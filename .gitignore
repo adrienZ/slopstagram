@@ -1,0 +1,5 @@
+.DS_Store
+.playwright-cli/
+.playwright/user-data/
+
+node_modules/
