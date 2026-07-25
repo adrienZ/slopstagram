@@ -31,12 +31,12 @@ const REELS_MEDIA_URL = "https://www.instagram.com/api/v1/feed/reels_media/";
 const DEFAULT_PROFILE_PATH = ".playwright/user-data";
 const REEL_IDS_PER_REQUEST = 25;
 
-function getArgValue(flag: string): string | undefined {
-  const index = process.argv.indexOf(flag);
+function getArgValue(args: string[], flag: string): string | undefined {
+  const index = args.indexOf(flag);
   if (index === -1) {
     return undefined;
   }
-  return process.argv[index + 1];
+  return args[index + 1];
 }
 
 function chunk<T>(items: T[], size: number): T[][] {
@@ -47,8 +47,16 @@ function chunk<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
-async function main(): Promise<void> {
-  const profileArg = getArgValue("--profile") ?? DEFAULT_PROFILE_PATH;
+export async function fetchStories(args: string[] = process.argv.slice(2)): Promise<{
+  reels: Record<string, unknown>;
+  xdt_api__v1__feed__reels_tray: {
+    broadcasts: unknown[];
+    status: string | null;
+    story_ranking_token: string | null;
+    tray: ReelTrayEntry[];
+  };
+}> {
+  const profileArg = getArgValue(args, "--profile") ?? DEFAULT_PROFILE_PATH;
   const session = await openInstagramSession(profileArg);
 
   try {
@@ -90,7 +98,7 @@ async function main(): Promise<void> {
       Object.assign(reels, reelsJson.reels ?? reelsJson.reels_media ?? {});
     }
 
-    const payload = {
+    return {
       xdt_api__v1__feed__reels_tray: {
         broadcasts: trayJson.broadcasts ?? [],
         tray,
@@ -99,11 +107,14 @@ async function main(): Promise<void> {
       },
       reels,
     };
-
-    process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
   } finally {
     await closeInstagramSession(session);
   }
+}
+
+async function main(): Promise<void> {
+  const payload = await fetchStories();
+  process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
 }
 
 main().catch((error: unknown) => {

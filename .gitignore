@@ -3,3 +3,4 @@
 .playwright/user-data/
 
 node_modules/
+.tmp/
