@@ -8,13 +8,15 @@
   "main": "index.js",
   "scripts": {
     "fetch:stories": "tsx scripts/fetch-stories.ts",
+    "fetch:story": "tsx scripts/fetch-story.ts",
     "create:report": "tsx scripts/create-report.ts",
     "parse:stories-tray": "node --import tsx scripts/parse-stories-tray.ts",
     "parse:story": "node --import tsx scripts/parse-story.ts",
     "test": "node --import tsx --test tests/**/*.test.ts"
   },
   "dependencies": {
-    "@playwright/cli": "^0.1.17"
+    "@playwright/cli": "^0.1.17",
+    "unstorage": "^1.17.5"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

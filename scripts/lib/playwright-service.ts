@@ -14,7 +14,7 @@ export async function openInstagramSession(
 ): Promise<InstagramSession> {
   const profilePath = path.resolve(profileArg);
   const context = await chromium.launchPersistentContext(profilePath, {
-    headless: false,
+    headless: true,
   });
 
   const page = context.pages()[0] ?? (await context.newPage());

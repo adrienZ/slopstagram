@@ -3,8 +3,8 @@ import { describe, test } from "node:test";
 import {
   getStoryTrayUiSortPosition,
   parseStoriesTrayReport,
-} from "../scripts/lib/parser-service.js";
-import type { StoriesReport } from "../scripts/lib/types.js";
+} from "../scripts/lib/parser-service";
+import type { StoriesReport } from "../scripts/lib/types";
 import reelsTrayFixture from "./fixtures/xdt_api__v1__feed__reels_tray.json" with { type: "json" };
 
 const report = reelsTrayFixture as StoriesReport;

@@ -3,9 +3,9 @@ import { describe, test } from "node:test";
 import {
   getLargestVersion,
   parseStoryReport,
-} from "../scripts/lib/parser-service.js";
-import { STORY_MEDIA_TYPES } from "../scripts/lib/types.js";
-import type { StoriesMediaReport, StoryVersion } from "../scripts/lib/types.js";
+} from "../scripts/lib/parser-service";
+import { STORY_MEDIA_TYPES } from "../scripts/lib/types";
+import type { StoriesMediaReport, StoryVersion } from "../scripts/lib/types";
 import storiesFixture from "./fixtures/instagram-story-data.json" with { type: "json" };
 
 const report = storiesFixture as StoriesMediaReport;

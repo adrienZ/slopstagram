@@ -2,7 +2,7 @@ import process from "node:process";
 import {
   closeInstagramSession,
   openInstagramSession,
-} from "./lib/playwright-service.js";
+} from "./lib/playwright-service";
 
 type ReelTrayEntry = {
   id: string;

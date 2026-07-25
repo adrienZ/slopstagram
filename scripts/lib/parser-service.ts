@@ -8,7 +8,7 @@ import {
   type StoryMediaType,
   type StoryTrayEntry,
   type StoryVersion,
-} from "./types.js";
+} from "./types";
 
 export function getLargestVersion<T extends StoryVersion>(
   versions: T[] | null | undefined,

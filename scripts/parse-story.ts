@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import process from "node:process";
-import { parseStoryReport } from "./lib/parser-service.js";
-import type { StoriesMediaReport } from "./lib/types.js";
+import { parseStoryReport } from "./lib/parser-service";
+import type { StoriesMediaReport } from "./lib/types";
 
 function getArgs(): { inputPath: string; pk: string } {
   const inputPath = process.argv[2];

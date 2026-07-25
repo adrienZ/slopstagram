@@ -1,9 +1,7 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { resolve } from "node:path";
 import process from "node:process";
-import { fetchStories } from "./fetch-stories.js";
-
-const OUTPUT_DIR = ".tmp/reports";
+import { reportsStorage } from "./lib/cache-service.ts";
+import { fetchStories } from "./fetch-stories.ts";
 
 function pad(value: number): string {
   return String(value).padStart(2, "0");
@@ -32,16 +30,12 @@ function formatFilenameTimestamp(date: Date): string {
 
 async function main(): Promise<void> {
   const timestamp = formatFilenameTimestamp(new Date());
-  const outputDirectory = join(process.cwd(), OUTPUT_DIR);
-  const outputPath = join(outputDirectory, `stories-report-${timestamp}.json`);
+  const outputFileName = `stories-report-${timestamp}.json`;
   const fetchStoriesArgs = process.argv.slice(2);
 
-  await mkdir(outputDirectory, { recursive: true });
-
   const report = await fetchStories(fetchStoriesArgs);
-  const reportJson = `${JSON.stringify(report, null, 2)}\n`;
-  JSON.parse(reportJson);
-  await writeFile(outputPath, reportJson);
+  await reportsStorage.setItem(outputFileName, JSON.stringify(report, null, 2));
+  const outputPath = resolve(".temp/reports", outputFileName);
 
   process.stdout.write(`${outputPath}\n`);
 }
