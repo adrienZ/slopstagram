@@ -1,3 +1,5 @@
+import type { Storage } from "unstorage";
+
 export const STORY_MEDIA_TYPES = {
   IMAGE: "image",
   VIDEO: "video",
@@ -46,6 +48,7 @@ export type StoryVideoVersion = StoryVersion & {
 };
 
 export type StoryItem = {
+  accessibility_caption?: string | null;
   image_versions2?: {
     candidates?: StoryVersion[];
   };
@@ -98,6 +101,7 @@ export type StoryFetchFailure = {
 };
 
 export type StoryManifestItem = {
+  accessibility_caption: string;
   cache_key: string;
   failure_index?: number;
   media_pk: string;
@@ -110,6 +114,20 @@ export type StoryManifestReel = {
   order: number;
   reel_id: string;
   stories: StoryManifestItem[];
+  username: string | null;
+};
+
+export type StoryOutputItem = {
+  accessibility_caption: string;
+  failure_index?: number;
+  media_pk: string;
+  status: StoryManifestItemStatus;
+};
+
+export type StoryOutputUser = {
+  full_name: string | null;
+  reel_ids: string[];
+  stories: StoryOutputItem[];
   username: string | null;
 };
 
@@ -135,6 +153,18 @@ export type StoriesManifestReport = {
     status: string | null;
     story_ranking_token: string | null;
   };
+  output: {
+    users: StoryOutputUser[];
+  };
+};
+
+export type TrayStorage = Storage<StoriesReport>;
+export type StoryStorage = Storage<StoryItem>;
+export type ReportStorage = Storage<StoriesManifestReport>;
+export type CacheStorageSet = {
+  reportsStorage: ReportStorage;
+  storiesStorage: StoryStorage;
+  strayStorage: StoryStorage;
 };
 
 export type ParsedStory = {

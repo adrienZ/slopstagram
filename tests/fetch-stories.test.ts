@@ -14,8 +14,9 @@ import {
 import type { Logger } from "../scripts/lib/logging-service.ts";
 import type { StoryItem, StoryReel, StoryTrayEntry } from "../scripts/lib/types.ts";
 
-function storyItem(pk: string): StoryItem {
+function storyItem(pk: string, accessibilityCaption?: string | null): StoryItem {
   return {
+    accessibility_caption: accessibilityCaption,
     image_versions2: {
       candidates: [
         {
@@ -117,14 +118,8 @@ function createMockLogger(): Logger & { messages: string[] } {
 describe("fetchStoriesManifest", () => {
   test("uses cached media items without calling reels media", async () => {
     const { storiesStorage } = createTestStorages();
-    await storiesStorage.setItem(
-      getStoryCacheKey("m1"),
-      JSON.stringify(storyItem("m1")),
-    );
-    await storiesStorage.setItem(
-      getStoryCacheKey("m2"),
-      JSON.stringify(storyItem("m2")),
-    );
+    await storiesStorage.setItem(getStoryCacheKey("m1"), storyItem("m1"));
+    await storiesStorage.setItem(getStoryCacheKey("m2"), storyItem("m2"));
 
     const client = createClient(
       [
@@ -152,22 +147,59 @@ describe("fetchStoriesManifest", () => {
     });
     assert.deepEqual(
       report.manifest.users.map((user) => ({
+        accessibility_caption: user.stories[0]?.accessibility_caption,
         reel_id: user.reel_id,
         status: user.stories[0]?.status,
         username: user.username,
       })),
       [
-        { reel_id: "r1", status: "cached", username: "one" },
-        { reel_id: "r2", status: "cached", username: "two" },
+        {
+          accessibility_caption: "no caption avaible",
+          reel_id: "r1",
+          status: "cached",
+          username: "one",
+        },
+        {
+          accessibility_caption: "no caption avaible",
+          reel_id: "r2",
+          status: "cached",
+          username: "two",
+        },
       ],
     );
+    assert.deepEqual(report.output.users, [
+      {
+        full_name: null,
+        reel_ids: ["r1"],
+        stories: [
+          {
+            accessibility_caption: "no caption avaible",
+            media_pk: "m1",
+            status: "cached",
+          },
+        ],
+        username: "one",
+      },
+      {
+        full_name: null,
+        reel_ids: ["r2"],
+        stories: [
+          {
+            accessibility_caption: "no caption avaible",
+            media_pk: "m2",
+            status: "cached",
+          },
+        ],
+        username: "two",
+      },
+    ]);
   });
 
   test("fetches only reels with missing media and caches returned items", async () => {
     const { storiesStorage } = createTestStorages();
     await storiesStorage.setItem(
       getStoryCacheKey("m1"),
-      JSON.stringify(storyItem("m1")),
+      storyItem("m1", "Cached image caption"),
     );
 
     const client = createClient(
@@ -194,11 +226,76 @@ describe("fetchStoriesManifest", () => {
     assert.deepEqual(client.reelsCalls, [["r2"]]);
     assert.equal(await storiesStorage.hasItem(getStoryCacheKey("m2")), true);
     assert.deepEqual(
-      report.manifest.users.map((user) => user.stories[0]?.status),
-      ["cached", "fetched"],
+      report.manifest.users.map((user) => ({
+        accessibility_caption: user.stories[0]?.accessibility_caption,
+        status: user.stories[0]?.status,
+      })),
+      [
+        {
+          accessibility_caption: "Cached image caption",
+          status: "cached",
+        },
+        {
+          accessibility_caption: "no caption avaible",
+          status: "fetched",
+        },
+      ],
     );
     assert.equal(report.metadata.counts.cache_hits, 1);
     assert.equal(report.metadata.counts.fetched, 1);
+  });
+
+  test("groups final output by user with story accessibility captions", async () => {
+    const { storiesStorage } = createTestStorages();
+    const client = createClient(
+      [
+        {
+          id: "r1",
+          media_ids: ["m1"],
+          user: { full_name: "Same User", username: "same" },
+        },
+        {
+          id: "r2",
+          media_ids: ["m2"],
+          user: { full_name: "Same User", username: "same" },
+        },
+      ],
+      [
+        response({
+          reels: {
+            r1: reel("r1", [storyItem("m1", "First story caption")]),
+            r2: reel("r2", [storyItem("m2", "Second story caption")]),
+          },
+        }),
+      ],
+    );
+
+    const report = await fetchStoriesManifest(client, {
+      logger: createMockLogger(),
+      now: fixedNow,
+      sleep: noSleep,
+      storyStorage: storiesStorage,
+    });
+
+    assert.deepEqual(report.output.users, [
+      {
+        full_name: "Same User",
+        reel_ids: ["r1", "r2"],
+        stories: [
+          {
+            accessibility_caption: "First story caption",
+            media_pk: "m1",
+            status: "fetched",
+          },
+          {
+            accessibility_caption: "Second story caption",
+            media_pk: "m2",
+            status: "fetched",
+          },
+        ],
+        username: "same",
+      },
+    ]);
   });
 
   test("preserves tray and media order in the manifest", async () => {

@@ -1,6 +1,9 @@
 import process from "node:process";
 import { pathToFileURL } from "node:url";
-import { getStoryCacheKey, storiesStorage } from "./lib/cache-service.ts";
+import {
+  getStoryCacheKey,
+  storiesStorage,
+} from "./lib/cache-service.ts";
 import { createLogger, type Logger } from "./lib/logging-service.ts";
 import {
   closeInstagramSession,
@@ -12,7 +15,10 @@ import type {
   StoryFetchFailure,
   StoryFetchFailureReason,
   StoryItem,
+  StoryManifestReel,
+  StoryOutputUser,
   StoryReel,
+  StoryStorage,
   StoryTrayEntry,
 } from "./lib/types.ts";
 
@@ -70,7 +76,7 @@ export type FetchStoriesManifestOptions = {
   reportName?: string;
   logger?: Logger;
   sleep?: (durationMs: number) => Promise<void>;
-  storyStorage?: typeof storiesStorage;
+  storyStorage?: StoryStorage;
 };
 
 type FetchStoriesOptions = FetchStoriesManifestOptions & {
@@ -88,6 +94,7 @@ const DEFAULT_REEL_IDS_PER_REQUEST = 25;
 const DEFAULT_MAX_ATTEMPTS = 3;
 const DEFAULT_BASE_DELAY_MS = 500;
 const DEFAULT_MAX_RATE_LIMIT_DELAY_MS = 10_000;
+const NO_ACCESSIBILITY_CAPTION = "no caption avaible";
 const TRANSIENT_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
 
 function getArgValue(args: string[], flag: string): string | undefined {
@@ -214,7 +221,7 @@ function extractReels(response: ReelsMediaResponse): Record<string, StoryReel> {
 
 async function getCachedStoryItem(
   mediaPk: string,
-  storyStorage: typeof storiesStorage,
+  storyStorage: StoryStorage,
 ): Promise<StoryItem | null> {
   const cachedValue = await storyStorage.getItem(getStoryCacheKey(mediaPk));
 
@@ -232,12 +239,9 @@ async function getCachedStoryItem(
 
 async function cacheStoryItem(
   item: StoryItem,
-  storyStorage: typeof storiesStorage,
+  storyStorage: StoryStorage,
 ): Promise<void> {
-  await storyStorage.setItem(
-    getStoryCacheKey(item.pk),
-    JSON.stringify(item, null, 2),
-  );
+  await storyStorage.setItem(getStoryCacheKey(item.pk), item);
 }
 
 async function requestWithRetry<T>(
@@ -401,7 +405,7 @@ async function cacheReturnedReels(
   reels: Record<string, StoryReel>,
   cachedItems: Map<string, StoryItem>,
   fetchedMediaPks: Set<string>,
-  storyStorage: typeof storiesStorage,
+  storyStorage: StoryStorage,
 ): Promise<void> {
   for (const reel of Object.values(reels)) {
     for (const item of reel.items ?? []) {
@@ -443,6 +447,54 @@ function logStoryProgress(
     getResolvedStoryCount(cacheHitPks, fetchedMediaPks, failureByMediaPk),
     expectedStories,
   );
+}
+
+function getAccessibilityCaption(
+  mediaPk: string,
+  cachedItems: Map<string, StoryItem>,
+): string {
+  const caption = cachedItems.get(mediaPk)?.accessibility_caption;
+
+  if (typeof caption === "string" && caption.trim().length > 0) {
+    return caption;
+  }
+
+  return NO_ACCESSIBILITY_CAPTION;
+}
+
+function createOutputUsers(manifestUsers: StoryManifestReel[]): StoryOutputUser[] {
+  const outputUsers: StoryOutputUser[] = [];
+  const groupByUser = new Map<string, StoryOutputUser>();
+
+  for (const user of manifestUsers) {
+    const groupKey = user.username ?? `reel:${user.reel_id}`;
+    let group = groupByUser.get(groupKey);
+
+    if (!group) {
+      group = {
+        full_name: user.full_name,
+        reel_ids: [],
+        stories: [],
+        username: user.username,
+      };
+      groupByUser.set(groupKey, group);
+      outputUsers.push(group);
+    }
+
+    group.reel_ids.push(user.reel_id);
+    group.stories.push(
+      ...user.stories.map((story) => ({
+        accessibility_caption: story.accessibility_caption,
+        ...(story.failure_index === undefined
+          ? {}
+          : { failure_index: story.failure_index }),
+        media_pk: story.media_pk,
+        status: story.status,
+      })),
+    );
+  }
+
+  return outputUsers;
 }
 
 export async function fetchStoriesManifest(
@@ -718,6 +770,7 @@ export async function fetchStoriesManifest(
       const wasFetched = fetchedMediaPks.has(mediaPk);
 
       return {
+        accessibility_caption: getAccessibilityCaption(mediaPk, cachedItems),
         cache_key: getStoryCacheKey(mediaPk),
         ...(failureIndex === undefined ? {} : { failure_index: failureIndex }),
         media_pk: mediaPk,
@@ -731,6 +784,7 @@ export async function fetchStoriesManifest(
     }),
     username: entry.user?.username ?? null,
   }));
+  const outputUsers = createOutputUsers(manifestUsers);
 
   logger.info(
     `manifest complete: cached=${cacheHitPks.size} fetched=${fetchedMediaPks.size} failed=${failureByMediaPk.size}`,
@@ -763,6 +817,9 @@ export async function fetchStoriesManifest(
       report_name: reportName,
       status: trayJson.status ?? null,
       story_ranking_token: trayJson.story_ranking_token ?? null,
+    },
+    output: {
+      users: outputUsers,
     },
   };
 }

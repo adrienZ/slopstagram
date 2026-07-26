@@ -7,6 +7,7 @@ import {
   type StoriesReport,
   type StoryItem,
   type StoryMediaType,
+  type StoryStorage,
   type StoryTrayEntry,
   type StoryVersion,
 } from "./types.ts";
@@ -173,7 +174,7 @@ export function parseStoryItem(item: StoryItem): ParsedStory {
 
 async function getCachedStoryItem(
   cacheKey: string,
-  storage = storiesStorage,
+  storage: StoryStorage = storiesStorage,
 ): Promise<StoryItem> {
   const cachedValue = await storage.getItem(cacheKey);
 
@@ -191,7 +192,7 @@ async function getCachedStoryItem(
 export async function parseStoryManifestReport(
   report: StoriesManifestReport,
   pk: string,
-  storage = storiesStorage,
+  storage: StoryStorage = storiesStorage,
 ): Promise<ParsedStory> {
   const manifestItem = report.manifest.users
     .flatMap((user) => user.stories)

@@ -121,6 +121,7 @@ describe("parseStoryReport", () => {
             reel_id: "reel-id",
             stories: [
               {
+                accessibility_caption: "Cached image caption",
                 cache_key: getStoryCacheKey("cached-pk"),
                 media_pk: "cached-pk",
                 status: "cached",
@@ -145,12 +146,25 @@ describe("parseStoryReport", () => {
         status: "ok",
         story_ranking_token: null,
       },
+      output: {
+        users: [
+          {
+            full_name: "Cached User",
+            reel_ids: ["reel-id"],
+            stories: [
+              {
+                accessibility_caption: "Cached image caption",
+                media_pk: "cached-pk",
+                status: "cached",
+              },
+            ],
+            username: "cached_user",
+          },
+        ],
+      },
     };
 
-    await storiesStorage.setItem(
-      getStoryCacheKey("cached-pk"),
-      JSON.stringify(cachedItem),
-    );
+    await storiesStorage.setItem(getStoryCacheKey("cached-pk"), cachedItem);
 
     assert.deepEqual(
       await parseStoryManifestReport(

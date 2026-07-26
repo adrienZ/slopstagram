@@ -3,8 +3,8 @@ import process from "node:process";
 import { pathToFileURL } from "node:url";
 import {
   BASE_CACHE_DIR,
-  STRAY_STORAGE_DIR,
-  strayStorage,
+  REPORTS_STORAGE_DIR,
+  reportsStorage,
 } from "./lib/cache-service.ts";
 import { createLogger } from "./lib/logging-service.ts";
 import { fetchStories } from "./fetch-stories.ts";
@@ -47,8 +47,8 @@ async function main(): Promise<void> {
     logger,
     reportName: outputFileName,
   });
-  await strayStorage.setItem(outputFileName, JSON.stringify(report, null, 2));
-  const outputPath = resolve(BASE_CACHE_DIR, STRAY_STORAGE_DIR, outputFileName);
+  await reportsStorage.setItem(outputFileName, report);
+  const outputPath = resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR, outputFileName);
   const counts = report.metadata.counts;
 
   logger.info(
