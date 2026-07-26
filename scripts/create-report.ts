@@ -1,6 +1,12 @@
 import { resolve } from "node:path";
 import process from "node:process";
-import { reportsStorage } from "./lib/cache-service.ts";
+import { pathToFileURL } from "node:url";
+import {
+  BASE_CACHE_DIR,
+  STRAY_STORAGE_DIR,
+  strayStorage,
+} from "./lib/cache-service.ts";
+import { createLogger } from "./lib/logging-service.ts";
 import { fetchStories } from "./fetch-stories.ts";
 
 function pad(value: number): string {
@@ -32,16 +38,35 @@ async function main(): Promise<void> {
   const timestamp = formatFilenameTimestamp(new Date());
   const outputFileName = `stories-report-${timestamp}.json`;
   const fetchStoriesArgs = process.argv.slice(2);
+  const logger = createLogger("create-report", (message) => {
+    process.stderr.write(`${message}\n`);
+  });
 
-  const report = await fetchStories(fetchStoriesArgs);
-  await reportsStorage.setItem(outputFileName, JSON.stringify(report, null, 2));
-  const outputPath = resolve(".temp/reports", outputFileName);
+  logger.info(`creating report ${outputFileName}`);
+  const report = await fetchStories(fetchStoriesArgs, {
+    logger,
+    reportName: outputFileName,
+  });
+  await strayStorage.setItem(outputFileName, JSON.stringify(report, null, 2));
+  const outputPath = resolve(BASE_CACHE_DIR, STRAY_STORAGE_DIR, outputFileName);
+  const counts = report.metadata.counts;
 
+  logger.info(
+    [
+      `stories=${counts.stories}`,
+      `cache_hits=${counts.cache_hits}`,
+      `fetched=${counts.fetched}`,
+      `failed=${counts.failed}`,
+    ].join(" "),
+  );
+  logger.info(`wrote report ${outputPath}`);
   process.stdout.write(`${outputPath}\n`);
 }
 
-main().catch((error: unknown) => {
-  const message = error instanceof Error ? error.message : String(error);
-  process.stderr.write(`${message}\n`);
-  process.exitCode = 1;
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error);
+    process.stderr.write(`${message}\n`);
+    process.exitCode = 1;
+  });
+}

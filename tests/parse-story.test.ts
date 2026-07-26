@@ -1,11 +1,22 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
+import { createStorage } from "unstorage";
+import memoryDriver from "unstorage/drivers/memory";
 import {
   getLargestVersion,
+  parseStoryManifestReport,
   parseStoryReport,
-} from "../scripts/lib/parser-service";
-import { STORY_MEDIA_TYPES } from "../scripts/lib/types";
-import type { StoriesMediaReport, StoryVersion } from "../scripts/lib/types";
+} from "../scripts/lib/parser-service.ts";
+import {
+  createCacheStorages,
+  getStoryCacheKey,
+} from "../scripts/lib/cache-service.ts";
+import { STORY_MEDIA_TYPES } from "../scripts/lib/types.ts";
+import type {
+  StoriesManifestReport,
+  StoriesMediaReport,
+  StoryVersion,
+} from "../scripts/lib/types.ts";
 import storiesFixture from "./fixtures/instagram-story-data.json" with { type: "json" };
 
 const report = storiesFixture as StoriesMediaReport;
@@ -78,6 +89,85 @@ describe("parseStoryReport", () => {
       url: "https://example.com/anonymized/instagram-media-0308.mp4",
       width: 716,
     });
+  });
+
+  test("resolves manifest stories from story cache", async () => {
+    const { storiesStorage } = createCacheStorages(
+      createStorage({
+        driver: memoryDriver(),
+      }),
+    );
+    const cachedItem = {
+      image_versions2: {
+        candidates: [
+          {
+            height: 120,
+            url: "https://example.com/cached-story.jpg",
+            width: 80,
+          },
+        ],
+      },
+      media_type: 1,
+      pk: "cached-pk",
+    };
+    const manifestReport: StoriesManifestReport = {
+      failures: [],
+      manifest: {
+        users: [
+          {
+            full_name: "Cached User",
+            media_ids: ["cached-pk"],
+            order: 0,
+            reel_id: "reel-id",
+            stories: [
+              {
+                cache_key: getStoryCacheKey("cached-pk"),
+                media_pk: "cached-pk",
+                status: "cached",
+              },
+            ],
+            username: "cached_user",
+          },
+        ],
+      },
+      metadata: {
+        broadcasts_count: 0,
+        counts: {
+          cache_hits: 1,
+          cache_misses: 0,
+          failed: 0,
+          fetched: 0,
+          reels: 1,
+          stories: 1,
+        },
+        created_at: "2026-07-26T00:00:00.000Z",
+        report_name: "stories-report.json",
+        status: "ok",
+        story_ranking_token: null,
+      },
+    };
+
+    await storiesStorage.setItem(
+      getStoryCacheKey("cached-pk"),
+      JSON.stringify(cachedItem),
+    );
+
+    assert.deepEqual(
+      await parseStoryManifestReport(
+        manifestReport,
+        "cached-pk",
+        storiesStorage,
+      ),
+      {
+        height: 120,
+        media_type: STORY_MEDIA_TYPES.IMAGE,
+        pk: "cached-pk",
+        story_bloks_stickers: null,
+        story_music_stickers: null,
+        url: "https://example.com/cached-story.jpg",
+        width: 80,
+      },
+    );
   });
 });
 

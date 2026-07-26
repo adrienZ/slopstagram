@@ -2,7 +2,7 @@ import process from "node:process";
 import {
   closeInstagramSession,
   openInstagramSession,
-} from "./lib/playwright-service";
+} from "./lib/playwright-service.ts";
 
 type ReelsMediaResponse = {
   reels?: Record<string, unknown>;
@@ -71,7 +71,7 @@ async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const reelId = getReelId(args);
   const payload = await fetchStory(reelId, args.slice(1));
-  process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+  // process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
 }
 
 main().catch((error: unknown) => {

@@ -3,12 +3,14 @@ import {
   type ParsedStory,
   type ParsedStoryTrayUser,
   type StoriesMediaReport,
+  type StoriesManifestReport,
   type StoriesReport,
   type StoryItem,
   type StoryMediaType,
   type StoryTrayEntry,
   type StoryVersion,
-} from "./types";
+} from "./types.ts";
+import { storiesStorage } from "./cache-service.ts";
 
 export function getLargestVersion<T extends StoryVersion>(
   versions: T[] | null | undefined,
@@ -41,11 +43,21 @@ function getStoryMediaType(value: number | undefined): StoryMediaType {
   throw new Error(`Unsupported story media_type: ${String(value)}`);
 }
 
+function isStoriesManifestReport(
+  report: StoriesMediaReport | StoriesManifestReport | StoriesReport,
+): report is StoriesManifestReport {
+  return "manifest" in report && "metadata" in report;
+}
+
 function findStoryItem(report: StoriesMediaReport, pk: string): StoryItem {
-  const items =
+  const graphItems =
     report.data?.xdt_api__v1__feed__reels_media__connection?.edges?.flatMap(
       (edge) => edge.node?.items ?? [],
     ) ?? [];
+  const reelsItems = Object.values(report.reels ?? {}).flatMap(
+    (reel) => reel.items ?? [],
+  );
+  const items = [...graphItems, ...reelsItems];
 
   const item = items.find((entry) => entry.pk === pk);
 
@@ -69,8 +81,19 @@ export function getStoryTrayUiSortPosition(entry: StoryTrayEntry): number {
 }
 
 export function parseStoriesTrayReport(
-  report: StoriesReport,
+  report: StoriesReport | StoriesManifestReport,
 ): ParsedStoryTrayUser[] {
+  if (isStoriesManifestReport(report)) {
+    return report.manifest.users.map((entry) => ({
+      items: [
+        {
+          media_ids: entry.media_ids,
+        },
+      ],
+      username: entry.username,
+    }));
+  }
+
   const tray = report.xdt_api__v1__feed__reels_tray?.tray ?? [];
   const groupedTray: ParsedStoryTrayUser[] = [];
   const groupByUsername = new Map<string | null, ParsedStoryTrayUser>();
@@ -114,6 +137,10 @@ export function parseStoryReport(
   pk: string,
 ): ParsedStory {
   const item = findStoryItem(report, pk);
+  return parseStoryItem(item);
+}
+
+export function parseStoryItem(item: StoryItem): ParsedStory {
   const mediaType = getStoryMediaType(item.media_type);
 
   if (mediaType === STORY_MEDIA_TYPES.IMAGE) {
@@ -142,4 +169,42 @@ export function parseStoryReport(
     url: selectedVideo?.url ?? null,
     width: selectedVideo?.width ?? item.original_width ?? null,
   };
+}
+
+async function getCachedStoryItem(
+  cacheKey: string,
+  storage = storiesStorage,
+): Promise<StoryItem> {
+  const cachedValue = await storage.getItem(cacheKey);
+
+  if (!cachedValue) {
+    throw new Error(`Cached story item ${cacheKey} not found`);
+  }
+
+  if (typeof cachedValue === "string") {
+    return JSON.parse(cachedValue) as StoryItem;
+  }
+
+  return cachedValue as StoryItem;
+}
+
+export async function parseStoryManifestReport(
+  report: StoriesManifestReport,
+  pk: string,
+  storage = storiesStorage,
+): Promise<ParsedStory> {
+  const manifestItem = report.manifest.users
+    .flatMap((user) => user.stories)
+    .find((story) => story.media_pk === pk);
+
+  if (!manifestItem) {
+    throw new Error(`Story with pk ${pk} not found`);
+  }
+
+  if (manifestItem.status === "failed") {
+    throw new Error(`Story with pk ${pk} was not fetched successfully`);
+  }
+
+  const item = await getCachedStoryItem(manifestItem.cache_key, storage);
+  return parseStoryItem(item);
 }

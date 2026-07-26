@@ -1,41 +1,101 @@
 import process from "node:process";
+import { pathToFileURL } from "node:url";
+import { getStoryCacheKey, storiesStorage } from "./lib/cache-service.ts";
+import { createLogger, type Logger } from "./lib/logging-service.ts";
 import {
   closeInstagramSession,
   openInstagramSession,
-} from "./lib/playwright-service";
-
-type ReelTrayEntry = {
-  id: string;
-  user?: {
-    username?: string;
-    full_name?: string;
-  };
-};
+  type InstagramSession,
+} from "./lib/playwright-service.ts";
+import type {
+  StoriesManifestReport,
+  StoryFetchFailure,
+  StoryFetchFailureReason,
+  StoryItem,
+  StoryReel,
+  StoryTrayEntry,
+} from "./lib/types.ts";
 
 type ReelTrayResponse = {
   broadcasts?: unknown[];
-  tray?: ReelTrayEntry[];
+  tray?: StoryTrayEntry[];
   story_ranking_token?: string | null;
   status?: string | null;
 };
 
 type ReelsMediaResponse = {
-  reels?: Record<string, unknown>;
-  reels_media?: Record<string, unknown>;
+  reels?: Record<string, StoryReel>;
+  reels_media?: Record<string, StoryReel>;
   status?: string | null;
+};
+
+export type InstagramClientResponse<T> = {
+  headers: Record<string, string>;
+  json: () => Promise<T>;
+  ok: boolean;
+  status: number;
+};
+
+export type InstagramClient = {
+  getReelsMedia: (
+    reelIds: string[],
+  ) => Promise<InstagramClientResponse<ReelsMediaResponse>>;
+  getTray: () => Promise<InstagramClientResponse<ReelTrayResponse>>;
+};
+
+type RequestFailure = {
+  attemptCount: number;
+  message: string;
+  reason: "request_failed" | "rate_limited";
+  status: number | null;
+};
+
+type RequestResult<T> =
+  | {
+      value: T;
+      ok: true;
+    }
+  | {
+      failure: RequestFailure;
+      ok: false;
+    };
+
+export type FetchStoriesManifestOptions = {
+  baseDelayMs?: number;
+  maxAttempts?: number;
+  maxRateLimitDelayMs?: number;
+  now?: () => Date;
+  random?: () => number;
+  reelIdsPerRequest?: number;
+  reportName?: string;
+  logger?: Logger;
+  sleep?: (durationMs: number) => Promise<void>;
+  storyStorage?: typeof storiesStorage;
+};
+
+type FetchStoriesOptions = FetchStoriesManifestOptions & {
+  client?: InstagramClient;
+  closeSession?: typeof closeInstagramSession;
+  openSession?: typeof openInstagramSession;
 };
 
 const IG_APP_ID = "936619743392459";
 const REELS_TRAY_URL = "https://www.instagram.com/api/v1/feed/reels_tray/";
 const REELS_MEDIA_URL = "https://www.instagram.com/api/v1/feed/reels_media/";
 const DEFAULT_PROFILE_PATH = ".playwright/user-data";
-const REEL_IDS_PER_REQUEST = 25;
+const DEFAULT_REPORT_NAME = "stories-report.json";
+const DEFAULT_REEL_IDS_PER_REQUEST = 25;
+const DEFAULT_MAX_ATTEMPTS = 3;
+const DEFAULT_BASE_DELAY_MS = 500;
+const DEFAULT_MAX_RATE_LIMIT_DELAY_MS = 10_000;
+const TRANSIENT_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
 
 function getArgValue(args: string[], flag: string): string | undefined {
   const index = args.indexOf(flag);
   if (index === -1) {
     return undefined;
   }
+
   return args[index + 1];
 }
 
@@ -47,39 +107,74 @@ function chunk<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
-export async function fetchStories(args: string[] = process.argv.slice(2)): Promise<{
-  reels: Record<string, unknown>;
-  xdt_api__v1__feed__reels_tray: {
-    broadcasts: unknown[];
-    status: string | null;
-    story_ranking_token: string | null;
-    tray: ReelTrayEntry[];
-  };
-}> {
-  const profileArg = getArgValue(args, "--profile") ?? DEFAULT_PROFILE_PATH;
-  const session = await openInstagramSession(profileArg);
+function sleep(durationMs: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, durationMs));
+}
 
-  try {
-    const trayResponse = await session.context.request.get(REELS_TRAY_URL, {
-      headers: {
-        "x-ig-app-id": IG_APP_ID,
-      },
-    });
+function normalizeHeaders(headers: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(headers).map(([key, value]) => [key.toLowerCase(), value]),
+  );
+}
 
-    if (!trayResponse.ok()) {
-      throw new Error(`Tray request failed with HTTP ${trayResponse.status()}`);
-    }
+function getRetryAfterMs(
+  headers: Record<string, string>,
+  maxRateLimitDelayMs: number,
+  now: Date,
+): number | null {
+  const retryAfter = normalizeHeaders(headers)["retry-after"];
 
-    const trayJson = (await trayResponse.json()) as ReelTrayResponse;
-    const tray = trayJson.tray ?? [];
-    const reelIds = tray.map((entry) => entry.id);
-    const reels: Record<string, unknown> = {};
+  if (!retryAfter) {
+    return null;
+  }
 
-    for (const idChunk of chunk(reelIds, REEL_IDS_PER_REQUEST)) {
-      const query = idChunk
+  const seconds = Number(retryAfter);
+  if (Number.isFinite(seconds)) {
+    return Math.min(Math.max(0, seconds * 1000), maxRateLimitDelayMs);
+  }
+
+  const retryAt = Date.parse(retryAfter);
+  if (Number.isNaN(retryAt)) {
+    return null;
+  }
+
+  return Math.min(Math.max(0, retryAt - now.getTime()), maxRateLimitDelayMs);
+}
+
+function getBackoffMs(
+  attemptIndex: number,
+  response: InstagramClientResponse<unknown> | null,
+  options: Required<
+    Pick<
+      FetchStoriesManifestOptions,
+      "baseDelayMs" | "maxRateLimitDelayMs" | "now" | "random"
+    >
+  >,
+): number {
+  const retryAfterMs =
+    response && response.status === 429
+      ? getRetryAfterMs(
+          response.headers,
+          options.maxRateLimitDelayMs,
+          options.now(),
+        )
+      : null;
+
+  if (retryAfterMs !== null) {
+    return retryAfterMs;
+  }
+
+  const jitterMs = Math.floor(options.random() * 100);
+  return options.baseDelayMs * 2 ** attemptIndex + jitterMs;
+}
+
+function createInstagramClient(session: InstagramSession): InstagramClient {
+  return {
+    async getReelsMedia(reelIds) {
+      const query = reelIds
         .map((reelId) => `reel_ids=${encodeURIComponent(reelId)}`)
         .join("&");
-      const reelsResponse = await session.context.request.get(
+      const response = await session.context.request.get(
         `${REELS_MEDIA_URL}?${query}`,
         {
           headers: {
@@ -88,37 +183,631 @@ export async function fetchStories(args: string[] = process.argv.slice(2)): Prom
         },
       );
 
-      if (!reelsResponse.ok()) {
-        throw new Error(
-          `Reels media request failed with HTTP ${reelsResponse.status()}`,
-        );
+      return {
+        headers: response.headers(),
+        json: () => response.json() as Promise<ReelsMediaResponse>,
+        ok: response.ok(),
+        status: response.status(),
+      };
+    },
+
+    async getTray() {
+      const response = await session.context.request.get(REELS_TRAY_URL, {
+        headers: {
+          "x-ig-app-id": IG_APP_ID,
+        },
+      });
+
+      return {
+        headers: response.headers(),
+        json: () => response.json() as Promise<ReelTrayResponse>,
+        ok: response.ok(),
+        status: response.status(),
+      };
+    },
+  };
+}
+
+function extractReels(response: ReelsMediaResponse): Record<string, StoryReel> {
+  return response.reels ?? response.reels_media ?? {};
+}
+
+async function getCachedStoryItem(
+  mediaPk: string,
+  storyStorage: typeof storiesStorage,
+): Promise<StoryItem | null> {
+  const cachedValue = await storyStorage.getItem(getStoryCacheKey(mediaPk));
+
+  if (!cachedValue) {
+    return null;
+  }
+
+  const item =
+    typeof cachedValue === "string"
+      ? (JSON.parse(cachedValue) as StoryItem)
+      : (cachedValue as StoryItem);
+
+  return item.pk === mediaPk ? item : null;
+}
+
+async function cacheStoryItem(
+  item: StoryItem,
+  storyStorage: typeof storiesStorage,
+): Promise<void> {
+  await storyStorage.setItem(
+    getStoryCacheKey(item.pk),
+    JSON.stringify(item, null, 2),
+  );
+}
+
+async function requestWithRetry<T>(
+  runRequest: () => Promise<InstagramClientResponse<T>>,
+  options: Required<
+    Pick<
+      FetchStoriesManifestOptions,
+      | "baseDelayMs"
+      | "logger"
+      | "maxAttempts"
+      | "maxRateLimitDelayMs"
+      | "now"
+      | "random"
+      | "sleep"
+    >
+  >,
+  label: string,
+): Promise<RequestResult<T>> {
+  let lastFailure: RequestFailure = {
+    attemptCount: 0,
+    message: "Request was not attempted",
+    reason: "request_failed",
+    status: null,
+  };
+
+  for (let attemptIndex = 0; attemptIndex < options.maxAttempts; attemptIndex += 1) {
+    const attemptCount = attemptIndex + 1;
+
+    try {
+      const response = await runRequest();
+
+      if (response.ok) {
+        return {
+          ok: true,
+          value: await response.json(),
+        };
       }
 
-      const reelsJson = (await reelsResponse.json()) as ReelsMediaResponse;
-      Object.assign(reels, reelsJson.reels ?? reelsJson.reels_media ?? {});
+      const reason = response.status === 429 ? "rate_limited" : "request_failed";
+      lastFailure = {
+        attemptCount,
+        message: `Instagram request failed with HTTP ${response.status}`,
+        reason,
+        status: response.status,
+      };
+
+      if (
+        attemptCount >= options.maxAttempts ||
+        !TRANSIENT_STATUS_CODES.has(response.status)
+      ) {
+        options.logger.warn(
+          `${label} failed after ${attemptCount} attempt(s): ${lastFailure.message}`,
+        );
+        return {
+          failure: lastFailure,
+          ok: false,
+        };
+      }
+
+      const delayMs = getBackoffMs(attemptIndex, response, options);
+      options.logger.warn(
+        `${label} attempt ${attemptCount} failed with HTTP ${response.status}; retrying in ${delayMs}ms`,
+      );
+      await options.sleep(delayMs);
+    } catch (error: unknown) {
+      lastFailure = {
+        attemptCount,
+        message: error instanceof Error ? error.message : String(error),
+        reason: "request_failed",
+        status: null,
+      };
+
+      if (attemptCount >= options.maxAttempts) {
+        options.logger.warn(
+          `${label} failed after ${attemptCount} attempt(s): ${lastFailure.message}`,
+        );
+        return {
+          failure: lastFailure,
+          ok: false,
+        };
+      }
+
+      const delayMs = getBackoffMs(attemptIndex, null, options);
+      options.logger.warn(
+        `${label} attempt ${attemptCount} threw ${lastFailure.message}; retrying in ${delayMs}ms`,
+      );
+      await options.sleep(delayMs);
+    }
+  }
+
+  return {
+    failure: lastFailure,
+    ok: false,
+  };
+}
+
+function createFailure(
+  reelId: string,
+  mediaPk: string | null,
+  failure: RequestFailure,
+  reason: StoryFetchFailureReason = failure.reason,
+): StoryFetchFailure {
+  return {
+    attempt_count: failure.attemptCount,
+    http_status: failure.status,
+    media_pk: mediaPk,
+    message: failure.message,
+    reason,
+    reel_id: reelId,
+  };
+}
+
+function getExpectedMediaIdsByReel(
+  tray: StoryTrayEntry[],
+): Map<string, string[]> {
+  return new Map(tray.map((entry) => [entry.id, entry.media_ids ?? []]));
+}
+
+function getPendingMediaIds(
+  reelId: string,
+  expectedMediaIdsByReel: Map<string, string[]>,
+  cachedItems: Map<string, StoryItem>,
+): string[] {
+  return (expectedMediaIdsByReel.get(reelId) ?? []).filter(
+    (mediaPk) => !cachedItems.has(mediaPk),
+  );
+}
+
+function addFailuresForPendingReelStories(
+  reelIds: string[],
+  expectedMediaIdsByReel: Map<string, string[]>,
+  cachedItems: Map<string, StoryItem>,
+  failures: StoryFetchFailure[],
+  failureByMediaPk: Map<string, number>,
+  logger: Logger,
+  failure: RequestFailure,
+  reason: StoryFetchFailureReason = failure.reason,
+): void {
+  for (const reelId of reelIds) {
+    for (const mediaPk of getPendingMediaIds(
+      reelId,
+      expectedMediaIdsByReel,
+      cachedItems,
+    )) {
+      if (failureByMediaPk.has(mediaPk)) {
+        continue;
+      }
+
+      const failureIndex = failures.length;
+      const storyFailure = createFailure(reelId, mediaPk, failure, reason);
+      failures.push(storyFailure);
+      failureByMediaPk.set(mediaPk, failureIndex);
+      logger.error(
+        `story failed: reel_id=${storyFailure.reel_id} media_pk=${storyFailure.media_pk} reason=${storyFailure.reason} status=${storyFailure.http_status ?? "none"} attempts=${storyFailure.attempt_count} message=${storyFailure.message}`,
+      );
+    }
+  }
+}
+
+async function cacheReturnedReels(
+  reels: Record<string, StoryReel>,
+  cachedItems: Map<string, StoryItem>,
+  fetchedMediaPks: Set<string>,
+  storyStorage: typeof storiesStorage,
+): Promise<void> {
+  for (const reel of Object.values(reels)) {
+    for (const item of reel.items ?? []) {
+      if (!item.pk || cachedItems.has(item.pk)) {
+        continue;
+      }
+
+      await cacheStoryItem(item, storyStorage);
+      cachedItems.set(item.pk, item);
+      fetchedMediaPks.add(item.pk);
+    }
+  }
+}
+
+function getRemainingReelIds(
+  reelIdsToFetch: string[],
+  currentIndex: number,
+): string[] {
+  return reelIdsToFetch.slice(currentIndex);
+}
+
+function getResolvedStoryCount(
+  cacheHitPks: Set<string>,
+  fetchedMediaPks: Set<string>,
+  failureByMediaPk: Map<string, number>,
+): number {
+  return cacheHitPks.size + fetchedMediaPks.size + failureByMediaPk.size;
+}
+
+function logStoryProgress(
+  logger: Logger,
+  expectedStories: number,
+  cacheHitPks: Set<string>,
+  fetchedMediaPks: Set<string>,
+  failureByMediaPk: Map<string, number>,
+): void {
+  logger.progress(
+    "stories",
+    getResolvedStoryCount(cacheHitPks, fetchedMediaPks, failureByMediaPk),
+    expectedStories,
+  );
+}
+
+export async function fetchStoriesManifest(
+  client: InstagramClient,
+  options: FetchStoriesManifestOptions = {},
+): Promise<StoriesManifestReport> {
+  const reportName = options.reportName ?? DEFAULT_REPORT_NAME;
+  const storyStorage = options.storyStorage ?? storiesStorage;
+  const now = options.now ?? (() => new Date());
+  const logger = options.logger ?? createLogger("fetch-stories");
+  const retryOptions = {
+    baseDelayMs: options.baseDelayMs ?? DEFAULT_BASE_DELAY_MS,
+    logger,
+    maxAttempts: options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
+    maxRateLimitDelayMs:
+      options.maxRateLimitDelayMs ?? DEFAULT_MAX_RATE_LIMIT_DELAY_MS,
+    now,
+    random: options.random ?? Math.random,
+    sleep: options.sleep ?? sleep,
+  };
+  const reelIdsPerRequest =
+    options.reelIdsPerRequest ?? DEFAULT_REEL_IDS_PER_REQUEST;
+
+  logger.info(`fetching tray for report ${reportName}`);
+  const trayResult = await requestWithRetry(
+    () => client.getTray(),
+    retryOptions,
+    "reels tray request",
+  );
+
+  if (!trayResult.ok) {
+    logger.error(`tray fetch failed: ${trayResult.failure.message}`);
+    throw new Error(trayResult.failure.message);
+  }
+
+  const trayJson = trayResult.value;
+  const tray = trayJson.tray ?? [];
+  const expectedMediaIdsByReel = getExpectedMediaIdsByReel(tray);
+  const expectedMediaPks = tray.flatMap((entry) => entry.media_ids ?? []);
+  const cachedItems = new Map<string, StoryItem>();
+  const cacheHitPks = new Set<string>();
+  const fetchedMediaPks = new Set<string>();
+  const failures: StoryFetchFailure[] = [];
+  const failureByMediaPk = new Map<string, number>();
+
+  logger.info(
+    `tray fetched: reels=${tray.length} stories=${expectedMediaPks.length} status=${trayJson.status ?? "unknown"}`,
+  );
+
+  for (const mediaPk of new Set(expectedMediaPks)) {
+    const cachedItem = await getCachedStoryItem(mediaPk, storyStorage);
+
+    if (cachedItem) {
+      cachedItems.set(mediaPk, cachedItem);
+      cacheHitPks.add(mediaPk);
+    }
+  }
+
+  const cacheMissCount = expectedMediaPks.filter(
+    (mediaPk) => !cacheHitPks.has(mediaPk),
+  ).length;
+  logger.info(
+    `story cache loaded: hits=${cacheHitPks.size} misses=${cacheMissCount}`,
+  );
+  logStoryProgress(
+    logger,
+    expectedMediaPks.length,
+    cacheHitPks,
+    fetchedMediaPks,
+    failureByMediaPk,
+  );
+
+  const reelIdsToFetch = tray
+    .filter((entry) =>
+      (entry.media_ids ?? []).some((mediaPk) => !cachedItems.has(mediaPk)),
+    )
+    .map((entry) => entry.id);
+
+  if (reelIdsToFetch.length === 0) {
+    logger.info("all expected stories were found in cache");
+  } else {
+    logger.info(
+      `fetching missing stories from ${reelIdsToFetch.length} reel(s)`,
+    );
+  }
+
+  let liveFetchStopped = false;
+  let reelIndex = 0;
+  const reelChunks = chunk(reelIdsToFetch, reelIdsPerRequest);
+
+  for (let chunkIndex = 0; chunkIndex < reelChunks.length; chunkIndex += 1) {
+    if (liveFetchStopped) {
+      break;
     }
 
-    return {
-      xdt_api__v1__feed__reels_tray: {
-        broadcasts: trayJson.broadcasts ?? [],
-        tray,
-        story_ranking_token: trayJson.story_ranking_token ?? null,
-        status: trayJson.status ?? null,
+    const idChunk = reelChunks[chunkIndex] ?? [];
+    logger.info(
+      `fetching reel chunk ${chunkIndex + 1}/${reelChunks.length}: reels=${idChunk.length}`,
+    );
+    const chunkResult = await requestWithRetry(
+      () => client.getReelsMedia(idChunk),
+      retryOptions,
+      `reels media chunk ${chunkIndex + 1}/${reelChunks.length}`,
+    );
+
+    if (chunkResult.ok) {
+      const fetchedBefore = fetchedMediaPks.size;
+      await cacheReturnedReels(
+        extractReels(chunkResult.value),
+        cachedItems,
+        fetchedMediaPks,
+        storyStorage,
+      );
+      logger.info(
+        `reel chunk ${chunkIndex + 1}/${reelChunks.length} cached ${fetchedMediaPks.size - fetchedBefore} new story item(s)`,
+      );
+
+      addFailuresForPendingReelStories(
+        idChunk,
+        expectedMediaIdsByReel,
+        cachedItems,
+        failures,
+        failureByMediaPk,
+        logger,
+        {
+          attemptCount: 1,
+          message: "Expected story was missing from Instagram reels response",
+          reason: "request_failed",
+          status: null,
+        },
+        "missing_from_response",
+      );
+      logStoryProgress(
+        logger,
+        expectedMediaPks.length,
+        cacheHitPks,
+        fetchedMediaPks,
+        failureByMediaPk,
+      );
+      reelIndex += idChunk.length;
+      continue;
+    }
+
+    if (chunkResult.failure.reason === "rate_limited") {
+      logger.warn(
+        `rate limited while fetching chunk ${chunkIndex + 1}; marking remaining missing stories as rate_limited`,
+      );
+      addFailuresForPendingReelStories(
+        getRemainingReelIds(reelIdsToFetch, reelIndex),
+        expectedMediaIdsByReel,
+        cachedItems,
+        failures,
+        failureByMediaPk,
+        logger,
+        chunkResult.failure,
+        "rate_limited",
+      );
+      logStoryProgress(
+        logger,
+        expectedMediaPks.length,
+        cacheHitPks,
+        fetchedMediaPks,
+        failureByMediaPk,
+      );
+      liveFetchStopped = true;
+      break;
+    }
+
+    logger.warn(
+      `chunk ${chunkIndex + 1}/${reelChunks.length} failed; falling back to individual reel requests`,
+    );
+    for (const reelId of idChunk) {
+      logger.info(`fetching individual reel ${reelId}`);
+      const singleResult = await requestWithRetry(
+        () => client.getReelsMedia([reelId]),
+        retryOptions,
+        `reels media request for reel ${reelId}`,
+      );
+
+      if (singleResult.ok) {
+        const fetchedBefore = fetchedMediaPks.size;
+        await cacheReturnedReels(
+          extractReels(singleResult.value),
+          cachedItems,
+          fetchedMediaPks,
+          storyStorage,
+        );
+        logger.info(
+          `individual reel ${reelId} cached ${fetchedMediaPks.size - fetchedBefore} new story item(s)`,
+        );
+
+        addFailuresForPendingReelStories(
+          [reelId],
+          expectedMediaIdsByReel,
+          cachedItems,
+          failures,
+          failureByMediaPk,
+          logger,
+          {
+            attemptCount: 1,
+            message: "Expected story was missing from Instagram reels response",
+            reason: "request_failed",
+            status: null,
+          },
+          "missing_from_response",
+        );
+        logStoryProgress(
+          logger,
+          expectedMediaPks.length,
+          cacheHitPks,
+          fetchedMediaPks,
+          failureByMediaPk,
+        );
+        reelIndex += 1;
+        continue;
+      }
+
+      if (singleResult.failure.reason === "rate_limited") {
+        logger.warn(
+          `rate limited while fetching reel ${reelId}; marking remaining missing stories as rate_limited`,
+        );
+        addFailuresForPendingReelStories(
+          getRemainingReelIds(reelIdsToFetch, reelIndex),
+          expectedMediaIdsByReel,
+          cachedItems,
+          failures,
+          failureByMediaPk,
+          logger,
+          singleResult.failure,
+          "rate_limited",
+        );
+        logStoryProgress(
+          logger,
+          expectedMediaPks.length,
+          cacheHitPks,
+          fetchedMediaPks,
+          failureByMediaPk,
+        );
+        liveFetchStopped = true;
+        break;
+      }
+
+      logger.warn(
+        `individual reel ${reelId} failed: ${singleResult.failure.message}`,
+      );
+      addFailuresForPendingReelStories(
+        [reelId],
+        expectedMediaIdsByReel,
+        cachedItems,
+        failures,
+        failureByMediaPk,
+        logger,
+        singleResult.failure,
+      );
+      logStoryProgress(
+        logger,
+        expectedMediaPks.length,
+        cacheHitPks,
+        fetchedMediaPks,
+        failureByMediaPk,
+      );
+      reelIndex += 1;
+    }
+  }
+
+  const manifestUsers = tray.map((entry, order) => ({
+    full_name: entry.user?.full_name ?? entry.full_name ?? null,
+    media_ids: entry.media_ids ?? [],
+    order,
+    reel_id: entry.id,
+    stories: (entry.media_ids ?? []).map((mediaPk) => {
+      const failureIndex = failureByMediaPk.get(mediaPk);
+      const wasFetched = fetchedMediaPks.has(mediaPk);
+
+      return {
+        cache_key: getStoryCacheKey(mediaPk),
+        ...(failureIndex === undefined ? {} : { failure_index: failureIndex }),
+        media_pk: mediaPk,
+        status:
+          failureIndex !== undefined
+            ? ("failed" as const)
+            : wasFetched
+              ? ("fetched" as const)
+              : ("cached" as const),
+      };
+    }),
+    username: entry.user?.username ?? null,
+  }));
+
+  logger.info(
+    `manifest complete: cached=${cacheHitPks.size} fetched=${fetchedMediaPks.size} failed=${failureByMediaPk.size}`,
+  );
+
+  return {
+    failures,
+    manifest: {
+      users: manifestUsers,
+    },
+    metadata: {
+      broadcasts_count: trayJson.broadcasts?.length ?? 0,
+      counts: {
+        cache_hits: expectedMediaPks.filter((mediaPk) =>
+          cacheHitPks.has(mediaPk),
+        ).length,
+        cache_misses: expectedMediaPks.filter(
+          (mediaPk) => !cacheHitPks.has(mediaPk),
+        ).length,
+        failed: expectedMediaPks.filter((mediaPk) =>
+          failureByMediaPk.has(mediaPk),
+        ).length,
+        fetched: expectedMediaPks.filter((mediaPk) =>
+          fetchedMediaPks.has(mediaPk),
+        ).length,
+        reels: tray.length,
+        stories: expectedMediaPks.length,
       },
-      reels,
-    };
+      created_at: now().toISOString(),
+      report_name: reportName,
+      status: trayJson.status ?? null,
+      story_ranking_token: trayJson.story_ranking_token ?? null,
+    },
+  };
+}
+
+export async function fetchStories(
+  args: string[] = process.argv.slice(2),
+  options: FetchStoriesOptions = {},
+): Promise<StoriesManifestReport> {
+  const profileArg = getArgValue(args, "--profile") ?? DEFAULT_PROFILE_PATH;
+  const reportName =
+    options.reportName ?? getArgValue(args, "--report-name") ?? DEFAULT_REPORT_NAME;
+
+  if (options.client) {
+    return fetchStoriesManifest(options.client, {
+      ...options,
+      reportName,
+    });
+  }
+
+  const openSession = options.openSession ?? openInstagramSession;
+  const closeSession = options.closeSession ?? closeInstagramSession;
+  const session = await openSession(profileArg);
+
+  try {
+    return await fetchStoriesManifest(createInstagramClient(session), {
+      ...options,
+      reportName,
+    });
   } finally {
-    await closeInstagramSession(session);
+    await closeSession(session);
   }
 }
 
 async function main(): Promise<void> {
-  const payload = await fetchStories();
+  const logger = createLogger("fetch-stories", (message) => {
+    process.stderr.write(`${message}\n`);
+  });
+  const payload = await fetchStories(process.argv.slice(2), { logger });
   process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
 }
 
-main().catch((error: unknown) => {
-  const message = error instanceof Error ? error.message : String(error);
-  process.stderr.write(`${message}\n`);
-  process.exitCode = 1;
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error);
+    process.stderr.write(`${message}\n`);
+    process.exitCode = 1;
+  });
+}
