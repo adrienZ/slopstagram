@@ -31,6 +31,17 @@ function storyItem(pk: string, accessibilityCaption?: string | null): StoryItem 
   };
 }
 
+function storyItemWithStickers(
+  pk: string,
+  stickers: Partial<StoryItem>,
+  accessibilityCaption?: string | null,
+): StoryItem {
+  return {
+    ...storyItem(pk, accessibilityCaption),
+    ...stickers,
+  };
+}
+
 function reel(id: string, items: StoryItem[]): StoryReel {
   return {
     id,
@@ -91,6 +102,8 @@ function createClient(
 
 const fixedNow = () => new Date("2026-07-26T00:00:00.000Z");
 const noSleep = async () => {};
+const resolveAppleCaption = async (story: StoryItem) =>
+  `apple:${story.pk}`;
 
 function createMockLogger(): Logger & { messages: string[] } {
   const messages: string[] = [];
@@ -130,6 +143,7 @@ describe("fetchStoriesManifest", () => {
     );
 
     const report = await fetchStoriesManifest(client, {
+      appleCaptionResolver: resolveAppleCaption,
       logger: createMockLogger(),
       now: fixedNow,
       sleep: noSleep,
@@ -147,22 +161,28 @@ describe("fetchStoriesManifest", () => {
     });
     assert.deepEqual(
       report.manifest.users.map((user) => ({
-        accessibility_caption: user.stories[0]?.accessibility_caption,
+        apple_caption: user.stories[0]?.apple_caption,
+        ig_caption: user.stories[0]?.ig_caption,
         reel_id: user.reel_id,
         status: user.stories[0]?.status,
+        stickers: user.stories[0]?.stickers,
         username: user.username,
       })),
       [
         {
-          accessibility_caption: "no caption avaible",
+          apple_caption: "apple:m1",
+          ig_caption: "no caption avaible",
           reel_id: "r1",
           status: "cached",
+          stickers: [],
           username: "one",
         },
         {
-          accessibility_caption: "no caption avaible",
+          apple_caption: "apple:m2",
+          ig_caption: "no caption avaible",
           reel_id: "r2",
           status: "cached",
+          stickers: [],
           username: "two",
         },
       ],
@@ -173,8 +193,10 @@ describe("fetchStoriesManifest", () => {
         reel_ids: ["r1"],
         stories: [
           {
-            accessibility_caption: "no caption avaible",
+            apple_caption: "apple:m1",
+            ig_caption: "no caption avaible",
             media_pk: "m1",
+            stickers: [],
             status: "cached",
           },
         ],
@@ -185,8 +207,10 @@ describe("fetchStoriesManifest", () => {
         reel_ids: ["r2"],
         stories: [
           {
-            accessibility_caption: "no caption avaible",
+            apple_caption: "apple:m2",
+            ig_caption: "no caption avaible",
             media_pk: "m2",
+            stickers: [],
             status: "cached",
           },
         ],
@@ -217,6 +241,7 @@ describe("fetchStoriesManifest", () => {
     );
 
     const report = await fetchStoriesManifest(client, {
+      appleCaptionResolver: resolveAppleCaption,
       logger: createMockLogger(),
       now: fixedNow,
       sleep: noSleep,
@@ -227,17 +252,23 @@ describe("fetchStoriesManifest", () => {
     assert.equal(await storiesStorage.hasItem(getStoryCacheKey("m2")), true);
     assert.deepEqual(
       report.manifest.users.map((user) => ({
-        accessibility_caption: user.stories[0]?.accessibility_caption,
+        apple_caption: user.stories[0]?.apple_caption,
+        ig_caption: user.stories[0]?.ig_caption,
         status: user.stories[0]?.status,
+        stickers: user.stories[0]?.stickers,
       })),
       [
         {
-          accessibility_caption: "Cached image caption",
+          apple_caption: "apple:m1",
+          ig_caption: "Cached image caption",
           status: "cached",
+          stickers: [],
         },
         {
-          accessibility_caption: "no caption avaible",
+          apple_caption: "apple:m2",
+          ig_caption: "no caption avaible",
           status: "fetched",
+          stickers: [],
         },
       ],
     );
@@ -263,7 +294,28 @@ describe("fetchStoriesManifest", () => {
       [
         response({
           reels: {
-            r1: reel("r1", [storyItem("m1", "First story caption")]),
+            r1: reel(
+              "r1",
+              [
+                storyItemWithStickers(
+                  "m1",
+                  {
+                    story_bloks_stickers: [
+                      {
+                        bloks_sticker: {
+                          sticker_data: {
+                            ig_mention: {
+                              username: "same",
+                            },
+                          },
+                        },
+                      },
+                    ],
+                  },
+                  "First story caption",
+                ),
+              ],
+            ),
             r2: reel("r2", [storyItem("m2", "Second story caption")]),
           },
         }),
@@ -271,6 +323,7 @@ describe("fetchStoriesManifest", () => {
     );
 
     const report = await fetchStoriesManifest(client, {
+      appleCaptionResolver: resolveAppleCaption,
       logger: createMockLogger(),
       now: fixedNow,
       sleep: noSleep,
@@ -283,13 +336,17 @@ describe("fetchStoriesManifest", () => {
         reel_ids: ["r1", "r2"],
         stories: [
           {
-            accessibility_caption: "First story caption",
+            apple_caption: "apple:m1",
+            ig_caption: "First story caption",
             media_pk: "m1",
+            stickers: ["mention:@same"],
             status: "fetched",
           },
           {
-            accessibility_caption: "Second story caption",
+            apple_caption: "apple:m2",
+            ig_caption: "Second story caption",
             media_pk: "m2",
+            stickers: [],
             status: "fetched",
           },
         ],
@@ -316,6 +373,7 @@ describe("fetchStoriesManifest", () => {
     );
 
     const report = await fetchStoriesManifest(client, {
+      appleCaptionResolver: resolveAppleCaption,
       logger: createMockLogger(),
       now: fixedNow,
       sleep: noSleep,
@@ -334,6 +392,114 @@ describe("fetchStoriesManifest", () => {
     );
   });
 
+  test("extracts sticker summaries from story payload", async () => {
+    const { storiesStorage } = createTestStorages();
+    const client = createClient(
+      [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
+      [
+        response({
+          reels: {
+            r1: reel(
+              "r1",
+              [
+                storyItemWithStickers(
+                  "m1",
+                  {
+                    link: {
+                      url: "https://example.com/a",
+                    },
+                    story_bloks_stickers: [
+                      {
+                        bloks_sticker: {
+                          sticker_data: {
+                            ig_mention: {
+                              username: "friend",
+                            },
+                          },
+                        },
+                      },
+                    ],
+                    story_hashtags: [{ hashtag: "summer" }],
+                    story_music_stickers: [
+                      {
+                        music_asset_info: {
+                          display_artist: "Artist",
+                          title: "Track",
+                        },
+                      },
+                    ],
+                  },
+                  "caption",
+                ),
+              ],
+            ),
+          },
+        }),
+      ],
+    );
+
+    const report = await fetchStoriesManifest(client, {
+      appleCaptionResolver: resolveAppleCaption,
+      logger: createMockLogger(),
+      now: fixedNow,
+      sleep: noSleep,
+      storyStorage: storiesStorage,
+    });
+
+    assert.deepEqual(report.manifest.users[0]?.stories[0]?.stickers, [
+      "mention:@friend",
+      "music:Track - Artist",
+      "hashtag:#summer",
+      "link:https://example.com/a",
+    ]);
+    assert.deepEqual(report.output.users[0]?.stories[0]?.stickers, [
+      "mention:@friend",
+      "music:Track - Artist",
+      "hashtag:#summer",
+      "link:https://example.com/a",
+    ]);
+  });
+
+  test("unwraps instagram redirect links inside sticker summaries", async () => {
+    const { storiesStorage } = createTestStorages();
+    const client = createClient(
+      [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
+      [
+        response({
+          reels: {
+            r1: reel(
+              "r1",
+              [
+                storyItemWithStickers(
+                  "m1",
+                  {
+                    link: {
+                      title: "Visit Link",
+                      url: "https://l.instagram.com/?u=https%3A%2F%2Finstallclaw.io%2Ffr%3Ffbclid%3DPAcGRvZgRleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAwyNTYyODEwNDA1NTgAAaees2JVYiKznrVRdrE8jUP0t055Ywo5c27Qe7zZvMdkJw4mRFLCM-_N39601g_aem_zcP2VBsrm0eIv1jimc94uQ&e=AUCmysVsYFdNrKGJp7Q0gcfWAbjsWt8JpZDcBDd_-NHBcUmft9eEQIoVQXv-HKNBFJtz4zRPoRllkQBozb6cDjlBocBjgrb3rEYJr2zjkEG3ODw9GwudH1HSKA",
+                    },
+                  },
+                  "caption",
+                ),
+              ],
+            ),
+          },
+        }),
+      ],
+    );
+
+    const report = await fetchStoriesManifest(client, {
+      appleCaptionResolver: resolveAppleCaption,
+      logger: createMockLogger(),
+      now: fixedNow,
+      sleep: noSleep,
+      storyStorage: storiesStorage,
+    });
+
+    assert.deepEqual(report.output.users[0]?.stories[0]?.stickers, [
+      "link:Visit Link (https://installclaw.io/fr?fbclid=PAcGRvZgRleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAwyNTYyODEwNDA1NTgAAaees2JVYiKznrVRdrE8jUP0t055Ywo5c27Qe7zZvMdkJw4mRFLCM-_N39601g_aem_zcP2VBsrm0eIv1jimc94uQ)",
+    ]);
+  });
+
   test("falls back after chunk failure and records failed stories", async () => {
     const { storiesStorage } = createTestStorages();
     const logger = createMockLogger();
@@ -343,6 +509,7 @@ describe("fetchStoriesManifest", () => {
     );
 
     const report = await fetchStoriesManifest(client, {
+      appleCaptionResolver: resolveAppleCaption,
       logger,
       maxAttempts: 1,
       now: fixedNow,
@@ -385,6 +552,7 @@ describe("fetchStoriesManifest", () => {
     );
 
     const report = await fetchStoriesManifest(client, {
+      appleCaptionResolver: resolveAppleCaption,
       logger: createMockLogger(),
       now: fixedNow,
       sleep: noSleep,
@@ -410,6 +578,7 @@ describe("fetchStoriesManifest", () => {
     );
 
     const report = await fetchStoriesManifest(client, {
+      appleCaptionResolver: resolveAppleCaption,
       logger: createMockLogger(),
       maxAttempts: 1,
       now: fixedNow,

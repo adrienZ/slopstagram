@@ -121,9 +121,11 @@ describe("parseStoryReport", () => {
             reel_id: "reel-id",
             stories: [
               {
-                accessibility_caption: "Cached image caption",
+                apple_caption: "Cached apple caption",
                 cache_key: getStoryCacheKey("cached-pk"),
+                ig_caption: "Cached image caption",
                 media_pk: "cached-pk",
+                stickers: [],
                 status: "cached",
               },
             ],
@@ -153,8 +155,10 @@ describe("parseStoryReport", () => {
             reel_ids: ["reel-id"],
             stories: [
               {
-                accessibility_caption: "Cached image caption",
+                apple_caption: "Cached apple caption",
+                ig_caption: "Cached image caption",
                 media_pk: "cached-pk",
+                stickers: [],
                 status: "cached",
               },
             ],

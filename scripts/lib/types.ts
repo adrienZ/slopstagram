@@ -58,7 +58,12 @@ export type StoryItem = {
   original_width?: number;
   pk: string;
   story_bloks_stickers?: unknown[] | null;
+  story_bloks_tappables?: unknown[] | null;
+  story_cta?: unknown[] | null;
+  story_hashtags?: unknown[] | null;
+  story_link_stickers?: unknown[] | null;
   story_music_stickers?: unknown[] | null;
+  text_post_share_to_ig_story_stickers?: unknown[] | null;
   video_versions?: StoryVideoVersion[] | null;
   [key: string]: unknown;
 };
@@ -101,10 +106,12 @@ export type StoryFetchFailure = {
 };
 
 export type StoryManifestItem = {
-  accessibility_caption: string;
+  apple_caption: string;
   cache_key: string;
   failure_index?: number;
+  ig_caption: string;
   media_pk: string;
+  stickers: string[];
   status: StoryManifestItemStatus;
 };
 
@@ -118,9 +125,11 @@ export type StoryManifestReel = {
 };
 
 export type StoryOutputItem = {
-  accessibility_caption: string;
+  apple_caption: string;
   failure_index?: number;
+  ig_caption: string;
   media_pk: string;
+  stickers: string[];
   status: StoryManifestItemStatus;
 };
 
@@ -138,6 +147,11 @@ export type StoryFetchCounts = {
   fetched: number;
   reels: number;
   stories: number;
+};
+
+export type AppleCaptionCacheEntry = {
+  caption: string;
+  source: string | null;
 };
 
 export type StoriesManifestReport = {
@@ -161,10 +175,11 @@ export type StoriesManifestReport = {
 export type TrayStorage = Storage<StoriesReport>;
 export type StoryStorage = Storage<StoryItem>;
 export type ReportStorage = Storage<StoriesManifestReport>;
+export type AppleCaptionStorage = Storage<AppleCaptionCacheEntry>;
 export type CacheStorageSet = {
+  appleCaptionsStorage: AppleCaptionStorage;
   reportsStorage: ReportStorage;
   storiesStorage: StoryStorage;
-  strayStorage: StoryStorage;
 };
 
 export type ParsedStory = {

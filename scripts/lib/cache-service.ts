@@ -1,15 +1,16 @@
 import { createStorage, prefixStorage, type Storage } from "unstorage";
 import fsDriver from "unstorage/drivers/fs";
 import type {
+  AppleCaptionCacheEntry,
   CacheStorageSet,
   StoriesManifestReport,
   StoryItem,
 } from "./types.ts";
 
 export const BASE_CACHE_DIR = ".tmp";
+export const APPLE_CAPTIONS_STORAGE_DIR = "apple-captions";
 export const REPORTS_STORAGE_DIR = "reports";
-export const STRAY_STORAGE_DIR = "stray";
-export const STORIES_STORAGE_DIR = STRAY_STORAGE_DIR;
+export const STORIES_STORAGE_DIR = "stories";
 
 export const baseStorage = createStorage({
   driver: fsDriver({
@@ -20,15 +21,16 @@ export const baseStorage = createStorage({
 export function createCacheStorages(
   storage: Storage = baseStorage,
 ): CacheStorageSet {
-  const strayStorage = prefixStorage<StoryItem>(storage, STRAY_STORAGE_DIR);
-
   return {
+    appleCaptionsStorage: prefixStorage<AppleCaptionCacheEntry>(
+      storage,
+      APPLE_CAPTIONS_STORAGE_DIR,
+    ),
     reportsStorage: prefixStorage<StoriesManifestReport>(
       storage,
       REPORTS_STORAGE_DIR,
     ),
-    storiesStorage: strayStorage,
-    strayStorage,
+    storiesStorage: prefixStorage<StoryItem>(storage, STORIES_STORAGE_DIR),
   };
 }
 
@@ -36,5 +38,9 @@ export function getStoryCacheKey(mediaPk: string): string {
   return `${mediaPk}.json`;
 }
 
-export const { reportsStorage, storiesStorage, strayStorage } =
+export function getAppleCaptionCacheKey(mediaPk: string): string {
+  return `${mediaPk}.json`;
+}
+
+export const { appleCaptionsStorage, reportsStorage, storiesStorage } =
   createCacheStorages();

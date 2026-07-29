@@ -1,3 +1,5 @@
+import { spawn } from "node:child_process";
+import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
@@ -6,7 +8,8 @@ import {
   REPORTS_STORAGE_DIR,
   reportsStorage,
 } from "./lib/cache-service.ts";
-import { createLogger } from "./lib/logging-service.ts";
+import { createLogger, type Logger } from "./lib/logging-service.ts";
+import { formatStoriesReportMarkdown } from "./lib/report-markdown-service.ts";
 import { fetchStories } from "./fetch-stories.ts";
 
 function pad(value: number): string {
@@ -34,9 +37,55 @@ function formatFilenameTimestamp(date: Date): string {
   return `${year}-${month}-${day}T${hours}-${minutes}-${seconds}${formatTimezoneOffset(date)}`;
 }
 
+function getOpenCommand(filePath: string): { args: string[]; command: string } {
+  if (process.platform === "darwin") {
+    return {
+      args: ["-a", "TextEdit", filePath],
+      command: "open",
+    };
+  }
+
+  if (process.platform === "win32") {
+    return {
+      args: ["/c", "start", "", "notepad", filePath],
+      command: "cmd",
+    };
+  }
+
+  return {
+    args: [filePath],
+    command: "xdg-open",
+  };
+}
+
+function openMarkdownReport(filePath: string, logger: Logger): Promise<void> {
+  const { args, command } = getOpenCommand(filePath);
+
+  return new Promise((resolveOpen) => {
+    const opener = spawn(command, args, {
+      stdio: "ignore",
+    });
+
+    opener.on("error", (error) => {
+      logger.warn(`could not open markdown report ${filePath}: ${error.message}`);
+      resolveOpen();
+    });
+
+    opener.on("close", (code) => {
+      if (code && code !== 0) {
+        logger.warn(
+          `could not open markdown report ${filePath}: ${command} exited with code ${code}`,
+        );
+      }
+      resolveOpen();
+    });
+  });
+}
+
 async function main(): Promise<void> {
   const timestamp = formatFilenameTimestamp(new Date());
   const outputFileName = `stories-report-${timestamp}.json`;
+  const markdownOutputFileName = `stories-report-${timestamp}.md`;
   const fetchStoriesArgs = process.argv.slice(2);
   const logger = createLogger("create-report", (message) => {
     process.stderr.write(`${message}\n`);
@@ -49,6 +98,12 @@ async function main(): Promise<void> {
   });
   await reportsStorage.setItem(outputFileName, report);
   const outputPath = resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR, outputFileName);
+  const markdownOutputPath = resolve(
+    BASE_CACHE_DIR,
+    REPORTS_STORAGE_DIR,
+    markdownOutputFileName,
+  );
+  await writeFile(markdownOutputPath, formatStoriesReportMarkdown(report), "utf8");
   const counts = report.metadata.counts;
 
   logger.info(
@@ -60,7 +115,9 @@ async function main(): Promise<void> {
     ].join(" "),
   );
   logger.info(`wrote report ${outputPath}`);
-  process.stdout.write(`${outputPath}\n`);
+  logger.info(`wrote markdown report ${markdownOutputPath}`);
+  await openMarkdownReport(markdownOutputPath, logger);
+  process.stdout.write(`${markdownOutputPath}\n`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

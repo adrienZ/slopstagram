@@ -1,10 +1,15 @@
 import process from "node:process";
 import { pathToFileURL } from "node:url";
+import { recognizeAppleCaption } from "./lib/apple-ocr-service.ts";
 import {
   getStoryCacheKey,
   storiesStorage,
 } from "./lib/cache-service.ts";
 import { createLogger, type Logger } from "./lib/logging-service.ts";
+import {
+  NO_ACCESSIBILITY_CAPTION,
+  NO_APPLE_CAPTION,
+} from "./lib/report-constants.ts";
 import {
   closeInstagramSession,
   openInstagramSession,
@@ -16,6 +21,7 @@ import type {
   StoryFetchFailureReason,
   StoryItem,
   StoryManifestReel,
+  StoryManifestItem,
   StoryOutputUser,
   StoryReel,
   StoryStorage,
@@ -67,6 +73,7 @@ type RequestResult<T> =
     };
 
 export type FetchStoriesManifestOptions = {
+  appleCaptionResolver?: (story: StoryItem) => Promise<string>;
   baseDelayMs?: number;
   maxAttempts?: number;
   maxRateLimitDelayMs?: number;
@@ -94,7 +101,6 @@ const DEFAULT_REEL_IDS_PER_REQUEST = 25;
 const DEFAULT_MAX_ATTEMPTS = 3;
 const DEFAULT_BASE_DELAY_MS = 500;
 const DEFAULT_MAX_RATE_LIMIT_DELAY_MS = 10_000;
-const NO_ACCESSIBILITY_CAPTION = "no caption avaible";
 const TRANSIENT_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
 
 function getArgValue(args: string[], flag: string): string | undefined {
@@ -462,6 +468,203 @@ function getAccessibilityCaption(
   return NO_ACCESSIBILITY_CAPTION;
 }
 
+function getNestedRecord(value: unknown, key: string): Record<string, unknown> | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const nested = record[key];
+
+  if (!nested || typeof nested !== "object") {
+    return null;
+  }
+
+  return nested as Record<string, unknown>;
+}
+
+function getNestedString(value: unknown, keys: readonly string[]): string | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+
+  for (const key of keys) {
+    const candidate = record[key];
+    if (typeof candidate === "string" && candidate.trim().length > 0) {
+      return candidate.trim();
+    }
+  }
+
+  return null;
+}
+
+function getMentionStickerLabel(value: unknown): string | null {
+  const stickerData = getNestedRecord(value, "bloks_sticker");
+  const bloksData = stickerData ? getNestedRecord(stickerData, "sticker_data") : null;
+  const mention = bloksData ? getNestedRecord(bloksData, "ig_mention") : null;
+
+  if (!mention) {
+    return null;
+  }
+
+  const username = getNestedString(mention, ["username"]);
+  if (username) {
+    return `mention:@${username}`;
+  }
+
+  const fullName = getNestedString(mention, ["full_name"]);
+  return fullName ? `mention:${fullName}` : null;
+}
+
+function getMusicStickerLabel(value: unknown): string | null {
+  const info = getNestedRecord(value, "music_asset_info");
+
+  if (!info) {
+    return null;
+  }
+
+  const title = getNestedString(info, ["title"]);
+  const artist = getNestedString(info, ["display_artist"]);
+
+  if (title && artist) {
+    return `music:${title} - ${artist}`;
+  }
+
+  return title ? `music:${title}` : null;
+}
+
+function getHashtagStickerLabel(value: unknown): string | null {
+  const hashtag =
+    getNestedString(value, ["hashtag", "name", "tag_name"]) ??
+    getNestedString(getNestedRecord(value, "hashtag"), ["name", "tag_name"]);
+
+  if (!hashtag) {
+    return null;
+  }
+
+  return hashtag.startsWith("#") ? `hashtag:${hashtag}` : `hashtag:#${hashtag}`;
+}
+
+function unwrapInstagramRedirectUrl(value: string): string {
+  try {
+    const url = new URL(value);
+
+    if (url.hostname !== "l.instagram.com") {
+      return value;
+    }
+
+    const redirect = url.searchParams.get("u");
+    if (!redirect) {
+      return value;
+    }
+
+    return decodeURIComponent(redirect);
+  } catch {
+    return value;
+  }
+}
+
+function getLinkStickerLabel(value: unknown): string | null {
+  const rawDirectUrl = getNestedString(value, [
+    "url",
+    "uri",
+    "link_url",
+    "webUri",
+    "web_uri",
+  ]);
+  const directUrl = rawDirectUrl ? unwrapInstagramRedirectUrl(rawDirectUrl) : null;
+  const directTitle = getNestedString(value, ["title", "link_title", "display_url"]);
+
+  if (directUrl && directTitle) {
+    return `link:${directTitle} (${directUrl})`;
+  }
+
+  if (directUrl) {
+    return `link:${directUrl}`;
+  }
+
+  for (const key of [
+    "story_link",
+    "link_sticker",
+    "link",
+    "cta",
+    "bloks_tappable_sticker",
+  ] as const) {
+    const nested = getNestedRecord(value, key);
+    if (!nested) {
+      continue;
+    }
+
+    const nestedLabel = getLinkStickerLabel(nested);
+    if (nestedLabel) {
+      return nestedLabel;
+    }
+  }
+
+  return directTitle ? `link:${directTitle}` : null;
+}
+
+function getStickerLabels(story: StoryItem): string[] {
+  const labels: string[] = [];
+  const seen = new Set<string>();
+
+  const addLabel = (label: string | null) => {
+    if (!label || seen.has(label)) {
+      return;
+    }
+
+    seen.add(label);
+    labels.push(label);
+  };
+
+  for (const sticker of story.story_bloks_stickers ?? []) {
+    addLabel(getMentionStickerLabel(sticker));
+  }
+
+  for (const sticker of story.story_music_stickers ?? []) {
+    addLabel(getMusicStickerLabel(sticker));
+  }
+
+  for (const sticker of story.story_hashtags ?? []) {
+    addLabel(getHashtagStickerLabel(sticker));
+  }
+
+  for (const sticker of story.story_link_stickers ?? []) {
+    addLabel(getLinkStickerLabel(sticker));
+  }
+
+  for (const sticker of story.story_cta ?? []) {
+    addLabel(getLinkStickerLabel(sticker));
+  }
+
+  for (const sticker of story.story_bloks_tappables ?? []) {
+    addLabel(getLinkStickerLabel(sticker));
+  }
+
+  for (const sticker of story.text_post_share_to_ig_story_stickers ?? []) {
+    addLabel(getLinkStickerLabel(sticker));
+  }
+
+  addLabel(getLinkStickerLabel(story.link));
+
+  return labels;
+}
+
+function getStoryStickers(
+  mediaPk: string,
+  cachedItems: Map<string, StoryItem>,
+): string[] {
+  const story = cachedItems.get(mediaPk);
+
+  if (!story) {
+    return [];
+  }
+
+  return getStickerLabels(story);
+}
+
 function createOutputUsers(manifestUsers: StoryManifestReel[]): StoryOutputUser[] {
   const outputUsers: StoryOutputUser[] = [];
   const groupByUser = new Map<string, StoryOutputUser>();
@@ -484,17 +687,59 @@ function createOutputUsers(manifestUsers: StoryManifestReel[]): StoryOutputUser[
     group.reel_ids.push(user.reel_id);
     group.stories.push(
       ...user.stories.map((story) => ({
-        accessibility_caption: story.accessibility_caption,
+        apple_caption: story.apple_caption,
         ...(story.failure_index === undefined
           ? {}
           : { failure_index: story.failure_index }),
+        ig_caption: story.ig_caption,
         media_pk: story.media_pk,
+        stickers: story.stickers,
         status: story.status,
       })),
     );
   }
 
   return outputUsers;
+}
+
+async function populateAppleCaptions(
+  manifestUsers: StoryManifestReel[],
+  cachedItems: Map<string, StoryItem>,
+  resolver: (story: StoryItem) => Promise<string>,
+  logger: Logger,
+): Promise<void> {
+  const resolvedByMediaPk = new Map<string, string>();
+
+  for (const user of manifestUsers) {
+    for (const story of user.stories) {
+      if (story.status === "failed") {
+        story.apple_caption = NO_APPLE_CAPTION;
+        continue;
+      }
+
+      const cachedCaption = resolvedByMediaPk.get(story.media_pk);
+      if (cachedCaption) {
+        story.apple_caption = cachedCaption;
+        continue;
+      }
+
+      const storyItem = cachedItems.get(story.media_pk);
+      if (!storyItem) {
+        story.apple_caption = NO_APPLE_CAPTION;
+        continue;
+      }
+
+      try {
+        const appleCaption = await resolver(storyItem);
+        resolvedByMediaPk.set(story.media_pk, appleCaption);
+        story.apple_caption = appleCaption;
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        logger.warn(`apple ocr failed for story ${story.media_pk}: ${message}`);
+        story.apple_caption = NO_APPLE_CAPTION;
+      }
+    }
+  }
 }
 
 export async function fetchStoriesManifest(
@@ -505,6 +750,7 @@ export async function fetchStoriesManifest(
   const storyStorage = options.storyStorage ?? storiesStorage;
   const now = options.now ?? (() => new Date());
   const logger = options.logger ?? createLogger("fetch-stories");
+  const appleCaptionResolver = options.appleCaptionResolver ?? recognizeAppleCaption;
   const retryOptions = {
     baseDelayMs: options.baseDelayMs ?? DEFAULT_BASE_DELAY_MS,
     logger,
@@ -760,20 +1006,22 @@ export async function fetchStoriesManifest(
     }
   }
 
-  const manifestUsers = tray.map((entry, order) => ({
+  const manifestUsers: StoryManifestReel[] = tray.map((entry, order) => ({
     full_name: entry.user?.full_name ?? entry.full_name ?? null,
     media_ids: entry.media_ids ?? [],
     order,
     reel_id: entry.id,
-    stories: (entry.media_ids ?? []).map((mediaPk) => {
+    stories: (entry.media_ids ?? []).map((mediaPk): StoryManifestItem => {
       const failureIndex = failureByMediaPk.get(mediaPk);
       const wasFetched = fetchedMediaPks.has(mediaPk);
 
       return {
-        accessibility_caption: getAccessibilityCaption(mediaPk, cachedItems),
+        apple_caption: NO_APPLE_CAPTION,
         cache_key: getStoryCacheKey(mediaPk),
         ...(failureIndex === undefined ? {} : { failure_index: failureIndex }),
+        ig_caption: getAccessibilityCaption(mediaPk, cachedItems),
         media_pk: mediaPk,
+        stickers: getStoryStickers(mediaPk, cachedItems),
         status:
           failureIndex !== undefined
             ? ("failed" as const)
@@ -784,6 +1032,13 @@ export async function fetchStoriesManifest(
     }),
     username: entry.user?.username ?? null,
   }));
+  logger.info(`resolving apple captions for ${expectedMediaPks.length - failureByMediaPk.size} story item(s)`);
+  await populateAppleCaptions(
+    manifestUsers,
+    cachedItems,
+    appleCaptionResolver,
+    logger,
+  );
   const outputUsers = createOutputUsers(manifestUsers);
 
   logger.info(
