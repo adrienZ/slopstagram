@@ -8,6 +8,7 @@ import {
   REPORTS_STORAGE_DIR,
   reportsStorage,
 } from "./lib/cache-service.ts";
+import { cacheReportImages } from "./lib/image-cache-service.ts";
 import { createLogger, type Logger } from "./lib/logging-service.ts";
 import { formatStoriesReportMarkdown } from "./lib/report-markdown-service.ts";
 import { fetchStories } from "./fetch-stories.ts";
@@ -103,7 +104,15 @@ async function main(): Promise<void> {
     REPORTS_STORAGE_DIR,
     markdownOutputFileName,
   );
-  await writeFile(markdownOutputPath, formatStoriesReportMarkdown(report), "utf8");
+  const cachedImages = await cacheReportImages(report, {
+    logger,
+    reportDirectory: resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR),
+  });
+  await writeFile(
+    markdownOutputPath,
+    formatStoriesReportMarkdown(report, cachedImages),
+    "utf8",
+  );
   const counts = report.metadata.counts;
 
   logger.info(

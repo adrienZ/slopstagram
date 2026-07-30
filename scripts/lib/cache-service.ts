@@ -3,12 +3,14 @@ import fsDriver from "unstorage/drivers/fs";
 import type {
   AppleCaptionCacheEntry,
   CacheStorageSet,
+  ImageCacheEntry,
   StoriesManifestReport,
   StoryItem,
 } from "./types.ts";
 
 export const BASE_CACHE_DIR = ".tmp";
 export const APPLE_CAPTIONS_STORAGE_DIR = "apple-captions";
+export const IMAGES_STORAGE_DIR = "images";
 export const REPORTS_STORAGE_DIR = "reports";
 export const STORIES_STORAGE_DIR = "stories";
 
@@ -26,6 +28,10 @@ export function createCacheStorages(
       storage,
       APPLE_CAPTIONS_STORAGE_DIR,
     ),
+    imageCacheStorage: prefixStorage<ImageCacheEntry>(
+      storage,
+      IMAGES_STORAGE_DIR,
+    ),
     reportsStorage: prefixStorage<StoriesManifestReport>(
       storage,
       REPORTS_STORAGE_DIR,
@@ -42,5 +48,13 @@ export function getAppleCaptionCacheKey(mediaPk: string): string {
   return `${mediaPk}.json`;
 }
 
-export const { appleCaptionsStorage, reportsStorage, storiesStorage } =
-  createCacheStorages();
+export function getImageCacheMetadataKey(imageKey: string): string {
+  return `${imageKey}.json`;
+}
+
+export const {
+  appleCaptionsStorage,
+  imageCacheStorage,
+  reportsStorage,
+  storiesStorage,
+} = createCacheStorages();

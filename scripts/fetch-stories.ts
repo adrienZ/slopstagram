@@ -6,6 +6,7 @@ import {
   storiesStorage,
 } from "./lib/cache-service.ts";
 import { createLogger, type Logger } from "./lib/logging-service.ts";
+import { getLargestVersion } from "./lib/parser-service.ts";
 import {
   NO_ACCESSIBILITY_CAPTION,
   NO_APPLE_CAPTION,
@@ -665,6 +666,16 @@ function getStoryStickers(
   return getStickerLabels(story);
 }
 
+function getStoryPreviewImageUrl(
+  mediaPk: string,
+  cachedItems: Map<string, StoryItem>,
+): string | null {
+  const story = cachedItems.get(mediaPk);
+  const candidate = getLargestVersion(story?.image_versions2?.candidates);
+
+  return candidate?.url ?? null;
+}
+
 function createOutputUsers(manifestUsers: StoryManifestReel[]): StoryOutputUser[] {
   const outputUsers: StoryOutputUser[] = [];
   const groupByUser = new Map<string, StoryOutputUser>();
@@ -676,6 +687,7 @@ function createOutputUsers(manifestUsers: StoryManifestReel[]): StoryOutputUser[
     if (!group) {
       group = {
         full_name: user.full_name,
+        profile_pic_url: user.profile_pic_url,
         reel_ids: [],
         stories: [],
         username: user.username,
@@ -693,6 +705,7 @@ function createOutputUsers(manifestUsers: StoryManifestReel[]): StoryOutputUser[
           : { failure_index: story.failure_index }),
         ig_caption: story.ig_caption,
         media_pk: story.media_pk,
+        preview_image_url: story.preview_image_url,
         stickers: story.stickers,
         status: story.status,
       })),
@@ -1010,6 +1023,7 @@ export async function fetchStoriesManifest(
     full_name: entry.user?.full_name ?? entry.full_name ?? null,
     media_ids: entry.media_ids ?? [],
     order,
+    profile_pic_url: entry.user?.profile_pic_url ?? null,
     reel_id: entry.id,
     stories: (entry.media_ids ?? []).map((mediaPk): StoryManifestItem => {
       const failureIndex = failureByMediaPk.get(mediaPk);
@@ -1021,6 +1035,7 @@ export async function fetchStoriesManifest(
         ...(failureIndex === undefined ? {} : { failure_index: failureIndex }),
         ig_caption: getAccessibilityCaption(mediaPk, cachedItems),
         media_pk: mediaPk,
+        preview_image_url: getStoryPreviewImageUrl(mediaPk, cachedItems),
         stickers: getStoryStickers(mediaPk, cachedItems),
         status:
           failureIndex !== undefined

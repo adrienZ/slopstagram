@@ -10,6 +10,7 @@ export type StoryMediaType =
 
 export type StoryTrayUser = {
   full_name?: string;
+  profile_pic_url?: string;
   username?: string;
 };
 
@@ -111,6 +112,7 @@ export type StoryManifestItem = {
   failure_index?: number;
   ig_caption: string;
   media_pk: string;
+  preview_image_url: string | null;
   stickers: string[];
   status: StoryManifestItemStatus;
 };
@@ -119,6 +121,7 @@ export type StoryManifestReel = {
   full_name: string | null;
   media_ids: string[];
   order: number;
+  profile_pic_url: string | null;
   reel_id: string;
   stories: StoryManifestItem[];
   username: string | null;
@@ -129,12 +132,14 @@ export type StoryOutputItem = {
   failure_index?: number;
   ig_caption: string;
   media_pk: string;
+  preview_image_url: string | null;
   stickers: string[];
   status: StoryManifestItemStatus;
 };
 
 export type StoryOutputUser = {
   full_name: string | null;
+  profile_pic_url: string | null;
   reel_ids: string[];
   stories: StoryOutputItem[];
   username: string | null;
@@ -152,6 +157,12 @@ export type StoryFetchCounts = {
 export type AppleCaptionCacheEntry = {
   caption: string;
   source: string | null;
+};
+
+export type ImageCacheEntry = {
+  content_type: string | null;
+  path: string;
+  source: string;
 };
 
 export type StoriesManifestReport = {
@@ -176,8 +187,10 @@ export type TrayStorage = Storage<StoriesReport>;
 export type StoryStorage = Storage<StoryItem>;
 export type ReportStorage = Storage<StoriesManifestReport>;
 export type AppleCaptionStorage = Storage<AppleCaptionCacheEntry>;
+export type ImageCacheStorage = Storage<ImageCacheEntry>;
 export type CacheStorageSet = {
   appleCaptionsStorage: AppleCaptionStorage;
+  imageCacheStorage: ImageCacheStorage;
   reportsStorage: ReportStorage;
   storiesStorage: StoryStorage;
 };

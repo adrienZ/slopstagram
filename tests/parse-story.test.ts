@@ -118,6 +118,7 @@ describe("parseStoryReport", () => {
             full_name: "Cached User",
             media_ids: ["cached-pk"],
             order: 0,
+            profile_pic_url: null,
             reel_id: "reel-id",
             stories: [
               {
@@ -125,6 +126,7 @@ describe("parseStoryReport", () => {
                 cache_key: getStoryCacheKey("cached-pk"),
                 ig_caption: "Cached image caption",
                 media_pk: "cached-pk",
+                preview_image_url: null,
                 stickers: [],
                 status: "cached",
               },
@@ -152,12 +154,14 @@ describe("parseStoryReport", () => {
         users: [
           {
             full_name: "Cached User",
+            profile_pic_url: null,
             reel_ids: ["reel-id"],
             stories: [
               {
                 apple_caption: "Cached apple caption",
                 ig_caption: "Cached image caption",
                 media_pk: "cached-pk",
+                preview_image_url: null,
                 stickers: [],
                 status: "cached",
               },

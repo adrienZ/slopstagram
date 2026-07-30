@@ -136,7 +136,11 @@ describe("fetchStoriesManifest", () => {
 
     const client = createClient(
       [
-        { id: "r1", media_ids: ["m1"], user: { username: "one" } },
+        {
+          id: "r1",
+          media_ids: ["m1"],
+          user: { profile_pic_url: "https://example.com/one.jpg", username: "one" },
+        },
         { id: "r2", media_ids: ["m2"], user: { username: "two" } },
       ],
       [],
@@ -163,6 +167,7 @@ describe("fetchStoriesManifest", () => {
       report.manifest.users.map((user) => ({
         apple_caption: user.stories[0]?.apple_caption,
         ig_caption: user.stories[0]?.ig_caption,
+        profile_pic_url: user.profile_pic_url,
         reel_id: user.reel_id,
         status: user.stories[0]?.status,
         stickers: user.stories[0]?.stickers,
@@ -172,6 +177,7 @@ describe("fetchStoriesManifest", () => {
         {
           apple_caption: "apple:m1",
           ig_caption: "no caption avaible",
+          profile_pic_url: "https://example.com/one.jpg",
           reel_id: "r1",
           status: "cached",
           stickers: [],
@@ -180,6 +186,7 @@ describe("fetchStoriesManifest", () => {
         {
           apple_caption: "apple:m2",
           ig_caption: "no caption avaible",
+          profile_pic_url: null,
           reel_id: "r2",
           status: "cached",
           stickers: [],
@@ -190,12 +197,14 @@ describe("fetchStoriesManifest", () => {
     assert.deepEqual(report.output.users, [
       {
         full_name: null,
+        profile_pic_url: "https://example.com/one.jpg",
         reel_ids: ["r1"],
         stories: [
           {
             apple_caption: "apple:m1",
             ig_caption: "no caption avaible",
             media_pk: "m1",
+            preview_image_url: "https://example.com/m1.jpg",
             stickers: [],
             status: "cached",
           },
@@ -204,12 +213,14 @@ describe("fetchStoriesManifest", () => {
       },
       {
         full_name: null,
+        profile_pic_url: null,
         reel_ids: ["r2"],
         stories: [
           {
             apple_caption: "apple:m2",
             ig_caption: "no caption avaible",
             media_pk: "m2",
+            preview_image_url: "https://example.com/m2.jpg",
             stickers: [],
             status: "cached",
           },
@@ -283,7 +294,11 @@ describe("fetchStoriesManifest", () => {
         {
           id: "r1",
           media_ids: ["m1"],
-          user: { full_name: "Same User", username: "same" },
+          user: {
+            full_name: "Same User",
+            profile_pic_url: "https://example.com/same.jpg",
+            username: "same",
+          },
         },
         {
           id: "r2",
@@ -333,12 +348,14 @@ describe("fetchStoriesManifest", () => {
     assert.deepEqual(report.output.users, [
       {
         full_name: "Same User",
+        profile_pic_url: "https://example.com/same.jpg",
         reel_ids: ["r1", "r2"],
         stories: [
           {
             apple_caption: "apple:m1",
             ig_caption: "First story caption",
             media_pk: "m1",
+            preview_image_url: "https://example.com/m1.jpg",
             stickers: ["mention:@same"],
             status: "fetched",
           },
@@ -346,6 +363,7 @@ describe("fetchStoriesManifest", () => {
             apple_caption: "apple:m2",
             ig_caption: "Second story caption",
             media_pk: "m2",
+            preview_image_url: "https://example.com/m2.jpg",
             stickers: [],
             status: "fetched",
           },

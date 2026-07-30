@@ -5,6 +5,8 @@ import {
 import type { StoriesManifestReport } from "./types.ts";
 
 export type FormatStoriesReportMarkdownOptions = {
+  profilePicPathByUrl?: Map<string, string>;
+  storyPreviewPathByUrl?: Map<string, string>;
   timeZone?: string;
 };
 
@@ -95,6 +97,24 @@ function escapeTableCell(value: string): string {
   return value.replaceAll("|", "\\|").replaceAll("\n", "<br>");
 }
 
+function escapeHtmlAttribute(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function formatImage(
+  source: string,
+  alt: string,
+  width: number,
+  height?: number,
+): string {
+  const heightAttribute = height === undefined ? "" : ` height="${height}"`;
+  return `<img src="${escapeHtmlAttribute(source)}" alt="${escapeHtmlAttribute(alt)}" width="${width}"${heightAttribute}>`;
+}
+
 export function formatStoriesReportMarkdown(
   report: StoriesManifestReport,
   options: FormatStoriesReportMarkdownOptions = {},
@@ -102,16 +122,34 @@ export function formatStoriesReportMarkdown(
   const lines = [`# Report ${formatReportDate(report.metadata.created_at, options)}`];
 
   for (const user of report.output.users) {
-    lines.push("", `## ${formatUserName(user.full_name, user.username)}`, "");
+    const userName = formatUserName(user.full_name, user.username);
+    lines.push("", `## ${userName}`, "");
+
+    const profilePicUrl = user.profile_pic_url?.trim();
+    if (profilePicUrl) {
+      const imagePath = options.profilePicPathByUrl?.get(profilePicUrl) ?? profilePicUrl;
+      lines.push(
+        formatImage(imagePath, `${userName} avatar`, 96, 96),
+        "",
+      );
+    }
 
     lines.push(
-      "| Story | stickers | ig_caption | apple_caption |",
-      "| --- | --- | --- | --- |",
+      "| Preview | Story | stickers | ig_caption | apple_caption |",
+      "| --- | --- | --- | --- | --- |",
     );
 
     for (const story of user.stories) {
+      const previewImageUrl = story.preview_image_url?.trim();
+      const previewImagePath = previewImageUrl
+        ? options.storyPreviewPathByUrl?.get(previewImageUrl) ?? previewImageUrl
+        : null;
+      const preview = previewImagePath
+        ? formatImage(previewImagePath, `${story.media_pk} preview`, 120)
+        : "";
+
       lines.push(
-        `| \`${escapeTableCell(story.media_pk)}\` | ${escapeTableCell(formatStickers(story.stickers))} | ${escapeTableCell(formatIgCaption(story.ig_caption))} | ${escapeTableCell(formatAppleCaption(story.apple_caption))} |`,
+        `| ${preview} | \`${escapeTableCell(story.media_pk)}\` | ${escapeTableCell(formatStickers(story.stickers))} | ${escapeTableCell(formatIgCaption(story.ig_caption))} | ${escapeTableCell(formatAppleCaption(story.apple_caption))} |`,
       );
     }
   }

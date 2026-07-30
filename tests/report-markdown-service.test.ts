@@ -38,6 +38,7 @@ describe("formatStoriesReportMarkdown", () => {
       createReport([
         {
           full_name: "Lucile Blandin",
+          profile_pic_url: "https://example.com/avatar.jpg",
           reel_ids: ["r1"],
           stories: [
             {
@@ -45,6 +46,7 @@ describe("formatStoriesReportMarkdown", () => {
               ig_caption:
                 "Photo by Lucile Blandin on July 26, 2026. May be an image of wedding and text.",
               media_pk: "3949348915041739675",
+              preview_image_url: "https://example.com/story-preview.jpg",
               stickers: ["link:https://example.com", "mention:@lucileblnd"],
               status: "fetched",
             },
@@ -52,6 +54,7 @@ describe("formatStoriesReportMarkdown", () => {
               apple_caption: "Second apple caption",
               ig_caption: "Second caption",
               media_pk: "3949651783460086594",
+              preview_image_url: null,
               stickers: [],
               status: "cached",
             },
@@ -71,10 +74,12 @@ describe("formatStoriesReportMarkdown", () => {
         "",
         "## Lucile Blandin (lucileblnd)",
         "",
-        "| Story | stickers | ig_caption | apple_caption |",
-        "| --- | --- | --- | --- |",
-        "| `3949348915041739675` | link:https://example.com<br>mention:@lucileblnd | May be an image of wedding and text. | Save the date |",
-        "| `3949651783460086594` |  | Second caption | Second apple caption |",
+        '<img src="https://example.com/avatar.jpg" alt="Lucile Blandin (lucileblnd) avatar" width="96" height="96">',
+        "",
+        "| Preview | Story | stickers | ig_caption | apple_caption |",
+        "| --- | --- | --- | --- | --- |",
+        '| <img src="https://example.com/story-preview.jpg" alt="3949348915041739675 preview" width="120"> | `3949348915041739675` | link:https://example.com<br>mention:@lucileblnd | May be an image of wedding and text. | Save the date |',
+        "|  | `3949651783460086594` |  | Second caption | Second apple caption |",
         "",
       ].join("\n"),
     );
@@ -85,12 +90,14 @@ describe("formatStoriesReportMarkdown", () => {
       createReport([
         {
           full_name: null,
+          profile_pic_url: null,
           reel_ids: ["r1"],
           stories: [
             {
               apple_caption: "  ",
               ig_caption: "  ",
               media_pk: "story-pk-433",
+              preview_image_url: null,
               stickers: [],
               status: "failed",
             },
@@ -99,12 +106,14 @@ describe("formatStoriesReportMarkdown", () => {
         },
         {
           full_name: null,
+          profile_pic_url: null,
           reel_ids: ["r2"],
           stories: [
             {
               apple_caption: "Apple username caption",
               ig_caption: "Caption for username-only user",
               media_pk: "story-pk-123",
+              preview_image_url: null,
               stickers: ["hashtag:#summer"],
               status: "cached",
             },
@@ -124,15 +133,15 @@ describe("formatStoriesReportMarkdown", () => {
         "",
         "## Unknown user",
         "",
-        "| Story | stickers | ig_caption | apple_caption |",
-        "| --- | --- | --- | --- |",
-        "| `story-pk-433` |  | no caption avaible | no text detected |",
+        "| Preview | Story | stickers | ig_caption | apple_caption |",
+        "| --- | --- | --- | --- | --- |",
+        "|  | `story-pk-433` |  | no caption avaible | no text detected |",
         "",
         "## username1",
         "",
-        "| Story | stickers | ig_caption | apple_caption |",
-        "| --- | --- | --- | --- |",
-        "| `story-pk-123` | hashtag:#summer | Caption for username-only user | Apple username caption |",
+        "| Preview | Story | stickers | ig_caption | apple_caption |",
+        "| --- | --- | --- | --- | --- |",
+        "|  | `story-pk-123` | hashtag:#summer | Caption for username-only user | Apple username caption |",
         "",
       ].join("\n"),
     );
@@ -143,6 +152,7 @@ describe("formatStoriesReportMarkdown", () => {
       createReport([
         {
           full_name: "L u c i e ☀️",
+          profile_pic_url: null,
           reel_ids: ["r1"],
           stories: [
             {
@@ -150,6 +160,7 @@ describe("formatStoriesReportMarkdown", () => {
               ig_caption:
                 "Photo by L u c i e ☀️ on July 25, 2026. May be an image of ‎text that says '‎รรชาพผนทงงามหม‎'‎.",
               media_pk: "3948996411573443635",
+              preview_image_url: null,
               stickers: [],
               status: "fetched",
             },
@@ -169,9 +180,9 @@ describe("formatStoriesReportMarkdown", () => {
         "",
         "## L u c i e ☀️ (luciecsln)",
         "",
-        "| Story | stickers | ig_caption | apple_caption |",
-        "| --- | --- | --- | --- |",
-        "| `3948996411573443635` |  | May be an image of ‎text that says '‎รรชาพผนทงงามหม‎'‎. | ‎รรชาพผนทงงามหม‎ |",
+        "| Preview | Story | stickers | ig_caption | apple_caption |",
+        "| --- | --- | --- | --- | --- |",
+        "|  | `3948996411573443635` |  | May be an image of ‎text that says '‎รรชาพผนทงงามหม‎'‎. | ‎รรชาพผนทงงามหม‎ |",
         "",
       ].join("\n"),
     );
@@ -182,6 +193,7 @@ describe("formatStoriesReportMarkdown", () => {
       createReport([
         {
           full_name: "Tabata & Pepe",
+          profile_pic_url: null,
           reel_ids: ["r1"],
           stories: [
             {
@@ -189,6 +201,7 @@ describe("formatStoriesReportMarkdown", () => {
               ig_caption:
                 "Photo by Tabata & Pepe in Ziano di Fiemme. May be an image of deck chair.",
               media_pk: "3949072268447669760",
+              preview_image_url: null,
               stickers: ["music:Alpine Song - DJ Peak"],
               status: "fetched",
             },
@@ -208,9 +221,9 @@ describe("formatStoriesReportMarkdown", () => {
         "",
         "## Tabata & Pepe (tabata.pepe)",
         "",
-        "| Story | stickers | ig_caption | apple_caption |",
-        "| --- | --- | --- | --- |",
-        "| `3949072268447669760` | music:Alpine Song - DJ Peak | In Ziano di Fiemme. May be an image of deck chair. | Mountain deck chairs |",
+        "| Preview | Story | stickers | ig_caption | apple_caption |",
+        "| --- | --- | --- | --- | --- |",
+        "|  | `3949072268447669760` | music:Alpine Song - DJ Peak | In Ziano di Fiemme. May be an image of deck chair. | Mountain deck chairs |",
         "",
       ].join("\n"),
     );
@@ -221,12 +234,14 @@ describe("formatStoriesReportMarkdown", () => {
       createReport([
         {
           full_name: "Pipe User",
+          profile_pic_url: null,
           reel_ids: ["r1"],
           stories: [
             {
               apple_caption: "apple | text",
               ig_caption: "one | two",
               media_pk: "story-pk-pipe",
+              preview_image_url: null,
               stickers: ["link:A | B"],
               status: "cached",
             },
@@ -246,11 +261,82 @@ describe("formatStoriesReportMarkdown", () => {
         "",
         "## Pipe User (pipeuser)",
         "",
-        "| Story | stickers | ig_caption | apple_caption |",
-        "| --- | --- | --- | --- |",
-        "| `story-pk-pipe` | link:A \\| B | one \\| two | apple \\| text |",
+        "| Preview | Story | stickers | ig_caption | apple_caption |",
+        "| --- | --- | --- | --- | --- |",
+        "|  | `story-pk-pipe` | link:A \\| B | one \\| two | apple \\| text |",
         "",
       ].join("\n"),
+    );
+  });
+
+  test("escapes avatar html attributes", () => {
+    const markdown = formatStoriesReportMarkdown(
+      createReport([
+        {
+          full_name: 'Avatar "User"',
+          profile_pic_url: 'https://example.com/avatar.jpg?x=1&label="me"',
+          reel_ids: ["r1"],
+          stories: [
+            {
+              apple_caption: "apple text",
+              ig_caption: "ig text",
+              media_pk: "story-pk-avatar",
+              preview_image_url: null,
+              stickers: [],
+              status: "cached",
+            },
+          ],
+          username: "avataruser",
+        },
+      ]),
+      {
+        timeZone: "Europe/Paris",
+      },
+    );
+
+    assert.match(
+      markdown,
+      /<img src="https:\/\/example\.com\/avatar\.jpg\?x=1&amp;label=&quot;me&quot;" alt="Avatar &quot;User&quot; \(avataruser\) avatar" width="96" height="96">/,
+    );
+  });
+
+  test("uses cached avatar paths when provided", () => {
+    const source = "https://example.com/avatar.jpg";
+    const markdown = formatStoriesReportMarkdown(
+      createReport([
+        {
+          full_name: "Cached Avatar",
+          profile_pic_url: source,
+          reel_ids: ["r1"],
+          stories: [
+            {
+              apple_caption: "apple text",
+              ig_caption: "ig text",
+              media_pk: "story-pk-avatar",
+              preview_image_url: "https://example.com/story-preview.jpg",
+              stickers: [],
+              status: "cached",
+            },
+          ],
+          username: "cachedavatar",
+        },
+      ]),
+      {
+        profilePicPathByUrl: new Map([[source, "../images/avatars/avatar.jpg"]]),
+        storyPreviewPathByUrl: new Map([
+          ["https://example.com/story-preview.jpg", "../images/story-previews/story.jpg"],
+        ]),
+        timeZone: "Europe/Paris",
+      },
+    );
+
+    assert.match(
+      markdown,
+      /<img src="\.\.\/images\/avatars\/avatar\.jpg" alt="Cached Avatar \(cachedavatar\) avatar" width="96" height="96">/,
+    );
+    assert.match(
+      markdown,
+      /<img src="\.\.\/images\/story-previews\/story\.jpg" alt="story-pk-avatar preview" width="120">/,
     );
   });
 });
