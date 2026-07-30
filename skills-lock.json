@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "mac-ocr": {
+      "source": "privatenumber/mac-ocr",
+      "sourceType": "github",
+      "skillPath": "skills/mac-ocr/SKILL.md",
+      "computedHash": "e400892e302523d6f06cd734f82698eb238c419fbd9dde01b93715b87ec9f956"
+    },
     "playwright-cli": {
       "source": "microsoft/playwright-cli",
       "sourceType": "github",
