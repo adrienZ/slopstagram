@@ -10,6 +10,7 @@ import {
 } from "./lib/cache-service.ts";
 import { cacheReportImages } from "./lib/image-cache-service.ts";
 import { createLogger, type Logger } from "./lib/logging-service.ts";
+import { resolveOllamaVisionForReport } from "./lib/ollama-vision-service.ts";
 import { formatStoriesReportMarkdown } from "./lib/report-markdown-service.ts";
 import { fetchStories } from "./fetch-stories.ts";
 
@@ -108,9 +109,20 @@ async function main(): Promise<void> {
     logger,
     reportDirectory: resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR),
   });
+  const ollamaVisionByPreviewUrl = await resolveOllamaVisionForReport(
+    report,
+    cachedImages,
+    {
+      logger,
+      reportDirectory: resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR),
+    },
+  );
   await writeFile(
     markdownOutputPath,
-    formatStoriesReportMarkdown(report, cachedImages),
+    formatStoriesReportMarkdown(report, {
+      ...cachedImages,
+      ollamaVisionByPreviewUrl,
+    }),
     "utf8",
   );
   const counts = report.metadata.counts;

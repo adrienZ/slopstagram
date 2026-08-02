@@ -4,6 +4,7 @@ import type {
   AppleCaptionCacheEntry,
   CacheStorageSet,
   ImageCacheEntry,
+  OllamaVisionCacheEntry,
   StoriesManifestReport,
   StoryItem,
 } from "./types.ts";
@@ -11,6 +12,7 @@ import type {
 export const BASE_CACHE_DIR = ".tmp";
 export const APPLE_CAPTIONS_STORAGE_DIR = "apple-captions";
 export const IMAGES_STORAGE_DIR = "images";
+export const OLLAMA_VISION_STORAGE_DIR = "ollama-vision";
 export const REPORTS_STORAGE_DIR = "reports";
 export const STORIES_STORAGE_DIR = "stories";
 
@@ -32,6 +34,10 @@ export function createCacheStorages(
       storage,
       IMAGES_STORAGE_DIR,
     ),
+    ollamaVisionStorage: prefixStorage<OllamaVisionCacheEntry>(
+      storage,
+      OLLAMA_VISION_STORAGE_DIR,
+    ),
     reportsStorage: prefixStorage<StoriesManifestReport>(
       storage,
       REPORTS_STORAGE_DIR,
@@ -52,9 +58,14 @@ export function getImageCacheMetadataKey(imageKey: string): string {
   return `${imageKey}.json`;
 }
 
+export function getOllamaVisionCacheKey(imageHash: string, model: string): string {
+  return `${imageHash}-${model.replaceAll(/[^a-zA-Z0-9._-]/g, "_")}.json`;
+}
+
 export const {
   appleCaptionsStorage,
   imageCacheStorage,
+  ollamaVisionStorage,
   reportsStorage,
   storiesStorage,
 } = createCacheStorages();

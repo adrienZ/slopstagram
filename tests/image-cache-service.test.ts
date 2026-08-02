@@ -74,8 +74,13 @@ describe("cacheReportImages", () => {
       }),
     );
     let fetchCount = 0;
+    let convertCount = 0;
 
     const cachedImages = await cacheReportImages(createReport(source, previewSource), {
+      convertToJpeg: async (body) => {
+        convertCount += 1;
+        return Buffer.from(`jpeg:${body.toString()}`);
+      },
       fetchImage: async () => {
         fetchCount += 1;
         const body = new TextEncoder().encode("image-bytes");
@@ -97,6 +102,7 @@ describe("cacheReportImages", () => {
     });
 
     assert.equal(fetchCount, 2);
+    assert.equal(convertCount, 1);
     assert.equal(
       cachedImages.profilePicPathByUrl.get(source),
       `../images/avatars/${imageHash}.jpg`,
@@ -116,6 +122,10 @@ describe("cacheReportImages", () => {
     assert.deepEqual(
       await imageCacheStorage.getItemRaw(`avatars/${imageHash}.jpg`),
       Buffer.from("image-bytes"),
+    );
+    assert.deepEqual(
+      await imageCacheStorage.getItemRaw(`story-previews/${previewHash}.jpg`),
+      Buffer.from("jpeg:image-bytes"),
     );
     assert.deepEqual(
       await imageCacheStorage.getItem(
@@ -154,6 +164,70 @@ describe("cacheReportImages", () => {
     assert.equal(
       cachedImages.profilePicPathByUrl.get(source),
       `../images/avatars/${imageHash}.webp`,
+    );
+  });
+
+  test("converts cached webp story previews to jpeg on reuse", async () => {
+    const source = "https://example.com/avatar.jpg";
+    const previewSource = "https://example.com/story-preview.webp";
+    const previewHash = getImageHash(previewSource);
+    const { imageCacheStorage } = createCacheStorages(
+      createStorage({
+        driver: memoryDriver(),
+      }),
+    );
+    await imageCacheStorage.setItem(
+      getImageCacheMetadataKey(`story-previews/${previewHash}`),
+      {
+        content_type: "image/webp",
+        path: `images/story-previews/${previewHash}.webp`,
+        source: previewSource,
+      },
+    );
+    await imageCacheStorage.setItemRaw(
+      `story-previews/${previewHash}.webp`,
+      Buffer.from("webp-bytes"),
+    );
+
+    const cachedImages = await cacheReportImages(createReport(source, previewSource), {
+      convertToJpeg: async (body, extension) =>
+        Buffer.from(`jpeg:${extension}:${body.toString()}`),
+      fetchImage: async () => {
+        const body = new TextEncoder().encode("avatar-bytes");
+        return {
+          arrayBuffer: async () =>
+            body.buffer.slice(
+              body.byteOffset,
+              body.byteOffset + body.byteLength,
+            ) as ArrayBuffer,
+          headers: {
+            get: (name) => (name.toLowerCase() === "content-type" ? "image/jpeg" : null),
+          },
+          ok: true,
+          status: 200,
+        };
+      },
+      reportDirectory: path.resolve(".tmp/reports"),
+      storage: imageCacheStorage,
+    });
+
+    assert.equal(
+      cachedImages.storyPreviewPathByUrl.get(previewSource),
+      `../images/story-previews/${previewHash}.jpg`,
+    );
+    assert.deepEqual(
+      await imageCacheStorage.getItemRaw(`story-previews/${previewHash}.jpg`),
+      Buffer.from("jpeg:webp:webp-bytes"),
+    );
+    assert.deepEqual(
+      await imageCacheStorage.getItem(
+        getImageCacheMetadataKey(`story-previews/${previewHash}`),
+      ),
+      {
+        content_type: "image/jpeg",
+        path: `images/story-previews/${previewHash}.jpg`,
+        source: previewSource,
+      },
     );
   });
 });

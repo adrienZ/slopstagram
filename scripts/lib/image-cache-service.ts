@@ -6,9 +6,14 @@ import {
   IMAGES_STORAGE_DIR,
   imageCacheStorage,
 } from "./cache-service.ts";
+import {
+  convertImageToJpeg,
+  type ConvertImageToJpeg,
+} from "./image-conversion-service.ts";
 import type { Logger } from "./logging-service.ts";
 import { noopLogger } from "./logging-service.ts";
 import type {
+  ImageCacheEntry,
   ImageCacheStorage,
   StoriesManifestReport,
 } from "./types.ts";
@@ -25,6 +30,7 @@ type FetchResponse = {
 type FetchImage = (url: string) => Promise<FetchResponse>;
 
 export type CacheReportImagesOptions = {
+  convertToJpeg?: ConvertImageToJpeg;
   fetchImage?: FetchImage;
   logger?: Logger;
   reportDirectory?: string;
@@ -83,13 +89,83 @@ function isPresent(value: string | null): value is string {
   return Boolean(value);
 }
 
+function getRawKeyFromImagePath(imagePath: string): string {
+  const prefix = `${IMAGES_STORAGE_DIR}/`;
+  return imagePath.startsWith(prefix) ? imagePath.slice(prefix.length) : imagePath;
+}
+
+function getJpegRawKey(namespace: string, imageHash: string): string {
+  return `${namespace}/${imageHash}.jpg`;
+}
+
+function isStoryPreviewNamespace(namespace: string): boolean {
+  return namespace === "story-previews";
+}
+
+async function getRawBuffer(
+  storage: ImageCacheStorage,
+  rawKey: string,
+): Promise<Buffer | null> {
+  const raw = await storage.getItemRaw(rawKey);
+
+  if (raw === null || raw === undefined) {
+    return null;
+  }
+
+  return Buffer.isBuffer(raw) ? raw : Buffer.from(raw as ArrayBuffer);
+}
+
+async function convertCachedStoryPreviewToJpeg(
+  source: string,
+  imageHash: string,
+  metadataKey: string,
+  cachedEntry: ImageCacheEntry,
+  options: Required<
+    Pick<
+      CacheReportImagesOptions,
+      "convertToJpeg" | "logger" | "reportDirectory" | "storage"
+    >
+  >,
+): Promise<string | null> {
+  const cachedRawKey = getRawKeyFromImagePath(cachedEntry.path);
+  const cachedExtension = path.extname(cachedRawKey).toLowerCase().slice(1);
+
+  if (cachedExtension === "jpg" || cachedExtension === "jpeg") {
+    return getRelativeReportImagePath(options.reportDirectory, cachedEntry.path);
+  }
+
+  const cachedBody = await getRawBuffer(options.storage, cachedRawKey);
+  if (!cachedBody) {
+    return getRelativeReportImagePath(options.reportDirectory, cachedEntry.path);
+  }
+
+  try {
+    const jpegBody = await options.convertToJpeg(cachedBody, cachedExtension);
+    const jpegRawKey = getJpegRawKey("story-previews", imageHash);
+    const jpegPath = `${IMAGES_STORAGE_DIR}/${jpegRawKey}`;
+
+    await options.storage.setItemRaw(jpegRawKey, jpegBody);
+    await options.storage.setItem(metadataKey, {
+      content_type: "image/jpeg",
+      path: jpegPath,
+      source,
+    });
+
+    return getRelativeReportImagePath(options.reportDirectory, jpegPath);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    options.logger.warn(`could not convert cached image ${source} to JPEG: ${message}`);
+    return getRelativeReportImagePath(options.reportDirectory, cachedEntry.path);
+  }
+}
+
 async function cacheImage(
   source: string,
   namespace: string,
   options: Required<
     Pick<
       CacheReportImagesOptions,
-      "fetchImage" | "logger" | "reportDirectory" | "storage"
+      "convertToJpeg" | "fetchImage" | "logger" | "reportDirectory" | "storage"
     >
   >,
 ): Promise<string | null> {
@@ -98,6 +174,16 @@ async function cacheImage(
   const cachedEntry = await options.storage.getItem(metadataKey);
 
   if (cachedEntry) {
+    if (isStoryPreviewNamespace(namespace)) {
+      return await convertCachedStoryPreviewToJpeg(
+        source,
+        imageHash,
+        metadataKey,
+        cachedEntry,
+        options,
+      );
+    }
+
     return getRelativeReportImagePath(options.reportDirectory, cachedEntry.path);
   }
 
@@ -109,13 +195,28 @@ async function cacheImage(
 
   const contentType = response.headers.get("content-type");
   const extension = getImageExtension(source, contentType);
-  const rawKey = `${namespace}/${imageHash}.${extension}`;
-  const imagePath = `${IMAGES_STORAGE_DIR}/${rawKey}`;
   const body = Buffer.from(await response.arrayBuffer());
+  const shouldConvertToJpeg = isStoryPreviewNamespace(namespace);
+  let rawKey = `${namespace}/${imageHash}.${extension}`;
+  let imagePath = `${IMAGES_STORAGE_DIR}/${rawKey}`;
+  let contentTypeToStore = contentType;
+  let bodyToStore: Buffer = body;
 
-  await options.storage.setItemRaw(rawKey, body);
+  if (shouldConvertToJpeg) {
+    try {
+      bodyToStore = await options.convertToJpeg(body, extension);
+      rawKey = getJpegRawKey(namespace, imageHash);
+      imagePath = `${IMAGES_STORAGE_DIR}/${rawKey}`;
+      contentTypeToStore = "image/jpeg";
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      options.logger.warn(`could not convert image ${source} to JPEG: ${message}`);
+    }
+  }
+
+  await options.storage.setItemRaw(rawKey, bodyToStore);
   await options.storage.setItem(metadataKey, {
-    content_type: contentType,
+    content_type: contentTypeToStore,
     path: imagePath,
     source,
   });
@@ -128,6 +229,7 @@ export async function cacheReportImages(
   options: CacheReportImagesOptions = {},
 ): Promise<CachedReportImages> {
   const fetchImage = options.fetchImage ?? fetch;
+  const convertToJpeg = options.convertToJpeg ?? convertImageToJpeg;
   const logger = options.logger ?? noopLogger;
   const reportDirectory =
     options.reportDirectory ?? path.resolve(BASE_CACHE_DIR, "reports");
@@ -142,6 +244,7 @@ export async function cacheReportImages(
   for (const source of new Set(profilePicUrls)) {
     try {
       const cachedPath = await cacheImage(source, "avatars", {
+        convertToJpeg,
         fetchImage,
         logger,
         reportDirectory,
@@ -164,6 +267,7 @@ export async function cacheReportImages(
   for (const source of new Set(storyPreviewUrls)) {
     try {
       const cachedPath = await cacheImage(source, "story-previews", {
+        convertToJpeg,
         fetchImage,
         logger,
         reportDirectory,

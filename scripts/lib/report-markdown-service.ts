@@ -5,6 +5,7 @@ import {
 import type { StoriesManifestReport } from "./types.ts";
 
 export type FormatStoriesReportMarkdownOptions = {
+  ollamaVisionByPreviewUrl?: Map<string, string>;
   profilePicPathByUrl?: Map<string, string>;
   storyPreviewPathByUrl?: Map<string, string>;
   timeZone?: string;
@@ -135,8 +136,8 @@ export function formatStoriesReportMarkdown(
     }
 
     lines.push(
-      "| Preview | Story | stickers | ig_caption | apple_caption |",
-      "| --- | --- | --- | --- | --- |",
+      "| Preview | Story | stickers | ig_caption | apple_caption | ollama vision |",
+      "| --- | --- | --- | --- | --- | --- |",
     );
 
     for (const story of user.stories) {
@@ -147,9 +148,12 @@ export function formatStoriesReportMarkdown(
       const preview = previewImagePath
         ? formatImage(previewImagePath, `${story.media_pk} preview`, 120)
         : "";
+      const ollamaVision = previewImageUrl
+        ? options.ollamaVisionByPreviewUrl?.get(previewImageUrl) ?? ""
+        : "";
 
       lines.push(
-        `| ${preview} | \`${escapeTableCell(story.media_pk)}\` | ${escapeTableCell(formatStickers(story.stickers))} | ${escapeTableCell(formatIgCaption(story.ig_caption))} | ${escapeTableCell(formatAppleCaption(story.apple_caption))} |`,
+        `| ${preview} | \`${escapeTableCell(story.media_pk)}\` | ${escapeTableCell(formatStickers(story.stickers))} | ${escapeTableCell(formatIgCaption(story.ig_caption))} | ${escapeTableCell(formatAppleCaption(story.apple_caption))} | ${escapeTableCell(ollamaVision)} |`,
       );
     }
   }

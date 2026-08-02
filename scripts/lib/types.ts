@@ -165,6 +165,14 @@ export type ImageCacheEntry = {
   source: string;
 };
 
+export type OllamaVisionCacheEntry = {
+  image_path: string;
+  model: string;
+  prompt: string;
+  result: string;
+  source: string;
+};
+
 export type StoriesManifestReport = {
   failures: StoryFetchFailure[];
   manifest: {
@@ -188,9 +196,11 @@ export type StoryStorage = Storage<StoryItem>;
 export type ReportStorage = Storage<StoriesManifestReport>;
 export type AppleCaptionStorage = Storage<AppleCaptionCacheEntry>;
 export type ImageCacheStorage = Storage<ImageCacheEntry>;
+export type OllamaVisionStorage = Storage<OllamaVisionCacheEntry>;
 export type CacheStorageSet = {
   appleCaptionsStorage: AppleCaptionStorage;
   imageCacheStorage: ImageCacheStorage;
+  ollamaVisionStorage: OllamaVisionStorage;
   reportsStorage: ReportStorage;
   storiesStorage: StoryStorage;
 };
