@@ -15,7 +15,7 @@ import type {
 
 export const OLLAMA_VISION_MODEL = "qwen2.5vl:3b";
 export const OLLAMA_VISION_PROMPT =
-  "Describe this image";
+  "Describe this image.";
 export const OLLAMA_SERVER_NOT_RUNNING = "ollama server not running";
 
 type FetchOllama = typeof fetch;

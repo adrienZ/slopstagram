@@ -173,6 +173,13 @@ export type OllamaVisionCacheEntry = {
   source: string;
 };
 
+export type CodexUserSummaryCacheEntry = {
+  prompt: string;
+  result: string;
+  source_hash: string;
+  user_key: string;
+};
+
 export type StoriesManifestReport = {
   failures: StoryFetchFailure[];
   manifest: {
@@ -197,8 +204,10 @@ export type ReportStorage = Storage<StoriesManifestReport>;
 export type AppleCaptionStorage = Storage<AppleCaptionCacheEntry>;
 export type ImageCacheStorage = Storage<ImageCacheEntry>;
 export type OllamaVisionStorage = Storage<OllamaVisionCacheEntry>;
+export type CodexUserSummaryStorage = Storage<CodexUserSummaryCacheEntry>;
 export type CacheStorageSet = {
   appleCaptionsStorage: AppleCaptionStorage;
+  codexUserSummaryStorage: CodexUserSummaryStorage;
   imageCacheStorage: ImageCacheStorage;
   ollamaVisionStorage: OllamaVisionStorage;
   reportsStorage: ReportStorage;

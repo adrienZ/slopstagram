@@ -8,9 +8,11 @@ import {
   REPORTS_STORAGE_DIR,
   reportsStorage,
 } from "./lib/cache-service.ts";
+import { resolveCodexUserSummariesForReport } from "./lib/codex-user-summary-service.ts";
 import { cacheReportImages } from "./lib/image-cache-service.ts";
 import { createLogger, type Logger } from "./lib/logging-service.ts";
 import { resolveOllamaVisionForReport } from "./lib/ollama-vision-service.ts";
+import { formatStoriesReportHtml } from "./lib/report-html-service.ts";
 import { formatStoriesReportMarkdown } from "./lib/report-markdown-service.ts";
 import { fetchStories } from "./fetch-stories.ts";
 
@@ -41,6 +43,13 @@ function formatFilenameTimestamp(date: Date): string {
 
 function getOpenCommand(filePath: string): { args: string[]; command: string } {
   if (process.platform === "darwin") {
+    if (pathToFileURL(filePath).pathname.endsWith(".html")) {
+      return {
+        args: [filePath],
+        command: "open",
+      };
+    }
+
     return {
       args: ["-a", "TextEdit", filePath],
       command: "open",
@@ -60,7 +69,7 @@ function getOpenCommand(filePath: string): { args: string[]; command: string } {
   };
 }
 
-function openMarkdownReport(filePath: string, logger: Logger): Promise<void> {
+function openReport(filePath: string, logger: Logger): Promise<void> {
   const { args, command } = getOpenCommand(filePath);
 
   return new Promise((resolveOpen) => {
@@ -69,14 +78,14 @@ function openMarkdownReport(filePath: string, logger: Logger): Promise<void> {
     });
 
     opener.on("error", (error) => {
-      logger.warn(`could not open markdown report ${filePath}: ${error.message}`);
+      logger.warn(`could not open report ${filePath}: ${error.message}`);
       resolveOpen();
     });
 
     opener.on("close", (code) => {
       if (code && code !== 0) {
         logger.warn(
-          `could not open markdown report ${filePath}: ${command} exited with code ${code}`,
+          `could not open report ${filePath}: ${command} exited with code ${code}`,
         );
       }
       resolveOpen();
@@ -88,6 +97,7 @@ async function main(): Promise<void> {
   const timestamp = formatFilenameTimestamp(new Date());
   const outputFileName = `stories-report-${timestamp}.json`;
   const markdownOutputFileName = `stories-report-${timestamp}.md`;
+  const htmlOutputFileName = `stories-report-${timestamp}.html`;
   const fetchStoriesArgs = process.argv.slice(2);
   const logger = createLogger("create-report", (message) => {
     process.stderr.write(`${message}\n`);
@@ -105,6 +115,11 @@ async function main(): Promise<void> {
     REPORTS_STORAGE_DIR,
     markdownOutputFileName,
   );
+  const htmlOutputPath = resolve(
+    BASE_CACHE_DIR,
+    REPORTS_STORAGE_DIR,
+    htmlOutputFileName,
+  );
   const cachedImages = await cacheReportImages(report, {
     logger,
     reportDirectory: resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR),
@@ -117,11 +132,25 @@ async function main(): Promise<void> {
       reportDirectory: resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR),
     },
   );
+  const userSummaryByUserKey = await resolveCodexUserSummariesForReport(report, {
+    logger,
+    ollamaVisionByPreviewUrl,
+    workingDirectory: process.cwd(),
+  });
   await writeFile(
     markdownOutputPath,
     formatStoriesReportMarkdown(report, {
       ...cachedImages,
       ollamaVisionByPreviewUrl,
+    }),
+    "utf8",
+  );
+  await writeFile(
+    htmlOutputPath,
+    formatStoriesReportHtml(report, {
+      ...cachedImages,
+      ollamaVisionByPreviewUrl,
+      userSummaryByUserKey,
     }),
     "utf8",
   );
@@ -137,8 +166,9 @@ async function main(): Promise<void> {
   );
   logger.info(`wrote report ${outputPath}`);
   logger.info(`wrote markdown report ${markdownOutputPath}`);
-  await openMarkdownReport(markdownOutputPath, logger);
-  process.stdout.write(`${markdownOutputPath}\n`);
+  logger.info(`wrote html report ${htmlOutputPath}`);
+  await openReport(htmlOutputPath, logger);
+  process.stdout.write(`${markdownOutputPath}\n${htmlOutputPath}\n`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
