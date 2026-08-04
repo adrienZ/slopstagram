@@ -10,13 +10,12 @@
     "auth": "tsx scripts/auth.ts",
     "fetch:stories": "tsx scripts/fetch-stories.ts",
     "fetch:story": "tsx scripts/fetch-story.ts",
-    "create:html-report": "tsx scripts/create-html-report.ts",
     "create:report": "tsx scripts/create-report.ts",
-    "report:server": "tsx scripts/report-server.tsx",
+    "report:server": "tsx server/app.ts",
     "parse:stories-tray": "node --import tsx scripts/parse-stories-tray.ts",
     "parse:story": "node --import tsx scripts/parse-story.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test tests/**/*.test.ts"
+    "test": "node --experimental-test-module-mocks --import tsx --test tests/**/*.test.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.0",

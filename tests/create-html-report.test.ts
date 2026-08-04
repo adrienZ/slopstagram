@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { createStorage } from "unstorage";
 import memoryDriver from "unstorage/drivers/memory";
-import { backfillReportStoryMediaTypes } from "../scripts/create-html-report.ts";
+import { backfillReportStoryMediaTypes } from "../scripts/lib/report-media-type-service.ts";
 import { getMediaCacheKey } from "../scripts/lib/cache-service.ts";
 import type { StoriesManifestReport, StoryItem } from "../scripts/lib/types.ts";
 

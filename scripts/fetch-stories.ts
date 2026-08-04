@@ -1243,7 +1243,7 @@ export async function fetchStories(
 
   const openSession = options.openSession ?? openInstagramSession;
   const closeSession = options.closeSession ?? closeInstagramSession;
-  const session = await openSession(profileArg);
+  const session = await openSession({ profilePath: profileArg });
 
   try {
     return await fetchStoriesManifest(createInstagramClient(session), {

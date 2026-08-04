@@ -1,13 +1,16 @@
-import { getReportUserKey } from "../lib/report-user-key-service.ts";
-import { STORY_MEDIA_TYPES, type StoryOutputUser } from "../lib/types.ts";
-import type { ReportViewModel } from "./report-data.ts";
-import { lightboxScript, reportCss } from "./report-assets.ts";
+import { getReportUserKey } from "../../scripts/lib/report-user-key-service.ts";
+import { STORY_MEDIA_TYPES, type StoryOutputUser } from "../../scripts/lib/types.ts";
 import {
   formatReportDate,
   formatUserName,
   getRankedUsers,
   getStoryUrl,
-} from "./report-helpers.ts";
+  lightboxScript,
+  reportCss,
+  reportHeaderCss,
+  reportPickerScript,
+} from "../helper.ts";
+import type { ReportViewModel } from "../report-view-model.ts";
 
 type StoryCardProps = {
   count: number;
@@ -27,10 +30,7 @@ function StoryCard({
   viewModel,
 }: StoryCardProps) {
   const source = story.preview_image_url?.trim();
-
-  if (!source) {
-    return null;
-  }
+  if (!source) return null;
 
   const preview =
     viewModel.cachedImages.storyPreviewPathByUrl.get(source) ?? source;
@@ -87,32 +87,21 @@ function UserSection({
     ? viewModel.cachedImages.profilePicPathByUrl.get(user.profile_pic_url) ??
       user.profile_pic_url
     : undefined;
-  const originalIndex = report.output.users.indexOf(user);
   const summary = viewModel.userSummaryByUserKey.get(
-    getReportUserKey(user, originalIndex),
+    getReportUserKey(user, report.output.users.indexOf(user)),
   );
 
   return (
     <section class="user-section">
       <div class="user-header">
         {avatar ? (
-          <img
-            class="avatar"
-            src={avatar}
-            alt={`${userName} avatar`}
-            width="96"
-            height="96"
-          />
+          <img class="avatar" src={avatar} alt={`${userName} avatar`} width="96" height="96" />
         ) : (
           <div class="avatar-placeholder" />
         )}
-        <div>
-          <h2>{userName}</h2>
-        </div>
+        <div><h2>{userName}</h2></div>
       </div>
-
       {summary && <p class="user-summary">{summary}</p>}
-
       {user.stories.length > 0 && (
         <div class="story-images">
           {user.stories.map((story, position) => (
@@ -133,74 +122,74 @@ function UserSection({
 
 function Lightbox() {
   return (
-    <dialog
-      class="image-lightbox"
-      id="image-lightbox"
-      aria-label="Aperçu de l’image"
-    >
-      <button class="lightbox-close" type="button" aria-label="Fermer l’aperçu">
-        ×
-      </button>
-      <button
-        class="lightbox-nav lightbox-prev"
-        type="button"
-        aria-label="Image précédente"
-        hidden
-      >
-        ‹
-      </button>
-
+    <dialog class="image-lightbox" id="image-lightbox" aria-label="Aperçu de l’image">
+      <button class="lightbox-close" type="button" aria-label="Fermer l’aperçu">×</button>
+      <button class="lightbox-nav lightbox-prev" type="button" aria-label="Image précédente" hidden>‹</button>
       <div class="lightbox-content">
         <div class="lightbox-preview-panel">
-          <div class="lightbox-header">
-            <img class="lightbox-avatar" alt="" hidden />
-            <div>
-              <strong class="lightbox-username" />
-              <span class="lightbox-count" />
-            </div>
-          </div>
+          <div class="lightbox-header"><img class="lightbox-avatar" alt="" hidden /><div><strong class="lightbox-username" /><span class="lightbox-count" /></div></div>
           <img class="lightbox-image" alt="" />
         </div>
-
         <aside class="lightbox-details-panel" aria-label="Détails de la story">
           <h2>Détails</h2>
-          <table class="lightbox-details-table">
-            <tbody>
-              <tr><th>Type</th><td class="lightbox-detail-media-type" /></tr>
-              <tr><th>Story</th><td class="lightbox-detail-media-pk" /></tr>
-              <tr><th>Stickers</th><td class="lightbox-detail-stickers" /></tr>
-              <tr><th>Lieux</th><td class="lightbox-detail-locations" /></tr>
-              <tr><th>Instagram</th><td class="lightbox-detail-ig-caption" /></tr>
-              <tr><th>Apple OCR</th><td class="lightbox-detail-apple-caption" /></tr>
-              <tr><th>Vision OCR</th><td class="lightbox-detail-vision-ocr" /></tr>
-              <tr>
-                <th>Vision description</th>
-                <td class="lightbox-detail-vision-description" />
-              </tr>
-            </tbody>
-          </table>
-          <a class="lightbox-story-link" target="_blank" rel="noreferrer" hidden>
-            Voir cette story sur Instagram
-          </a>
+          <table class="lightbox-details-table"><tbody>
+            <tr><th>Type</th><td class="lightbox-detail-media-type" /></tr>
+            <tr><th>Story</th><td class="lightbox-detail-media-pk" /></tr>
+            <tr><th>Stickers</th><td class="lightbox-detail-stickers" /></tr>
+            <tr><th>Lieux</th><td class="lightbox-detail-locations" /></tr>
+            <tr><th>Instagram</th><td class="lightbox-detail-ig-caption" /></tr>
+            <tr><th>Apple OCR</th><td class="lightbox-detail-apple-caption" /></tr>
+            <tr><th>Vision OCR</th><td class="lightbox-detail-vision-ocr" /></tr>
+            <tr><th>Vision description</th><td class="lightbox-detail-vision-description" /></tr>
+          </tbody></table>
+          <a class="lightbox-story-link" target="_blank" rel="noreferrer" hidden>Voir cette story sur Instagram</a>
         </aside>
       </div>
-
-      <button
-        class="lightbox-nav lightbox-next"
-        type="button"
-        aria-label="Image suivante"
-        hidden
-      >
-        ›
-      </button>
+      <button class="lightbox-nav lightbox-next" type="button" aria-label="Image suivante" hidden>›</button>
     </dialog>
   );
 }
 
-export function ReportPage({ viewModel }: { viewModel: ReportViewModel }) {
+function ReportHeader({
+  reportKeys,
+  selectedReportKey,
+}: {
+  reportKeys: string[];
+  selectedReportKey: string;
+}) {
+  return (
+    <header class="report-page-header">
+      <div>
+        <p class="report-page-header__eyebrow">Stories Instagram</p>
+        <p class="report-page-header__title">Consulter un rapport</p>
+      </div>
+      <form class="report-picker" action="/report" method="get">
+        <label for="report-picker">Rapport</label>
+        <select id="report-picker" name="report" aria-label="Choisir un rapport">
+          {reportKeys.map((reportKey) => (
+            <option value={reportKey} selected={reportKey === selectedReportKey}>
+              {reportKey.replace(/^stories-report-/, "").replace(/\.json$/, "")}
+            </option>
+          ))}
+        </select>
+      </form>
+    </header>
+  );
+}
+
+type ReportPageProps = {
+  reportKeys: string[];
+  selectedReportKey: string;
+  viewModel: ReportViewModel;
+};
+
+export function ReportPage({
+  reportKeys,
+  selectedReportKey,
+  viewModel,
+}: ReportPageProps) {
   const { report } = viewModel;
   const date = formatReportDate(report.metadata.created_at);
-
   return (
     <html lang="fr">
       <head>
@@ -208,15 +197,19 @@ export function ReportPage({ viewModel }: { viewModel: ReportViewModel }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{`Rapport Stories ${date}`}</title>
         <style dangerouslySetInnerHTML={{ __html: reportCss }} />
+        <style dangerouslySetInnerHTML={{ __html: reportHeaderCss }} />
       </head>
       <body>
         <main>
+          <ReportHeader
+            reportKeys={reportKeys}
+            selectedReportKey={selectedReportKey}
+          />
           <h1>{`Rapport du ${date}`}</h1>
-          {getRankedUsers(report).map((user) => (
-            <UserSection user={user} viewModel={viewModel} />
-          ))}
+          {getRankedUsers(report).map((user) => <UserSection user={user} viewModel={viewModel} />)}
         </main>
         <Lightbox />
+        <script dangerouslySetInnerHTML={{ __html: reportPickerScript }} />
         <script dangerouslySetInnerHTML={{ __html: lightboxScript }} />
       </body>
     </html>

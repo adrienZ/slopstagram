@@ -32,3 +32,11 @@ Create report:
 ```bash
 npm run create:report
 ```
+
+View cached reports:
+
+```bash
+npm run report:server
+```
+
+Open <http://localhost:3000/report>.

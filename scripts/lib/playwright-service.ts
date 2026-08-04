@@ -12,12 +12,13 @@ export type InstagramSession = {
 
 export type OpenInstagramSessionOptions = {
   headless?: boolean;
+  profilePath?: string;
 };
 
 export async function openInstagramSession(
   options: OpenInstagramSessionOptions = {},
 ): Promise<InstagramSession> {
-  const profilePath = path.resolve(DEFAULT_PROFILE_PATH);
+  const profilePath = path.resolve(options.profilePath ?? DEFAULT_PROFILE_PATH);
   const context = await chromium.launchPersistentContext(profilePath, {
     ...cliConfig.browser.launchOptions,
     headless: options.headless ?? true,

@@ -33,7 +33,7 @@ export async function fetchStory(
   const profileArg = args.includes("--profile")
     ? args[args.indexOf("--profile") + 1] ?? DEFAULT_PROFILE_PATH
     : DEFAULT_PROFILE_PATH;
-  const session = await openInstagramSession(profileArg);
+  const session = await openInstagramSession({ profilePath: profileArg });
 
   try {
     const query = `reel_ids=${encodeURIComponent(reelId)}`;

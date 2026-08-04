@@ -1,0 +1,62 @@
+{
+  "failures": [],
+  "manifest": {
+    "users": [
+      {
+        "full_name": null,
+        "media_ids": ["story-pk-1"],
+        "order": 1,
+        "profile_pic_url": null,
+        "reel_id": "r1",
+        "stories": [],
+        "username": "ranked-second"
+      },
+      {
+        "full_name": null,
+        "media_ids": ["story-pk-2"],
+        "order": 0,
+        "profile_pic_url": null,
+        "reel_id": "r2",
+        "stories": [],
+        "username": "ranked-first"
+      }
+    ]
+  },
+  "metadata": {
+    "broadcasts_count": 0,
+    "counts": { "cache_hits": 0, "cache_misses": 0, "failed": 0, "fetched": 0, "reels": 2, "stories": 1 },
+    "created_at": "2026-07-26T09:48:26.773Z",
+    "report_name": "stories-report.json",
+    "status": "ok",
+    "story_ranking_token": null
+  },
+  "output": {
+    "users": [
+      {
+        "full_name": "Html \"User\"",
+        "profile_pic_url": "https://example.com/avatar.jpg",
+        "reel_ids": ["r1"],
+        "stories": [
+          {
+            "apple_caption": "apple <text>",
+            "ig_caption": "Instagram caption",
+            "locations": ["Cafe Example, Paris"],
+            "media_type": "image",
+            "media_pk": "story-pk-1",
+            "preview_image_url": "https://example.com/story.jpg",
+            "stickers": ["link:A & B"],
+            "status": "ok"
+          }
+        ],
+        "username": "ranked-second"
+      },
+      {
+        "full_name": "Ranked First",
+        "profile_pic_url": null,
+        "reel_ids": ["r2"],
+        "stories": [],
+        "username": "ranked-first"
+      }
+    ]
+  }
+}
