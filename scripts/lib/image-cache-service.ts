@@ -91,8 +91,8 @@ function getRawKeyFromImagePath(imagePath: string): string {
   return imagePath.startsWith(prefix) ? imagePath.slice(prefix.length) : imagePath;
 }
 
-function getJpegRawKey(namespace: string, imageHash: string): string {
-  return `${namespace}/${imageHash}.jpg`;
+function getJpegRawKey(namespace: string, imageKey: string): string {
+  return `${namespace}/${imageKey}.jpg`;
 }
 
 function isStoryPreviewNamespace(namespace: string): boolean {
@@ -114,7 +114,7 @@ async function getRawBuffer(
 
 async function convertCachedStoryPreviewToJpeg(
   source: string,
-  imageHash: string,
+  imageKey: string,
   metadataKey: string,
   cachedEntry: ImageCacheEntry,
   options: Required<
@@ -138,14 +138,13 @@ async function convertCachedStoryPreviewToJpeg(
 
   try {
     const jpegBody = await options.convertToJpeg(cachedBody);
-    const jpegRawKey = getJpegRawKey("story-previews", imageHash);
+    const jpegRawKey = getJpegRawKey("story-previews", imageKey);
     const jpegPath = `${IMAGES_STORAGE_DIR}/${jpegRawKey}`;
 
     await options.storage.setItemRaw(jpegRawKey, jpegBody);
     await options.storage.setItem(metadataKey, {
       content_type: "image/jpeg",
       path: jpegPath,
-      source,
     });
 
     return getRelativeReportImagePath(options.reportDirectory, jpegPath);
@@ -164,17 +163,17 @@ async function cacheImage(
       CacheReportImagesOptions,
       "convertToJpeg" | "fetchImage" | "logger" | "reportDirectory" | "storage"
     >
-  > & { cacheIdentity?: string },
+  > & { mediaPk?: string },
 ): Promise<string | null> {
-  const imageHash = getImageHash(options.cacheIdentity ?? source);
-  const metadataKey = getImageCacheMetadataKey(`${namespace}/${imageHash}`);
+  const imageKey = options.mediaPk ?? getImageHash(source);
+  const metadataKey = getImageCacheMetadataKey(`${namespace}/${imageKey}`);
   const cachedEntry = await options.storage.getItem(metadataKey);
 
   if (cachedEntry) {
     if (isStoryPreviewNamespace(namespace)) {
       return await convertCachedStoryPreviewToJpeg(
         source,
-        imageHash,
+        imageKey,
         metadataKey,
         cachedEntry,
         options,
@@ -194,7 +193,7 @@ async function cacheImage(
   const extension = getImageExtension(source, contentType);
   const body = Buffer.from(await response.arrayBuffer());
   const shouldConvertToJpeg = isStoryPreviewNamespace(namespace);
-  let rawKey = `${namespace}/${imageHash}.${extension}`;
+  let rawKey = `${namespace}/${imageKey}.${extension}`;
   let imagePath = `${IMAGES_STORAGE_DIR}/${rawKey}`;
   let contentTypeToStore = contentType;
   let bodyToStore: Buffer = body;
@@ -202,7 +201,7 @@ async function cacheImage(
   if (shouldConvertToJpeg) {
     try {
       bodyToStore = await options.convertToJpeg(body);
-      rawKey = getJpegRawKey(namespace, imageHash);
+      rawKey = getJpegRawKey(namespace, imageKey);
       imagePath = `${IMAGES_STORAGE_DIR}/${rawKey}`;
       contentTypeToStore = "image/jpeg";
     } catch (error) {
@@ -215,7 +214,6 @@ async function cacheImage(
   await options.storage.setItem(metadataKey, {
     content_type: contentTypeToStore,
     path: imagePath,
-    source,
   });
 
   return getRelativeReportImagePath(options.reportDirectory, imagePath);
@@ -260,23 +258,23 @@ export async function cacheReportImages(
   const storyPreviewEntries = report.output.users
     .flatMap((user) =>
       user.stories.map((story) => ({
-        cacheIdentity: story.media_pk,
+        mediaPk: story.media_pk,
         source: story.preview_image_url,
       })),
     )
     .filter(
-      (entry): entry is { cacheIdentity: string; source: string } =>
+      (entry): entry is { mediaPk: string; source: string } =>
         isPresent(entry.source),
     );
 
-  const storyPreviewPathByIdentity = new Map<string, string>();
+  const storyPreviewPathByMediaPk = new Map<string, string>();
 
-  for (const { cacheIdentity, source } of new Map(
-    storyPreviewEntries.map((entry) => [entry.cacheIdentity, entry]),
+  for (const { mediaPk, source } of new Map(
+    storyPreviewEntries.map((entry) => [entry.mediaPk, entry]),
   ).values()) {
     try {
       const cachedPath = await cacheImage(source, "story-previews", {
-        cacheIdentity,
+        mediaPk,
         convertToJpeg,
         fetchImage,
         logger,
@@ -285,7 +283,7 @@ export async function cacheReportImages(
       });
 
       if (cachedPath) {
-        storyPreviewPathByIdentity.set(cacheIdentity, cachedPath);
+        storyPreviewPathByMediaPk.set(mediaPk, cachedPath);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -293,8 +291,8 @@ export async function cacheReportImages(
     }
   }
 
-  for (const { cacheIdentity, source } of storyPreviewEntries) {
-    const cachedPath = storyPreviewPathByIdentity.get(cacheIdentity);
+  for (const { mediaPk, source } of storyPreviewEntries) {
+    const cachedPath = storyPreviewPathByMediaPk.get(mediaPk);
 
     if (cachedPath) {
       storyPreviewPathByUrl.set(source, cachedPath);

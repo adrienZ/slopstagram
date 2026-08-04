@@ -11,6 +11,10 @@ import {
 import { cacheReportImages } from "../scripts/lib/image-cache-service.ts";
 import type { StoriesManifestReport } from "../scripts/lib/types.ts";
 
+function getImageHash(source: string): string {
+  return createHash("sha256").update(source).digest("hex");
+}
+
 function createReport(
   profilePicUrl: string,
   storyPreviewUrl: string | null = null,
@@ -59,16 +63,12 @@ function createReport(
   };
 }
 
-function getImageHash(source: string): string {
-  return createHash("sha256").update(source).digest("hex");
-}
-
 describe("cacheReportImages", () => {
   test("caches profile pictures as local report-relative files", async () => {
     const source = "https://example.com/avatar?id=1";
     const previewSource = "https://example.com/story-preview.webp";
     const imageHash = getImageHash(source);
-    const previewHash = getImageHash("story-pk");
+    const previewKey = "story-pk";
     const { imageCacheStorage } = createCacheStorages(
       createStorage({
         driver: memoryDriver(),
@@ -110,14 +110,13 @@ describe("cacheReportImages", () => {
     );
     assert.equal(
       cachedImages.storyPreviewPathByUrl.get(previewSource),
-      `../images/story-previews/${previewHash}.jpg`,
+      `../images/story-previews/${previewKey}.jpg`,
     );
     assert.deepEqual(
       await imageCacheStorage.getItem(getImageCacheMetadataKey(`avatars/${imageHash}`)),
       {
         content_type: "image/jpeg",
         path: `images/avatars/${imageHash}.jpg`,
-        source,
       },
     );
     assert.deepEqual(
@@ -125,17 +124,16 @@ describe("cacheReportImages", () => {
       Buffer.from("image-bytes"),
     );
     assert.deepEqual(
-      await imageCacheStorage.getItemRaw(`story-previews/${previewHash}.jpg`),
+      await imageCacheStorage.getItemRaw(`story-previews/${previewKey}.jpg`),
       Buffer.from("jpeg:image-bytes"),
     );
     assert.deepEqual(
       await imageCacheStorage.getItem(
-        getImageCacheMetadataKey(`story-previews/${previewHash}`),
+        getImageCacheMetadataKey(`story-previews/${previewKey}`),
       ),
       {
         content_type: "image/jpeg",
-        path: `images/story-previews/${previewHash}.jpg`,
-        source: previewSource,
+        path: `images/story-previews/${previewKey}.jpg`,
       },
     );
   });
@@ -151,7 +149,6 @@ describe("cacheReportImages", () => {
     await imageCacheStorage.setItem(getImageCacheMetadataKey(`avatars/${imageHash}`), {
       content_type: "image/webp",
       path: `images/avatars/${imageHash}.webp`,
-      source,
     });
 
     const cachedImages = await cacheReportImages(createReport(source), {
@@ -171,22 +168,21 @@ describe("cacheReportImages", () => {
   test("converts cached webp story previews to jpeg on reuse", async () => {
     const source = "https://example.com/avatar.jpg";
     const previewSource = "https://example.com/story-preview.webp";
-    const previewHash = getImageHash("story-pk");
+    const previewKey = "story-pk";
     const { imageCacheStorage } = createCacheStorages(
       createStorage({
         driver: memoryDriver(),
       }),
     );
     await imageCacheStorage.setItem(
-      getImageCacheMetadataKey(`story-previews/${previewHash}`),
+      getImageCacheMetadataKey(`story-previews/${previewKey}`),
       {
         content_type: "image/webp",
-        path: `images/story-previews/${previewHash}.webp`,
-        source: previewSource,
+        path: `images/story-previews/${previewKey}.webp`,
       },
     );
     await imageCacheStorage.setItemRaw(
-      `story-previews/${previewHash}.webp`,
+      `story-previews/${previewKey}.webp`,
       Buffer.from("webp-bytes"),
     );
 
@@ -213,20 +209,19 @@ describe("cacheReportImages", () => {
 
     assert.equal(
       cachedImages.storyPreviewPathByUrl.get(previewSource),
-      `../images/story-previews/${previewHash}.jpg`,
+      `../images/story-previews/${previewKey}.jpg`,
     );
     assert.deepEqual(
-      await imageCacheStorage.getItemRaw(`story-previews/${previewHash}.jpg`),
+      await imageCacheStorage.getItemRaw(`story-previews/${previewKey}.jpg`),
       Buffer.from("jpeg:webp-bytes"),
     );
     assert.deepEqual(
       await imageCacheStorage.getItem(
-        getImageCacheMetadataKey(`story-previews/${previewHash}`),
+        getImageCacheMetadataKey(`story-previews/${previewKey}`),
       ),
       {
         content_type: "image/jpeg",
-        path: `images/story-previews/${previewHash}.jpg`,
-        source: previewSource,
+        path: `images/story-previews/${previewKey}.jpg`,
       },
     );
   });
@@ -235,7 +230,7 @@ describe("cacheReportImages", () => {
     const source = "https://example.com/avatar.jpg";
     const firstPreviewSource = "https://example.com/story-preview.webp?signature=old";
     const secondPreviewSource = "https://example.com/story-preview.webp?signature=new";
-    const previewHash = getImageHash("story-pk");
+    const previewKey = "story-pk";
     const { imageCacheStorage } = createCacheStorages(
       createStorage({
         driver: memoryDriver(),
@@ -272,14 +267,14 @@ describe("cacheReportImages", () => {
     assert.equal(fetchCount, 2);
     assert.equal(
       first.storyPreviewPathByUrl.get(firstPreviewSource),
-      `../images/story-previews/${previewHash}.jpg`,
+      `../images/story-previews/${previewKey}.jpg`,
     );
     assert.equal(
       second.storyPreviewPathByUrl.get(secondPreviewSource),
-      `../images/story-previews/${previewHash}.jpg`,
+      `../images/story-previews/${previewKey}.jpg`,
     );
     assert.deepEqual(
-      await imageCacheStorage.getItemRaw(`story-previews/${previewHash}.jpg`),
+      await imageCacheStorage.getItemRaw(`story-previews/${previewKey}.jpg`),
       Buffer.from("jpeg:story"),
     );
   });

@@ -5,7 +5,7 @@ import process from "node:process";
 import { pathToFileURL } from "node:url";
 import {
   BASE_CACHE_DIR,
-  getStoryCacheKey,
+  getMediaCacheKey,
   REPORTS_STORAGE_DIR,
   reportsStorage,
   storiesStorage,
@@ -219,7 +219,7 @@ export async function backfillReportStoryMediaTypes(
       }
 
       const cachedMediaType = await getCachedStoryMediaType(
-        cacheKeyByPk.get(story.media_pk) ?? getStoryCacheKey(story.media_pk),
+        cacheKeyByPk.get(story.media_pk) ?? getMediaCacheKey(story.media_pk),
         storage,
       );
       story.media_type = cachedMediaType;

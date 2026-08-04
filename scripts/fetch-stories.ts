@@ -2,7 +2,7 @@ import process from "node:process";
 import { pathToFileURL } from "node:url";
 import { recognizeAppleCaption } from "./lib/apple-ocr-service.ts";
 import {
-  getStoryCacheKey,
+  getMediaCacheKey,
   storiesStorage,
 } from "./lib/cache-service.ts";
 import { createLogger, type Logger } from "./lib/logging-service.ts";
@@ -232,7 +232,7 @@ async function getCachedStoryItem(
   mediaPk: string,
   storyStorage: StoryStorage,
 ): Promise<StoryItem | null> {
-  const cachedValue = await storyStorage.getItem(getStoryCacheKey(mediaPk));
+  const cachedValue = await storyStorage.getItem(getMediaCacheKey(mediaPk));
 
   if (!cachedValue) {
     return null;
@@ -250,7 +250,7 @@ async function cacheStoryItem(
   item: StoryItem,
   storyStorage: StoryStorage,
 ): Promise<void> {
-  await storyStorage.setItem(getStoryCacheKey(item.pk), item);
+  await storyStorage.setItem(getMediaCacheKey(item.pk), item);
 }
 
 async function requestWithRetry<T>(
@@ -1163,7 +1163,7 @@ export async function fetchStoriesManifest(
       const failureIndex = failureByMediaPk.get(mediaPk);
       return {
         apple_caption: NO_APPLE_CAPTION,
-        cache_key: getStoryCacheKey(mediaPk),
+        cache_key: getMediaCacheKey(mediaPk),
         ...(failureIndex === undefined ? {} : { failure_index: failureIndex }),
         ig_caption: getAccessibilityCaption(mediaPk, cachedItems),
         locations: getStoryLocations(mediaPk, cachedItems),

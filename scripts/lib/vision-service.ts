@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import path from "node:path";
 import { Ollama as VisionSdk, type Fetch as VisionFetch } from "ollama";
 import {
-  getVisionCacheKey,
+  getMediaCacheKey,
   visionStorage,
 } from "./cache-service.ts";
 import type { CachedReportImages } from "./image-cache-service.ts";
@@ -61,7 +61,7 @@ type VisionClient = Pick<VisionSdk, "generate">;
 type ResolvedVisionOptions = Required<
   Omit<VisionOptions, "endpoint" | "fetchVision" | "logger">
 > & {
-  cacheIdentity: string;
+  mediaPk: string;
   logger: Logger;
   client: VisionClient;
 };
@@ -69,23 +69,15 @@ type ResolvedVisionOptions = Required<
 function isUsableVisionCacheEntry(
   cachedEntry: VisionCacheEntry | null | undefined,
   options: {
-    cacheIdentity: string;
     model: string;
-    prompt: string;
     promptHash: string;
-    source: string;
   },
 ): cachedEntry is VisionCacheEntry {
   return Boolean(
     cachedEntry &&
-      cachedEntry.cache_identity === options.cacheIdentity &&
       cachedEntry.model === options.model &&
       cachedEntry.prompt_hash === options.promptHash,
   );
-}
-
-function getImageHash(source: string): string {
-  return createHash("sha256").update(source).digest("hex");
 }
 
 function getPromptHash(prompt: string): string {
@@ -218,8 +210,7 @@ async function analyzeImage(
   imagePath: string,
   options: ResolvedVisionOptions,
 ): Promise<VisionResult> {
-  const imageHash = getImageHash(options.cacheIdentity);
-  const cacheKey = getVisionCacheKey(imageHash, options.model);
+  const cacheKey = getMediaCacheKey(options.mediaPk);
   const promptHash = getPromptHash(options.prompt);
   const cachedEntry = await options.storage.getItem(cacheKey);
 
@@ -227,7 +218,6 @@ async function analyzeImage(
     isUsableVisionCacheEntry(cachedEntry, {
       ...options,
       promptHash,
-      source,
     })
   ) {
     const cachedResult = normalizeCachedResult(cachedEntry.result);
@@ -253,12 +243,9 @@ async function analyzeImage(
     const result = parseVisionResponse(payload.response);
 
     await options.storage.setItem(cacheKey, {
-      cache_identity: options.cacheIdentity,
-      image_path: imagePath,
       model: options.model,
       prompt_hash: promptHash,
       result,
-      source,
     });
 
     options.logger.info(`vision completed for ${source}`);
@@ -298,34 +285,34 @@ export async function resolveVisionForReport(
   const previewEntries = report.output.users
     .flatMap((user) =>
       user.stories.map((story) => ({
-        cacheIdentity: story.media_pk,
+        mediaPk: story.media_pk,
         source: story.preview_image_url?.trim() ?? null,
       })),
     )
     .filter(
-      (entry): entry is { cacheIdentity: string; source: string } =>
+      (entry): entry is { mediaPk: string; source: string } =>
         Boolean(entry.source),
     );
-  const entriesByIdentity = new Map<string, { cacheIdentity: string; source: string }>();
-  const sourcesByIdentity = new Map<string, string[]>();
+  const entriesByMediaPk = new Map<string, { mediaPk: string; source: string }>();
+  const sourcesByMediaPk = new Map<string, string[]>();
 
   for (const entry of previewEntries) {
-    entriesByIdentity.set(entry.cacheIdentity, entry);
-    sourcesByIdentity.set(entry.cacheIdentity, [
-      ...(sourcesByIdentity.get(entry.cacheIdentity) ?? []),
+    entriesByMediaPk.set(entry.mediaPk, entry);
+    sourcesByMediaPk.set(entry.mediaPk, [
+      ...(sourcesByMediaPk.get(entry.mediaPk) ?? []),
       entry.source,
     ]);
   }
 
-  const uniquePreviewEntries = [...entriesByIdentity.values()];
+  const uniquePreviewEntries = [...entriesByMediaPk.values()];
 
-  for (const [index, { cacheIdentity, source }] of uniquePreviewEntries.entries()) {
+  for (const [index, { mediaPk, source }] of uniquePreviewEntries.entries()) {
     logger.progress("vision", index + 1, uniquePreviewEntries.length);
     const cachedPath = cachedImages.storyPreviewPathByUrl.get(source);
 
     if (!cachedPath) {
       logger.warn(`vision skipped for ${source}: no cached preview`);
-      for (const previewSource of sourcesByIdentity.get(cacheIdentity) ?? [source]) {
+      for (const previewSource of sourcesByMediaPk.get(mediaPk) ?? [source]) {
         resultByPreviewUrl.set(
           previewSource,
           createFailureResult("vision failed: no cached preview"),
@@ -336,7 +323,7 @@ export async function resolveVisionForReport(
 
     if (path.extname(cachedPath).toLowerCase() !== ".jpg") {
       logger.warn(`vision skipped for ${source}: preview is not JPEG`);
-      for (const previewSource of sourcesByIdentity.get(cacheIdentity) ?? [source]) {
+      for (const previewSource of sourcesByMediaPk.get(mediaPk) ?? [source]) {
         resultByPreviewUrl.set(
           previewSource,
           createFailureResult("vision failed: preview is not JPEG"),
@@ -347,7 +334,7 @@ export async function resolveVisionForReport(
 
     const imagePath = resolveReportImagePath(options.reportDirectory, cachedPath);
     const result = await analyzeImage(source, imagePath, {
-      cacheIdentity,
+      mediaPk,
       logger,
       model,
       client,
@@ -356,7 +343,7 @@ export async function resolveVisionForReport(
       storage,
     });
 
-    for (const previewSource of sourcesByIdentity.get(cacheIdentity) ?? [source]) {
+    for (const previewSource of sourcesByMediaPk.get(mediaPk) ?? [source]) {
       resultByPreviewUrl.set(previewSource, result);
     }
   }

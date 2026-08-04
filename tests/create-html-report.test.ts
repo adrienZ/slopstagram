@@ -3,7 +3,7 @@ import { describe, test } from "node:test";
 import { createStorage } from "unstorage";
 import memoryDriver from "unstorage/drivers/memory";
 import { backfillReportStoryMediaTypes } from "../scripts/create-html-report.ts";
-import { getStoryCacheKey } from "../scripts/lib/cache-service.ts";
+import { getMediaCacheKey } from "../scripts/lib/cache-service.ts";
 import type { StoriesManifestReport, StoryItem } from "../scripts/lib/types.ts";
 
 function createLegacyReport(): StoriesManifestReport {
@@ -20,7 +20,7 @@ function createLegacyReport(): StoriesManifestReport {
           stories: [
             {
               apple_caption: "apple image",
-              cache_key: getStoryCacheKey("story-pk-1"),
+              cache_key: getMediaCacheKey("story-pk-1"),
               ig_caption: "ig image",
               locations: [],
               media_pk: "story-pk-1",
@@ -30,7 +30,7 @@ function createLegacyReport(): StoriesManifestReport {
             },
             {
               apple_caption: "apple video",
-              cache_key: getStoryCacheKey("story-pk-2"),
+              cache_key: getMediaCacheKey("story-pk-2"),
               ig_caption: "ig video",
               locations: [],
               media_pk: "story-pk-2",
@@ -98,11 +98,11 @@ describe("backfillReportStoryMediaTypes", () => {
     });
     const report = createLegacyReport();
 
-    await storage.setItem(getStoryCacheKey("story-pk-1"), {
+    await storage.setItem(getMediaCacheKey("story-pk-1"), {
       media_type: 1,
       pk: "story-pk-1",
     });
-    await storage.setItem(getStoryCacheKey("story-pk-2"), {
+    await storage.setItem(getMediaCacheKey("story-pk-2"), {
       media_type: 2,
       pk: "story-pk-2",
     });

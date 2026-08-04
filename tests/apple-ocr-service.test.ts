@@ -4,7 +4,7 @@ import { createStorage } from "unstorage";
 import memoryDriver from "unstorage/drivers/memory";
 import {
   createCacheStorages,
-  getAppleCaptionCacheKey,
+  getMediaCacheKey,
 } from "../scripts/lib/cache-service.ts";
 import { recognizeAppleCaption } from "../scripts/lib/apple-ocr-service.ts";
 import type { StoryItem } from "../scripts/lib/types.ts";
@@ -37,7 +37,7 @@ describe("recognizeAppleCaption", () => {
         driver: memoryDriver(),
       }),
     );
-    await appleCaptionsStorage.setItem(getAppleCaptionCacheKey("story-1"), {
+    await appleCaptionsStorage.setItem(getMediaCacheKey("story-1"), {
       caption: "cached caption",
       source: "https://example.com/story-1.jpg",
     });
@@ -75,7 +75,7 @@ describe("recognizeAppleCaption", () => {
 
     assert.equal(caption, "fresh caption");
     assert.deepEqual(
-      await appleCaptionsStorage.getItem(getAppleCaptionCacheKey("story-2")),
+      await appleCaptionsStorage.getItem(getMediaCacheKey("story-2")),
       {
         caption: "fresh caption",
         source: "https://example.com/story-2.jpg",

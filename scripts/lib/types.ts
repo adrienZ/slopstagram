@@ -162,7 +162,6 @@ export type StoryFetchCounts = {
 export type ImageCacheEntry = {
   content_type: string | null;
   path: string;
-  source: string;
 };
 
 export type AppleCaptionCacheEntry = {
@@ -176,12 +175,9 @@ export type VisionResult = {
 };
 
 export type VisionCacheEntry = {
-  cache_identity: string;
-  image_path: string;
   model: string;
   prompt_hash: string;
   result: VisionResult;
-  source: string;
 };
 
 export type OllamaUserSummaryCacheEntry = {

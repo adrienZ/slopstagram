@@ -52,20 +52,12 @@ export function createCacheStorages(
   };
 }
 
-export function getStoryCacheKey(mediaPk: string): string {
-  return `${mediaPk}.json`;
-}
-
-export function getAppleCaptionCacheKey(mediaPk: string): string {
+export function getMediaCacheKey(mediaPk: string): string {
   return `${mediaPk}.json`;
 }
 
 export function getImageCacheMetadataKey(imageKey: string): string {
   return `${imageKey}.json`;
-}
-
-export function getVisionCacheKey(imageHash: string, model: string): string {
-  return `${imageHash}-${model.replaceAll(/[^a-zA-Z0-9._-]/g, "_")}.json`;
 }
 
 export function getOllamaUserSummaryCacheKey(sourceHash: string): string {

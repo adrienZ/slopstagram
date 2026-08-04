@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import {
   appleCaptionsStorage,
-  getAppleCaptionCacheKey,
+  getMediaCacheKey,
 } from "./cache-service.ts";
 import { getLargestVersion } from "./parser-service.ts";
 import { NO_APPLE_CAPTION } from "./report-constants.ts";
@@ -62,7 +62,7 @@ export async function recognizeAppleCaption(
 ): Promise<string> {
   const source = getOcrSource(story);
   const storage = options.storage ?? appleCaptionsStorage;
-  const cacheKey = getAppleCaptionCacheKey(story.pk);
+  const cacheKey = getMediaCacheKey(story.pk);
   const cachedEntry = await storage.getItem(cacheKey);
 
   if (

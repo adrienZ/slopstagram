@@ -9,7 +9,7 @@ import {
 } from "../scripts/fetch-stories.ts";
 import {
   createCacheStorages,
-  getStoryCacheKey,
+  getMediaCacheKey,
 } from "../scripts/lib/cache-service.ts";
 import type { Logger } from "../scripts/lib/logging-service.ts";
 import type { StoryItem, StoryReel, StoryTrayEntry } from "../scripts/lib/types.ts";
@@ -130,8 +130,8 @@ function createMockLogger(): Logger & { messages: string[] } {
 describe("fetchStoriesManifest", () => {
   test("uses cached media items without calling reels media", async () => {
     const { storiesStorage } = createTestStorages();
-    await storiesStorage.setItem(getStoryCacheKey("m1"), storyItem("m1"));
-    await storiesStorage.setItem(getStoryCacheKey("m2"), storyItem("m2"));
+    await storiesStorage.setItem(getMediaCacheKey("m1"), storyItem("m1"));
+    await storiesStorage.setItem(getMediaCacheKey("m2"), storyItem("m2"));
 
     const client = createClient(
       [
@@ -242,7 +242,7 @@ describe("fetchStoriesManifest", () => {
   test("fetches only reels with missing media and caches returned items", async () => {
     const { storiesStorage } = createTestStorages();
     await storiesStorage.setItem(
-      getStoryCacheKey("m1"),
+      getMediaCacheKey("m1"),
       storyItem("m1", "Cached image caption"),
     );
 
@@ -269,7 +269,7 @@ describe("fetchStoriesManifest", () => {
     });
 
     assert.deepEqual(client.reelsCalls, [["r2"]]);
-    assert.equal(await storiesStorage.hasItem(getStoryCacheKey("m2")), true);
+    assert.equal(await storiesStorage.hasItem(getMediaCacheKey("m2")), true);
     assert.deepEqual(
       report.manifest.users.map((user) => ({
         apple_caption: user.stories[0]?.apple_caption,

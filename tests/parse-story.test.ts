@@ -9,7 +9,7 @@ import {
 } from "../scripts/lib/parser-service.ts";
 import {
   createCacheStorages,
-  getStoryCacheKey,
+  getMediaCacheKey,
 } from "../scripts/lib/cache-service.ts";
 import { STORY_MEDIA_TYPES } from "../scripts/lib/types.ts";
 import type {
@@ -123,7 +123,7 @@ describe("parseStoryReport", () => {
             stories: [
               {
                 apple_caption: "Cached apple caption",
-                cache_key: getStoryCacheKey("cached-pk"),
+                cache_key: getMediaCacheKey("cached-pk"),
                 ig_caption: "Cached image caption",
                 locations: [],
                 media_pk: "cached-pk",
@@ -174,7 +174,7 @@ describe("parseStoryReport", () => {
       },
     };
 
-    await storiesStorage.setItem(getStoryCacheKey("cached-pk"), cachedItem);
+    await storiesStorage.setItem(getMediaCacheKey("cached-pk"), cachedItem);
 
     assert.deepEqual(
       await parseStoryManifestReport(
