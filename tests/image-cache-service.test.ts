@@ -45,10 +45,11 @@ function createReport(
             {
               apple_caption: "apple text",
               ig_caption: "ig text",
+              locations: [],
               media_pk: "story-pk",
               preview_image_url: storyPreviewUrl,
               stickers: [],
-              status: "cached",
+              status: "ok",
             },
           ],
           username: "avataruser",

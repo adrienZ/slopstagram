@@ -36,20 +36,22 @@ function createReport(): StoriesManifestReport {
               apple_caption: "apple <text>",
               ig_caption:
                 "Photo by Html User on July 26, 2026. May be an image of text.",
+              locations: ["Cafe Example, 1 Rue Example, Paris"],
               media_type: "image",
               media_pk: "story-pk-1",
               preview_image_url: "https://example.com/story.jpg",
               stickers: ["link:A & B"],
-              status: "cached",
+              status: "ok",
             },
             {
               apple_caption: " ",
               ig_caption: " ",
+              locations: [],
               media_type: "video",
               media_pk: "story-pk-2",
               preview_image_url: "https://example.com/story-2.jpg",
               stickers: [],
-              status: "cached",
+              status: "ok",
             },
           ],
           username: "htmluser",
@@ -72,8 +74,14 @@ describe("formatStoriesReportHtml", () => {
     const report = createReport();
     const userKey = getReportUserKey(report.output.users[0]!, 0);
     const html = formatStoriesReportHtml(report, {
-      ollamaVisionByPreviewUrl: new Map([
-        ["https://example.com/story.jpg", "vision | text\nsecond line"],
+      visionByPreviewUrl: new Map([
+        [
+          "https://example.com/story.jpg",
+          {
+            text: "OCR | text",
+            visual: "vision | text\nsecond line",
+          },
+        ],
       ]),
       profilePicPathByUrl: new Map([
         ["https://example.com/avatar.jpg", "../images/avatars/avatar.jpg"],
@@ -112,7 +120,7 @@ describe("formatStoriesReportHtml", () => {
     );
     assert.match(
       html,
-      /<button class="story-image-button" type="button" data-full-src="\.\.\/images\/story-previews\/story\.jpg" data-full-alt="aperçu story-pk-1" data-story-url="https:\/\/www\.instagram\.com\/stories\/htmluser\/story-pk-1\/" data-user-name="Html &quot;User&quot; \(htmluser\)" data-user-avatar="\.\.\/images\/avatars\/avatar\.jpg" data-user-image-index="1" data-user-image-count="2" data-story-media-type="Image" data-story-media-pk="story-pk-1" data-story-stickers="link:A &amp; B" data-story-ig-caption="Photo by Html User on July 26, 2026\. May be an image of text\." data-story-apple-caption="apple &lt;text&gt;" data-story-ollama-vision="vision \| text\nsecond line" aria-label="Ouvrir aperçu story-pk-1">/,
+      /<button class="story-image-button" type="button" data-full-src="\.\.\/images\/story-previews\/story\.jpg" data-full-alt="aperçu story-pk-1" data-story-url="https:\/\/www\.instagram\.com\/stories\/htmluser\/story-pk-1\/" data-user-name="Html &quot;User&quot; \(htmluser\)" data-user-avatar="\.\.\/images\/avatars\/avatar\.jpg" data-user-image-index="1" data-user-image-count="2" data-story-media-type="Image" data-story-media-pk="story-pk-1" data-story-stickers="link:A &amp; B" data-story-locations="Cafe Example, 1 Rue Example, Paris" data-story-ig-caption="Photo by Html User on July 26, 2026\. May be an image of text\." data-story-apple-caption="apple &lt;text&gt;" data-story-vision-ocr="OCR \| text" data-story-vision-description="vision \| text\nsecond line" aria-label="Ouvrir aperçu story-pk-1">/,
     );
     assert.match(html, /data-story-media-type="Vidéo"/);
     assert.doesNotMatch(html, /data-story-status/);
@@ -163,15 +171,29 @@ describe("formatStoriesReportHtml", () => {
       html,
       /<tr><th scope="row">Instagram<\/th><td class="lightbox-detail-ig-caption"><\/td><\/tr>/,
     );
-    assert.doesNotMatch(html, /Statut/);
-    assert.doesNotMatch(html, /lightbox-detail-status/);
-    assert.match(html, /<details class="lightbox-vision-details">/);
-    assert.match(html, /<summary>Résumé vision<\/summary>/);
     assert.match(
       html,
-      /<\/details>\n<a class="lightbox-story-link" href="#" target="_blank" rel="noreferrer" hidden>Voir cette story sur Instagram<\/a>\n<\/aside>/,
+      /<tr><th scope="row">Lieux<\/th><td class="lightbox-detail-locations"><\/td><\/tr>/,
     );
-    assert.doesNotMatch(html, /<details class="lightbox-vision-details" open>/);
+    assert.match(
+      html,
+      /<tr><th scope="row">Apple OCR<\/th><td class="lightbox-detail-apple-caption"><\/td><\/tr>/,
+    );
+    assert.match(
+      html,
+      /<tr><th scope="row">Vision OCR<\/th><td class="lightbox-detail-vision-ocr"><\/td><\/tr>/,
+    );
+    assert.match(
+      html,
+      /<tr><th scope="row">Vision description<\/th><td class="lightbox-detail-vision-description"><\/td><\/tr>/,
+    );
+    assert.doesNotMatch(html, /Statut/);
+    assert.doesNotMatch(html, /lightbox-detail-status/);
+    assert.match(
+      html,
+      /<\/table>\n<a class="lightbox-story-link" href="#" target="_blank" rel="noreferrer" hidden>Voir cette story sur Instagram<\/a>\n<\/aside>/,
+    );
+    assert.doesNotMatch(html, /lightbox-vision-details/);
     assert.match(html, /@media \(max-width:760px\)/);
     assert.match(html, /<div class="lightbox-header" hidden>/);
     assert.match(html, /<img class="lightbox-avatar" alt="" hidden>/);
@@ -201,12 +223,23 @@ describe("formatStoriesReportHtml", () => {
     assert.match(html, /lightboxImage\.src=button\.dataset\.fullSrc/);
     assert.match(html, /lightboxMediaType\.textContent=button\.dataset\.storyMediaType/);
     assert.match(html, /lightboxMediaPk\.textContent=button\.dataset\.storyMediaPk/);
+    assert.match(
+      html,
+      /lightboxLocations\.textContent=button\.dataset\.storyLocations/,
+    );
     assert.doesNotMatch(html, /lightboxStatus/);
     assert.match(
       html,
-      /lightboxVisionText\.textContent=button\.dataset\.storyOllamaVision/,
+      /lightboxAppleCaption\.textContent=button\.dataset\.storyAppleCaption/,
     );
-    assert.match(html, /lightboxVisionDetails\.open=false/);
+    assert.match(
+      html,
+      /lightboxVisionOcr\.textContent=button\.dataset\.storyVisionOcr/,
+    );
+    assert.match(
+      html,
+      /lightboxVisionDescription\.textContent=button\.dataset\.storyVisionDescription/,
+    );
   });
 
   test("orders users by manifest rank in the html report", () => {

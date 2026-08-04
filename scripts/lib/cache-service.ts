@@ -5,7 +5,7 @@ import type {
   CacheStorageSet,
   ImageCacheEntry,
   OllamaUserSummaryCacheEntry,
-  OllamaVisionCacheEntry,
+  VisionCacheEntry,
   StoriesManifestReport,
   StoryItem,
 } from "./types.ts";
@@ -14,7 +14,7 @@ export const BASE_CACHE_DIR = ".tmp";
 export const APPLE_CAPTIONS_STORAGE_DIR = "apple-captions";
 export const IMAGES_STORAGE_DIR = "images";
 export const OLLAMA_USER_SUMMARIES_STORAGE_DIR = "ollama-user-summaries";
-export const OLLAMA_VISION_STORAGE_DIR = "ollama-vision";
+export const VISION_STORAGE_DIR = "vision";
 export const REPORTS_STORAGE_DIR = "reports";
 export const STORIES_STORAGE_DIR = "stories";
 
@@ -40,9 +40,9 @@ export function createCacheStorages(
       storage,
       OLLAMA_USER_SUMMARIES_STORAGE_DIR,
     ),
-    ollamaVisionStorage: prefixStorage<OllamaVisionCacheEntry>(
+    visionStorage: prefixStorage<VisionCacheEntry>(
       storage,
-      OLLAMA_VISION_STORAGE_DIR,
+      VISION_STORAGE_DIR,
     ),
     reportsStorage: prefixStorage<StoriesManifestReport>(
       storage,
@@ -64,7 +64,7 @@ export function getImageCacheMetadataKey(imageKey: string): string {
   return `${imageKey}.json`;
 }
 
-export function getOllamaVisionCacheKey(imageHash: string, model: string): string {
+export function getVisionCacheKey(imageHash: string, model: string): string {
   return `${imageHash}-${model.replaceAll(/[^a-zA-Z0-9._-]/g, "_")}.json`;
 }
 
@@ -76,7 +76,7 @@ export const {
   appleCaptionsStorage,
   imageCacheStorage,
   ollamaUserSummaryStorage,
-  ollamaVisionStorage,
+  visionStorage,
   reportsStorage,
   storiesStorage,
 } = createCacheStorages();

@@ -11,7 +11,7 @@ import {
 import { resolveOllamaUserSummariesForReport } from "./lib/ollama-user-summary-service.ts";
 import { cacheReportImages } from "./lib/image-cache-service.ts";
 import { createLogger, type Logger } from "./lib/logging-service.ts";
-import { resolveOllamaVisionForReport } from "./lib/ollama-vision-service.ts";
+import { resolveVisionForReport } from "./lib/vision-service.ts";
 import { formatStoriesReportHtml } from "./lib/report-html-service.ts";
 import { fetchStories } from "./fetch-stories.ts";
 
@@ -117,7 +117,7 @@ async function main(): Promise<void> {
     logger,
     reportDirectory: resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR),
   });
-  const ollamaVisionByPreviewUrl = await resolveOllamaVisionForReport(
+  const visionByPreviewUrl = await resolveVisionForReport(
     report,
     cachedImages,
     {
@@ -127,13 +127,13 @@ async function main(): Promise<void> {
   );
   const userSummaryByUserKey = await resolveOllamaUserSummariesForReport(report, {
     logger,
-    ollamaVisionByPreviewUrl,
+    visionByPreviewUrl,
   });
   await writeFile(
     htmlOutputPath,
     formatStoriesReportHtml(report, {
       ...cachedImages,
-      ollamaVisionByPreviewUrl,
+      visionByPreviewUrl,
       userSummaryByUserKey,
     }),
     "utf8",

@@ -45,10 +45,11 @@ function createReport(): StoriesManifestReport {
             {
               apple_caption: "street food menu",
               ig_caption: "Photo by Summary User on July 26, 2026. May be food.",
+              locations: ["Paris Market, 10 Rue Food, Paris"],
               media_pk: "story-pk",
               preview_image_url: "https://example.com/story.jpg",
               stickers: ["location:Paris"],
-              status: "cached",
+              status: "ok",
             },
           ],
           username: "summaryuser",
@@ -67,16 +68,29 @@ describe("resolveOllamaUserSummariesForReport", () => {
     );
     const report = createReport();
     const userKey = getReportUserKey(report.output.users[0]!, 0);
-    const ollamaVisionByPreviewUrl = new Map([
-      ["https://example.com/story.jpg", "A food stall with readable prices."],
+    const visionByPreviewUrl = new Map([
+      [
+        "https://example.com/story.jpg",
+        {
+          text: "menu prices",
+          visual: "A food stall with readable prices.",
+        },
+      ],
     ]);
     let runCount = 0;
 
     const first = await resolveOllamaUserSummariesForReport(report, {
-      ollamaVisionByPreviewUrl,
+      visionByPreviewUrl,
       runOllamaUserSummary: async (prompt) => {
         runCount += 1;
         assert.match(prompt, /A food stall with readable prices\./);
+        assert.match(prompt, /Paris Market/);
+        assert.doesNotMatch(prompt, /May be food/);
+        assert.doesNotMatch(prompt, /menu prices/);
+        assert.doesNotMatch(prompt, /ig_caption/);
+        assert.doesNotMatch(prompt, /ocr_text/);
+        assert.doesNotMatch(prompt, /"status"/);
+        assert.doesNotMatch(prompt, /"ok"/);
         assert.match(prompt, /Réponds en français\./);
 
         return JSON.stringify({
@@ -87,7 +101,7 @@ describe("resolveOllamaUserSummariesForReport", () => {
       storage: ollamaUserSummaryStorage,
     });
     const second = await resolveOllamaUserSummariesForReport(report, {
-      ollamaVisionByPreviewUrl,
+      visionByPreviewUrl,
       runOllamaUserSummary: async () => {
         runCount += 1;
         return "should not be used";
@@ -176,7 +190,8 @@ describe("resolveOllamaUserSummariesForReport", () => {
           required: ["summary"],
           type: "object",
         });
-        assert.match(String(body.prompt), /street food menu/);
+        assert.doesNotMatch(String(body.prompt), /May be food/);
+        assert.doesNotMatch(String(body.prompt), /menu prices/);
 
         return new Response(
           JSON.stringify({
@@ -241,7 +256,7 @@ describe("resolveOllamaUserSummariesForReport", () => {
 
     assert.equal(
       summaries.get(userKey),
-      "Summary User a partagé 1 story. Éléments visibles: street food menu; May be food.; location:Paris.",
+      "Summary User a partagé 1 story. Éléments visibles: location:Paris; Paris Market, 10 Rue Food, Paris.",
     );
     assert.deepEqual(keys, []);
   });

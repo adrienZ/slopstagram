@@ -1,13 +1,14 @@
 import { getReportUserKey } from "./report-user-key-service.ts";
 import {
   STORY_MEDIA_TYPES,
+  type VisionResult,
   type StoriesManifestReport,
   type StoryOutputUser,
   type StoryMediaType,
 } from "./types.ts";
 
 export type FormatStoriesReportHtmlOptions = {
-  ollamaVisionByPreviewUrl?: Map<string, string>;
+  visionByPreviewUrl?: Map<string, VisionResult>;
   profilePicPathByUrl?: Map<string, string>;
   storyPreviewPathByUrl?: Map<string, string>;
   timeZone?: string;
@@ -17,9 +18,11 @@ export type FormatStoriesReportHtmlOptions = {
 type LightboxStoryDetails = {
   appleCaption: string;
   igCaption: string;
+  locations: string;
   mediaType: StoryMediaType | null;
   mediaPk: string;
-  ollamaVision: string;
+  visionDescription: string;
+  visionOcr: string;
   stickers: string;
 };
 
@@ -138,6 +141,13 @@ function formatStoryMediaType(mediaType: StoryMediaType | null | undefined): str
   return "";
 }
 
+function formatStoryLocations(locations: string[] | undefined): string {
+  return (locations ?? [])
+    .map((location) => location.trim())
+    .filter((location) => location.length > 0)
+    .join("\n");
+}
+
 function getUserManifestOrderByReelId(
   report: StoriesManifestReport,
 ): Map<string, number> {
@@ -217,9 +227,11 @@ function formatPreviewButton(
     ` data-story-media-type="${escapeHtml(formatStoryMediaType(storyDetails.mediaType))}"`,
     ` data-story-media-pk="${escapeHtml(storyDetails.mediaPk)}"`,
     ` data-story-stickers="${escapeHtml(storyDetails.stickers)}"`,
+    ` data-story-locations="${escapeHtml(storyDetails.locations)}"`,
     ` data-story-ig-caption="${escapeHtml(storyDetails.igCaption)}"`,
     ` data-story-apple-caption="${escapeHtml(storyDetails.appleCaption)}"`,
-    ` data-story-ollama-vision="${escapeHtml(storyDetails.ollamaVision)}"`,
+    ` data-story-vision-ocr="${escapeHtml(storyDetails.visionOcr)}"`,
+    ` data-story-vision-description="${escapeHtml(storyDetails.visionDescription)}"`,
     ` aria-label="Ouvrir ${escapedAlt}">`,
     formatImage(source, alt, "story-preview"),
     "</button>",
@@ -248,17 +260,25 @@ export function formatStoriesReportHtml(
           ? options.storyPreviewPathByUrl?.get(previewImageUrl) ?? previewImageUrl
           : null;
         const storyUrl = getInstagramStoryMediaUrl(user.username, story.media_pk);
-        const ollamaVision = previewImageUrl
-          ? options.ollamaVisionByPreviewUrl?.get(previewImageUrl) ?? ""
-          : "";
+        const vision = previewImageUrl
+          ? options.visionByPreviewUrl?.get(previewImageUrl) ?? ""
+          : null;
 
         return previewImagePath
           ? {
               appleCaption: story.apple_caption.trim(),
               igCaption: story.ig_caption.trim(),
+              locations: formatStoryLocations(story.locations),
               mediaType: story.media_type ?? null,
               mediaPk: story.media_pk,
-              ollamaVision: ollamaVision.trim(),
+              visionOcr:
+                typeof vision === "string"
+                  ? ""
+                  : vision?.text.trim() ?? "",
+              visionDescription:
+                typeof vision === "string"
+                  ? vision.trim()
+                  : vision?.visual.trim() ?? "",
               previewImagePath,
               stickers: story.stickers.join(", "),
               storyUrl,
@@ -285,9 +305,11 @@ export function formatStoriesReportHtml(
             {
               appleCaption: entry.appleCaption,
               igCaption: entry.igCaption,
+              locations: entry.locations,
               mediaType: entry.mediaType,
               mediaPk: entry.mediaPk,
-              ollamaVision: entry.ollamaVision,
+              visionDescription: entry.visionDescription,
+              visionOcr: entry.visionOcr,
               stickers: entry.stickers,
             },
           ),
@@ -363,9 +385,6 @@ export function formatStoriesReportHtml(
     ".lightbox-details-table tr:last-child th,.lightbox-details-table tr:last-child td{border-bottom:0}",
     ".lightbox-details-table th{width:128px;color:#5b6876;background:#eef2f6;font-weight:650}",
     ".lightbox-details-table td{overflow-wrap:anywhere;white-space:pre-wrap}",
-    ".lightbox-vision-details{margin:14px 0 0;border:1px solid #d8dee7;border-radius:8px;background:#fff}",
-    ".lightbox-vision-details summary{padding:11px 12px;cursor:pointer;font-size:14px;font-weight:650;color:#334250}",
-    ".lightbox-vision-text{margin:0;padding:0 12px 12px;color:#1f2933;font-size:14px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}",
     ".lightbox-close,.lightbox-nav{position:absolute;width:42px;height:42px;border-radius:8px;border:1px solid rgba(255,255,255,.35);background:rgba(8,12,18,.7);color:#fff;font-size:28px;line-height:1;cursor:pointer}",
     ".lightbox-close{top:16px;right:16px}",
     ".lightbox-nav{top:50%;transform:translateY(-50%)}",
@@ -374,7 +393,7 @@ export function formatStoriesReportHtml(
     ".lightbox-nav[hidden]{display:none}",
     "@media (max-width:760px){.image-lightbox[open]{align-items:stretch}.image-lightbox{padding:12px}.lightbox-content{flex-direction:column;width:100%;height:100%;max-height:none}.lightbox-preview-panel{flex:1 1 auto;max-width:none}.lightbox-details-panel{flex:0 1 auto;min-height:34%;padding:14px}.lightbox-image{max-height:calc(100% - 62px)}.lightbox-details-table,.lightbox-details-table tbody,.lightbox-details-table tr,.lightbox-details-table th,.lightbox-details-table td{display:block;width:auto}.lightbox-details-table tr{border-bottom:1px solid #d8dee7}.lightbox-details-table tr:last-child{border-bottom:0}.lightbox-details-table th,.lightbox-details-table td{border-bottom:0;padding:8px 10px}.lightbox-details-table th{background:#eef2f6}.lightbox-details-table td{padding-top:0}.lightbox-close{top:12px;right:12px}.lightbox-prev{left:12px}.lightbox-next{right:12px}}",
     "@media (max-width:640px){main{padding:24px 16px 40px}.user-header{gap:12px}.avatar,.avatar-placeholder{width:68px;height:68px}.user-title{display:block}.user-summary{font-size:19px}.story-preview{width:72vw;max-width:none}}",
-    "@media (prefers-color-scheme:dark){:root,body{background:#11161c;color:#e5e9ef}.user-summary{color:#d3dae3}.avatar-placeholder,.story-preview{background:#27313c}.lightbox-details-panel{background:#1b222b;color:#e5e9ef}.lightbox-details-table,.lightbox-vision-details{background:#11161c;border-color:#34404d}.lightbox-details-table th,.lightbox-details-table td{border-color:#34404d}.lightbox-details-table th{background:#27313c;color:#b8c3cf}.lightbox-details-table td,.lightbox-vision-text{color:#e5e9ef}.lightbox-vision-details summary{color:#e5e9ef}}",
+    "@media (prefers-color-scheme:dark){:root,body{background:#11161c;color:#e5e9ef}.user-summary{color:#d3dae3}.avatar-placeholder,.story-preview{background:#27313c}.lightbox-details-panel{background:#1b222b;color:#e5e9ef}.lightbox-details-table{background:#11161c;border-color:#34404d}.lightbox-details-table th,.lightbox-details-table td{border-color:#34404d}.lightbox-details-table th{background:#27313c;color:#b8c3cf}.lightbox-details-table td{color:#e5e9ef}}",
     "</style>",
     "</head>",
     "<body>",
@@ -403,14 +422,13 @@ export function formatStoriesReportHtml(
     '<tr><th scope="row">Type</th><td class="lightbox-detail-media-type"></td></tr>',
     '<tr><th scope="row">Story</th><td class="lightbox-detail-media-pk"></td></tr>',
     '<tr><th scope="row">Stickers</th><td class="lightbox-detail-stickers"></td></tr>',
+    '<tr><th scope="row">Lieux</th><td class="lightbox-detail-locations"></td></tr>',
     '<tr><th scope="row">Instagram</th><td class="lightbox-detail-ig-caption"></td></tr>',
-    '<tr><th scope="row">Apple</th><td class="lightbox-detail-apple-caption"></td></tr>',
+    '<tr><th scope="row">Apple OCR</th><td class="lightbox-detail-apple-caption"></td></tr>',
+    '<tr><th scope="row">Vision OCR</th><td class="lightbox-detail-vision-ocr"></td></tr>',
+    '<tr><th scope="row">Vision description</th><td class="lightbox-detail-vision-description"></td></tr>',
     "</tbody>",
     "</table>",
-    '<details class="lightbox-vision-details">',
-    "<summary>Résumé vision</summary>",
-    '<p class="lightbox-vision-text"></p>',
-    "</details>",
     '<a class="lightbox-story-link" href="#" target="_blank" rel="noreferrer" hidden>Voir cette story sur Instagram</a>',
     "</aside>",
     "</div>",
@@ -427,18 +445,19 @@ export function formatStoriesReportHtml(
     "const lightboxMediaType=lightbox?.querySelector('.lightbox-detail-media-type');",
     "const lightboxMediaPk=lightbox?.querySelector('.lightbox-detail-media-pk');",
     "const lightboxStickers=lightbox?.querySelector('.lightbox-detail-stickers');",
+    "const lightboxLocations=lightbox?.querySelector('.lightbox-detail-locations');",
     "const lightboxIgCaption=lightbox?.querySelector('.lightbox-detail-ig-caption');",
     "const lightboxAppleCaption=lightbox?.querySelector('.lightbox-detail-apple-caption');",
-    "const lightboxVisionDetails=lightbox?.querySelector('.lightbox-vision-details');",
-    "const lightboxVisionText=lightbox?.querySelector('.lightbox-vision-text');",
+    "const lightboxVisionOcr=lightbox?.querySelector('.lightbox-detail-vision-ocr');",
+    "const lightboxVisionDescription=lightbox?.querySelector('.lightbox-detail-vision-description');",
     "const lightboxPrev=lightbox?.querySelector('.lightbox-prev');",
     "const lightboxNext=lightbox?.querySelector('.lightbox-next');",
     "const storyImageButtons=Array.from(document.querySelectorAll('.story-image-button'));",
     "let lightboxIndex=-1;",
     "const updateLightboxNav=()=>{const canNavigate=storyImageButtons.length>1;if(lightboxPrev){lightboxPrev.hidden=!canNavigate;}if(lightboxNext){lightboxNext.hidden=!canNavigate;}};",
     "const updateLightboxHeader=(button)=>{if(lightboxHeader){lightboxHeader.hidden=false;}if(lightboxUsername){lightboxUsername.textContent=button.dataset.userName||'';}if(lightboxCount){lightboxCount.textContent=`${button.dataset.userImageIndex||''} / ${button.dataset.userImageCount||''}`.trim();}if(lightboxAvatar){if(button.dataset.userAvatar){lightboxAvatar.src=button.dataset.userAvatar;lightboxAvatar.alt=`${button.dataset.userName||''} avatar`;lightboxAvatar.hidden=false;}else{lightboxAvatar.hidden=true;lightboxAvatar.removeAttribute('src');lightboxAvatar.alt='';}}};",
-    "const updateLightboxDetails=(button)=>{if(lightboxMediaType){lightboxMediaType.textContent=button.dataset.storyMediaType||'—';}if(lightboxMediaPk){lightboxMediaPk.textContent=button.dataset.storyMediaPk||'—';}if(lightboxStickers){lightboxStickers.textContent=button.dataset.storyStickers||'—';}if(lightboxIgCaption){lightboxIgCaption.textContent=button.dataset.storyIgCaption||'—';}if(lightboxAppleCaption){lightboxAppleCaption.textContent=button.dataset.storyAppleCaption||'—';}if(lightboxVisionText){lightboxVisionText.textContent=button.dataset.storyOllamaVision||'—';}if(lightboxVisionDetails){lightboxVisionDetails.open=false;}};",
-    "const clearLightboxState=()=>{if(!lightboxImage)return;lightboxImage.removeAttribute('src');lightboxImage.alt='';lightboxIndex=-1;document.documentElement.classList.remove('lightbox-open');if(lightboxHeader){lightboxHeader.hidden=true;}if(lightboxAvatar){lightboxAvatar.hidden=true;lightboxAvatar.removeAttribute('src');lightboxAvatar.alt='';}if(lightboxUsername){lightboxUsername.textContent='';}if(lightboxCount){lightboxCount.textContent='';}if(lightboxStoryLink){lightboxStoryLink.setAttribute('hidden','');lightboxStoryLink.removeAttribute('href');}if(lightboxMediaType){lightboxMediaType.textContent='';}if(lightboxMediaPk){lightboxMediaPk.textContent='';}if(lightboxStickers){lightboxStickers.textContent='';}if(lightboxIgCaption){lightboxIgCaption.textContent='';}if(lightboxAppleCaption){lightboxAppleCaption.textContent='';}if(lightboxVisionText){lightboxVisionText.textContent='';}if(lightboxVisionDetails){lightboxVisionDetails.open=false;}};",
+    "const updateLightboxDetails=(button)=>{if(lightboxMediaType){lightboxMediaType.textContent=button.dataset.storyMediaType||'—';}if(lightboxMediaPk){lightboxMediaPk.textContent=button.dataset.storyMediaPk||'—';}if(lightboxStickers){lightboxStickers.textContent=button.dataset.storyStickers||'—';}if(lightboxLocations){lightboxLocations.textContent=button.dataset.storyLocations||'—';}if(lightboxIgCaption){lightboxIgCaption.textContent=button.dataset.storyIgCaption||'—';}if(lightboxAppleCaption){lightboxAppleCaption.textContent=button.dataset.storyAppleCaption||'—';}if(lightboxVisionOcr){lightboxVisionOcr.textContent=button.dataset.storyVisionOcr||'—';}if(lightboxVisionDescription){lightboxVisionDescription.textContent=button.dataset.storyVisionDescription||'—';}};",
+    "const clearLightboxState=()=>{if(!lightboxImage)return;lightboxImage.removeAttribute('src');lightboxImage.alt='';lightboxIndex=-1;document.documentElement.classList.remove('lightbox-open');if(lightboxHeader){lightboxHeader.hidden=true;}if(lightboxAvatar){lightboxAvatar.hidden=true;lightboxAvatar.removeAttribute('src');lightboxAvatar.alt='';}if(lightboxUsername){lightboxUsername.textContent='';}if(lightboxCount){lightboxCount.textContent='';}if(lightboxStoryLink){lightboxStoryLink.setAttribute('hidden','');lightboxStoryLink.removeAttribute('href');}if(lightboxMediaType){lightboxMediaType.textContent='';}if(lightboxMediaPk){lightboxMediaPk.textContent='';}if(lightboxStickers){lightboxStickers.textContent='';}if(lightboxLocations){lightboxLocations.textContent='';}if(lightboxIgCaption){lightboxIgCaption.textContent='';}if(lightboxAppleCaption){lightboxAppleCaption.textContent='';}if(lightboxVisionOcr){lightboxVisionOcr.textContent='';}if(lightboxVisionDescription){lightboxVisionDescription.textContent='';}};",
     "const openLightboxAt=(index)=>{if(!lightbox||!lightboxImage||storyImageButtons.length===0)return;lightboxIndex=(index+storyImageButtons.length)%storyImageButtons.length;const button=storyImageButtons[lightboxIndex];lightboxImage.src=button.dataset.fullSrc||'';lightboxImage.alt=button.dataset.fullAlt||'';updateLightboxHeader(button);updateLightboxDetails(button);if(lightboxStoryLink){if(button.dataset.storyUrl){lightboxStoryLink.href=button.dataset.storyUrl;lightboxStoryLink.removeAttribute('hidden');}else{lightboxStoryLink.setAttribute('hidden','');lightboxStoryLink.removeAttribute('href');}}updateLightboxNav();document.documentElement.classList.add('lightbox-open');if(!lightbox.open){if(typeof lightbox.showModal==='function'){lightbox.showModal();}else{lightbox.setAttribute('open','');}}};",
     "const closeLightbox=()=>{if(!lightbox)return;if(lightbox.open&&typeof lightbox.close==='function'){lightbox.close();}else{lightbox.removeAttribute('open');clearLightboxState();}};",
     "storyImageButtons.forEach((button,index)=>{button.addEventListener('click',()=>openLightboxAt(index));});",

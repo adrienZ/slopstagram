@@ -609,6 +609,106 @@ function getLinkStickerLabel(value: unknown): string | null {
   return directTitle ? `link:${directTitle}` : null;
 }
 
+function getLocationRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const name = getNestedString(record, ["name", "location_name", "title"]);
+  const address = getNestedString(record, [
+    "address",
+    "full_address",
+    "street_address",
+    "subtitle",
+  ]);
+
+  if (name || address) {
+    return record;
+  }
+
+  for (const key of [
+    "location",
+    "venue",
+    "place",
+    "story_location",
+    "location_sticker",
+    "bloks_sticker",
+    "sticker_data",
+  ] as const) {
+    const nested = getNestedRecord(record, key);
+    const nestedLocation = getLocationRecord(nested);
+
+    if (nestedLocation) {
+      return nestedLocation;
+    }
+  }
+
+  return null;
+}
+
+function getLocationFromValue(value: unknown): { address: string; name: string } | null {
+  const location = getLocationRecord(value);
+
+  if (!location) {
+    return null;
+  }
+
+  const name =
+    getNestedString(location, ["name", "location_name", "title"]) ?? "";
+  const address =
+    getNestedString(location, [
+      "address",
+      "full_address",
+      "street_address",
+      "subtitle",
+    ]) ?? "";
+
+  return name || address ? { address, name } : null;
+}
+
+function formatStoryLocation(location: { address: string; name: string }): string {
+  return [location.name, location.address]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(", ");
+}
+
+function getStoryLocationsFromItem(story: StoryItem): string[] {
+  const locations: string[] = [];
+  const seen = new Set<string>();
+
+  const addLocation = (location: { address: string; name: string } | null) => {
+    if (!location) {
+      return;
+    }
+
+    const formattedLocation = formatStoryLocation(location);
+    const key = formattedLocation.toLowerCase();
+
+    if (!formattedLocation) {
+      return;
+    }
+
+    if (seen.has(key)) {
+      return;
+    }
+
+    seen.add(key);
+    locations.push(formattedLocation);
+  };
+
+  for (const location of story.story_locations ?? []) {
+    addLocation(getLocationFromValue(location));
+  }
+
+  for (const sticker of story.story_bloks_stickers ?? []) {
+    addLocation(getLocationFromValue(sticker));
+  }
+
+  return locations;
+}
+
 function getStickerLabels(story: StoryItem): string[] {
   const labels: string[] = [];
   const seen = new Set<string>();
@@ -668,6 +768,19 @@ function getStoryStickers(
   return getStickerLabels(story);
 }
 
+function getStoryLocations(
+  mediaPk: string,
+  cachedItems: Map<string, StoryItem>,
+): string[] {
+  const story = cachedItems.get(mediaPk);
+
+  if (!story) {
+    return [];
+  }
+
+  return getStoryLocationsFromItem(story);
+}
+
 function getStoryPreviewImageUrl(
   mediaPk: string,
   cachedItems: Map<string, StoryItem>,
@@ -723,6 +836,7 @@ function createOutputUsers(manifestUsers: StoryManifestReel[]): StoryOutputUser[
           ? {}
           : { failure_index: story.failure_index }),
         ig_caption: story.ig_caption,
+        locations: story.locations,
         media_type: story.media_type ?? null,
         media_pk: story.media_pk,
         preview_image_url: story.preview_image_url,
@@ -1047,13 +1161,12 @@ export async function fetchStoriesManifest(
     reel_id: entry.id,
     stories: (entry.media_ids ?? []).map((mediaPk): StoryManifestItem => {
       const failureIndex = failureByMediaPk.get(mediaPk);
-      const wasFetched = fetchedMediaPks.has(mediaPk);
-
       return {
         apple_caption: NO_APPLE_CAPTION,
         cache_key: getStoryCacheKey(mediaPk),
         ...(failureIndex === undefined ? {} : { failure_index: failureIndex }),
         ig_caption: getAccessibilityCaption(mediaPk, cachedItems),
+        locations: getStoryLocations(mediaPk, cachedItems),
         media_type: getStoryMediaType(mediaPk, cachedItems),
         media_pk: mediaPk,
         preview_image_url: getStoryPreviewImageUrl(mediaPk, cachedItems),
@@ -1061,9 +1174,7 @@ export async function fetchStoriesManifest(
         status:
           failureIndex !== undefined
             ? ("failed" as const)
-            : wasFetched
-              ? ("fetched" as const)
-              : ("cached" as const),
+            : ("ok" as const),
       };
     }),
     username: entry.user?.username ?? null,

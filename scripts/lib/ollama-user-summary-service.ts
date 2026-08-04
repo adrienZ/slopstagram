@@ -8,6 +8,7 @@ import { noopLogger, type Logger } from "./logging-service.ts";
 import { getReportUserKey } from "./report-user-key-service.ts";
 import type {
   OllamaUserSummaryStorage,
+  VisionResult,
   StoriesManifestReport,
   StoryOutputUser,
 } from "./types.ts";
@@ -36,7 +37,7 @@ export type ResolveOllamaUserSummariesOptions = {
   fetchOllama?: OllamaFetch;
   logger?: Logger;
   model?: string;
-  ollamaVisionByPreviewUrl?: Map<string, string>;
+  visionByPreviewUrl?: Map<string, VisionResult>;
   runOllamaUserSummary?: RunOllamaUserSummary;
   storage?: OllamaUserSummaryStorage;
   timeoutMs?: number;
@@ -81,27 +82,20 @@ function parseSummaryResponse(value: string): string | null {
   return isUsableSummary(summary) ? summary : null;
 }
 
-function stripCaptionPrefix(value: string): string {
-  return value
-    .replace(/^Photo by .*?\.\s*/i, "")
-    .replace(/^Video by .*?\.\s*/i, "")
-    .trim();
-}
-
 function collectFallbackDetails(
   user: StoryOutputUser,
-  ollamaVisionByPreviewUrl: Map<string, string> | undefined,
+  visionByPreviewUrl: Map<string, VisionResult> | undefined,
 ): string[] {
   const details: string[] = [];
 
   for (const story of user.stories) {
+    const vision = story.preview_image_url
+      ? visionByPreviewUrl?.get(story.preview_image_url)
+      : undefined;
     const values = [
-      story.apple_caption,
-      story.ig_caption ? stripCaptionPrefix(story.ig_caption) : "",
-      story.preview_image_url
-        ? ollamaVisionByPreviewUrl?.get(story.preview_image_url) ?? ""
-        : "",
+      vision?.visual ?? "",
       story.stickers.join(", "),
+      story.locations.join(", "),
     ];
 
     for (const value of values) {
@@ -123,11 +117,11 @@ function collectFallbackDetails(
 
 function createFallbackSummary(
   user: StoryOutputUser,
-  ollamaVisionByPreviewUrl: Map<string, string> | undefined,
+  visionByPreviewUrl: Map<string, VisionResult> | undefined,
 ): string {
   const displayName =
     user.full_name?.trim() || user.username?.trim() || "Cet utilisateur";
-  const details = collectFallbackDetails(user, ollamaVisionByPreviewUrl);
+  const details = collectFallbackDetails(user, visionByPreviewUrl);
 
   if (details.length === 0) {
     return OLLAMA_USER_SUMMARY_UNAVAILABLE;
@@ -142,23 +136,25 @@ function createFallbackSummary(
 
 function createPrompt(
   user: StoryOutputUser,
-  ollamaVisionByPreviewUrl: Map<string, string> | undefined,
+  visionByPreviewUrl: Map<string, VisionResult> | undefined,
 ): string {
-  const stories = user.stories.map((story) => ({
-    apple_caption: story.apple_caption,
-    ig_caption: story.ig_caption,
-    media_pk: story.media_pk,
-    ollama_vision: story.preview_image_url
-      ? ollamaVisionByPreviewUrl?.get(story.preview_image_url) ?? ""
-      : "",
-    stickers: story.stickers,
-    status: story.status,
-  }));
+  const stories = user.stories.map((story) => {
+    const vision = story.preview_image_url
+      ? visionByPreviewUrl?.get(story.preview_image_url)
+      : undefined;
+
+    return {
+      locations: story.locations,
+      media_pk: story.media_pk,
+      stickers: story.stickers,
+      vision_description: vision?.visual ?? "",
+    };
+  });
 
   return [
     OLLAMA_USER_SUMMARY_PROMPT,
     "",
-    "Utilise uniquement les données ci-dessous. Concentre-toi sur les activités visibles, les lieux, les événements, les thèmes et le texte lisible. N'évoque pas les légendes manquantes ni les champs techniques. Réponds en français. Retourne du JSON avec un seul champ string nommé summary.",
+    "Utilise uniquement les données ci-dessous. Concentre-toi sur les activités visibles, les lieux, les événements et les thèmes. N'évoque pas les légendes manquantes ni les champs techniques. Réponds en français. Retourne du JSON avec un seul champ string nommé summary.",
     "",
     JSON.stringify(
       {
@@ -242,7 +238,7 @@ export async function resolveOllamaUserSummariesForReport(
 ): Promise<Map<string, string>> {
   const logger = options.logger ?? noopLogger;
   const model = options.model ?? OLLAMA_USER_SUMMARY_MODEL;
-  const ollamaVisionByPreviewUrl = options.ollamaVisionByPreviewUrl;
+  const visionByPreviewUrl = options.visionByPreviewUrl;
   const timeoutMs = options.timeoutMs ?? OLLAMA_USER_SUMMARY_TIMEOUT_MS;
   const runOllamaUserSummary =
     options.runOllamaUserSummary ??
@@ -259,7 +255,7 @@ export async function resolveOllamaUserSummariesForReport(
   for (const [index, user] of users.entries()) {
     const userKey = getReportUserKey(user, index);
     logger.progress("ollama summary", index + 1, users.length);
-    const prompt = createPrompt(user, ollamaVisionByPreviewUrl);
+    const prompt = createPrompt(user, visionByPreviewUrl);
     const sourceHash = getSourceHash({ model, prompt, userKey });
     const cacheKey = getOllamaUserSummaryCacheKey(sourceHash);
     const cachedEntry = await storage.getItem(cacheKey);
@@ -285,7 +281,7 @@ export async function resolveOllamaUserSummariesForReport(
       const result = parseSummaryResponse(response);
 
       if (!result) {
-        const fallbackSummary = createFallbackSummary(user, ollamaVisionByPreviewUrl);
+        const fallbackSummary = createFallbackSummary(user, visionByPreviewUrl);
         logger.warn(
           `ollama summary returned empty response for ${userKey}; using report fallback`,
         );

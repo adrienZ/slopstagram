@@ -13,7 +13,7 @@ import {
 import { cacheReportImages } from "./lib/image-cache-service.ts";
 import { createLogger, type Logger } from "./lib/logging-service.ts";
 import { resolveOllamaUserSummariesForReport } from "./lib/ollama-user-summary-service.ts";
-import { resolveOllamaVisionForReport } from "./lib/ollama-vision-service.ts";
+import { resolveVisionForReport } from "./lib/vision-service.ts";
 import { formatStoriesReportHtml } from "./lib/report-html-service.ts";
 import {
   STORY_MEDIA_TYPES,
@@ -249,7 +249,7 @@ async function main(): Promise<void> {
     logger,
     reportDirectory,
   });
-  const ollamaVisionByPreviewUrl = await resolveOllamaVisionForReport(
+  const visionByPreviewUrl = await resolveVisionForReport(
     report,
     cachedImages,
     {
@@ -259,14 +259,14 @@ async function main(): Promise<void> {
   );
   const userSummaryByUserKey = await resolveOllamaUserSummariesForReport(report, {
     logger,
-    ollamaVisionByPreviewUrl,
+    visionByPreviewUrl,
   });
 
   await writeFile(
     htmlOutputPath,
     formatStoriesReportHtml(report, {
       ...cachedImages,
-      ollamaVisionByPreviewUrl,
+      visionByPreviewUrl,
       userSummaryByUserKey,
     }),
     "utf8",

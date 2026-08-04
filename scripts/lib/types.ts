@@ -62,6 +62,7 @@ export type StoryItem = {
   story_bloks_tappables?: unknown[] | null;
   story_cta?: unknown[] | null;
   story_hashtags?: unknown[] | null;
+  story_locations?: unknown[] | null;
   story_link_stickers?: unknown[] | null;
   story_music_stickers?: unknown[] | null;
   text_post_share_to_ig_story_stickers?: unknown[] | null;
@@ -95,7 +96,7 @@ export type StoryFetchFailureReason =
   | "rate_limited"
   | "missing_from_response";
 
-export type StoryManifestItemStatus = "cached" | "fetched" | "failed";
+export type StoryManifestItemStatus = "ok" | "failed";
 
 export type StoryFetchFailure = {
   attempt_count: number;
@@ -111,6 +112,7 @@ export type StoryManifestItem = {
   cache_key: string;
   failure_index?: number;
   ig_caption: string;
+  locations: string[];
   media_type?: StoryMediaType | null;
   media_pk: string;
   preview_image_url: string | null;
@@ -132,6 +134,7 @@ export type StoryOutputItem = {
   apple_caption: string;
   failure_index?: number;
   ig_caption: string;
+  locations: string[];
   media_type?: StoryMediaType | null;
   media_pk: string;
   preview_image_url: string | null;
@@ -156,23 +159,28 @@ export type StoryFetchCounts = {
   stories: number;
 };
 
-export type AppleCaptionCacheEntry = {
-  caption: string;
-  source: string | null;
-};
-
 export type ImageCacheEntry = {
   content_type: string | null;
   path: string;
   source: string;
 };
 
-export type OllamaVisionCacheEntry = {
+export type AppleCaptionCacheEntry = {
+  caption: string;
+  source: string | null;
+};
+
+export type VisionResult = {
+  text: string;
+  visual: string;
+};
+
+export type VisionCacheEntry = {
   cache_identity: string;
   image_path: string;
   model: string;
-  prompt: string;
-  result: string;
+  prompt_hash: string;
+  result: VisionResult;
   source: string;
 };
 
@@ -206,13 +214,13 @@ export type StoryStorage = Storage<StoryItem>;
 export type ReportStorage = Storage<StoriesManifestReport>;
 export type AppleCaptionStorage = Storage<AppleCaptionCacheEntry>;
 export type ImageCacheStorage = Storage<ImageCacheEntry>;
-export type OllamaVisionStorage = Storage<OllamaVisionCacheEntry>;
+export type VisionStorage = Storage<VisionCacheEntry>;
 export type OllamaUserSummaryStorage = Storage<OllamaUserSummaryCacheEntry>;
 export type CacheStorageSet = {
   appleCaptionsStorage: AppleCaptionStorage;
   imageCacheStorage: ImageCacheStorage;
   ollamaUserSummaryStorage: OllamaUserSummaryStorage;
-  ollamaVisionStorage: OllamaVisionStorage;
+  visionStorage: VisionStorage;
   reportsStorage: ReportStorage;
   storiesStorage: StoryStorage;
 };

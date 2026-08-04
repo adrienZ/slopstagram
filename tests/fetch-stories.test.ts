@@ -104,7 +104,6 @@ const fixedNow = () => new Date("2026-07-26T00:00:00.000Z");
 const noSleep = async () => {};
 const resolveAppleCaption = async (story: StoryItem) =>
   `apple:${story.pk}`;
-
 function createMockLogger(): Logger & { messages: string[] } {
   const messages: string[] = [];
 
@@ -167,6 +166,7 @@ describe("fetchStoriesManifest", () => {
       report.manifest.users.map((user) => ({
         apple_caption: user.stories[0]?.apple_caption,
         ig_caption: user.stories[0]?.ig_caption,
+        locations: user.stories[0]?.locations,
         media_type: user.stories[0]?.media_type,
         profile_pic_url: user.profile_pic_url,
         reel_id: user.reel_id,
@@ -177,21 +177,23 @@ describe("fetchStoriesManifest", () => {
       [
         {
           apple_caption: "apple:m1",
-          ig_caption: "no caption avaible",
+          ig_caption: "N/A",
+          locations: [],
           media_type: "image",
           profile_pic_url: "https://example.com/one.jpg",
           reel_id: "r1",
-          status: "cached",
+          status: "ok",
           stickers: [],
           username: "one",
         },
         {
           apple_caption: "apple:m2",
-          ig_caption: "no caption avaible",
+          ig_caption: "N/A",
+          locations: [],
           media_type: "image",
           profile_pic_url: null,
           reel_id: "r2",
-          status: "cached",
+          status: "ok",
           stickers: [],
           username: "two",
         },
@@ -205,12 +207,13 @@ describe("fetchStoriesManifest", () => {
         stories: [
           {
             apple_caption: "apple:m1",
-            ig_caption: "no caption avaible",
+            ig_caption: "N/A",
+            locations: [],
             media_type: "image",
             media_pk: "m1",
             preview_image_url: "https://example.com/m1.jpg",
             stickers: [],
-            status: "cached",
+            status: "ok",
           },
         ],
         username: "one",
@@ -222,12 +225,13 @@ describe("fetchStoriesManifest", () => {
         stories: [
           {
             apple_caption: "apple:m2",
-            ig_caption: "no caption avaible",
+            ig_caption: "N/A",
+            locations: [],
             media_type: "image",
             media_pk: "m2",
             preview_image_url: "https://example.com/m2.jpg",
             stickers: [],
-            status: "cached",
+            status: "ok",
           },
         ],
         username: "two",
@@ -270,6 +274,7 @@ describe("fetchStoriesManifest", () => {
       report.manifest.users.map((user) => ({
         apple_caption: user.stories[0]?.apple_caption,
         ig_caption: user.stories[0]?.ig_caption,
+        locations: user.stories[0]?.locations,
         status: user.stories[0]?.status,
         stickers: user.stories[0]?.stickers,
       })),
@@ -277,13 +282,15 @@ describe("fetchStoriesManifest", () => {
         {
           apple_caption: "apple:m1",
           ig_caption: "Cached image caption",
-          status: "cached",
+          locations: [],
+          status: "ok",
           stickers: [],
         },
         {
           apple_caption: "apple:m2",
-          ig_caption: "no caption avaible",
-          status: "fetched",
+          ig_caption: "N/A",
+          locations: [],
+          status: "ok",
           stickers: [],
         },
       ],
@@ -359,20 +366,22 @@ describe("fetchStoriesManifest", () => {
           {
             apple_caption: "apple:m1",
             ig_caption: "First story caption",
+            locations: [],
             media_type: "image",
             media_pk: "m1",
             preview_image_url: "https://example.com/m1.jpg",
             stickers: ["mention:@same"],
-            status: "fetched",
+            status: "ok",
           },
           {
             apple_caption: "apple:m2",
             ig_caption: "Second story caption",
+            locations: [],
             media_type: "image",
             media_pk: "m2",
             preview_image_url: "https://example.com/m2.jpg",
             stickers: [],
-            status: "fetched",
+            status: "ok",
           },
         ],
         username: "same",
@@ -443,8 +452,26 @@ describe("fetchStoriesManifest", () => {
                           },
                         },
                       },
+                      {
+                        bloks_sticker: {
+                          sticker_data: {
+                            location: {
+                              address: "1 Rue Example, Paris",
+                              name: "Cafe Example",
+                            },
+                          },
+                        },
+                      },
                     ],
                     story_hashtags: [{ hashtag: "summer" }],
+                    story_locations: [
+                      {
+                        location: {
+                          address: "1 Rue Example, Paris",
+                          name: "Cafe Example",
+                        },
+                      },
+                    ],
                     story_music_stickers: [
                       {
                         music_asset_info: {
@@ -482,6 +509,9 @@ describe("fetchStoriesManifest", () => {
       "music:Track - Artist",
       "hashtag:#summer",
       "link:https://example.com/a",
+    ]);
+    assert.deepEqual(report.output.users[0]?.stories[0]?.locations, [
+      "Cafe Example, 1 Rue Example, Paris",
     ]);
   });
 
@@ -586,7 +616,7 @@ describe("fetchStoriesManifest", () => {
 
     assert.deepEqual(
       report.manifest.users[0]?.stories.map((story) => story.status),
-      ["fetched", "failed"],
+      ["ok", "failed"],
     );
     assert.equal(report.failures[0]?.reason, "missing_from_response");
     assert.equal(report.failures[0]?.media_pk, "m2");
