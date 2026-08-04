@@ -12,13 +12,16 @@
     "fetch:story": "tsx scripts/fetch-story.ts",
     "create:html-report": "tsx scripts/create-html-report.ts",
     "create:report": "tsx scripts/create-report.ts",
+    "report:server": "tsx scripts/report-server.tsx",
     "parse:stories-tray": "node --import tsx scripts/parse-stories-tray.ts",
     "parse:story": "node --import tsx scripts/parse-story.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/**/*.test.ts"
   },
   "dependencies": {
+    "@hono/node-server": "^2.1.0",
     "@playwright/cli": "^0.1.17",
+    "hono": "^4.13.0",
     "ollama": "^0.6.3",
     "sharp": "^0.35.3",
     "unstorage": "^1.17.5",
