@@ -8,12 +8,11 @@ import {
   REPORTS_STORAGE_DIR,
   reportsStorage,
 } from "./lib/cache-service.ts";
-import { resolveCodexUserSummariesForReport } from "./lib/codex-user-summary-service.ts";
+import { resolveOllamaUserSummariesForReport } from "./lib/ollama-user-summary-service.ts";
 import { cacheReportImages } from "./lib/image-cache-service.ts";
 import { createLogger, type Logger } from "./lib/logging-service.ts";
 import { resolveOllamaVisionForReport } from "./lib/ollama-vision-service.ts";
 import { formatStoriesReportHtml } from "./lib/report-html-service.ts";
-import { formatStoriesReportMarkdown } from "./lib/report-markdown-service.ts";
 import { fetchStories } from "./fetch-stories.ts";
 
 function pad(value: number): string {
@@ -96,7 +95,6 @@ function openReport(filePath: string, logger: Logger): Promise<void> {
 async function main(): Promise<void> {
   const timestamp = formatFilenameTimestamp(new Date());
   const outputFileName = `stories-report-${timestamp}.json`;
-  const markdownOutputFileName = `stories-report-${timestamp}.md`;
   const htmlOutputFileName = `stories-report-${timestamp}.html`;
   const fetchStoriesArgs = process.argv.slice(2);
   const logger = createLogger("create-report", (message) => {
@@ -110,11 +108,6 @@ async function main(): Promise<void> {
   });
   await reportsStorage.setItem(outputFileName, report);
   const outputPath = resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR, outputFileName);
-  const markdownOutputPath = resolve(
-    BASE_CACHE_DIR,
-    REPORTS_STORAGE_DIR,
-    markdownOutputFileName,
-  );
   const htmlOutputPath = resolve(
     BASE_CACHE_DIR,
     REPORTS_STORAGE_DIR,
@@ -132,19 +125,10 @@ async function main(): Promise<void> {
       reportDirectory: resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR),
     },
   );
-  const userSummaryByUserKey = await resolveCodexUserSummariesForReport(report, {
+  const userSummaryByUserKey = await resolveOllamaUserSummariesForReport(report, {
     logger,
     ollamaVisionByPreviewUrl,
-    workingDirectory: process.cwd(),
   });
-  await writeFile(
-    markdownOutputPath,
-    formatStoriesReportMarkdown(report, {
-      ...cachedImages,
-      ollamaVisionByPreviewUrl,
-    }),
-    "utf8",
-  );
   await writeFile(
     htmlOutputPath,
     formatStoriesReportHtml(report, {
@@ -165,10 +149,9 @@ async function main(): Promise<void> {
     ].join(" "),
   );
   logger.info(`wrote report ${outputPath}`);
-  logger.info(`wrote markdown report ${markdownOutputPath}`);
   logger.info(`wrote html report ${htmlOutputPath}`);
   await openReport(htmlOutputPath, logger);
-  process.stdout.write(`${markdownOutputPath}\n${htmlOutputPath}\n`);
+  process.stdout.write(`${htmlOutputPath}\n`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

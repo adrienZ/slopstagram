@@ -167,6 +167,7 @@ describe("fetchStoriesManifest", () => {
       report.manifest.users.map((user) => ({
         apple_caption: user.stories[0]?.apple_caption,
         ig_caption: user.stories[0]?.ig_caption,
+        media_type: user.stories[0]?.media_type,
         profile_pic_url: user.profile_pic_url,
         reel_id: user.reel_id,
         status: user.stories[0]?.status,
@@ -177,6 +178,7 @@ describe("fetchStoriesManifest", () => {
         {
           apple_caption: "apple:m1",
           ig_caption: "no caption avaible",
+          media_type: "image",
           profile_pic_url: "https://example.com/one.jpg",
           reel_id: "r1",
           status: "cached",
@@ -186,6 +188,7 @@ describe("fetchStoriesManifest", () => {
         {
           apple_caption: "apple:m2",
           ig_caption: "no caption avaible",
+          media_type: "image",
           profile_pic_url: null,
           reel_id: "r2",
           status: "cached",
@@ -203,6 +206,7 @@ describe("fetchStoriesManifest", () => {
           {
             apple_caption: "apple:m1",
             ig_caption: "no caption avaible",
+            media_type: "image",
             media_pk: "m1",
             preview_image_url: "https://example.com/m1.jpg",
             stickers: [],
@@ -219,6 +223,7 @@ describe("fetchStoriesManifest", () => {
           {
             apple_caption: "apple:m2",
             ig_caption: "no caption avaible",
+            media_type: "image",
             media_pk: "m2",
             preview_image_url: "https://example.com/m2.jpg",
             stickers: [],
@@ -354,6 +359,7 @@ describe("fetchStoriesManifest", () => {
           {
             apple_caption: "apple:m1",
             ig_caption: "First story caption",
+            media_type: "image",
             media_pk: "m1",
             preview_image_url: "https://example.com/m1.jpg",
             stickers: ["mention:@same"],
@@ -362,6 +368,7 @@ describe("fetchStoriesManifest", () => {
           {
             apple_caption: "apple:m2",
             ig_caption: "Second story caption",
+            media_type: "image",
             media_pk: "m2",
             preview_image_url: "https://example.com/m2.jpg",
             stickers: [],

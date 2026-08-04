@@ -111,6 +111,7 @@ export type StoryManifestItem = {
   cache_key: string;
   failure_index?: number;
   ig_caption: string;
+  media_type?: StoryMediaType | null;
   media_pk: string;
   preview_image_url: string | null;
   stickers: string[];
@@ -131,6 +132,7 @@ export type StoryOutputItem = {
   apple_caption: string;
   failure_index?: number;
   ig_caption: string;
+  media_type?: StoryMediaType | null;
   media_pk: string;
   preview_image_url: string | null;
   stickers: string[];
@@ -166,6 +168,7 @@ export type ImageCacheEntry = {
 };
 
 export type OllamaVisionCacheEntry = {
+  cache_identity: string;
   image_path: string;
   model: string;
   prompt: string;
@@ -173,7 +176,7 @@ export type OllamaVisionCacheEntry = {
   source: string;
 };
 
-export type CodexUserSummaryCacheEntry = {
+export type OllamaUserSummaryCacheEntry = {
   prompt: string;
   result: string;
   source_hash: string;
@@ -204,11 +207,11 @@ export type ReportStorage = Storage<StoriesManifestReport>;
 export type AppleCaptionStorage = Storage<AppleCaptionCacheEntry>;
 export type ImageCacheStorage = Storage<ImageCacheEntry>;
 export type OllamaVisionStorage = Storage<OllamaVisionCacheEntry>;
-export type CodexUserSummaryStorage = Storage<CodexUserSummaryCacheEntry>;
+export type OllamaUserSummaryStorage = Storage<OllamaUserSummaryCacheEntry>;
 export type CacheStorageSet = {
   appleCaptionsStorage: AppleCaptionStorage;
-  codexUserSummaryStorage: CodexUserSummaryStorage;
   imageCacheStorage: ImageCacheStorage;
+  ollamaUserSummaryStorage: OllamaUserSummaryStorage;
   ollamaVisionStorage: OllamaVisionStorage;
   reportsStorage: ReportStorage;
   storiesStorage: StoryStorage;

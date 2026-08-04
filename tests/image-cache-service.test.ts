@@ -67,7 +67,7 @@ describe("cacheReportImages", () => {
     const source = "https://example.com/avatar?id=1";
     const previewSource = "https://example.com/story-preview.webp";
     const imageHash = getImageHash(source);
-    const previewHash = getImageHash(previewSource);
+    const previewHash = getImageHash("story-pk");
     const { imageCacheStorage } = createCacheStorages(
       createStorage({
         driver: memoryDriver(),
@@ -170,7 +170,7 @@ describe("cacheReportImages", () => {
   test("converts cached webp story previews to jpeg on reuse", async () => {
     const source = "https://example.com/avatar.jpg";
     const previewSource = "https://example.com/story-preview.webp";
-    const previewHash = getImageHash(previewSource);
+    const previewHash = getImageHash("story-pk");
     const { imageCacheStorage } = createCacheStorages(
       createStorage({
         driver: memoryDriver(),
@@ -228,6 +228,59 @@ describe("cacheReportImages", () => {
         path: `images/story-previews/${previewHash}.jpg`,
         source: previewSource,
       },
+    );
+  });
+
+  test("reuses story preview cache when the signed CDN URL changes", async () => {
+    const source = "https://example.com/avatar.jpg";
+    const firstPreviewSource = "https://example.com/story-preview.webp?signature=old";
+    const secondPreviewSource = "https://example.com/story-preview.webp?signature=new";
+    const previewHash = getImageHash("story-pk");
+    const { imageCacheStorage } = createCacheStorages(
+      createStorage({
+        driver: memoryDriver(),
+      }),
+    );
+    let fetchCount = 0;
+
+    const options = {
+      convertToJpeg: async (body: Buffer) => Buffer.from(`jpeg:${body.toString()}`),
+      fetchImage: async (url: string) => {
+        fetchCount += 1;
+        const body = new TextEncoder().encode(url.includes("avatar") ? "avatar" : "story");
+        return {
+          arrayBuffer: async () =>
+            body.buffer.slice(
+              body.byteOffset,
+              body.byteOffset + body.byteLength,
+            ) as ArrayBuffer,
+          headers: {
+            get: (name: string) =>
+              name.toLowerCase() === "content-type" ? "image/webp" : null,
+          },
+          ok: true,
+          status: 200,
+        };
+      },
+      reportDirectory: path.resolve(".tmp/reports"),
+      storage: imageCacheStorage,
+    };
+
+    const first = await cacheReportImages(createReport(source, firstPreviewSource), options);
+    const second = await cacheReportImages(createReport(source, secondPreviewSource), options);
+
+    assert.equal(fetchCount, 2);
+    assert.equal(
+      first.storyPreviewPathByUrl.get(firstPreviewSource),
+      `../images/story-previews/${previewHash}.jpg`,
+    );
+    assert.equal(
+      second.storyPreviewPathByUrl.get(secondPreviewSource),
+      `../images/story-previews/${previewHash}.jpg`,
+    );
+    assert.deepEqual(
+      await imageCacheStorage.getItemRaw(`story-previews/${previewHash}.jpg`),
+      Buffer.from("jpeg:story"),
     );
   });
 });

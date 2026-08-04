@@ -3,8 +3,8 @@ import fsDriver from "unstorage/drivers/fs";
 import type {
   AppleCaptionCacheEntry,
   CacheStorageSet,
-  CodexUserSummaryCacheEntry,
   ImageCacheEntry,
+  OllamaUserSummaryCacheEntry,
   OllamaVisionCacheEntry,
   StoriesManifestReport,
   StoryItem,
@@ -12,8 +12,8 @@ import type {
 
 export const BASE_CACHE_DIR = ".tmp";
 export const APPLE_CAPTIONS_STORAGE_DIR = "apple-captions";
-export const CODEX_USER_SUMMARIES_STORAGE_DIR = "codex-user-summaries";
 export const IMAGES_STORAGE_DIR = "images";
+export const OLLAMA_USER_SUMMARIES_STORAGE_DIR = "ollama-user-summaries";
 export const OLLAMA_VISION_STORAGE_DIR = "ollama-vision";
 export const REPORTS_STORAGE_DIR = "reports";
 export const STORIES_STORAGE_DIR = "stories";
@@ -32,13 +32,13 @@ export function createCacheStorages(
       storage,
       APPLE_CAPTIONS_STORAGE_DIR,
     ),
-    codexUserSummaryStorage: prefixStorage<CodexUserSummaryCacheEntry>(
-      storage,
-      CODEX_USER_SUMMARIES_STORAGE_DIR,
-    ),
     imageCacheStorage: prefixStorage<ImageCacheEntry>(
       storage,
       IMAGES_STORAGE_DIR,
+    ),
+    ollamaUserSummaryStorage: prefixStorage<OllamaUserSummaryCacheEntry>(
+      storage,
+      OLLAMA_USER_SUMMARIES_STORAGE_DIR,
     ),
     ollamaVisionStorage: prefixStorage<OllamaVisionCacheEntry>(
       storage,
@@ -68,14 +68,14 @@ export function getOllamaVisionCacheKey(imageHash: string, model: string): strin
   return `${imageHash}-${model.replaceAll(/[^a-zA-Z0-9._-]/g, "_")}.json`;
 }
 
-export function getCodexUserSummaryCacheKey(sourceHash: string): string {
+export function getOllamaUserSummaryCacheKey(sourceHash: string): string {
   return `${sourceHash}.json`;
 }
 
 export const {
   appleCaptionsStorage,
-  codexUserSummaryStorage,
   imageCacheStorage,
+  ollamaUserSummaryStorage,
   ollamaVisionStorage,
   reportsStorage,
   storiesStorage,

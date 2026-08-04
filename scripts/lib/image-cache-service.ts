@@ -167,9 +167,9 @@ async function cacheImage(
       CacheReportImagesOptions,
       "convertToJpeg" | "fetchImage" | "logger" | "reportDirectory" | "storage"
     >
-  >,
+  > & { cacheIdentity?: string },
 ): Promise<string | null> {
-  const imageHash = getImageHash(source);
+  const imageHash = getImageHash(options.cacheIdentity ?? source);
   const metadataKey = getImageCacheMetadataKey(`${namespace}/${imageHash}`);
   const cachedEntry = await options.storage.getItem(metadataKey);
 
@@ -260,13 +260,26 @@ export async function cacheReportImages(
     }
   }
 
-  const storyPreviewUrls = report.output.users
-    .flatMap((user) => user.stories.map((story) => story.preview_image_url))
-    .filter(isPresent);
+  const storyPreviewEntries = report.output.users
+    .flatMap((user) =>
+      user.stories.map((story) => ({
+        cacheIdentity: story.media_pk,
+        source: story.preview_image_url,
+      })),
+    )
+    .filter(
+      (entry): entry is { cacheIdentity: string; source: string } =>
+        isPresent(entry.source),
+    );
 
-  for (const source of new Set(storyPreviewUrls)) {
+  const storyPreviewPathByIdentity = new Map<string, string>();
+
+  for (const { cacheIdentity, source } of new Map(
+    storyPreviewEntries.map((entry) => [entry.cacheIdentity, entry]),
+  ).values()) {
     try {
       const cachedPath = await cacheImage(source, "story-previews", {
+        cacheIdentity,
         convertToJpeg,
         fetchImage,
         logger,
@@ -275,11 +288,19 @@ export async function cacheReportImages(
       });
 
       if (cachedPath) {
-        storyPreviewPathByUrl.set(source, cachedPath);
+        storyPreviewPathByIdentity.set(cacheIdentity, cachedPath);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       logger.warn(`could not cache image ${source}: ${message}`);
+    }
+  }
+
+  for (const { cacheIdentity, source } of storyPreviewEntries) {
+    const cachedPath = storyPreviewPathByIdentity.get(cacheIdentity);
+
+    if (cachedPath) {
+      storyPreviewPathByUrl.set(source, cachedPath);
     }
   }
 

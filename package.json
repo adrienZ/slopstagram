@@ -9,6 +9,7 @@
   "scripts": {
     "fetch:stories": "tsx scripts/fetch-stories.ts",
     "fetch:story": "tsx scripts/fetch-story.ts",
+    "create:html-report": "tsx scripts/create-html-report.ts",
     "create:report": "tsx scripts/create-report.ts",
     "parse:stories-tray": "node --import tsx scripts/parse-stories-tray.ts",
     "parse:story": "node --import tsx scripts/parse-story.ts",
@@ -16,8 +17,8 @@
     "test": "node --import tsx --test tests/**/*.test.ts"
   },
   "dependencies": {
-    "@openai/codex-sdk": "^0.146.0",
     "@playwright/cli": "^0.1.17",
+    "ollama": "^0.6.3",
     "unstorage": "^1.17.5"
   },
   "devDependencies": {

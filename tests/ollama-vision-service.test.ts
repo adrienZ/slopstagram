@@ -15,7 +15,7 @@ import type { StoriesManifestReport } from "../scripts/lib/types.ts";
 
 const previewSource = "https://example.com/story-preview.webp";
 
-function createReport(): StoriesManifestReport {
+function createReport(source: string = previewSource): StoriesManifestReport {
   return {
     failures: [],
     manifest: {
@@ -47,7 +47,7 @@ function createReport(): StoriesManifestReport {
               apple_caption: "apple text",
               ig_caption: "ig text",
               media_pk: "story-pk",
-              preview_image_url: previewSource,
+              preview_image_url: source,
               stickers: [],
               status: "cached",
             },
@@ -114,6 +114,63 @@ describe("resolveOllamaVisionForReport", () => {
     });
   });
 
+  test("reuses cached responses for the same story when the signed CDN URL changes", async () => {
+    const { ollamaVisionStorage } = createCacheStorages(
+      createStorage({
+        driver: memoryDriver(),
+      }),
+    );
+    const firstPreviewSource = "https://example.com/story-preview.webp?signature=old";
+    const secondPreviewSource = "https://example.com/story-preview.webp?signature=new";
+    let fetchCount = 0;
+
+    const directory = await mkdtemp(path.join(tmpdir(), "slopstagram-ollama-test-"));
+    const imagePath = path.join(directory, "story.jpg");
+
+    try {
+      await writeFile(imagePath, Buffer.from("jpeg-bytes"));
+      const cachedImages: CachedReportImages = {
+        profilePicPathByUrl: new Map(),
+        storyPreviewPathByUrl: new Map([
+          [firstPreviewSource, "story.jpg"],
+          [secondPreviewSource, "story.jpg"],
+        ]),
+      };
+      const fetchOllama = async () => {
+        fetchCount += 1;
+
+        return new Response(JSON.stringify({ response: "same story" }), {
+          status: 200,
+        });
+      };
+
+      const first = await resolveOllamaVisionForReport(
+        createReport(firstPreviewSource),
+        cachedImages,
+        {
+          fetchOllama,
+          reportDirectory: directory,
+          storage: ollamaVisionStorage,
+        },
+      );
+      const second = await resolveOllamaVisionForReport(
+        createReport(secondPreviewSource),
+        cachedImages,
+        {
+          fetchOllama,
+          reportDirectory: directory,
+          storage: ollamaVisionStorage,
+        },
+      );
+
+      assert.equal(first.get(firstPreviewSource), "same story");
+      assert.equal(second.get(secondPreviewSource), "same story");
+      assert.equal(fetchCount, 1);
+    } finally {
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
+
   test("returns server-down text when ollama is unavailable", async () => {
     const { ollamaVisionStorage } = createCacheStorages(
       createStorage({
@@ -143,7 +200,11 @@ describe("resolveOllamaVisionForReport", () => {
 
     await withReportImage(async (reportDirectory, cachedImages) => {
       const result = await resolveOllamaVisionForReport(createReport(), cachedImages, {
-        fetchOllama: async () => new Response("bad request", { status: 400 }),
+        fetchOllama: async () =>
+          new Response(JSON.stringify({ error: "bad request" }), {
+            headers: { "content-type": "application/json" },
+            status: 400,
+          }),
         reportDirectory,
         storage: ollamaVisionStorage,
       });

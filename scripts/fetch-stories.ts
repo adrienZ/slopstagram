@@ -16,11 +16,13 @@ import {
   openInstagramSession,
   type InstagramSession,
 } from "./lib/playwright-service.ts";
+import { STORY_MEDIA_TYPES } from "./lib/types.ts";
 import type {
   StoriesManifestReport,
   StoryFetchFailure,
   StoryFetchFailureReason,
   StoryItem,
+  StoryMediaType,
   StoryManifestReel,
   StoryManifestItem,
   StoryOutputUser,
@@ -676,6 +678,23 @@ function getStoryPreviewImageUrl(
   return candidate?.url ?? null;
 }
 
+function getStoryMediaType(
+  mediaPk: string,
+  cachedItems: Map<string, StoryItem>,
+): StoryMediaType | null {
+  const mediaType = cachedItems.get(mediaPk)?.media_type;
+
+  if (mediaType === 1) {
+    return STORY_MEDIA_TYPES.IMAGE;
+  }
+
+  if (mediaType === 2) {
+    return STORY_MEDIA_TYPES.VIDEO;
+  }
+
+  return null;
+}
+
 function createOutputUsers(manifestUsers: StoryManifestReel[]): StoryOutputUser[] {
   const outputUsers: StoryOutputUser[] = [];
   const groupByUser = new Map<string, StoryOutputUser>();
@@ -704,6 +723,7 @@ function createOutputUsers(manifestUsers: StoryManifestReel[]): StoryOutputUser[
           ? {}
           : { failure_index: story.failure_index }),
         ig_caption: story.ig_caption,
+        media_type: story.media_type ?? null,
         media_pk: story.media_pk,
         preview_image_url: story.preview_image_url,
         stickers: story.stickers,
@@ -1034,6 +1054,7 @@ export async function fetchStoriesManifest(
         cache_key: getStoryCacheKey(mediaPk),
         ...(failureIndex === undefined ? {} : { failure_index: failureIndex }),
         ig_caption: getAccessibilityCaption(mediaPk, cachedItems),
+        media_type: getStoryMediaType(mediaPk, cachedItems),
         media_pk: mediaPk,
         preview_image_url: getStoryPreviewImageUrl(mediaPk, cachedItems),
         stickers: getStoryStickers(mediaPk, cachedItems),
