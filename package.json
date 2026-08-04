@@ -7,6 +7,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
+    "auth": "tsx scripts/auth.ts",
     "fetch:stories": "tsx scripts/fetch-stories.ts",
     "fetch:story": "tsx scripts/fetch-story.ts",
     "create:html-report": "tsx scripts/create-html-report.ts",

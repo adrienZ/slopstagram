@@ -1,6 +1,7 @@
 import process from "node:process";
 import {
   closeInstagramSession,
+  DEFAULT_PROFILE_PATH,
   openInstagramSession,
 } from "./lib/playwright-service.ts";
 
@@ -12,23 +13,13 @@ type ReelsMediaResponse = {
 
 const IG_APP_ID = "936619743392459";
 const REELS_MEDIA_URL = "https://www.instagram.com/api/v1/feed/reels_media/";
-const DEFAULT_PROFILE_PATH = ".playwright/user-data";
-
-function getArgValue(args: string[], flag: string): string | undefined {
-  const index = args.indexOf(flag);
-  if (index === -1) {
-    return undefined;
-  }
-
-  return args[index + 1];
-}
 
 function getReelId(args: string[]): string {
   const reelId = args[0];
 
   if (!reelId || reelId.startsWith("--")) {
     throw new Error(
-      "Usage: tsx scripts/fetch-story.ts <reel-id> [--profile <path>]",
+      "Usage: tsx scripts/fetch-story.ts <reel-id>",
     );
   }
 
@@ -39,7 +30,9 @@ export async function fetchStory(
   reelId: string,
   args: string[] = process.argv.slice(3),
 ): Promise<Record<string, unknown>> {
-  const profileArg = getArgValue(args, "--profile") ?? DEFAULT_PROFILE_PATH;
+  const profileArg = args.includes("--profile")
+    ? args[args.indexOf("--profile") + 1] ?? DEFAULT_PROFILE_PATH
+    : DEFAULT_PROFILE_PATH;
   const session = await openInstagramSession(profileArg);
 
   try {

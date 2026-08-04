@@ -13,6 +13,7 @@ import {
 } from "./lib/report-constants.ts";
 import {
   closeInstagramSession,
+  DEFAULT_PROFILE_PATH,
   openInstagramSession,
   type InstagramSession,
 } from "./lib/playwright-service.ts";
@@ -98,7 +99,6 @@ type FetchStoriesOptions = FetchStoriesManifestOptions & {
 const IG_APP_ID = "936619743392459";
 const REELS_TRAY_URL = "https://www.instagram.com/api/v1/feed/reels_tray/";
 const REELS_MEDIA_URL = "https://www.instagram.com/api/v1/feed/reels_media/";
-const DEFAULT_PROFILE_PATH = ".playwright/user-data";
 const DEFAULT_REPORT_NAME = "stories-report.json";
 const DEFAULT_REEL_IDS_PER_REQUEST = 25;
 const DEFAULT_MAX_ATTEMPTS = 3;
