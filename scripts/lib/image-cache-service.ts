@@ -6,10 +6,7 @@ import {
   IMAGES_STORAGE_DIR,
   imageCacheStorage,
 } from "./cache-service.ts";
-import {
-  convertImageToJpeg,
-  type ConvertImageToJpeg,
-} from "./image-conversion-service.ts";
+import { convertImageToJpeg } from "./image-conversion-service.ts";
 import type { Logger } from "./logging-service.ts";
 import { noopLogger } from "./logging-service.ts";
 import type {
@@ -30,7 +27,7 @@ type FetchResponse = {
 type FetchImage = (url: string) => Promise<FetchResponse>;
 
 export type CacheReportImagesOptions = {
-  convertToJpeg?: ConvertImageToJpeg;
+  convertToJpeg?: typeof convertImageToJpeg;
   fetchImage?: FetchImage;
   logger?: Logger;
   reportDirectory?: string;
@@ -140,7 +137,7 @@ async function convertCachedStoryPreviewToJpeg(
   }
 
   try {
-    const jpegBody = await options.convertToJpeg(cachedBody, cachedExtension);
+    const jpegBody = await options.convertToJpeg(cachedBody);
     const jpegRawKey = getJpegRawKey("story-previews", imageHash);
     const jpegPath = `${IMAGES_STORAGE_DIR}/${jpegRawKey}`;
 
@@ -204,7 +201,7 @@ async function cacheImage(
 
   if (shouldConvertToJpeg) {
     try {
-      bodyToStore = await options.convertToJpeg(body, extension);
+      bodyToStore = await options.convertToJpeg(body);
       rawKey = getJpegRawKey(namespace, imageHash);
       imagePath = `${IMAGES_STORAGE_DIR}/${rawKey}`;
       contentTypeToStore = "image/jpeg";

@@ -190,8 +190,7 @@ describe("cacheReportImages", () => {
     );
 
     const cachedImages = await cacheReportImages(createReport(source, previewSource), {
-      convertToJpeg: async (body, extension) =>
-        Buffer.from(`jpeg:${extension}:${body.toString()}`),
+      convertToJpeg: async (body) => Buffer.from(`jpeg:${body.toString()}`),
       fetchImage: async () => {
         const body = new TextEncoder().encode("avatar-bytes");
         return {
@@ -217,7 +216,7 @@ describe("cacheReportImages", () => {
     );
     assert.deepEqual(
       await imageCacheStorage.getItemRaw(`story-previews/${previewHash}.jpg`),
-      Buffer.from("jpeg:webp:webp-bytes"),
+      Buffer.from("jpeg:webp-bytes"),
     );
     assert.deepEqual(
       await imageCacheStorage.getItem(

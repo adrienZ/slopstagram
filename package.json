@@ -19,6 +19,7 @@
   "dependencies": {
     "@playwright/cli": "^0.1.17",
     "ollama": "^0.6.3",
+    "sharp": "^0.35.3",
     "unstorage": "^1.17.5"
   },
   "devDependencies": {
