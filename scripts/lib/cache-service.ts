@@ -13,7 +13,7 @@ import type {
 export const BASE_CACHE_DIR = ".tmp";
 export const APPLE_CAPTIONS_STORAGE_DIR = "apple-captions";
 export const IMAGES_STORAGE_DIR = "images";
-export const OLLAMA_USER_SUMMARIES_STORAGE_DIR = "ollama-user-summaries";
+export const USER_SUMMARIES_STORAGE_DIR = "user-summaries";
 export const VISION_STORAGE_DIR = "vision";
 export const REPORTS_STORAGE_DIR = "reports";
 export const STORIES_STORAGE_DIR = "stories";
@@ -38,7 +38,7 @@ export function createCacheStorages(
     ),
     ollamaUserSummaryStorage: prefixStorage<OllamaUserSummaryCacheEntry>(
       storage,
-      OLLAMA_USER_SUMMARIES_STORAGE_DIR,
+      USER_SUMMARIES_STORAGE_DIR,
     ),
     visionStorage: prefixStorage<VisionCacheEntry>(
       storage,

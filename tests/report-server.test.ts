@@ -67,6 +67,7 @@ test("GET /report renders the latest fixture report", async () => {
   assert.match(html, /A text-focused story with extracted details\./);
   assert.match(html, /src="\/images\/avatar.jpg"/);
   assert.match(html, /src="\/images\/story.jpg"/);
+  assert.doesNotMatch(html, /src="https?:\/\//);
   assert.match(html, /data-story-url="https:\/\/www\.instagram\.com\/stories\/ranked-second\/story-pk-1\/"/);
   assert.match(html, /data-story-stickers="link:A &amp; B"/);
   assert.match(html, /data-story-apple-caption="apple &lt;text&gt;"/);

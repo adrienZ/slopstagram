@@ -6,8 +6,43 @@ import {
   REPORTS_STORAGE_DIR,
   reportsStorage,
 } from "./lib/cache-service.ts";
-import { createLogger } from "./lib/logging-service.ts";
+import { cacheReportImages } from "./lib/image-cache-service.ts";
+import { createLogger, type Logger } from "./lib/logging-service.ts";
+import { resolveOllamaUserSummariesForReport } from "./lib/ollama-user-summary-service.ts";
+import type { StoriesManifestReport } from "./lib/types.ts";
+import { resolveVisionForReport } from "./lib/vision-service.ts";
 import { fetchStories } from "./fetch-stories.ts";
+
+type CreateReportDependencies = {
+  cacheReportImages: typeof cacheReportImages;
+  fetchStories: typeof fetchStories;
+  resolveOllamaUserSummariesForReport: typeof resolveOllamaUserSummariesForReport;
+  resolveVisionForReport: typeof resolveVisionForReport;
+  saveReport: (key: string, report: StoriesManifestReport) => Promise<void>;
+};
+
+type CreateReportOptions = {
+  args?: string[];
+  dependencies?: Partial<CreateReportDependencies>;
+  logger: Logger;
+  now?: () => Date;
+};
+
+type CreateReportResult = {
+  outputFileName: string;
+  outputPath: string;
+  report: StoriesManifestReport;
+};
+
+const defaultDependencies: CreateReportDependencies = {
+  cacheReportImages,
+  fetchStories,
+  resolveOllamaUserSummariesForReport,
+  resolveVisionForReport,
+  saveReport: async (key, report) => {
+    await reportsStorage.setItem(key, report);
+  },
+};
 
 function pad(value: number): string {
   return String(value).padStart(2, "0");
@@ -34,20 +69,40 @@ function formatFilenameTimestamp(date: Date): string {
   return `${year}-${month}-${day}T${hours}-${minutes}-${seconds}${formatTimezoneOffset(date)}`;
 }
 
-async function main(): Promise<void> {
-  const timestamp = formatFilenameTimestamp(new Date());
+export async function createReport(
+  options: CreateReportOptions,
+): Promise<CreateReportResult> {
+  const dependencies = {
+    ...defaultDependencies,
+    ...options.dependencies,
+  };
+  const timestamp = formatFilenameTimestamp((options.now ?? (() => new Date()))());
   const outputFileName = `stories-report-${timestamp}.json`;
-  const fetchStoriesArgs = process.argv.slice(2);
-  const logger = createLogger("create-report", (message) => {
-    process.stderr.write(`${message}\n`);
-  });
+  const logger = options.logger;
 
   logger.info(`creating report ${outputFileName}`);
-  const report = await fetchStories(fetchStoriesArgs, {
+  const report = await dependencies.fetchStories(options.args ?? [], {
     logger,
     reportName: outputFileName,
   });
-  await reportsStorage.setItem(outputFileName, report);
+  const reportDirectory = resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR);
+  const cachedImages = await dependencies.cacheReportImages(report, {
+    logger,
+    reportDirectory,
+  });
+  const visionByPreviewUrl = await dependencies.resolveVisionForReport(
+    report,
+    cachedImages,
+    {
+      logger,
+      reportDirectory,
+    },
+  );
+  await dependencies.resolveOllamaUserSummariesForReport(report, {
+    logger,
+    visionByPreviewUrl,
+  });
+  await dependencies.saveReport(outputFileName, report);
   const outputPath = resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR, outputFileName);
   const counts = report.metadata.counts;
 
@@ -60,6 +115,19 @@ async function main(): Promise<void> {
     ].join(" "),
   );
   logger.info(`wrote report ${outputPath}`);
+
+  return { outputFileName, outputPath, report };
+}
+
+async function main(): Promise<void> {
+  const logger = createLogger("create-report", (message) => {
+    process.stderr.write(`${message}\n`);
+  });
+  const { outputPath } = await createReport({
+    args: process.argv.slice(2),
+    logger,
+  });
+
   process.stdout.write(`${outputPath}\n`);
 }
 

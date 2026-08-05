@@ -43,7 +43,7 @@ export type ResolveOllamaUserSummariesOptions = {
   timeoutMs?: number;
 };
 
-function getSourceHash(value: unknown): string {
+export function getOllamaUserSummarySourceHash(value: unknown): string {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
 }
 
@@ -134,7 +134,7 @@ function createFallbackSummary(
   );
 }
 
-function createPrompt(
+export function createOllamaUserSummaryPrompt(
   user: StoryOutputUser,
   visionByPreviewUrl: Map<string, VisionResult> | undefined,
 ): string {
@@ -255,8 +255,8 @@ export async function resolveOllamaUserSummariesForReport(
   for (const [index, user] of users.entries()) {
     const userKey = getReportUserKey(user, index);
     logger.progress("ollama summary", index + 1, users.length);
-    const prompt = createPrompt(user, visionByPreviewUrl);
-    const sourceHash = getSourceHash({ model, prompt, userKey });
+    const prompt = createOllamaUserSummaryPrompt(user, visionByPreviewUrl);
+    const sourceHash = getOllamaUserSummarySourceHash({ model, prompt, userKey });
     const cacheKey = getOllamaUserSummaryCacheKey(sourceHash);
     const cachedEntry = await storage.getItem(cacheKey);
 
