@@ -132,6 +132,9 @@ describe("getStoryTrayUiSortPosition", () => {
   test("prefers seen_ranked_position over ranked_position when they diverge", () => {
     const customReport: StoriesReport = {
       xdt_api__v1__feed__reels_tray: {
+        broadcasts: [],
+        status: "ok",
+        story_ranking_token: "ranking-token",
         tray: [
           {
             id: "ranked-first",
@@ -153,9 +156,7 @@ describe("getStoryTrayUiSortPosition", () => {
 
     assert.equal(
       getStoryTrayUiSortPosition(
-        customReport.xdt_api__v1__feed__reels_tray?.tray?.[0] ?? {
-          id: "missing",
-        },
+        customReport.xdt_api__v1__feed__reels_tray.tray[0]!,
       ),
       2,
     );

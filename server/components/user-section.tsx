@@ -10,13 +10,12 @@ type UserSectionProps = {
 };
 
 export function UserSection({ user, viewModel }: UserSectionProps) {
-  const { report } = viewModel;
   const userName = formatUserName(user);
   const avatar = user.profile_pic_url
     ? viewModel.cachedImages.profilePicPathByUrl.get(user.profile_pic_url)
     : undefined;
   const summary = viewModel.userSummaryByUserKey.get(
-    getReportUserKey(user, report.output.users.indexOf(user)),
+    getReportUserKey(user),
   );
 
   return (

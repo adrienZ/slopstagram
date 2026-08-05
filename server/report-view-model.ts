@@ -139,8 +139,8 @@ async function readCachedUserSummaries(
 ): Promise<Map<string, string>> {
   const userSummaryByUserKey = new Map<string, string>();
 
-  for (const [index, user] of report.output.users.entries()) {
-    const userKey = getReportUserKey(user, index);
+  for (const user of report.output.users) {
+    const userKey = getReportUserKey(user);
     const prompt = createOllamaUserSummaryPrompt(user, visionByPreviewUrl);
     const sourceHash = getOllamaUserSummarySourceHash({
       model: OLLAMA_USER_SUMMARY_MODEL,

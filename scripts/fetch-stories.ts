@@ -33,10 +33,10 @@ import type {
 } from "./lib/types.ts";
 
 type ReelTrayResponse = {
-  broadcasts?: unknown[];
-  tray?: StoryTrayEntry[];
-  story_ranking_token?: string | null;
-  status?: string | null;
+  broadcasts: unknown[];
+  story_ranking_token: string;
+  status: string;
+  tray: StoryTrayEntry[];
 };
 
 type ReelsMediaResponse = {
@@ -366,7 +366,7 @@ function createFailure(
 function getExpectedMediaIdsByReel(
   tray: StoryTrayEntry[],
 ): Map<string, string[]> {
-  return new Map(tray.map((entry) => [entry.id, entry.media_ids ?? []]));
+  return new Map(tray.map((entry) => [entry.id, entry.media_ids]));
 }
 
 function getPendingMediaIds(
@@ -813,7 +813,7 @@ function createOutputUsers(manifestUsers: StoryManifestReel[]): StoryOutputUser[
   const groupByUser = new Map<string, StoryOutputUser>();
 
   for (const user of manifestUsers) {
-    const groupKey = user.username ?? `reel:${user.reel_id}`;
+    const groupKey = user.username;
     let group = groupByUser.get(groupKey);
 
     if (!group) {
@@ -924,9 +924,9 @@ export async function fetchStoriesManifest(
   }
 
   const trayJson = trayResult.value;
-  const tray = trayJson.tray ?? [];
+  const tray = trayJson.tray;
   const expectedMediaIdsByReel = getExpectedMediaIdsByReel(tray);
-  const expectedMediaPks = tray.flatMap((entry) => entry.media_ids ?? []);
+  const expectedMediaPks = tray.flatMap((entry) => entry.media_ids);
   const cachedItems = new Map<string, StoryItem>();
   const cacheHitPks = new Set<string>();
   const fetchedMediaPks = new Set<string>();
@@ -934,7 +934,7 @@ export async function fetchStoriesManifest(
   const failureByMediaPk = new Map<string, number>();
 
   logger.info(
-    `tray fetched: reels=${tray.length} stories=${expectedMediaPks.length} status=${trayJson.status ?? "unknown"}`,
+    `tray fetched: reels=${tray.length} stories=${expectedMediaPks.length} status=${trayJson.status}`,
   );
 
   for (const mediaPk of new Set(expectedMediaPks)) {
@@ -962,7 +962,7 @@ export async function fetchStoriesManifest(
 
   const reelIdsToFetch = tray
     .filter((entry) =>
-      (entry.media_ids ?? []).some((mediaPk) => !cachedItems.has(mediaPk)),
+      entry.media_ids.some((mediaPk) => !cachedItems.has(mediaPk)),
     )
     .map((entry) => entry.id);
 
@@ -1154,12 +1154,12 @@ export async function fetchStoriesManifest(
   }
 
   const manifestUsers: StoryManifestReel[] = tray.map((entry, order) => ({
-    full_name: entry.user?.full_name ?? entry.full_name ?? null,
-    media_ids: entry.media_ids ?? [],
+    full_name: entry.user.full_name ?? entry.full_name ?? null,
+    media_ids: entry.media_ids,
     order,
-    profile_pic_url: entry.user?.profile_pic_url ?? null,
+    profile_pic_url: entry.user.profile_pic_url ?? null,
     reel_id: entry.id,
-    stories: (entry.media_ids ?? []).map((mediaPk): StoryManifestItem => {
+    stories: entry.media_ids.map((mediaPk): StoryManifestItem => {
       const failureIndex = failureByMediaPk.get(mediaPk);
       return {
         apple_caption: NO_APPLE_CAPTION,
@@ -1177,7 +1177,7 @@ export async function fetchStoriesManifest(
             : ("ok" as const),
       };
     }),
-    username: entry.user?.username ?? null,
+    username: entry.user.username,
   }));
   logger.info(`resolving apple captions for ${expectedMediaPks.length - failureByMediaPk.size} story item(s)`);
   await populateAppleCaptions(
@@ -1198,7 +1198,7 @@ export async function fetchStoriesManifest(
       users: manifestUsers,
     },
     metadata: {
-      broadcasts_count: trayJson.broadcasts?.length ?? 0,
+      broadcasts_count: trayJson.broadcasts.length,
       counts: {
         cache_hits: expectedMediaPks.filter((mediaPk) =>
           cacheHitPks.has(mediaPk),
@@ -1217,8 +1217,8 @@ export async function fetchStoriesManifest(
       },
       created_at: now().toISOString(),
       report_name: reportName,
-      status: trayJson.status ?? null,
-      story_ranking_token: trayJson.story_ranking_token ?? null,
+      status: trayJson.status,
+      story_ranking_token: trayJson.story_ranking_token,
     },
     output: {
       users: outputUsers,

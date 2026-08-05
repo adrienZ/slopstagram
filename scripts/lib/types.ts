@@ -11,21 +11,24 @@ export type StoryMediaType =
 export type StoryTrayUser = {
   full_name?: string;
   profile_pic_url?: string;
-  username?: string;
+  username: string;
 };
 
 export type StoryTrayEntry = {
   id: string;
   full_name?: string;
-  media_ids?: string[];
+  media_ids: string[];
   ranked_position?: number;
   seen_ranked_position?: number;
-  user?: StoryTrayUser;
+  user: StoryTrayUser;
 };
 
 export type StoriesReport = {
-  xdt_api__v1__feed__reels_tray?: {
-    tray?: StoryTrayEntry[];
+  xdt_api__v1__feed__reels_tray: {
+    broadcasts: unknown[];
+    status: string;
+    story_ranking_token: string;
+    tray: StoryTrayEntry[];
   };
 };
 
@@ -35,7 +38,7 @@ export type ParsedStoryTrayItem = {
 
 export type ParsedStoryTrayUser = {
   items: ParsedStoryTrayItem[];
-  username: string | null;
+  username: string;
 };
 
 export type StoryVersion = {
@@ -127,7 +130,7 @@ export type StoryManifestReel = {
   profile_pic_url: string | null;
   reel_id: string;
   stories: StoryManifestItem[];
-  username: string | null;
+  username: string;
 };
 
 export type StoryOutputItem = {
@@ -147,7 +150,7 @@ export type StoryOutputUser = {
   profile_pic_url: string | null;
   reel_ids: string[];
   stories: StoryOutputItem[];
-  username: string | null;
+  username: string;
 };
 
 export type StoryFetchCounts = {

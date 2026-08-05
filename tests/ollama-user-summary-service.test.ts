@@ -67,7 +67,7 @@ describe("resolveOllamaUserSummariesForReport", () => {
       }),
     );
     const report = createReport();
-    const userKey = getReportUserKey(report.output.users[0]!, 0);
+    const userKey = getReportUserKey(report.output.users[0]!);
     const visionByPreviewUrl = new Map([
       [
         "https://example.com/story.jpg",
@@ -127,7 +127,7 @@ describe("resolveOllamaUserSummariesForReport", () => {
       }),
     );
     const report = createReport();
-    const userKey = getReportUserKey(report.output.users[0]!, 0);
+    const userKey = getReportUserKey(report.output.users[0]!);
     let runCount = 0;
 
     const first = await resolveOllamaUserSummariesForReport(report, {
@@ -159,7 +159,7 @@ describe("resolveOllamaUserSummariesForReport", () => {
       }),
     );
     const report = createReport();
-    const userKey = getReportUserKey(report.output.users[0]!, 0);
+    const userKey = getReportUserKey(report.output.users[0]!);
 
     const summaries = await resolveOllamaUserSummariesForReport(report, {
       fetchOllama: async (url, init) => {
@@ -213,7 +213,7 @@ describe("resolveOllamaUserSummariesForReport", () => {
       }),
     );
     const report = createReport();
-    const userKey = getReportUserKey(report.output.users[0]!, 0);
+    const userKey = getReportUserKey(report.output.users[0]!);
 
     const summaries = await resolveOllamaUserSummariesForReport(report, {
       logger: {
@@ -239,7 +239,7 @@ describe("resolveOllamaUserSummariesForReport", () => {
       }),
     );
     const report = createReport();
-    const userKey = getReportUserKey(report.output.users[0]!, 0);
+    const userKey = getReportUserKey(report.output.users[0]!);
 
     const summaries = await resolveOllamaUserSummariesForReport(report, {
       logger: {
@@ -270,7 +270,7 @@ describe("resolveOllamaUserSummariesForReport", () => {
     const sourceHash = "bad-cache-key";
     const cacheKey = getOllamaUserSummaryCacheKey(sourceHash);
     const report = createReport();
-    const userKey = getReportUserKey(report.output.users[0]!, 0);
+    const userKey = getReportUserKey(report.output.users[0]!);
     let runCount = 0;
 
     await ollamaUserSummaryStorage.setItem(cacheKey, {

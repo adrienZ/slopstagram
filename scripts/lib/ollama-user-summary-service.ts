@@ -253,7 +253,7 @@ export async function resolveOllamaUserSummariesForReport(
   const users = report.output.users;
 
   for (const [index, user] of users.entries()) {
-    const userKey = getReportUserKey(user, index);
+    const userKey = getReportUserKey(user);
     logger.progress("ollama summary", index + 1, users.length);
     const prompt = createOllamaUserSummaryPrompt(user, visionByPreviewUrl);
     const sourceHash = getOllamaUserSummarySourceHash({ model, prompt, userKey });

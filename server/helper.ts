@@ -27,10 +27,10 @@ export function formatReportDate(value: string): string {
 
 export function formatUserName(user: StoryOutputUser): string {
   const fullName = user.full_name?.trim();
-  const username = user.username?.trim();
+  const username = user.username.trim();
   return fullName && username
     ? `${fullName} (${username})`
-    : fullName || username || "Utilisateur inconnu";
+    : fullName || username;
 }
 
 export function getRankedUsers(report: StoriesManifestReport): StoryOutputUser[] {
@@ -44,8 +44,6 @@ export function getRankedUsers(report: StoriesManifestReport): StoryOutputUser[]
     .map(({ user }) => user);
 }
 
-export function getStoryUrl(username: string | null, mediaPk: string): string | undefined {
-  return username?.trim()
-    ? `https://www.instagram.com/stories/${encodeURIComponent(username)}/${encodeURIComponent(mediaPk)}/`
-    : undefined;
+export function getStoryUrl(username: string, mediaPk: string): string {
+  return `https://www.instagram.com/stories/${encodeURIComponent(username.trim())}/${encodeURIComponent(mediaPk)}/`;
 }

@@ -41,7 +41,7 @@ await mock.module("../server/report-view-model.ts", {
       report: fixture,
       userSummaryByUserKey: new Map([
         [
-          getReportUserKey(fixture.output.users[0]!, 0),
+          getReportUserKey(fixture.output.users[0]!),
           "A text-focused story with extracted details.",
         ],
       ]),

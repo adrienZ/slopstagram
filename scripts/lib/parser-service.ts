@@ -69,7 +69,9 @@ function findStoryItem(report: StoriesMediaReport, pk: string): StoryItem {
   return item;
 }
 
-export function getStoryTrayUiSortPosition(entry: StoryTrayEntry): number {
+export function getStoryTrayUiSortPosition(
+  entry: Pick<StoryTrayEntry, "ranked_position" | "seen_ranked_position">,
+): number {
   if (typeof entry.seen_ranked_position === "number") {
     return entry.seen_ranked_position;
   }
@@ -95,9 +97,9 @@ export function parseStoriesTrayReport(
     }));
   }
 
-  const tray = report.xdt_api__v1__feed__reels_tray?.tray ?? [];
+  const tray = report.xdt_api__v1__feed__reels_tray.tray;
   const groupedTray: ParsedStoryTrayUser[] = [];
-  const groupByUsername = new Map<string | null, ParsedStoryTrayUser>();
+  const groupByUsername = new Map<string, ParsedStoryTrayUser>();
 
   [...tray]
     .map((entry, originalIndex) => ({ entry, originalIndex }))
@@ -113,7 +115,7 @@ export function parseStoriesTrayReport(
       return left.originalIndex - right.originalIndex;
     })
     .forEach(({ entry }) => {
-      const username = entry.user?.username ?? null;
+      const username = entry.user.username;
       let group = groupByUsername.get(username);
 
       if (!group) {
@@ -126,7 +128,7 @@ export function parseStoriesTrayReport(
       }
 
       group.items.push({
-        media_ids: entry.media_ids ?? [],
+        media_ids: entry.media_ids,
       });
     });
 
