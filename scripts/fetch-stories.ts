@@ -1256,9 +1256,7 @@ export async function fetchStories(
 }
 
 async function main(): Promise<void> {
-  const logger = createLogger("fetch-stories", (message) => {
-    process.stderr.write(`${message}\n`);
-  });
+  const logger = createLogger("fetch-stories");
   const payload = await fetchStories(process.argv.slice(2), { logger });
   process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
 }

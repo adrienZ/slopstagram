@@ -1,4 +1,6 @@
-export type LogLevel = "debug" | "error" | "info" | "warn";
+import { ProgressBar } from "@opentf/cli-pbar";
+import { createConsola } from "consola";
+import type { ConsolaReporter } from "consola";
 
 export type Logger = {
   debug: (message: string) => void;
@@ -8,42 +10,42 @@ export type Logger = {
   warn: (message: string) => void;
 };
 
-type LogWriter = (message: string) => void;
+const stderrReporter: ConsolaReporter = {
+  log: ({ args, tag, type }) => {
+    process.stderr.write(`${tag ? `[${tag}] ` : ""}${type}: ${args.join(" ")}\n`);
+  },
+};
 
-function formatMessage(prefix: string, level: LogLevel, message: string): string {
-  return `[${prefix}] ${level}: ${message}`;
-}
+export function createLogger(prefix: string): Logger {
+  const logger = createConsola({ reporters: [stderrReporter] }).withTag(prefix);
+  let progressBar: ProgressBar | null = null;
+  let progressLabel = "";
 
-export function formatProgressBar(current: number, total: number): string {
-  const width = 20;
-  const boundedTotal = Math.max(0, total);
-  const boundedCurrent =
-    boundedTotal === 0 ? 0 : Math.min(Math.max(0, current), boundedTotal);
-  const ratio = boundedTotal === 0 ? 1 : boundedCurrent / boundedTotal;
-  const filled = Math.round(ratio * width);
-  const empty = width - filled;
-  const percent = Math.round(ratio * 100);
-
-  return `[${"#".repeat(filled)}${"-".repeat(empty)}] ${boundedCurrent}/${boundedTotal} ${percent}%`;
-}
-
-export function createLogger(
-  prefix: string,
-  write: LogWriter = console.log,
-): Logger {
   return {
-    debug: (message) => write(formatMessage(prefix, "debug", message)),
-    error: (message) => write(formatMessage(prefix, "error", message)),
-    info: (message) => write(formatMessage(prefix, "info", message)),
-    progress: (label, current, total) =>
-      write(
-        formatMessage(
-          prefix,
-          "info",
-          `${label} ${formatProgressBar(current, total)}`,
-        ),
-      ),
-    warn: (message) => write(formatMessage(prefix, "warn", message)),
+    debug: (message) => logger.debug(message),
+    error: (message) => logger.error(message),
+    info: (message) => logger.info(message),
+    progress: (label, current, total) => {
+      if (!progressBar || progressLabel !== label) {
+        progressBar?.stop();
+        progressBar = new ProgressBar({
+          autoClear: true,
+          prefix: `[${prefix}] ${label}`,
+          showCount: true,
+        });
+        progressBar.start({ total });
+        progressLabel = label;
+      }
+
+      progressBar.update({ total, value: current });
+
+      if (current >= total) {
+        progressBar.stop();
+        progressBar = null;
+        progressLabel = "";
+      }
+    },
+    warn: (message) => logger.warn(message),
   };
 }
 

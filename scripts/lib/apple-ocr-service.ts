@@ -7,10 +7,10 @@ import { getLargestVersion } from "./parser-service.ts";
 import { NO_APPLE_CAPTION } from "./report-constants.ts";
 import type { AppleCaptionStorage, StoryItem } from "./types.ts";
 
-type RunAppleOcr = (source: string) => Promise<string>;
+type AppleOcrRunner = (source: string) => Promise<string>;
 
 export type RecognizeAppleCaptionOptions = {
-  runAppleOcr?: RunAppleOcr;
+  runAppleOcr?: AppleOcrRunner;
   storage?: AppleCaptionStorage;
 };
 
@@ -47,7 +47,7 @@ async function runAppleOcr(source: string): Promise<string> {
     child.on("error", reject);
     child.on("close", (code) => {
       if (code === 0) {
-        resolve(normalizeOcrText(stdout));
+        resolve(stdout);
         return;
       }
 
@@ -58,31 +58,24 @@ async function runAppleOcr(source: string): Promise<string> {
 
 export async function recognizeAppleCaption(
   story: StoryItem,
-  options: RecognizeAppleCaptionOptions = {},
+  {
+    runAppleOcr: runOcr = runAppleOcr,
+    storage = appleCaptionsStorage,
+  }: RecognizeAppleCaptionOptions = {},
 ): Promise<string> {
   const source = getOcrSource(story);
-  const storage = options.storage ?? appleCaptionsStorage;
   const cacheKey = getMediaCacheKey(story.pk);
-  const cachedEntry = await storage.getItem(cacheKey);
+  const cachedCaption = await storage.getItem(cacheKey);
 
-  if (
-    cachedEntry &&
-    typeof cachedEntry === "object" &&
-    "caption" in cachedEntry &&
-    "source" in cachedEntry &&
-    cachedEntry.source === source
-  ) {
-    return cachedEntry.caption;
+  if (cachedCaption) {
+    return cachedCaption;
   }
 
   if (!source) {
     return NO_APPLE_CAPTION;
   }
 
-  const caption = await (options.runAppleOcr ?? runAppleOcr)(source);
-  await storage.setItem(cacheKey, {
-    caption,
-    source,
-  });
+  const caption = normalizeOcrText(await runOcr(source));
+  await storage.setItem(cacheKey, caption);
   return caption;
 }

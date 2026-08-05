@@ -31,16 +31,16 @@ function createStory(
 }
 
 describe("recognizeAppleCaption", () => {
-  test("uses cached OCR when source is unchanged", async () => {
+  test("uses cached OCR by media key", async () => {
     const { appleCaptionsStorage } = createCacheStorages(
       createStorage({
         driver: memoryDriver(),
       }),
     );
-    await appleCaptionsStorage.setItem(getMediaCacheKey("story-1"), {
-      caption: "cached caption",
-      source: "https://example.com/story-1.jpg",
-    });
+    await appleCaptionsStorage.setItem(
+      getMediaCacheKey("story-1"),
+      "cached caption",
+    );
 
     let runCount = 0;
     const caption = await recognizeAppleCaption(
@@ -76,10 +76,29 @@ describe("recognizeAppleCaption", () => {
     assert.equal(caption, "fresh caption");
     assert.deepEqual(
       await appleCaptionsStorage.getItem(getMediaCacheKey("story-2")),
+      "fresh caption",
+    );
+  });
+
+  test("normalizes OCR text before caching it", async () => {
+    const { appleCaptionsStorage } = createCacheStorages(
+      createStorage({
+        driver: memoryDriver(),
+      }),
+    );
+
+    const caption = await recognizeAppleCaption(
+      createStory("story-3", "https://example.com/story-3.jpg"),
       {
-        caption: "fresh caption",
-        source: "https://example.com/story-2.jpg",
+        runAppleOcr: async () => "\r\n  fresh caption  \n",
+        storage: appleCaptionsStorage,
       },
+    );
+
+    assert.equal(caption, "fresh caption");
+    assert.deepEqual(
+      await appleCaptionsStorage.getItem(getMediaCacheKey("story-3")),
+      "fresh caption",
     );
   });
 });

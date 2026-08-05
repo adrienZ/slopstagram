@@ -19,7 +19,9 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.1.0",
+    "@opentf/cli-pbar": "^0.7.2",
     "@playwright/cli": "^0.1.17",
+    "consola": "^3.4.2",
     "hono": "^4.13.0",
     "ollama": "^0.6.3",
     "sharp": "^0.35.3",

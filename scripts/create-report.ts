@@ -120,9 +120,7 @@ export async function createReport(
 }
 
 async function main(): Promise<void> {
-  const logger = createLogger("create-report", (message) => {
-    process.stderr.write(`${message}\n`);
-  });
+  const logger = createLogger("create-report");
   const { outputPath } = await createReport({
     args: process.argv.slice(2),
     logger,

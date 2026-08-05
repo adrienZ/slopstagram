@@ -167,10 +167,7 @@ export type ImageCacheEntry = {
   path: string;
 };
 
-export type AppleCaptionCacheEntry = {
-  caption: string;
-  source: string | null;
-};
+export type AppleCaptionCacheEntry = string;
 
 export type VisionResult = {
   text: string;
