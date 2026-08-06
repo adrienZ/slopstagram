@@ -206,7 +206,7 @@ function resolveReportImagePath(reportDirectory: string, imagePath: string): str
 }
 
 async function analyzeImage(
-  source: string,
+  itemLabel: string,
   imagePath: string,
   options: ResolvedVisionOptions,
 ): Promise<VisionResult> {
@@ -223,13 +223,11 @@ async function analyzeImage(
     const cachedResult = normalizeCachedResult(cachedEntry.result);
 
     if (cachedResult) {
-      options.logger.info(`vision cache hit for ${source}`);
       return cachedResult;
     }
   }
 
   try {
-    options.logger.info(`vision started for ${source}`);
     const payload = await options.client.generate({
       format: VISION_OUTPUT_SCHEMA,
       images: [imagePath],
@@ -248,7 +246,6 @@ async function analyzeImage(
       result,
     });
 
-    options.logger.info(`vision completed for ${source}`);
     return result;
   } catch (error) {
     const status = getVisionHttpStatus(error);
@@ -260,12 +257,12 @@ async function analyzeImage(
     }
 
     if (isServerUnavailableError(error)) {
-      options.logger.warn(`vision unavailable for ${source}`);
+      options.logger.warn(`vision unavailable for ${itemLabel}`);
       return createFailureResult(VISION_SERVER_NOT_RUNNING);
     }
 
     const message = error instanceof Error ? error.message : String(error);
-    options.logger.warn(`could not run vision for ${source}: ${message}`);
+    options.logger.warn(`could not run vision for ${itemLabel}: ${message}`);
     return createFailureResult(`vision failed: ${message}`);
   }
 }
@@ -307,11 +304,22 @@ export async function resolveVisionForReport(
   const uniquePreviewEntries = [...entriesByMediaPk.values()];
 
   for (const [index, { mediaPk, source }] of uniquePreviewEntries.entries()) {
-    logger.progress("vision", index + 1, uniquePreviewEntries.length);
     const cachedPath = cachedImages.storyPreviewPathByUrl.get(source);
+    const current = index + 1;
+    const total = uniquePreviewEntries.length;
+    const cacheKey = getMediaCacheKey(mediaPk);
+    const itemLabel = cachedPath ?? `vision/${cacheKey}`;
 
     if (!cachedPath) {
-      logger.warn(`vision skipped for ${source}: no cached preview`);
+      logger.progress(index, total, {
+        prefix: "vision",
+        suffix: `missing ${itemLabel}`,
+      });
+      logger.warn(`vision skipped for ${itemLabel}: no cached preview`);
+      logger.progress(current, total, {
+        prefix: "vision",
+        suffix: `skipped ${itemLabel}`,
+      });
       for (const previewSource of sourcesByMediaPk.get(mediaPk) ?? [source]) {
         resultByPreviewUrl.set(
           previewSource,
@@ -322,7 +330,15 @@ export async function resolveVisionForReport(
     }
 
     if (path.extname(cachedPath).toLowerCase() !== ".jpg") {
-      logger.warn(`vision skipped for ${source}: preview is not JPEG`);
+      logger.progress(index, total, {
+        prefix: "vision",
+        suffix: `checking ${itemLabel}`,
+      });
+      logger.warn(`vision skipped for ${itemLabel}: preview is not JPEG`);
+      logger.progress(current, total, {
+        prefix: "vision",
+        suffix: `skipped ${itemLabel}`,
+      });
       for (const previewSource of sourcesByMediaPk.get(mediaPk) ?? [source]) {
         resultByPreviewUrl.set(
           previewSource,
@@ -333,7 +349,11 @@ export async function resolveVisionForReport(
     }
 
     const imagePath = resolveReportImagePath(options.reportDirectory, cachedPath);
-    const result = await analyzeImage(source, imagePath, {
+    logger.progress(index, total, {
+      prefix: "vision",
+      suffix: `resolving ${itemLabel}`,
+    });
+    const result = await analyzeImage(itemLabel, imagePath, {
       mediaPk,
       logger,
       model,

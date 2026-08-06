@@ -4,7 +4,7 @@ import type {
   AppleCaptionCacheEntry,
   CacheStorageSet,
   ImageCacheEntry,
-  OllamaUserSummaryCacheEntry,
+  UserSummaryCacheEntry,
   VisionCacheEntry,
   StoriesManifestReport,
   StoryItem,
@@ -36,7 +36,7 @@ export function createCacheStorages(
       storage,
       IMAGES_STORAGE_DIR,
     ),
-    ollamaUserSummaryStorage: prefixStorage<OllamaUserSummaryCacheEntry>(
+    userSummaryStorage: prefixStorage<UserSummaryCacheEntry>(
       storage,
       USER_SUMMARIES_STORAGE_DIR,
     ),
@@ -60,14 +60,14 @@ export function getImageCacheMetadataKey(imageKey: string): string {
   return `${imageKey}.json`;
 }
 
-export function getOllamaUserSummaryCacheKey(sourceHash: string): string {
+export function getUserSummaryCacheKey(sourceHash: string): string {
   return `${sourceHash}.json`;
 }
 
 export const {
   appleCaptionsStorage,
   imageCacheStorage,
-  ollamaUserSummaryStorage,
+  userSummaryStorage,
   visionStorage,
   reportsStorage,
   storiesStorage,

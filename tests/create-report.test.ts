@@ -1,8 +1,24 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { createConsola } from "consola";
 import { createReport } from "../scripts/create-report.ts";
-import { noopLogger } from "../scripts/lib/logging-service.ts";
+import type { Logger } from "../scripts/lib/logging-service.ts";
 import type { StoriesManifestReport } from "../scripts/lib/types.ts";
+
+function createMockLogger(): Logger {
+  const logger = createConsola();
+
+  logger.mockTypes(() => {
+    const log = () => {};
+    log.raw = log;
+
+    return log;
+  });
+
+  return Object.assign(logger, {
+    progress: () => {},
+  });
+}
 
 function createFixtureReport(): StoriesManifestReport {
   return {
@@ -57,7 +73,7 @@ test("createReport prepares every cache before persisting the report", async () 
         assert.equal(images, cachedImages);
         return visionByPreviewUrl;
       },
-      resolveOllamaUserSummariesForReport: async (_report, options) => {
+      resolveUserSummariesForReport: async (_report, options) => {
         calls.push("cache-summaries");
         assert.ok(options);
         assert.equal(options.visionByPreviewUrl, visionByPreviewUrl);
@@ -69,7 +85,7 @@ test("createReport prepares every cache before persisting the report", async () 
         savedKey = key;
       },
     },
-    logger: noopLogger,
+    logger: createMockLogger(),
     now: () => new Date("2026-08-05T18:00:00.000Z"),
   });
 

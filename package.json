@@ -11,7 +11,7 @@
     "fetch:stories": "tsx scripts/fetch-stories.ts",
     "fetch:story": "tsx scripts/fetch-story.ts",
     "create:report": "tsx scripts/create-report.ts",
-    "report:server": "tsx server/app.ts",
+    "start": "tsx server/app.ts",
     "parse:stories-tray": "node --import tsx scripts/parse-stories-tray.ts",
     "parse:story": "node --import tsx scripts/parse-story.ts",
     "typecheck": "tsc --noEmit",

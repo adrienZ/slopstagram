@@ -1,58 +1,87 @@
 import { ProgressBar } from "@opentf/cli-pbar";
-import { createConsola } from "consola";
-import type { ConsolaReporter } from "consola";
+import { createConsola, type ConsolaInstance } from "consola";
 
-export type Logger = {
-  debug: (message: string) => void;
-  error: (message: string) => void;
-  info: (message: string) => void;
-  progress: (label: string, current: number, total: number) => void;
-  warn: (message: string) => void;
+type ProgressOptions = {
+  prefix?: string;
+  suffix?: string;
 };
 
-const stderrReporter: ConsolaReporter = {
-  log: ({ args, tag, type }) => {
-    process.stderr.write(`${tag ? `[${tag}] ` : ""}${type}: ${args.join(" ")}\n`);
-  },
+export type Logger = ConsolaInstance & {
+  progress(value: number, total: number, options?: ProgressOptions): void;
 };
 
-export function createLogger(prefix: string): Logger {
-  const logger = createConsola({ reporters: [stderrReporter] }).withTag(prefix);
-  let progressBar: ProgressBar | null = null;
-  let progressLabel = "";
-
-  return {
-    debug: (message) => logger.debug(message),
-    error: (message) => logger.error(message),
-    info: (message) => logger.info(message),
-    progress: (label, current, total) => {
-      if (!progressBar || progressLabel !== label) {
-        progressBar?.stop();
-        progressBar = new ProgressBar({
-          autoClear: true,
-          prefix: `[${prefix}] ${label}`,
-          showCount: true,
-        });
-        progressBar.start({ total });
-        progressLabel = label;
-      }
-
-      progressBar.update({ total, value: current });
-
-      if (current >= total) {
-        progressBar.stop();
-        progressBar = null;
-        progressLabel = "";
-      }
-    },
-    warn: (message) => logger.warn(message),
-  };
+function createBar(prefix: string): ProgressBar {
+  return new ProgressBar({
+    autoClear: true,
+    prefix,
+    showCount: true,
+    variant: "PLAIN",
+    size: "SMALL",
+  });
 }
 
-export const noopLogger: Logger = {
-  debug: () => {},
-  error: () => {},
-  info: () => {},
-  progress: () => {},
-  warn: () => {},
-};
+export function createLogger(prefix: string): Logger {
+  const instance = createConsola();
+  instance.withTag(prefix);
+
+  let activeBar: { bar: ProgressBar; key: string } | null = null;
+
+  function stopActiveBar(): void {
+    if (!activeBar) {
+      return;
+    }
+
+    activeBar.bar.stop();
+    activeBar = null;
+  }
+
+  for (const typeName of [
+    "debug",
+    "error",
+    "info",
+    "log",
+    "success",
+    "warn",
+  ] as const) {
+    const log = instance[typeName].bind(instance);
+    instance[typeName] = ((...args: Parameters<typeof log>) => {
+      stopActiveBar();
+      return log(...args);
+    }) as typeof instance[typeof typeName];
+  }
+
+  function progress(value: number, total: number, options: ProgressOptions = {}): void {
+    if (!process.stderr.isTTY) {
+      return;
+    }
+
+    const barPrefix = [prefix, options.prefix].filter(Boolean).join(" ");
+    const barKey = barPrefix;
+
+    if (activeBar && activeBar.key !== barKey) {
+      stopActiveBar();
+    }
+
+    if (!activeBar) {
+      const bar = createBar(barPrefix);
+      activeBar = { bar, key: barKey };
+      bar.start({ total });
+    }
+
+    activeBar.bar.update({
+      suffix: options.suffix,
+      total,
+      value,
+    });
+
+    if (value >= total) {
+      stopActiveBar();
+    }
+  }
+
+  return Object.assign(instance, {
+    progress,
+  });
+}
+
+export const noopLogger: Logger = createLogger("noop");

@@ -180,7 +180,7 @@ export type VisionCacheEntry = {
   result: VisionResult;
 };
 
-export type OllamaUserSummaryCacheEntry = {
+export type UserSummaryCacheEntry = {
   prompt: string;
   result: string;
   source_hash: string;
@@ -211,11 +211,11 @@ export type ReportStorage = Storage<StoriesManifestReport>;
 export type AppleCaptionStorage = Storage<AppleCaptionCacheEntry>;
 export type ImageCacheStorage = Storage<ImageCacheEntry>;
 export type VisionStorage = Storage<VisionCacheEntry>;
-export type OllamaUserSummaryStorage = Storage<OllamaUserSummaryCacheEntry>;
+export type UserSummaryStorage = Storage<UserSummaryCacheEntry>;
 export type CacheStorageSet = {
   appleCaptionsStorage: AppleCaptionStorage;
   imageCacheStorage: ImageCacheStorage;
-  ollamaUserSummaryStorage: OllamaUserSummaryStorage;
+  userSummaryStorage: UserSummaryStorage;
   visionStorage: VisionStorage;
   reportsStorage: ReportStorage;
   storiesStorage: StoryStorage;

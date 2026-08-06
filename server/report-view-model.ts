@@ -4,20 +4,20 @@ import {
   BASE_CACHE_DIR,
   getImageCacheMetadataKey,
   getMediaCacheKey,
-  getOllamaUserSummaryCacheKey,
+  getUserSummaryCacheKey,
   IMAGES_STORAGE_DIR,
   imageCacheStorage,
-  ollamaUserSummaryStorage,
+  userSummaryStorage,
   visionStorage,
 } from "../scripts/lib/cache-service.ts";
 import type { CachedReportImages } from "../scripts/lib/image-cache-service.ts";
 import {
-  createOllamaUserSummaryPrompt,
-  getOllamaUserSummarySourceHash,
-  OLLAMA_USER_SUMMARY_MODEL,
-  OLLAMA_USER_SUMMARY_PROMPT,
-  OLLAMA_USER_SUMMARY_UNAVAILABLE,
-} from "../scripts/lib/ollama-user-summary-service.ts";
+  createSummaryPrompt,
+  getUserSummarySourceHash,
+  USER_SUMMARY_MODEL,
+  USER_SUMMARY_PROMPT,
+  USER_SUMMARY_UNAVAILABLE,
+} from "../scripts/lib/user-summary-service.ts";
 import { backfillReportStoryMediaTypes } from "../scripts/lib/report-media-type-service.ts";
 import { getReportUserKey } from "../scripts/lib/report-user-key-service.ts";
 import type {
@@ -141,23 +141,23 @@ async function readCachedUserSummaries(
 
   for (const user of report.output.users) {
     const userKey = getReportUserKey(user);
-    const prompt = createOllamaUserSummaryPrompt(user, visionByPreviewUrl);
-    const sourceHash = getOllamaUserSummarySourceHash({
-      model: OLLAMA_USER_SUMMARY_MODEL,
+    const prompt = createSummaryPrompt(user, visionByPreviewUrl);
+    const sourceHash = getUserSummarySourceHash({
+      model: USER_SUMMARY_MODEL,
       prompt,
       userKey,
     });
-    const entry = await ollamaUserSummaryStorage.getItem(
-      getOllamaUserSummaryCacheKey(sourceHash),
+    const entry = await userSummaryStorage.getItem(
+      getUserSummaryCacheKey(sourceHash),
     );
     const result = entry?.result.trim();
 
     if (
       entry?.source_hash === sourceHash &&
-      entry.prompt === OLLAMA_USER_SUMMARY_PROMPT &&
+      entry.prompt === USER_SUMMARY_PROMPT &&
       entry.user_key === userKey &&
       result &&
-      result !== OLLAMA_USER_SUMMARY_UNAVAILABLE
+      result !== USER_SUMMARY_UNAVAILABLE
     ) {
       userSummaryByUserKey.set(userKey, result);
     }

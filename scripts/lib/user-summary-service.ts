@@ -1,23 +1,23 @@
 import { createHash } from "node:crypto";
 import { Ollama, type Fetch as OllamaFetch } from "ollama";
 import {
-  getOllamaUserSummaryCacheKey,
-  ollamaUserSummaryStorage,
+  getUserSummaryCacheKey,
+  userSummaryStorage,
 } from "./cache-service.ts";
 import { noopLogger, type Logger } from "./logging-service.ts";
 import { getReportUserKey } from "./report-user-key-service.ts";
 import type {
-  OllamaUserSummaryStorage,
+  UserSummaryStorage,
   VisionResult,
   StoriesManifestReport,
   StoryOutputUser,
 } from "./types.ts";
 
-export const OLLAMA_USER_SUMMARY_MODEL = "qwen3.5:0.8b-mlx";
-export const OLLAMA_USER_SUMMARY_PROMPT =
+export const USER_SUMMARY_MODEL = "qwen3.5:0.8b-mlx";
+export const USER_SUMMARY_PROMPT =
   "Résume cet utilisateur Instagram en 2 ou 3 phrases en français.";
-export const OLLAMA_USER_SUMMARY_UNAVAILABLE = "résumé indisponible";
-export const OLLAMA_USER_SUMMARY_TIMEOUT_MS = 60_000;
+export const USER_SUMMARY_UNAVAILABLE = "résumé indisponible";
+export const USER_SUMMARY_TIMEOUT_MS = 60_000;
 
 const USER_SUMMARY_OUTPUT_SCHEMA = {
   additionalProperties: false,
@@ -30,20 +30,20 @@ const USER_SUMMARY_OUTPUT_SCHEMA = {
   type: "object",
 } as const;
 
-type RunOllamaUserSummary = (prompt: string) => Promise<string>;
+type RunUserSummary = (prompt: string) => Promise<string>;
 
-export type ResolveOllamaUserSummariesOptions = {
+export type ResolveUserSummariesOptions = {
   endpoint?: string;
   fetchOllama?: OllamaFetch;
   logger?: Logger;
   model?: string;
   visionByPreviewUrl?: Map<string, VisionResult>;
-  runOllamaUserSummary?: RunOllamaUserSummary;
-  storage?: OllamaUserSummaryStorage;
+  runUserSummary?: RunUserSummary;
+  storage?: UserSummaryStorage;
   timeoutMs?: number;
 };
 
-export function getOllamaUserSummarySourceHash(value: unknown): string {
+export function getUserSummarySourceHash(value: unknown): string {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
 }
 
@@ -55,7 +55,7 @@ function isUsableSummary(value: string | null | undefined): value is string {
   return Boolean(
     value &&
       value.trim() &&
-      normalizeSummary(value) !== OLLAMA_USER_SUMMARY_UNAVAILABLE,
+      normalizeSummary(value) !== USER_SUMMARY_UNAVAILABLE,
   );
 }
 
@@ -124,7 +124,7 @@ function createFallbackSummary(
   const details = collectFallbackDetails(user, visionByPreviewUrl);
 
   if (details.length === 0) {
-    return OLLAMA_USER_SUMMARY_UNAVAILABLE;
+    return USER_SUMMARY_UNAVAILABLE;
   }
 
   return normalizeSummary(
@@ -134,7 +134,7 @@ function createFallbackSummary(
   );
 }
 
-export function createOllamaUserSummaryPrompt(
+export function createSummaryPrompt(
   user: StoryOutputUser,
   visionByPreviewUrl: Map<string, VisionResult> | undefined,
 ): string {
@@ -152,7 +152,7 @@ export function createOllamaUserSummaryPrompt(
   });
 
   return [
-    OLLAMA_USER_SUMMARY_PROMPT,
+    USER_SUMMARY_PROMPT,
     "",
     "Utilise uniquement les données ci-dessous. Concentre-toi sur les activités visibles, les lieux, les événements et les thèmes. N'évoque pas les légendes manquantes ni les champs techniques. Réponds en français. Retourne du JSON avec un seul champ string nommé summary.",
     "",
@@ -168,7 +168,7 @@ export function createOllamaUserSummaryPrompt(
   ].join("\n");
 }
 
-function getOllamaHttpStatus(error: unknown): number | null {
+function getHttpStatus(error: unknown): number | null {
   if (
     error &&
     typeof error === "object" &&
@@ -209,7 +209,7 @@ function createDefaultOllamaRunner(options: {
   fetchOllama?: OllamaFetch;
   model: string;
   timeoutMs: number;
-}): RunOllamaUserSummary {
+}): RunUserSummary {
   const ollama = new Ollama({
     fetch: createTimeoutFetch(options.fetchOllama ?? fetch, options.timeoutMs),
     host: resolveOllamaHost(options.endpoint),
@@ -232,80 +232,89 @@ function createDefaultOllamaRunner(options: {
   };
 }
 
-export async function resolveOllamaUserSummariesForReport(
+export async function resolveUserSummariesForReport(
   report: StoriesManifestReport,
-  options: ResolveOllamaUserSummariesOptions = {},
+  options: ResolveUserSummariesOptions = {},
 ): Promise<Map<string, string>> {
   const logger = options.logger ?? noopLogger;
-  const model = options.model ?? OLLAMA_USER_SUMMARY_MODEL;
+  const model = options.model ?? USER_SUMMARY_MODEL;
   const visionByPreviewUrl = options.visionByPreviewUrl;
-  const timeoutMs = options.timeoutMs ?? OLLAMA_USER_SUMMARY_TIMEOUT_MS;
-  const runOllamaUserSummary =
-    options.runOllamaUserSummary ??
+  const timeoutMs = options.timeoutMs ?? USER_SUMMARY_TIMEOUT_MS;
+  const runUserSummary =
+    options.runUserSummary ??
     createDefaultOllamaRunner({
       endpoint: options.endpoint,
       fetchOllama: options.fetchOllama,
       model,
       timeoutMs,
     });
-  const storage = options.storage ?? ollamaUserSummaryStorage;
+  const storage = options.storage ?? userSummaryStorage;
   const summaryByUserKey = new Map<string, string>();
   const users = report.output.users;
 
   for (const [index, user] of users.entries()) {
     const userKey = getReportUserKey(user);
-    logger.progress("ollama summary", index + 1, users.length);
-    const prompt = createOllamaUserSummaryPrompt(user, visionByPreviewUrl);
-    const sourceHash = getOllamaUserSummarySourceHash({ model, prompt, userKey });
-    const cacheKey = getOllamaUserSummaryCacheKey(sourceHash);
+    const current = index + 1;
+    const prompt = createSummaryPrompt(user, visionByPreviewUrl);
+    const sourceHash = getUserSummarySourceHash({ model, prompt, userKey });
+    const cacheKey = getUserSummaryCacheKey(sourceHash);
     const cachedEntry = await storage.getItem(cacheKey);
 
     if (
       cachedEntry &&
       cachedEntry.source_hash === sourceHash &&
-      cachedEntry.prompt === OLLAMA_USER_SUMMARY_PROMPT &&
+      cachedEntry.prompt === USER_SUMMARY_PROMPT &&
       cachedEntry.user_key === userKey
     ) {
       if (isUsableSummary(cachedEntry.result)) {
-        logger.info(`ollama summary cache hit for ${userKey}`);
+        logger.progress(current, users.length, {
+          prefix: "user-summary",
+          suffix: `cache hit ${userKey}`,
+        });
         summaryByUserKey.set(userKey, cachedEntry.result);
         continue;
       }
 
-      logger.warn(`ollama summary ignored bad cached result for ${userKey}`);
+      logger.warn(`user summary ignored bad cached result for ${userKey}`);
     }
 
     try {
-      logger.info(`ollama summary started for ${userKey}`);
-      const response = await runOllamaUserSummary(prompt);
+      logger.progress(current, users.length, {
+        prefix: "user-summary",
+        suffix: `summarizing ${userKey}`,
+      });
+      const response = await runUserSummary(prompt);
       const result = parseSummaryResponse(response);
 
       if (!result) {
         const fallbackSummary = createFallbackSummary(user, visionByPreviewUrl);
         logger.warn(
-          `ollama summary returned empty response for ${userKey}; using report fallback`,
+          `user summary returned empty response for ${userKey}; using report fallback`,
         );
         summaryByUserKey.set(userKey, fallbackSummary);
         continue;
       }
 
       await storage.setItem(cacheKey, {
-        prompt: OLLAMA_USER_SUMMARY_PROMPT,
+        prompt: USER_SUMMARY_PROMPT,
         result,
         source_hash: sourceHash,
         user_key: userKey,
       });
       summaryByUserKey.set(userKey, result);
-      logger.info(`ollama summary completed for ${userKey}`);
+      logger.progress(current, users.length, {
+        prefix: "user-summary",
+        suffix: `summarized ${userKey}`,
+      });
     } catch (error) {
-      const status = getOllamaHttpStatus(error);
+      const status = getHttpStatus(error);
       const message = error instanceof Error ? error.message : String(error);
       logger.warn(
         `could not summarize user ${userKey} with Ollama${
           status === null ? "" : ` HTTP ${status}`
         }: ${message}`,
       );
-      summaryByUserKey.set(userKey, OLLAMA_USER_SUMMARY_UNAVAILABLE);
+      summaryByUserKey.set(userKey, USER_SUMMARY_UNAVAILABLE);
     }
   }
 

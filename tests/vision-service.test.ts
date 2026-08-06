@@ -3,6 +3,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, test } from "node:test";
+import { createConsola } from "consola";
 import { createStorage } from "unstorage";
 import memoryDriver from "unstorage/drivers/memory";
 import { createCacheStorages } from "../scripts/lib/cache-service.ts";
@@ -11,9 +12,25 @@ import {
   VISION_SERVER_NOT_RUNNING,
   resolveVisionForReport,
 } from "../scripts/lib/vision-service.ts";
+import type { Logger } from "../scripts/lib/logging-service.ts";
 import type { StoriesManifestReport } from "../scripts/lib/types.ts";
 
 const previewSource = "https://example.com/story-preview.webp";
+
+function createMockLogger(): Logger {
+  const logger = createConsola();
+
+  logger.mockTypes(() => {
+    const log = () => {};
+    log.raw = log;
+
+    return log;
+  });
+
+  return Object.assign(logger, {
+    progress: () => {},
+  });
+}
 
 function createReport(source: string = previewSource): StoriesManifestReport {
   return {
@@ -139,11 +156,13 @@ describe("resolveVisionForReport", () => {
 
       const first = await resolveVisionForReport(createReport(), cachedImages, {
         fetchVision,
+        logger: createMockLogger(),
         reportDirectory,
         storage: visionStorage,
       });
       const second = await resolveVisionForReport(createReport(), cachedImages, {
         fetchVision,
+        logger: createMockLogger(),
         reportDirectory,
         storage: visionStorage,
       });
@@ -208,6 +227,7 @@ describe("resolveVisionForReport", () => {
         cachedImages,
         {
           fetchVision,
+          logger: createMockLogger(),
           reportDirectory: directory,
           storage: visionStorage,
         },
@@ -217,6 +237,7 @@ describe("resolveVisionForReport", () => {
         cachedImages,
         {
           fetchVision,
+          logger: createMockLogger(),
           reportDirectory: directory,
           storage: visionStorage,
         },
@@ -248,6 +269,7 @@ describe("resolveVisionForReport", () => {
         fetchVision: async () => {
           throw new TypeError("fetch failed");
         },
+        logger: createMockLogger(),
         reportDirectory,
         storage: visionStorage,
       });
@@ -280,6 +302,7 @@ describe("resolveVisionForReport", () => {
               status: 200,
             },
           ),
+        logger: createMockLogger(),
         reportDirectory,
         storage: visionStorage,
       });
@@ -312,6 +335,7 @@ describe("resolveVisionForReport", () => {
               status: 200,
             },
           ),
+        logger: createMockLogger(),
         reportDirectory,
         storage: visionStorage,
       });
@@ -337,6 +361,7 @@ describe("resolveVisionForReport", () => {
             headers: { "content-type": "application/json" },
             status: 400,
           }),
+        logger: createMockLogger(),
         reportDirectory,
         storage: visionStorage,
       });

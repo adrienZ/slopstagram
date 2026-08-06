@@ -450,11 +450,15 @@ function logStoryProgress(
   cacheHitPks: Set<string>,
   fetchedMediaPks: Set<string>,
   failureByMediaPk: Map<string, number>,
+  suffix: string,
 ): void {
   logger.progress(
-    "stories",
     getResolvedStoryCount(cacheHitPks, fetchedMediaPks, failureByMediaPk),
     expectedStories,
+    {
+      prefix: "stories",
+      suffix,
+    },
   );
 }
 
@@ -856,6 +860,34 @@ async function populateAppleCaptions(
   logger: Logger,
 ): Promise<void> {
   const resolvedByMediaPk = new Map<string, string>();
+  const mediaPksToResolve = new Set(
+    manifestUsers.flatMap((user) =>
+      user.stories
+        .filter((story) => story.status !== "failed")
+        .map((story) => story.media_pk),
+    ),
+  );
+  let resolvedCount = 0;
+
+  function updateAppleCaptionProgress(mediaPk: string, suffix: string): void {
+    if (mediaPksToResolve.size === 0) {
+      return;
+    }
+
+    logger.progress(resolvedCount, mediaPksToResolve.size, {
+      prefix: "apple-captions",
+      suffix: `${suffix} ${getMediaCacheKey(mediaPk)}`,
+    });
+  }
+
+  function logAppleCaptionProgress(mediaPk: string, suffix: string): void {
+    if (mediaPksToResolve.size === 0) {
+      return;
+    }
+
+    resolvedCount += 1;
+    updateAppleCaptionProgress(mediaPk, suffix);
+  }
 
   for (const user of manifestUsers) {
     for (const story of user.stories) {
@@ -873,17 +905,23 @@ async function populateAppleCaptions(
       const storyItem = cachedItems.get(story.media_pk);
       if (!storyItem) {
         story.apple_caption = NO_APPLE_CAPTION;
+        resolvedByMediaPk.set(story.media_pk, story.apple_caption);
+        logAppleCaptionProgress(story.media_pk, "missing");
         continue;
       }
 
       try {
+        updateAppleCaptionProgress(story.media_pk, "resolving");
         const appleCaption = await resolver(storyItem);
         resolvedByMediaPk.set(story.media_pk, appleCaption);
         story.apple_caption = appleCaption;
+        logAppleCaptionProgress(story.media_pk, "resolved");
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : String(error);
         logger.warn(`apple ocr failed for story ${story.media_pk}: ${message}`);
         story.apple_caption = NO_APPLE_CAPTION;
+        resolvedByMediaPk.set(story.media_pk, story.apple_caption);
+        logAppleCaptionProgress(story.media_pk, "failed");
       }
     }
   }
@@ -958,6 +996,7 @@ export async function fetchStoriesManifest(
     cacheHitPks,
     fetchedMediaPks,
     failureByMediaPk,
+    `cache hits=${cacheHitPks.size} misses=${cacheMissCount}`,
   );
 
   const reelIdsToFetch = tray
@@ -984,8 +1023,13 @@ export async function fetchStoriesManifest(
     }
 
     const idChunk = reelChunks[chunkIndex] ?? [];
-    logger.info(
-      `fetching reel chunk ${chunkIndex + 1}/${reelChunks.length}: reels=${idChunk.length}`,
+    logStoryProgress(
+      logger,
+      expectedMediaPks.length,
+      cacheHitPks,
+      fetchedMediaPks,
+      failureByMediaPk,
+      `fetching reel chunk ${chunkIndex + 1}/${reelChunks.length} reels=${idChunk.length}`,
     );
     const chunkResult = await requestWithRetry(
       () => client.getReelsMedia(idChunk),
@@ -1000,9 +1044,6 @@ export async function fetchStoriesManifest(
         cachedItems,
         fetchedMediaPks,
         storyStorage,
-      );
-      logger.info(
-        `reel chunk ${chunkIndex + 1}/${reelChunks.length} cached ${fetchedMediaPks.size - fetchedBefore} new story item(s)`,
       );
 
       addFailuresForPendingReelStories(
@@ -1026,6 +1067,7 @@ export async function fetchStoriesManifest(
         cacheHitPks,
         fetchedMediaPks,
         failureByMediaPk,
+        `reel chunk ${chunkIndex + 1}/${reelChunks.length} cached ${fetchedMediaPks.size - fetchedBefore}`,
       );
       reelIndex += idChunk.length;
       continue;
@@ -1051,6 +1093,7 @@ export async function fetchStoriesManifest(
         cacheHitPks,
         fetchedMediaPks,
         failureByMediaPk,
+        `rate limited chunk ${chunkIndex + 1}`,
       );
       liveFetchStopped = true;
       break;
@@ -1060,7 +1103,14 @@ export async function fetchStoriesManifest(
       `chunk ${chunkIndex + 1}/${reelChunks.length} failed; falling back to individual reel requests`,
     );
     for (const reelId of idChunk) {
-      logger.info(`fetching individual reel ${reelId}`);
+      logStoryProgress(
+        logger,
+        expectedMediaPks.length,
+        cacheHitPks,
+        fetchedMediaPks,
+        failureByMediaPk,
+        `fetching reel ${reelId}`,
+      );
       const singleResult = await requestWithRetry(
         () => client.getReelsMedia([reelId]),
         retryOptions,
@@ -1074,9 +1124,6 @@ export async function fetchStoriesManifest(
           cachedItems,
           fetchedMediaPks,
           storyStorage,
-        );
-        logger.info(
-          `individual reel ${reelId} cached ${fetchedMediaPks.size - fetchedBefore} new story item(s)`,
         );
 
         addFailuresForPendingReelStories(
@@ -1100,6 +1147,7 @@ export async function fetchStoriesManifest(
           cacheHitPks,
           fetchedMediaPks,
           failureByMediaPk,
+          `reel ${reelId} cached ${fetchedMediaPks.size - fetchedBefore}`,
         );
         reelIndex += 1;
         continue;
@@ -1125,6 +1173,7 @@ export async function fetchStoriesManifest(
           cacheHitPks,
           fetchedMediaPks,
           failureByMediaPk,
+          `rate limited reel ${reelId}`,
         );
         liveFetchStopped = true;
         break;
@@ -1148,6 +1197,7 @@ export async function fetchStoriesManifest(
         cacheHitPks,
         fetchedMediaPks,
         failureByMediaPk,
+        `reel ${reelId} failed`,
       );
       reelIndex += 1;
     }

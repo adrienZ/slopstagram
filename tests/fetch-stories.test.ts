@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
+import { createConsola } from "consola";
 import { createStorage } from "unstorage";
 import memoryDriver from "unstorage/drivers/memory";
 import {
@@ -106,25 +107,25 @@ const resolveAppleCaption = async (story: StoryItem) =>
   `apple:${story.pk}`;
 function createMockLogger(): Logger & { messages: string[] } {
   const messages: string[] = [];
+  const logger = createConsola();
 
-  return {
-    debug: (message) => {
-      messages.push(`debug: ${message}`);
-    },
-    error: (message) => {
-      messages.push(`error: ${message}`);
-    },
-    info: (message) => {
-      messages.push(`info: ${message}`);
-    },
+  logger.mockTypes((typeName) => {
+    const log = (...args: unknown[]) => {
+      messages.push(`${typeName}: ${args.join(" ")}`);
+    };
+    log.raw = log;
+
+    return log;
+  });
+
+  function progress(value: number, total: number): void {
+    messages.push(`progress: ${value}/${total}`);
+  }
+
+  return Object.assign(logger, {
     messages,
-    progress: (label, current, total) => {
-      messages.push(`progress: ${label} ${current}/${total}`);
-    },
-    warn: (message) => {
-      messages.push(`warn: ${message}`);
-    },
-  };
+    progress,
+  });
 }
 
 describe("fetchStoriesManifest", () => {

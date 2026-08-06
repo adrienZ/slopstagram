@@ -8,15 +8,16 @@ import {
 } from "./lib/cache-service.ts";
 import { cacheReportImages } from "./lib/image-cache-service.ts";
 import { createLogger, type Logger } from "./lib/logging-service.ts";
-import { resolveOllamaUserSummariesForReport } from "./lib/ollama-user-summary-service.ts";
+import { resolveUserSummariesForReport } from "./lib/user-summary-service.ts";
 import type { StoriesManifestReport } from "./lib/types.ts";
 import { resolveVisionForReport } from "./lib/vision-service.ts";
 import { fetchStories } from "./fetch-stories.ts";
+import pkg from "../package.json" with { type: "json" };
 
 type CreateReportDependencies = {
   cacheReportImages: typeof cacheReportImages;
   fetchStories: typeof fetchStories;
-  resolveOllamaUserSummariesForReport: typeof resolveOllamaUserSummariesForReport;
+  resolveUserSummariesForReport: typeof resolveUserSummariesForReport;
   resolveVisionForReport: typeof resolveVisionForReport;
   saveReport: (key: string, report: StoriesManifestReport) => Promise<void>;
 };
@@ -37,7 +38,7 @@ type CreateReportResult = {
 const defaultDependencies: CreateReportDependencies = {
   cacheReportImages,
   fetchStories,
-  resolveOllamaUserSummariesForReport,
+  resolveUserSummariesForReport: resolveUserSummariesForReport,
   resolveVisionForReport,
   saveReport: async (key, report) => {
     await reportsStorage.setItem(key, report);
@@ -80,7 +81,7 @@ export async function createReport(
   const outputFileName = `stories-report-${timestamp}.json`;
   const logger = options.logger;
 
-  logger.info(`creating report ${outputFileName}`);
+  logger.box(`${pkg.name} - report ${outputFileName}`);
   const report = await dependencies.fetchStories(options.args ?? [], {
     logger,
     reportName: outputFileName,
@@ -98,7 +99,7 @@ export async function createReport(
       reportDirectory,
     },
   );
-  await dependencies.resolveOllamaUserSummariesForReport(report, {
+  await dependencies.resolveUserSummariesForReport(report, {
     logger,
     visionByPreviewUrl,
   });
@@ -114,19 +115,17 @@ export async function createReport(
       `failed=${counts.failed}`,
     ].join(" "),
   );
-  logger.info(`wrote report ${outputPath}`);
+  logger.success(`wrote report ${outputPath}`);
 
   return { outputFileName, outputPath, report };
 }
 
 async function main(): Promise<void> {
   const logger = createLogger("create-report");
-  const { outputPath } = await createReport({
+  await createReport({
     args: process.argv.slice(2),
     logger,
   });
-
-  process.stdout.write(`${outputPath}\n`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

@@ -1,18 +1,35 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
+import { createConsola } from "consola";
 import { createStorage } from "unstorage";
 import memoryDriver from "unstorage/drivers/memory";
 import {
   createCacheStorages,
-  getOllamaUserSummaryCacheKey,
+  getUserSummaryCacheKey,
 } from "../scripts/lib/cache-service.ts";
 import {
-  OLLAMA_USER_SUMMARY_MODEL,
-  OLLAMA_USER_SUMMARY_UNAVAILABLE,
-  resolveOllamaUserSummariesForReport,
-} from "../scripts/lib/ollama-user-summary-service.ts";
+  USER_SUMMARY_MODEL,
+  USER_SUMMARY_UNAVAILABLE,
+  resolveUserSummariesForReport,
+} from "../scripts/lib/user-summary-service.ts";
+import type { Logger } from "../scripts/lib/logging-service.ts";
 import { getReportUserKey } from "../scripts/lib/report-user-key-service.ts";
 import type { StoriesManifestReport } from "../scripts/lib/types.ts";
+
+function createMockLogger(): Logger {
+  const logger = createConsola();
+
+  logger.mockTypes(() => {
+    const log = () => {};
+    log.raw = log;
+
+    return log;
+  });
+
+  return Object.assign(logger, {
+    progress: () => {},
+  });
+}
 
 function createReport(): StoriesManifestReport {
   return {
@@ -59,9 +76,9 @@ function createReport(): StoriesManifestReport {
   };
 }
 
-describe("resolveOllamaUserSummariesForReport", () => {
-  test("caches successful Ollama summaries", async () => {
-    const { ollamaUserSummaryStorage } = createCacheStorages(
+describe("resolveUserSummariesForReport", () => {
+  test("caches successful user summaries", async () => {
+    const { userSummaryStorage: UserSummaryStorage } = createCacheStorages(
       createStorage({
         driver: memoryDriver(),
       }),
@@ -79,9 +96,10 @@ describe("resolveOllamaUserSummariesForReport", () => {
     ]);
     let runCount = 0;
 
-    const first = await resolveOllamaUserSummariesForReport(report, {
+    const first = await resolveUserSummariesForReport(report, {
+      logger: createMockLogger(),
       visionByPreviewUrl,
-      runOllamaUserSummary: async (prompt) => {
+      runUserSummary: async (prompt) => {
         runCount += 1;
         assert.match(prompt, /A food stall with readable prices\./);
         assert.match(prompt, /Paris Market/);
@@ -98,15 +116,16 @@ describe("resolveOllamaUserSummariesForReport", () => {
             "Summary User shared a Paris food story with a visible menu. The post centers on street food and readable prices.",
         });
       },
-      storage: ollamaUserSummaryStorage,
+      storage: UserSummaryStorage,
     });
-    const second = await resolveOllamaUserSummariesForReport(report, {
+    const second = await resolveUserSummariesForReport(report, {
+      logger: createMockLogger(),
       visionByPreviewUrl,
-      runOllamaUserSummary: async () => {
+      runUserSummary: async () => {
         runCount += 1;
         return "should not be used";
       },
-      storage: ollamaUserSummaryStorage,
+      storage: UserSummaryStorage,
     });
 
     assert.equal(
@@ -121,7 +140,7 @@ describe("resolveOllamaUserSummariesForReport", () => {
   });
 
   test("uses the Ollama model in the cache identity", async () => {
-    const { ollamaUserSummaryStorage } = createCacheStorages(
+    const { userSummaryStorage } = createCacheStorages(
       createStorage({
         driver: memoryDriver(),
       }),
@@ -130,30 +149,32 @@ describe("resolveOllamaUserSummariesForReport", () => {
     const userKey = getReportUserKey(report.output.users[0]!);
     let runCount = 0;
 
-    const first = await resolveOllamaUserSummariesForReport(report, {
-      runOllamaUserSummary: async () => {
+    const first = await resolveUserSummariesForReport(report, {
+      logger: createMockLogger(),
+      runUserSummary: async () => {
         runCount += 1;
         return JSON.stringify({ summary: "default model summary" });
       },
-      storage: ollamaUserSummaryStorage,
+      storage: userSummaryStorage,
     });
-    const second = await resolveOllamaUserSummariesForReport(report, {
+    const second = await resolveUserSummariesForReport(report, {
+      logger: createMockLogger(),
       model: "different-model",
-      runOllamaUserSummary: async () => {
+      runUserSummary: async () => {
         runCount += 1;
         return JSON.stringify({ summary: "custom model summary" });
       },
-      storage: ollamaUserSummaryStorage,
+      storage: userSummaryStorage,
     });
 
-    assert.equal(OLLAMA_USER_SUMMARY_MODEL, "qwen3.5:0.8b-mlx");
+    assert.equal(USER_SUMMARY_MODEL, "qwen3.5:0.8b-mlx");
     assert.equal(first.get(userKey), "default model summary");
     assert.equal(second.get(userKey), "custom model summary");
     assert.equal(runCount, 2);
   });
 
   test("runs the default Ollama client with qwen3.5", async () => {
-    const { ollamaUserSummaryStorage } = createCacheStorages(
+    const { userSummaryStorage } = createCacheStorages(
       createStorage({
         driver: memoryDriver(),
       }),
@@ -161,7 +182,8 @@ describe("resolveOllamaUserSummariesForReport", () => {
     const report = createReport();
     const userKey = getReportUserKey(report.output.users[0]!);
 
-    const summaries = await resolveOllamaUserSummariesForReport(report, {
+    const summaries = await resolveUserSummariesForReport(report, {
+      logger: createMockLogger(),
       fetchOllama: async (url, init) => {
         assert.match(String(url), /\/api\/generate$/);
         const body = JSON.parse(String(init?.body)) as {
@@ -200,14 +222,14 @@ describe("resolveOllamaUserSummariesForReport", () => {
           { status: 200 },
         );
       },
-      storage: ollamaUserSummaryStorage,
+      storage: userSummaryStorage,
     });
 
     assert.equal(summaries.get(userKey), "sdk summary");
   });
 
-  test("returns fallback text when Ollama summary fails", async () => {
-    const { ollamaUserSummaryStorage } = createCacheStorages(
+  test("returns fallback text when user summary fails", async () => {
+    const { userSummaryStorage } = createCacheStorages(
       createStorage({
         driver: memoryDriver(),
       }),
@@ -215,25 +237,19 @@ describe("resolveOllamaUserSummariesForReport", () => {
     const report = createReport();
     const userKey = getReportUserKey(report.output.users[0]!);
 
-    const summaries = await resolveOllamaUserSummariesForReport(report, {
-      logger: {
-        debug: () => {},
-        error: () => {},
-        info: () => {},
-        progress: () => {},
-        warn: () => {},
-      },
-      runOllamaUserSummary: async () => {
+    const summaries = await resolveUserSummariesForReport(report, {
+      logger: createMockLogger(),
+      runUserSummary: async () => {
         throw new Error("not signed in");
       },
-      storage: ollamaUserSummaryStorage,
+      storage: userSummaryStorage,
     });
 
-    assert.equal(summaries.get(userKey), OLLAMA_USER_SUMMARY_UNAVAILABLE);
+    assert.equal(summaries.get(userKey), USER_SUMMARY_UNAVAILABLE);
   });
 
-  test("uses report fallback and does not cache empty Ollama summary responses", async () => {
-    const { ollamaUserSummaryStorage } = createCacheStorages(
+  test("uses report fallback and does not cache empty user summary responses", async () => {
+    const { userSummaryStorage } = createCacheStorages(
       createStorage({
         driver: memoryDriver(),
       }),
@@ -241,18 +257,12 @@ describe("resolveOllamaUserSummariesForReport", () => {
     const report = createReport();
     const userKey = getReportUserKey(report.output.users[0]!);
 
-    const summaries = await resolveOllamaUserSummariesForReport(report, {
-      logger: {
-        debug: () => {},
-        error: () => {},
-        info: () => {},
-        progress: () => {},
-        warn: () => {},
-      },
-      runOllamaUserSummary: async () => "",
-      storage: ollamaUserSummaryStorage,
+    const summaries = await resolveUserSummariesForReport(report, {
+      logger: createMockLogger(),
+      runUserSummary: async () => "",
+      storage: userSummaryStorage,
     });
-    const keys = await ollamaUserSummaryStorage.getKeys();
+    const keys = await userSummaryStorage.getKeys();
 
     assert.equal(
       summaries.get(userKey),
@@ -262,35 +272,36 @@ describe("resolveOllamaUserSummariesForReport", () => {
   });
 
   test("ignores cached unavailable summaries and regenerates them", async () => {
-    const { ollamaUserSummaryStorage } = createCacheStorages(
+    const { userSummaryStorage } = createCacheStorages(
       createStorage({
         driver: memoryDriver(),
       }),
     );
     const sourceHash = "bad-cache-key";
-    const cacheKey = getOllamaUserSummaryCacheKey(sourceHash);
+    const cacheKey = getUserSummaryCacheKey(sourceHash);
     const report = createReport();
     const userKey = getReportUserKey(report.output.users[0]!);
     let runCount = 0;
 
-    await ollamaUserSummaryStorage.setItem(cacheKey, {
+    await userSummaryStorage.setItem(cacheKey, {
       prompt: "Résume cet utilisateur Instagram en 2 ou 3 phrases en français.",
-      result: OLLAMA_USER_SUMMARY_UNAVAILABLE,
+      result: USER_SUMMARY_UNAVAILABLE,
       source_hash: sourceHash,
       user_key: userKey,
     });
 
-    const summaries = await resolveOllamaUserSummariesForReport(report, {
-      runOllamaUserSummary: async () => {
+    const summaries = await resolveUserSummariesForReport(report, {
+      logger: createMockLogger(),
+      runUserSummary: async () => {
         runCount += 1;
         return JSON.stringify({ summary: "regenerated summary" });
       },
       storage: {
-        ...ollamaUserSummaryStorage,
+        ...userSummaryStorage,
         getItem: async (key: string) =>
-          key === getOllamaUserSummaryCacheKey(sourceHash)
-            ? await ollamaUserSummaryStorage.getItem(key)
-            : await ollamaUserSummaryStorage.getItem(cacheKey),
+          key === getUserSummaryCacheKey(sourceHash)
+            ? await userSummaryStorage.getItem(key)
+            : await userSummaryStorage.getItem(cacheKey),
       },
     });
 
