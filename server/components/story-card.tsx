@@ -1,3 +1,4 @@
+import { css, cx } from "hono/css";
 import { STORY_MEDIA_TYPES, type StoryOutputUser } from "../../scripts/lib/types.ts";
 import { getStoryUrl } from "../helper.ts";
 import type { ReportViewModel } from "../report-view-model.ts";
@@ -10,6 +11,31 @@ type StoryCardProps = {
   userName: string;
   viewModel: ReportViewModel;
 };
+
+const slideClass = css`
+  flex: none;
+  scroll-snap-align: start;
+`;
+
+const imageButtonClass = css`
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: zoom-in;
+`;
+
+const previewClass = css`
+  width: 210px;
+  max-width: calc(55vw - 36px);
+  border-radius: 8px;
+  display: block;
+  box-shadow: 0 1px 3px #0003;
+
+  @media (max-width: 760px) {
+    width: 72vw;
+    max-width: none;
+  }
+`;
 
 export function StoryCard({
   count,
@@ -36,9 +62,9 @@ export function StoryCard({
         : "";
 
   return (
-    <div class="story-slide">
+    <div class={cx("story-slide", slideClass)}>
       <button
-        class="story-image-button"
+        class={cx("story-image-button", imageButtonClass)}
         type="button"
         data-full-src={preview}
         data-full-alt={`aperçu ${story.media_pk}`}
@@ -57,7 +83,7 @@ export function StoryCard({
         data-story-vision-description={vision?.visual ?? ""}
         aria-label={`Ouvrir aperçu ${story.media_pk}`}
       >
-        <img class="story-preview" src={preview} alt={`aperçu ${story.media_pk}`} />
+        <img class={cx("story-preview", previewClass)} src={preview} alt={`aperçu ${story.media_pk}`} />
       </button>
     </div>
   );

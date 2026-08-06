@@ -1,9 +1,8 @@
+import { css, Style } from "hono/css";
 import {
   formatReportDate,
   getRankedUsers,
   lightboxScript,
-  reportCss,
-  reportHeaderCss,
   reportPickerScript,
 } from "../helper.ts";
 import type { ReportViewModel } from "../report-view-model.ts";
@@ -16,6 +15,45 @@ type ReportPageProps = {
   selectedReportKey: string;
   viewModel: ReportViewModel;
 };
+
+const pageClass = css`
+  :-hono-global {
+    :root {
+      color-scheme: light dark;
+      font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      background: #f6f7f9;
+      color: #1f2933;
+    }
+
+    body {
+      margin: 0;
+      background: #f6f7f9;
+      color: #1f2933;
+    }
+
+    main {
+      max-width: 1440px;
+      margin: auto;
+      padding: 32px 24px 48px;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin: 0 0 28px;
+    }
+
+    h2 {
+      font-size: 21px;
+      margin: 0 0 9px;
+    }
+
+    @media (max-width: 760px) {
+      main {
+        padding: 24px 16px;
+      }
+    }
+  }
+`;
 
 export function ReportPage({
   reportKeys,
@@ -30,10 +68,9 @@ export function ReportPage({
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{`Rapport Stories ${date}`}</title>
-        <style dangerouslySetInnerHTML={{ __html: reportCss }} />
-        <style dangerouslySetInnerHTML={{ __html: reportHeaderCss }} />
+        <Style />
       </head>
-      <body>
+      <body class={pageClass}>
         <main>
           <ReportHeader
             reportKeys={reportKeys}

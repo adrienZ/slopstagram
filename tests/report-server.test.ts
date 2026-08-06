@@ -72,7 +72,7 @@ test("GET /report renders the latest fixture report", async () => {
   assert.match(html, /data-story-stickers="link:A &amp; B"/);
   assert.match(html, /data-story-apple-caption="apple &lt;text&gt;"/);
   assert.match(html, /data-story-vision-ocr="OCR text"/);
-  assert.match(html, /<dialog class="image-lightbox" id="image-lightbox"/);
+  assert.match(html, /<dialog class="css-[^"]+ image-lightbox" id="image-lightbox"/);
   assert.match(html, /const dialog=document\.querySelector\('#image-lightbox'\)/);
   assert.ok(
     html.indexOf("Ranked First (ranked-first)") <

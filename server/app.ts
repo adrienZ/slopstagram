@@ -1,8 +1,9 @@
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
+import type { Context } from "hono";
 import { Hono } from "hono";
 import { jsx } from "hono/jsx";
-import { renderToString } from "hono/jsx/dom/server";
+import { renderToReadableStream } from "hono/jsx/dom/server";
 import { pathToFileURL } from "node:url";
 import { BASE_CACHE_DIR } from "../scripts/lib/cache-service.ts";
 import { ReportPage } from "./components/report-page.tsx";
@@ -11,7 +12,8 @@ import { createReportViewModel } from "./report-view-model.ts";
 
 export const app = new Hono();
 app.use("/images/*", serveStatic({ root: BASE_CACHE_DIR }));
-app.get("/", async (context) => {
+
+const renderReport = async (context: Context) => {
   try {
     const reportKeys = await getCachedReportKeys();
     const selectedReportKey = context.req.query("report") ?? reportKeys.at(-1);
@@ -21,16 +23,22 @@ app.get("/", async (context) => {
     const viewModel = await createReportViewModel(
       await readCachedReport(selectedReportKey),
     );
-    return context.html(
-      renderToString(jsx(ReportPage, { reportKeys, selectedReportKey, viewModel })),
-    );
+    const html = await new Response(
+      await renderToReadableStream(
+        jsx(ReportPage, { reportKeys, selectedReportKey, viewModel }),
+      ),
+    ).text();
+    return context.html(html);
   } catch (error) {
     return context.text(
       error instanceof Error ? error.message : String(error),
       404,
     );
   }
-});
+};
+
+app.get("/", renderReport);
+app.get("/report", renderReport);
 
 function main(): void {
   const port = Number(process.env.PORT ?? 3000);
