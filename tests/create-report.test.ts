@@ -68,7 +68,7 @@ test("createReport prepares every cache before persisting the report", async () 
         assert.ok(options);
         return cachedImages;
       },
-      resolveVisionForReport: async (_report, images, options) => {
+      resolveVisionForReport: async (_report, images) => {
         calls.push("cache-vision");
         assert.equal(images, cachedImages);
         return visionByPreviewUrl;

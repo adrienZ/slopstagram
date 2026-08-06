@@ -41,6 +41,7 @@ const VISION_OUTPUT_SCHEMA = z.toJSONSchema(VisionResponseSchema);
 const DEFAULT_IMAGE_URL =
   "https://instagram.fcdg4-1.fna.fbcdn.net/v/t51.71878-15/763318529_1727223928519145_8475697476003986394_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=102&ig_cache_key=Mzk1NTY1OTI1NjcwNzQ1NTE5OA%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IlNUT1JZLnhwaWRzLjY0MC5zZHIudmlkZW9fZGVmYXVsdF9jb3Zlcl9mcmFtZS5DMyJ9&_nc_ohc=KjQLP_pdY30Q7kNvwHsawbR&_nc_oc=AdoZFdOpUbVynr9CMW1E3_cu60C4zVkBZulvtFJKpQLJfzi-Y38uPLBCIjkPD3POulxhHhEbBLnk2WtOtelRLsZp&_nc_ad=z-m&_nc_cid=0&_nc_zt=23&_nc_ht=instagram.fcdg4-1.fna&_nc_gid=PydYgYJLiJxslfTj51yKAA&_nc_ss=7a22e&oh=00_AQH7QdTWzi4zpM4PEfe87Of1oI8aXX6PqzoVq_fAw0vryg&oe=6A76F60F";
 
+// oxlint-disable-next-line no-unused-vars
 const DEFAULT_IMAGE2_URL =
   "https://instagram.fcdg4-1.fna.fbcdn.net/v/t51.71878-15/763417317_2600086243765944_7952138478558910062_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=107&ig_cache_key=Mzk1NTUwNDc4NDkwMzgyNzA4Mg%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IlNUT1JZLnhwaWRzLjY0MC5zZHIudmlkZW9fZGVmYXVsdF9jb3Zlcl9mcmFtZS5DMyJ9&_nc_ohc=LqIm4zuXr4oQ7kNvwFX3hAy&_nc_oc=Adr6YbVIX3xF-kF4Ylq51QwMIkUfT5NAn7xAzmfU-RaPpQ2gSLMbXbgz2Y2XmwDlQJl8Ertm_fg-f1yruxxeFbJv&_nc_ad=z-m&_nc_cid=0&_nc_zt=23&_nc_ht=instagram.fcdg4-1.fna&_nc_gid=PydYgYJLiJxslfTj51yKAA&_nc_ss=7a22e&oh=00_AQFG2_SfH3hfnHOV6Vb2AHPlD8cDX0nI8pfT6rttQ8XK7Q&oe=6A76F5E1";
 

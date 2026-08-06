@@ -14,18 +14,6 @@ type ReelsMediaResponse = {
 const IG_APP_ID = "936619743392459";
 const REELS_MEDIA_URL = "https://www.instagram.com/api/v1/feed/reels_media/";
 
-function getReelId(args: string[]): string {
-  const reelId = args[0];
-
-  if (!reelId || reelId.startsWith("--")) {
-    throw new Error(
-      "Usage: tsx scripts/fetch-story.ts <reel-id>",
-    );
-  }
-
-  return reelId;
-}
-
 export async function fetchStory(
   reelId: string,
   args: string[] = process.argv.slice(3),
@@ -59,16 +47,3 @@ export async function fetchStory(
     await closeInstagramSession(session);
   }
 }
-
-async function main(): Promise<void> {
-  const args = process.argv.slice(2);
-  const reelId = getReelId(args);
-  const payload = await fetchStory(reelId, args.slice(1));
-  // process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
-}
-
-main().catch((error: unknown) => {
-  const message = error instanceof Error ? error.message : String(error);
-  process.stderr.write(`${message}\n`);
-  process.exitCode = 1;
-});
