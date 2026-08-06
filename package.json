@@ -10,7 +10,7 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "postinstall": "npm audit --json > audit.json",
+    "postinstall": "npm audit --json > audit.json || true",
     "auth": "tsx scripts/auth.ts",
     "fetch:stories": "tsx scripts/fetch-stories.ts",
     "fetch:story": "tsx scripts/fetch-story.ts",
