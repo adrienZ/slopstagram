@@ -15,7 +15,7 @@ export function formatReportDate(value: string): string {
     ? value
     : new Intl.DateTimeFormat("fr-FR", {
         day: "numeric", hour: "2-digit", hour12: false, minute: "2-digit",
-        month: "long", timeZoneName: "short", year: "numeric",
+        month: "long", timeZone: "Europe/Paris", timeZoneName: "short", year: "numeric",
       }).format(date).replace(",", " à");
 }
 
