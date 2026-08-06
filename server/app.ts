@@ -11,7 +11,7 @@ import { createReportViewModel } from "./report-view-model.ts";
 
 export const app = new Hono();
 app.use("/images/*", serveStatic({ root: BASE_CACHE_DIR }));
-app.get("/report", async (context) => {
+app.get("/", async (context) => {
   try {
     const reportKeys = await getCachedReportKeys();
     const selectedReportKey = context.req.query("report") ?? reportKeys.at(-1);

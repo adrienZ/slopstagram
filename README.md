@@ -36,7 +36,7 @@ npm run create:report
 View cached reports:
 
 ```bash
-npm run report:server
+npm run start
 ```
 
-Open <http://localhost:3000/report>.
+Open <http://localhost:5173/>.
