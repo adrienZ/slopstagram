@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { mock, test } from "node:test";
+import { createApp, defineEventHandler, toWebHandler } from "nitro/h3";
 import { getReportUserKey } from "../scripts/lib/report-user-key-service.ts";
 import type { StoriesManifestReport } from "../scripts/lib/types.ts";
 import type { ReportViewModel } from "../server/report-view-model.ts";
@@ -45,10 +46,14 @@ mock.module("../server/report-view-model.ts", {
   },
 });
 
-const { default: app } = await import("../server/app.ts");
+const { renderReport } = await import("../server/report-handler.tsx");
+const app = createApp();
+app.on("GET", "/", defineEventHandler(renderReport));
+app.on("GET", "/report", defineEventHandler(renderReport));
+const request = toWebHandler(app);
 
 test("GET /report renders the latest fixture report", async () => {
-  const response = await app.request("/report");
+  const response = await request(new Request("http://localhost/report"));
 
   assert.equal(response.status, 200);
   assert.equal(requestedReportKey, "stories-report-fixture.json");
@@ -68,7 +73,7 @@ test("GET /report renders the latest fixture report", async () => {
   assert.match(html, /data-story-stickers="link:A &amp; B"/);
   assert.match(html, /data-story-apple-caption="apple &lt;text&gt;"/);
   assert.match(html, /data-story-vision-ocr="OCR text"/);
-  assert.match(html, /<dialog class="css-[^"]+ image-lightbox" id="image-lightbox"/);
+  assert.match(html, /<dialog class="image-lightbox" id="image-lightbox"/);
   assert.match(html, /const dialog=document\.querySelector\('#image-lightbox'\)/);
   assert.ok(
     html.indexOf("Ranked First (ranked-first)") <
@@ -77,11 +82,15 @@ test("GET /report renders the latest fixture report", async () => {
 });
 
 test("GET /report selects a requested report and returns 404 when unavailable", async () => {
-  const selectedResponse = await app.request("/report?report=stories-report-fixture.json");
+  const selectedResponse = await request(
+    new Request("http://localhost/report?report=stories-report-fixture.json"),
+  );
   assert.equal(selectedResponse.status, 200);
   assert.equal(requestedReportKey, "stories-report-fixture.json");
 
-  const missingResponse = await app.request("/report?report=stories-report-missing.json");
+  const missingResponse = await request(
+    new Request("http://localhost/report?report=stories-report-missing.json"),
+  );
   assert.equal(missingResponse.status, 404);
   assert.equal(
     await missingResponse.text(),

@@ -4,7 +4,7 @@ import path from "node:path";
 import { describe, test } from "node:test";
 import { createStorage } from "unstorage";
 import memoryDriver from "unstorage/drivers/memory";
-import { createCacheStorages, getImageCacheMetadataKey } from "../scripts/lib/cache-service.ts";
+import { createCacheStorages } from "../scripts/lib/cache-service.ts";
 import { cacheReportImages } from "../scripts/lib/image-cache-service.ts";
 import type { StoriesManifestReport } from "../scripts/lib/types.ts";
 
@@ -97,7 +97,7 @@ describe("cacheReportImages", () => {
     });
 
     assert.equal(fetchCount, 2);
-    assert.equal(convertCount, 1);
+    assert.equal(convertCount, 2);
     assert.equal(
       cachedImages.profilePicPathByUrl.get(source),
       `../images/avatars/${imageHash}.jpg`,
@@ -107,27 +107,15 @@ describe("cacheReportImages", () => {
       `../images/story-previews/${previewKey}.jpg`,
     );
     assert.deepEqual(
-      await imageCacheStorage.getItem(getImageCacheMetadataKey(`avatars/${imageHash}`)),
-      {
-        content_type: "image/jpeg",
-        path: `images/avatars/${imageHash}.jpg`,
-      },
-    );
-    assert.deepEqual(
       await imageCacheStorage.getItemRaw(`avatars/${imageHash}.jpg`),
-      Buffer.from("image-bytes"),
+      Buffer.from("jpeg:image-bytes"),
     );
     assert.deepEqual(
       await imageCacheStorage.getItemRaw(`story-previews/${previewKey}.jpg`),
       Buffer.from("jpeg:image-bytes"),
     );
-    assert.deepEqual(
-      await imageCacheStorage.getItem(getImageCacheMetadataKey(`story-previews/${previewKey}`)),
-      {
-        content_type: "image/jpeg",
-        path: `images/story-previews/${previewKey}.jpg`,
-      },
-    );
+    assert.equal(await imageCacheStorage.getItemRaw(`avatars/${imageHash}.json`), null);
+    assert.equal(await imageCacheStorage.getItemRaw(`story-previews/${previewKey}.json`), null);
   });
 
   test("reuses cached profile pictures without fetching again", async () => {
@@ -138,10 +126,7 @@ describe("cacheReportImages", () => {
         driver: memoryDriver(),
       }),
     );
-    await imageCacheStorage.setItem(getImageCacheMetadataKey(`avatars/${imageHash}`), {
-      content_type: "image/webp",
-      path: `images/avatars/${imageHash}.webp`,
-    });
+    await imageCacheStorage.setItemRaw(`avatars/${imageHash}.jpg`, Buffer.from("jpeg-avatar"));
 
     const cachedImages = await cacheReportImages(createReport(source), {
       fetchImage: async () => {
@@ -153,41 +138,29 @@ describe("cacheReportImages", () => {
 
     assert.equal(
       cachedImages.profilePicPathByUrl.get(source),
-      `../images/avatars/${imageHash}.webp`,
+      `../images/avatars/${imageHash}.jpg`,
     );
   });
 
-  test("converts cached webp story previews to jpeg on reuse", async () => {
+  test("reuses cached story previews without fetching again", async () => {
     const source = "https://example.com/avatar.jpg";
     const previewSource = "https://example.com/story-preview.webp";
+    const imageHash = getImageHash(source);
     const previewKey = "story-pk";
     const { imageCacheStorage } = createCacheStorages(
       createStorage({
         driver: memoryDriver(),
       }),
     );
-    await imageCacheStorage.setItem(getImageCacheMetadataKey(`story-previews/${previewKey}`), {
-      content_type: "image/webp",
-      path: `images/story-previews/${previewKey}.webp`,
-    });
+    await imageCacheStorage.setItemRaw(`avatars/${imageHash}.jpg`, Buffer.from("jpeg-avatar"));
     await imageCacheStorage.setItemRaw(
-      `story-previews/${previewKey}.webp`,
-      Buffer.from("webp-bytes"),
+      `story-previews/${previewKey}.jpg`,
+      Buffer.from("jpeg-story"),
     );
 
     const cachedImages = await cacheReportImages(createReport(source, previewSource), {
-      convertToJpeg: async (body) => Buffer.from(`jpeg:${body.toString()}`),
       fetchImage: async () => {
-        const body = new TextEncoder().encode("avatar-bytes");
-        return {
-          arrayBuffer: async () =>
-            body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength) as ArrayBuffer,
-          headers: {
-            get: (name) => (name.toLowerCase() === "content-type" ? "image/jpeg" : null),
-          },
-          ok: true,
-          status: 200,
-        };
+        throw new Error("should not fetch");
       },
       reportDirectory: path.resolve(".tmp/reports"),
       storage: imageCacheStorage,
@@ -199,14 +172,7 @@ describe("cacheReportImages", () => {
     );
     assert.deepEqual(
       await imageCacheStorage.getItemRaw(`story-previews/${previewKey}.jpg`),
-      Buffer.from("jpeg:webp-bytes"),
-    );
-    assert.deepEqual(
-      await imageCacheStorage.getItem(getImageCacheMetadataKey(`story-previews/${previewKey}`)),
-      {
-        content_type: "image/jpeg",
-        path: `images/story-previews/${previewKey}.jpg`,
-      },
+      Buffer.from("jpeg-story"),
     );
   });
 

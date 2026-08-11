@@ -158,11 +158,6 @@ export type StoryFetchCounts = {
   stories: number;
 };
 
-export type ImageCacheEntry = {
-  content_type: string | null;
-  path: string;
-};
-
 export type AppleCaptionCacheEntry = string;
 
 export type VisionResult = {
@@ -205,7 +200,7 @@ export type TrayStorage = Storage<StoriesReport>;
 export type StoryStorage = Storage<StoryItem>;
 export type ReportStorage = Storage<StoriesManifestReport>;
 export type AppleCaptionStorage = Storage<AppleCaptionCacheEntry>;
-export type ImageCacheStorage = Storage<ImageCacheEntry>;
+export type ImageCacheStorage = Storage<Record<string, never>>;
 export type VisionStorage = Storage<VisionCacheEntry>;
 export type UserSummaryStorage = Storage<UserSummaryCacheEntry>;
 export type CacheStorageSet = {

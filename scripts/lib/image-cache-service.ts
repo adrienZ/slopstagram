@@ -1,15 +1,10 @@
 import { createHash } from "node:crypto";
 import path from "node:path";
-import {
-  BASE_CACHE_DIR,
-  getImageCacheMetadataKey,
-  IMAGES_STORAGE_DIR,
-  imageCacheStorage,
-} from "./cache-service.ts";
+import { BASE_CACHE_DIR, IMAGES_STORAGE_DIR, imageCacheStorage } from "./cache-service.ts";
 import { convertImageToJpeg } from "./image-conversion-service.ts";
 import type { Logger } from "./logging-service.ts";
 import { noopLogger } from "./logging-service.ts";
-import type { ImageCacheEntry, ImageCacheStorage, StoriesManifestReport } from "./types.ts";
+import type { ImageCacheStorage, StoriesManifestReport } from "./types.ts";
 
 type FetchResponse = {
   arrayBuffer: () => Promise<ArrayBuffer>;
@@ -35,39 +30,13 @@ export type CachedReportImages = {
   storyPreviewPathByUrl: Map<string, string>;
 };
 
-const CONTENT_TYPE_EXTENSIONS: Record<string, string> = {
-  "image/avif": "avif",
-  "image/gif": "gif",
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-};
-
 function getImageHash(source: string): string {
   return createHash("sha256").update(source).digest("hex");
 }
 
-function getExtensionFromUrl(source: string): string | null {
-  try {
-    const extension = path.extname(new URL(source).pathname).toLowerCase().slice(1);
-    return extension || null;
-  } catch {
-    return null;
-  }
-}
-
-function getImageExtension(source: string, contentType: string | null): string {
-  const normalizedContentType = contentType?.split(";")[0]?.trim().toLowerCase();
-  return (
-    (normalizedContentType ? CONTENT_TYPE_EXTENSIONS[normalizedContentType] : null) ??
-    getExtensionFromUrl(source) ??
-    "jpg"
-  );
-}
-
-function getRelativeReportImagePath(reportDirectory: string, imagePath: string): string {
+function getRelativeReportImagePath(reportDirectory: string, rawKey: string): string {
   return path
-    .relative(reportDirectory, path.resolve(BASE_CACHE_DIR, imagePath))
+    .relative(reportDirectory, path.resolve(BASE_CACHE_DIR, IMAGES_STORAGE_DIR, rawKey))
     .split(path.sep)
     .join("/");
 }
@@ -76,67 +45,8 @@ function isPresent(value: string | null): value is string {
   return Boolean(value);
 }
 
-function getRawKeyFromImagePath(imagePath: string): string {
-  const prefix = `${IMAGES_STORAGE_DIR}/`;
-  return imagePath.startsWith(prefix) ? imagePath.slice(prefix.length) : imagePath;
-}
-
 function getJpegRawKey(namespace: string, imageKey: string): string {
   return `${namespace}/${imageKey}.jpg`;
-}
-
-function isStoryPreviewNamespace(namespace: string): boolean {
-  return namespace === "story-previews";
-}
-
-async function getRawBuffer(storage: ImageCacheStorage, rawKey: string): Promise<Buffer | null> {
-  const raw = await storage.getItemRaw(rawKey);
-
-  if (raw === null || raw === undefined) {
-    return null;
-  }
-
-  return Buffer.isBuffer(raw) ? raw : Buffer.from(raw as ArrayBuffer);
-}
-
-async function convertCachedStoryPreviewToJpeg(
-  source: string,
-  imageKey: string,
-  metadataKey: string,
-  cachedEntry: ImageCacheEntry,
-  options: Required<
-    Pick<CacheReportImagesOptions, "convertToJpeg" | "logger" | "reportDirectory" | "storage">
-  >,
-): Promise<string | null> {
-  const cachedRawKey = getRawKeyFromImagePath(cachedEntry.path);
-  const cachedExtension = path.extname(cachedRawKey).toLowerCase().slice(1);
-
-  if (cachedExtension === "jpg" || cachedExtension === "jpeg") {
-    return getRelativeReportImagePath(options.reportDirectory, cachedEntry.path);
-  }
-
-  const cachedBody = await getRawBuffer(options.storage, cachedRawKey);
-  if (!cachedBody) {
-    return getRelativeReportImagePath(options.reportDirectory, cachedEntry.path);
-  }
-
-  try {
-    const jpegBody = await options.convertToJpeg(cachedBody);
-    const jpegRawKey = getJpegRawKey("story-previews", imageKey);
-    const jpegPath = `${IMAGES_STORAGE_DIR}/${jpegRawKey}`;
-
-    await options.storage.setItemRaw(jpegRawKey, jpegBody);
-    await options.storage.setItem(metadataKey, {
-      content_type: "image/jpeg",
-      path: jpegPath,
-    });
-
-    return getRelativeReportImagePath(options.reportDirectory, jpegPath);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    options.logger.warn(`could not convert cached image ${source} to JPEG: ${message}`);
-    return getRelativeReportImagePath(options.reportDirectory, cachedEntry.path);
-  }
 }
 
 async function cacheImage(
@@ -150,21 +60,10 @@ async function cacheImage(
   > & { mediaPk?: string },
 ): Promise<string | null> {
   const imageKey = options.mediaPk ?? getImageHash(source);
-  const metadataKey = getImageCacheMetadataKey(`${namespace}/${imageKey}`);
-  const cachedEntry = await options.storage.getItem(metadataKey);
+  const rawKey = getJpegRawKey(namespace, imageKey);
 
-  if (cachedEntry) {
-    if (isStoryPreviewNamespace(namespace)) {
-      return await convertCachedStoryPreviewToJpeg(
-        source,
-        imageKey,
-        metadataKey,
-        cachedEntry,
-        options,
-      );
-    }
-
-    return getRelativeReportImagePath(options.reportDirectory, cachedEntry.path);
+  if (await options.storage.hasItem(rawKey)) {
+    return getRelativeReportImagePath(options.reportDirectory, rawKey);
   }
 
   const response = await options.fetchImage(source);
@@ -173,34 +72,17 @@ async function cacheImage(
     return null;
   }
 
-  const contentType = response.headers.get("content-type");
-  const extension = getImageExtension(source, contentType);
   const body = Buffer.from(await response.arrayBuffer());
-  const shouldConvertToJpeg = isStoryPreviewNamespace(namespace);
-  let rawKey = `${namespace}/${imageKey}.${extension}`;
-  let imagePath = `${IMAGES_STORAGE_DIR}/${rawKey}`;
-  let contentTypeToStore = contentType;
-  let bodyToStore: Buffer = body;
 
-  if (shouldConvertToJpeg) {
-    try {
-      bodyToStore = await options.convertToJpeg(body);
-      rawKey = getJpegRawKey(namespace, imageKey);
-      imagePath = `${IMAGES_STORAGE_DIR}/${rawKey}`;
-      contentTypeToStore = "image/jpeg";
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      options.logger.warn(`could not convert image ${source} to JPEG: ${message}`);
-    }
+  try {
+    await options.storage.setItemRaw(rawKey, await options.convertToJpeg(body));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    options.logger.warn(`could not convert image ${source} to JPEG: ${message}`);
+    return null;
   }
 
-  await options.storage.setItemRaw(rawKey, bodyToStore);
-  await options.storage.setItem(metadataKey, {
-    content_type: contentTypeToStore,
-    path: imagePath,
-  });
-
-  return getRelativeReportImagePath(options.reportDirectory, imagePath);
+  return getRelativeReportImagePath(options.reportDirectory, rawKey);
 }
 
 export async function cacheReportImages(

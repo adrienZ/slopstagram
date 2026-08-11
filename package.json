@@ -11,7 +11,9 @@
     "auth": "tsx scripts/auth.ts",
     "fetch:stories": "tsx scripts/fetch-stories.ts",
     "create:report": "tsx scripts/create-report.ts",
-    "start": "npm exec vite",
+    "feed:cache": "tsx scripts/feed-cache.ts",
+    "start": "vite --port 5173",
+    "build": "vite build",
     "lint": "oxlint",
     "knip": "knip",
     "check": "npm run format:check && npm run lint && npm run knip && npm run test",
@@ -20,10 +22,9 @@
     "test": "node --experimental-test-module-mocks --import tsx --test tests/**/*.test.ts"
   },
   "dependencies": {
-    "@hono/node-server": "^2.1.0",
     "@opentf/cli-pbar": "^0.7.2",
+    "clsx": "^2.1.1",
     "consola": "^3.4.2",
-    "hono": "^4.13.0",
     "ollama": "^0.6.3",
     "playwright": "^1.62.1",
     "sharp": "^0.35.3",
@@ -31,12 +32,13 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@hono/vite-dev-server": "^0.26.1",
     "@playwright/cli": "^0.1.17",
     "@types/node": "^26.1.1",
     "husky": "^9.1.7",
     "knip": "^6.32.1",
     "lint-staged": "^17.3.0",
+    "mono-jsx": "^0.9.14",
+    "nitro": "^3.0.0",
     "oxfmt": "^0.63.0",
     "oxlint": "^1.77.0",
     "oxlint-tsgolint": "^7.0.2001",

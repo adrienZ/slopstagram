@@ -2,7 +2,6 @@ import { createHash } from "node:crypto";
 import path from "node:path";
 import {
   BASE_CACHE_DIR,
-  getImageCacheMetadataKey,
   getMediaCacheKey,
   getUserSummaryCacheKey,
   IMAGES_STORAGE_DIR,
@@ -35,19 +34,17 @@ function getHash(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
-function getRawImageKey(imagePath: string): string {
-  const prefix = `${IMAGES_STORAGE_DIR}/`;
-  return imagePath.startsWith(prefix) ? imagePath.slice(prefix.length) : imagePath;
+function getImageRawKey(namespace: string, imageKey: string): string {
+  return `${namespace}/${imageKey}.jpg`;
 }
 
-async function getCachedImagePath(metadataKey: string): Promise<string | null> {
-  const entry = await imageCacheStorage.getItem(metadataKey);
-  if (!entry || !(await imageCacheStorage.hasItem(getRawImageKey(entry.path)))) {
+async function getCachedImagePath(rawKey: string): Promise<string | null> {
+  if (!(await imageCacheStorage.hasItem(rawKey))) {
     return null;
   }
 
   return path
-    .relative(reportDirectory, path.resolve(BASE_CACHE_DIR, entry.path))
+    .relative(reportDirectory, path.resolve(BASE_CACHE_DIR, IMAGES_STORAGE_DIR, rawKey))
     .split(path.sep)
     .join("/");
 }
@@ -60,7 +57,7 @@ async function readCachedImages(report: StoriesManifestReport): Promise<CachedRe
     const profilePicUrl = user.profile_pic_url?.trim();
     if (profilePicUrl && !profilePicPathByUrl.has(profilePicUrl)) {
       const cachedPath = await getCachedImagePath(
-        getImageCacheMetadataKey(`avatars/${getHash(profilePicUrl)}`),
+        getImageRawKey("avatars", getHash(profilePicUrl)),
       );
       if (cachedPath) profilePicPathByUrl.set(profilePicUrl, cachedPath);
     }
@@ -69,9 +66,7 @@ async function readCachedImages(report: StoriesManifestReport): Promise<CachedRe
       const previewUrl = story.preview_image_url?.trim();
       if (!previewUrl || storyPreviewPathByUrl.has(previewUrl)) continue;
 
-      const cachedPath = await getCachedImagePath(
-        getImageCacheMetadataKey(`story-previews/${story.media_pk}`),
-      );
+      const cachedPath = await getCachedImagePath(getImageRawKey("story-previews", story.media_pk));
       if (cachedPath) storyPreviewPathByUrl.set(previewUrl, cachedPath);
     }
   }

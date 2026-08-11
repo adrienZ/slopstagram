@@ -5,7 +5,7 @@
     "moduleResolution": "NodeNext",
     "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "hono/jsx",
+    "jsxImportSource": "mono-jsx",
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,

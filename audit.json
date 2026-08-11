@@ -1,68 +1,22 @@
 {
   "auditReportVersion": 2,
-  "vulnerabilities": {
-    "@hono/node-server": {
-      "name": "@hono/node-server",
-      "severity": "moderate",
-      "isDirect": false,
-      "via": [
-        {
-          "source": 1124006,
-          "name": "@hono/node-server",
-          "dependency": "@hono/node-server",
-          "title": "Node.js Adapter for Hono: Path traversal in `serve-static` on Windows via encoded backslash (`%5C`)",
-          "url": "https://github.com/advisories/GHSA-frvp-7c67-39w9",
-          "severity": "moderate",
-          "cwe": [
-            "CWE-22"
-          ],
-          "cvss": {
-            "score": 5.9,
-            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N"
-          },
-          "range": "<2.0.5"
-        }
-      ],
-      "effects": [
-        "@hono/vite-dev-server"
-      ],
-      "range": "<2.0.5",
-      "nodes": [
-        "node_modules/@hono/vite-dev-server/node_modules/@hono/node-server"
-      ],
-      "fixAvailable": false
-    },
-    "@hono/vite-dev-server": {
-      "name": "@hono/vite-dev-server",
-      "severity": "moderate",
-      "isDirect": true,
-      "via": [
-        "@hono/node-server"
-      ],
-      "effects": [],
-      "range": "*",
-      "nodes": [
-        "node_modules/@hono/vite-dev-server"
-      ],
-      "fixAvailable": false
-    }
-  },
+  "vulnerabilities": {},
   "metadata": {
     "vulnerabilities": {
       "info": 0,
       "low": 0,
-      "moderate": 2,
+      "moderate": 0,
       "high": 0,
       "critical": 0,
-      "total": 2
+      "total": 0
     },
     "dependencies": {
-      "prod": 35,
-      "dev": 183,
-      "optional": 168,
-      "peer": 4,
+      "prod": 34,
+      "dev": 229,
+      "optional": 193,
+      "peer": 9,
       "peerOptional": 0,
-      "total": 246
+      "total": 291
     }
   }
 }
