@@ -1,22 +1,249 @@
 {
   "auditReportVersion": 2,
-  "vulnerabilities": {},
+  "vulnerabilities": {
+    "h3": {
+      "name": "h3",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1114876,
+          "name": "h3",
+          "dependency": "h3",
+          "title": "h3 has a Path Traversal via Percent-Encoded Dot Segments in serveStatic Allows Arbitrary File Read",
+          "url": "https://github.com/advisories/GHSA-wr4h-v87w-p3r7",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-22",
+            "CWE-116"
+          ],
+          "cvss": {
+            "score": 5.9,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N"
+          },
+          "range": ">=2.0.0 <=2.0.1-rc.14"
+        },
+        {
+          "source": 1115115,
+          "name": "h3",
+          "dependency": "h3",
+          "title": "h3: SSE Event Injection via Unsanitized Carriage Return (`\\r`) in EventStream Data and Comment Fields (Bypass of CVE Fix)",
+          "url": "https://github.com/advisories/GHSA-4hxc-9384-m385",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-74"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+          },
+          "range": ">=2.0.0-beta.0 <=2.0.1-rc.16"
+        },
+        {
+          "source": 1115159,
+          "name": "h3",
+          "dependency": "h3",
+          "title": "h3 has a middleware bypass with one gadget",
+          "url": "https://github.com/advisories/GHSA-3vj8-jmxq-cgj5",
+          "severity": "high",
+          "cwe": [
+            "CWE-290"
+          ],
+          "cvss": {
+            "score": 7.4,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N"
+          },
+          "range": ">=2.0.0-0 <2.0.1-rc.15"
+        },
+        {
+          "source": 1115162,
+          "name": "h3",
+          "dependency": "h3",
+          "title": "h3 has a Server-Sent Events Injection via Unsanitized Newlines in Event Stream Fields",
+          "url": "https://github.com/advisories/GHSA-22cc-p3c6-wpvm",
+          "severity": "high",
+          "cwe": [
+            "CWE-93"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:L/I:H/A:N"
+          },
+          "range": ">=2.0.0 <=2.0.1-rc.14"
+        },
+        {
+          "source": 1115262,
+          "name": "h3",
+          "dependency": "h3",
+          "title": "H3: Unbounded Chunked Cookie Count in Session Cleanup Loop may Lead to Denial of Service",
+          "url": "https://github.com/advisories/GHSA-q5pr-72pq-83v3",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-400"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+          },
+          "range": ">=2.0.0-beta.4 <2.0.1-rc.18"
+        },
+        {
+          "source": 1115530,
+          "name": "h3",
+          "dependency": "h3",
+          "title": "h3: Missing Path Segment Boundary Check in `mount()` Causes Middleware Execution on Unrelated Prefix-Matching Routes",
+          "url": "https://github.com/advisories/GHSA-2j6q-whv2-gh6w",
+          "severity": "low",
+          "cwe": [
+            "CWE-706"
+          ],
+          "cvss": {
+            "score": 3.7,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N"
+          },
+          "range": ">=2.0.1-alpha.0 <=2.0.1-rc.16"
+        },
+        "srvx"
+      ],
+      "effects": [
+        "nitro"
+      ],
+      "range": "2.0.0-beta.0 - 2.0.1-rc.17",
+      "nodes": [
+        "node_modules/nitro/node_modules/h3"
+      ],
+      "fixAvailable": {
+        "name": "nitro",
+        "version": "3.0.260610-beta",
+        "isSemVerMajor": true
+      }
+    },
+    "nitro": {
+      "name": "nitro",
+      "severity": "moderate",
+      "isDirect": true,
+      "via": [
+        {
+          "source": 1118994,
+          "name": "nitro",
+          "dependency": "nitro",
+          "title": "Nitro has a proxy scope bypass via percent-encoded path traversal in `routeRules`",
+          "url": "https://github.com/advisories/GHSA-5w89-w975-hf9q",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-22"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N"
+          },
+          "range": "<3.0.260429-beta"
+        },
+        {
+          "source": 1120264,
+          "name": "nitro",
+          "dependency": "nitro",
+          "title": "Nitro has an Open Redirect via Protocol-Relative URL Bypass in Wildcard Route Rules",
+          "url": "https://github.com/advisories/GHSA-9phm-9p8f-hw5m",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-601"
+          ],
+          "cvss": {
+            "score": 6.1,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N"
+          },
+          "range": "<3.0.260429-beta"
+        },
+        "h3",
+        "rendu",
+        "srvx"
+      ],
+      "effects": [],
+      "range": "<=3.0.260415-beta",
+      "nodes": [
+        "node_modules/nitro"
+      ],
+      "fixAvailable": {
+        "name": "nitro",
+        "version": "3.0.260610-beta",
+        "isSemVerMajor": true
+      }
+    },
+    "rendu": {
+      "name": "rendu",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "srvx"
+      ],
+      "effects": [
+        "nitro"
+      ],
+      "range": "0.0.1 - 0.0.7",
+      "nodes": [
+        "node_modules/rendu"
+      ],
+      "fixAvailable": {
+        "name": "nitro",
+        "version": "3.0.260610-beta",
+        "isSemVerMajor": true
+      }
+    },
+    "srvx": {
+      "name": "srvx",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1115537,
+          "name": "srvx",
+          "dependency": "srvx",
+          "title": "srvx is vulnerable to middleware bypass via absolute URI in request line ",
+          "url": "https://github.com/advisories/GHSA-p36q-q72m-gchr",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-706"
+          ],
+          "cvss": {
+            "score": 4.8,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:N"
+          },
+          "range": "<0.11.13"
+        }
+      ],
+      "effects": [
+        "h3",
+        "nitro",
+        "rendu"
+      ],
+      "range": "<0.11.13",
+      "nodes": [
+        "node_modules/srvx"
+      ],
+      "fixAvailable": {
+        "name": "nitro",
+        "version": "3.0.260610-beta",
+        "isSemVerMajor": true
+      }
+    }
+  },
   "metadata": {
     "vulnerabilities": {
       "info": 0,
       "low": 0,
-      "moderate": 0,
-      "high": 0,
+      "moderate": 3,
+      "high": 1,
       "critical": 0,
-      "total": 0
+      "total": 4
     },
     "dependencies": {
-      "prod": 34,
-      "dev": 229,
-      "optional": 193,
-      "peer": 9,
+      "prod": 35,
+      "dev": 255,
+      "optional": 227,
+      "peer": 8,
       "peerOptional": 0,
-      "total": 291
+      "total": 318
     }
   }
 }
