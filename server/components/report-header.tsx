@@ -69,10 +69,7 @@ const pickerClass = css`
   }
 `;
 
-export function ReportHeader({
-  reportKeys,
-  selectedReportKey,
-}: ReportHeaderProps) {
+export function ReportHeader({ reportKeys, selectedReportKey }: ReportHeaderProps) {
   return (
     <header class={cx("report-page-header", headerClass)}>
       <div>

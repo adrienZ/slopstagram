@@ -3,10 +3,7 @@ import { describe, test } from "node:test";
 import { createConsola } from "consola";
 import { createStorage } from "unstorage";
 import memoryDriver from "unstorage/drivers/memory";
-import {
-  createCacheStorages,
-  getUserSummaryCacheKey,
-} from "../scripts/lib/cache-service.ts";
+import { createCacheStorages, getUserSummaryCacheKey } from "../scripts/lib/cache-service.ts";
 import {
   USER_SUMMARY_MODEL,
   USER_SUMMARY_UNAVAILABLE,

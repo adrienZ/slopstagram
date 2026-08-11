@@ -1,11 +1,7 @@
 import { resolve } from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
-import {
-  BASE_CACHE_DIR,
-  REPORTS_STORAGE_DIR,
-  reportsStorage,
-} from "./lib/cache-service.ts";
+import { BASE_CACHE_DIR, REPORTS_STORAGE_DIR, reportsStorage } from "./lib/cache-service.ts";
 import { cacheReportImages } from "./lib/image-cache-service.ts";
 import { createLogger, type Logger } from "./lib/logging-service.ts";
 import { resolveUserSummariesForReport } from "./lib/user-summary-service.ts";
@@ -70,9 +66,7 @@ function formatFilenameTimestamp(date: Date): string {
   return `${year}-${month}-${day}T${hours}-${minutes}-${seconds}${formatTimezoneOffset(date)}`;
 }
 
-export async function createReport(
-  options: CreateReportOptions,
-): Promise<CreateReportResult> {
+export async function createReport(options: CreateReportOptions): Promise<CreateReportResult> {
   const dependencies = {
     ...defaultDependencies,
     ...options.dependencies,
@@ -91,14 +85,10 @@ export async function createReport(
     logger,
     reportDirectory,
   });
-  const visionByPreviewUrl = await dependencies.resolveVisionForReport(
-    report,
-    cachedImages,
-    {
-      logger,
-      reportDirectory,
-    },
-  );
+  const visionByPreviewUrl = await dependencies.resolveVisionForReport(report, cachedImages, {
+    logger,
+    reportDirectory,
+  });
   await dependencies.resolveUserSummariesForReport(report, {
     logger,
     visionByPreviewUrl,

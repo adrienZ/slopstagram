@@ -55,9 +55,7 @@ function findStoryItem(report: StoriesMediaReport, pk: string): StoryItem {
     report.data?.xdt_api__v1__feed__reels_media__connection?.edges?.flatMap(
       (edge) => edge.node?.items ?? [],
     ) ?? [];
-  const reelsItems = Object.values(report.reels ?? {}).flatMap(
-    (reel) => reel.items ?? [],
-  );
+  const reelsItems = Object.values(report.reels ?? {}).flatMap((reel) => reel.items ?? []);
   const items = [...graphItems, ...reelsItems];
 
   const item = items.find((entry) => entry.pk === pk);
@@ -105,8 +103,7 @@ export function parseStoriesTrayReport(
     .map((entry, originalIndex) => ({ entry, originalIndex }))
     .sort((left, right) => {
       const positionDelta =
-        getStoryTrayUiSortPosition(left.entry) -
-        getStoryTrayUiSortPosition(right.entry);
+        getStoryTrayUiSortPosition(left.entry) - getStoryTrayUiSortPosition(right.entry);
 
       if (positionDelta !== 0) {
         return positionDelta;
@@ -135,10 +132,7 @@ export function parseStoriesTrayReport(
   return groupedTray;
 }
 
-export function parseStoryReport(
-  report: StoriesMediaReport,
-  pk: string,
-): ParsedStory {
+export function parseStoryReport(report: StoriesMediaReport, pk: string): ParsedStory {
   const item = findStoryItem(report, pk);
   return parseStoryItem(item);
 }

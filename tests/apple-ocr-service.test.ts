@@ -2,17 +2,11 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { createStorage } from "unstorage";
 import memoryDriver from "unstorage/drivers/memory";
-import {
-  createCacheStorages,
-  getMediaCacheKey,
-} from "../scripts/lib/cache-service.ts";
+import { createCacheStorages, getMediaCacheKey } from "../scripts/lib/cache-service.ts";
 import { recognizeAppleCaption } from "../scripts/lib/apple-ocr-service.ts";
 import type { StoryItem } from "../scripts/lib/types.ts";
 
-function createStory(
-  pk: string,
-  url: string | null,
-): StoryItem {
+function createStory(pk: string, url: string | null): StoryItem {
   return {
     image_versions2: url
       ? {
@@ -37,10 +31,7 @@ describe("recognizeAppleCaption", () => {
         driver: memoryDriver(),
       }),
     );
-    await appleCaptionsStorage.setItem(
-      getMediaCacheKey("story-1"),
-      "cached caption",
-    );
+    await appleCaptionsStorage.setItem(getMediaCacheKey("story-1"), "cached caption");
 
     let runCount = 0;
     const caption = await recognizeAppleCaption(

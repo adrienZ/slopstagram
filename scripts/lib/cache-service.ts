@@ -24,30 +24,16 @@ export const baseStorage = createStorage({
   }),
 });
 
-export function createCacheStorages(
-  storage: Storage = baseStorage,
-): CacheStorageSet {
+export function createCacheStorages(storage: Storage = baseStorage): CacheStorageSet {
   return {
     appleCaptionsStorage: prefixStorage<AppleCaptionCacheEntry>(
       storage,
       APPLE_CAPTIONS_STORAGE_DIR,
     ),
-    imageCacheStorage: prefixStorage<ImageCacheEntry>(
-      storage,
-      IMAGES_STORAGE_DIR,
-    ),
-    userSummaryStorage: prefixStorage<UserSummaryCacheEntry>(
-      storage,
-      USER_SUMMARIES_STORAGE_DIR,
-    ),
-    visionStorage: prefixStorage<VisionCacheEntry>(
-      storage,
-      VISION_STORAGE_DIR,
-    ),
-    reportsStorage: prefixStorage<StoriesManifestReport>(
-      storage,
-      REPORTS_STORAGE_DIR,
-    ),
+    imageCacheStorage: prefixStorage<ImageCacheEntry>(storage, IMAGES_STORAGE_DIR),
+    userSummaryStorage: prefixStorage<UserSummaryCacheEntry>(storage, USER_SUMMARIES_STORAGE_DIR),
+    visionStorage: prefixStorage<VisionCacheEntry>(storage, VISION_STORAGE_DIR),
+    reportsStorage: prefixStorage<StoriesManifestReport>(storage, REPORTS_STORAGE_DIR),
     storiesStorage: prefixStorage<StoryItem>(storage, STORIES_STORAGE_DIR),
   };
 }

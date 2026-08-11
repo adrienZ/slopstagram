@@ -1,8 +1,5 @@
 import { spawn } from "node:child_process";
-import {
-  appleCaptionsStorage,
-  getMediaCacheKey,
-} from "./cache-service.ts";
+import { appleCaptionsStorage, getMediaCacheKey } from "./cache-service.ts";
 import { getLargestVersion } from "./parser-service.ts";
 import { NO_APPLE_CAPTION } from "./report-constants.ts";
 import type { AppleCaptionStorage, StoryItem } from "./types.ts";
@@ -20,10 +17,7 @@ function getOcrSource(story: StoryItem): string | null {
 }
 
 function normalizeOcrText(value: string): string {
-  const normalized = value
-    .normalize("NFC")
-    .replace(/\r\n/g, "\n")
-    .trim();
+  const normalized = value.normalize("NFC").replace(/\r\n/g, "\n").trim();
 
   return normalized.length > 0 ? normalized : NO_APPLE_CAPTION;
 }

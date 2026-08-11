@@ -1,9 +1,6 @@
 import { createHash } from "node:crypto";
 import { Ollama, type Fetch as OllamaFetch } from "ollama";
-import {
-  getUserSummaryCacheKey,
-  userSummaryStorage,
-} from "./cache-service.ts";
+import { getUserSummaryCacheKey, userSummaryStorage } from "./cache-service.ts";
 import { noopLogger, type Logger } from "./logging-service.ts";
 import { getReportUserKey } from "./report-user-key-service.ts";
 import type {
@@ -52,11 +49,7 @@ function normalizeSummary(value: string): string {
 }
 
 function isUsableSummary(value: string | null | undefined): value is string {
-  return Boolean(
-    value &&
-      value.trim() &&
-      normalizeSummary(value) !== USER_SUMMARY_UNAVAILABLE,
-  );
+  return Boolean(value && value.trim() && normalizeSummary(value) !== USER_SUMMARY_UNAVAILABLE);
 }
 
 function parseSummaryResponse(value: string): string | null {
@@ -92,20 +85,14 @@ function collectFallbackDetails(
     const vision = story.preview_image_url
       ? visionByPreviewUrl?.get(story.preview_image_url)
       : undefined;
-    const values = [
-      vision?.visual ?? "",
-      story.stickers.join(", "),
-      story.locations.join(", "),
-    ];
+    const values = [vision?.visual ?? "", story.stickers.join(", "), story.locations.join(", ")];
 
     for (const value of values) {
       const normalizedValue = normalizeSummary(value);
 
       if (
         normalizedValue &&
-        !details.some(
-          (detail) => detail.toLowerCase() === normalizedValue.toLowerCase(),
-        )
+        !details.some((detail) => detail.toLowerCase() === normalizedValue.toLowerCase())
       ) {
         details.push(normalizedValue);
       }
@@ -119,8 +106,7 @@ function createFallbackSummary(
   user: StoryOutputUser,
   visionByPreviewUrl: Map<string, VisionResult> | undefined,
 ): string {
-  const displayName =
-    user.full_name?.trim() || user.username?.trim() || "Cet utilisateur";
+  const displayName = user.full_name?.trim() || user.username?.trim() || "Cet utilisateur";
   const details = collectFallbackDetails(user, visionByPreviewUrl);
 
   if (details.length === 0) {
@@ -185,10 +171,7 @@ function resolveOllamaHost(endpoint: string | undefined): string {
   return (endpoint ?? "http://127.0.0.1:11434").replace(/\/api\/generate\/?$/, "");
 }
 
-function createTimeoutFetch(
-  fetchOllama: OllamaFetch,
-  timeoutMs: number,
-): OllamaFetch {
+function createTimeoutFetch(fetchOllama: OllamaFetch, timeoutMs: number): OllamaFetch {
   return async (input, init) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -288,9 +271,7 @@ export async function resolveUserSummariesForReport(
 
       if (!result) {
         const fallbackSummary = createFallbackSummary(user, visionByPreviewUrl);
-        logger.warn(
-          `user summary returned empty response for ${userKey}; using report fallback`,
-        );
+        logger.warn(`user summary returned empty response for ${userKey}; using report fallback`);
         summaryByUserKey.set(userKey, fallbackSummary);
         continue;
       }

@@ -37,14 +37,7 @@ const previewClass = css`
   }
 `;
 
-export function StoryCard({
-  count,
-  position,
-  story,
-  user,
-  userName,
-  viewModel,
-}: StoryCardProps) {
+export function StoryCard({ count, position, story, user, userName, viewModel }: StoryCardProps) {
   const source = story.preview_image_url?.trim();
   if (!source) return null;
 
@@ -83,7 +76,11 @@ export function StoryCard({
         data-story-vision-description={vision?.visual ?? ""}
         aria-label={`Ouvrir aperçu ${story.media_pk}`}
       >
-        <img class={cx("story-preview", previewClass)} src={preview} alt={`aperçu ${story.media_pk}`} />
+        <img
+          class={cx("story-preview", previewClass)}
+          src={preview}
+          alt={`aperçu ${story.media_pk}`}
+        />
       </button>
     </div>
   );

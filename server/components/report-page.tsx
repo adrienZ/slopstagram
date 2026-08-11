@@ -1,10 +1,5 @@
 import { css, Style } from "hono/css";
-import {
-  formatReportDate,
-  getRankedUsers,
-  lightboxScript,
-  reportPickerScript,
-} from "../helper.ts";
+import { formatReportDate, getRankedUsers, lightboxScript, reportPickerScript } from "../helper.ts";
 import type { ReportViewModel } from "../report-view-model.ts";
 import { Lightbox } from "./lightbox.tsx";
 import { ReportHeader } from "./report-header.tsx";
@@ -55,11 +50,7 @@ const pageClass = css`
   }
 `;
 
-export function ReportPage({
-  reportKeys,
-  selectedReportKey,
-  viewModel,
-}: ReportPageProps) {
+export function ReportPage({ reportKeys, selectedReportKey, viewModel }: ReportPageProps) {
   const { report } = viewModel;
   const date = formatReportDate(report.metadata.created_at);
   return (
@@ -72,12 +63,11 @@ export function ReportPage({
       </head>
       <body class={pageClass}>
         <main>
-          <ReportHeader
-            reportKeys={reportKeys}
-            selectedReportKey={selectedReportKey}
-          />
+          <ReportHeader reportKeys={reportKeys} selectedReportKey={selectedReportKey} />
           <h1>{`Rapport du ${date}`}</h1>
-          {getRankedUsers(report).map((user) => <UserSection user={user} viewModel={viewModel} />)}
+          {getRankedUsers(report).map((user) => (
+            <UserSection user={user} viewModel={viewModel} />
+          ))}
         </main>
         <Lightbox />
         <script dangerouslySetInnerHTML={{ __html: reportPickerScript }} />

@@ -9,11 +9,7 @@ import {
 import { convertImageToJpeg } from "./image-conversion-service.ts";
 import type { Logger } from "./logging-service.ts";
 import { noopLogger } from "./logging-service.ts";
-import type {
-  ImageCacheEntry,
-  ImageCacheStorage,
-  StoriesManifestReport,
-} from "./types.ts";
+import type { ImageCacheEntry, ImageCacheStorage, StoriesManifestReport } from "./types.ts";
 
 type FetchResponse = {
   arrayBuffer: () => Promise<ArrayBuffer>;
@@ -53,10 +49,7 @@ function getImageHash(source: string): string {
 
 function getExtensionFromUrl(source: string): string | null {
   try {
-    const extension = path
-      .extname(new URL(source).pathname)
-      .toLowerCase()
-      .slice(1);
+    const extension = path.extname(new URL(source).pathname).toLowerCase().slice(1);
     return extension || null;
   } catch {
     return null;
@@ -72,10 +65,7 @@ function getImageExtension(source: string, contentType: string | null): string {
   );
 }
 
-function getRelativeReportImagePath(
-  reportDirectory: string,
-  imagePath: string,
-): string {
+function getRelativeReportImagePath(reportDirectory: string, imagePath: string): string {
   return path
     .relative(reportDirectory, path.resolve(BASE_CACHE_DIR, imagePath))
     .split(path.sep)
@@ -99,10 +89,7 @@ function isStoryPreviewNamespace(namespace: string): boolean {
   return namespace === "story-previews";
 }
 
-async function getRawBuffer(
-  storage: ImageCacheStorage,
-  rawKey: string,
-): Promise<Buffer | null> {
+async function getRawBuffer(storage: ImageCacheStorage, rawKey: string): Promise<Buffer | null> {
   const raw = await storage.getItemRaw(rawKey);
 
   if (raw === null || raw === undefined) {
@@ -118,10 +105,7 @@ async function convertCachedStoryPreviewToJpeg(
   metadataKey: string,
   cachedEntry: ImageCacheEntry,
   options: Required<
-    Pick<
-      CacheReportImagesOptions,
-      "convertToJpeg" | "logger" | "reportDirectory" | "storage"
-    >
+    Pick<CacheReportImagesOptions, "convertToJpeg" | "logger" | "reportDirectory" | "storage">
   >,
 ): Promise<string | null> {
   const cachedRawKey = getRawKeyFromImagePath(cachedEntry.path);
@@ -226,15 +210,12 @@ export async function cacheReportImages(
   const fetchImage = options.fetchImage ?? fetch;
   const convertToJpeg = options.convertToJpeg ?? convertImageToJpeg;
   const logger = options.logger ?? noopLogger;
-  const reportDirectory =
-    options.reportDirectory ?? path.resolve(BASE_CACHE_DIR, "reports");
+  const reportDirectory = options.reportDirectory ?? path.resolve(BASE_CACHE_DIR, "reports");
   const storage = options.storage ?? imageCacheStorage;
   const profilePicPathByUrl = new Map<string, string>();
   const storyPreviewPathByUrl = new Map<string, string>();
 
-  const profilePicUrls = report.output.users
-    .map((user) => user.profile_pic_url)
-    .filter(isPresent);
+  const profilePicUrls = report.output.users.map((user) => user.profile_pic_url).filter(isPresent);
 
   for (const source of new Set(profilePicUrls)) {
     try {
@@ -262,10 +243,7 @@ export async function cacheReportImages(
         source: story.preview_image_url,
       })),
     )
-    .filter(
-      (entry): entry is { mediaPk: string; source: string } =>
-        isPresent(entry.source),
-    );
+    .filter((entry): entry is { mediaPk: string; source: string } => isPresent(entry.source));
 
   const storyPreviewPathByMediaPk = new Map<string, string>();
 

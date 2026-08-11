@@ -4,10 +4,7 @@ import path from "node:path";
 import { describe, test } from "node:test";
 import { createStorage } from "unstorage";
 import memoryDriver from "unstorage/drivers/memory";
-import {
-  createCacheStorages,
-  getImageCacheMetadataKey,
-} from "../scripts/lib/cache-service.ts";
+import { createCacheStorages, getImageCacheMetadataKey } from "../scripts/lib/cache-service.ts";
 import { cacheReportImages } from "../scripts/lib/image-cache-service.ts";
 import type { StoriesManifestReport } from "../scripts/lib/types.ts";
 
@@ -87,10 +84,7 @@ describe("cacheReportImages", () => {
         const body = new TextEncoder().encode("image-bytes");
         return {
           arrayBuffer: async () =>
-            body.buffer.slice(
-              body.byteOffset,
-              body.byteOffset + body.byteLength,
-            ) as ArrayBuffer,
+            body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength) as ArrayBuffer,
           headers: {
             get: (name) => (name.toLowerCase() === "content-type" ? "image/jpeg" : null),
           },
@@ -128,9 +122,7 @@ describe("cacheReportImages", () => {
       Buffer.from("jpeg:image-bytes"),
     );
     assert.deepEqual(
-      await imageCacheStorage.getItem(
-        getImageCacheMetadataKey(`story-previews/${previewKey}`),
-      ),
+      await imageCacheStorage.getItem(getImageCacheMetadataKey(`story-previews/${previewKey}`)),
       {
         content_type: "image/jpeg",
         path: `images/story-previews/${previewKey}.jpg`,
@@ -174,13 +166,10 @@ describe("cacheReportImages", () => {
         driver: memoryDriver(),
       }),
     );
-    await imageCacheStorage.setItem(
-      getImageCacheMetadataKey(`story-previews/${previewKey}`),
-      {
-        content_type: "image/webp",
-        path: `images/story-previews/${previewKey}.webp`,
-      },
-    );
+    await imageCacheStorage.setItem(getImageCacheMetadataKey(`story-previews/${previewKey}`), {
+      content_type: "image/webp",
+      path: `images/story-previews/${previewKey}.webp`,
+    });
     await imageCacheStorage.setItemRaw(
       `story-previews/${previewKey}.webp`,
       Buffer.from("webp-bytes"),
@@ -192,10 +181,7 @@ describe("cacheReportImages", () => {
         const body = new TextEncoder().encode("avatar-bytes");
         return {
           arrayBuffer: async () =>
-            body.buffer.slice(
-              body.byteOffset,
-              body.byteOffset + body.byteLength,
-            ) as ArrayBuffer,
+            body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength) as ArrayBuffer,
           headers: {
             get: (name) => (name.toLowerCase() === "content-type" ? "image/jpeg" : null),
           },
@@ -216,9 +202,7 @@ describe("cacheReportImages", () => {
       Buffer.from("jpeg:webp-bytes"),
     );
     assert.deepEqual(
-      await imageCacheStorage.getItem(
-        getImageCacheMetadataKey(`story-previews/${previewKey}`),
-      ),
+      await imageCacheStorage.getItem(getImageCacheMetadataKey(`story-previews/${previewKey}`)),
       {
         content_type: "image/jpeg",
         path: `images/story-previews/${previewKey}.jpg`,
@@ -245,13 +229,9 @@ describe("cacheReportImages", () => {
         const body = new TextEncoder().encode(url.includes("avatar") ? "avatar" : "story");
         return {
           arrayBuffer: async () =>
-            body.buffer.slice(
-              body.byteOffset,
-              body.byteOffset + body.byteLength,
-            ) as ArrayBuffer,
+            body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength) as ArrayBuffer,
           headers: {
-            get: (name: string) =>
-              name.toLowerCase() === "content-type" ? "image/webp" : null,
+            get: (name: string) => (name.toLowerCase() === "content-type" ? "image/webp" : null),
           },
           ok: true,
           status: 200,

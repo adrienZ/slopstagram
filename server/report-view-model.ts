@@ -20,14 +20,8 @@ import {
 } from "../scripts/lib/user-summary-service.ts";
 import { backfillReportStoryMediaTypes } from "../scripts/lib/report-media-type-service.ts";
 import { getReportUserKey } from "../scripts/lib/report-user-key-service.ts";
-import type {
-  StoriesManifestReport,
-  VisionResult,
-} from "../scripts/lib/types.ts";
-import {
-  VISION_MODEL,
-  VISION_PROMPT,
-} from "../scripts/lib/vision-service.ts";
+import type { StoriesManifestReport, VisionResult } from "../scripts/lib/types.ts";
+import { VISION_MODEL, VISION_PROMPT } from "../scripts/lib/vision-service.ts";
 import { reportDirectory } from "./report-cache.ts";
 
 export type ReportViewModel = {
@@ -58,9 +52,7 @@ async function getCachedImagePath(metadataKey: string): Promise<string | null> {
     .join("/");
 }
 
-async function readCachedImages(
-  report: StoriesManifestReport,
-): Promise<CachedReportImages> {
+async function readCachedImages(report: StoriesManifestReport): Promise<CachedReportImages> {
   const profilePicPathByUrl = new Map<string, string>();
   const storyPreviewPathByUrl = new Map<string, string>();
 
@@ -117,11 +109,7 @@ async function readCachedVision(
       }
 
       const entry = await visionStorage.getItem(getMediaCacheKey(story.media_pk));
-      if (
-        !entry ||
-        entry.model !== VISION_MODEL ||
-        entry.prompt_hash !== promptHash
-      ) {
+      if (!entry || entry.model !== VISION_MODEL || entry.prompt_hash !== promptHash) {
         continue;
       }
 
@@ -147,9 +135,7 @@ async function readCachedUserSummaries(
       prompt,
       userKey,
     });
-    const entry = await userSummaryStorage.getItem(
-      getUserSummaryCacheKey(sourceHash),
-    );
+    const entry = await userSummaryStorage.getItem(getUserSummaryCacheKey(sourceHash));
     const result = entry?.result.trim();
 
     if (
@@ -172,10 +158,7 @@ export async function createReportViewModel(
   await backfillReportStoryMediaTypes(report);
   const cachedImages = await readCachedImages(report);
   const visionByPreviewUrl = await readCachedVision(report, cachedImages);
-  const userSummaryByUserKey = await readCachedUserSummaries(
-    report,
-    visionByPreviewUrl,
-  );
+  const userSummaryByUserKey = await readCachedUserSummaries(report, visionByPreviewUrl);
 
   return { cachedImages, report, userSummaryByUserKey, visionByPreviewUrl };
 }

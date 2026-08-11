@@ -8,10 +8,7 @@ import {
   type InstagramClient,
   type InstagramClientResponse,
 } from "../scripts/fetch-stories.ts";
-import {
-  createCacheStorages,
-  getMediaCacheKey,
-} from "../scripts/lib/cache-service.ts";
+import { createCacheStorages, getMediaCacheKey } from "../scripts/lib/cache-service.ts";
 import type { Logger } from "../scripts/lib/logging-service.ts";
 import type { StoryItem, StoryReel, StoryTrayEntry } from "../scripts/lib/types.ts";
 
@@ -103,8 +100,7 @@ function createClient(
 
 const fixedNow = () => new Date("2026-07-26T00:00:00.000Z");
 const noSleep = async () => {};
-const resolveAppleCaption = async (story: StoryItem) =>
-  `apple:${story.pk}`;
+const resolveAppleCaption = async (story: StoryItem) => `apple:${story.pk}`;
 function createMockLogger(): Logger & { messages: string[] } {
   const messages: string[] = [];
   const logger = createConsola();
@@ -242,10 +238,7 @@ describe("fetchStoriesManifest", () => {
 
   test("fetches only reels with missing media and caches returned items", async () => {
     const { storiesStorage } = createTestStorages();
-    await storiesStorage.setItem(
-      getMediaCacheKey("m1"),
-      storyItem("m1", "Cached image caption"),
-    );
+    await storiesStorage.setItem(getMediaCacheKey("m1"), storyItem("m1", "Cached image caption"));
 
     const client = createClient(
       [
@@ -322,28 +315,25 @@ describe("fetchStoriesManifest", () => {
       [
         response({
           reels: {
-            r1: reel(
-              "r1",
-              [
-                storyItemWithStickers(
-                  "m1",
-                  {
-                    story_bloks_stickers: [
-                      {
-                        bloks_sticker: {
-                          sticker_data: {
-                            ig_mention: {
-                              username: "same",
-                            },
+            r1: reel("r1", [
+              storyItemWithStickers(
+                "m1",
+                {
+                  story_bloks_stickers: [
+                    {
+                      bloks_sticker: {
+                        sticker_data: {
+                          ig_mention: {
+                            username: "same",
                           },
                         },
                       },
-                    ],
-                  },
-                  "First story caption",
-                ),
-              ],
-            ),
+                    },
+                  ],
+                },
+                "First story caption",
+              ),
+            ]),
             r2: reel("r2", [storyItem("m2", "Second story caption")]),
           },
         }),
@@ -434,58 +424,55 @@ describe("fetchStoriesManifest", () => {
       [
         response({
           reels: {
-            r1: reel(
-              "r1",
-              [
-                storyItemWithStickers(
-                  "m1",
-                  {
-                    link: {
-                      url: "https://example.com/a",
-                    },
-                    story_bloks_stickers: [
-                      {
-                        bloks_sticker: {
-                          sticker_data: {
-                            ig_mention: {
-                              username: "friend",
-                            },
-                          },
-                        },
-                      },
-                      {
-                        bloks_sticker: {
-                          sticker_data: {
-                            location: {
-                              address: "1 Rue Example, Paris",
-                              name: "Cafe Example",
-                            },
-                          },
-                        },
-                      },
-                    ],
-                    story_hashtags: [{ hashtag: "summer" }],
-                    story_locations: [
-                      {
-                        location: {
-                          address: "1 Rue Example, Paris",
-                          name: "Cafe Example",
-                        },
-                      },
-                    ],
-                    story_music_stickers: [
-                      {
-                        music_asset_info: {
-                          display_artist: "Artist",
-                          title: "Track",
-                        },
-                      },
-                    ],
+            r1: reel("r1", [
+              storyItemWithStickers(
+                "m1",
+                {
+                  link: {
+                    url: "https://example.com/a",
                   },
-                  "caption",
-                ),
-              ],
-            ),
+                  story_bloks_stickers: [
+                    {
+                      bloks_sticker: {
+                        sticker_data: {
+                          ig_mention: {
+                            username: "friend",
+                          },
+                        },
+                      },
+                    },
+                    {
+                      bloks_sticker: {
+                        sticker_data: {
+                          location: {
+                            address: "1 Rue Example, Paris",
+                            name: "Cafe Example",
+                          },
+                        },
+                      },
+                    },
+                  ],
+                  story_hashtags: [{ hashtag: "summer" }],
+                  story_locations: [
+                    {
+                      location: {
+                        address: "1 Rue Example, Paris",
+                        name: "Cafe Example",
+                      },
+                    },
+                  ],
+                  story_music_stickers: [
+                    {
+                      music_asset_info: {
+                        display_artist: "Artist",
+                        title: "Track",
+                      },
+                    },
+                  ],
+                },
+                "caption",
+              ),
+            ]),
           },
         }),
       ],
@@ -523,21 +510,18 @@ describe("fetchStoriesManifest", () => {
       [
         response({
           reels: {
-            r1: reel(
-              "r1",
-              [
-                storyItemWithStickers(
-                  "m1",
-                  {
-                    link: {
-                      title: "Visit Link",
-                      url: "https://l.instagram.com/?u=https%3A%2F%2Finstallclaw.io%2Ffr%3Ffbclid%3DPAcGRvZgRleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAwyNTYyODEwNDA1NTgAAaees2JVYiKznrVRdrE8jUP0t055Ywo5c27Qe7zZvMdkJw4mRFLCM-_N39601g_aem_zcP2VBsrm0eIv1jimc94uQ&e=AUCmysVsYFdNrKGJp7Q0gcfWAbjsWt8JpZDcBDd_-NHBcUmft9eEQIoVQXv-HKNBFJtz4zRPoRllkQBozb6cDjlBocBjgrb3rEYJr2zjkEG3ODw9GwudH1HSKA",
-                    },
+            r1: reel("r1", [
+              storyItemWithStickers(
+                "m1",
+                {
+                  link: {
+                    title: "Visit Link",
+                    url: "https://l.instagram.com/?u=https%3A%2F%2Finstallclaw.io%2Ffr%3Ffbclid%3DPAcGRvZgRleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAwyNTYyODEwNDA1NTgAAaees2JVYiKznrVRdrE8jUP0t055Ywo5c27Qe7zZvMdkJw4mRFLCM-_N39601g_aem_zcP2VBsrm0eIv1jimc94uQ&e=AUCmysVsYFdNrKGJp7Q0gcfWAbjsWt8JpZDcBDd_-NHBcUmft9eEQIoVQXv-HKNBFJtz4zRPoRllkQBozb6cDjlBocBjgrb3rEYJr2zjkEG3ODw9GwudH1HSKA",
                   },
-                  "caption",
-                ),
-              ],
-            ),
+                },
+                "caption",
+              ),
+            ]),
           },
         }),
       ],
@@ -645,9 +629,7 @@ describe("fetchStoriesManifest", () => {
 
     assert.deepEqual(client.reelsCalls, [["r1"]]);
     assert.deepEqual(
-      report.manifest.users.flatMap((user) =>
-        user.stories.map((story) => story.status),
-      ),
+      report.manifest.users.flatMap((user) => user.stories.map((story) => story.status)),
       ["failed", "failed"],
     );
     assert.deepEqual(

@@ -5,8 +5,7 @@ export const STORY_MEDIA_TYPES = {
   VIDEO: "video",
 } as const;
 
-export type StoryMediaType =
-  (typeof STORY_MEDIA_TYPES)[keyof typeof STORY_MEDIA_TYPES];
+export type StoryMediaType = (typeof STORY_MEDIA_TYPES)[keyof typeof STORY_MEDIA_TYPES];
 
 export type StoryTrayUser = {
   full_name?: string;
@@ -94,10 +93,7 @@ export type StoriesMediaReport = {
   };
 };
 
-export type StoryFetchFailureReason =
-  | "request_failed"
-  | "rate_limited"
-  | "missing_from_response";
+export type StoryFetchFailureReason = "request_failed" | "rate_limited" | "missing_from_response";
 
 export type StoryManifestItemStatus = "ok" | "failed";
 

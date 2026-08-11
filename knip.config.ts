@@ -6,11 +6,12 @@ const config: KnipConfig = {
     "server/**/*.ts",
     "server/**/*.tsx",
     "scripts/**/*.ts",
+    "*.config.ts",
   ],
   ignoreBinaries: ["mac-ocr"],
   ignoreDependencies: [
     "@playwright/cli", // used by agents
-  ]
+  ],
 };
 
 export default config;

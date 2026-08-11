@@ -6,10 +6,7 @@ import type { StoriesManifestReport } from "../scripts/lib/types.ts";
 import type { ReportViewModel } from "../server/report-view-model.ts";
 
 const report = JSON.parse(
-  await readFile(
-    new URL("./fixtures/stories-report-server.json", import.meta.url),
-    "utf8",
-  ),
+  await readFile(new URL("./fixtures/stories-report-server.json", import.meta.url), "utf8"),
 ) as StoriesManifestReport;
 const reportKeys = ["stories-report-earlier.json", "stories-report-fixture.json"];
 let requestedReportKey: string | undefined;
@@ -31,12 +28,8 @@ mock.module("../server/report-view-model.ts", {
   namedExports: {
     createReportViewModel: async (fixture: StoriesManifestReport): Promise<ReportViewModel> => ({
       cachedImages: {
-        profilePicPathByUrl: new Map([
-          ["https://example.com/avatar.jpg", "/images/avatar.jpg"],
-        ]),
-        storyPreviewPathByUrl: new Map([
-          ["https://example.com/story.jpg", "/images/story.jpg"],
-        ]),
+        profilePicPathByUrl: new Map([["https://example.com/avatar.jpg", "/images/avatar.jpg"]]),
+        storyPreviewPathByUrl: new Map([["https://example.com/story.jpg", "/images/story.jpg"]]),
       },
       report: fixture,
       userSummaryByUserKey: new Map([
@@ -68,7 +61,10 @@ test("GET /report renders the latest fixture report", async () => {
   assert.match(html, /src="\/images\/avatar.jpg"/);
   assert.match(html, /src="\/images\/story.jpg"/);
   assert.doesNotMatch(html, /src="https?:\/\//);
-  assert.match(html, /data-story-url="https:\/\/www\.instagram\.com\/stories\/ranked-second\/story-pk-1\/"/);
+  assert.match(
+    html,
+    /data-story-url="https:\/\/www\.instagram\.com\/stories\/ranked-second\/story-pk-1\/"/,
+  );
   assert.match(html, /data-story-stickers="link:A &amp; B"/);
   assert.match(html, /data-story-apple-caption="apple &lt;text&gt;"/);
   assert.match(html, /data-story-vision-ocr="OCR text"/);
@@ -87,5 +83,8 @@ test("GET /report selects a requested report and returns 404 when unavailable", 
 
   const missingResponse = await app.request("/report?report=stories-report-missing.json");
   assert.equal(missingResponse.status, 404);
-  assert.equal(await missingResponse.text(), "cached report stories-report-missing.json could not be read");
+  assert.equal(
+    await missingResponse.text(),
+    "cached report stories-report-missing.json could not be read",
+  );
 });

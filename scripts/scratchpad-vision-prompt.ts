@@ -9,23 +9,18 @@ import {
   // VISION_PROMPT,
 } from "./lib/vision-service.ts";
 
-const VISION_PROMPT =
-  `
+const VISION_PROMPT = `
     Describe the image in detail.
     First, extract any text that appears in the image. Provide a list of all visible text. Only if there is text.
     Then, provide a short description of the visual elements of the image. ignore all texts.
     \`\`\`json
-  `
+  `;
 
 const VisionResponseSchema = z
   .object({
     ocrText: z
-      .array(
-        z.string()
-      )
-      .describe(
-        "Exact all OCR texts if any. Do not include any non-text image description.",
-      ),
+      .array(z.string())
+      .describe("Exact all OCR texts if any. Do not include any non-text image description."),
     description: z
       .string()
       .describe(
@@ -35,8 +30,6 @@ const VisionResponseSchema = z
   .strict();
 
 const VISION_OUTPUT_SCHEMA = z.toJSONSchema(VisionResponseSchema);
-
-
 
 const DEFAULT_IMAGE_URL =
   "https://instagram.fcdg4-1.fna.fbcdn.net/v/t51.71878-15/763318529_1727223928519145_8475697476003986394_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=102&ig_cache_key=Mzk1NTY1OTI1NjcwNzQ1NTE5OA%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IlNUT1JZLnhwaWRzLjY0MC5zZHIudmlkZW9fZGVmYXVsdF9jb3Zlcl9mcmFtZS5DMyJ9&_nc_ohc=KjQLP_pdY30Q7kNvwHsawbR&_nc_oc=AdoZFdOpUbVynr9CMW1E3_cu60C4zVkBZulvtFJKpQLJfzi-Y38uPLBCIjkPD3POulxhHhEbBLnk2WtOtelRLsZp&_nc_ad=z-m&_nc_cid=0&_nc_zt=23&_nc_ht=instagram.fcdg4-1.fna&_nc_gid=PydYgYJLiJxslfTj51yKAA&_nc_ss=7a22e&oh=00_AQH7QdTWzi4zpM4PEfe87Of1oI8aXX6PqzoVq_fAw0vryg&oe=6A76F60F";
@@ -110,9 +103,7 @@ async function main(): Promise<void> {
   if (validation.success) {
     console.log(JSON.stringify({ ok: true, data: validation.data }, null, 2));
   } else {
-    console.log(
-      JSON.stringify({ ok: false, issues: validation.error.issues }, null, 2),
-    );
+    console.log(JSON.stringify({ ok: false, issues: validation.error.issues }, null, 2));
   }
 }
 

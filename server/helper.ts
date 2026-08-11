@@ -1,7 +1,4 @@
-import {
-  type StoriesManifestReport,
-  type StoryOutputUser,
-} from "../scripts/lib/types.ts";
+import { type StoriesManifestReport, type StoryOutputUser } from "../scripts/lib/types.ts";
 
 export const reportPickerScript = `
 document.querySelector('#report-picker')?.addEventListener('change',event=>event.currentTarget.form?.requestSubmit());`;
@@ -14,17 +11,23 @@ export function formatReportDate(value: string): string {
   return Number.isNaN(date.getTime())
     ? value
     : new Intl.DateTimeFormat("fr-FR", {
-        day: "numeric", hour: "2-digit", hour12: false, minute: "2-digit",
-        month: "long", timeZone: "Europe/Paris", timeZoneName: "short", year: "numeric",
-      }).format(date).replace(",", " à");
+        day: "numeric",
+        hour: "2-digit",
+        hour12: false,
+        minute: "2-digit",
+        month: "long",
+        timeZone: "Europe/Paris",
+        timeZoneName: "short",
+        year: "numeric",
+      })
+        .format(date)
+        .replace(",", " à");
 }
 
 export function formatUserName(user: StoryOutputUser): string {
   const fullName = user.full_name?.trim();
   const username = user.username.trim();
-  return fullName && username
-    ? `${fullName} (${username})`
-    : fullName || username;
+  return fullName && username ? `${fullName} (${username})` : fullName || username;
 }
 
 export function getRankedUsers(report: StoriesManifestReport): StoryOutputUser[] {
@@ -33,7 +36,11 @@ export function getRankedUsers(report: StoriesManifestReport): StoryOutputUser[]
     orderByReel.set(user.reel_id, Math.min(orderByReel.get(user.reel_id) ?? Infinity, user.order));
   }
   return report.output.users
-    .map((user, index) => ({ index, rank: Math.min(...user.reel_ids.map((id) => orderByReel.get(id) ?? Infinity)), user }))
+    .map((user, index) => ({
+      index,
+      rank: Math.min(...user.reel_ids.map((id) => orderByReel.get(id) ?? Infinity)),
+      user,
+    }))
     .sort((left, right) => left.rank - right.rank || left.index - right.index)
     .map(({ user }) => user);
 }

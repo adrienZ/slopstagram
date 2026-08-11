@@ -118,10 +118,7 @@ describe("resolveVisionForReport", () => {
           String(body.prompt),
           /Provide a list of all visible text\. Only if there is text\./,
         );
-        assert.match(
-          String(body.prompt),
-          /ignore all texts/i,
-        );
+        assert.match(String(body.prompt), /ignore all texts/i);
         const schema = body.format as {
           additionalProperties?: unknown;
           properties?: Record<string, { description?: string; type?: string }>;
@@ -132,15 +129,9 @@ describe("resolveVisionForReport", () => {
         assert.equal(schema.additionalProperties, false);
         assert.deepEqual(schema.required, ["ocrText", "description"]);
         assert.equal(schema.properties?.ocrText?.type, "array");
-        assert.match(
-          schema.properties?.ocrText?.description ?? "",
-          /Exact all OCR texts/,
-        );
+        assert.match(schema.properties?.ocrText?.description ?? "", /Exact all OCR texts/);
         assert.equal(schema.properties?.description?.type, "string");
-        assert.match(
-          schema.properties?.description?.description ?? "",
-          /image description/,
-        );
+        assert.match(schema.properties?.description?.description ?? "", /image description/);
 
         return new Response(
           JSON.stringify({
@@ -223,26 +214,18 @@ describe("resolveVisionForReport", () => {
         );
       };
 
-      const first = await resolveVisionForReport(
-        createReport(firstPreviewSource),
-        cachedImages,
-        {
-          fetchVision,
-          logger: createMockLogger(),
-          reportDirectory: directory,
-          storage: visionStorage,
-        },
-      );
-      const second = await resolveVisionForReport(
-        createReport(secondPreviewSource),
-        cachedImages,
-        {
-          fetchVision,
-          logger: createMockLogger(),
-          reportDirectory: directory,
-          storage: visionStorage,
-        },
-      );
+      const first = await resolveVisionForReport(createReport(firstPreviewSource), cachedImages, {
+        fetchVision,
+        logger: createMockLogger(),
+        reportDirectory: directory,
+        storage: visionStorage,
+      });
+      const second = await resolveVisionForReport(createReport(secondPreviewSource), cachedImages, {
+        fetchVision,
+        logger: createMockLogger(),
+        reportDirectory: directory,
+        storage: visionStorage,
+      });
 
       assert.deepEqual(first.get(firstPreviewSource), {
         text: "same text",

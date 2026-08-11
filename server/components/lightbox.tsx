@@ -167,30 +167,92 @@ const storyLinkClass = css`
 
 export function Lightbox() {
   return (
-    <dialog class={cx("image-lightbox", dialogClass)} id="image-lightbox" aria-label="Aperçu de l’image">
-      <button class={cx("lightbox-close", closeClass)} type="button" aria-label="Fermer l’aperçu">×</button>
-      <button class={cx("lightbox-nav lightbox-prev", navClass, prevClass)} type="button" aria-label="Image précédente" hidden>‹</button>
+    <dialog
+      class={cx("image-lightbox", dialogClass)}
+      id="image-lightbox"
+      aria-label="Aperçu de l’image"
+    >
+      <button class={cx("lightbox-close", closeClass)} type="button" aria-label="Fermer l’aperçu">
+        ×
+      </button>
+      <button
+        class={cx("lightbox-nav lightbox-prev", navClass, prevClass)}
+        type="button"
+        aria-label="Image précédente"
+        hidden
+      >
+        ‹
+      </button>
       <div class={cx("lightbox-content", contentClass)}>
         <div class={cx("lightbox-preview-panel", previewPanelClass)}>
-          <div class={cx("lightbox-header", headerClass)}><img class={cx("lightbox-avatar", avatarClass)} alt="" hidden /><div><strong class="lightbox-username" /><span class="lightbox-count" /></div></div>
+          <div class={cx("lightbox-header", headerClass)}>
+            <img class={cx("lightbox-avatar", avatarClass)} alt="" hidden />
+            <div>
+              <strong class="lightbox-username" />
+              <span class="lightbox-count" />
+            </div>
+          </div>
           <img class={cx("lightbox-image", imageClass)} alt="" />
         </div>
-        <aside class={cx("lightbox-details-panel", detailsPanelClass)} aria-label="Détails de la story">
+        <aside
+          class={cx("lightbox-details-panel", detailsPanelClass)}
+          aria-label="Détails de la story"
+        >
           <h2>Détails</h2>
-          <table class={cx("lightbox-details-table", detailsTableClass)}><tbody>
-            <tr><th>Type</th><td class="lightbox-detail-media-type" /></tr>
-            <tr><th>Story</th><td class="lightbox-detail-media-pk" /></tr>
-            <tr><th>Stickers</th><td class="lightbox-detail-stickers" /></tr>
-            <tr><th>Lieux</th><td class="lightbox-detail-locations" /></tr>
-            <tr><th>Instagram</th><td class="lightbox-detail-ig-caption" /></tr>
-            <tr><th>Apple OCR</th><td class="lightbox-detail-apple-caption" /></tr>
-            <tr><th>Vision OCR</th><td class="lightbox-detail-vision-ocr" /></tr>
-            <tr><th>Vision description</th><td class="lightbox-detail-vision-description" /></tr>
-          </tbody></table>
-          <a class={cx("lightbox-story-link", storyLinkClass)} target="_blank" rel="noreferrer" hidden>Voir cette story sur Instagram</a>
+          <table class={cx("lightbox-details-table", detailsTableClass)}>
+            <tbody>
+              <tr>
+                <th>Type</th>
+                <td class="lightbox-detail-media-type" />
+              </tr>
+              <tr>
+                <th>Story</th>
+                <td class="lightbox-detail-media-pk" />
+              </tr>
+              <tr>
+                <th>Stickers</th>
+                <td class="lightbox-detail-stickers" />
+              </tr>
+              <tr>
+                <th>Lieux</th>
+                <td class="lightbox-detail-locations" />
+              </tr>
+              <tr>
+                <th>Instagram</th>
+                <td class="lightbox-detail-ig-caption" />
+              </tr>
+              <tr>
+                <th>Apple OCR</th>
+                <td class="lightbox-detail-apple-caption" />
+              </tr>
+              <tr>
+                <th>Vision OCR</th>
+                <td class="lightbox-detail-vision-ocr" />
+              </tr>
+              <tr>
+                <th>Vision description</th>
+                <td class="lightbox-detail-vision-description" />
+              </tr>
+            </tbody>
+          </table>
+          <a
+            class={cx("lightbox-story-link", storyLinkClass)}
+            target="_blank"
+            rel="noreferrer"
+            hidden
+          >
+            Voir cette story sur Instagram
+          </a>
         </aside>
       </div>
-      <button class={cx("lightbox-nav lightbox-next", navClass, nextClass)} type="button" aria-label="Image suivante" hidden>›</button>
+      <button
+        class={cx("lightbox-nav lightbox-next", navClass, nextClass)}
+        type="button"
+        aria-label="Image suivante"
+        hidden
+      >
+        ›
+      </button>
     </dialog>
   );
 }

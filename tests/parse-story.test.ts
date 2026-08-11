@@ -7,10 +7,7 @@ import {
   parseStoryManifestReport,
   parseStoryReport,
 } from "../scripts/lib/parser-service.ts";
-import {
-  createCacheStorages,
-  getMediaCacheKey,
-} from "../scripts/lib/cache-service.ts";
+import { createCacheStorages, getMediaCacheKey } from "../scripts/lib/cache-service.ts";
 import { STORY_MEDIA_TYPES } from "../scripts/lib/types.ts";
 import type {
   StoriesManifestReport,
@@ -176,22 +173,15 @@ describe("parseStoryReport", () => {
 
     await storiesStorage.setItem(getMediaCacheKey("cached-pk"), cachedItem);
 
-    assert.deepEqual(
-      await parseStoryManifestReport(
-        manifestReport,
-        "cached-pk",
-        storiesStorage,
-      ),
-      {
-        height: 120,
-        media_type: STORY_MEDIA_TYPES.IMAGE,
-        pk: "cached-pk",
-        story_bloks_stickers: null,
-        story_music_stickers: null,
-        url: "https://example.com/cached-story.jpg",
-        width: 80,
-      },
-    );
+    assert.deepEqual(await parseStoryManifestReport(manifestReport, "cached-pk", storiesStorage), {
+      height: 120,
+      media_type: STORY_MEDIA_TYPES.IMAGE,
+      pk: "cached-pk",
+      story_bloks_stickers: null,
+      story_music_stickers: null,
+      url: "https://example.com/cached-story.jpg",
+      width: 80,
+    });
   });
 });
 

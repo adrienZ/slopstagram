@@ -1,10 +1,7 @@
 import { createHash } from "node:crypto";
 import path from "node:path";
 import { Ollama as VisionSdk, type Fetch as VisionFetch } from "ollama";
-import {
-  getMediaCacheKey,
-  visionStorage,
-} from "./cache-service.ts";
+import { getMediaCacheKey, visionStorage } from "./cache-service.ts";
 import type { CachedReportImages } from "./image-cache-service.ts";
 import type { Logger } from "./logging-service.ts";
 import { noopLogger } from "./logging-service.ts";
@@ -16,8 +13,7 @@ import type {
 } from "./types.ts";
 
 export const VISION_MODEL = "minicpm-v4.6";
-export const VISION_PROMPT =
-  `
+export const VISION_PROMPT = `
     Describe the image in detail.
     First, extract any text that appears in the image. Provide a list of all visible text. Only if there is text.
     Then, provide a short description of the visual elements of the image. ignore all texts.
@@ -34,8 +30,7 @@ const VISION_OUTPUT_SCHEMA = {
       type: "string",
     },
     ocrText: {
-      description:
-        "Exact all OCR texts if any. Do not include any non-text image description.",
+      description: "Exact all OCR texts if any. Do not include any non-text image description.",
       items: {
         type: "string",
       },
@@ -75,8 +70,8 @@ function isUsableVisionCacheEntry(
 ): cachedEntry is VisionCacheEntry {
   return Boolean(
     cachedEntry &&
-      cachedEntry.model === options.model &&
-      cachedEntry.prompt_hash === options.promptHash,
+    cachedEntry.model === options.model &&
+    cachedEntry.prompt_hash === options.promptHash,
   );
 }
 
@@ -200,9 +195,7 @@ function resolveVisionHost(endpoint: string | undefined): string {
 }
 
 function resolveReportImagePath(reportDirectory: string, imagePath: string): string {
-  return path.isAbsolute(imagePath)
-    ? imagePath
-    : path.resolve(reportDirectory, imagePath);
+  return path.isAbsolute(imagePath) ? imagePath : path.resolve(reportDirectory, imagePath);
 }
 
 async function analyzeImage(
@@ -286,10 +279,7 @@ export async function resolveVisionForReport(
         source: story.preview_image_url?.trim() ?? null,
       })),
     )
-    .filter(
-      (entry): entry is { mediaPk: string; source: string } =>
-        Boolean(entry.source),
-    );
+    .filter((entry): entry is { mediaPk: string; source: string } => Boolean(entry.source));
   const entriesByMediaPk = new Map<string, { mediaPk: string; source: string }>();
   const sourcesByMediaPk = new Map<string, string[]>();
 

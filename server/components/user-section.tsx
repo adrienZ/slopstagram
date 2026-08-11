@@ -49,19 +49,25 @@ export function UserSection({ user, viewModel }: UserSectionProps) {
   const avatar = user.profile_pic_url
     ? viewModel.cachedImages.profilePicPathByUrl.get(user.profile_pic_url)
     : undefined;
-  const summary = viewModel.userSummaryByUserKey.get(
-    getReportUserKey(user),
-  );
+  const summary = viewModel.userSummaryByUserKey.get(getReportUserKey(user));
 
   return (
     <section class={cx("user-section", sectionClass)}>
       <div class={cx("user-header", headerClass)}>
         {avatar ? (
-          <img class={cx("avatar", avatarClass)} src={avatar} alt={`${userName} avatar`} width="96" height="96" />
+          <img
+            class={cx("avatar", avatarClass)}
+            src={avatar}
+            alt={`${userName} avatar`}
+            width="96"
+            height="96"
+          />
         ) : (
           <div class={cx("avatar-placeholder", avatarClass)} />
         )}
-        <div><h2>{userName}</h2></div>
+        <div>
+          <h2>{userName}</h2>
+        </div>
       </div>
       {summary && <p class={cx("user-summary", summaryClass)}>{summary}</p>}
       {user.stories.length > 0 && (

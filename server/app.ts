@@ -20,20 +20,13 @@ const renderReport = async (context: Context) => {
     if (!selectedReportKey) {
       throw new Error("no cached stories reports found");
     }
-    const viewModel = await createReportViewModel(
-      await readCachedReport(selectedReportKey),
-    );
+    const viewModel = await createReportViewModel(await readCachedReport(selectedReportKey));
     const html = await new Response(
-      await renderToReadableStream(
-        jsx(ReportPage, { reportKeys, selectedReportKey, viewModel }),
-      ),
+      await renderToReadableStream(jsx(ReportPage, { reportKeys, selectedReportKey, viewModel })),
     ).text();
     return context.html(html);
   } catch (error) {
-    return context.text(
-      error instanceof Error ? error.message : String(error),
-      404,
-    );
+    return context.text(error instanceof Error ? error.message : String(error), 404);
   }
 };
 

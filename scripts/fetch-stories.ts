@@ -1,16 +1,10 @@
 import process from "node:process";
 import { pathToFileURL } from "node:url";
 import { recognizeAppleCaption } from "./lib/apple-ocr-service.ts";
-import {
-  getMediaCacheKey,
-  storiesStorage,
-} from "./lib/cache-service.ts";
+import { getMediaCacheKey, storiesStorage } from "./lib/cache-service.ts";
 import { createLogger, type Logger } from "./lib/logging-service.ts";
 import { getLargestVersion } from "./lib/parser-service.ts";
-import {
-  NO_ACCESSIBILITY_CAPTION,
-  NO_APPLE_CAPTION,
-} from "./lib/report-constants.ts";
+import { NO_ACCESSIBILITY_CAPTION, NO_APPLE_CAPTION } from "./lib/report-constants.ts";
 import {
   closeInstagramSession,
   openInstagramSession,
@@ -52,9 +46,7 @@ export type InstagramClientResponse<T> = {
 };
 
 export type InstagramClient = {
-  getReelsMedia: (
-    reelIds: string[],
-  ) => Promise<InstagramClientResponse<ReelsMediaResponse>>;
+  getReelsMedia: (reelIds: string[]) => Promise<InstagramClientResponse<ReelsMediaResponse>>;
   getTray: () => Promise<InstagramClientResponse<ReelTrayResponse>>;
 };
 
@@ -160,19 +152,12 @@ function getBackoffMs(
   attemptIndex: number,
   response: InstagramClientResponse<unknown> | null,
   options: Required<
-    Pick<
-      FetchStoriesManifestOptions,
-      "baseDelayMs" | "maxRateLimitDelayMs" | "now" | "random"
-    >
+    Pick<FetchStoriesManifestOptions, "baseDelayMs" | "maxRateLimitDelayMs" | "now" | "random">
   >,
 ): number {
   const retryAfterMs =
     response && response.status === 429
-      ? getRetryAfterMs(
-          response.headers,
-          options.maxRateLimitDelayMs,
-          options.now(),
-        )
+      ? getRetryAfterMs(response.headers, options.maxRateLimitDelayMs, options.now())
       : null;
 
   if (retryAfterMs !== null) {
@@ -186,17 +171,12 @@ function getBackoffMs(
 function createInstagramClient(session: InstagramSession): InstagramClient {
   return {
     async getReelsMedia(reelIds) {
-      const query = reelIds
-        .map((reelId) => `reel_ids=${encodeURIComponent(reelId)}`)
-        .join("&");
-      const response = await session.context.request.get(
-        `${REELS_MEDIA_URL}?${query}`,
-        {
-          headers: {
-            "x-ig-app-id": IG_APP_ID,
-          },
+      const query = reelIds.map((reelId) => `reel_ids=${encodeURIComponent(reelId)}`).join("&");
+      const response = await session.context.request.get(`${REELS_MEDIA_URL}?${query}`, {
+        headers: {
+          "x-ig-app-id": IG_APP_ID,
         },
-      );
+      });
 
       return {
         headers: response.headers(),
@@ -245,10 +225,7 @@ async function getCachedStoryItem(
   return item.pk === mediaPk ? item : null;
 }
 
-async function cacheStoryItem(
-  item: StoryItem,
-  storyStorage: StoryStorage,
-): Promise<void> {
+async function cacheStoryItem(item: StoryItem, storyStorage: StoryStorage): Promise<void> {
   await storyStorage.setItem(getMediaCacheKey(item.pk), item);
 }
 
@@ -257,13 +234,7 @@ async function requestWithRetry<T>(
   options: Required<
     Pick<
       FetchStoriesManifestOptions,
-      | "baseDelayMs"
-      | "logger"
-      | "maxAttempts"
-      | "maxRateLimitDelayMs"
-      | "now"
-      | "random"
-      | "sleep"
+      "baseDelayMs" | "logger" | "maxAttempts" | "maxRateLimitDelayMs" | "now" | "random" | "sleep"
     >
   >,
   label: string,
@@ -296,10 +267,7 @@ async function requestWithRetry<T>(
         status: response.status,
       };
 
-      if (
-        attemptCount >= options.maxAttempts ||
-        !TRANSIENT_STATUS_CODES.has(response.status)
-      ) {
+      if (attemptCount >= options.maxAttempts || !TRANSIENT_STATUS_CODES.has(response.status)) {
         options.logger.warn(
           `${label} failed after ${attemptCount} attempt(s): ${lastFailure.message}`,
         );
@@ -362,9 +330,7 @@ function createFailure(
   };
 }
 
-function getExpectedMediaIdsByReel(
-  tray: StoryTrayEntry[],
-): Map<string, string[]> {
+function getExpectedMediaIdsByReel(tray: StoryTrayEntry[]): Map<string, string[]> {
   return new Map(tray.map((entry) => [entry.id, entry.media_ids]));
 }
 
@@ -373,9 +339,7 @@ function getPendingMediaIds(
   expectedMediaIdsByReel: Map<string, string[]>,
   cachedItems: Map<string, StoryItem>,
 ): string[] {
-  return (expectedMediaIdsByReel.get(reelId) ?? []).filter(
-    (mediaPk) => !cachedItems.has(mediaPk),
-  );
+  return (expectedMediaIdsByReel.get(reelId) ?? []).filter((mediaPk) => !cachedItems.has(mediaPk));
 }
 
 function addFailuresForPendingReelStories(
@@ -389,11 +353,7 @@ function addFailuresForPendingReelStories(
   reason: StoryFetchFailureReason = failure.reason,
 ): void {
   for (const reelId of reelIds) {
-    for (const mediaPk of getPendingMediaIds(
-      reelId,
-      expectedMediaIdsByReel,
-      cachedItems,
-    )) {
+    for (const mediaPk of getPendingMediaIds(reelId, expectedMediaIdsByReel, cachedItems)) {
       if (failureByMediaPk.has(mediaPk)) {
         continue;
       }
@@ -428,10 +388,7 @@ async function cacheReturnedReels(
   }
 }
 
-function getRemainingReelIds(
-  reelIdsToFetch: string[],
-  currentIndex: number,
-): string[] {
+function getRemainingReelIds(reelIdsToFetch: string[], currentIndex: number): string[] {
   return reelIdsToFetch.slice(currentIndex);
 }
 
@@ -461,10 +418,7 @@ function logStoryProgress(
   );
 }
 
-function getAccessibilityCaption(
-  mediaPk: string,
-  cachedItems: Map<string, StoryItem>,
-): string {
+function getAccessibilityCaption(mediaPk: string, cachedItems: Map<string, StoryItem>): string {
   const caption = cachedItems.get(mediaPk)?.accessibility_caption;
 
   if (typeof caption === "string" && caption.trim().length > 0) {
@@ -573,13 +527,7 @@ function unwrapInstagramRedirectUrl(value: string): string {
 }
 
 function getLinkStickerLabel(value: unknown): string | null {
-  const rawDirectUrl = getNestedString(value, [
-    "url",
-    "uri",
-    "link_url",
-    "webUri",
-    "web_uri",
-  ]);
+  const rawDirectUrl = getNestedString(value, ["url", "uri", "link_url", "webUri", "web_uri"]);
   const directUrl = rawDirectUrl ? unwrapInstagramRedirectUrl(rawDirectUrl) : null;
   const directTitle = getNestedString(value, ["title", "link_title", "display_url"]);
 
@@ -657,15 +605,9 @@ function getLocationFromValue(value: unknown): { address: string; name: string }
     return null;
   }
 
-  const name =
-    getNestedString(location, ["name", "location_name", "title"]) ?? "";
+  const name = getNestedString(location, ["name", "location_name", "title"]) ?? "";
   const address =
-    getNestedString(location, [
-      "address",
-      "full_address",
-      "street_address",
-      "subtitle",
-    ]) ?? "";
+    getNestedString(location, ["address", "full_address", "street_address", "subtitle"]) ?? "";
 
   return name || address ? { address, name } : null;
 }
@@ -758,10 +700,7 @@ function getStickerLabels(story: StoryItem): string[] {
   return labels;
 }
 
-function getStoryStickers(
-  mediaPk: string,
-  cachedItems: Map<string, StoryItem>,
-): string[] {
+function getStoryStickers(mediaPk: string, cachedItems: Map<string, StoryItem>): string[] {
   const story = cachedItems.get(mediaPk);
 
   if (!story) {
@@ -771,10 +710,7 @@ function getStoryStickers(
   return getStickerLabels(story);
 }
 
-function getStoryLocations(
-  mediaPk: string,
-  cachedItems: Map<string, StoryItem>,
-): string[] {
+function getStoryLocations(mediaPk: string, cachedItems: Map<string, StoryItem>): string[] {
   const story = cachedItems.get(mediaPk);
 
   if (!story) {
@@ -835,9 +771,7 @@ function createOutputUsers(manifestUsers: StoryManifestReel[]): StoryOutputUser[
     group.stories.push(
       ...user.stories.map((story) => ({
         apple_caption: story.apple_caption,
-        ...(story.failure_index === undefined
-          ? {}
-          : { failure_index: story.failure_index }),
+        ...(story.failure_index === undefined ? {} : { failure_index: story.failure_index }),
         ig_caption: story.ig_caption,
         locations: story.locations,
         media_type: story.media_type ?? null,
@@ -861,9 +795,7 @@ async function populateAppleCaptions(
   const resolvedByMediaPk = new Map<string, string>();
   const mediaPksToResolve = new Set(
     manifestUsers.flatMap((user) =>
-      user.stories
-        .filter((story) => story.status !== "failed")
-        .map((story) => story.media_pk),
+      user.stories.filter((story) => story.status !== "failed").map((story) => story.media_pk),
     ),
   );
   let resolvedCount = 0;
@@ -939,14 +871,12 @@ export async function fetchStoriesManifest(
     baseDelayMs: options.baseDelayMs ?? DEFAULT_BASE_DELAY_MS,
     logger,
     maxAttempts: options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
-    maxRateLimitDelayMs:
-      options.maxRateLimitDelayMs ?? DEFAULT_MAX_RATE_LIMIT_DELAY_MS,
+    maxRateLimitDelayMs: options.maxRateLimitDelayMs ?? DEFAULT_MAX_RATE_LIMIT_DELAY_MS,
     now,
     random: options.random ?? Math.random,
     sleep: options.sleep ?? sleep,
   };
-  const reelIdsPerRequest =
-    options.reelIdsPerRequest ?? DEFAULT_REEL_IDS_PER_REQUEST;
+  const reelIdsPerRequest = options.reelIdsPerRequest ?? DEFAULT_REEL_IDS_PER_REQUEST;
 
   logger.info(`fetching tray for report ${reportName}`);
   const trayResult = await requestWithRetry(
@@ -983,12 +913,8 @@ export async function fetchStoriesManifest(
     }
   }
 
-  const cacheMissCount = expectedMediaPks.filter(
-    (mediaPk) => !cacheHitPks.has(mediaPk),
-  ).length;
-  logger.info(
-    `story cache loaded: hits=${cacheHitPks.size} misses=${cacheMissCount}`,
-  );
+  const cacheMissCount = expectedMediaPks.filter((mediaPk) => !cacheHitPks.has(mediaPk)).length;
+  logger.info(`story cache loaded: hits=${cacheHitPks.size} misses=${cacheMissCount}`);
   logStoryProgress(
     logger,
     expectedMediaPks.length,
@@ -999,17 +925,13 @@ export async function fetchStoriesManifest(
   );
 
   const reelIdsToFetch = tray
-    .filter((entry) =>
-      entry.media_ids.some((mediaPk) => !cachedItems.has(mediaPk)),
-    )
+    .filter((entry) => entry.media_ids.some((mediaPk) => !cachedItems.has(mediaPk)))
     .map((entry) => entry.id);
 
   if (reelIdsToFetch.length === 0) {
     logger.info("all expected stories were found in cache");
   } else {
-    logger.info(
-      `fetching missing stories from ${reelIdsToFetch.length} reel(s)`,
-    );
+    logger.info(`fetching missing stories from ${reelIdsToFetch.length} reel(s)`);
   }
 
   let liveFetchStopped = false;
@@ -1178,9 +1100,7 @@ export async function fetchStoriesManifest(
         break;
       }
 
-      logger.warn(
-        `individual reel ${reelId} failed: ${singleResult.failure.message}`,
-      );
+      logger.warn(`individual reel ${reelId} failed: ${singleResult.failure.message}`);
       addFailuresForPendingReelStories(
         [reelId],
         expectedMediaIdsByReel,
@@ -1220,21 +1140,15 @@ export async function fetchStoriesManifest(
         media_pk: mediaPk,
         preview_image_url: getStoryPreviewImageUrl(mediaPk, cachedItems),
         stickers: getStoryStickers(mediaPk, cachedItems),
-        status:
-          failureIndex !== undefined
-            ? ("failed" as const)
-            : ("ok" as const),
+        status: failureIndex !== undefined ? ("failed" as const) : ("ok" as const),
       };
     }),
     username: entry.user.username,
   }));
-  logger.info(`resolving apple captions for ${expectedMediaPks.length - failureByMediaPk.size} story item(s)`);
-  await populateAppleCaptions(
-    manifestUsers,
-    cachedItems,
-    appleCaptionResolver,
-    logger,
+  logger.info(
+    `resolving apple captions for ${expectedMediaPks.length - failureByMediaPk.size} story item(s)`,
   );
+  await populateAppleCaptions(manifestUsers, cachedItems, appleCaptionResolver, logger);
   const outputUsers = createOutputUsers(manifestUsers);
 
   logger.info(
@@ -1249,18 +1163,10 @@ export async function fetchStoriesManifest(
     metadata: {
       broadcasts_count: trayJson.broadcasts.length,
       counts: {
-        cache_hits: expectedMediaPks.filter((mediaPk) =>
-          cacheHitPks.has(mediaPk),
-        ).length,
-        cache_misses: expectedMediaPks.filter(
-          (mediaPk) => !cacheHitPks.has(mediaPk),
-        ).length,
-        failed: expectedMediaPks.filter((mediaPk) =>
-          failureByMediaPk.has(mediaPk),
-        ).length,
-        fetched: expectedMediaPks.filter((mediaPk) =>
-          fetchedMediaPks.has(mediaPk),
-        ).length,
+        cache_hits: expectedMediaPks.filter((mediaPk) => cacheHitPks.has(mediaPk)).length,
+        cache_misses: expectedMediaPks.filter((mediaPk) => !cacheHitPks.has(mediaPk)).length,
+        failed: expectedMediaPks.filter((mediaPk) => failureByMediaPk.has(mediaPk)).length,
+        fetched: expectedMediaPks.filter((mediaPk) => fetchedMediaPks.has(mediaPk)).length,
         reels: tray.length,
         stories: expectedMediaPks.length,
       },

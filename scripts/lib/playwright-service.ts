@@ -33,8 +33,6 @@ export async function openInstagramSession(
   return { context, page };
 }
 
-export async function closeInstagramSession(
-  session: InstagramSession,
-): Promise<void> {
+export async function closeInstagramSession(session: InstagramSession): Promise<void> {
   await session.context.close();
 }

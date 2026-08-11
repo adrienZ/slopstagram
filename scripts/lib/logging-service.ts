@@ -35,19 +35,12 @@ export function createLogger(prefix: string): Logger {
     activeBar = null;
   }
 
-  for (const typeName of [
-    "debug",
-    "error",
-    "info",
-    "log",
-    "success",
-    "warn",
-  ] as const) {
+  for (const typeName of ["debug", "error", "info", "log", "success", "warn"] as const) {
     const log = instance[typeName].bind(instance);
     instance[typeName] = ((...args: Parameters<typeof log>) => {
       stopActiveBar();
       return log(...args);
-    }) as typeof instance[typeof typeName];
+    }) as (typeof instance)[typeof typeName];
   }
 
   function progress(value: number, total: number, options: ProgressOptions = {}): void {

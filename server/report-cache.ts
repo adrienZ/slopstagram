@@ -11,9 +11,7 @@ export async function getCachedReportKeys(): Promise<string[]> {
     .sort();
 }
 
-export async function readCachedReport(
-  reportKey: string,
-): Promise<StoriesManifestReport> {
+export async function readCachedReport(reportKey: string): Promise<StoriesManifestReport> {
   if (!/^stories-report-.*\.json$/.test(reportKey)) {
     throw new Error(`invalid cached report key: ${reportKey}`);
   }
