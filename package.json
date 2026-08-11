@@ -13,13 +13,10 @@
     "postinstall": "npm audit --json > audit.json || true",
     "auth": "tsx scripts/auth.ts",
     "fetch:stories": "tsx scripts/fetch-stories.ts",
-    "fetch:story": "tsx scripts/fetch-story.ts",
     "create:report": "tsx scripts/create-report.ts",
     "start": "npm exec vite",
     "lint": "oxlint",
     "check": "npm run lint && npm run typecheck && npm run test",
-    "parse:stories-tray": "node --import tsx scripts/parse-stories-tray.ts",
-    "parse:story": "node --import tsx scripts/parse-story.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-test-module-mocks --import tsx --test tests/**/*.test.ts"
   },

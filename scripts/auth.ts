@@ -3,12 +3,10 @@ import {
   openInstagramSession,
 } from "./lib/playwright-service.ts";
 
-async function main(): Promise<void> {
+try {
   await openInstagramSession({ headless: false });
-}
-
-main().catch((error: unknown) => {
+} catch(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   process.stderr.write(`${message}\n`);
   process.exitCode = 1;
-});
+};

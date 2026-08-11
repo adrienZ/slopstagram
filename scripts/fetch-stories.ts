@@ -13,7 +13,6 @@ import {
 } from "./lib/report-constants.ts";
 import {
   closeInstagramSession,
-  DEFAULT_PROFILE_PATH,
   openInstagramSession,
   type InstagramSession,
 } from "./lib/playwright-service.ts";
@@ -1280,7 +1279,6 @@ export async function fetchStories(
   args: string[] = process.argv.slice(2),
   options: FetchStoriesOptions = {},
 ): Promise<StoriesManifestReport> {
-  const profileArg = getArgValue(args, "--profile") ?? DEFAULT_PROFILE_PATH;
   const reportName =
     options.reportName ?? getArgValue(args, "--report-name") ?? DEFAULT_REPORT_NAME;
 
@@ -1293,7 +1291,7 @@ export async function fetchStories(
 
   const openSession = options.openSession ?? openInstagramSession;
   const closeSession = options.closeSession ?? closeInstagramSession;
-  const session = await openSession({ profilePath: profileArg });
+  const session = await openSession();
 
   try {
     return await fetchStoriesManifest(createInstagramClient(session), {
