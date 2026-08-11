@@ -10,7 +10,7 @@ import { ReportPage } from "./components/report-page.tsx";
 import { getCachedReportKeys, readCachedReport } from "./report-cache.ts";
 import { createReportViewModel } from "./report-view-model.ts";
 
-export const app = new Hono();
+const app = new Hono();
 app.use("/images/*", serveStatic({ root: BASE_CACHE_DIR }));
 
 const renderReport = async (context: Context) => {
