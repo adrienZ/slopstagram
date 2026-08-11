@@ -106,6 +106,7 @@ describe("resolveVisionForReport", () => {
     await withReportImage(async (reportDirectory, cachedImages) => {
       const fetchVision = async (_url: string | URL | Request, init?: RequestInit) => {
         fetchCount += 1;
+        // oxlint-disable-next-line typescript/no-base-to-string
         const body = JSON.parse(String(init?.body)) as {
           format?: unknown;
           images: string[];

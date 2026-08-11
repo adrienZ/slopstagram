@@ -185,7 +185,9 @@ describe("resolveUserSummariesForReport", () => {
     const summaries = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
       fetchOllama: async (url, init) => {
+        // oxlint-disable-next-line typescript/no-base-to-string
         assert.match(String(url), /\/api\/generate$/);
+        // oxlint-disable-next-line typescript/no-base-to-string
         const body = JSON.parse(String(init?.body)) as {
           format?: unknown;
           model?: unknown;

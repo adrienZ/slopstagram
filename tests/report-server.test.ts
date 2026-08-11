@@ -14,7 +14,7 @@ const report = JSON.parse(
 const reportKeys = ["stories-report-earlier.json", "stories-report-fixture.json"];
 let requestedReportKey: string | undefined;
 
-await mock.module("../server/report-cache.ts", {
+mock.module("../server/report-cache.ts", {
   namedExports: {
     getCachedReportKeys: async () => reportKeys,
     readCachedReport: async (reportKey: string) => {
@@ -27,7 +27,7 @@ await mock.module("../server/report-cache.ts", {
   },
 });
 
-await mock.module("../server/report-view-model.ts", {
+mock.module("../server/report-view-model.ts", {
   namedExports: {
     createReportViewModel: async (fixture: StoriesManifestReport): Promise<ReportViewModel> => ({
       cachedImages: {
@@ -52,7 +52,7 @@ await mock.module("../server/report-view-model.ts", {
   },
 });
 
-const { app } = await import("../server/app.ts");
+const { default: app } = await import("../server/app.ts");
 
 test("GET /report renders the latest fixture report", async () => {
   const response = await app.request("/report");
