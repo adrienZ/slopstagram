@@ -1,4 +1,4 @@
-import { defineTask } from "nitro/runtime";
+import { defineTask } from "nitro/task";
 import { z } from "zod";
 import { createReport } from "../../sdk/index.ts";
 import { createLogger } from "../../sdk/lib/logging-service.ts";

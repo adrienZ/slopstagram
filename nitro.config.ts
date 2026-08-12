@@ -13,11 +13,12 @@ export default defineNitroConfig({
     {
       baseURL: "images",
       dir: imageCacheDir,
+      maxAge: 0,
     },
   ],
   scheduledTasks: {
     // Each hour.
     "0 * * * *": "warm-cache",
   },
-  srcDir: "./server",
+  serverDir: "./server",
 });
