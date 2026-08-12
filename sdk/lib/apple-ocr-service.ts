@@ -17,12 +17,12 @@ function getOcrSource(story: StoryItem): string | null {
 }
 
 function normalizeOcrText(value: string): string {
-  const normalized = value.normalize("NFC").replace(/\r\n/g, "\n").trim();
+  const normalized = value.normalize("NFC").replaceAll("\r\n", "\n").trim();
 
   return normalized.length > 0 ? normalized : NO_APPLE_CAPTION;
 }
 
-async function runAppleOcr(source: string): Promise<string> {
+function runAppleOcr(source: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const child = spawn("mac-ocr", [source], {
       stdio: ["ignore", "pipe", "pipe"],
@@ -61,11 +61,11 @@ export async function recognizeAppleCaption(
   const cacheKey = getMediaCacheKey(story.pk);
   const cachedCaption = await storage.getItem(cacheKey);
 
-  if (cachedCaption) {
+  if (cachedCaption !== null && cachedCaption.length > 0) {
     return cachedCaption;
   }
 
-  if (!source) {
+  if (source === null || source.length === 0) {
     return NO_APPLE_CAPTION;
   }
 

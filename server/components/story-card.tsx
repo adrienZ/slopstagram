@@ -1,6 +1,6 @@
 import cx from "clsx";
 import { css } from "mono-jsx/jsx-runtime";
-import { STORY_MEDIA_TYPES, type StoryOutputUser } from "../../scripts/lib/types.ts";
+import { STORY_MEDIA_TYPES, type StoryOutputUser } from "../../sdk/lib/types.ts";
 import { getStoryUrl } from "../helper.ts";
 import type { ReportViewModel } from "../report-view-model.ts";
 
@@ -48,14 +48,15 @@ export function StoryCardStyles() {
 
 export function StoryCard({ count, position, story, user, userName, viewModel }: StoryCardProps) {
   const source = story.preview_image_url?.trim();
-  if (!source) return null;
+  if (source === undefined || source.length === 0) return null;
 
   const preview = viewModel.cachedImages.storyPreviewPathByUrl.get(source);
-  if (!preview) return null;
+  if (preview === undefined || preview.length === 0) return null;
   const vision = viewModel.visionByPreviewUrl.get(source);
-  const avatar = user.profile_pic_url
-    ? viewModel.cachedImages.profilePicPathByUrl.get(user.profile_pic_url)
-    : undefined;
+  const avatar =
+    user.profile_pic_url !== null && user.profile_pic_url.length > 0
+      ? viewModel.cachedImages.profilePicPathByUrl.get(user.profile_pic_url)
+      : undefined;
   const mediaType =
     story.media_type === STORY_MEDIA_TYPES.IMAGE
       ? "Image"

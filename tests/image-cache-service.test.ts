@@ -1,12 +1,14 @@
+import { Buffer } from "node:buffer";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import path from "node:path";
 import { describe, test } from "node:test";
-import { createStorage } from "unstorage";
-import memoryDriver from "unstorage/drivers/memory";
-import { createCacheStorages } from "../scripts/lib/cache-service.ts";
-import { cacheReportImages } from "../scripts/lib/image-cache-service.ts";
-import type { StoriesManifestReport } from "../scripts/lib/types.ts";
+import { TextEncoder } from "node:util";
+import { createCacheStorages } from "../sdk/lib/cache-service.ts";
+import { cacheReportImages } from "../sdk/lib/image-cache-service.ts";
+import type { StoriesManifestReport } from "../sdk/lib/types.ts";
+import { createMemoryStorage } from "./memory-storage.ts";
+import { createMockLogger } from "./mock-helpers.ts";
 
 function getImageHash(source: string): string {
   return createHash("sha256").update(source).digest("hex");
@@ -66,32 +68,29 @@ describe("cacheReportImages", () => {
     const previewSource = "https://example.com/story-preview.webp";
     const imageHash = getImageHash(source);
     const previewKey = "story-pk";
-    const { imageCacheStorage } = createCacheStorages(
-      createStorage({
-        driver: memoryDriver(),
-      }),
-    );
+    const { imageCacheStorage } = createCacheStorages(createMemoryStorage());
     let fetchCount = 0;
     let convertCount = 0;
 
     const cachedImages = await cacheReportImages(createReport(source, previewSource), {
-      convertToJpeg: async (body) => {
+      convertToJpeg: (body) => {
         convertCount += 1;
-        return Buffer.from(`jpeg:${body.toString()}`);
+        return Promise.resolve(Buffer.from(`jpeg:${body.toString()}`));
       },
-      fetchImage: async () => {
+      fetchImage: () => {
         fetchCount += 1;
         const body = new TextEncoder().encode("image-bytes");
-        return {
-          arrayBuffer: async () =>
-            body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength) as ArrayBuffer,
+        return Promise.resolve({
+          arrayBuffer: () =>
+            Promise.resolve(body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength)),
           headers: {
             get: (name) => (name.toLowerCase() === "content-type" ? "image/jpeg" : null),
           },
           ok: true,
           status: 200,
-        };
+        });
       },
+      logger: createMockLogger(),
       reportDirectory: path.resolve(".tmp/reports"),
       storage: imageCacheStorage,
     });
@@ -121,17 +120,12 @@ describe("cacheReportImages", () => {
   test("reuses cached profile pictures without fetching again", async () => {
     const source = "https://example.com/avatar.webp";
     const imageHash = getImageHash(source);
-    const { imageCacheStorage } = createCacheStorages(
-      createStorage({
-        driver: memoryDriver(),
-      }),
-    );
+    const { imageCacheStorage } = createCacheStorages(createMemoryStorage());
     await imageCacheStorage.setItemRaw(`avatars/${imageHash}.jpg`, Buffer.from("jpeg-avatar"));
 
     const cachedImages = await cacheReportImages(createReport(source), {
-      fetchImage: async () => {
-        throw new Error("should not fetch");
-      },
+      fetchImage: () => Promise.reject(new Error("should not fetch")),
+      logger: createMockLogger(),
       reportDirectory: path.resolve(".tmp/reports"),
       storage: imageCacheStorage,
     });
@@ -147,11 +141,7 @@ describe("cacheReportImages", () => {
     const previewSource = "https://example.com/story-preview.webp";
     const imageHash = getImageHash(source);
     const previewKey = "story-pk";
-    const { imageCacheStorage } = createCacheStorages(
-      createStorage({
-        driver: memoryDriver(),
-      }),
-    );
+    const { imageCacheStorage } = createCacheStorages(createMemoryStorage());
     await imageCacheStorage.setItemRaw(`avatars/${imageHash}.jpg`, Buffer.from("jpeg-avatar"));
     await imageCacheStorage.setItemRaw(
       `story-previews/${previewKey}.jpg`,
@@ -159,9 +149,8 @@ describe("cacheReportImages", () => {
     );
 
     const cachedImages = await cacheReportImages(createReport(source, previewSource), {
-      fetchImage: async () => {
-        throw new Error("should not fetch");
-      },
+      fetchImage: () => Promise.reject(new Error("should not fetch")),
+      logger: createMockLogger(),
       reportDirectory: path.resolve(".tmp/reports"),
       storage: imageCacheStorage,
     });
@@ -181,28 +170,25 @@ describe("cacheReportImages", () => {
     const firstPreviewSource = "https://example.com/story-preview.webp?signature=old";
     const secondPreviewSource = "https://example.com/story-preview.webp?signature=new";
     const previewKey = "story-pk";
-    const { imageCacheStorage } = createCacheStorages(
-      createStorage({
-        driver: memoryDriver(),
-      }),
-    );
+    const { imageCacheStorage } = createCacheStorages(createMemoryStorage());
     let fetchCount = 0;
 
     const options = {
-      convertToJpeg: async (body: Buffer) => Buffer.from(`jpeg:${body.toString()}`),
-      fetchImage: async (url: string) => {
+      convertToJpeg: (body: Buffer) => Promise.resolve(Buffer.from(`jpeg:${body.toString()}`)),
+      fetchImage: (url: string) => {
         fetchCount += 1;
         const body = new TextEncoder().encode(url.includes("avatar") ? "avatar" : "story");
-        return {
-          arrayBuffer: async () =>
-            body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength) as ArrayBuffer,
+        return Promise.resolve({
+          arrayBuffer: () =>
+            Promise.resolve(body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength)),
           headers: {
             get: (name: string) => (name.toLowerCase() === "content-type" ? "image/webp" : null),
           },
           ok: true,
           status: 200,
-        };
+        });
       },
+      logger: createMockLogger(),
       reportDirectory: path.resolve(".tmp/reports"),
       storage: imageCacheStorage,
     };

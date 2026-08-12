@@ -1,8 +1,8 @@
 import { getMediaCacheKey, storiesStorage } from "./cache-service.ts";
+import { StoryItemSchema } from "./story-schemas.ts";
 import {
   STORY_MEDIA_TYPES,
   type StoriesManifestReport,
-  type StoryItem,
   type StoryMediaType,
   type StoryStorage,
 } from "./types.ts";
@@ -24,12 +24,17 @@ async function getCachedStoryMediaType(
 ): Promise<StoryMediaType | null> {
   const cachedStory = await storage.getItem(cacheKey);
 
-  if (!cachedStory) return null;
+  if (cachedStory === null || cachedStory === undefined) return null;
 
-  const story =
-    typeof cachedStory === "string"
-      ? (JSON.parse(cachedStory) as StoryItem)
-      : (cachedStory as StoryItem);
+  const result = StoryItemSchema.safeParse(
+    typeof cachedStory === "string" ? JSON.parse(cachedStory) : cachedStory,
+  );
+
+  if (!result.success) {
+    return null;
+  }
+
+  const story = result.data;
 
   return formatStoryMediaType(story.media_type);
 }

@@ -1,19 +1,18 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createConsola } from "consola";
-import { createReport } from "../scripts/create-report.ts";
-import type { Logger } from "../scripts/lib/logging-service.ts";
-import type { StoriesManifestReport } from "../scripts/lib/types.ts";
+import { createReport } from "../sdk/index.ts";
+import type { Logger } from "../sdk/lib/logging-service.ts";
+import type { StoriesManifestReport } from "../sdk/lib/types.ts";
+
+function log(): void {}
+
+log.raw = log;
 
 function createMockLogger(): Logger {
   const logger = createConsola();
 
-  logger.mockTypes(() => {
-    const log = () => {};
-    log.raw = log;
-
-    return log;
-  });
+  logger.mockTypes(() => log);
 
   return Object.assign(logger, {
     progress: () => {},
@@ -57,32 +56,35 @@ test("createReport prepares every cache before persisting the report", async () 
 
   const result = await createReport({
     dependencies: {
-      fetchStories: async (_args, options) => {
+      fetchStories: (_args, options) => {
         calls.push("fetch-stories");
-        assert.ok(options);
-        assert.match(options.reportName ?? "", /^stories-report-/);
-        return report;
+        if (options === undefined) {
+          assert.fail("expected fetch stories options");
+        }
+        assert.match(options.reportName ?? "", /^stories-report-/u);
+        return Promise.resolve(report);
       },
-      cacheReportImages: async (_report, options) => {
+      cacheReportImages: (_report, options) => {
         calls.push("cache-images");
-        assert.ok(options);
-        return cachedImages;
+        assert.equal(typeof options.logger.progress, "function");
+        return Promise.resolve(cachedImages);
       },
-      resolveVisionForReport: async (_report, images) => {
+      resolveVisionForReport: (_report, images) => {
         calls.push("cache-vision");
         assert.equal(images, cachedImages);
-        return visionByPreviewUrl;
+        return Promise.resolve(visionByPreviewUrl);
       },
-      resolveUserSummariesForReport: async (_report, options) => {
+      resolveUserSummariesForReport: (_report, options) => {
         calls.push("cache-summaries");
-        assert.ok(options);
+        assert.equal(typeof options.logger.progress, "function");
         assert.equal(options.visionByPreviewUrl, visionByPreviewUrl);
-        return new Map();
+        return Promise.resolve(new Map());
       },
-      saveReport: async (key, savedReport) => {
+      saveReport: (key, savedReport) => {
         calls.push("save-report");
         assert.equal(savedReport, report);
         savedKey = key;
+        return Promise.resolve();
       },
     },
     logger: createMockLogger(),

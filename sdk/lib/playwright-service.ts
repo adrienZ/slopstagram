@@ -3,7 +3,7 @@ import { chromium, type BrowserContext, type Page } from "playwright";
 import cliConfig from "../../.playwright/cli.config.json" with { type: "json" };
 
 const INSTAGRAM_HOME_URL = "https://www.instagram.com/";
-export const DEFAULT_PROFILE_PATH = cliConfig.browser.userDataDir;
+const DEFAULT_PROFILE_PATH = cliConfig.browser.userDataDir;
 
 export type InstagramSession = {
   context: BrowserContext;

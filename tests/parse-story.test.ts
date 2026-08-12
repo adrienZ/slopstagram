@@ -1,20 +1,15 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { createStorage } from "unstorage";
-import memoryDriver from "unstorage/drivers/memory";
 import {
   getLargestVersion,
   parseStoryManifestReport,
   parseStoryReport,
-} from "../scripts/lib/parser-service.ts";
-import { createCacheStorages, getMediaCacheKey } from "../scripts/lib/cache-service.ts";
-import { STORY_MEDIA_TYPES } from "../scripts/lib/types.ts";
-import type {
-  StoriesManifestReport,
-  StoriesMediaReport,
-  StoryVersion,
-} from "../scripts/lib/types.ts";
+} from "../sdk/lib/parser-service.ts";
+import { createCacheStorages, getMediaCacheKey } from "../sdk/lib/cache-service.ts";
+import { STORY_MEDIA_TYPES } from "../sdk/lib/types.ts";
+import type { StoriesManifestReport, StoriesMediaReport, StoryVersion } from "../sdk/lib/types.ts";
 import storiesFixture from "./fixtures/instagram-story-data.json" with { type: "json" };
+import { createMemoryStorage } from "./memory-storage.ts";
 
 const report = storiesFixture as StoriesMediaReport;
 
@@ -89,11 +84,7 @@ describe("parseStoryReport", () => {
   });
 
   test("resolves manifest stories from story cache", async () => {
-    const { storiesStorage } = createCacheStorages(
-      createStorage({
-        driver: memoryDriver(),
-      }),
-    );
+    const { storiesStorage } = createCacheStorages(createMemoryStorage());
     const cachedItem = {
       image_versions2: {
         candidates: [
@@ -203,6 +194,5 @@ describe("getLargestVersion", () => {
   test("returns null for empty input", () => {
     assert.equal(getLargestVersion([]), null);
     assert.equal(getLargestVersion(null), null);
-    assert.equal(getLargestVersion(undefined), null);
   });
 });

@@ -1,22 +1,23 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
-import { BASE_CACHE_DIR, REPORTS_STORAGE_DIR } from "../scripts/lib/cache-service.ts";
-import type { StoriesManifestReport } from "../scripts/lib/types.ts";
+import { BASE_CACHE_DIR, REPORTS_STORAGE_DIR } from "../sdk/lib/cache-service.ts";
+import { StoriesManifestReportSchema } from "../sdk/lib/story-schemas.ts";
+import type { StoriesManifestReport } from "../sdk/lib/types.ts";
 
 export const reportDirectory = path.resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR);
 
 export async function getCachedReportKeys(): Promise<string[]> {
   return (await readdir(reportDirectory))
-    .filter((file) => /^stories-report-.*\.json$/.test(file))
-    .sort();
+    .filter((file) => /^stories-report-.*\.json$/u.test(file))
+    .toSorted();
 }
 
 export async function readCachedReport(reportKey: string): Promise<StoriesManifestReport> {
-  if (!/^stories-report-.*\.json$/.test(reportKey)) {
+  if (!/^stories-report-.*\.json$/u.test(reportKey)) {
     throw new Error(`invalid cached report key: ${reportKey}`);
   }
 
-  return JSON.parse(
-    await readFile(path.join(reportDirectory, reportKey), "utf8"),
-  ) as StoriesManifestReport;
+  return StoriesManifestReportSchema.parse(
+    JSON.parse(await readFile(path.join(reportDirectory, reportKey), "utf8")),
+  );
 }

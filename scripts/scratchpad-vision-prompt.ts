@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import { writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -7,7 +8,7 @@ import { z } from "zod";
 import {
   VISION_MODEL,
   // VISION_PROMPT,
-} from "./lib/vision-service.ts";
+} from "../sdk/lib/vision-service.ts";
 
 const VISION_PROMPT = `
     Describe the image in detail.
@@ -45,7 +46,7 @@ function getArgValue(args: string[], flag: string): string | undefined {
 }
 
 async function downloadImage(url: string): Promise<string> {
-  const response = await fetch(url);
+  const response = await globalThis.fetch(url);
 
   if (!response.ok) {
     throw new Error(`image fetch failed: HTTP ${response.status}`);
@@ -67,6 +68,10 @@ function parseResponse(value: string): unknown {
   }
 }
 
+function writeOutput(value: string): void {
+  process.stdout.write(`${value}\n`);
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const imageUrl = DEFAULT_IMAGE_URL;
@@ -76,7 +81,7 @@ async function main(): Promise<void> {
   const imagePath = await downloadImage(imageUrl);
   const client = new Ollama({ host });
 
-  console.log(JSON.stringify({ imagePath, model, prompt }, null, 2));
+  writeOutput(JSON.stringify({ imagePath, model, prompt }, null, 2));
 
   const response = await client.generate({
     format: {
@@ -92,23 +97,25 @@ async function main(): Promise<void> {
     stream: false,
   });
 
-  console.log("\nraw response:");
-  console.log(response.response);
-  console.log("\nparsed response:");
+  writeOutput("\nraw response:");
+  writeOutput(response.response);
+  writeOutput("\nparsed response:");
   const parsedResponse = parseResponse(response.response);
-  console.log(JSON.stringify(parsedResponse, null, 2));
+  writeOutput(JSON.stringify(parsedResponse, null, 2));
 
-  console.log("\nvalidation:");
+  writeOutput("\nvalidation:");
   const validation = VisionResponseSchema.safeParse(parsedResponse);
   if (validation.success) {
-    console.log(JSON.stringify({ ok: true, data: validation.data }, null, 2));
+    writeOutput(JSON.stringify({ ok: true, data: validation.data }, null, 2));
   } else {
-    console.log(JSON.stringify({ ok: false, issues: validation.error.issues }, null, 2));
+    writeOutput(JSON.stringify({ ok: false, issues: validation.error.issues }, null, 2));
   }
 }
 
-main().catch((error: unknown) => {
+try {
+  await main();
+} catch (error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
-  console.error(message);
+  process.stderr.write(`${message}\n`);
   process.exitCode = 1;
-});
+}

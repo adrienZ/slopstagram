@@ -2,18 +2,17 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createConsola } from "consola";
 import { feedCache, parseFeedCacheArgs } from "../scripts/feed-cache.ts";
-import type { Logger } from "../scripts/lib/logging-service.ts";
-import type { StoriesManifestReport } from "../scripts/lib/types.ts";
+import type { Logger } from "../sdk/lib/logging-service.ts";
+import type { StoriesManifestReport } from "../sdk/lib/types.ts";
+
+function log(): void {}
+
+log.raw = log;
 
 function createMockLogger(): Logger {
   const logger = createConsola();
 
-  logger.mockTypes(() => {
-    const log = () => {};
-    log.raw = log;
-
-    return log;
-  });
+  logger.mockTypes(() => log);
 
   return Object.assign(logger, {
     progress: () => {},
@@ -68,19 +67,17 @@ test("feedCache creates a report and exits in once mode", async () => {
 
   await feedCache({
     args: ["--once", "--interval-ms", "10", "--report-name", "cache-feed-test.json"],
-    createReport: async (options) => {
+    createReport: (options) => {
       reportArgs.push(options.args ?? []);
 
-      return {
+      return Promise.resolve({
         outputFileName: "stories-report-cache-feed-test.json",
         outputPath: ".tmp/reports/stories-report-cache-feed-test.json",
         report: createFixtureReport(),
-      };
+      });
     },
     logger: createMockLogger(),
-    sleep: async () => {
-      throw new Error("feedCache should not sleep in once mode");
-    },
+    sleep: () => Promise.reject(new Error("feedCache should not sleep in once mode")),
   });
 
   assert.deepEqual(reportArgs, [["--report-name", "cache-feed-test.json"]]);

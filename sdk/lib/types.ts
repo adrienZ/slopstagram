@@ -7,7 +7,7 @@ export const STORY_MEDIA_TYPES = {
 
 export type StoryMediaType = (typeof STORY_MEDIA_TYPES)[keyof typeof STORY_MEDIA_TYPES];
 
-export type StoryTrayUser = {
+type StoryTrayUser = {
   full_name?: string;
   profile_pic_url?: string;
   username: string;
@@ -31,7 +31,7 @@ export type StoriesReport = {
   };
 };
 
-export type ParsedStoryTrayItem = {
+type ParsedStoryTrayItem = {
   media_ids: string[];
 };
 
@@ -46,7 +46,7 @@ export type StoryVersion = {
   width?: number;
 };
 
-export type StoryVideoVersion = StoryVersion & {
+type StoryVideoVersion = StoryVersion & {
   type?: number;
 };
 
@@ -95,7 +95,7 @@ export type StoriesMediaReport = {
 
 export type StoryFetchFailureReason = "request_failed" | "rate_limited" | "missing_from_response";
 
-export type StoryManifestItemStatus = "ok" | "failed";
+type StoryManifestItemStatus = "ok" | "failed";
 
 export type StoryFetchFailure = {
   attempt_count: number;
@@ -129,7 +129,7 @@ export type StoryManifestReel = {
   username: string;
 };
 
-export type StoryOutputItem = {
+type StoryOutputItem = {
   apple_caption: string;
   failure_index?: number;
   ig_caption: string;
@@ -149,7 +149,7 @@ export type StoryOutputUser = {
   username: string;
 };
 
-export type StoryFetchCounts = {
+type StoryFetchCounts = {
   cache_hits: number;
   cache_misses: number;
   failed: number;
@@ -196,9 +196,8 @@ export type StoriesManifestReport = {
   };
 };
 
-export type TrayStorage = Storage<StoriesReport>;
 export type StoryStorage = Storage<StoryItem>;
-export type ReportStorage = Storage<StoriesManifestReport>;
+type ReportStorage = Storage<StoriesManifestReport>;
 export type AppleCaptionStorage = Storage<AppleCaptionCacheEntry>;
 export type ImageCacheStorage = Storage<Record<string, never>>;
 export type VisionStorage = Storage<VisionCacheEntry>;
@@ -221,3 +220,11 @@ export type ParsedStory = {
   url: string | null;
   width: number | null;
 };
+
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object";
+}
+
+export function isStoryItem(value: unknown): value is StoryItem {
+  return isRecord(value) && typeof value.pk === "string";
+}

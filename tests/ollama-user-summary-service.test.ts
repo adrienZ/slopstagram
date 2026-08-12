@@ -1,87 +1,44 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { createConsola } from "consola";
-import { createStorage } from "unstorage";
-import memoryDriver from "unstorage/drivers/memory";
-import { createCacheStorages, getUserSummaryCacheKey } from "../scripts/lib/cache-service.ts";
+import { z } from "zod";
+import { getUserSummaryCacheKey } from "../sdk/lib/cache-service.ts";
 import {
   USER_SUMMARY_MODEL,
   USER_SUMMARY_UNAVAILABLE,
   resolveUserSummariesForReport,
-} from "../scripts/lib/user-summary-service.ts";
-import type { Logger } from "../scripts/lib/logging-service.ts";
-import { getReportUserKey } from "../scripts/lib/report-user-key-service.ts";
-import type { StoriesManifestReport } from "../scripts/lib/types.ts";
+} from "../sdk/lib/user-summary-service.ts";
+import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
+import {
+  createMemoryCacheStorages,
+  createMockLogger,
+  createSummaryReport,
+} from "./mock-helpers.ts";
 
-function createMockLogger(): Logger {
-  const logger = createConsola();
-
-  logger.mockTypes(() => {
-    const log = () => {};
-    log.raw = log;
-
-    return log;
-  });
-
-  return Object.assign(logger, {
-    progress: () => {},
-  });
-}
-
-function createReport(): StoriesManifestReport {
-  return {
-    failures: [],
-    manifest: {
-      users: [],
-    },
-    metadata: {
-      broadcasts_count: 0,
-      counts: {
-        cache_hits: 0,
-        cache_misses: 0,
-        failed: 0,
-        fetched: 0,
-        reels: 0,
-        stories: 1,
-      },
-      created_at: "2026-07-26T09:48:26.773Z",
-      report_name: "stories-report.json",
-      status: "ok",
-      story_ranking_token: null,
-    },
-    output: {
-      users: [
-        {
-          full_name: "Summary User",
-          profile_pic_url: null,
-          reel_ids: ["r1"],
-          stories: [
-            {
-              apple_caption: "street food menu",
-              ig_caption: "Photo by Summary User on July 26, 2026. May be food.",
-              locations: ["Paris Market, 10 Rue Food, Paris"],
-              media_pk: "story-pk",
-              preview_image_url: "https://example.com/story.jpg",
-              stickers: ["location:Paris"],
-              status: "ok",
-            },
-          ],
-          username: "summaryuser",
-        },
-      ],
-    },
-  };
-}
+const UserSummaryRequestSchema = z.object({
+  format: z
+    .object({
+      additionalProperties: z.literal(false),
+      properties: z.object({
+        summary: z.object({
+          type: z.literal("string"),
+        }),
+      }),
+      required: z.array(z.string()),
+      type: z.literal("object"),
+    })
+    .required(),
+  model: z.unknown().optional(),
+  options: z.unknown().optional(),
+  prompt: z.unknown().optional(),
+  stream: z.unknown().optional(),
+  think: z.unknown().optional(),
+});
 
 describe("resolveUserSummariesForReport", () => {
   test("caches successful user summaries", async () => {
-    const { userSummaryStorage: UserSummaryStorage } = createCacheStorages(
-      createStorage({
-        driver: memoryDriver(),
-      }),
-    );
-    const report = createReport();
-    const userKey = getReportUserKey(report.output.users[0]!);
+    const { userSummaryStorage: UserSummaryStorage } = createMemoryCacheStorages();
+    const report = createSummaryReport();
+    const userKey = getReportUserKey(report.output.users[0]);
     const visionByPreviewUrl = new Map([
       [
         "https://example.com/story.jpg",
@@ -96,31 +53,33 @@ describe("resolveUserSummariesForReport", () => {
     const first = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
       visionByPreviewUrl,
-      runUserSummary: async (prompt) => {
+      runUserSummary: (prompt) => {
         runCount += 1;
-        assert.match(prompt, /A food stall with readable prices\./);
-        assert.match(prompt, /Paris Market/);
-        assert.doesNotMatch(prompt, /May be food/);
-        assert.doesNotMatch(prompt, /menu prices/);
-        assert.doesNotMatch(prompt, /ig_caption/);
-        assert.doesNotMatch(prompt, /ocr_text/);
-        assert.doesNotMatch(prompt, /"status"/);
-        assert.doesNotMatch(prompt, /"ok"/);
-        assert.match(prompt, /Réponds en français\./);
+        assert.match(prompt, /A food stall with readable prices\./u);
+        assert.match(prompt, /Paris Market/u);
+        assert.doesNotMatch(prompt, /May be food/u);
+        assert.doesNotMatch(prompt, /menu prices/u);
+        assert.doesNotMatch(prompt, /ig_caption/u);
+        assert.doesNotMatch(prompt, /ocr_text/u);
+        assert.doesNotMatch(prompt, /"status"/u);
+        assert.doesNotMatch(prompt, /"ok"/u);
+        assert.match(prompt, /Réponds en français\./u);
 
-        return JSON.stringify({
-          summary:
-            "Summary User shared a Paris food story with a visible menu. The post centers on street food and readable prices.",
-        });
+        return Promise.resolve(
+          JSON.stringify({
+            summary:
+              "Summary User shared a Paris food story with a visible menu. The post centers on street food and readable prices.",
+          }),
+        );
       },
       storage: UserSummaryStorage,
     });
     const second = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
       visionByPreviewUrl,
-      runUserSummary: async () => {
+      runUserSummary: () => {
         runCount += 1;
-        return "should not be used";
+        return Promise.resolve("should not be used");
       },
       storage: UserSummaryStorage,
     });
@@ -137,29 +96,25 @@ describe("resolveUserSummariesForReport", () => {
   });
 
   test("uses the Ollama model in the cache identity", async () => {
-    const { userSummaryStorage } = createCacheStorages(
-      createStorage({
-        driver: memoryDriver(),
-      }),
-    );
-    const report = createReport();
-    const userKey = getReportUserKey(report.output.users[0]!);
+    const { userSummaryStorage } = createMemoryCacheStorages();
+    const report = createSummaryReport();
+    const userKey = getReportUserKey(report.output.users[0]);
     let runCount = 0;
 
     const first = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
-      runUserSummary: async () => {
+      runUserSummary: () => {
         runCount += 1;
-        return JSON.stringify({ summary: "default model summary" });
+        return Promise.resolve(JSON.stringify({ summary: "default model summary" }));
       },
       storage: userSummaryStorage,
     });
     const second = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
       model: "different-model",
-      runUserSummary: async () => {
+      runUserSummary: () => {
         runCount += 1;
-        return JSON.stringify({ summary: "custom model summary" });
+        return Promise.resolve(JSON.stringify({ summary: "custom model summary" }));
       },
       storage: userSummaryStorage,
     });
@@ -171,28 +126,17 @@ describe("resolveUserSummariesForReport", () => {
   });
 
   test("runs the default Ollama client with qwen3.5", async () => {
-    const { userSummaryStorage } = createCacheStorages(
-      createStorage({
-        driver: memoryDriver(),
-      }),
-    );
-    const report = createReport();
-    const userKey = getReportUserKey(report.output.users[0]!);
+    const { userSummaryStorage } = createMemoryCacheStorages();
+    const report = createSummaryReport();
+    const userKey = getReportUserKey(report.output.users[0]);
 
     const summaries = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
-      fetchOllama: async (url, init) => {
+      fetchOllama: (url, init) => {
         // oxlint-disable-next-line typescript/no-base-to-string
-        assert.match(String(url), /\/api\/generate$/);
-        // oxlint-disable-next-line typescript/no-base-to-string
-        const body = JSON.parse(String(init?.body)) as {
-          format?: unknown;
-          model?: unknown;
-          options?: unknown;
-          prompt?: unknown;
-          stream?: unknown;
-          think?: unknown;
-        };
+        assert.match(String(url), /\/api\/generate$/u);
+        // oxlint-disable-next-line typescript/no-base-to-string typescript/no-unsafe-type-assertion
+        const body = UserSummaryRequestSchema.parse(JSON.parse(String(init?.body)));
 
         assert.equal(body.model, "qwen3.5:0.8b-mlx");
         assert.equal(body.stream, false);
@@ -201,24 +145,20 @@ describe("resolveUserSummariesForReport", () => {
           temperature: 0.2,
         });
         assert.equal(body.think, false);
-        assert.deepEqual(body.format, {
-          additionalProperties: false,
-          properties: {
-            summary: {
-              type: "string",
-            },
-          },
-          required: ["summary"],
-          type: "object",
-        });
-        assert.doesNotMatch(String(body.prompt), /May be food/);
-        assert.doesNotMatch(String(body.prompt), /menu prices/);
+        assert.equal(body.format.additionalProperties, false);
+        assert.equal(body.format.type, "object");
+        assert.equal(body.format.properties.summary.type, "string");
+        assert.deepEqual(body.format.required.toSorted(), ["summary"]);
+        assert.doesNotMatch(String(body.prompt), /May be food/u);
+        assert.doesNotMatch(String(body.prompt), /menu prices/u);
 
-        return new Response(
-          JSON.stringify({
-            response: JSON.stringify({ summary: "sdk summary" }),
-          }),
-          { status: 200 },
+        return Promise.resolve(
+          new globalThis.Response(
+            JSON.stringify({
+              response: JSON.stringify({ summary: "sdk summary" }),
+            }),
+            { status: 200 },
+          ),
         );
       },
       storage: userSummaryStorage,
@@ -228,18 +168,14 @@ describe("resolveUserSummariesForReport", () => {
   });
 
   test("returns fallback text when user summary fails", async () => {
-    const { userSummaryStorage } = createCacheStorages(
-      createStorage({
-        driver: memoryDriver(),
-      }),
-    );
-    const report = createReport();
-    const userKey = getReportUserKey(report.output.users[0]!);
+    const { userSummaryStorage } = createMemoryCacheStorages();
+    const report = createSummaryReport();
+    const userKey = getReportUserKey(report.output.users[0]);
 
     const summaries = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
-      runUserSummary: async () => {
-        throw new Error("not signed in");
+      runUserSummary: () => {
+        return Promise.reject(new Error("not signed in"));
       },
       storage: userSummaryStorage,
     });
@@ -248,17 +184,13 @@ describe("resolveUserSummariesForReport", () => {
   });
 
   test("uses report fallback and does not cache empty user summary responses", async () => {
-    const { userSummaryStorage } = createCacheStorages(
-      createStorage({
-        driver: memoryDriver(),
-      }),
-    );
-    const report = createReport();
-    const userKey = getReportUserKey(report.output.users[0]!);
+    const { userSummaryStorage } = createMemoryCacheStorages();
+    const report = createSummaryReport();
+    const userKey = getReportUserKey(report.output.users[0]);
 
     const summaries = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
-      runUserSummary: async () => "",
+      runUserSummary: () => Promise.resolve(""),
       storage: userSummaryStorage,
     });
     const keys = await userSummaryStorage.getKeys();
@@ -271,15 +203,11 @@ describe("resolveUserSummariesForReport", () => {
   });
 
   test("ignores cached unavailable summaries and regenerates them", async () => {
-    const { userSummaryStorage } = createCacheStorages(
-      createStorage({
-        driver: memoryDriver(),
-      }),
-    );
+    const { userSummaryStorage } = createMemoryCacheStorages();
     const sourceHash = "bad-cache-key";
     const cacheKey = getUserSummaryCacheKey(sourceHash);
-    const report = createReport();
-    const userKey = getReportUserKey(report.output.users[0]!);
+    const report = createSummaryReport();
+    const userKey = getReportUserKey(report.output.users[0]);
     let runCount = 0;
 
     await userSummaryStorage.setItem(cacheKey, {
@@ -291,16 +219,16 @@ describe("resolveUserSummariesForReport", () => {
 
     const summaries = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
-      runUserSummary: async () => {
+      runUserSummary: () => {
         runCount += 1;
-        return JSON.stringify({ summary: "regenerated summary" });
+        return Promise.resolve(JSON.stringify({ summary: "regenerated summary" }));
       },
       storage: {
         ...userSummaryStorage,
-        getItem: async (key: string) =>
+        getItem: (key: string) =>
           key === getUserSummaryCacheKey(sourceHash)
-            ? await userSummaryStorage.getItem(key)
-            : await userSummaryStorage.getItem(cacheKey),
+            ? userSummaryStorage.getItem(key)
+            : userSummaryStorage.getItem(cacheKey),
       },
     });
 

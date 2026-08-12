@@ -1,7 +1,7 @@
 import cx from "clsx";
 import { css } from "mono-jsx/jsx-runtime";
-import { getReportUserKey } from "../../scripts/lib/report-user-key-service.ts";
-import type { StoryOutputUser } from "../../scripts/lib/types.ts";
+import { getReportUserKey } from "../../sdk/lib/report-user-key-service.ts";
+import type { StoryOutputUser } from "../../sdk/lib/types.ts";
 import { formatUserName } from "../helper.ts";
 import type { ReportViewModel } from "../report-view-model.ts";
 import { StoryCard } from "./story-card.tsx";
@@ -54,15 +54,16 @@ export function UserSectionStyles() {
 
 export function UserSection({ user, viewModel }: UserSectionProps) {
   const userName = formatUserName(user);
-  const avatar = user.profile_pic_url
-    ? viewModel.cachedImages.profilePicPathByUrl.get(user.profile_pic_url)
-    : undefined;
+  const avatar =
+    user.profile_pic_url !== null && user.profile_pic_url.length > 0
+      ? viewModel.cachedImages.profilePicPathByUrl.get(user.profile_pic_url)
+      : undefined;
   const summary = viewModel.userSummaryByUserKey.get(getReportUserKey(user));
 
   return (
     <section class={cx("user-section")}>
       <div class={cx("user-header")}>
-        {avatar ? (
+        {avatar !== undefined && avatar.length > 0 ? (
           <img
             class={cx("avatar")}
             src={avatar}
@@ -77,7 +78,7 @@ export function UserSection({ user, viewModel }: UserSectionProps) {
           <h2>{userName}</h2>
         </div>
       </div>
-      {summary && <p class={cx("user-summary")}>{summary}</p>}
+      {summary !== undefined && summary.length > 0 && <p class={cx("user-summary")}>{summary}</p>}
       {user.stories.length > 0 && (
         <div class={cx("story-images")}>
           {user.stories.map((story, position) => (

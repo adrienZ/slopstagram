@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { StoriesManifestReport } from "../scripts/lib/types.ts";
+import type { StoriesManifestReport } from "../sdk/lib/types.ts";
 import { createReportViewModel } from "../server/report-view-model.ts";
 
 function createUncachedReport(): StoriesManifestReport {
@@ -52,10 +52,10 @@ test(
   async () => {
     const originalFetch = globalThis.fetch;
     let fetchCount = 0;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = () => {
       fetchCount += 1;
       throw new Error("report view model must remain cache-only");
-    }) as typeof fetch;
+    };
 
     try {
       const viewModel = await createReportViewModel(createUncachedReport());

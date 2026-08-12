@@ -3,5 +3,10 @@
 .playwright/user-data/
 
 node_modules/
+reporter.xml
+
+# nitro
 .output/
+.nitro
+
 .tmp/

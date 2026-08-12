@@ -6,7 +6,15 @@ export default defineConfig({
     typeAware: true,
     typeCheck: true,
   },
+  categories: {
+    correctness: "error",
+    suspicious: "error",
+    pedantic: "error",
+    nursery: "error",
+    // perf: "error",
+  },
   rules: {
+    "typescript/prefer-readonly-parameter-types": "off",
     "typescript/no-floating-promises": [
       "error",
       {
@@ -16,4 +24,12 @@ export default defineConfig({
       },
     ],
   },
+  overrides: [
+    {
+      files: ["tests/**/*.test.ts"],
+      rules: {
+        "max-lines-per-function": "off",
+      },
+    },
+  ],
 });

@@ -90,7 +90,7 @@ export function ReportHeader({ reportKeys, selectedReportKey }: ReportHeaderProp
         <select id="report-picker" name="report" aria-label="Choisir un rapport">
           {reportKeys.map((reportKey) => (
             <option value={reportKey} selected={reportKey === selectedReportKey}>
-              {reportKey.replace(/^stories-report-/, "").replace(/\.json$/, "")}
+              {reportKey.replace(/^stories-report-/u, "").replace(/\.json$/u, "")}
             </option>
           ))}
         </select>

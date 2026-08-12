@@ -1,5 +1,5 @@
 import { createStorage, prefixStorage, type Storage } from "unstorage";
-import fsDriver from "unstorage/drivers/fs";
+import fsDriver from "unstorage/drivers/fs-lite";
 import type {
   AppleCaptionCacheEntry,
   CacheStorageSet,
@@ -10,14 +10,15 @@ import type {
 } from "./types.ts";
 
 export const BASE_CACHE_DIR = ".tmp";
-export const APPLE_CAPTIONS_STORAGE_DIR = "apple-captions";
+const APPLE_CAPTIONS_STORAGE_DIR = "apple-captions";
 export const IMAGES_STORAGE_DIR = "images";
-export const USER_SUMMARIES_STORAGE_DIR = "user-summaries";
-export const VISION_STORAGE_DIR = "vision";
+const USER_SUMMARIES_STORAGE_DIR = "user-summaries";
+const VISION_STORAGE_DIR = "vision";
 export const REPORTS_STORAGE_DIR = "reports";
-export const STORIES_STORAGE_DIR = "stories";
+const STORIES_STORAGE_DIR = "stories";
 
-export const baseStorage = createStorage({
+const baseStorage = createStorage({
+  // oxlint-disable-next-line typescript/no-unsafe-assignment unstorage drivers use any
   driver: fsDriver({
     base: BASE_CACHE_DIR,
   }),

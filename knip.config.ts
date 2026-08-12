@@ -2,6 +2,7 @@ import type { KnipConfig } from "knip";
 
 const config: KnipConfig = {
   entry: [
+    "sdk/**/*.ts",
     "tests/**/*.test.ts",
     "server/**/*.ts",
     "server/**/*.tsx",
@@ -10,7 +11,8 @@ const config: KnipConfig = {
   ],
   ignoreBinaries: ["mac-ocr"],
   ignoreDependencies: [
-    "@playwright/cli", // used by agents
+    // Used by agents.
+    "@playwright/cli",
   ],
 };
 

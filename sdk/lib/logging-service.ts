@@ -1,3 +1,4 @@
+import process from "node:process";
 import { ProgressBar } from "@opentf/cli-pbar";
 import { createConsola, type ConsolaInstance } from "consola";
 
@@ -10,6 +11,11 @@ export type Logger = ConsolaInstance & {
   progress(value: number, total: number, options?: ProgressOptions): void;
 };
 
+type ActiveProgressBar = { bar: ProgressBar; key: string };
+type WrappedLogMethod = ((message?: unknown, ...args: unknown[]) => void) & {
+  raw: (...args: unknown[]) => void;
+};
+
 function createBar(prefix: string): ProgressBar {
   return new ProgressBar({
     autoClear: true,
@@ -20,11 +26,39 @@ function createBar(prefix: string): ProgressBar {
   });
 }
 
+function wrapLogMethod(log: WrappedLogMethod, stopActiveBar: () => void): WrappedLogMethod {
+  return Object.assign(
+    (message?: unknown, ...args: unknown[]) => {
+      stopActiveBar();
+      log(message, ...args);
+    },
+    {
+      raw: (...args: unknown[]) => {
+        stopActiveBar();
+        log.raw(...args);
+      },
+    },
+  );
+}
+
+function wrapLogMethods(instance: ConsolaInstance, stopActiveBar: () => void): void {
+  for (const typeName of ["debug", "error", "info", "log", "success", "warn"] as const) {
+    const log = Object.assign(instance[typeName].bind(instance), {
+      raw: instance[typeName].raw.bind(instance),
+    });
+    instance[typeName] = wrapLogMethod(log, stopActiveBar);
+  }
+}
+
+function getBarPrefix(prefix: string, options: ProgressOptions): string {
+  return [prefix, options.prefix].filter(Boolean).join(" ");
+}
+
 export function createLogger(prefix: string): Logger {
   const instance = createConsola();
   instance.withTag(prefix);
 
-  let activeBar: { bar: ProgressBar; key: string } | null = null;
+  let activeBar: ActiveProgressBar | null = null;
 
   function stopActiveBar(): void {
     if (!activeBar) {
@@ -35,20 +69,14 @@ export function createLogger(prefix: string): Logger {
     activeBar = null;
   }
 
-  for (const typeName of ["debug", "error", "info", "log", "success", "warn"] as const) {
-    const log = instance[typeName].bind(instance);
-    instance[typeName] = ((...args: Parameters<typeof log>) => {
-      stopActiveBar();
-      return log(...args);
-    }) as (typeof instance)[typeof typeName];
-  }
+  wrapLogMethods(instance, stopActiveBar);
 
   function progress(value: number, total: number, options: ProgressOptions = {}): void {
     if (!process.stderr.isTTY) {
       return;
     }
 
-    const barPrefix = [prefix, options.prefix].filter(Boolean).join(" ");
+    const barPrefix = getBarPrefix(prefix, options);
     const barKey = barPrefix;
 
     if (activeBar && activeBar.key !== barKey) {
@@ -76,5 +104,3 @@ export function createLogger(prefix: string): Logger {
     progress,
   });
 }
-
-export const noopLogger: Logger = createLogger("noop");

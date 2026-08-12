@@ -1,5 +1,6 @@
 import {
   STORY_MEDIA_TYPES,
+  isStoryItem,
   type ParsedStory,
   type ParsedStoryTrayUser,
   type StoriesMediaReport,
@@ -11,6 +12,7 @@ import {
   type StoryTrayEntry,
   type StoryVersion,
 } from "./types.ts";
+import { StoryItemSchema } from "./story-schemas.ts";
 import { storiesStorage } from "./cache-service.ts";
 
 export function getLargestVersion<T extends StoryVersion>(
@@ -101,7 +103,7 @@ export function parseStoriesTrayReport(
 
   [...tray]
     .map((entry, originalIndex) => ({ entry, originalIndex }))
-    .sort((left, right) => {
+    .toSorted((left, right) => {
       const positionDelta =
         getStoryTrayUiSortPosition(left.entry) - getStoryTrayUiSortPosition(right.entry);
 
@@ -137,7 +139,7 @@ export function parseStoryReport(report: StoriesMediaReport, pk: string): Parsed
   return parseStoryItem(item);
 }
 
-export function parseStoryItem(item: StoryItem): ParsedStory {
+function parseStoryItem(item: StoryItem): ParsedStory {
   const mediaType = getStoryMediaType(item.media_type);
 
   if (mediaType === STORY_MEDIA_TYPES.IMAGE) {
@@ -174,15 +176,19 @@ async function getCachedStoryItem(
 ): Promise<StoryItem> {
   const cachedValue = await storage.getItem(cacheKey);
 
-  if (!cachedValue) {
+  if (cachedValue === null || cachedValue === undefined) {
     throw new Error(`Cached story item ${cacheKey} not found`);
   }
 
   if (typeof cachedValue === "string") {
-    return JSON.parse(cachedValue) as StoryItem;
+    return StoryItemSchema.parse(JSON.parse(cachedValue));
   }
 
-  return cachedValue as StoryItem;
+  if (isStoryItem(cachedValue)) {
+    return cachedValue;
+  }
+
+  throw new Error(`Cached story item ${cacheKey} is invalid`);
 }
 
 export async function parseStoryManifestReport(

@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { createStorage } from "unstorage";
-import memoryDriver from "unstorage/drivers/memory";
-import { backfillReportStoryMediaTypes } from "../scripts/lib/report-media-type-service.ts";
-import { getMediaCacheKey } from "../scripts/lib/cache-service.ts";
-import type { StoriesManifestReport, StoryItem } from "../scripts/lib/types.ts";
+import { backfillReportStoryMediaTypes } from "../sdk/lib/report-media-type-service.ts";
+import { getMediaCacheKey } from "../sdk/lib/cache-service.ts";
+import type { StoriesManifestReport, StoryItem } from "../sdk/lib/types.ts";
+import { createMemoryStorage } from "./memory-storage.ts";
 
 function createLegacyReport(): StoriesManifestReport {
   return {
@@ -93,9 +92,7 @@ function createLegacyReport(): StoriesManifestReport {
 
 describe("backfillReportStoryMediaTypes", () => {
   test("fills missing media types from cached story payloads", async () => {
-    const storage = createStorage<StoryItem>({
-      driver: memoryDriver(),
-    });
+    const storage = createMemoryStorage<StoryItem>();
     const report = createLegacyReport();
 
     await storage.setItem(getMediaCacheKey("story-pk-1"), {

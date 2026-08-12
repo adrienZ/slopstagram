@@ -1,9 +1,9 @@
+import { Buffer } from "node:buffer";
 import { createHash } from "node:crypto";
 import path from "node:path";
 import { BASE_CACHE_DIR, IMAGES_STORAGE_DIR, imageCacheStorage } from "./cache-service.ts";
 import { convertImageToJpeg } from "./image-conversion-service.ts";
 import type { Logger } from "./logging-service.ts";
-import { noopLogger } from "./logging-service.ts";
 import type { ImageCacheStorage, StoriesManifestReport } from "./types.ts";
 
 type FetchResponse = {
@@ -20,7 +20,7 @@ type FetchImage = (url: string) => Promise<FetchResponse>;
 export type CacheReportImagesOptions = {
   convertToJpeg?: typeof convertImageToJpeg;
   fetchImage?: FetchImage;
-  logger?: Logger;
+  logger: Logger;
   reportDirectory?: string;
   storage?: ImageCacheStorage;
 };
@@ -28,6 +28,18 @@ export type CacheReportImagesOptions = {
 export type CachedReportImages = {
   profilePicPathByUrl: Map<string, string>;
   storyPreviewPathByUrl: Map<string, string>;
+};
+
+type ResolvedCacheReportImagesOptions = Required<
+  Pick<
+    CacheReportImagesOptions,
+    "convertToJpeg" | "fetchImage" | "logger" | "reportDirectory" | "storage"
+  >
+>;
+
+type StoryPreviewEntry = {
+  mediaPk: string;
+  source: string;
 };
 
 function getImageHash(source: string): string {
@@ -52,12 +64,7 @@ function getJpegRawKey(namespace: string, imageKey: string): string {
 async function cacheImage(
   source: string,
   namespace: string,
-  options: Required<
-    Pick<
-      CacheReportImagesOptions,
-      "convertToJpeg" | "fetchImage" | "logger" | "reportDirectory" | "storage"
-    >
-  > & { mediaPk?: string },
+  options: ResolvedCacheReportImagesOptions & { mediaPk?: string },
 ): Promise<string | null> {
   const imageKey = options.mediaPk ?? getImageHash(source);
   const rawKey = getJpegRawKey(namespace, imageKey);
@@ -85,82 +92,110 @@ async function cacheImage(
   return getRelativeReportImagePath(options.reportDirectory, rawKey);
 }
 
-export async function cacheReportImages(
-  report: StoriesManifestReport,
-  options: CacheReportImagesOptions = {},
-): Promise<CachedReportImages> {
-  const fetchImage = options.fetchImage ?? fetch;
-  const convertToJpeg = options.convertToJpeg ?? convertImageToJpeg;
-  const logger = options.logger ?? noopLogger;
-  const reportDirectory = options.reportDirectory ?? path.resolve(BASE_CACHE_DIR, "reports");
-  const storage = options.storage ?? imageCacheStorage;
-  const profilePicPathByUrl = new Map<string, string>();
-  const storyPreviewPathByUrl = new Map<string, string>();
+function resolveCacheOptions(options: CacheReportImagesOptions): ResolvedCacheReportImagesOptions {
+  return {
+    convertToJpeg: options.convertToJpeg ?? convertImageToJpeg,
+    fetchImage: options.fetchImage ?? globalThis.fetch,
+    logger: options.logger,
+    reportDirectory: options.reportDirectory ?? path.resolve(BASE_CACHE_DIR, "reports"),
+    storage: options.storage ?? imageCacheStorage,
+  };
+}
 
-  const profilePicUrls = report.output.users.map((user) => user.profile_pic_url).filter(isPresent);
+async function cacheProfilePics(
+  report: StoriesManifestReport,
+  options: ResolvedCacheReportImagesOptions,
+): Promise<Map<string, string>> {
+  const profilePicPathByUrl = new Map<string, string>();
+  const profilePicUrls = report.output.users
+    .map((user) => user.profile_pic_url)
+    .filter((url) => isPresent(url));
 
   for (const source of new Set(profilePicUrls)) {
     try {
-      const cachedPath = await cacheImage(source, "avatars", {
-        convertToJpeg,
-        fetchImage,
-        logger,
-        reportDirectory,
-        storage,
-      });
+      const cachedPath = await cacheImage(source, "avatars", options);
 
-      if (cachedPath) {
+      if (cachedPath !== null && cachedPath.length > 0) {
         profilePicPathByUrl.set(source, cachedPath);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      logger.warn(`could not cache image ${source}: ${message}`);
+      options.logger.warn(`could not cache image ${source}: ${message}`);
     }
   }
 
-  const storyPreviewEntries = report.output.users
+  return profilePicPathByUrl;
+}
+
+function getStoryPreviewEntries(report: StoriesManifestReport): StoryPreviewEntry[] {
+  return report.output.users
     .flatMap((user) =>
       user.stories.map((story) => ({
         mediaPk: story.media_pk,
         source: story.preview_image_url,
       })),
     )
-    .filter((entry): entry is { mediaPk: string; source: string } => isPresent(entry.source));
+    .filter((entry): entry is StoryPreviewEntry => isPresent(entry.source));
+}
 
+async function cacheStoryPreviewByMediaPk(
+  entries: StoryPreviewEntry[],
+  options: ResolvedCacheReportImagesOptions,
+): Promise<Map<string, string>> {
   const storyPreviewPathByMediaPk = new Map<string, string>();
 
   for (const { mediaPk, source } of new Map(
-    storyPreviewEntries.map((entry) => [entry.mediaPk, entry]),
+    entries.map((entry) => [entry.mediaPk, entry]),
   ).values()) {
     try {
-      const cachedPath = await cacheImage(source, "story-previews", {
-        mediaPk,
-        convertToJpeg,
-        fetchImage,
-        logger,
-        reportDirectory,
-        storage,
-      });
+      const cachedPath = await cacheImage(source, "story-previews", { ...options, mediaPk });
 
-      if (cachedPath) {
+      if (cachedPath !== null && cachedPath.length > 0) {
         storyPreviewPathByMediaPk.set(mediaPk, cachedPath);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      logger.warn(`could not cache image ${source}: ${message}`);
+      options.logger.warn(`could not cache image ${source}: ${message}`);
     }
   }
 
-  for (const { mediaPk, source } of storyPreviewEntries) {
+  return storyPreviewPathByMediaPk;
+}
+
+function mapStoryPreviewPathsByUrl(
+  entries: StoryPreviewEntry[],
+  storyPreviewPathByMediaPk: Map<string, string>,
+): Map<string, string> {
+  const storyPreviewPathByUrl = new Map<string, string>();
+
+  for (const { mediaPk, source } of entries) {
     const cachedPath = storyPreviewPathByMediaPk.get(mediaPk);
 
-    if (cachedPath) {
+    if (cachedPath !== undefined && cachedPath.length > 0) {
       storyPreviewPathByUrl.set(source, cachedPath);
     }
   }
 
+  return storyPreviewPathByUrl;
+}
+
+export async function cacheReportImages(
+  report: StoriesManifestReport,
+  options: CacheReportImagesOptions,
+): Promise<CachedReportImages> {
+  const resolvedOptions = resolveCacheOptions(options);
+  const profilePicPathByUrl = await cacheProfilePics(report, resolvedOptions);
+  const storyPreviewEntries = getStoryPreviewEntries(report);
+  const storyPreviewPathByMediaPk = await cacheStoryPreviewByMediaPk(
+    storyPreviewEntries,
+    resolvedOptions,
+  );
+
   return {
     profilePicPathByUrl,
-    storyPreviewPathByUrl,
+    storyPreviewPathByUrl: mapStoryPreviewPathsByUrl(
+      storyPreviewEntries,
+      storyPreviewPathByMediaPk,
+    ),
   };
 }

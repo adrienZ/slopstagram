@@ -169,82 +169,81 @@ export function LightboxStyles() {
   return <style>{lightboxStyles}</style>;
 }
 
+function LightboxNavButton(props: { className: string; label: string; text: string }) {
+  return (
+    <button
+      class={cx("lightbox-nav", props.className)}
+      type="button"
+      aria-label={props.label}
+      hidden
+    >
+      {props.text}
+    </button>
+  );
+}
+
+function LightboxPreviewPanel() {
+  return (
+    <div class={cx("lightbox-preview-panel")}>
+      <div class={cx("lightbox-header")}>
+        <img class={cx("lightbox-avatar")} alt="" hidden />
+        <div>
+          <strong class="lightbox-username" />
+          <span class="lightbox-count" />
+        </div>
+      </div>
+      <img class={cx("lightbox-image")} alt="" />
+    </div>
+  );
+}
+
+function LightboxDetailsRow(props: { label: string; className: string }) {
+  return (
+    <tr>
+      <th>{props.label}</th>
+      <td class={props.className} />
+    </tr>
+  );
+}
+
+function LightboxDetailsPanel() {
+  return (
+    <aside class={cx("lightbox-details-panel")} aria-label="Détails de la story">
+      <h2>Détails</h2>
+      <table class={cx("lightbox-details-table")}>
+        <tbody>
+          <LightboxDetailsRow label="Type" className="lightbox-detail-media-type" />
+          <LightboxDetailsRow label="Story" className="lightbox-detail-media-pk" />
+          <LightboxDetailsRow label="Stickers" className="lightbox-detail-stickers" />
+          <LightboxDetailsRow label="Lieux" className="lightbox-detail-locations" />
+          <LightboxDetailsRow label="Instagram" className="lightbox-detail-ig-caption" />
+          <LightboxDetailsRow label="Apple OCR" className="lightbox-detail-apple-caption" />
+          <LightboxDetailsRow label="Vision OCR" className="lightbox-detail-vision-ocr" />
+          <LightboxDetailsRow
+            label="Vision description"
+            className="lightbox-detail-vision-description"
+          />
+        </tbody>
+      </table>
+      <a class={cx("lightbox-story-link")} target="_blank" rel="noreferrer" hidden>
+        Voir cette story sur Instagram
+      </a>
+    </aside>
+  );
+}
+
 export function Lightbox() {
   return (
     <dialog class={cx("image-lightbox")} id="image-lightbox" aria-label="Aperçu de l’image">
       <button class={cx("lightbox-close")} type="button" aria-label="Fermer l’aperçu">
         ×
       </button>
-      <button
-        class={cx("lightbox-nav", "lightbox-prev")}
-        type="button"
-        aria-label="Image précédente"
-        hidden
-      >
-        ‹
-      </button>
+      <LightboxNavButton className="lightbox-prev" label="Image précédente" text="‹" />
       <div class={cx("lightbox-content")}>
-        <div class={cx("lightbox-preview-panel")}>
-          <div class={cx("lightbox-header")}>
-            <img class={cx("lightbox-avatar")} alt="" hidden />
-            <div>
-              <strong class="lightbox-username" />
-              <span class="lightbox-count" />
-            </div>
-          </div>
-          <img class={cx("lightbox-image")} alt="" />
-        </div>
-        <aside class={cx("lightbox-details-panel")} aria-label="Détails de la story">
-          <h2>Détails</h2>
-          <table class={cx("lightbox-details-table")}>
-            <tbody>
-              <tr>
-                <th>Type</th>
-                <td class="lightbox-detail-media-type" />
-              </tr>
-              <tr>
-                <th>Story</th>
-                <td class="lightbox-detail-media-pk" />
-              </tr>
-              <tr>
-                <th>Stickers</th>
-                <td class="lightbox-detail-stickers" />
-              </tr>
-              <tr>
-                <th>Lieux</th>
-                <td class="lightbox-detail-locations" />
-              </tr>
-              <tr>
-                <th>Instagram</th>
-                <td class="lightbox-detail-ig-caption" />
-              </tr>
-              <tr>
-                <th>Apple OCR</th>
-                <td class="lightbox-detail-apple-caption" />
-              </tr>
-              <tr>
-                <th>Vision OCR</th>
-                <td class="lightbox-detail-vision-ocr" />
-              </tr>
-              <tr>
-                <th>Vision description</th>
-                <td class="lightbox-detail-vision-description" />
-              </tr>
-            </tbody>
-          </table>
-          <a class={cx("lightbox-story-link")} target="_blank" rel="noreferrer" hidden>
-            Voir cette story sur Instagram
-          </a>
-        </aside>
+        <LightboxPreviewPanel />
+        <LightboxDetailsPanel />
       </div>
-      <button
-        class={cx("lightbox-nav", "lightbox-next")}
-        type="button"
-        aria-label="Image suivante"
-        hidden
-      >
-        ›
-      </button>
+      <LightboxNavButton className="lightbox-next" label="Image suivante" text="›" />
     </dialog>
   );
 }

@@ -1,10 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import {
-  getStoryTrayUiSortPosition,
-  parseStoriesTrayReport,
-} from "../scripts/lib/parser-service.ts";
-import type { StoriesReport } from "../scripts/lib/types.ts";
+import { getStoryTrayUiSortPosition, parseStoriesTrayReport } from "../sdk/lib/parser-service.ts";
+import type { StoriesReport } from "../sdk/lib/types.ts";
 import reelsTrayFixture from "./fixtures/xdt_api__v1__feed__reels_tray.json" with { type: "json" };
 
 const report = reelsTrayFixture as StoriesReport;
@@ -151,10 +148,7 @@ describe("getStoryTrayUiSortPosition", () => {
       },
     };
 
-    assert.equal(
-      getStoryTrayUiSortPosition(customReport.xdt_api__v1__feed__reels_tray.tray[0]!),
-      2,
-    );
+    assert.equal(getStoryTrayUiSortPosition(customReport.xdt_api__v1__feed__reels_tray.tray[0]), 2);
     assert.deepEqual(parseStoriesTrayReport(customReport), [
       {
         items: [

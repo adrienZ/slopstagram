@@ -17,9 +17,11 @@
     "lint": "oxlint",
     "knip": "knip",
     "check": "npm run format:check && npm run lint && npm run knip && npm run test",
+    "check:ci": "npm run format:check && npm run lint && npm run knip && npm run test:reporter",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
-    "test": "node --experimental-test-module-mocks --import tsx --test tests/**/*.test.ts"
+    "test": "node --experimental-test-module-mocks  --experimental-test-coverage --import tsx --test tests/**/*.test.ts",
+    "test:reporter": "node --experimental-test-module-mocks  --experimental-test-coverage  --test-reporter=junit --import tsx --test tests/**/*.test.ts > reporter.xml || true"
   },
   "dependencies": {
     "@opentf/cli-pbar": "^0.7.2",
@@ -43,7 +45,8 @@
     "oxlint": "^1.77.0",
     "oxlint-tsgolint": "^7.0.2001",
     "tsx": "^4.23.1",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vite": "^7.3.6"
   },
   "lint-staged": {
     "*": "oxfmt --no-error-on-unmatched-pattern"

@@ -8,19 +8,19 @@ import {
   imageCacheStorage,
   userSummaryStorage,
   visionStorage,
-} from "../scripts/lib/cache-service.ts";
-import type { CachedReportImages } from "../scripts/lib/image-cache-service.ts";
+} from "../sdk/lib/cache-service.ts";
+import type { CachedReportImages } from "../sdk/lib/image-cache-service.ts";
 import {
   createSummaryPrompt,
   getUserSummarySourceHash,
   USER_SUMMARY_MODEL,
   USER_SUMMARY_PROMPT,
   USER_SUMMARY_UNAVAILABLE,
-} from "../scripts/lib/user-summary-service.ts";
-import { backfillReportStoryMediaTypes } from "../scripts/lib/report-media-type-service.ts";
-import { getReportUserKey } from "../scripts/lib/report-user-key-service.ts";
-import type { StoriesManifestReport, VisionResult } from "../scripts/lib/types.ts";
-import { VISION_MODEL, VISION_PROMPT } from "../scripts/lib/vision-service.ts";
+} from "../sdk/lib/user-summary-service.ts";
+import { backfillReportStoryMediaTypes } from "../sdk/lib/report-media-type-service.ts";
+import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
+import type { StoriesManifestReport, VisionResult } from "../sdk/lib/types.ts";
+import { VISION_MODEL, VISION_PROMPT } from "../sdk/lib/vision-service.ts";
 import { reportDirectory } from "./report-cache.ts";
 
 export type ReportViewModel = {
@@ -55,19 +55,33 @@ async function readCachedImages(report: StoriesManifestReport): Promise<CachedRe
 
   for (const user of report.output.users) {
     const profilePicUrl = user.profile_pic_url?.trim();
-    if (profilePicUrl && !profilePicPathByUrl.has(profilePicUrl)) {
+    if (
+      profilePicUrl !== undefined &&
+      profilePicUrl.length > 0 &&
+      !profilePicPathByUrl.has(profilePicUrl)
+    ) {
       const cachedPath = await getCachedImagePath(
         getImageRawKey("avatars", getHash(profilePicUrl)),
       );
-      if (cachedPath) profilePicPathByUrl.set(profilePicUrl, cachedPath);
+      if (cachedPath !== null && cachedPath.length > 0) {
+        profilePicPathByUrl.set(profilePicUrl, cachedPath);
+      }
     }
 
     for (const story of user.stories) {
       const previewUrl = story.preview_image_url?.trim();
-      if (!previewUrl || storyPreviewPathByUrl.has(previewUrl)) continue;
+      if (
+        previewUrl === undefined ||
+        previewUrl.length === 0 ||
+        storyPreviewPathByUrl.has(previewUrl)
+      ) {
+        continue;
+      }
 
       const cachedPath = await getCachedImagePath(getImageRawKey("story-previews", story.media_pk));
-      if (cachedPath) storyPreviewPathByUrl.set(previewUrl, cachedPath);
+      if (cachedPath !== null && cachedPath.length > 0) {
+        storyPreviewPathByUrl.set(previewUrl, cachedPath);
+      }
     }
   }
 
@@ -77,7 +91,8 @@ async function readCachedImages(report: StoriesManifestReport): Promise<CachedRe
 function normalizeCachedVisionResult(value: unknown): VisionResult | null {
   if (typeof value === "string") return { text: "", visual: value.trim() };
   if (
-    value &&
+    value !== null &&
+    value !== undefined &&
     typeof value === "object" &&
     "text" in value &&
     "visual" in value &&
@@ -99,7 +114,11 @@ async function readCachedVision(
   for (const user of report.output.users) {
     for (const story of user.stories) {
       const previewUrl = story.preview_image_url?.trim();
-      if (!previewUrl || !cachedImages.storyPreviewPathByUrl.has(previewUrl)) {
+      if (
+        previewUrl === undefined ||
+        previewUrl.length === 0 ||
+        !cachedImages.storyPreviewPathByUrl.has(previewUrl)
+      ) {
         continue;
       }
 
@@ -109,7 +128,9 @@ async function readCachedVision(
       }
 
       const result = normalizeCachedVisionResult(entry.result);
-      if (result) visionByPreviewUrl.set(previewUrl, result);
+      if (result !== null) {
+        visionByPreviewUrl.set(previewUrl, result);
+      }
     }
   }
 
@@ -137,7 +158,8 @@ async function readCachedUserSummaries(
       entry?.source_hash === sourceHash &&
       entry.prompt === USER_SUMMARY_PROMPT &&
       entry.user_key === userKey &&
-      result &&
+      result !== undefined &&
+      result.length > 0 &&
       result !== USER_SUMMARY_UNAVAILABLE
     ) {
       userSummaryByUserKey.set(userKey, result);

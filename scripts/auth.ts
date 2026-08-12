@@ -1,5 +1,5 @@
 import process from "node:process";
-import { openInstagramSession } from "./lib/playwright-service.ts";
+import { openInstagramSession } from "../sdk/lib/playwright-service.ts";
 
 try {
   await openInstagramSession({ headless: false });
