@@ -1,4 +1,5 @@
 import { getMediaCacheKey } from "./lib/cache-service.ts";
+import { isAppleOcrUnavailable } from "./lib/apple-ocr-service.ts";
 import type { Logger } from "./lib/logging-service.ts";
 import { NO_APPLE_CAPTION } from "./lib/report-constants.ts";
 import type { StoryItem, StoryManifestReel } from "./lib/types.ts";
@@ -47,6 +48,7 @@ export async function populateAppleCaptions(
 ): Promise<void> {
   const resolvedByMediaPk = new Map<string, string>();
   const mediaPksToResolve = getAppleCaptionMediaPks(manifestUsers);
+  logger.info(`resolving apple captions for ${mediaPksToResolve.size} story item(s)`);
   const logProgress = createCaptionProgressLogger(logger, mediaPksToResolve);
   let resolvedCount = 0;
 
@@ -67,6 +69,11 @@ export async function populateAppleCaptions(
         logProgress(story.media_pk, "resolving", resolvedCount);
         story.apple_caption = await resolveStoryAppleCaption(story.media_pk, cachedItems, resolver);
       } catch (error: unknown) {
+        if (isAppleOcrUnavailable(error)) {
+          logger.warn(`apple ocr unavailable; skipping remaining captions: ${error.message}`);
+          return;
+        }
+
         const message = error instanceof Error ? error.message : String(error);
         logger.warn(`apple ocr failed for story ${story.media_pk}: ${message}`);
         story.apple_caption = NO_APPLE_CAPTION;

@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { resolveAppleCaptionsForReport } from "./apple-caption-report-service.ts";
 import { BASE_CACHE_DIR, REPORTS_STORAGE_DIR, reportsStorage } from "./lib/cache-service.ts";
 import { cacheReportImages } from "./lib/image-cache-service.ts";
 import { type Logger } from "./lib/logging-service.ts";
@@ -11,6 +12,7 @@ import pkg from "../package.json" with { type: "json" };
 type CreateReportDependencies = {
   cacheReportImages: typeof cacheReportImages;
   fetchStories: typeof fetchStories;
+  resolveAppleCaptionsForReport: typeof resolveAppleCaptionsForReport;
   resolveUserSummariesForReport: typeof resolveUserSummariesForReport;
   resolveVisionForReport: typeof resolveVisionForReport;
   saveReport: (key: string, report: StoriesManifestReport) => Promise<void>;
@@ -32,6 +34,7 @@ export type CreateReportResult = {
 const defaultDependencies: CreateReportDependencies = {
   cacheReportImages,
   fetchStories,
+  resolveAppleCaptionsForReport,
   resolveUserSummariesForReport: resolveUserSummariesForReport,
   resolveVisionForReport,
   saveReport: async (key, report) => {
@@ -80,6 +83,10 @@ export async function createReport(options: CreateReportOptions): Promise<Create
   });
   const reportDirectory = resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR);
   const cachedImages = await dependencies.cacheReportImages(report, {
+    logger,
+    reportDirectory,
+  });
+  await dependencies.resolveAppleCaptionsForReport(report, cachedImages, {
     logger,
     reportDirectory,
   });

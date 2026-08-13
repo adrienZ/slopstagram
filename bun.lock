@@ -9,6 +9,7 @@
         "bunqueue": "^2.8.59",
         "clsx": "^2.1.1",
         "consola": "^3.4.2",
+        "mac-ocr": "^1.1.1",
         "ollama": "^0.6.3",
         "playwright": "^1.62.1",
         "sharp": "^0.35.3",
@@ -523,6 +524,8 @@
     "lint-staged": ["lint-staged@17.3.0", "", { "dependencies": { "picomatch": "^4.0.5", "string-argv": "^0.3.2", "tinyexec": "^1.2.4" }, "optionalDependencies": { "yaml": "^2.9.0" }, "bin": { "lint-staged": "bin/lint-staged.js" } }, "sha512-woZS3vNe3UKqBaLPvbLOtKRY4tLANpWQhom12MGWqC8Mh1lCOO+WgSwmX2amjJAqTY9BkXYW87fCUH5H9Ph6xw=="],
 
     "lru-cache": ["lru-cache@11.5.2", "", {}, "sha512-4pfM1Ff0x50o0tQwb5ucw/RzNyD0/YJME6IVcStalZuMWxdt3sR3huStTtxz4PUmvZfRguvDejasvQ2kifR11g=="],
+
+    "mac-ocr": ["mac-ocr@1.1.1", "", { "os": "darwin", "bin": { "mac-ocr": "bin/mac-ocr" } }, "sha512-2b5xNapCpbjAjntPZmP8nVEDe8zzOXVUAOerh36azjuJqZfDTt9y8flwCVrcG+0GL1ox4UcWUE4PtGH34ChChw=="],
 
     "mono-jsx": ["mono-jsx@0.9.14", "", { "bin": { "mono-jsx": "bin/mono-jsx" } }, "sha512-CGBCYLXRcIg7v21WmGEVRwcGLkiYXnmVqZ0meH6rSzBzHlrArkUu8UI2dONN370qz+GqyAihEyHO3NZmpJyC9A=="],
 

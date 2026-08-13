@@ -9,7 +9,6 @@ const config: KnipConfig = {
     "scripts/**/*.ts",
     "*.config.ts",
   ],
-  ignoreBinaries: ["mac-ocr"],
   ignoreDependencies: [
     // Used by agents.
     "@playwright/cli",

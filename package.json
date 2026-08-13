@@ -27,6 +27,7 @@
     "bunqueue": "^2.8.59",
     "clsx": "^2.1.1",
     "consola": "^3.4.2",
+    "mac-ocr": "^1.1.1",
     "ollama": "^0.6.3",
     "playwright": "^1.62.1",
     "sharp": "^0.35.3",

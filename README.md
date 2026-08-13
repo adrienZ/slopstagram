@@ -35,6 +35,18 @@ Create report:
 bun run create:report
 ```
 
+### Report pipeline
+
+```mermaid
+flowchart TD
+    start["Create report"] --> stories["Fetch Instagram story metadata"]
+    stories --> images["Download and cache images locally"]
+    images --> apple["Run Apple OCR on cached story images"]
+    apple --> vision["Run vision analysis on cached story images"]
+    vision --> summaries["Generate user summaries"]
+    summaries --> save["Save the JSON report"]
+```
+
 View cached reports:
 
 ```bash
