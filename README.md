@@ -2,16 +2,33 @@
 
 ## Prerequisites
 
-Install [Bun](https://bun.sh/) 1.3.14 or newer.
+Install [Bun](https://bun.sh/) 1.3.14 or newer and [Node.js](https://nodejs.org/) 24 or
+newer.
 
-Install [Ollama](https://ollama.com/)
+Install [Ollama](https://ollama.com/).
 
-Then install 2 models
+Install the vision model on every platform:
+
+```bash
+ollama pull minicpm-v4.6:latest
+```
+
+Then install the user-summary model for your platform.
+
+On an Apple Silicon Mac:
 
 ```bash
 ollama pull qwen3.5:0.8b-mlx
-ollama pull minicpm-v4.6:latest
 ```
+
+On Windows, Linux, or an Intel Mac:
+
+```bash
+ollama pull qwen3.5:0.8b
+```
+
+The application selects the matching model automatically. The MLX variant is optimized for
+Apple Silicon and is not available on Windows; the standard variant is the portable fallback.
 
 ## Setup
 
@@ -54,3 +71,9 @@ bun run start
 ```
 
 Open <http://localhost:5173/>.
+
+## Runtime rationale
+
+This project intentionally uses both Bun and Node.js. See
+[RUNTIME-RATIONALE.md](./RUNTIME-RATIONALE.md) for the reasoning and the Windows
+Playwright constraint.

@@ -8,9 +8,9 @@
   "scripts": {
     "prepare": "husky",
     "postinstall": "bun audit --json > audit.json || true",
-    "auth": "bun scripts/auth.ts",
-    "fetch:stories": "bun scripts/fetch-stories.ts",
-    "create:report": "bun scripts/create-report.ts",
+    "auth": "tsx scripts/auth.ts",
+    "fetch:stories": "tsx scripts/fetch-stories.ts",
+    "create:report": "tsx scripts/create-report.ts",
     "start": "bun --bun vite dev --port 5173",
     "build": "bun --bun vite build",
     "lint": "bun --bun oxlint",
@@ -56,6 +56,7 @@
     "*": "oxfmt --no-error-on-unmatched-pattern"
   },
   "engines": {
-    "bun": ">=1.3.14"
+    "bun": ">=1.3.14",
+    "node": ">=24.0.0"
   }
 }

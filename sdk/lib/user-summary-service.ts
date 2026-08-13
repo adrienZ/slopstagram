@@ -1,5 +1,6 @@
 export {
   createSummaryPrompt,
+  getUserSummaryModel,
   getUserSummarySourceHash,
   USER_SUMMARY_MODEL,
   USER_SUMMARY_PROMPT,

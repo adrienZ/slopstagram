@@ -5,6 +5,7 @@ import { getUserSummaryCacheKey } from "../sdk/lib/cache-service.ts";
 import {
   USER_SUMMARY_MODEL,
   USER_SUMMARY_UNAVAILABLE,
+  getUserSummaryModel,
   resolveUserSummariesForReport,
 } from "../sdk/lib/user-summary-service.ts";
 import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
@@ -35,6 +36,20 @@ const UserSummaryRequestSchema = z.object({
 });
 
 describe("resolveUserSummariesForReport", () => {
+  test("selects an OS-compatible summary model", () => {
+    assert.equal(getUserSummaryModel("darwin", "arm64"), "qwen3.5:0.8b-mlx");
+    assert.equal(getUserSummaryModel("darwin", "x64"), "qwen3.5:0.8b");
+    assert.equal(getUserSummaryModel("linux", "x64"), "qwen3.5:0.8b");
+  });
+
+  test("never selects the MLX summary model on Windows", () => {
+    for (const architecture of ["x64", "arm64"]) {
+      const model = getUserSummaryModel("win32", architecture);
+
+      assert.doesNotMatch(model, /mlx/u);
+    }
+  });
+
   test("caches successful user summaries", async () => {
     const { userSummaryStorage: UserSummaryStorage } = createMemoryCacheStorages();
     const report = createSummaryReport();
@@ -119,7 +134,7 @@ describe("resolveUserSummariesForReport", () => {
       storage: userSummaryStorage,
     });
 
-    assert.equal(USER_SUMMARY_MODEL, "qwen3.5:0.8b-mlx");
+    assert.equal(USER_SUMMARY_MODEL, getUserSummaryModel());
     assert.equal(first.get(userKey), "default model summary");
     assert.equal(second.get(userKey), "custom model summary");
     assert.equal(runCount, 2);
@@ -138,7 +153,7 @@ describe("resolveUserSummariesForReport", () => {
         // oxlint-disable-next-line typescript/no-base-to-string typescript/no-unsafe-type-assertion
         const body = UserSummaryRequestSchema.parse(JSON.parse(String(init?.body)));
 
-        assert.equal(body.model, "qwen3.5:0.8b-mlx");
+        assert.equal(body.model, getUserSummaryModel());
         assert.equal(body.stream, false);
         assert.deepEqual(body.options, {
           num_predict: 300,

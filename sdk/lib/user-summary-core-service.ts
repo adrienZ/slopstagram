@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import process from "node:process";
 import { clearTimeout, setTimeout } from "node:timers";
 import { Ollama, type Fetch as OllamaFetch } from "ollama";
 import { z } from "zod";
@@ -7,7 +8,19 @@ import type { UserSummaryStorage, VisionResult, StoryOutputUser } from "./types.
 
 type HttpFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
-export const USER_SUMMARY_MODEL = "qwen3.5:0.8b-mlx";
+const USER_SUMMARY_MLX_MODEL = "qwen3.5:0.8b-mlx";
+const USER_SUMMARY_PORTABLE_MODEL = "qwen3.5:0.8b";
+
+export function getUserSummaryModel(
+  platform: NodeJS.Platform = process.platform,
+  architecture: string = process.arch,
+): string {
+  return platform === "darwin" && architecture === "arm64"
+    ? USER_SUMMARY_MLX_MODEL
+    : USER_SUMMARY_PORTABLE_MODEL;
+}
+
+export const USER_SUMMARY_MODEL = getUserSummaryModel();
 export const USER_SUMMARY_PROMPT =
   "Résume cet utilisateur Instagram en 2 ou 3 phrases en français.";
 export const USER_SUMMARY_UNAVAILABLE = "résumé indisponible";
