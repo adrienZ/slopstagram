@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import path from "node:path";
 import { test } from "bun:test";
-import { MacOcrError } from "mac-ocr";
 import { resolveAppleCaptionsForReport } from "../sdk/apple-caption-report-service.ts";
+import { AppleOcrUnavailableError } from "../sdk/lib/apple-ocr-service.ts";
 import { fetchStoriesManifest } from "../sdk/stories.ts";
 import {
   createCapturingLogger,
@@ -44,9 +44,7 @@ test("reads cached local previews and stops after the first unavailable result",
       reportDirectory: "/cache/reports",
       resolver: (_mediaPk, imagePath) => {
         resolvedPaths.push(imagePath);
-        throw new MacOcrError("Vision is unavailable", {
-          kind: "unavailable",
-        });
+        throw new AppleOcrUnavailableError("Vision is unavailable");
       },
     },
   );

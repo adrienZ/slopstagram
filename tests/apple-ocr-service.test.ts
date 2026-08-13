@@ -60,4 +60,21 @@ describe("recognizeAppleCaption", () => {
       "fresh caption",
     );
   });
+
+  test("reports OCR as unavailable without loading it on Windows", async () => {
+    const { appleCaptionsStorage } = createCacheStorages(createMemoryStorage());
+
+    await assert.rejects(
+      recognizeAppleCaption("story-4", "/cache/story-4.jpg", {
+        platform: "win32",
+        readImage: () => Promise.resolve(Buffer.from("local-image")),
+        storage: appleCaptionsStorage,
+      }),
+      (error: unknown) =>
+        error instanceof Error &&
+        "kind" in error &&
+        error.kind === "unavailable" &&
+        error.message === "unsupported platform win32",
+    );
+  });
 });
