@@ -5,6 +5,8 @@ import { z } from "zod";
 import type { Logger } from "./logging-service.ts";
 import type { UserSummaryStorage, VisionResult, StoryOutputUser } from "./types.ts";
 
+type HttpFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+
 export const USER_SUMMARY_MODEL = "qwen3.5:0.8b-mlx";
 export const USER_SUMMARY_PROMPT =
   "Résume cet utilisateur Instagram en 2 ou 3 phrases en français.";
@@ -22,7 +24,7 @@ export type RunUserSummary = (prompt: string) => Promise<string>;
 
 export type ResolveUserSummariesOptions = {
   endpoint?: string;
-  fetchOllama?: OllamaFetch;
+  fetchOllama?: HttpFetch;
   logger: Logger;
   model?: string;
   visionByPreviewUrl?: Map<string, VisionResult>;
@@ -170,8 +172,8 @@ function resolveOllamaHost(endpoint: string | undefined): string {
   return (endpoint ?? "http://127.0.0.1:11434").replace(/\/api\/generate\/?$/u, "");
 }
 
-function createTimeoutFetch(fetchOllama: OllamaFetch, timeoutMs: number): OllamaFetch {
-  return async (input, init) => {
+function createTimeoutFetch(fetchOllama: HttpFetch, timeoutMs: number): OllamaFetch {
+  const timeoutFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const controller = new globalThis.AbortController();
     const timeout = setTimeout(() => {
       controller.abort();
@@ -186,11 +188,15 @@ function createTimeoutFetch(fetchOllama: OllamaFetch, timeoutMs: number): Ollama
       clearTimeout(timeout);
     }
   };
+
+  return Object.assign(timeoutFetch, {
+    preconnect: globalThis.fetch.preconnect,
+  });
 }
 
 export function createDefaultOllamaRunner(options: {
   endpoint?: string;
-  fetchOllama?: OllamaFetch;
+  fetchOllama?: HttpFetch;
   model: string;
   timeoutMs: number;
 }): RunUserSummary {

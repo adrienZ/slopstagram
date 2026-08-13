@@ -1,10 +1,7 @@
 import { createHash } from "node:crypto";
-import path from "node:path";
 import {
-  BASE_CACHE_DIR,
   getMediaCacheKey,
   getUserSummaryCacheKey,
-  IMAGES_STORAGE_DIR,
   imageCacheStorage,
   userSummaryStorage,
   visionStorage,
@@ -21,7 +18,6 @@ import { backfillReportStoryMediaTypes } from "../sdk/lib/report-media-type-serv
 import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
 import type { StoriesManifestReport, VisionResult } from "../sdk/lib/types.ts";
 import { VISION_MODEL, VISION_PROMPT } from "../sdk/lib/vision-service.ts";
-import { reportDirectory } from "./report-cache.ts";
 
 export type ReportViewModel = {
   cachedImages: CachedReportImages;
@@ -43,10 +39,7 @@ async function getCachedImagePath(rawKey: string): Promise<string | null> {
     return null;
   }
 
-  return path
-    .relative(reportDirectory, path.resolve(BASE_CACHE_DIR, IMAGES_STORAGE_DIR, rawKey))
-    .split(path.sep)
-    .join("/");
+  return `/images/${rawKey}`;
 }
 
 async function readCachedImages(report: StoriesManifestReport): Promise<CachedReportImages> {

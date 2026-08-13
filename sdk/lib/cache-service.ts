@@ -9,7 +9,7 @@ import type {
   StoryItem,
 } from "./types.ts";
 
-export const BASE_CACHE_DIR = ".tmp";
+export const BASE_CACHE_DIR = "public";
 const APPLE_CAPTIONS_STORAGE_DIR = "apple-captions";
 export const IMAGES_STORAGE_DIR = "images";
 const USER_SUMMARIES_STORAGE_DIR = "user-summaries";

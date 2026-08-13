@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { test } from "bun:test";
 import { createConsola } from "consola";
 import { createReport } from "../sdk/index.ts";
 import type { Logger } from "../sdk/lib/logging-service.ts";
@@ -69,6 +69,12 @@ test("createReport prepares every cache before persisting the report", async () 
         assert.equal(typeof options.logger.progress, "function");
         return Promise.resolve(cachedImages);
       },
+      resolveAppleCaptionsForReport: (_report, images, options) => {
+        calls.push("cache-apple-captions");
+        assert.equal(images, cachedImages);
+        assert.equal(typeof options.logger.progress, "function");
+        return Promise.resolve();
+      },
       resolveVisionForReport: (_report, images) => {
         calls.push("cache-vision");
         assert.equal(images, cachedImages);
@@ -94,6 +100,7 @@ test("createReport prepares every cache before persisting the report", async () 
   assert.deepEqual(calls, [
     "fetch-stories",
     "cache-images",
+    "cache-apple-captions",
     "cache-vision",
     "cache-summaries",
     "save-report",

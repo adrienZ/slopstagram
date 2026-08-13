@@ -1,4 +1,3 @@
-import { recognizeAppleCaption } from "./lib/apple-ocr-service.ts";
 import { storiesStorage } from "./lib/cache-service.ts";
 import type { Logger } from "./lib/logging-service.ts";
 import { createLogger } from "./lib/logging-service.ts";
@@ -40,7 +39,6 @@ const DEFAULT_REEL_IDS_PER_REQUEST = 25;
 const DEFAULT_MAX_ATTEMPTS = 3;
 const DEFAULT_BASE_DELAY_MS = 500;
 const DEFAULT_MAX_RATE_LIMIT_DELAY_MS = 10_000;
-
 function getArgValue(args: string[], flag: string): string | undefined {
   const index = args.indexOf(flag);
   if (index === -1) {
@@ -187,7 +185,7 @@ async function fetchMissingStoriesForReport(options: {
 }
 
 async function createCaptionedManifestUsers(options: {
-  appleCaptionResolver: (story: StoryItem) => Promise<string>;
+  appleCaptionResolver?: (story: StoryItem) => Promise<string>;
   logger: Logger;
   state: ReturnType<typeof createFetchState>;
   tray: StoryTrayEntry[];
@@ -197,11 +195,10 @@ async function createCaptionedManifestUsers(options: {
     options.state.cachedItems,
     options.state.failureByMediaPk,
   );
-  options.logger.info(
-    `resolving apple captions for ${
-      options.state.expectedMediaPks.length - options.state.failureByMediaPk.size
-    } story item(s)`,
-  );
+  if (!options.appleCaptionResolver) {
+    return manifestUsers;
+  }
+
   await populateAppleCaptions(
     manifestUsers,
     options.state.cachedItems,
@@ -219,7 +216,6 @@ export async function fetchStoriesManifest(
   const storyStorage = options.storyStorage ?? storiesStorage;
   const now = options.now ?? (() => new Date());
   const logger = options.logger ?? createLogger("fetch-stories");
-  const appleCaptionResolver = options.appleCaptionResolver ?? recognizeAppleCaption;
 
   logger.info(`fetching tray for report ${reportName}`);
   const trayJson = await fetchTray(client, { ...options, now }, logger);
@@ -244,7 +240,7 @@ export async function fetchStoriesManifest(
   });
 
   const manifestUsers = await createCaptionedManifestUsers({
-    appleCaptionResolver,
+    appleCaptionResolver: options.appleCaptionResolver,
     logger,
     state,
     tray: trayJson.tray,

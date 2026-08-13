@@ -1,5 +1,5 @@
 import path from "node:path";
-import { Ollama as VisionSdk, type Fetch as VisionFetch } from "ollama";
+import { Ollama as VisionSdk } from "ollama";
 import { getMediaCacheKey, visionStorage } from "./cache-service.ts";
 import type { CachedReportImages } from "./image-cache-service.ts";
 import type { Logger } from "./logging-service.ts";
@@ -10,6 +10,8 @@ import {
   VISION_MODEL,
   VISION_PROMPT,
 } from "./vision-analysis-service.ts";
+
+type VisionFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
 type VisionOptions = {
   endpoint?: string;
@@ -181,7 +183,13 @@ export async function resolveVisionForReport(
   options: VisionOptions,
 ): Promise<Map<string, VisionResult>> {
   const host = resolveVisionHost(options.endpoint);
-  const client = new VisionSdk({ fetch: options.fetchVision, host });
+  const client = new VisionSdk({
+    fetch:
+      options.fetchVision === undefined
+        ? undefined
+        : Object.assign(options.fetchVision, { preconnect: globalThis.fetch.preconnect }),
+    host,
+  });
   const logger = options.logger;
   const entrySet = createPreviewEntrySet(report);
   const resultByPreviewUrl = new Map<string, VisionResult>();

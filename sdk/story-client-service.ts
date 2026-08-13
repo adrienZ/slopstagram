@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { installPlaywrightApiRequestPatch } from "./lib/playwright-api-request-patch.ts";
 import type { InstagramSession } from "./lib/playwright-service.ts";
 import { StoryReelSchema, StoryTrayEntrySchema } from "./lib/story-schemas.ts";
 import type { StoryReel } from "./lib/types.ts";
@@ -13,13 +14,15 @@ const ReelTrayResponseSchema = z.object({
 
 export type ReelsMediaResponse = {
   reels?: Record<string, StoryReel>;
-  reels_media?: Record<string, StoryReel>;
+  reels_media?: Record<string, StoryReel> | StoryReel[];
   status?: string | null;
 };
 
 const ReelsMediaResponseSchema = z.object({
   reels: z.record(z.string(), StoryReelSchema).optional(),
-  reels_media: z.record(z.string(), StoryReelSchema).optional(),
+  reels_media: z
+    .union([z.record(z.string(), StoryReelSchema), z.array(StoryReelSchema)])
+    .optional(),
   status: z.string().nullable().optional(),
 });
 
@@ -28,6 +31,8 @@ const REELS_TRAY_URL = "https://www.instagram.com/api/v1/feed/reels_tray/";
 const REELS_MEDIA_URL = "https://www.instagram.com/api/v1/feed/reels_media/";
 
 export function createInstagramClient(session: InstagramSession): InstagramClient {
+  installPlaywrightApiRequestPatch();
+
   return {
     async getReelsMedia(reelIds) {
       const query = reelIds.map((reelId) => `reel_ids=${encodeURIComponent(reelId)}`).join("&");
@@ -63,5 +68,17 @@ export function createInstagramClient(session: InstagramSession): InstagramClien
 }
 
 export function extractReels(response: ReelsMediaResponse): Record<string, StoryReel> {
-  return response.reels ?? response.reels_media ?? {};
+  if (response.reels !== undefined) {
+    return response.reels;
+  }
+
+  if (Array.isArray(response.reels_media)) {
+    return Object.fromEntries(
+      response.reels_media
+        .filter((reel): reel is StoryReel & { id: string } => typeof reel.id === "string")
+        .map((reel) => [reel.id, reel]),
+    );
+  }
+
+  return response.reels_media ?? {};
 }

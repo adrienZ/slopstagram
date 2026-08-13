@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { mock } from "node:test";
+import { mock } from "bun:test";
 import path from "node:path";
 import { createConsola } from "consola";
 import { createCacheStorages } from "../sdk/lib/cache-service.ts";
@@ -60,12 +60,7 @@ export function createMemoryCacheStorages(): ReturnType<typeof createCacheStorag
 }
 
 export function mockModule(specifier: string, namedExports: Record<string, unknown>): void {
-  const exportOption = "namedExports";
-  const options = Object.fromEntries([[exportOption, namedExports]]) as Parameters<
-    typeof mock.module
-  >[1];
-
-  mock.module(specifier, options);
+  void mock.module(specifier, () => namedExports);
 }
 
 export function createVisionReport(source: string = previewSource): StoriesManifestReport {

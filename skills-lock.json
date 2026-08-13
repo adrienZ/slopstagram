@@ -11,7 +11,7 @@
       "source": "privatenumber/mac-ocr",
       "sourceType": "github",
       "skillPath": "skills/mac-ocr/SKILL.md",
-      "computedHash": "e400892e302523d6f06cd734f82698eb238c419fbd9dde01b93715b87ec9f956"
+      "computedHash": "0e4ee9026528352e672913e6c2362865419d11359fecb33f9b0d50d8bde08f0c"
     },
     "nitro": {
       "source": "antfu/skills",

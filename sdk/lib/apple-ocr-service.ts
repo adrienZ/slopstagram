@@ -1,20 +1,17 @@
-import { spawn } from "node:child_process";
+import { readFile } from "node:fs/promises";
+import { MacOcrError, ocr } from "mac-ocr";
 import { appleCaptionsStorage, getMediaCacheKey } from "./cache-service.ts";
-import { getLargestVersion } from "./parser-service.ts";
 import { NO_APPLE_CAPTION } from "./report-constants.ts";
-import type { AppleCaptionStorage, StoryItem } from "./types.ts";
+import type { AppleCaptionStorage } from "./types.ts";
 
-type AppleOcrRunner = (source: string) => Promise<string>;
+type AppleOcrRunner = (image: Uint8Array) => Promise<string>;
+type ReadImage = (imagePath: string) => Promise<Uint8Array>;
 
 export type RecognizeAppleCaptionOptions = {
+  readImage?: ReadImage;
   runAppleOcr?: AppleOcrRunner;
   storage?: AppleCaptionStorage;
 };
-
-function getOcrSource(story: StoryItem): string | null {
-  const candidate = getLargestVersion(story.image_versions2?.candidates);
-  return candidate?.url ?? null;
-}
 
 function normalizeOcrText(value: string): string {
   const normalized = value.normalize("NFC").replaceAll("\r\n", "\n").trim();
@@ -22,54 +19,32 @@ function normalizeOcrText(value: string): string {
   return normalized.length > 0 ? normalized : NO_APPLE_CAPTION;
 }
 
-function runAppleOcr(source: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const child = spawn("mac-ocr", [source], {
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    let stdout = "";
-    let stderr = "";
+export function isAppleOcrUnavailable(error: unknown): error is MacOcrError {
+  return error instanceof MacOcrError && error.kind === "unavailable";
+}
 
-    child.stdout.on("data", (chunk: Buffer | string) => {
-      stdout += chunk.toString();
-    });
-
-    child.stderr.on("data", (chunk: Buffer | string) => {
-      stderr += chunk.toString();
-    });
-
-    child.on("error", reject);
-    child.on("close", (code) => {
-      if (code === 0) {
-        resolve(stdout);
-        return;
-      }
-
-      reject(new Error(stderr.trim() || `mac-ocr exited with code ${code ?? "unknown"}`));
-    });
-  });
+async function runAppleOcr(image: Uint8Array): Promise<string> {
+  const result = await ocr(image);
+  return result.text;
 }
 
 export async function recognizeAppleCaption(
-  story: StoryItem,
+  mediaPk: string,
+  imagePath: string,
   {
+    readImage: read = (path) => readFile(path),
     runAppleOcr: runOcr = runAppleOcr,
     storage = appleCaptionsStorage,
   }: RecognizeAppleCaptionOptions = {},
 ): Promise<string> {
-  const source = getOcrSource(story);
-  const cacheKey = getMediaCacheKey(story.pk);
+  const cacheKey = getMediaCacheKey(mediaPk);
   const cachedCaption = await storage.getItem(cacheKey);
 
   if (cachedCaption !== null && cachedCaption.length > 0) {
     return cachedCaption;
   }
 
-  if (source === null || source.length === 0) {
-    return NO_APPLE_CAPTION;
-  }
-
-  const caption = normalizeOcrText(await runOcr(source));
+  const caption = normalizeOcrText(await runOcr(await read(imagePath)));
   await storage.setItem(cacheKey, caption);
   return caption;
 }

@@ -1,28 +1,9 @@
+import { Buffer } from "node:buffer";
 import assert from "node:assert/strict";
-import { describe, test } from "node:test";
+import { describe, test } from "bun:test";
 import { createCacheStorages, getMediaCacheKey } from "../sdk/lib/cache-service.ts";
 import { recognizeAppleCaption } from "../sdk/lib/apple-ocr-service.ts";
-import type { StoryItem } from "../sdk/lib/types.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
-
-function createStory(pk: string, url: string | null): StoryItem {
-  return {
-    image_versions2:
-      url === null
-        ? undefined
-        : {
-            candidates: [
-              {
-                height: 100,
-                url,
-                width: 100,
-              },
-            ],
-          },
-    media_type: 1,
-    pk,
-  };
-}
 
 describe("recognizeAppleCaption", () => {
   test("uses cached OCR by media key", async () => {
@@ -30,16 +11,14 @@ describe("recognizeAppleCaption", () => {
     await appleCaptionsStorage.setItem(getMediaCacheKey("story-1"), "cached caption");
 
     let runCount = 0;
-    const caption = await recognizeAppleCaption(
-      createStory("story-1", "https://example.com/story-1.jpg"),
-      {
-        runAppleOcr: () => {
-          runCount += 1;
-          return Promise.resolve("fresh caption");
-        },
-        storage: appleCaptionsStorage,
+    const caption = await recognizeAppleCaption("story-1", "/cache/story-1.jpg", {
+      readImage: () => Promise.reject(new Error("should not read")),
+      runAppleOcr: () => {
+        runCount += 1;
+        return Promise.resolve("fresh caption");
       },
-    );
+      storage: appleCaptionsStorage,
+    });
 
     assert.equal(caption, "cached caption");
     assert.equal(runCount, 0);
@@ -47,16 +26,19 @@ describe("recognizeAppleCaption", () => {
 
   test("stores OCR result when cache is missing", async () => {
     const { appleCaptionsStorage } = createCacheStorages(createMemoryStorage());
+    let receivedImage: Uint8Array | undefined;
 
-    const caption = await recognizeAppleCaption(
-      createStory("story-2", "https://example.com/story-2.jpg"),
-      {
-        runAppleOcr: () => Promise.resolve("fresh caption"),
-        storage: appleCaptionsStorage,
+    const caption = await recognizeAppleCaption("story-2", "/cache/story-2.jpg", {
+      readImage: () => Promise.resolve(Buffer.from("local-image")),
+      runAppleOcr: (image) => {
+        receivedImage = image;
+        return Promise.resolve("fresh caption");
       },
-    );
+      storage: appleCaptionsStorage,
+    });
 
     assert.equal(caption, "fresh caption");
+    assert.deepEqual(receivedImage, Buffer.from("local-image"));
     assert.deepEqual(
       await appleCaptionsStorage.getItem(getMediaCacheKey("story-2")),
       "fresh caption",
@@ -66,13 +48,11 @@ describe("recognizeAppleCaption", () => {
   test("normalizes OCR text before caching it", async () => {
     const { appleCaptionsStorage } = createCacheStorages(createMemoryStorage());
 
-    const caption = await recognizeAppleCaption(
-      createStory("story-3", "https://example.com/story-3.jpg"),
-      {
-        runAppleOcr: () => Promise.resolve("\r\n  fresh caption  \n"),
-        storage: appleCaptionsStorage,
-      },
-    );
+    const caption = await recognizeAppleCaption("story-3", "/cache/story-3.jpg", {
+      readImage: () => Promise.resolve(Buffer.from("local-image")),
+      runAppleOcr: () => Promise.resolve("\r\n  fresh caption  \n"),
+      storage: appleCaptionsStorage,
+    });
 
     assert.equal(caption, "fresh caption");
     assert.deepEqual(

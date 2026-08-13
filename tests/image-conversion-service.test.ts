@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 import assert from "node:assert/strict";
-import { describe, test } from "node:test";
+import { describe, test } from "bun:test";
 import sharp from "sharp";
 import { convertImageToJpeg } from "../sdk/lib/image-conversion-service.ts";
 
