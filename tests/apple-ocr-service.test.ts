@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, test } from "node:test";
+import { describe, test } from "bun:test";
 import { createCacheStorages, getMediaCacheKey } from "../sdk/lib/cache-service.ts";
 import { recognizeAppleCaption } from "../sdk/lib/apple-ocr-service.ts";
 import type { StoryItem } from "../sdk/lib/types.ts";

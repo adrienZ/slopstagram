@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { randomUUID } from "node:crypto";
+import { test } from "bun:test";
 import type { StoriesManifestReport } from "../sdk/lib/types.ts";
 import { createReportViewModel } from "../server/report-view-model.ts";
 
-function createUncachedReport(): StoriesManifestReport {
+function createUncachedReport(cacheKey: string): StoriesManifestReport {
   return {
     failures: [],
     manifest: { users: [] },
@@ -18,7 +19,7 @@ function createUncachedReport(): StoriesManifestReport {
         stories: 1,
       },
       created_at: "2026-08-05T18:00:00.000Z",
-      report_name: "stories-report-cache-only-regression.json",
+      report_name: `stories-report-${cacheKey}.json`,
       status: "ok",
       story_ranking_token: null,
     },
@@ -26,15 +27,15 @@ function createUncachedReport(): StoriesManifestReport {
       users: [
         {
           full_name: "Uncached User",
-          profile_pic_url: "https://instagram.invalid/cache-only-avatar.jpg",
-          reel_ids: ["cache-only-reel"],
+          profile_pic_url: `https://instagram.invalid/${cacheKey}-avatar.jpg`,
+          reel_ids: [`${cacheKey}-reel`],
           stories: [
             {
               apple_caption: "",
               ig_caption: "",
               locations: [],
-              media_pk: "cache-only-story-that-does-not-exist",
-              preview_image_url: "https://instagram.invalid/cache-only-story.jpg",
+              media_pk: `${cacheKey}-story-that-does-not-exist`,
+              preview_image_url: `https://instagram.invalid/${cacheKey}-story.jpg`,
               stickers: [],
               status: "ok",
             },
@@ -46,26 +47,25 @@ function createUncachedReport(): StoriesManifestReport {
   };
 }
 
-test(
-  "createReportViewModel never fetches external resources on cache misses",
-  { timeout: 2_000 },
-  async () => {
-    const originalFetch = globalThis.fetch;
-    let fetchCount = 0;
-    globalThis.fetch = () => {
+test("createReportViewModel never fetches external resources on cache misses", async () => {
+  const originalFetch = globalThis.fetch;
+  let fetchCount = 0;
+  globalThis.fetch = Object.assign(
+    () => {
       fetchCount += 1;
       throw new Error("report view model must remain cache-only");
-    };
+    },
+    { preconnect: originalFetch.preconnect },
+  );
 
-    try {
-      const viewModel = await createReportViewModel(createUncachedReport());
+  try {
+    const viewModel = await createReportViewModel(createUncachedReport(randomUUID()));
 
-      assert.equal(fetchCount, 0);
-      assert.equal(viewModel.cachedImages.profilePicPathByUrl.size, 0);
-      assert.equal(viewModel.cachedImages.storyPreviewPathByUrl.size, 0);
-      assert.equal(viewModel.userSummaryByUserKey.size, 0);
-    } finally {
-      globalThis.fetch = originalFetch;
-    }
-  },
-);
+    assert.equal(fetchCount, 0);
+    assert.equal(viewModel.cachedImages.profilePicPathByUrl.size, 0);
+    assert.equal(viewModel.cachedImages.storyPreviewPathByUrl.size, 0);
+    assert.equal(viewModel.userSummaryByUserKey.size, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

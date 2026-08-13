@@ -7,23 +7,25 @@
   "type": "module",
   "scripts": {
     "prepare": "husky",
-    "postinstall": "npm audit --json > audit.json || true",
-    "auth": "tsx scripts/auth.ts",
-    "fetch:stories": "tsx scripts/fetch-stories.ts",
-    "create:report": "tsx scripts/create-report.ts",
-    "start": "vite --port 5173",
-    "build": "vite build",
-    "lint": "oxlint",
+    "postinstall": "bun audit --json > audit.json || true",
+    "auth": "bun scripts/auth.ts",
+    "fetch:stories": "bun scripts/fetch-stories.ts",
+    "create:report": "bun scripts/create-report.ts",
+    "warm-cache": "bun scripts/warm-cache.ts",
+    "start": "bun --bun vite dev --port 5173",
+    "build": "bun --bun vite build",
+    "lint": "bun --bun oxlint",
     "knip": "knip",
-    "check": "npm run format:check && npm run lint && npm run knip && npm run test",
-    "check:ci": "npm run format:check && npm run lint && npm run knip && npm run test:reporter",
-    "format": "oxfmt",
-    "format:check": "oxfmt --check",
-    "test": "node --experimental-test-module-mocks  --experimental-test-coverage --import tsx --test tests/**/*.test.ts",
-    "test:reporter": "node --experimental-test-module-mocks  --experimental-test-coverage  --test-reporter=junit --import tsx --test tests/**/*.test.ts > reporter.xml || true"
+    "check": "bun run format && bun run lint && bun run knip && bun run test",
+    "check:ci": "bun run format:check && bun run lint && bun run knip && bun run test:reporter",
+    "format": "bun --bun oxfmt",
+    "format:check": "bun --bun oxfmt --check",
+    "test": "bun test --isolate --coverage ./tests",
+    "test:reporter": "bun test --isolate --reporter=junit --reporter-outfile=reporter.xml ./tests || true"
   },
   "dependencies": {
     "@opentf/cli-pbar": "^0.7.2",
+    "bunqueue": "^2.8.59",
     "clsx": "^2.1.1",
     "consola": "^3.4.2",
     "ollama": "^0.6.3",
@@ -34,6 +36,7 @@
   },
   "devDependencies": {
     "@playwright/cli": "^0.1.17",
+    "@types/bun": "^1.3.14",
     "@types/node": "^26.1.1",
     "husky": "^9.1.7",
     "knip": "^6.32.1",
@@ -51,6 +54,6 @@
     "*": "oxfmt --no-error-on-unmatched-pattern"
   },
   "engines": {
-    "node": ">=24.0.0"
+    "bun": ">=1.3.14"
   }
 }

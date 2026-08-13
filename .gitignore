@@ -9,4 +9,8 @@ reporter.xml
 .output/
 .nitro
 
-.tmp/
+# .data
+.data/*
+!.data/.gitkeep
+
+public
