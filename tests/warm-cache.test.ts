@@ -1,8 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "bun:test";
 import type { CreateReportResult } from "../sdk/report.ts";
+import {
+  startWarmCacheQueue,
+  WARM_CACHE_CRON_PATTERN,
+  WARM_CACHE_DATA_PATH,
+  WARM_CACHE_QUEUE_NAME,
+  type WarmCacheQueueDependencies,
+} from "../sdk/warm-cache-queue.ts";
 import { runWarmCacheJob } from "../sdk/warm-cache.ts";
-import { processWarmCacheJob } from "../sdk/warm-cache-worker.ts";
 import { createMockLogger } from "./mock-helpers.ts";
 
 function createReportResult(): CreateReportResult {
@@ -77,71 +83,137 @@ test("runWarmCacheJob accepts an empty payload", async () => {
   assert.deepEqual(calls, [[]]);
 });
 
-function createWarmCacheQueueJob() {
-  const logs: string[] = [];
-  const progress: Array<{ message?: string; value: number }> = [];
+test("startWarmCacheQueue schedules and processes warm-cache jobs", async () => {
+  const calls: Array<{ arguments: unknown[]; name: string }> = [];
+  let processor: Parameters<WarmCacheQueueDependencies["createWorker"]>[1] | undefined;
+  let workerErrorListener: ((error: Error) => void) | undefined;
+  const workerError = new Error("worker failed");
+  const capturedErrors: Error[] = [];
+  let processedPayload: unknown;
 
-  return {
-    job: {
-      data: {},
-      id: "job-1",
-      log: (message: string) => {
-        logs.push(message);
-        return Promise.resolve();
+  const runtime = startWarmCacheQueue({
+    dependencies: {
+      createQueue(name, options) {
+        calls.push({ arguments: [options], name: `queue:${name}` });
+        return {
+          close() {
+            calls.push({ arguments: [], name: "queue:close" });
+          },
+          upsertJobScheduler(...arguments_) {
+            calls.push({ arguments: arguments_, name: "queue:schedule" });
+            return Promise.resolve("scheduled");
+          },
+        };
       },
-      updateProgress: (value: number, message?: string) => {
-        progress.push({ message, value });
-        return Promise.resolve();
+      createWorker(name, nextProcessor, options) {
+        calls.push({ arguments: [options], name: `worker:${name}` });
+        processor = nextProcessor;
+        return {
+          close() {
+            calls.push({ arguments: [], name: "worker:close" });
+            return Promise.resolve();
+          },
+          on(_event, listener) {
+            workerErrorListener = listener;
+            return this;
+          },
+        };
+      },
+      shutdown() {
+        calls.push({ arguments: [], name: "shutdown" });
       },
     },
-    logs,
-    progress,
-  };
-}
-
-test("processWarmCacheJob logs success and sets progress to completed", async () => {
-  const { job, logs, progress } = createWarmCacheQueueJob();
-  const result = createReportResult();
-
-  const processed = await processWarmCacheJob(job, {
     logger: createMockLogger(),
-    runWarmCacheJob: () =>
-      Promise.resolve({
+    onError(error) {
+      capturedErrors.push(error);
+    },
+    runJob: (options = {}) => {
+      processedPayload = options.payload;
+      const result = createReportResult();
+      return Promise.resolve({
         counts: result.report.metadata.counts,
         outputFileName: result.outputFileName,
         outputPath: result.outputPath,
-      }),
+      });
+    },
   });
 
-  assert.deepEqual(processed, {
-    counts: result.report.metadata.counts,
-    outputFileName: result.outputFileName,
-    outputPath: result.outputPath,
+  assert.equal(await runtime.ready, "scheduled");
+  assert.ok(processor);
+  assert.deepEqual(await processor({ data: { reportArgs: ["--limit", "5"] } }), {
+    counts: createReportResult().report.metadata.counts,
+    outputFileName: "stories-report-test.json",
+    outputPath: "public/reports/stories-report-test.json",
   });
-  assert.deepEqual(progress, [
-    { message: "started", value: 0 },
-    { message: "completed", value: 100 },
-  ]);
-  assert.deepEqual(logs, [
-    "started job job-1",
-    "completed job job-1",
-    "output public/reports/stories-report-test.json",
-    'counts {"cache_hits":1,"cache_misses":2,"failed":3,"fetched":4,"reels":5,"stories":6}',
+  assert.deepEqual(processedPayload, { reportArgs: ["--limit", "5"] });
+
+  workerErrorListener?.(workerError);
+  assert.deepEqual(capturedErrors, [workerError]);
+
+  await runtime.close();
+  assert.deepEqual(calls, [
+    {
+      arguments: [
+        {
+          dataPath: WARM_CACHE_DATA_PATH,
+          defaultJobOptions: {
+            attempts: 3,
+            backoff: { delay: 1_000, type: "exponential" },
+          },
+          embedded: true,
+        },
+      ],
+      name: `queue:${WARM_CACHE_QUEUE_NAME}`,
+    },
+    {
+      arguments: [
+        WARM_CACHE_QUEUE_NAME,
+        { pattern: WARM_CACHE_CRON_PATTERN },
+        { data: {}, name: WARM_CACHE_QUEUE_NAME },
+      ],
+      name: "queue:schedule",
+    },
+    {
+      arguments: [{ concurrency: 1, dataPath: WARM_CACHE_DATA_PATH, embedded: true }],
+      name: `worker:${WARM_CACHE_QUEUE_NAME}`,
+    },
+    { arguments: [], name: "worker:close" },
+    { arguments: [], name: "queue:close" },
+    { arguments: [], name: "shutdown" },
   ]);
 });
 
-test("processWarmCacheJob logs failure and rethrows", async () => {
-  const { job, logs, progress } = createWarmCacheQueueJob();
-  const failure = new Error("tray fetch failed");
+test("startWarmCacheQueue cleans up when its worker fails to close", async () => {
+  const calls: string[] = [];
+  const closeFailure = new Error("close failed");
 
-  await assert.rejects(
-    processWarmCacheJob(job, {
-      logger: createMockLogger(),
-      runWarmCacheJob: () => Promise.reject(failure),
-    }),
-    failure,
-  );
+  const runtime = startWarmCacheQueue({
+    dependencies: {
+      createQueue() {
+        return {
+          close() {
+            calls.push("queue:close");
+          },
+          upsertJobScheduler: () => Promise.resolve(),
+        };
+      },
+      createWorker() {
+        return {
+          close() {
+            calls.push("worker:close");
+            return Promise.reject(closeFailure);
+          },
+          on() {
+            return this;
+          },
+        };
+      },
+      shutdown() {
+        calls.push("shutdown");
+      },
+    },
+  });
 
-  assert.deepEqual(progress, [{ message: "started", value: 0 }]);
-  assert.deepEqual(logs, ["started job job-1", "failed job job-1: tray fetch failed"]);
+  await assert.rejects(runtime.close(), closeFailure);
+  assert.deepEqual(calls, ["worker:close", "queue:close", "shutdown"]);
 });
