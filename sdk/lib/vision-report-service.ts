@@ -1,9 +1,10 @@
 import path from "node:path";
 import { Ollama as VisionSdk } from "ollama";
-import { getMediaCacheKey, visionStorage } from "./cache-service.ts";
+import type { VisionRepository } from "../entities/vision.ts";
+import { visionRepository } from "./entity-repository-service.ts";
 import type { CachedReportImages } from "./image-cache-service.ts";
 import type { Logger } from "./logging-service.ts";
-import type { StoriesManifestReport, VisionResult, VisionStorage } from "./types.ts";
+import type { StoriesManifestReport, VisionResult } from "./types.ts";
 import {
   analyzeImage,
   createFailureResult,
@@ -20,7 +21,7 @@ type VisionOptions = {
   model?: string;
   prompt?: string;
   reportDirectory: string;
-  storage?: VisionStorage;
+  repository?: Pick<VisionRepository, "findByMediaPk" | "save">;
 };
 
 type PreviewEntry = {
@@ -44,7 +45,7 @@ type ResolvePreviewEntryOptions = {
   reportDirectory: string;
   resultByPreviewUrl: Map<string, VisionResult>;
   sourcesByMediaPk: Map<string, string[]>;
-  storage: VisionStorage;
+  repository: Pick<VisionRepository, "findByMediaPk" | "save">;
   total: number;
 };
 
@@ -130,8 +131,7 @@ function skipPreviewEntry(options: {
 
 function getPreviewValidation(options: ResolvePreviewEntryOptions): PreviewValidation {
   const cachedPath = options.cachedImages.storyPreviewPathByUrl.get(options.entry.source);
-  const cacheKey = getMediaCacheKey(options.entry.mediaPk);
-  const itemLabel = cachedPath ?? `vision/${cacheKey}`;
+  const itemLabel = cachedPath ?? `vision/${options.entry.mediaPk}`;
 
   if (cachedPath === undefined || cachedPath.length === 0) {
     return { itemLabel, message: "missing", ok: false, warning: "no cached preview" };
@@ -166,7 +166,7 @@ async function resolvePreviewEntry(options: ResolvePreviewEntryOptions): Promise
       model: options.model,
       prompt: options.prompt,
       reportDirectory: options.reportDirectory,
-      storage: options.storage,
+      repository: options.repository,
     },
   );
   setResultForPreviewSources(
@@ -203,7 +203,7 @@ export async function resolveVisionForReport(
       reportDirectory: options.reportDirectory,
       resultByPreviewUrl,
       sourcesByMediaPk: entrySet.sourcesByMediaPk,
-      storage: options.storage ?? visionStorage,
+      repository: options.repository ?? visionRepository,
       total: entrySet.uniquePreviewEntries.length,
     });
   }

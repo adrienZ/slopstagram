@@ -1,6 +1,5 @@
-import { getMediaCacheKey } from "./lib/cache-service.ts";
 import { getLargestVersion } from "./lib/parser-service.ts";
-import { NO_ACCESSIBILITY_CAPTION, NO_APPLE_CAPTION } from "./lib/report-constants.ts";
+import { NO_ACCESSIBILITY_CAPTION } from "./lib/report-constants.ts";
 import { STORY_MEDIA_TYPES } from "./lib/types.ts";
 import type {
   StoryItem,
@@ -55,8 +54,6 @@ function createManifestStory(
   const failureIndex = failureByMediaPk.get(mediaPk);
 
   return {
-    apple_caption: NO_APPLE_CAPTION,
-    cache_key: getMediaCacheKey(mediaPk),
     ...(failureIndex === undefined ? {} : { failure_index: failureIndex }),
     ig_caption: getAccessibilityCaption(mediaPk, cachedItems),
     locations: getStoryLocations(mediaPk, cachedItems),
@@ -90,7 +87,6 @@ function appendOutputUserStories(group: StoryOutputUser, user: StoryManifestReel
   group.reel_ids.push(user.reel_id);
   group.stories.push(
     ...user.stories.map((story) => ({
-      apple_caption: story.apple_caption,
       ...(story.failure_index === undefined ? {} : { failure_index: story.failure_index }),
       ig_caption: story.ig_caption,
       locations: story.locations,

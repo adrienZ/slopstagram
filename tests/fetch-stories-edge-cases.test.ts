@@ -8,7 +8,6 @@ import {
   fixedNow,
   noSleep,
   reel,
-  resolveAppleCaption,
   response,
   storyItem,
   storyItemWithStickers,
@@ -33,7 +32,6 @@ describe("fetchStoriesManifest edge cases", () => {
     );
 
     const report = await fetchStoriesManifest(client, {
-      appleCaptionResolver: resolveAppleCaption,
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
@@ -114,7 +112,6 @@ describe("fetchStoriesManifest edge cases", () => {
     );
 
     const report = await fetchStoriesManifest(client, {
-      appleCaptionResolver: resolveAppleCaption,
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
@@ -157,7 +154,6 @@ describe("fetchStoriesManifest edge cases", () => {
     );
 
     const report = await fetchStoriesManifest(client, {
-      appleCaptionResolver: resolveAppleCaption,
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
@@ -178,7 +174,6 @@ describe("fetchStoriesManifest edge cases", () => {
     );
 
     const report = await fetchStoriesManifest(client, {
-      appleCaptionResolver: resolveAppleCaption,
       logger,
       maxAttempts: 1,
       now: fixedNow,
@@ -221,7 +216,6 @@ describe("fetchStoriesManifest edge cases", () => {
     );
 
     const report = await fetchStoriesManifest(client, {
-      appleCaptionResolver: resolveAppleCaption,
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
@@ -247,7 +241,6 @@ describe("fetchStoriesManifest edge cases", () => {
     );
 
     const report = await fetchStoriesManifest(client, {
-      appleCaptionResolver: resolveAppleCaption,
       logger: createCapturingLogger(),
       maxAttempts: 1,
       now: fixedNow,

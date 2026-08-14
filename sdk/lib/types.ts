@@ -107,8 +107,6 @@ export type StoryFetchFailure = {
 };
 
 export type StoryManifestItem = {
-  apple_caption: string;
-  cache_key: string;
   failure_index?: number;
   ig_caption: string;
   locations: string[];
@@ -130,7 +128,6 @@ export type StoryManifestReel = {
 };
 
 type StoryOutputItem = {
-  apple_caption: string;
   failure_index?: number;
   ig_caption: string;
   locations: string[];
@@ -158,21 +155,19 @@ type StoryFetchCounts = {
   stories: number;
 };
 
-export type AppleCaptionCacheEntry = string;
-
 export type VisionResult = {
   text: string;
   visual: string;
 };
 
-export type VisionCacheEntry = {
+export type VisionEntry = {
   model: string;
   prompt_hash: string;
   result: VisionResult;
 };
 
-export type UserSummaryCacheEntry = {
-  prompt: string;
+export type UserSummaryEntry = {
+  prompt_hash: string;
   result: string;
   source_hash: string;
   user_key: string;
@@ -198,15 +193,9 @@ export type StoriesManifestReport = {
 
 export type StoryStorage = Storage<StoryItem>;
 type ReportStorage = Storage<StoriesManifestReport>;
-export type AppleCaptionStorage = Storage<AppleCaptionCacheEntry>;
 export type ImageCacheStorage = Storage<Record<string, never>>;
-export type VisionStorage = Storage<VisionCacheEntry>;
-export type UserSummaryStorage = Storage<UserSummaryCacheEntry>;
 export type CacheStorageSet = {
-  appleCaptionsStorage: AppleCaptionStorage;
   imageCacheStorage: ImageCacheStorage;
-  userSummaryStorage: UserSummaryStorage;
-  visionStorage: VisionStorage;
   reportsStorage: ReportStorage;
   storiesStorage: StoryStorage;
 };

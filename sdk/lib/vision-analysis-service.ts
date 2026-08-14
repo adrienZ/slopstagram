@@ -1,9 +1,9 @@
 import { createHash } from "node:crypto";
 import type { Ollama as VisionSdk } from "ollama";
 import { z } from "zod";
-import { getMediaCacheKey } from "./cache-service.ts";
+import type { VisionRepository } from "../entities/vision.ts";
 import type { Logger } from "./logging-service.ts";
-import type { VisionCacheEntry, VisionResult, VisionStorage } from "./types.ts";
+import type { VisionEntry, VisionResult } from "./types.ts";
 
 export const VISION_MODEL = "minicpm-v4.6";
 export const VISION_PROMPT = `
@@ -37,20 +37,18 @@ export type ResolvedVisionOptions = {
   model: string;
   prompt: string;
   reportDirectory: string;
-  storage: VisionStorage;
+  repository: Pick<VisionRepository, "findByMediaPk" | "save">;
 };
 
-function isUsableVisionCacheEntry(
-  cachedEntry: VisionCacheEntry | null | undefined,
+function isUsableVisionEntry(
+  entry: VisionEntry | null | undefined,
   options: {
     model: string;
     promptHash: string;
   },
-): cachedEntry is VisionCacheEntry {
+): entry is VisionEntry {
   return Boolean(
-    cachedEntry &&
-    cachedEntry.model === options.model &&
-    cachedEntry.prompt_hash === options.promptHash,
+    entry && entry.model === options.model && entry.prompt_hash === options.promptHash,
   );
 }
 
@@ -111,7 +109,7 @@ function parseVisionResponse(value: unknown): VisionResult {
   };
 }
 
-function normalizeCachedResult(value: unknown): VisionResult | null {
+function normalizeStoredResult(value: unknown): VisionResult | null {
   if (typeof value === "string") {
     return {
       text: "",
@@ -163,15 +161,14 @@ function getVisionHttpStatus(error: unknown): number | null {
   return null;
 }
 
-async function getCachedVisionResult(
-  cacheKey: string,
+async function getStoredVisionResult(
   promptHash: string,
   options: ResolvedVisionOptions,
 ): Promise<VisionResult | null> {
-  const cachedEntry = await options.storage.getItem(cacheKey);
+  const entry = await options.repository.findByMediaPk(options.mediaPk);
 
-  if (isUsableVisionCacheEntry(cachedEntry, { ...options, promptHash })) {
-    return normalizeCachedResult(cachedEntry.result);
+  if (isUsableVisionEntry(entry, { ...options, promptHash })) {
+    return normalizeStoredResult(entry.result);
   }
 
   return null;
@@ -179,7 +176,6 @@ async function getCachedVisionResult(
 
 async function runVisionRequest(
   imagePath: string,
-  cacheKey: string,
   promptHash: string,
   options: ResolvedVisionOptions,
 ): Promise<VisionResult> {
@@ -195,7 +191,7 @@ async function runVisionRequest(
   });
   const result = parseVisionResponse(payload.response);
 
-  await options.storage.setItem(cacheKey, {
+  await options.repository.save(options.mediaPk, {
     model: options.model,
     prompt_hash: promptHash,
     result,
@@ -232,16 +228,15 @@ export async function analyzeImage(
   imagePath: string,
   options: ResolvedVisionOptions,
 ): Promise<VisionResult> {
-  const cacheKey = getMediaCacheKey(options.mediaPk);
   const promptHash = getPromptHash(options.prompt);
-  const cachedResult = await getCachedVisionResult(cacheKey, promptHash, options);
+  const storedResult = await getStoredVisionResult(promptHash, options);
 
-  if (cachedResult) {
-    return cachedResult;
+  if (storedResult) {
+    return storedResult;
   }
 
   try {
-    return await runVisionRequest(imagePath, cacheKey, promptHash, options);
+    return await runVisionRequest(imagePath, promptHash, options);
   } catch (error) {
     return handleVisionError(error, itemLabel, options);
   }

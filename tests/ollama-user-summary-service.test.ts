@@ -1,19 +1,17 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { z } from "zod";
-import { getUserSummaryCacheKey } from "../sdk/lib/cache-service.ts";
 import {
   USER_SUMMARY_MODEL,
+  USER_SUMMARY_PROMPT,
   USER_SUMMARY_UNAVAILABLE,
   getUserSummaryModel,
+  getUserSummaryPromptHash,
 } from "../sdk/lib/user-summary-core-service.ts";
 import { resolveUserSummariesForReport } from "../sdk/lib/user-summary-resolver-service.ts";
 import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
-import {
-  createMemoryCacheStorages,
-  createMockLogger,
-  createSummaryReport,
-} from "./mock-helpers.ts";
+import { createMockLogger, createSummaryReport } from "./mock-helpers.ts";
+import { createUserSummaryRepositoryAdapter } from "./repository-adapters.ts";
 
 const UserSummaryRequestSchema = z.object({
   format: z
@@ -50,10 +48,11 @@ describe("resolveUserSummariesForReport", () => {
     }
   });
 
-  test("caches successful user summaries", async () => {
-    const { userSummaryStorage: UserSummaryStorage } = createMemoryCacheStorages();
+  test("reuses successful user summaries from the repository", async () => {
+    const repository = createUserSummaryRepositoryAdapter();
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
+    assert.equal(userKey, "summaryuser");
     const visionByPreviewUrl = new Map([
       [
         "https://example.com/story.jpg",
@@ -87,7 +86,7 @@ describe("resolveUserSummariesForReport", () => {
           }),
         );
       },
-      storage: UserSummaryStorage,
+      repository: repository,
     });
     const second = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
@@ -96,7 +95,7 @@ describe("resolveUserSummariesForReport", () => {
         runCount += 1;
         return Promise.resolve("should not be used");
       },
-      storage: UserSummaryStorage,
+      repository: repository,
     });
 
     assert.equal(
@@ -110,8 +109,8 @@ describe("resolveUserSummariesForReport", () => {
     assert.equal(runCount, 1);
   });
 
-  test("uses the Ollama model in the cache identity", async () => {
-    const { userSummaryStorage } = createMemoryCacheStorages();
+  test("uses the Ollama model in the repository identity", async () => {
+    const repository = createUserSummaryRepositoryAdapter();
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
     let runCount = 0;
@@ -122,7 +121,7 @@ describe("resolveUserSummariesForReport", () => {
         runCount += 1;
         return Promise.resolve(JSON.stringify({ summary: "default model summary" }));
       },
-      storage: userSummaryStorage,
+      repository: repository,
     });
     const second = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
@@ -131,7 +130,7 @@ describe("resolveUserSummariesForReport", () => {
         runCount += 1;
         return Promise.resolve(JSON.stringify({ summary: "custom model summary" }));
       },
-      storage: userSummaryStorage,
+      repository: repository,
     });
 
     assert.equal(USER_SUMMARY_MODEL, getUserSummaryModel());
@@ -141,7 +140,7 @@ describe("resolveUserSummariesForReport", () => {
   });
 
   test("runs the default Ollama client with qwen3.5", async () => {
-    const { userSummaryStorage } = createMemoryCacheStorages();
+    const repository = createUserSummaryRepositoryAdapter();
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
 
@@ -176,14 +175,14 @@ describe("resolveUserSummariesForReport", () => {
           ),
         );
       },
-      storage: userSummaryStorage,
+      repository: repository,
     });
 
     assert.equal(summaries.get(userKey), "sdk summary");
   });
 
   test("returns fallback text when user summary fails", async () => {
-    const { userSummaryStorage } = createMemoryCacheStorages();
+    const repository = createUserSummaryRepositoryAdapter();
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
 
@@ -192,41 +191,38 @@ describe("resolveUserSummariesForReport", () => {
       runUserSummary: () => {
         return Promise.reject(new Error("not signed in"));
       },
-      storage: userSummaryStorage,
+      repository: repository,
     });
 
     assert.equal(summaries.get(userKey), USER_SUMMARY_UNAVAILABLE);
   });
 
-  test("uses report fallback and does not cache empty user summary responses", async () => {
-    const { userSummaryStorage } = createMemoryCacheStorages();
+  test("uses report fallback and does not store empty user summary responses", async () => {
+    const repository = createUserSummaryRepositoryAdapter();
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
 
     const summaries = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
       runUserSummary: () => Promise.resolve(""),
-      storage: userSummaryStorage,
+      repository: repository,
     });
-    const keys = await userSummaryStorage.getKeys();
-
     assert.equal(
       summaries.get(userKey),
       "Summary User a partagé 1 story. Éléments visibles: location:Paris; Paris Market, 10 Rue Food, Paris.",
     );
-    assert.deepEqual(keys, []);
+    assert.equal(repository.entries.size, 0);
   });
 
-  test("ignores cached unavailable summaries and regenerates them", async () => {
-    const { userSummaryStorage } = createMemoryCacheStorages();
-    const sourceHash = "bad-cache-key";
-    const cacheKey = getUserSummaryCacheKey(sourceHash);
+  test("ignores stored unavailable summaries and regenerates them", async () => {
+    const repository = createUserSummaryRepositoryAdapter();
+    const sourceHash = "unavailable-source-hash";
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
     let runCount = 0;
 
-    await userSummaryStorage.setItem(cacheKey, {
-      prompt: "Résume cet utilisateur Instagram en 2 ou 3 phrases en français.",
+    repository.entries.set(sourceHash, {
+      prompt_hash: getUserSummaryPromptHash(USER_SUMMARY_PROMPT),
       result: USER_SUMMARY_UNAVAILABLE,
       source_hash: sourceHash,
       user_key: userKey,
@@ -238,12 +234,9 @@ describe("resolveUserSummariesForReport", () => {
         runCount += 1;
         return Promise.resolve(JSON.stringify({ summary: "regenerated summary" }));
       },
-      storage: {
-        ...userSummaryStorage,
-        getItem: (key: string) =>
-          key === getUserSummaryCacheKey(sourceHash)
-            ? userSummaryStorage.getItem(key)
-            : userSummaryStorage.getItem(cacheKey),
+      repository: {
+        findBySourceHash: () => Promise.resolve(repository.entries.get(sourceHash) ?? null),
+        save: repository.save,
       },
     });
 

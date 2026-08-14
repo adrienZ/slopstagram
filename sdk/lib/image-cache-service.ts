@@ -179,6 +179,36 @@ function mapStoryPreviewPathsByUrl(
   return storyPreviewPathByUrl;
 }
 
+function replaceReportImageSources(
+  report: StoriesManifestReport,
+  cachedImages: CachedReportImages,
+): void {
+  for (const user of [...report.manifest.users, ...report.output.users]) {
+    const profileSource = user.profile_pic_url?.trim();
+    user.profile_pic_url =
+      profileSource !== undefined && profileSource.length > 0
+        ? (cachedImages.profilePicPathByUrl.get(profileSource) ?? null)
+        : null;
+
+    for (const story of user.stories) {
+      const previewSource = story.preview_image_url?.trim();
+      story.preview_image_url =
+        previewSource !== undefined && previewSource.length > 0
+          ? (cachedImages.storyPreviewPathByUrl.get(previewSource) ?? null)
+          : null;
+    }
+  }
+}
+
+function addLocalPathAliases(cachedImages: CachedReportImages): void {
+  for (const imagePath of cachedImages.profilePicPathByUrl.values()) {
+    cachedImages.profilePicPathByUrl.set(imagePath, imagePath);
+  }
+  for (const imagePath of cachedImages.storyPreviewPathByUrl.values()) {
+    cachedImages.storyPreviewPathByUrl.set(imagePath, imagePath);
+  }
+}
+
 export async function cacheReportImages(
   report: StoriesManifestReport,
   options: CacheReportImagesOptions,
@@ -191,11 +221,15 @@ export async function cacheReportImages(
     resolvedOptions,
   );
 
-  return {
+  const cachedImages = {
     profilePicPathByUrl,
     storyPreviewPathByUrl: mapStoryPreviewPathsByUrl(
       storyPreviewEntries,
       storyPreviewPathByMediaPk,
     ),
   };
+  replaceReportImageSources(report, cachedImages);
+  addLocalPathAliases(cachedImages);
+
+  return cachedImages;
 }

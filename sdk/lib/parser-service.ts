@@ -208,6 +208,6 @@ export async function parseStoryManifestReport(
     throw new Error(`Story with pk ${pk} was not fetched successfully`);
   }
 
-  const item = await getCachedStoryItem(manifestItem.cache_key, storage);
+  const item = await getCachedStoryItem(`${manifestItem.media_pk}.json`, storage);
   return parseStoryItem(item);
 }

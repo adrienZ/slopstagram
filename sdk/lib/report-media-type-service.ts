@@ -1,4 +1,4 @@
-import { getMediaCacheKey, storiesStorage } from "./cache-service.ts";
+import { storiesStorage } from "./cache-service.ts";
 import { StoryItemSchema } from "./story-schemas.ts";
 import {
   STORY_MEDIA_TYPES,
@@ -44,11 +44,9 @@ export async function backfillReportStoryMediaTypes(
   storage: StoryStorage = storiesStorage,
 ): Promise<void> {
   const mediaTypeByPk = new Map<string, StoryMediaType>();
-  const cacheKeyByPk = new Map<string, string>();
 
   for (const user of report.manifest.users) {
     for (const story of user.stories) {
-      cacheKeyByPk.set(story.media_pk, story.cache_key);
       const manifestMediaType = formatStoryMediaType(story.media_type);
 
       if (manifestMediaType) {
@@ -57,7 +55,7 @@ export async function backfillReportStoryMediaTypes(
         continue;
       }
 
-      const cachedMediaType = await getCachedStoryMediaType(story.cache_key, storage);
+      const cachedMediaType = await getCachedStoryMediaType(`${story.media_pk}.json`, storage);
       if (cachedMediaType) {
         mediaTypeByPk.set(story.media_pk, cachedMediaType);
         story.media_type = cachedMediaType;
@@ -80,10 +78,7 @@ export async function backfillReportStoryMediaTypes(
         continue;
       }
 
-      const cachedMediaType = await getCachedStoryMediaType(
-        cacheKeyByPk.get(story.media_pk) ?? getMediaCacheKey(story.media_pk),
-        storage,
-      );
+      const cachedMediaType = await getCachedStoryMediaType(`${story.media_pk}.json`, storage);
       story.media_type = cachedMediaType;
       if (cachedMediaType) mediaTypeByPk.set(story.media_pk, cachedMediaType);
     }

@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 import process from "node:process";
-import { appleCaptionsStorage, getMediaCacheKey } from "./cache-service.ts";
+import type { AppleVisionRepository } from "../entities/apple-vision.ts";
+import { appleVisionRepository } from "./entity-repository-service.ts";
 import { NO_APPLE_CAPTION } from "./report-constants.ts";
-import type { AppleCaptionStorage } from "./types.ts";
 
 type AppleOcrRunner = (image: Uint8Array) => Promise<string>;
 type ReadImage = (imagePath: string) => Promise<Uint8Array>;
@@ -15,7 +15,7 @@ export type RecognizeAppleCaptionOptions = {
   platform?: NodeJS.Platform;
   readImage?: ReadImage;
   runAppleOcr?: AppleOcrRunner;
-  storage?: AppleCaptionStorage;
+  repository?: Pick<AppleVisionRepository, "findByMediaPk" | "save">;
 };
 
 function normalizeOcrText(value: string): string {
@@ -52,17 +52,16 @@ export async function recognizeAppleCaption(
     platform = process.platform,
     readImage: read = (path) => readFile(path),
     runAppleOcr: runOcr = (image) => runAppleOcr(image, platform),
-    storage = appleCaptionsStorage,
+    repository = appleVisionRepository,
   }: RecognizeAppleCaptionOptions = {},
 ): Promise<string> {
-  const cacheKey = getMediaCacheKey(mediaPk);
-  const cachedCaption = await storage.getItem(cacheKey);
+  const storedCaption = await repository.findByMediaPk(mediaPk);
 
-  if (cachedCaption !== null && cachedCaption.length > 0) {
-    return cachedCaption;
+  if (storedCaption !== null && storedCaption.length > 0) {
+    return storedCaption;
   }
 
   const caption = normalizeOcrText(await runOcr(await read(imagePath)));
-  await storage.setItem(cacheKey, caption);
+  await repository.save(mediaPk, caption);
   return caption;
 }

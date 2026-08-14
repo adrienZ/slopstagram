@@ -31,7 +31,6 @@ function createUncachedReport(cacheKey: string): StoriesManifestReport {
           reel_ids: [`${cacheKey}-reel`],
           stories: [
             {
-              apple_caption: "",
               ig_caption: "",
               locations: [],
               media_pk: `${cacheKey}-story-that-does-not-exist`,

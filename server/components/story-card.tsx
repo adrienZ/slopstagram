@@ -81,7 +81,7 @@ export function StoryCard({ count, position, story, user, userName, viewModel }:
         data-story-stickers={story.stickers.join(", ")}
         data-story-locations={story.locations.join("\n")}
         data-story-ig-caption={story.ig_caption.trim()}
-        data-story-apple-caption={story.apple_caption.trim()}
+        data-story-apple-caption={viewModel.appleCaptionByMediaPk.get(story.media_pk)?.trim() ?? ""}
         data-story-vision-ocr={vision?.text ?? ""}
         data-story-vision-description={vision?.visual ?? ""}
         aria-label={`Ouvrir aperçu ${story.media_pk}`}

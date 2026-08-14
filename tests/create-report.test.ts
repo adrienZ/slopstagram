@@ -42,7 +42,7 @@ function createFixtureReport(): StoriesManifestReport {
   };
 }
 
-test("createReport prepares every cache before persisting the report", async () => {
+test("createReport resolves entities before persisting the report", async () => {
   const report = createFixtureReport();
   const calls: string[] = [];
   const cachedImages = {
@@ -56,6 +56,9 @@ test("createReport prepares every cache before persisting the report", async () 
 
   const result = await createReport({
     dependencies: {
+      migrateDatabase: () => {
+        calls.push("migrate-database");
+      },
       fetchStories: (_args, options) => {
         calls.push("fetch-stories");
         if (options === undefined) {
@@ -70,18 +73,18 @@ test("createReport prepares every cache before persisting the report", async () 
         return Promise.resolve(cachedImages);
       },
       resolveAppleCaptionsForReport: (_report, images, options) => {
-        calls.push("cache-apple-captions");
+        calls.push("resolve-apple-captions");
         assert.equal(images, cachedImages);
         assert.equal(typeof options.logger.progress, "function");
         return Promise.resolve();
       },
       resolveVisionForReport: (_report, images) => {
-        calls.push("cache-vision");
+        calls.push("resolve-vision");
         assert.equal(images, cachedImages);
         return Promise.resolve(visionByPreviewUrl);
       },
       resolveUserSummariesForReport: (_report, options) => {
-        calls.push("cache-summaries");
+        calls.push("resolve-summaries");
         assert.equal(typeof options.logger.progress, "function");
         assert.equal(options.visionByPreviewUrl, visionByPreviewUrl);
         return Promise.resolve(new Map());
@@ -98,11 +101,12 @@ test("createReport prepares every cache before persisting the report", async () 
   });
 
   assert.deepEqual(calls, [
+    "migrate-database",
     "fetch-stories",
     "cache-images",
-    "cache-apple-captions",
-    "cache-vision",
-    "cache-summaries",
+    "resolve-apple-captions",
+    "resolve-vision",
+    "resolve-summaries",
     "save-report",
   ]);
   assert.equal(savedKey, result.outputFileName);

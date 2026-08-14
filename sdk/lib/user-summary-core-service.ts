@@ -3,8 +3,9 @@ import process from "node:process";
 import { clearTimeout, setTimeout } from "node:timers";
 import { Ollama, type Fetch as OllamaFetch } from "ollama";
 import { z } from "zod";
+import type { UserSummaryRepository } from "../entities/user-summary.ts";
 import type { Logger } from "./logging-service.ts";
-import type { UserSummaryStorage, VisionResult, StoryOutputUser } from "./types.ts";
+import type { StoryOutputUser, VisionResult } from "./types.ts";
 
 type HttpFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -42,12 +43,20 @@ export type ResolveUserSummariesOptions = {
   model?: string;
   visionByPreviewUrl?: Map<string, VisionResult>;
   runUserSummary?: RunUserSummary;
-  storage?: UserSummaryStorage;
+  repository?: Pick<UserSummaryRepository, "findBySourceHash" | "save">;
   timeoutMs?: number;
 };
 
-export function getUserSummarySourceHash(value: unknown): string {
+export function getUserSummarySourceHash(value: {
+  model: string;
+  prompt: string;
+  userKey: string;
+}): string {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
+}
+
+export function getUserSummaryPromptHash(prompt: string): string {
+  return createHash("sha256").update(prompt).digest("hex");
 }
 
 function normalizeSummary(value: string): string {

@@ -1,4 +1,5 @@
-import { getUserSummaryCacheKey, userSummaryStorage } from "./cache-service.ts";
+import type { UserSummaryRepository } from "../entities/user-summary.ts";
+import { userSummaryRepository } from "./entity-repository-service.ts";
 import { getReportUserKey } from "./report-user-key-service.ts";
 import type { StoriesManifestReport, StoryOutputUser, VisionResult } from "./types.ts";
 import {
@@ -6,6 +7,7 @@ import {
   createFallbackSummary,
   createSummaryPrompt,
   getHttpStatus,
+  getUserSummaryPromptHash,
   getUserSummarySourceHash,
   isUsableSummary,
   parseSummaryResponse,
@@ -21,9 +23,11 @@ type ResolvedUserSummaryOptions = {
   logger: NonNullable<ResolveUserSummariesOptions["logger"]>;
   model: string;
   runUserSummary: RunUserSummary;
-  storage: NonNullable<ResolveUserSummariesOptions["storage"]>;
+  repository: Pick<UserSummaryRepository, "findBySourceHash" | "save">;
   visionByPreviewUrl?: Map<string, VisionResult>;
 };
+
+const USER_SUMMARY_PROMPT_HASH = getUserSummaryPromptHash(USER_SUMMARY_PROMPT);
 
 function resolveOptions(options: ResolveUserSummariesOptions): ResolvedUserSummaryOptions {
   const model = options.model ?? USER_SUMMARY_MODEL;
@@ -40,25 +44,24 @@ function resolveOptions(options: ResolveUserSummariesOptions): ResolvedUserSumma
         model,
         timeoutMs,
       }),
-    storage: options.storage ?? userSummaryStorage,
+    repository: options.repository ?? userSummaryRepository,
     visionByPreviewUrl: options.visionByPreviewUrl,
   };
 }
 
-async function getCachedSummary(options: {
-  cacheKey: string;
+async function getStoredSummary(options: {
   sourceHash: string;
   userKey: string;
   resolved: ResolvedUserSummaryOptions;
 }): Promise<string | null> {
-  const cachedEntry = await options.resolved.storage.getItem(options.cacheKey);
+  const entry = await options.resolved.repository.findBySourceHash(options.sourceHash);
 
   if (
-    cachedEntry?.source_hash === options.sourceHash &&
-    cachedEntry.prompt === USER_SUMMARY_PROMPT &&
-    cachedEntry.user_key === options.userKey
+    entry?.source_hash === options.sourceHash &&
+    entry.prompt_hash === USER_SUMMARY_PROMPT_HASH &&
+    entry.user_key === options.userKey
   ) {
-    return isUsableSummary(cachedEntry.result) ? cachedEntry.result : null;
+    return isUsableSummary(entry.result) ? entry.result : null;
   }
 
   return null;
@@ -67,7 +70,6 @@ async function getCachedSummary(options: {
 async function runSummaryForUser(
   user: StoryOutputUser,
   userKey: string,
-  cacheKey: string,
   sourceHash: string,
   resolved: ResolvedUserSummaryOptions,
 ): Promise<string> {
@@ -82,8 +84,8 @@ async function runSummaryForUser(
     return createFallbackSummary(user, resolved.visionByPreviewUrl);
   }
 
-  await resolved.storage.setItem(cacheKey, {
-    prompt: USER_SUMMARY_PROMPT,
+  await resolved.repository.save({
+    prompt_hash: USER_SUMMARY_PROMPT_HASH,
     result,
     source_hash: sourceHash,
     user_key: userKey,
@@ -100,15 +102,14 @@ async function resolveUserSummary(
   const userKey = getReportUserKey(user);
   const prompt = createSummaryPrompt(user, resolved.visionByPreviewUrl);
   const sourceHash = getUserSummarySourceHash({ model: resolved.model, prompt, userKey });
-  const cacheKey = getUserSummaryCacheKey(sourceHash);
-  const cachedSummary = await getCachedSummary({ cacheKey, sourceHash, userKey, resolved });
+  const storedSummary = await getStoredSummary({ sourceHash, userKey, resolved });
 
-  if (cachedSummary !== null) {
+  if (storedSummary !== null) {
     resolved.logger.progress(current, total, {
       prefix: "user-summary",
-      suffix: `cache hit ${userKey}`,
+      suffix: `repository hit ${userKey}`,
     });
-    return [userKey, cachedSummary];
+    return [userKey, storedSummary];
   }
 
   try {
@@ -116,7 +117,7 @@ async function resolveUserSummary(
       prefix: "user-summary",
       suffix: `summarizing ${userKey}`,
     });
-    const summary = await runSummaryForUser(user, userKey, cacheKey, sourceHash, resolved);
+    const summary = await runSummaryForUser(user, userKey, sourceHash, resolved);
     resolved.logger.progress(current, total, {
       prefix: "user-summary",
       suffix: `summarized ${userKey}`,

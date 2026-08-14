@@ -66,8 +66,6 @@ export const StoryReelSchema = z
 const StoryManifestItemStatusSchema = z.enum(["ok", "failed"]);
 const StoryMediaTypeSchema = z.enum([STORY_MEDIA_TYPES.IMAGE, STORY_MEDIA_TYPES.VIDEO]);
 const StoryManifestItemSchema = z.object({
-  apple_caption: z.string(),
-  cache_key: z.string(),
   failure_index: z.number().optional(),
   ig_caption: z.string(),
   locations: z.array(z.string()),
@@ -86,9 +84,7 @@ const StoryManifestReelSchema = z.object({
   stories: z.array(StoryManifestItemSchema),
   username: z.string(),
 });
-const StoryOutputItemSchema = StoryManifestItemSchema.omit({
-  cache_key: true,
-});
+const StoryOutputItemSchema = StoryManifestItemSchema;
 const StoryOutputUserSchema = z.object({
   full_name: z.string().nullable(),
   profile_pic_url: z.string().nullable(),

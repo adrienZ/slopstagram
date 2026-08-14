@@ -189,8 +189,6 @@ export function createClient(
 
 export const fixedNow = () => new Date("2026-07-26T00:00:00.000Z");
 export const noSleep = () => Promise.resolve();
-export const resolveAppleCaption = (story: StoryItem) => Promise.resolve(`apple:${story.pk}`);
-
 function createSingleStoryReport(options: {
   appleCaption: string;
   fullName: string;
@@ -237,7 +235,6 @@ function createReportUser(
     reel_ids: ["r1"],
     stories: [
       {
-        apple_caption: options.appleCaption,
         ig_caption: options.igCaption,
         locations: options.locations,
         media_pk: "story-pk",

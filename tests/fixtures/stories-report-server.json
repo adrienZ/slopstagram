@@ -34,16 +34,15 @@
     "users": [
       {
         "full_name": "Html \"User\"",
-        "profile_pic_url": "https://example.com/avatar.jpg",
+        "profile_pic_url": "../images/avatars/avatar.jpg",
         "reel_ids": ["r1"],
         "stories": [
           {
-            "apple_caption": "apple <text>",
             "ig_caption": "Instagram caption",
             "locations": ["Cafe Example, Paris"],
             "media_type": "image",
             "media_pk": "story-pk-1",
-            "preview_image_url": "https://example.com/story.jpg",
+            "preview_image_url": "../images/story-previews/story-pk-1.jpg",
             "stickers": ["link:A & B"],
             "status": "ok"
           }

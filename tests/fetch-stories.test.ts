@@ -9,7 +9,6 @@ import {
   fixedNow,
   noSleep,
   reel,
-  resolveAppleCaption,
   response,
   storyItem,
   storyItemWithStickers,
@@ -34,7 +33,6 @@ describe("fetchStoriesManifest", () => {
     );
 
     const report = await fetchStoriesManifest(client, {
-      appleCaptionResolver: resolveAppleCaption,
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
@@ -52,7 +50,6 @@ describe("fetchStoriesManifest", () => {
     });
     assert.deepEqual(
       report.manifest.users.map((user) => ({
-        apple_caption: user.stories[0]?.apple_caption,
         ig_caption: user.stories[0]?.ig_caption,
         locations: user.stories[0]?.locations,
         media_type: user.stories[0]?.media_type,
@@ -64,7 +61,6 @@ describe("fetchStoriesManifest", () => {
       })),
       [
         {
-          apple_caption: "apple:m1",
           ig_caption: "N/A",
           locations: [],
           media_type: "image",
@@ -75,7 +71,6 @@ describe("fetchStoriesManifest", () => {
           username: "one",
         },
         {
-          apple_caption: "apple:m2",
           ig_caption: "N/A",
           locations: [],
           media_type: "image",
@@ -94,7 +89,6 @@ describe("fetchStoriesManifest", () => {
         reel_ids: ["r1"],
         stories: [
           {
-            apple_caption: "apple:m1",
             ig_caption: "N/A",
             locations: [],
             media_type: "image",
@@ -112,7 +106,6 @@ describe("fetchStoriesManifest", () => {
         reel_ids: ["r2"],
         stories: [
           {
-            apple_caption: "apple:m2",
             ig_caption: "N/A",
             locations: [],
             media_type: "image",
@@ -146,7 +139,6 @@ describe("fetchStoriesManifest", () => {
     );
 
     const report = await fetchStoriesManifest(client, {
-      appleCaptionResolver: resolveAppleCaption,
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
@@ -157,7 +149,6 @@ describe("fetchStoriesManifest", () => {
     assert.equal(await storiesStorage.hasItem(getMediaCacheKey("m2")), true);
     assert.deepEqual(
       report.manifest.users.map((user) => ({
-        apple_caption: user.stories[0]?.apple_caption,
         ig_caption: user.stories[0]?.ig_caption,
         locations: user.stories[0]?.locations,
         status: user.stories[0]?.status,
@@ -165,14 +156,12 @@ describe("fetchStoriesManifest", () => {
       })),
       [
         {
-          apple_caption: "apple:m1",
           ig_caption: "Cached image caption",
           locations: [],
           status: "ok",
           stickers: [],
         },
         {
-          apple_caption: "apple:m2",
           ig_caption: "N/A",
           locations: [],
           status: "ok",
@@ -232,7 +221,6 @@ describe("fetchStoriesManifest", () => {
     );
 
     const report = await fetchStoriesManifest(client, {
-      appleCaptionResolver: resolveAppleCaption,
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
@@ -246,7 +234,6 @@ describe("fetchStoriesManifest", () => {
         reel_ids: ["r1", "r2"],
         stories: [
           {
-            apple_caption: "apple:m1",
             ig_caption: "First story caption",
             locations: [],
             media_type: "image",
@@ -256,7 +243,6 @@ describe("fetchStoriesManifest", () => {
             status: "ok",
           },
           {
-            apple_caption: "apple:m2",
             ig_caption: "Second story caption",
             locations: [],
             media_type: "image",

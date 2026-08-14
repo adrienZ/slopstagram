@@ -1,14 +1,12 @@
-import { createHash } from "node:crypto";
 import {
-  getMediaCacheKey,
-  getUserSummaryCacheKey,
-  imageCacheStorage,
-  userSummaryStorage,
-  visionStorage,
-} from "../sdk/lib/cache-service.ts";
+  appleVisionRepository,
+  userSummaryRepository,
+  visionRepository,
+} from "../sdk/lib/entity-repository-service.ts";
 import type { CachedReportImages } from "../sdk/lib/image-cache-service.ts";
 import {
   createSummaryPrompt,
+  getUserSummaryPromptHash,
   getUserSummarySourceHash,
   USER_SUMMARY_MODEL,
   USER_SUMMARY_PROMPT,
@@ -20,6 +18,7 @@ import type { StoriesManifestReport, VisionResult } from "../sdk/lib/types.ts";
 import { VISION_MODEL, VISION_PROMPT } from "../sdk/lib/vision-analysis-service.ts";
 
 export type ReportViewModel = {
+  appleCaptionByMediaPk: Map<string, string>;
   cachedImages: CachedReportImages;
   report: StoriesManifestReport;
   userSummaryByUserKey: Map<string, string>;
@@ -30,19 +29,12 @@ function getHash(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
-function getImageRawKey(namespace: string, imageKey: string): string {
-  return `${namespace}/${imageKey}.jpg`;
+function getLocalImageUrl(imagePath: string): string | null {
+  const marker = "../images/";
+  return imagePath.startsWith(marker) ? `/media/${imagePath.slice(marker.length)}` : null;
 }
 
-async function getCachedImagePath(rawKey: string): Promise<string | null> {
-  if (!(await imageCacheStorage.hasItem(rawKey))) {
-    return null;
-  }
-
-  return `/media/${rawKey}`;
-}
-
-async function readCachedImages(report: StoriesManifestReport): Promise<CachedReportImages> {
+function readCachedImages(report: StoriesManifestReport): CachedReportImages {
   const profilePicPathByUrl = new Map<string, string>();
   const storyPreviewPathByUrl = new Map<string, string>();
 
@@ -53,9 +45,7 @@ async function readCachedImages(report: StoriesManifestReport): Promise<CachedRe
       profilePicUrl.length > 0 &&
       !profilePicPathByUrl.has(profilePicUrl)
     ) {
-      const cachedPath = await getCachedImagePath(
-        getImageRawKey("avatars", getHash(profilePicUrl)),
-      );
+      const cachedPath = getLocalImageUrl(profilePicUrl);
       if (cachedPath !== null && cachedPath.length > 0) {
         profilePicPathByUrl.set(profilePicUrl, cachedPath);
       }
@@ -71,7 +61,7 @@ async function readCachedImages(report: StoriesManifestReport): Promise<CachedRe
         continue;
       }
 
-      const cachedPath = await getCachedImagePath(getImageRawKey("story-previews", story.media_pk));
+      const cachedPath = getLocalImageUrl(previewUrl);
       if (cachedPath !== null && cachedPath.length > 0) {
         storyPreviewPathByUrl.set(previewUrl, cachedPath);
       }
@@ -79,22 +69,6 @@ async function readCachedImages(report: StoriesManifestReport): Promise<CachedRe
   }
 
   return { profilePicPathByUrl, storyPreviewPathByUrl };
-}
-
-function normalizeCachedVisionResult(value: unknown): VisionResult | null {
-  if (typeof value === "string") return { text: "", visual: value.trim() };
-  if (
-    value !== null &&
-    value !== undefined &&
-    typeof value === "object" &&
-    "text" in value &&
-    "visual" in value &&
-    typeof value.text === "string" &&
-    typeof value.visual === "string"
-  ) {
-    return { text: value.text.trim(), visual: value.visual.trim() };
-  }
-  return null;
 }
 
 async function readCachedVision(
@@ -115,15 +89,12 @@ async function readCachedVision(
         continue;
       }
 
-      const entry = await visionStorage.getItem(getMediaCacheKey(story.media_pk));
+      const entry = await visionRepository.findByMediaPk(story.media_pk);
       if (!entry || entry.model !== VISION_MODEL || entry.prompt_hash !== promptHash) {
         continue;
       }
 
-      const result = normalizeCachedVisionResult(entry.result);
-      if (result !== null) {
-        visionByPreviewUrl.set(previewUrl, result);
-      }
+      visionByPreviewUrl.set(previewUrl, entry.result);
     }
   }
 
@@ -144,12 +115,12 @@ async function readCachedUserSummaries(
       prompt,
       userKey,
     });
-    const entry = await userSummaryStorage.getItem(getUserSummaryCacheKey(sourceHash));
+    const entry = await userSummaryRepository.findBySourceHash(sourceHash);
     const result = entry?.result.trim();
 
     if (
       entry?.source_hash === sourceHash &&
-      entry.prompt === USER_SUMMARY_PROMPT &&
+      entry.prompt_hash === getUserSummaryPromptHash(USER_SUMMARY_PROMPT) &&
       entry.user_key === userKey &&
       result !== undefined &&
       result.length > 0 &&
@@ -162,13 +133,35 @@ async function readCachedUserSummaries(
   return userSummaryByUserKey;
 }
 
+async function readAppleCaptions(report: StoriesManifestReport): Promise<Map<string, string>> {
+  const captionByMediaPk = new Map<string, string>();
+  const mediaPks = new Set(
+    report.output.users.flatMap((user) => user.stories.map((story) => story.media_pk)),
+  );
+
+  for (const mediaPk of mediaPks) {
+    const caption = await appleVisionRepository.findByMediaPk(mediaPk);
+    if (caption !== null) captionByMediaPk.set(mediaPk, caption);
+  }
+
+  return captionByMediaPk;
+}
+
 export async function createReportViewModel(
   report: StoriesManifestReport,
 ): Promise<ReportViewModel> {
   await backfillReportStoryMediaTypes(report);
-  const cachedImages = await readCachedImages(report);
+  const cachedImages = readCachedImages(report);
   const visionByPreviewUrl = await readCachedVision(report, cachedImages);
   const userSummaryByUserKey = await readCachedUserSummaries(report, visionByPreviewUrl);
+  const appleCaptionByMediaPk = await readAppleCaptions(report);
 
-  return { cachedImages, report, userSummaryByUserKey, visionByPreviewUrl };
+  return {
+    appleCaptionByMediaPk,
+    cachedImages,
+    report,
+    userSummaryByUserKey,
+    visionByPreviewUrl,
+  };
 }
+import { createHash } from "node:crypto";

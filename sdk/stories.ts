@@ -4,12 +4,10 @@ import { createLogger } from "./lib/logging-service.ts";
 import { closeInstagramSession, openInstagramSession } from "./lib/playwright-service.ts";
 import type {
   StoriesManifestReport,
-  StoryItem,
   StoryManifestReel,
   StoryStorage,
   StoryTrayEntry,
 } from "./lib/types.ts";
-import { populateAppleCaptions } from "./story-apple-caption-service.ts";
 import { createInstagramClient } from "./story-client-service.ts";
 import { getCachedStoryItem } from "./story-cache-service.ts";
 import {
@@ -184,30 +182,6 @@ async function fetchMissingStoriesForReport(options: {
   });
 }
 
-async function createCaptionedManifestUsers(options: {
-  appleCaptionResolver?: (story: StoryItem) => Promise<string>;
-  logger: Logger;
-  state: ReturnType<typeof createFetchState>;
-  tray: StoryTrayEntry[];
-}): Promise<StoryManifestReel[]> {
-  const manifestUsers = createManifestUsers(
-    options.tray,
-    options.state.cachedItems,
-    options.state.failureByMediaPk,
-  );
-  if (!options.appleCaptionResolver) {
-    return manifestUsers;
-  }
-
-  await populateAppleCaptions(
-    manifestUsers,
-    options.state.cachedItems,
-    options.appleCaptionResolver,
-    options.logger,
-  );
-  return manifestUsers;
-}
-
 export async function fetchStoriesManifest(
   client: InstagramClient,
   options: FetchStoriesManifestOptions = {},
@@ -239,12 +213,11 @@ export async function fetchStoriesManifest(
     tray: trayJson.tray,
   });
 
-  const manifestUsers = await createCaptionedManifestUsers({
-    appleCaptionResolver: options.appleCaptionResolver,
-    logger,
-    state,
-    tray: trayJson.tray,
-  });
+  const manifestUsers = createManifestUsers(
+    trayJson.tray,
+    state.cachedItems,
+    state.failureByMediaPk,
+  );
   logger.info(
     `manifest complete: cached=${state.cacheHitPks.size} fetched=${state.fetchedMediaPks.size} failed=${state.failureByMediaPk.size}`,
   );

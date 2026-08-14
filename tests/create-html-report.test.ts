@@ -18,8 +18,6 @@ function createLegacyReport(): StoriesManifestReport {
           reel_id: "r1",
           stories: [
             {
-              apple_caption: "apple image",
-              cache_key: getMediaCacheKey("story-pk-1"),
               ig_caption: "ig image",
               locations: [],
               media_pk: "story-pk-1",
@@ -28,8 +26,6 @@ function createLegacyReport(): StoriesManifestReport {
               status: "ok",
             },
             {
-              apple_caption: "apple video",
-              cache_key: getMediaCacheKey("story-pk-2"),
               ig_caption: "ig video",
               locations: [],
               media_pk: "story-pk-2",
@@ -65,7 +61,6 @@ function createLegacyReport(): StoriesManifestReport {
           reel_ids: ["r1"],
           stories: [
             {
-              apple_caption: "apple image",
               ig_caption: "ig image",
               locations: [],
               media_pk: "story-pk-1",
@@ -74,7 +69,6 @@ function createLegacyReport(): StoriesManifestReport {
               status: "ok",
             },
             {
-              apple_caption: "apple video",
               ig_caption: "ig video",
               locations: [],
               media_pk: "story-pk-2",

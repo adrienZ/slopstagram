@@ -5,12 +5,12 @@ import { z } from "zod";
 import { VISION_SERVER_NOT_RUNNING } from "../sdk/lib/vision-analysis-service.ts";
 import { resolveVisionForReport } from "../sdk/lib/vision-report-service.ts";
 import {
-  createMemoryCacheStorages,
   createMockLogger,
   createVisionReport,
   previewSource,
   withReportImage,
 } from "./mock-helpers.ts";
+import { createVisionRepositoryAdapter } from "./repository-adapters.ts";
 
 const VisionJsonSchemaPropertySchema = z.object({
   description: z.string().optional(),
@@ -31,8 +31,8 @@ const VisionRequestBodySchema = z.object({
 });
 
 describe("resolveVisionForReport", () => {
-  test("caches successful vision responses", async () => {
-    const { visionStorage } = createMemoryCacheStorages();
+  test("reuses successful vision responses from the repository", async () => {
+    const repository = createVisionRepositoryAdapter();
     let fetchCount = 0;
 
     await withReportImage(async (reportDirectory, cachedImages) => {
@@ -79,13 +79,13 @@ describe("resolveVisionForReport", () => {
         fetchVision,
         logger: createMockLogger(),
         reportDirectory,
-        storage: visionStorage,
+        repository: repository,
       });
       const second = await resolveVisionForReport(createVisionReport(), cachedImages, {
         fetchVision,
         logger: createMockLogger(),
         reportDirectory,
-        storage: visionStorage,
+        repository: repository,
       });
 
       assert.deepEqual(first.get(previewSource), {
@@ -96,17 +96,16 @@ describe("resolveVisionForReport", () => {
         text: "readable text",
         visual: "cat on a counter\nwith a cup",
       });
-      const cacheKeys = await visionStorage.getKeys();
-      assert.equal(cacheKeys.length, 1);
-      const cacheEntry = await visionStorage.getItem(cacheKeys[0]);
-      assert.equal("prompt" in (cacheEntry ?? {}), false);
-      assert.equal(typeof cacheEntry?.prompt_hash, "string");
+      assert.equal(repository.entries.size, 1);
+      const entry = repository.entries.get("story-pk");
+      assert.equal("prompt" in (entry ?? {}), false);
+      assert.equal(typeof entry?.prompt_hash, "string");
       assert.equal(fetchCount, 1);
     });
   });
 
-  test("reuses cached responses for the same story when the signed CDN URL changes", async () => {
-    const { visionStorage } = createMemoryCacheStorages();
+  test("reuses stored responses for the same story when the signed CDN URL changes", async () => {
+    const repository = createVisionRepositoryAdapter();
     const firstPreviewSource = "https://example.com/story-preview.webp?signature=old";
     const secondPreviewSource = "https://example.com/story-preview.webp?signature=new";
     let fetchCount = 0;
@@ -138,7 +137,7 @@ describe("resolveVisionForReport", () => {
             fetchVision,
             logger: createMockLogger(),
             reportDirectory,
-            storage: visionStorage,
+            repository: repository,
           },
         );
         const second = await resolveVisionForReport(
@@ -148,7 +147,7 @@ describe("resolveVisionForReport", () => {
             fetchVision,
             logger: createMockLogger(),
             reportDirectory,
-            storage: visionStorage,
+            repository: repository,
           },
         );
 
@@ -170,7 +169,7 @@ describe("resolveVisionForReport", () => {
   });
 
   test("returns server-down text when vision is unavailable", async () => {
-    const { visionStorage } = createMemoryCacheStorages();
+    const repository = createVisionRepositoryAdapter();
 
     await withReportImage(async (reportDirectory, cachedImages) => {
       const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
@@ -179,7 +178,7 @@ describe("resolveVisionForReport", () => {
         },
         logger: createMockLogger(),
         reportDirectory,
-        storage: visionStorage,
+        repository: repository,
       });
 
       assert.deepEqual(result.get(previewSource), {
@@ -190,7 +189,7 @@ describe("resolveVisionForReport", () => {
   });
 
   test("normalizes missing OCR text to an empty string", async () => {
-    const { visionStorage } = createMemoryCacheStorages();
+    const repository = createVisionRepositoryAdapter();
 
     await withReportImage(async (reportDirectory, cachedImages) => {
       const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
@@ -210,7 +209,7 @@ describe("resolveVisionForReport", () => {
           ),
         logger: createMockLogger(),
         reportDirectory,
-        storage: visionStorage,
+        repository: repository,
       });
 
       assert.deepEqual(result.get(previewSource), {
@@ -221,7 +220,7 @@ describe("resolveVisionForReport", () => {
   });
 
   test("joins multiple OCR text entries", async () => {
-    const { visionStorage } = createMemoryCacheStorages();
+    const repository = createVisionRepositoryAdapter();
 
     await withReportImage(async (reportDirectory, cachedImages) => {
       const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
@@ -241,7 +240,7 @@ describe("resolveVisionForReport", () => {
           ),
         logger: createMockLogger(),
         reportDirectory,
-        storage: visionStorage,
+        repository: repository,
       });
 
       assert.deepEqual(result.get(previewSource), {
@@ -252,7 +251,7 @@ describe("resolveVisionForReport", () => {
   });
 
   test("returns short per-image text for non-server failures", async () => {
-    const { visionStorage } = createMemoryCacheStorages();
+    const repository = createVisionRepositoryAdapter();
 
     await withReportImage(async (reportDirectory, cachedImages) => {
       const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
@@ -265,7 +264,7 @@ describe("resolveVisionForReport", () => {
           ),
         logger: createMockLogger(),
         reportDirectory,
-        storage: visionStorage,
+        repository: repository,
       });
 
       assert.deepEqual(result.get(previewSource), {

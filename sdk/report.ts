@@ -1,5 +1,6 @@
 import { resolve } from "node:path";
 import { resolveAppleCaptionsForReport } from "./apple-caption-report-service.ts";
+import { migrateDatabase } from "./database/migrate.ts";
 import { BASE_CACHE_DIR, REPORTS_STORAGE_DIR, reportsStorage } from "./lib/cache-service.ts";
 import { cacheReportImages } from "./lib/image-cache-service.ts";
 import { type Logger } from "./lib/logging-service.ts";
@@ -12,6 +13,7 @@ import pkg from "../package.json" with { type: "json" };
 type CreateReportDependencies = {
   cacheReportImages: typeof cacheReportImages;
   fetchStories: typeof fetchStories;
+  migrateDatabase: typeof migrateDatabase;
   resolveAppleCaptionsForReport: typeof resolveAppleCaptionsForReport;
   resolveUserSummariesForReport: typeof resolveUserSummariesForReport;
   resolveVisionForReport: typeof resolveVisionForReport;
@@ -34,6 +36,7 @@ export type CreateReportResult = {
 const defaultDependencies: CreateReportDependencies = {
   cacheReportImages,
   fetchStories,
+  migrateDatabase,
   resolveAppleCaptionsForReport,
   resolveUserSummariesForReport: resolveUserSummariesForReport,
   resolveVisionForReport,
@@ -77,6 +80,7 @@ export async function createReport(options: CreateReportOptions): Promise<Create
   const logger = options.logger;
 
   logger.box(`${pkg.name} - report ${outputFileName}`);
+  dependencies.migrateDatabase();
   const report = await dependencies.fetchStories(options.args ?? [], {
     logger,
     reportName: outputFileName,

@@ -30,16 +30,19 @@ mockModule("../server/report-cache.ts", {
 mockModule("../server/report-view-model.ts", {
   createReportViewModel: (fixture: StoriesManifestReport): Promise<ReportViewModel> =>
     Promise.resolve({
+      appleCaptionByMediaPk: new Map([["story-pk-1", "apple <text>"]]),
       cachedImages: {
-        profilePicPathByUrl: new Map([["https://example.com/avatar.jpg", "/media/avatar.jpg"]]),
-        storyPreviewPathByUrl: new Map([["https://example.com/story.jpg", "/media/story.jpg"]]),
+        profilePicPathByUrl: new Map([["../images/avatars/avatar.jpg", "/media/avatar.jpg"]]),
+        storyPreviewPathByUrl: new Map([
+          ["../images/story-previews/story-pk-1.jpg", "/media/story.jpg"],
+        ]),
       },
       report: fixture,
       userSummaryByUserKey: new Map([
         [getReportUserKey(fixture.output.users[0]), "A text-focused story with extracted details."],
       ]),
       visionByPreviewUrl: new Map([
-        ["https://example.com/story.jpg", { text: "OCR text", visual: "Vision text" }],
+        ["../images/story-previews/story-pk-1.jpg", { text: "OCR text", visual: "Vision text" }],
       ]),
     }),
 });

@@ -79,7 +79,16 @@ npm run start
 
 Open <http://localhost:5173/>.
 
-Runtime reports, cached media, and the Playwright profile are stored in `./data`.
+## Development
+
+Runtime reports, cached media, the SQLite databases, and the Playwright profile are stored
+in `./data`.
+Database migrations are applied automatically when the Nitro server starts and before report
+creation. After changing an entity schema, generate a migration with:
+
+```bash
+npm run db:generate
+```
 
 ## Runtime rationale
 

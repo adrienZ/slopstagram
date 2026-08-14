@@ -50,7 +50,6 @@ function createReport(
           reel_ids: ["r1"],
           stories: [
             {
-              apple_caption: "apple text",
               ig_caption: "ig text",
               locations: [],
               media_pk: "story-pk",
@@ -76,7 +75,8 @@ describe("cacheReportImages", () => {
     let fetchCount = 0;
     let convertCount = 0;
 
-    const cachedImages = await cacheReportImages(createReport(source, previewSource), {
+    const report = createReport(source, previewSource);
+    const cachedImages = await cacheReportImages(report, {
       convertToJpeg: (body) => {
         convertCount += 1;
         return Promise.resolve(Buffer.from(`jpeg:${body.toString()}`));
@@ -107,6 +107,11 @@ describe("cacheReportImages", () => {
     );
     assert.equal(
       cachedImages.storyPreviewPathByUrl.get(previewSource),
+      `../images/story-previews/${previewKey}.jpg`,
+    );
+    assert.equal(report.output.users[0]?.profile_pic_url, `../images/avatars/${imageHash}.jpg`);
+    assert.equal(
+      report.output.users[0]?.stories[0]?.preview_image_url,
       `../images/story-previews/${previewKey}.jpg`,
     );
     assert.deepEqual(

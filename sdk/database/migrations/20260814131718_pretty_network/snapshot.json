@@ -1,0 +1,152 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "ad458cc2-8075-4b35-bd6b-bc3a4eba5832",
+  "prevIds": ["1023217d-a4c7-4219-b0cd-5fd66ecd4f44"],
+  "ddl": [
+    {
+      "name": "apple_vision",
+      "entityType": "tables"
+    },
+    {
+      "name": "user_summaries",
+      "entityType": "tables"
+    },
+    {
+      "name": "vision",
+      "entityType": "tables"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "caption",
+      "entityType": "columns",
+      "table": "apple_vision"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "mediaPk",
+      "entityType": "columns",
+      "table": "apple_vision"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "promptHash",
+      "entityType": "columns",
+      "table": "user_summaries"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "result",
+      "entityType": "columns",
+      "table": "user_summaries"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "sourceHash",
+      "entityType": "columns",
+      "table": "user_summaries"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "userKey",
+      "entityType": "columns",
+      "table": "user_summaries"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "mediaPk",
+      "entityType": "columns",
+      "table": "vision"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "model",
+      "entityType": "columns",
+      "table": "vision"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "promptHash",
+      "entityType": "columns",
+      "table": "vision"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "text",
+      "entityType": "columns",
+      "table": "vision"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "visual",
+      "entityType": "columns",
+      "table": "vision"
+    },
+    {
+      "columns": ["mediaPk"],
+      "nameExplicit": false,
+      "name": "apple_vision_pk",
+      "table": "apple_vision",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["sourceHash"],
+      "nameExplicit": false,
+      "name": "user_summaries_pk",
+      "table": "user_summaries",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["mediaPk"],
+      "nameExplicit": false,
+      "name": "vision_pk",
+      "table": "vision",
+      "entityType": "pks"
+    }
+  ],
+  "renames": ["user_summaries.prompt->user_summaries.promptHash"]
+}

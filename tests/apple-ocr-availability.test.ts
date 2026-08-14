@@ -50,8 +50,6 @@ test("reads cached local previews and stops after the first unavailable result",
   );
 
   assert.deepEqual(resolvedPaths, [path.resolve("/cache/images/story-previews/m1.jpg")]);
-  assert.equal(report.manifest.users[0]?.stories[0]?.apple_caption, "N/A");
-  assert.equal(report.manifest.users[0]?.stories[1]?.apple_caption, "N/A");
   assert.ok(
     logger.messages.some((message) =>
       message.includes(
@@ -61,7 +59,7 @@ test("reads cached local previews and stops after the first unavailable result",
   );
 });
 
-test("writes local OCR captions to both report views", async () => {
+test("resolves local OCR without embedding it in the report", async () => {
   const { storiesStorage } = createMemoryCacheStorages();
   const logger = createCapturingLogger();
   const client = createClient(
@@ -93,7 +91,5 @@ test("writes local OCR captions to both report views", async () => {
       },
     },
   );
-
-  assert.equal(report.manifest.users[0]?.stories[0]?.apple_caption, "local OCR text");
-  assert.equal(report.output.users[0]?.stories[0]?.apple_caption, "local OCR text");
+  assert.equal("apple_caption" in report.output.users[0].stories[0], false);
 });

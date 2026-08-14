@@ -38,24 +38,6 @@ function getLocalStoryPreviews(
   return [...new Map(previews.map((preview) => [preview.mediaPk, preview])).values()];
 }
 
-function setAppleCaption(report: StoriesManifestReport, mediaPk: string, caption: string): void {
-  for (const user of report.manifest.users) {
-    for (const story of user.stories) {
-      if (story.media_pk === mediaPk) {
-        story.apple_caption = caption;
-      }
-    }
-  }
-
-  for (const user of report.output.users) {
-    for (const story of user.stories) {
-      if (story.media_pk === mediaPk) {
-        story.apple_caption = caption;
-      }
-    }
-  }
-}
-
 export async function resolveAppleCaptionsForReport(
   report: StoriesManifestReport,
   cachedImages: CachedReportImages,
@@ -70,8 +52,7 @@ export async function resolveAppleCaptionsForReport(
         prefix: "apple-captions",
         suffix: preview.mediaPk,
       });
-      const caption = await resolver(preview.mediaPk, preview.imagePath);
-      setAppleCaption(report, preview.mediaPk, caption);
+      await resolver(preview.mediaPk, preview.imagePath);
     } catch (error: unknown) {
       if (isAppleOcrUnavailable(error)) {
         options.logger.warn(`apple ocr unavailable; skipping remaining captions: ${error.message}`);
