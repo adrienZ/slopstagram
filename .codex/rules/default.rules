@@ -1,5 +1,5 @@
 prefix_rule(
-    pattern = ["bun", "exec", "--no-install", "-p", "@playwright/cli", "--"],
+    pattern = ["npm", "exec", "--no-install", "-p", "@playwright/cli", "--"],
     decision = "allow",
     justification = "Allow the project-standard local Playwright CLI wrapper from AGENTS.md.",
 )

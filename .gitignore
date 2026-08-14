@@ -9,8 +9,8 @@ reporter.xml
 .output/
 .nitro
 
-# .data
-.data/*
-!.data/.gitkeep
+# data
+data/*
+.data/.gitkeep
 
 public

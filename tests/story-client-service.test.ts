@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "bun:test";
+import { test } from "node:test";
 import type { InstagramSession } from "../sdk/lib/playwright-service.ts";
 import { createInstagramClient } from "../sdk/story-client-service.ts";
 

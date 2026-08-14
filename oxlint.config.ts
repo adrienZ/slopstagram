@@ -22,7 +22,7 @@ export default defineConfig({
       "error",
       {
         allowForKnownSafeCalls: [
-          { from: "package", name: ["describe", "test"], package: "bun:test" },
+          { from: "package", name: ["describe", "test"], package: "node:test" },
         ],
       },
     ],

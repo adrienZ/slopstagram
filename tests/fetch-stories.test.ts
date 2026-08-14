@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, test } from "bun:test";
+import { describe, test } from "node:test";
 import { fetchStoriesManifest } from "../sdk/stories.ts";
 import { getMediaCacheKey } from "../sdk/lib/cache-service.ts";
 import {

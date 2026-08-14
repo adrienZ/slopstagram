@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import path from "node:path";
-import { test } from "bun:test";
+import { test } from "node:test";
 import { resolveAppleCaptionsForReport } from "../sdk/apple-caption-report-service.ts";
 import { AppleOcrUnavailableError } from "../sdk/lib/apple-ocr-service.ts";
 import { fetchStoriesManifest } from "../sdk/stories.ts";

@@ -2,7 +2,8 @@ import { createLogger, type Logger } from "./lib/logging-service.ts";
 import { runWarmCacheJob, type WarmCacheJobResult, type WarmCachePayload } from "./warm-cache.ts";
 
 export const WARM_CACHE_QUEUE_NAME = "warm-cache";
-export const WARM_CACHE_CRON_PATTERN = "* * * * *";
+const EVERY_HOUR = "0 * * * *";
+export const WARM_CACHE_CRON_PATTERN = EVERY_HOUR;
 export const WARM_CACHE_DATA_PATH = "./.data/bunqueue.db";
 
 interface WarmCacheQueue {

@@ -6,6 +6,7 @@ export default {
   },
 
   storage: {
-    dataPath: "./.data/bunqueue.db",
+    // hardcoded value expected by dashboard UI
+    dataPath: "./data/bunq.db",
   },
 } satisfies BunqueueConfig;

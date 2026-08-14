@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 import assert from "node:assert/strict";
-import { describe, test } from "bun:test";
+import { describe, test } from "node:test";
 import { z } from "zod";
 import { VISION_SERVER_NOT_RUNNING } from "../sdk/lib/vision-analysis-service.ts";
 import { resolveVisionForReport } from "../sdk/lib/vision-report-service.ts";

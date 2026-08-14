@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { test } from "bun:test";
+import { test } from "node:test";
 import { URL } from "node:url";
 import { H3, defineEventHandler } from "nitro/h3";
 import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";

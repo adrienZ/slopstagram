@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 import assert from "node:assert/strict";
-import { describe, test } from "bun:test";
+import { describe, test } from "node:test";
 import { createCacheStorages, getMediaCacheKey } from "../sdk/lib/cache-service.ts";
 import { recognizeAppleCaption } from "../sdk/lib/apple-ocr-service.ts";
 import { createMemoryStorage } from "./memory-storage.ts";

@@ -2,7 +2,7 @@ import { Buffer } from "node:buffer";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import path from "node:path";
-import { describe, test } from "bun:test";
+import { describe, test } from "node:test";
 import { TextEncoder } from "node:util";
 import { createCacheStorages } from "../sdk/lib/cache-service.ts";
 import { cacheReportImages } from "../sdk/lib/image-cache-service.ts";

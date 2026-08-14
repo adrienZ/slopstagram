@@ -11,6 +11,7 @@
     "auth": "tsx scripts/auth.ts",
     "fetch:stories": "tsx scripts/fetch-stories.ts",
     "create:report": "tsx scripts/create-report.ts",
+    "bunqueue:server": "bunqueue start",
     "start": "bun --bun vite dev --port 5173",
     "build": "bun --bun vite build",
     "lint": "bun --bun oxlint",

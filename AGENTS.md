@@ -2,7 +2,7 @@
 
 This project is using [Bun](https://bun.sh/docs) in order to use [bunqueue](https://bunqueue.dev).
 
-You can discover the CLI tool using`bunx bunqueue --help`.
+You can discover the CLI tool using`bunx bunqueue --help`. The bunqueue server is already started when the nitro server plugin.
 
 Humans can explore the [dashboard](https://egeominotti.github.io/bunqueue-dashboard/docs/quickstart) running `bunx bunqueue-dashboard`
 
