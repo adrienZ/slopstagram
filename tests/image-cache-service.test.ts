@@ -4,7 +4,11 @@ import { createHash } from "node:crypto";
 import path from "node:path";
 import { describe, test } from "node:test";
 import { TextEncoder } from "node:util";
-import { createCacheStorages } from "../sdk/lib/cache-service.ts";
+import {
+  BASE_CACHE_DIR,
+  createCacheStorages,
+  REPORTS_STORAGE_DIR,
+} from "../sdk/lib/cache-service.ts";
 import { cacheReportImages } from "../sdk/lib/image-cache-service.ts";
 import type { StoriesManifestReport } from "../sdk/lib/types.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
@@ -91,7 +95,7 @@ describe("cacheReportImages", () => {
         });
       },
       logger: createMockLogger(),
-      reportDirectory: path.resolve("public/reports"),
+      reportDirectory: path.resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR),
       storage: imageCacheStorage,
     });
 
@@ -126,7 +130,7 @@ describe("cacheReportImages", () => {
     const cachedImages = await cacheReportImages(createReport(source), {
       fetchImage: () => Promise.reject(new Error("should not fetch")),
       logger: createMockLogger(),
-      reportDirectory: path.resolve("public/reports"),
+      reportDirectory: path.resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR),
       storage: imageCacheStorage,
     });
 
@@ -151,7 +155,7 @@ describe("cacheReportImages", () => {
     const cachedImages = await cacheReportImages(createReport(source, previewSource), {
       fetchImage: () => Promise.reject(new Error("should not fetch")),
       logger: createMockLogger(),
-      reportDirectory: path.resolve("public/reports"),
+      reportDirectory: path.resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR),
       storage: imageCacheStorage,
     });
 
@@ -189,7 +193,7 @@ describe("cacheReportImages", () => {
         });
       },
       logger: createMockLogger(),
-      reportDirectory: path.resolve("public/reports"),
+      reportDirectory: path.resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR),
       storage: imageCacheStorage,
     };
 

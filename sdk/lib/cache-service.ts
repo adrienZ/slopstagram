@@ -1,5 +1,6 @@
 import { createStorage, prefixStorage, type Storage } from "unstorage";
 import fsDriver from "unstorage/drivers/fs-lite";
+import { APP_CACHE_DIR } from "./app-data-paths.ts";
 import type {
   AppleCaptionCacheEntry,
   CacheStorageSet,
@@ -9,7 +10,7 @@ import type {
   StoryItem,
 } from "./types.ts";
 
-export const BASE_CACHE_DIR = "public";
+export const BASE_CACHE_DIR = APP_CACHE_DIR;
 const APPLE_CAPTIONS_STORAGE_DIR = "apple-captions";
 export const IMAGES_STORAGE_DIR = "images";
 const USER_SUMMARIES_STORAGE_DIR = "user-summaries";

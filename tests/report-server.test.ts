@@ -31,8 +31,8 @@ mockModule("../server/report-view-model.ts", {
   createReportViewModel: (fixture: StoriesManifestReport): Promise<ReportViewModel> =>
     Promise.resolve({
       cachedImages: {
-        profilePicPathByUrl: new Map([["https://example.com/avatar.jpg", "/images/avatar.jpg"]]),
-        storyPreviewPathByUrl: new Map([["https://example.com/story.jpg", "/images/story.jpg"]]),
+        profilePicPathByUrl: new Map([["https://example.com/avatar.jpg", "/media/avatar.jpg"]]),
+        storyPreviewPathByUrl: new Map([["https://example.com/story.jpg", "/media/story.jpg"]]),
       },
       report: fixture,
       userSummaryByUserKey: new Map([
@@ -61,8 +61,8 @@ test("GET /report renders the latest fixture report", async () => {
   assert.match(html, /<h1>Rapport du 26 juillet 2026 à 11:48 UTC\+2<\/h1>/u);
   assert.match(html, /Html &quot;User&quot; \(ranked-second\)/u);
   assert.match(html, /A text-focused story with extracted details\./u);
-  assert.match(html, /src="\/images\/avatar.jpg"/u);
-  assert.match(html, /src="\/images\/story.jpg"/u);
+  assert.match(html, /src="\/media\/avatar.jpg"/u);
+  assert.match(html, /src="\/media\/story.jpg"/u);
   assert.doesNotMatch(html, /src="https?:\/\//u);
   assert.match(
     html,

@@ -39,7 +39,7 @@ async function getCachedImagePath(rawKey: string): Promise<string | null> {
     return null;
   }
 
-  return `/images/${rawKey}`;
+  return `/media/${rawKey}`;
 }
 
 async function readCachedImages(report: StoriesManifestReport): Promise<CachedReportImages> {

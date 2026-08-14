@@ -11,6 +11,6 @@ reporter.xml
 
 # data
 data/*
-.data/.gitkeep
+!data/.gitkeep
 
 public

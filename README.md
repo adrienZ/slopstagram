@@ -8,6 +8,12 @@ but its standalone [bunqueue](https://bunqueue.dev/) server still requires
 
 Install [Ollama](https://ollama.com/).
 
+Install the Chromium build used by Playwright:
+
+```bash
+npx playwright install chromium
+```
+
 Install the vision model on every platform:
 
 ```bash
@@ -72,6 +78,8 @@ npm run start
 ```
 
 Open <http://localhost:5173/>.
+
+Runtime reports, cached media, and the Playwright profile are stored in `./data`.
 
 ## Runtime rationale
 
