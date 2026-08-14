@@ -4,7 +4,6 @@ import type { CreateReportResult } from "../sdk/report.ts";
 import {
   startWarmCacheQueue,
   WARM_CACHE_CRON_PATTERN,
-  WARM_CACHE_DATA_PATH,
   WARM_CACHE_QUEUE_NAME,
   type WarmCacheQueueDependencies,
 } from "../sdk/warm-cache-queue.ts";
@@ -93,11 +92,15 @@ test("startWarmCacheQueue schedules and processes warm-cache jobs", async () => 
 
   const runtime = startWarmCacheQueue({
     dependencies: {
-      createQueue(name, options) {
-        calls.push({ arguments: [options], name: `queue:${name}` });
+      createQueue(name) {
+        calls.push({ arguments: [], name: `queue:${name}` });
         return {
           close() {
             calls.push({ arguments: [], name: "queue:close" });
+          },
+          waitUntilReady() {
+            calls.push({ arguments: [], name: "queue:ready" });
+            return Promise.resolve();
           },
           upsertJobScheduler(...arguments_) {
             calls.push({ arguments: arguments_, name: "queue:schedule" });
@@ -117,10 +120,14 @@ test("startWarmCacheQueue schedules and processes warm-cache jobs", async () => 
             workerErrorListener = listener;
             return this;
           },
+          run() {
+            calls.push({ arguments: [], name: "worker:run" });
+          },
+          waitUntilReady() {
+            calls.push({ arguments: [], name: "worker:ready" });
+            return Promise.resolve();
+          },
         };
-      },
-      shutdown() {
-        calls.push({ arguments: [], name: "shutdown" });
       },
     },
     logger: createMockLogger(),
@@ -138,7 +145,7 @@ test("startWarmCacheQueue schedules and processes warm-cache jobs", async () => 
     },
   });
 
-  assert.equal(await runtime.ready, "scheduled");
+  assert.equal(await runtime.ready, undefined);
   assert.ok(processor);
   assert.deepEqual(await processor({ data: { reportArgs: ["--limit", "5"] } }), {
     counts: createReportResult().report.metadata.counts,
@@ -153,34 +160,79 @@ test("startWarmCacheQueue schedules and processes warm-cache jobs", async () => 
   await runtime.close();
   assert.deepEqual(calls, [
     {
-      arguments: [
-        {
-          dataPath: WARM_CACHE_DATA_PATH,
-          defaultJobOptions: {
-            attempts: 3,
-            backoff: { delay: 1_000, type: "exponential" },
-          },
-          embedded: true,
-        },
-      ],
+      arguments: [],
       name: `queue:${WARM_CACHE_QUEUE_NAME}`,
     },
+    {
+      arguments: [{ autorun: false, concurrency: 1 }],
+      name: `worker:${WARM_CACHE_QUEUE_NAME}`,
+    },
+    { arguments: [], name: "queue:ready" },
     {
       arguments: [
         WARM_CACHE_QUEUE_NAME,
         { pattern: WARM_CACHE_CRON_PATTERN },
-        { data: {}, name: WARM_CACHE_QUEUE_NAME },
+        {
+          data: {},
+          name: WARM_CACHE_QUEUE_NAME,
+          opts: {
+            attempts: 3,
+            backoff: { delay: 1_000, type: "exponential" },
+          },
+        },
       ],
       name: "queue:schedule",
     },
-    {
-      arguments: [{ concurrency: 1, dataPath: WARM_CACHE_DATA_PATH, embedded: true }],
-      name: `worker:${WARM_CACHE_QUEUE_NAME}`,
-    },
+    { arguments: [], name: "worker:run" },
+    { arguments: [], name: "worker:ready" },
     { arguments: [], name: "worker:close" },
     { arguments: [], name: "queue:close" },
-    { arguments: [], name: "shutdown" },
   ]);
+});
+
+test("startWarmCacheQueue retries while the standalone server starts", async () => {
+  let readyAttempts = 0;
+  const calls: string[] = [];
+
+  const runtime = startWarmCacheQueue({
+    dependencies: {
+      createQueue() {
+        return {
+          close() {},
+          waitUntilReady() {
+            readyAttempts += 1;
+            return readyAttempts === 1
+              ? Promise.reject(new Error("server is starting"))
+              : Promise.resolve();
+          },
+          upsertJobScheduler() {
+            calls.push("schedule");
+            return Promise.resolve();
+          },
+        };
+      },
+      createWorker() {
+        return {
+          close: () => Promise.resolve(),
+          on() {
+            return this;
+          },
+          run() {
+            calls.push("worker:run");
+          },
+          waitUntilReady() {
+            calls.push("worker:ready");
+            return Promise.resolve();
+          },
+        };
+      },
+    },
+  });
+
+  await runtime.ready;
+  assert.equal(readyAttempts, 2);
+  assert.deepEqual(calls, ["schedule", "worker:run", "worker:ready"]);
+  await runtime.close();
 });
 
 test("startWarmCacheQueue cleans up when its worker fails to close", async () => {
@@ -194,6 +246,7 @@ test("startWarmCacheQueue cleans up when its worker fails to close", async () =>
           close() {
             calls.push("queue:close");
           },
+          waitUntilReady: () => Promise.resolve(),
           upsertJobScheduler: () => Promise.resolve(),
         };
       },
@@ -206,14 +259,14 @@ test("startWarmCacheQueue cleans up when its worker fails to close", async () =>
           on() {
             return this;
           },
+          run() {},
+          waitUntilReady: () => Promise.resolve(),
         };
-      },
-      shutdown() {
-        calls.push("shutdown");
       },
     },
   });
 
+  await runtime.ready;
   await assert.rejects(runtime.close(), closeFailure);
-  assert.deepEqual(calls, ["worker:close", "queue:close", "shutdown"]);
+  assert.deepEqual(calls, ["worker:close", "queue:close"]);
 });

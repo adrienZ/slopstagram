@@ -7,6 +7,7 @@
       "dependencies": {
         "@opentf/cli-pbar": "^0.7.2",
         "bunqueue": "^2.8.59",
+        "bunqueue-client": "^0.1.9",
         "clsx": "^2.1.1",
         "consola": "^3.4.2",
         "ollama": "^0.6.3",
@@ -472,6 +473,8 @@
     "bun-types": ["bun-types@1.3.14", "", { "dependencies": { "@types/node": "*" } }, "sha512-4N0ig0fEomHt5R0KCFWjovxow98rIoRwKolrYdCcknNwMekCXRnWEUvgu5soYV8QXtVsrUD8B95MBOZGPvr6KQ=="],
 
     "bunqueue": ["bunqueue@2.8.59", "", { "dependencies": { "croner": "10.0.1", "msgpackr": "^1.11.8" }, "peerDependencies": { "@modelcontextprotocol/sdk": "^1.26.0" }, "optionalPeers": ["@modelcontextprotocol/sdk"], "bin": { "bunqueue": "dist/cli/index.js", "bunqueue-mcp": "dist/mcp/index.js" } }, "sha512-qQvN2FIC3tvPXf+/1Avgn5vQU0tWdFGUHHRlnH6RfClLzb8rd3eFDZ43U8cJYluzOOnG/OKkyUlMkArd3MS7xg=="],
+
+    "bunqueue-client": ["bunqueue-client@0.1.9", "", { "dependencies": { "msgpackr": "^1.11.8" } }, "sha512-rj0zF8rkcdCYlFRMOakO9Hi1BVSaRKnoB6cNeO3zXPPpgAXf2tUDVqsom2FT1ztkIb64cO5v+wH3Naawjz0C5g=="],
 
     "chokidar": ["chokidar@5.0.0", "", { "dependencies": { "readdirp": "^5.0.0" } }, "sha512-TQMmc3w+5AxjpL8iIiwebF73dRDF4fBIieAqGn9RGCWaEVwQ6Fb2cGe31Yns0RRIzii5goJ1Y7xbMwo1TxMplw=="],
 

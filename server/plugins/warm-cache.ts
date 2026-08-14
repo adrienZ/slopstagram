@@ -1,10 +1,6 @@
+import { spawn } from "node:child_process";
 import process from "node:process";
-import Bun from "bun";
-import {
-  Queue as UntypedQueue,
-  shutdownManager as untypedShutdownManager,
-  Worker as UntypedWorker,
-} from "bunqueue/client";
+import { Queue, Worker } from "bunqueue-client";
 import { definePlugin } from "nitro";
 import { startWarmCacheQueue, WARM_CACHE_QUEUE_NAME } from "../../sdk/warm-cache-queue.ts";
 
@@ -13,25 +9,33 @@ function toError(error: unknown): Error {
 }
 
 function spawnBunqueueServer(onError: (error: Error) => void) {
-  const server = Bun.spawn([process.execPath, "run", "bunqueue:server"], {
+  const server = spawn("bun", ["run", "bunqueue:server"], {
     cwd: process.cwd(),
     env: process.env,
-    stderr: "inherit",
-    stdout: "inherit",
+    stdio: "inherit",
   });
   let closing = false;
 
-  void server.exited.then((exitCode) => {
-    if (!closing && exitCode !== 0) {
-      onError(new Error(`bunqueue server exited with code ${exitCode}`));
+  server.on("error", onError);
+  server.on("exit", (exitCode, signal) => {
+    if (!closing) {
+      const reason = exitCode === null ? `signal ${signal ?? "unknown"}` : `code ${exitCode}`;
+      onError(new Error(`bunqueue server exited with ${reason}`));
     }
   });
 
   return {
     async close() {
       closing = true;
-      server.kill("SIGTERM");
-      await server.exited;
+      if (server.exitCode !== null || server.signalCode !== null) return;
+
+      await new Promise<void>((resolve, reject) => {
+        server.once("error", reject);
+        server.once("exit", () => {
+          resolve();
+        });
+        server.kill("SIGTERM");
+      });
     },
   };
 }
@@ -44,15 +48,8 @@ export default definePlugin((nitroApp) => {
   const server = spawnBunqueueServer(capturePluginError);
   const runtime = startWarmCacheQueue({
     dependencies: {
-      // Nitro's Bun export condition currently makes these public APIs appear untyped to TS.
-      // oxlint-disable-next-line typescript/no-unsafe-return, typescript/no-unsafe-call
-      createQueue: (name, options) => new UntypedQueue(name, options),
-      // oxlint-disable-next-line typescript/no-unsafe-return, typescript/no-unsafe-call
-      createWorker: (name, processor, options) => new UntypedWorker(name, processor, options),
-      shutdown() {
-        // oxlint-disable-next-line typescript/no-unsafe-call
-        untypedShutdownManager();
-      },
+      createQueue: (name) => new Queue(name),
+      createWorker: (name, processor, options) => new Worker(name, processor, options),
     },
     onError: capturePluginError,
   });
@@ -63,9 +60,16 @@ export default definePlugin((nitroApp) => {
 
   nitroApp.hooks.hook("close", () => {
     const close = async () => {
-      const results = await Promise.allSettled([runtime.close(), server.close()]);
-      for (const result of results) {
-        if (result.status === "rejected") capturePluginError(toError(result.reason));
+      try {
+        await runtime.close();
+      } catch (error) {
+        capturePluginError(toError(error));
+      }
+
+      try {
+        await server.close();
+      } catch (error) {
+        capturePluginError(toError(error));
       }
     };
 

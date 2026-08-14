@@ -4,19 +4,15 @@ This project intentionally uses both Bun and Node.js (mostly for windows).
 
 ## Why Bun
 
-Bun is required because this project runs [bunqueue](https://bunqueue.dev) in
-**embedded mode**. Bunqueue's embedded run inside the same process as the
-Nitro application. engine uses Bun-specific APIs such as `bun:sqlite`, so it cannot run inside a Node.js process.
+The Nitro application uses [bunqueue](https://bunqueue.dev) in **server mode**.
+The Nitro plugin starts a standalone bunqueue process, which exclusively owns
+`./data/bunq.db`, while the queue and worker connect over TCP through
+`bunqueue-client`.
 
-SQLite persistence is independent of embedded mode. Bunqueue can also run in
-**server mode**, where a standalone bunqueue process owns the same persistent
-SQLite database and a Node.js Nitro application connects to it over TCP using
-`bunqueue-client`. Server mode keeps SQLite persistence, retries, scheduled jobs,
-and backup support, but adds a separately supervised process. Therefore:
-
-- One application process with embedded bunqueue requires Bun.
-- Nitro running on Node.js requires bunqueue server mode.
-- Both modes can persist their state in a SQLite file.
+Only the bunqueue server requires Bun because its SQLite engine uses Bun-specific
+APIs such as `bun:sqlite`. Nitro and the TCP client can run on Node.js. Server mode
+keeps SQLite persistence, retries, scheduled jobs, and backup support while
+preventing multiple application processes from opening the database directly.
 
 ## Why `tsx` for Playwright
 

@@ -1,4 +1,4 @@
-import type { BunqueueConfig } from "bunqueue/client";
+import type { BunqueueConfig } from "bunqueue";
 
 export default {
   backup: {
