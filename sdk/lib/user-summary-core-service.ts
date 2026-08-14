@@ -202,9 +202,7 @@ function createTimeoutFetch(fetchOllama: HttpFetch, timeoutMs: number): OllamaFe
     }
   };
 
-  return Object.assign(timeoutFetch, {
-    preconnect: globalThis.fetch.preconnect,
-  });
+  return timeoutFetch;
 }
 
 export function createDefaultOllamaRunner(options: {

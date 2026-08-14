@@ -184,10 +184,7 @@ export async function resolveVisionForReport(
 ): Promise<Map<string, VisionResult>> {
   const host = resolveVisionHost(options.endpoint);
   const client = new VisionSdk({
-    fetch:
-      options.fetchVision === undefined
-        ? undefined
-        : Object.assign(options.fetchVision, { preconnect: globalThis.fetch.preconnect }),
+    fetch: options.fetchVision,
     host,
   });
   const logger = options.logger;

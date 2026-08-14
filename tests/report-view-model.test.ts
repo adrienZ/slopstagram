@@ -50,13 +50,10 @@ function createUncachedReport(cacheKey: string): StoriesManifestReport {
 test("createReportViewModel never fetches external resources on cache misses", async () => {
   const originalFetch = globalThis.fetch;
   let fetchCount = 0;
-  globalThis.fetch = Object.assign(
-    () => {
-      fetchCount += 1;
-      throw new Error("report view model must remain cache-only");
-    },
-    { preconnect: originalFetch.preconnect },
-  );
+  globalThis.fetch = () => {
+    fetchCount += 1;
+    throw new Error("report view model must remain cache-only");
+  };
 
   try {
     const viewModel = await createReportViewModel(createUncachedReport(randomUUID()));

@@ -1,31 +1,20 @@
 # Rationale
 
-This project intentionally uses both Bun and Node.js (mostly for windows).
+## Why do we need Bun?
 
-## Why Bun
+The Nitro application runs on Node.js, but the npm-installed `bunqueue` CLI
+requires Bun. A Nitro plugin launches this CLI as a standalone bunqueue server.
 
-The Nitro application uses [bunqueue](https://bunqueue.dev) in **server mode**.
-The Nitro plugin starts a standalone bunqueue process, which exclusively owns
-`./data/bunq.db`, while the queue and worker connect over TCP through
-`bunqueue-client`.
+The application connects to that server over TCP using `bunqueue-client`, which
+supports Node.js.
 
-Only the bunqueue server requires Bun because its SQLite engine uses Bun-specific
-APIs such as `bun:sqlite`. Nitro and the TCP client can run on Node.js. Server mode
-keeps SQLite persistence, retries, scheduled jobs, and backup support while
-preventing multiple application processes from opening the database directly.
+## Why not use Bun everywhere?
 
-## Why `tsx` for Playwright
-
-The `auth`, `fetch:stories`, and `create:report` entrypoints launch Playwright.
-They run through [`tsx`](https://tsx.is), which executes TypeScript directly on
-Node.js.
+The bunqueue server exclusively owns `./data/bunq.db`, while the Node.js queue
+and worker communicate with it through `bunqueue-client`.
 
 On Windows, launching Playwright's persistent Chromium context from Bun can leave
 the browser on `about:blank` while `launchPersistentContext()` waits indefinitely
 for Chromium's remote-debugging pipe. Running the same entrypoint through Node.js
 works correctly. Using `tsx` keeps the commands cross-platform without requiring a
 build step or spelling out Node loader flags.
-
-<!-- Keep Playwright out of an in-process Bun worker on Windows. If a bunqueue worker
-needs to create a report, it should invoke the `tsx`-backed report entrypoint (or
-delegate to a separate Node.js process) instead of launching Playwright itself. -->

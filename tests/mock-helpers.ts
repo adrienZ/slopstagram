@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { mock } from "bun:test";
+import { mock } from "node:test";
 import path from "node:path";
 import { createConsola } from "consola";
 import { createCacheStorages } from "../sdk/lib/cache-service.ts";
@@ -60,7 +60,9 @@ export function createMemoryCacheStorages(): ReturnType<typeof createCacheStorag
 }
 
 export function mockModule(specifier: string, namedExports: Record<string, unknown>): void {
-  void mock.module(specifier, () => namedExports);
+  // Node 24 does not yet support the replacement `exports` option.
+  // oxlint-disable-next-line typescript/no-deprecated
+  void mock.module(specifier, { namedExports });
 }
 
 export function createVisionReport(source: string = previewSource): StoriesManifestReport {

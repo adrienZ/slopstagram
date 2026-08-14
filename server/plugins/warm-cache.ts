@@ -9,7 +9,7 @@ function toError(error: unknown): Error {
 }
 
 function spawnBunqueueServer(onError: (error: Error) => void) {
-  const server = spawn("bun", ["run", "bunqueue:server"], {
+  const server = spawn("npm", ["run", "bunqueue:server"], {
     cwd: process.cwd(),
     env: process.env,
     stdio: "inherit",

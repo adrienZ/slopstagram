@@ -2,8 +2,9 @@
 
 ## Prerequisites
 
-Install [Bun](https://bun.sh/) 1.3.14 or newer and [Node.js](https://nodejs.org/) 24 or
-newer.
+Install [Node.js](https://nodejs.org/) 24 or newer. The application runs on Node.js,
+but its standalone [bunqueue](https://bunqueue.dev/) server still requires
+[Bun](https://bun.sh/) 1.3.14 or newer.
 
 Install [Ollama](https://ollama.com/).
 
@@ -33,13 +34,13 @@ Apple Silicon and is not available on Windows; the standard variant is the porta
 ## Setup
 
 ```bash
-bun install
+npm install
 ```
 
 Authenticate in a persistent Playwright session:
 
 ```bash
-bun run auth
+npm run auth
 ```
 
 Complete the Instagram login in the opened browser, Then close the browser.
@@ -49,7 +50,7 @@ Complete the Instagram login in the opened browser, Then close the browser.
 Create report:
 
 ```bash
-bun run create:report
+npm run create:report
 ```
 
 ### Report pipeline
@@ -67,13 +68,12 @@ flowchart TD
 View cached reports:
 
 ```bash
-bun run start
+npm run start
 ```
 
 Open <http://localhost:5173/>.
 
 ## Runtime rationale
 
-This project intentionally uses both Bun and Node.js. See
-[RUNTIME-RATIONALE.md](./RUNTIME-RATIONALE.md) for the reasoning and the Windows
-Playwright constraint.
+The Nitro application and scripts run on Node.js. Bun is retained only for the
+standalone bunqueue server. See [RATIONALE.md](./RATIONALE.md) for details.

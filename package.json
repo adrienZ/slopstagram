@@ -7,21 +7,21 @@
   "type": "module",
   "scripts": {
     "prepare": "husky",
-    "postinstall": "bun audit --json > audit.json || true",
+    "postinstall": "npm audit --json > audit.json || true",
     "auth": "tsx scripts/auth.ts",
     "fetch:stories": "tsx scripts/fetch-stories.ts",
     "create:report": "tsx scripts/create-report.ts",
     "bunqueue:server": "bunqueue start",
-    "start": "bun --bun vite dev --port 5173",
-    "build": "bun --bun vite build",
-    "lint": "bun --bun oxlint",
+    "start": "vite dev --port 5173",
+    "build": "vite build",
+    "lint": "oxlint",
     "knip": "knip",
-    "check": "bun run format && bun run lint && bun run knip && bun run test",
-    "check:ci": "bun run format:check && bun run lint && bun run knip && bun run test:reporter",
-    "format": "bun --bun oxfmt",
-    "format:check": "bun --bun oxfmt --check",
-    "test": "bun test --isolate --coverage ./tests",
-    "test:reporter": "bun test --isolate --reporter=junit --reporter-outfile=reporter.xml ./tests || true"
+    "check": "npm run format && npm run lint && npm run knip && npm run test",
+    "check:ci": "npm run format:check && npm run lint && npm run knip && npm run test:reporter",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "test": "node --import tsx --test --experimental-test-module-mocks --experimental-test-coverage tests/*.test.ts",
+    "test:reporter": "node --import tsx --test --experimental-test-module-mocks --test-reporter=junit --test-reporter-destination=reporter.xml tests/*.test.ts"
   },
   "dependencies": {
     "@opentf/cli-pbar": "^0.7.2",
@@ -37,7 +37,6 @@
   },
   "devDependencies": {
     "@playwright/cli": "^0.1.17",
-    "@types/bun": "^1.3.14",
     "@types/node": "^26.1.1",
     "husky": "^9.1.7",
     "knip": "^6.32.1",
@@ -58,7 +57,7 @@
     "*": "oxfmt --no-error-on-unmatched-pattern"
   },
   "engines": {
-    "bun": ">=1.3.14",
     "node": ">=24.0.0"
-  }
+  },
+  "packageManager": "npm@11.6.1"
 }

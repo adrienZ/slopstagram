@@ -1,6 +1,6 @@
-import type { BunqueueConfig } from "bunqueue";
+import { defineConfig } from "bunqueue";
 
-export default {
+export default defineConfig({
   backup: {
     enabled: false,
   },
@@ -9,4 +9,4 @@ export default {
     // hardcoded value expected by dashboard UI
     dataPath: "./data/bunq.db",
   },
-} satisfies BunqueueConfig;
+});
