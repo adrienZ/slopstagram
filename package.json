@@ -22,7 +22,7 @@
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "test": "node --import tsx --test --experimental-test-module-mocks --experimental-test-coverage tests/*.test.ts",
-    "test:reporter": "node --import tsx --test --experimental-test-module-mocks --test-reporter=junit --test-reporter-destination=./reporter.xml tests/*.test.ts"
+    "test:reporter": "node --import tsx --test --experimental-test-module-mocks --test-force-exit --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=./reporter.xml tests/*.test.ts"
   },
   "dependencies": {
     "@opentf/cli-pbar": "^0.7.2",
