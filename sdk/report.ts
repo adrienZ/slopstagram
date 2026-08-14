@@ -3,9 +3,9 @@ import { resolveAppleCaptionsForReport } from "./apple-caption-report-service.ts
 import { BASE_CACHE_DIR, REPORTS_STORAGE_DIR, reportsStorage } from "./lib/cache-service.ts";
 import { cacheReportImages } from "./lib/image-cache-service.ts";
 import { type Logger } from "./lib/logging-service.ts";
-import { resolveUserSummariesForReport } from "./lib/user-summary-service.ts";
 import type { StoriesManifestReport } from "./lib/types.ts";
-import { resolveVisionForReport } from "./lib/vision-service.ts";
+import { resolveUserSummariesForReport } from "./lib/user-summary-resolver-service.ts";
+import { resolveVisionForReport } from "./lib/vision-report-service.ts";
 import { fetchStories } from "./stories.ts";
 import pkg from "../package.json" with { type: "json" };
 

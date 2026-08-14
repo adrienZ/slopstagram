@@ -13,11 +13,11 @@ import {
   USER_SUMMARY_MODEL,
   USER_SUMMARY_PROMPT,
   USER_SUMMARY_UNAVAILABLE,
-} from "../sdk/lib/user-summary-service.ts";
+} from "../sdk/lib/user-summary-core-service.ts";
 import { backfillReportStoryMediaTypes } from "../sdk/lib/report-media-type-service.ts";
 import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
 import type { StoriesManifestReport, VisionResult } from "../sdk/lib/types.ts";
-import { VISION_MODEL, VISION_PROMPT } from "../sdk/lib/vision-service.ts";
+import { VISION_MODEL, VISION_PROMPT } from "../sdk/lib/vision-analysis-service.ts";
 
 export type ReportViewModel = {
   cachedImages: CachedReportImages;

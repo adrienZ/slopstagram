@@ -6,8 +6,8 @@ import {
   USER_SUMMARY_MODEL,
   USER_SUMMARY_UNAVAILABLE,
   getUserSummaryModel,
-  resolveUserSummariesForReport,
-} from "../sdk/lib/user-summary-service.ts";
+} from "../sdk/lib/user-summary-core-service.ts";
+import { resolveUserSummariesForReport } from "../sdk/lib/user-summary-resolver-service.ts";
 import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
 import {
   createMemoryCacheStorages,

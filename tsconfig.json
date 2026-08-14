@@ -17,6 +17,7 @@
     "sdk/**/*.ts",
     "scripts/**/*.ts",
     "scripts/**/*.tsx",
+    "oxlint/**/*.ts",
     "server/**/*.ts",
     "server/**/*.tsx",
     "types/**/*.d.ts",

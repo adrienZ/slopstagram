@@ -8,7 +8,7 @@ import { z } from "zod";
 import {
   VISION_MODEL,
   // VISION_PROMPT,
-} from "../sdk/lib/vision-service.ts";
+} from "../sdk/lib/vision-analysis-service.ts";
 
 const VISION_PROMPT = `
     Describe the image in detail.

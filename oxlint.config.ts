@@ -1,6 +1,7 @@
 import { defineConfig } from "oxlint";
 
 export default defineConfig({
+  jsPlugins: ["./oxlint/plugins/rules/no-barrel-files.ts"],
   options: {
     maxWarnings: 0,
     typeAware: true,
@@ -14,6 +15,8 @@ export default defineConfig({
     // perf: "error",
   },
   rules: {
+    "oxc/no-barrel-file": ["error", { threshold: 0 }],
+    "slopstagram/no-barrel-files": "error",
     "typescript/prefer-readonly-parameter-types": "off",
     "typescript/no-floating-promises": [
       "error",
@@ -25,6 +28,13 @@ export default defineConfig({
     ],
   },
   overrides: [
+    {
+      files: ["sdk/index.ts"],
+      rules: {
+        "oxc/no-barrel-file": "off",
+        "slopstagram/no-barrel-files": "off",
+      },
+    },
     {
       files: ["tests/**/*.test.ts"],
       rules: {
