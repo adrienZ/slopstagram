@@ -72,8 +72,10 @@ export function createManifestUsers(
 ): StoryManifestReel[] {
   return tray.map((entry, order) => ({
     full_name: entry.user.full_name ?? entry.full_name ?? null,
+    id: entry.user.id ?? entry.id,
     media_ids: entry.media_ids,
     order,
+    pk: entry.user.pk ?? entry.user.id ?? entry.id,
     profile_pic_url: entry.user.profile_pic_url ?? null,
     reel_id: entry.id,
     stories: entry.media_ids.map((mediaPk) =>

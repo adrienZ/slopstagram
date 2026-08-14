@@ -1,0 +1,203 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "994ec011-7c92-41d4-9b0d-abbf7ea8f487",
+  "prevIds": ["ad458cc2-8075-4b35-bd6b-bc3a4eba5832"],
+  "ddl": [
+    {
+      "name": "apple_vision",
+      "entityType": "tables"
+    },
+    {
+      "name": "instagram_users",
+      "entityType": "tables"
+    },
+    {
+      "name": "user_summaries",
+      "entityType": "tables"
+    },
+    {
+      "name": "vision",
+      "entityType": "tables"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "caption",
+      "entityType": "columns",
+      "table": "apple_vision"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "instagram_users"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "pk",
+      "entityType": "columns",
+      "table": "instagram_users"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "mediaPk",
+      "entityType": "columns",
+      "table": "apple_vision"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fullName",
+      "entityType": "columns",
+      "table": "instagram_users"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "username",
+      "entityType": "columns",
+      "table": "instagram_users"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "promptHash",
+      "entityType": "columns",
+      "table": "user_summaries"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "result",
+      "entityType": "columns",
+      "table": "user_summaries"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "sourceHash",
+      "entityType": "columns",
+      "table": "user_summaries"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "userKey",
+      "entityType": "columns",
+      "table": "user_summaries"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "mediaPk",
+      "entityType": "columns",
+      "table": "vision"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "model",
+      "entityType": "columns",
+      "table": "vision"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "promptHash",
+      "entityType": "columns",
+      "table": "vision"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "text",
+      "entityType": "columns",
+      "table": "vision"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "visual",
+      "entityType": "columns",
+      "table": "vision"
+    },
+    {
+      "columns": ["mediaPk"],
+      "nameExplicit": false,
+      "name": "apple_vision_pk",
+      "table": "apple_vision",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["pk"],
+      "nameExplicit": false,
+      "name": "instagram_users_pk",
+      "table": "instagram_users",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["sourceHash"],
+      "nameExplicit": false,
+      "name": "user_summaries_pk",
+      "table": "user_summaries",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["mediaPk"],
+      "nameExplicit": false,
+      "name": "vision_pk",
+      "table": "vision",
+      "entityType": "pks"
+    }
+  ],
+  "renames": []
+}

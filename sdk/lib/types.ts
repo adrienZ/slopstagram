@@ -9,6 +9,8 @@ export type StoryMediaType = (typeof STORY_MEDIA_TYPES)[keyof typeof STORY_MEDIA
 
 type StoryTrayUser = {
   full_name?: string;
+  id?: string;
+  pk?: string;
   profile_pic_url?: string;
   username: string;
 };
@@ -118,10 +120,12 @@ export type StoryManifestItem = {
 };
 
 export type StoryManifestReel = {
-  full_name: string | null;
+  full_name?: string | null;
+  id?: string;
   media_ids: string[];
   order: number;
-  profile_pic_url: string | null;
+  pk?: string;
+  profile_pic_url?: string | null;
   reel_id: string;
   stories: StoryManifestItem[];
   username: string;
@@ -139,10 +143,17 @@ type StoryOutputItem = {
 };
 
 export type StoryOutputUser = {
-  full_name: string | null;
-  profile_pic_url: string | null;
+  full_name?: string | null;
+  profile_pic_url?: string | null;
   reel_ids: string[];
   stories: StoryOutputItem[];
+  username: string;
+};
+
+export type InstagramUserEntry = {
+  full_name: string | null;
+  id: string;
+  pk: string;
   username: string;
 };
 

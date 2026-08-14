@@ -3,6 +3,7 @@ import { resolveAppleCaptionsForReport } from "./apple-caption-report-service.ts
 import { migrateDatabase } from "./database/migrate.ts";
 import { BASE_CACHE_DIR, REPORTS_STORAGE_DIR, reportsStorage } from "./lib/cache-service.ts";
 import { cacheReportImages } from "./lib/image-cache-service.ts";
+import { persistReportInstagramUsers } from "./lib/instagram-user-service.ts";
 import { type Logger } from "./lib/logging-service.ts";
 import type { StoriesManifestReport } from "./lib/types.ts";
 import { resolveUserSummariesForReport } from "./lib/user-summary-resolver-service.ts";
@@ -14,6 +15,7 @@ type CreateReportDependencies = {
   cacheReportImages: typeof cacheReportImages;
   fetchStories: typeof fetchStories;
   migrateDatabase: typeof migrateDatabase;
+  persistReportInstagramUsers: typeof persistReportInstagramUsers;
   resolveAppleCaptionsForReport: typeof resolveAppleCaptionsForReport;
   resolveUserSummariesForReport: typeof resolveUserSummariesForReport;
   resolveVisionForReport: typeof resolveVisionForReport;
@@ -37,6 +39,7 @@ const defaultDependencies: CreateReportDependencies = {
   cacheReportImages,
   fetchStories,
   migrateDatabase,
+  persistReportInstagramUsers,
   resolveAppleCaptionsForReport,
   resolveUserSummariesForReport: resolveUserSummariesForReport,
   resolveVisionForReport,
@@ -102,6 +105,7 @@ export async function createReport(options: CreateReportOptions): Promise<Create
     logger,
     visionByPreviewUrl,
   });
+  await dependencies.persistReportInstagramUsers(report);
   await dependencies.saveReport(outputFileName, report);
   const outputPath = resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR, outputFileName);
   const counts = report.metadata.counts;

@@ -25,7 +25,12 @@ describe("fetchStoriesManifest", () => {
         {
           id: "r1",
           media_ids: ["m1"],
-          user: { profile_pic_url: "https://example.com/one.jpg", username: "one" },
+          user: {
+            id: "instagram-id-1",
+            pk: "instagram-pk-1",
+            profile_pic_url: "https://example.com/one.jpg",
+            username: "one",
+          },
         },
         { id: "r2", media_ids: ["m2"], user: { username: "two" } },
       ],
@@ -50,9 +55,11 @@ describe("fetchStoriesManifest", () => {
     });
     assert.deepEqual(
       report.manifest.users.map((user) => ({
+        id: user.id,
         ig_caption: user.stories[0]?.ig_caption,
         locations: user.stories[0]?.locations,
         media_type: user.stories[0]?.media_type,
+        pk: user.pk,
         profile_pic_url: user.profile_pic_url,
         reel_id: user.reel_id,
         status: user.stories[0]?.status,
@@ -61,9 +68,11 @@ describe("fetchStoriesManifest", () => {
       })),
       [
         {
+          id: "instagram-id-1",
           ig_caption: "N/A",
           locations: [],
           media_type: "image",
+          pk: "instagram-pk-1",
           profile_pic_url: "https://example.com/one.jpg",
           reel_id: "r1",
           status: "ok",
@@ -71,9 +80,11 @@ describe("fetchStoriesManifest", () => {
           username: "one",
         },
         {
+          id: "r2",
           ig_caption: "N/A",
           locations: [],
           media_type: "image",
+          pk: "r2",
           profile_pic_url: null,
           reel_id: "r2",
           status: "ok",

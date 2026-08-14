@@ -15,6 +15,8 @@ export const StoryTrayEntrySchema = z.object({
   seen_ranked_position: z.number().optional(),
   user: z.object({
     full_name: z.string().optional(),
+    id: z.string().optional(),
+    pk: z.string().optional(),
     profile_pic_url: z.string().optional(),
     username: z.string(),
   }),
@@ -56,6 +58,8 @@ export const StoryReelSchema = z
     user: z
       .object({
         full_name: z.string().optional(),
+        id: z.string().optional(),
+        pk: z.string().optional(),
         profile_pic_url: z.string().optional(),
         username: z.string(),
       })
@@ -76,18 +80,20 @@ const StoryManifestItemSchema = z.object({
   status: StoryManifestItemStatusSchema,
 });
 const StoryManifestReelSchema = z.object({
-  full_name: z.string().nullable(),
+  full_name: z.string().nullable().optional(),
+  id: z.string().optional(),
   media_ids: z.array(z.string()),
   order: z.number(),
-  profile_pic_url: z.string().nullable(),
+  pk: z.string().optional(),
+  profile_pic_url: z.string().nullable().optional(),
   reel_id: z.string(),
   stories: z.array(StoryManifestItemSchema),
   username: z.string(),
 });
 const StoryOutputItemSchema = StoryManifestItemSchema;
 const StoryOutputUserSchema = z.object({
-  full_name: z.string().nullable(),
-  profile_pic_url: z.string().nullable(),
+  full_name: z.string().nullable().optional(),
+  profile_pic_url: z.string().nullable().optional(),
   reel_ids: z.array(z.string()),
   stories: z.array(StoryOutputItemSchema),
   username: z.string(),

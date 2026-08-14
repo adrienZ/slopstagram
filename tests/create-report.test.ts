@@ -59,6 +59,10 @@ test("createReport resolves entities before persisting the report", async () => 
       migrateDatabase: () => {
         calls.push("migrate-database");
       },
+      persistReportInstagramUsers: () => {
+        calls.push("persist-instagram-users");
+        return Promise.resolve();
+      },
       fetchStories: (_args, options) => {
         calls.push("fetch-stories");
         if (options === undefined) {
@@ -107,6 +111,7 @@ test("createReport resolves entities before persisting the report", async () => 
     "resolve-apple-captions",
     "resolve-vision",
     "resolve-summaries",
+    "persist-instagram-users",
     "save-report",
   ]);
   assert.equal(savedKey, result.outputFileName);

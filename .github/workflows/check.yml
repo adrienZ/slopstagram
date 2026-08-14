@@ -18,6 +18,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Initialize test report
+        run: echo '<testsuites name="Tests" tests="0" failures="0" errors="0"></testsuites>' > reporter.xml
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:

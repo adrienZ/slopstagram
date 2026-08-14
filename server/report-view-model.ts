@@ -1,9 +1,11 @@
+import { createHash } from "node:crypto";
 import {
   appleVisionRepository,
   userSummaryRepository,
   visionRepository,
 } from "../sdk/lib/entity-repository-service.ts";
 import type { CachedReportImages } from "../sdk/lib/image-cache-service.ts";
+import { hydrateReportInstagramUsers } from "../sdk/lib/instagram-user-service.ts";
 import {
   createSummaryPrompt,
   getUserSummaryPromptHash,
@@ -151,6 +153,7 @@ export async function createReportViewModel(
   report: StoriesManifestReport,
 ): Promise<ReportViewModel> {
   await backfillReportStoryMediaTypes(report);
+  await hydrateReportInstagramUsers(report);
   const cachedImages = readCachedImages(report);
   const visionByPreviewUrl = await readCachedVision(report, cachedImages);
   const userSummaryByUserKey = await readCachedUserSummaries(report, visionByPreviewUrl);
@@ -164,4 +167,3 @@ export async function createReportViewModel(
     visionByPreviewUrl,
   };
 }
-import { createHash } from "node:crypto";

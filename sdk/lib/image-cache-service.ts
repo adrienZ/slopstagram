@@ -1,5 +1,4 @@
 import { Buffer } from "node:buffer";
-import { createHash } from "node:crypto";
 import path from "node:path";
 import { BASE_CACHE_DIR, IMAGES_STORAGE_DIR, imageCacheStorage } from "./cache-service.ts";
 import { convertImageToJpeg } from "./image-conversion-service.ts";
@@ -42,9 +41,7 @@ type StoryPreviewEntry = {
   source: string;
 };
 
-function getImageHash(source: string): string {
-  return createHash("sha256").update(source).digest("hex");
-}
+type ProfilePicEntry = { pk: string; source: string };
 
 function getRelativeReportImagePath(reportDirectory: string, rawKey: string): string {
   return path
@@ -53,7 +50,7 @@ function getRelativeReportImagePath(reportDirectory: string, rawKey: string): st
     .join("/");
 }
 
-function isPresent(value: string | null): value is string {
+function isPresent(value: string | null | undefined): value is string {
   return Boolean(value);
 }
 
@@ -64,19 +61,21 @@ function getJpegRawKey(namespace: string, imageKey: string): string {
 async function cacheImage(
   source: string,
   namespace: string,
-  options: ResolvedCacheReportImagesOptions & { mediaPk?: string },
+  options: ResolvedCacheReportImagesOptions & { imageKey: string; refresh?: boolean },
 ): Promise<string | null> {
-  const imageKey = options.mediaPk ?? getImageHash(source);
-  const rawKey = getJpegRawKey(namespace, imageKey);
+  const rawKey = getJpegRawKey(namespace, options.imageKey);
+  const cachedPath = (await options.storage.hasItem(rawKey))
+    ? getRelativeReportImagePath(options.reportDirectory, rawKey)
+    : null;
 
-  if (await options.storage.hasItem(rawKey)) {
-    return getRelativeReportImagePath(options.reportDirectory, rawKey);
+  if (cachedPath !== null && options.refresh !== true) {
+    return cachedPath;
   }
 
   const response = await options.fetchImage(source);
   if (!response.ok) {
     options.logger.warn(`could not cache image ${source}: HTTP ${response.status}`);
-    return null;
+    return cachedPath;
   }
 
   const body = Buffer.from(await response.arrayBuffer());
@@ -86,7 +85,7 @@ async function cacheImage(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     options.logger.warn(`could not convert image ${source} to JPEG: ${message}`);
-    return null;
+    return cachedPath;
   }
 
   return getRelativeReportImagePath(options.reportDirectory, rawKey);
@@ -107,13 +106,17 @@ async function cacheProfilePics(
   options: ResolvedCacheReportImagesOptions,
 ): Promise<Map<string, string>> {
   const profilePicPathByUrl = new Map<string, string>();
-  const profilePicUrls = report.output.users
-    .map((user) => user.profile_pic_url)
-    .filter((url) => isPresent(url));
+  const entries = report.manifest.users
+    .map((user) => ({ pk: user.pk, source: user.profile_pic_url }))
+    .filter((entry): entry is ProfilePicEntry => isPresent(entry.pk) && isPresent(entry.source));
 
-  for (const source of new Set(profilePicUrls)) {
+  for (const { pk, source } of new Map(entries.map((entry) => [entry.pk, entry])).values()) {
     try {
-      const cachedPath = await cacheImage(source, "avatars", options);
+      const cachedPath = await cacheImage(source, "avatars", {
+        ...options,
+        imageKey: pk,
+        refresh: true,
+      });
 
       if (cachedPath !== null && cachedPath.length > 0) {
         profilePicPathByUrl.set(source, cachedPath);
@@ -148,7 +151,10 @@ async function cacheStoryPreviewByMediaPk(
     entries.map((entry) => [entry.mediaPk, entry]),
   ).values()) {
     try {
-      const cachedPath = await cacheImage(source, "story-previews", { ...options, mediaPk });
+      const cachedPath = await cacheImage(source, "story-previews", {
+        ...options,
+        imageKey: mediaPk,
+      });
 
       if (cachedPath !== null && cachedPath.length > 0) {
         storyPreviewPathByMediaPk.set(mediaPk, cachedPath);
