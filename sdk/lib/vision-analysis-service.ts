@@ -36,7 +36,6 @@ export type ResolvedVisionOptions = {
   mediaPk: string;
   model: string;
   prompt: string;
-  reportDirectory: string;
   repository: Pick<VisionRepository, "findByMediaPk" | "save">;
 };
 

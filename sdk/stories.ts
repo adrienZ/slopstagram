@@ -1,4 +1,6 @@
 import { storiesStorage } from "./lib/cache-service.ts";
+import { storyRepository } from "./lib/entity-repository-service.ts";
+import type { StoryRepository } from "./entities/story.ts";
 import type { Logger } from "./lib/logging-service.ts";
 import { createLogger } from "./lib/logging-service.ts";
 import { closeInstagramSession, openInstagramSession } from "./lib/playwright-service.ts";
@@ -9,12 +11,7 @@ import type {
   StoryTrayEntry,
 } from "./lib/types.ts";
 import { createInstagramClient } from "./story-client-service.ts";
-import { getCachedStoryItem } from "./story-cache-service.ts";
-import {
-  createFetchState,
-  getStoryCacheStatus,
-  logStoryProgress,
-} from "./story-failure-service.ts";
+import { createFetchState } from "./story-failure-service.ts";
 import { fetchMissingStories } from "./story-live-fetch-service.ts";
 import { createManifestUsers, createOutputUsers } from "./story-output-service.ts";
 import { requestWithRetry, sleep } from "./story-retry-service.ts";
@@ -56,38 +53,6 @@ function createRetryOptions(options: FetchStoriesManifestOptions, logger: Logger
     random: options.random ?? Math.random,
     sleep: options.sleep ?? sleep,
   };
-}
-
-async function loadStoryCache(
-  expectedMediaPks: string[],
-  storyStorage: StoryStorage,
-  state: ReturnType<typeof createFetchState>,
-): Promise<void> {
-  for (const mediaPk of new Set(expectedMediaPks)) {
-    const cachedItem = await getCachedStoryItem(mediaPk, storyStorage);
-
-    if (cachedItem) {
-      state.cachedItems.set(mediaPk, cachedItem);
-      state.cacheHitPks.add(mediaPk);
-    }
-  }
-}
-
-async function loadStoryCacheForReport(options: {
-  logger: Logger;
-  state: ReturnType<typeof createFetchState>;
-  storyStorage: StoryStorage;
-}): Promise<void> {
-  await loadStoryCache(options.state.expectedMediaPks, options.storyStorage, options.state);
-  const cacheStatus = getStoryCacheStatus(options.state);
-  options.logger.info(
-    `story cache loaded: hits=${cacheStatus.hitCount} misses=${cacheStatus.missCount}`,
-  );
-  logStoryProgress(
-    options.logger,
-    options.state,
-    `cache hits=${cacheStatus.hitCount} misses=${cacheStatus.missCount}`,
-  );
 }
 
 function createReportMetadata(
@@ -165,6 +130,7 @@ async function fetchMissingStoriesForReport(options: {
   manifestOptions: FetchStoriesManifestOptions;
   now: () => Date;
   state: ReturnType<typeof createFetchState>;
+  storyRepository: Pick<StoryRepository, "save">;
   storyStorage: StoryStorage;
   tray: StoryTrayEntry[];
 }): Promise<void> {
@@ -177,6 +143,7 @@ async function fetchMissingStoriesForReport(options: {
       options.logger,
     ),
     state: options.state,
+    storyRepository: options.storyRepository,
     storyStorage: options.storyStorage,
     trayReelIds: options.tray.map((entry) => entry.id),
   });
@@ -187,7 +154,7 @@ export async function fetchStoriesManifest(
   options: FetchStoriesManifestOptions = {},
 ): Promise<StoriesManifestReport> {
   const reportName = options.reportName ?? DEFAULT_REPORT_NAME;
-  const storyStorage = options.storyStorage ?? storiesStorage;
+  const storage = options.storyStorage ?? storiesStorage;
   const now = options.now ?? (() => new Date());
   const logger = options.logger ?? createLogger("fetch-stories");
 
@@ -198,18 +165,14 @@ export async function fetchStoriesManifest(
   logger.info(
     `tray fetched: reels=${trayJson.tray.length} stories=${state.expectedMediaPks.length} status=${trayJson.status}`,
   );
-  await loadStoryCacheForReport({
-    logger,
-    state,
-    storyStorage,
-  });
   await fetchMissingStoriesForReport({
     client,
     logger,
     manifestOptions: options,
     now,
     state,
-    storyStorage,
+    storyRepository: options.storyRepository ?? storyRepository,
+    storyStorage: storage,
     tray: trayJson.tray,
   });
 

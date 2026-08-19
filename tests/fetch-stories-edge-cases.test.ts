@@ -4,7 +4,7 @@ import { fetchStoriesManifest } from "../sdk/stories.ts";
 import {
   createCapturingLogger,
   createClient,
-  createMemoryCacheStorages,
+  createMemoryStoryRepository,
   fixedNow,
   noSleep,
   reel,
@@ -15,7 +15,7 @@ import {
 
 describe("fetchStoriesManifest edge cases", () => {
   test("preserves tray and media order in the manifest", async () => {
-    const { storiesStorage } = createMemoryCacheStorages();
+    const storyRepository = createMemoryStoryRepository();
     const client = createClient(
       [
         { id: "r2", media_ids: ["m2", "m3"], user: { username: "two" } },
@@ -35,7 +35,8 @@ describe("fetchStoriesManifest edge cases", () => {
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
-      storyStorage: storiesStorage,
+      storyRepository,
+      storyStorage: storyRepository.storyStorage,
     });
 
     assert.deepEqual(
@@ -51,7 +52,7 @@ describe("fetchStoriesManifest edge cases", () => {
   });
 
   test("extracts sticker summaries from story payload", async () => {
-    const { storiesStorage } = createMemoryCacheStorages();
+    const storyRepository = createMemoryStoryRepository();
     const client = createClient(
       [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
       [
@@ -115,7 +116,8 @@ describe("fetchStoriesManifest edge cases", () => {
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
-      storyStorage: storiesStorage,
+      storyRepository,
+      storyStorage: storyRepository.storyStorage,
     });
 
     assert.deepEqual(report.manifest.users[0]?.stories[0]?.stickers, [
@@ -130,7 +132,7 @@ describe("fetchStoriesManifest edge cases", () => {
   });
 
   test("unwraps instagram redirect links inside sticker summaries", async () => {
-    const { storiesStorage } = createMemoryCacheStorages();
+    const storyRepository = createMemoryStoryRepository();
     const client = createClient(
       [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
       [
@@ -157,7 +159,8 @@ describe("fetchStoriesManifest edge cases", () => {
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
-      storyStorage: storiesStorage,
+      storyRepository,
+      storyStorage: storyRepository.storyStorage,
     });
 
     assert.deepEqual(report.output.users[0]?.stories[0]?.stickers, [
@@ -166,7 +169,7 @@ describe("fetchStoriesManifest edge cases", () => {
   });
 
   test("falls back after chunk failure and records failed stories", async () => {
-    const { storiesStorage } = createMemoryCacheStorages();
+    const storyRepository = createMemoryStoryRepository();
     const logger = createCapturingLogger();
     const client = createClient(
       [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
@@ -178,7 +181,8 @@ describe("fetchStoriesManifest edge cases", () => {
       maxAttempts: 1,
       now: fixedNow,
       sleep: noSleep,
-      storyStorage: storiesStorage,
+      storyRepository,
+      storyStorage: storyRepository.storyStorage,
     });
 
     assert.deepEqual(client.reelsCalls, [["r1"], ["r1"]]);
@@ -203,7 +207,7 @@ describe("fetchStoriesManifest edge cases", () => {
   });
 
   test("records missing stories when Instagram omits expected media", async () => {
-    const { storiesStorage } = createMemoryCacheStorages();
+    const storyRepository = createMemoryStoryRepository();
     const client = createClient(
       [{ id: "r1", media_ids: ["m1", "m2"], user: { username: "one" } }],
       [
@@ -219,7 +223,8 @@ describe("fetchStoriesManifest edge cases", () => {
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
-      storyStorage: storiesStorage,
+      storyRepository,
+      storyStorage: storyRepository.storyStorage,
     });
 
     assert.deepEqual(
@@ -231,7 +236,7 @@ describe("fetchStoriesManifest edge cases", () => {
   });
 
   test("stops further live fetches after rate limiting", async () => {
-    const { storiesStorage } = createMemoryCacheStorages();
+    const storyRepository = createMemoryStoryRepository();
     const client = createClient(
       [
         { id: "r1", media_ids: ["m1"], user: { username: "one" } },
@@ -246,7 +251,8 @@ describe("fetchStoriesManifest edge cases", () => {
       now: fixedNow,
       reelIdsPerRequest: 1,
       sleep: noSleep,
-      storyStorage: storiesStorage,
+      storyRepository,
+      storyStorage: storyRepository.storyStorage,
     });
 
     assert.deepEqual(client.reelsCalls, [["r1"]]);

@@ -1,7 +1,8 @@
-import { resolve } from "node:path";
 import { resolveAppleCaptionsForReport } from "./apple-caption-report-service.ts";
 import { migrateDatabase } from "./database/migrate.ts";
-import { BASE_CACHE_DIR, REPORTS_STORAGE_DIR, reportsStorage } from "./lib/cache-service.ts";
+import { ReportRepository } from "./entities/report.ts";
+import { BASE_CACHE_DIR } from "./lib/cache-service.ts";
+import { reportRepository } from "./lib/entity-repository-service.ts";
 import { cacheReportImages } from "./lib/image-cache-service.ts";
 import { persistReportInstagramUsers } from "./lib/instagram-user-service.ts";
 import { type Logger } from "./lib/logging-service.ts";
@@ -19,7 +20,7 @@ type CreateReportDependencies = {
   resolveAppleCaptionsForReport: typeof resolveAppleCaptionsForReport;
   resolveUserSummariesForReport: typeof resolveUserSummariesForReport;
   resolveVisionForReport: typeof resolveVisionForReport;
-  saveReport: (key: string, report: StoriesManifestReport) => Promise<void>;
+  saveReport: Pick<ReportRepository, "save">["save"];
 };
 
 export type CreateReportOptions = {
@@ -31,7 +32,7 @@ export type CreateReportOptions = {
 
 export type CreateReportResult = {
   outputFileName: string;
-  outputPath: string;
+  reportKey: string;
   report: StoriesManifestReport;
 };
 
@@ -43,9 +44,7 @@ const defaultDependencies: CreateReportDependencies = {
   resolveAppleCaptionsForReport,
   resolveUserSummariesForReport: resolveUserSummariesForReport,
   resolveVisionForReport,
-  saveReport: async (key, report) => {
-    await reportsStorage.setItem(key, report);
-  },
+  saveReport: reportRepository.save.bind(reportRepository),
 };
 
 function pad(value: number): string {
@@ -88,18 +87,18 @@ export async function createReport(options: CreateReportOptions): Promise<Create
     logger,
     reportName: outputFileName,
   });
-  const reportDirectory = resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR);
+  const cacheDirectory = BASE_CACHE_DIR;
   const cachedImages = await dependencies.cacheReportImages(report, {
+    cacheDirectory,
     logger,
-    reportDirectory,
   });
   await dependencies.resolveAppleCaptionsForReport(report, cachedImages, {
+    cacheDirectory,
     logger,
-    reportDirectory,
   });
   const visionByPreviewUrl = await dependencies.resolveVisionForReport(report, cachedImages, {
+    cacheDirectory,
     logger,
-    reportDirectory,
   });
   await dependencies.resolveUserSummariesForReport(report, {
     logger,
@@ -107,7 +106,6 @@ export async function createReport(options: CreateReportOptions): Promise<Create
   });
   await dependencies.persistReportInstagramUsers(report);
   await dependencies.saveReport(outputFileName, report);
-  const outputPath = resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR, outputFileName);
   const counts = report.metadata.counts;
 
   logger.info(
@@ -118,7 +116,7 @@ export async function createReport(options: CreateReportOptions): Promise<Create
       `failed=${counts.failed}`,
     ].join(" "),
   );
-  logger.success(`wrote report ${outputPath}`);
+  logger.success(`saved report ${outputFileName} to the database`);
 
-  return { outputFileName, outputPath, report };
+  return { outputFileName, reportKey: outputFileName, report };
 }

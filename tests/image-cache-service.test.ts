@@ -1,19 +1,15 @@
 import { Buffer } from "node:buffer";
 import assert from "node:assert/strict";
-import path from "node:path";
 import { describe, test } from "node:test";
 import { TextEncoder } from "node:util";
-import {
-  BASE_CACHE_DIR,
-  createCacheStorages,
-  REPORTS_STORAGE_DIR,
-} from "../sdk/lib/cache-service.ts";
+import { BASE_CACHE_DIR, createImageCacheStorage } from "../sdk/lib/cache-service.ts";
 import { cacheReportImages } from "../sdk/lib/image-cache-service.ts";
 import type { StoriesManifestReport } from "../sdk/lib/types.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 import { createMockLogger } from "./mock-helpers.ts";
 
 const PROFILE_PK = "avatar-pk";
+const cacheDirectory = BASE_CACHE_DIR;
 
 function createReport(
   profilePicUrl: string,
@@ -79,7 +75,7 @@ describe("cacheReportImages", () => {
     const source = "https://example.com/avatar?id=1";
     const previewSource = "https://example.com/story-preview.webp";
     const previewKey = "story-pk";
-    const { imageCacheStorage } = createCacheStorages(createMemoryStorage());
+    const imageCacheStorage = createImageCacheStorage(createMemoryStorage());
     let fetchCount = 0;
     let convertCount = 0;
 
@@ -103,24 +99,21 @@ describe("cacheReportImages", () => {
         });
       },
       logger: createMockLogger(),
-      reportDirectory: path.resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR),
+      cacheDirectory,
       storage: imageCacheStorage,
     });
 
     assert.equal(fetchCount, 2);
     assert.equal(convertCount, 2);
-    assert.equal(
-      cachedImages.profilePicPathByUrl.get(source),
-      `../images/avatars/${PROFILE_PK}.jpg`,
-    );
+    assert.equal(cachedImages.profilePicPathByUrl.get(source), `images/avatars/${PROFILE_PK}.jpg`);
     assert.equal(
       cachedImages.storyPreviewPathByUrl.get(previewSource),
-      `../images/story-previews/${previewKey}.jpg`,
+      `images/story-previews/${previewKey}.jpg`,
     );
-    assert.equal(report.output.users[0]?.profile_pic_url, `../images/avatars/${PROFILE_PK}.jpg`);
+    assert.equal(report.output.users[0]?.profile_pic_url, `images/avatars/${PROFILE_PK}.jpg`);
     assert.equal(
       report.output.users[0]?.stories[0]?.preview_image_url,
-      `../images/story-previews/${previewKey}.jpg`,
+      `images/story-previews/${previewKey}.jpg`,
     );
     assert.deepEqual(
       await imageCacheStorage.getItemRaw(`avatars/${PROFILE_PK}.jpg`),
@@ -136,7 +129,7 @@ describe("cacheReportImages", () => {
 
   test("refreshes cached profile pictures from the latest API response", async () => {
     const source = "https://example.com/avatar.webp";
-    const { imageCacheStorage } = createCacheStorages(createMemoryStorage());
+    const imageCacheStorage = createImageCacheStorage(createMemoryStorage());
     await imageCacheStorage.setItemRaw(`avatars/${PROFILE_PK}.jpg`, Buffer.from("jpeg-avatar"));
 
     const cachedImages = await cacheReportImages(createReport(source), {
@@ -152,14 +145,11 @@ describe("cacheReportImages", () => {
         });
       },
       logger: createMockLogger(),
-      reportDirectory: path.resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR),
+      cacheDirectory,
       storage: imageCacheStorage,
     });
 
-    assert.equal(
-      cachedImages.profilePicPathByUrl.get(source),
-      `../images/avatars/${PROFILE_PK}.jpg`,
-    );
+    assert.equal(cachedImages.profilePicPathByUrl.get(source), `images/avatars/${PROFILE_PK}.jpg`);
     assert.deepEqual(
       await imageCacheStorage.getItemRaw(`avatars/${PROFILE_PK}.jpg`),
       Buffer.from("jpeg:updated-avatar"),
@@ -170,7 +160,7 @@ describe("cacheReportImages", () => {
     const source = "https://example.com/avatar.jpg";
     const previewSource = "https://example.com/story-preview.webp";
     const previewKey = "story-pk";
-    const { imageCacheStorage } = createCacheStorages(createMemoryStorage());
+    const imageCacheStorage = createImageCacheStorage(createMemoryStorage());
     await imageCacheStorage.setItemRaw(`avatars/${PROFILE_PK}.jpg`, Buffer.from("jpeg-avatar"));
     await imageCacheStorage.setItemRaw(
       `story-previews/${previewKey}.jpg`,
@@ -180,13 +170,13 @@ describe("cacheReportImages", () => {
     const cachedImages = await cacheReportImages(createReport(source, previewSource), {
       fetchImage: () => Promise.reject(new Error("should not fetch")),
       logger: createMockLogger(),
-      reportDirectory: path.resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR),
+      cacheDirectory,
       storage: imageCacheStorage,
     });
 
     assert.equal(
       cachedImages.storyPreviewPathByUrl.get(previewSource),
-      `../images/story-previews/${previewKey}.jpg`,
+      `images/story-previews/${previewKey}.jpg`,
     );
     assert.deepEqual(
       await imageCacheStorage.getItemRaw(`story-previews/${previewKey}.jpg`),
@@ -199,7 +189,7 @@ describe("cacheReportImages", () => {
     const firstPreviewSource = "https://example.com/story-preview.webp?signature=old";
     const secondPreviewSource = "https://example.com/story-preview.webp?signature=new";
     const previewKey = "story-pk";
-    const { imageCacheStorage } = createCacheStorages(createMemoryStorage());
+    const imageCacheStorage = createImageCacheStorage(createMemoryStorage());
     let fetchCount = 0;
 
     const options = {
@@ -218,7 +208,7 @@ describe("cacheReportImages", () => {
         });
       },
       logger: createMockLogger(),
-      reportDirectory: path.resolve(BASE_CACHE_DIR, REPORTS_STORAGE_DIR),
+      cacheDirectory,
       storage: imageCacheStorage,
     };
 
@@ -228,11 +218,11 @@ describe("cacheReportImages", () => {
     assert.equal(fetchCount, 3);
     assert.equal(
       first.storyPreviewPathByUrl.get(firstPreviewSource),
-      `../images/story-previews/${previewKey}.jpg`,
+      `images/story-previews/${previewKey}.jpg`,
     );
     assert.equal(
       second.storyPreviewPathByUrl.get(secondPreviewSource),
-      `../images/story-previews/${previewKey}.jpg`,
+      `images/story-previews/${previewKey}.jpg`,
     );
     assert.deepEqual(
       await imageCacheStorage.getItemRaw(`story-previews/${previewKey}.jpg`),

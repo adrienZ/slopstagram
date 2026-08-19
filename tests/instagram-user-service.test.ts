@@ -17,7 +17,7 @@ function createReportWithInstagramUser(): StoriesManifestReport {
           media_ids: [],
           order: 0,
           pk: "instagram-pk-1",
-          profile_pic_url: "../images/avatars/fixture.jpg",
+          profile_pic_url: "images/avatars/fixture.jpg",
           reel_id: "reel-1",
           stories: [],
           username: "fixture-user",
@@ -43,7 +43,7 @@ function createReportWithInstagramUser(): StoriesManifestReport {
       users: [
         {
           full_name: "Fixture User",
-          profile_pic_url: "../images/avatars/fixture.jpg",
+          profile_pic_url: "images/avatars/fixture.jpg",
           reel_ids: ["reel-1"],
           stories: [],
           username: "fixture-user",
@@ -88,6 +88,22 @@ describe("Instagram user report persistence", () => {
     await hydrateReportInstagramUsers(report, repository);
 
     assert.equal(report.output.users[0]?.full_name, "Fixture User");
-    assert.equal(report.output.users[0]?.profile_pic_url, "../images/avatars/instagram-pk-1.jpg");
+    assert.equal(report.output.users[0]?.profile_pic_url, "images/avatars/instagram-pk-1.jpg");
+  });
+
+  test("hydrates reports whose nullable user columns were read as null", async () => {
+    const report = createReportWithInstagramUser();
+    const repository = createRepository();
+
+    await persistReportInstagramUsers(report, repository);
+    report.manifest.users[0].full_name = null;
+    report.manifest.users[0].profile_pic_url = null;
+    report.output.users[0].full_name = null;
+    report.output.users[0].profile_pic_url = null;
+
+    await hydrateReportInstagramUsers(report, repository);
+
+    assert.equal(report.output.users[0]?.full_name, "Fixture User");
+    assert.equal(report.output.users[0]?.profile_pic_url, "images/avatars/instagram-pk-1.jpg");
   });
 });

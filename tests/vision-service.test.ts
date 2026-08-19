@@ -35,7 +35,7 @@ describe("resolveVisionForReport", () => {
     const repository = createVisionRepositoryAdapter();
     let fetchCount = 0;
 
-    await withReportImage(async (reportDirectory, cachedImages) => {
+    await withReportImage(async (cacheDirectory, cachedImages) => {
       const fetchVision = (_url: string | URL | Request, init?: RequestInit) => {
         fetchCount += 1;
         // oxlint-disable-next-line typescript/no-base-to-string
@@ -78,13 +78,13 @@ describe("resolveVisionForReport", () => {
       const first = await resolveVisionForReport(createVisionReport(), cachedImages, {
         fetchVision,
         logger: createMockLogger(),
-        reportDirectory,
+        cacheDirectory,
         repository: repository,
       });
       const second = await resolveVisionForReport(createVisionReport(), cachedImages, {
         fetchVision,
         logger: createMockLogger(),
-        reportDirectory,
+        cacheDirectory,
         repository: repository,
       });
 
@@ -111,7 +111,7 @@ describe("resolveVisionForReport", () => {
     let fetchCount = 0;
 
     await withReportImage(
-      async (reportDirectory, cachedImages) => {
+      async (cacheDirectory, cachedImages) => {
         const fetchVision = () => {
           fetchCount += 1;
 
@@ -136,7 +136,7 @@ describe("resolveVisionForReport", () => {
           {
             fetchVision,
             logger: createMockLogger(),
-            reportDirectory,
+            cacheDirectory,
             repository: repository,
           },
         );
@@ -146,7 +146,7 @@ describe("resolveVisionForReport", () => {
           {
             fetchVision,
             logger: createMockLogger(),
-            reportDirectory,
+            cacheDirectory,
             repository: repository,
           },
         );
@@ -171,13 +171,13 @@ describe("resolveVisionForReport", () => {
   test("returns server-down text when vision is unavailable", async () => {
     const repository = createVisionRepositoryAdapter();
 
-    await withReportImage(async (reportDirectory, cachedImages) => {
+    await withReportImage(async (cacheDirectory, cachedImages) => {
       const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
         fetchVision: () => {
           return Promise.reject(new TypeError("fetch failed"));
         },
         logger: createMockLogger(),
-        reportDirectory,
+        cacheDirectory,
         repository: repository,
       });
 
@@ -191,7 +191,7 @@ describe("resolveVisionForReport", () => {
   test("normalizes missing OCR text to an empty string", async () => {
     const repository = createVisionRepositoryAdapter();
 
-    await withReportImage(async (reportDirectory, cachedImages) => {
+    await withReportImage(async (cacheDirectory, cachedImages) => {
       const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
         fetchVision: () =>
           Promise.resolve(
@@ -208,7 +208,7 @@ describe("resolveVisionForReport", () => {
             ),
           ),
         logger: createMockLogger(),
-        reportDirectory,
+        cacheDirectory,
         repository: repository,
       });
 
@@ -222,7 +222,7 @@ describe("resolveVisionForReport", () => {
   test("joins multiple OCR text entries", async () => {
     const repository = createVisionRepositoryAdapter();
 
-    await withReportImage(async (reportDirectory, cachedImages) => {
+    await withReportImage(async (cacheDirectory, cachedImages) => {
       const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
         fetchVision: () =>
           Promise.resolve(
@@ -239,7 +239,7 @@ describe("resolveVisionForReport", () => {
             ),
           ),
         logger: createMockLogger(),
-        reportDirectory,
+        cacheDirectory,
         repository: repository,
       });
 
@@ -253,7 +253,7 @@ describe("resolveVisionForReport", () => {
   test("returns short per-image text for non-server failures", async () => {
     const repository = createVisionRepositoryAdapter();
 
-    await withReportImage(async (reportDirectory, cachedImages) => {
+    await withReportImage(async (cacheDirectory, cachedImages) => {
       const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
         fetchVision: () =>
           Promise.resolve(
@@ -263,7 +263,7 @@ describe("resolveVisionForReport", () => {
             }),
           ),
         logger: createMockLogger(),
-        reportDirectory,
+        cacheDirectory,
         repository: repository,
       });
 

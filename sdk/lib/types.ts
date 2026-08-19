@@ -202,14 +202,8 @@ export type StoriesManifestReport = {
   };
 };
 
-export type StoryStorage = Storage<StoryItem>;
-type ReportStorage = Storage<StoriesManifestReport>;
 export type ImageCacheStorage = Storage<Record<string, never>>;
-export type CacheStorageSet = {
-  imageCacheStorage: ImageCacheStorage;
-  reportsStorage: ReportStorage;
-  storiesStorage: StoryStorage;
-};
+export type StoryStorage = Storage<StoryItem>;
 
 export type ParsedStory = {
   height: number | null;

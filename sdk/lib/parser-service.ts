@@ -1,6 +1,6 @@
+import type { StoryRepository } from "../entities/story.ts";
 import {
   STORY_MEDIA_TYPES,
-  isStoryItem,
   type ParsedStory,
   type ParsedStoryTrayUser,
   type StoriesMediaReport,
@@ -8,12 +8,9 @@ import {
   type StoriesReport,
   type StoryItem,
   type StoryMediaType,
-  type StoryStorage,
   type StoryTrayEntry,
   type StoryVersion,
 } from "./types.ts";
-import { StoryItemSchema } from "./story-schemas.ts";
-import { storiesStorage } from "./cache-service.ts";
 
 export function getLargestVersion<T extends StoryVersion>(
   versions: T[] | null | undefined,
@@ -170,31 +167,10 @@ function parseStoryItem(item: StoryItem): ParsedStory {
   };
 }
 
-async function getCachedStoryItem(
-  cacheKey: string,
-  storage: StoryStorage = storiesStorage,
-): Promise<StoryItem> {
-  const cachedValue = await storage.getItem(cacheKey);
-
-  if (cachedValue === null || cachedValue === undefined) {
-    throw new Error(`Cached story item ${cacheKey} not found`);
-  }
-
-  if (typeof cachedValue === "string") {
-    return StoryItemSchema.parse(JSON.parse(cachedValue));
-  }
-
-  if (isStoryItem(cachedValue)) {
-    return cachedValue;
-  }
-
-  throw new Error(`Cached story item ${cacheKey} is invalid`);
-}
-
 export async function parseStoryManifestReport(
   report: StoriesManifestReport,
   pk: string,
-  storage: StoryStorage = storiesStorage,
+  repository: Pick<StoryRepository, "findByMediaPk">,
 ): Promise<ParsedStory> {
   const manifestItem = report.manifest.users
     .flatMap((user) => user.stories)
@@ -208,6 +184,7 @@ export async function parseStoryManifestReport(
     throw new Error(`Story with pk ${pk} was not fetched successfully`);
   }
 
-  const item = await getCachedStoryItem(`${manifestItem.media_pk}.json`, storage);
+  const item = await repository.findByMediaPk(manifestItem.media_pk);
+  if (item === null) throw new Error(`Story item ${manifestItem.media_pk} not found`);
   return parseStoryItem(item);
 }

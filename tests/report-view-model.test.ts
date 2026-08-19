@@ -33,6 +33,7 @@ function createUncachedReport(cacheKey: string): StoriesManifestReport {
             {
               ig_caption: "",
               locations: [],
+              media_type: "image",
               media_pk: `${cacheKey}-story-that-does-not-exist`,
               preview_image_url: `https://instagram.invalid/${cacheKey}-story.jpg`,
               stickers: [],

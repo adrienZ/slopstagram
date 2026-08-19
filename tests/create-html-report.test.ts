@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { backfillReportStoryMediaTypes } from "../sdk/lib/report-media-type-service.ts";
-import { getMediaCacheKey } from "../sdk/lib/cache-service.ts";
-import type { StoriesManifestReport, StoryItem } from "../sdk/lib/types.ts";
-import { createMemoryStorage } from "./memory-storage.ts";
+import type { StoriesManifestReport } from "../sdk/lib/types.ts";
+import { createMemoryStoryRepository } from "./mock-helpers.ts";
 
 function createLegacyReport(): StoriesManifestReport {
   return {
@@ -86,19 +85,19 @@ function createLegacyReport(): StoriesManifestReport {
 
 describe("backfillReportStoryMediaTypes", () => {
   test("fills missing media types from cached story payloads", async () => {
-    const storage = createMemoryStorage<StoryItem>();
+    const storyRepository = createMemoryStoryRepository();
     const report = createLegacyReport();
 
-    await storage.setItem(getMediaCacheKey("story-pk-1"), {
+    await storyRepository.save({
       media_type: 1,
       pk: "story-pk-1",
     });
-    await storage.setItem(getMediaCacheKey("story-pk-2"), {
+    await storyRepository.save({
       media_type: 2,
       pk: "story-pk-2",
     });
 
-    await backfillReportStoryMediaTypes(report, storage);
+    await backfillReportStoryMediaTypes(report, storyRepository);
 
     assert.deepEqual(
       report.output.users[0]?.stories.map((story) => story.media_type),

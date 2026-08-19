@@ -13,7 +13,7 @@ import { createMockLogger } from "./mock-helpers.ts";
 function createReportResult(): CreateReportResult {
   return {
     outputFileName: "stories-report-test.json",
-    outputPath: "public/reports/stories-report-test.json",
+    reportKey: "stories-report-test.json",
     report: {
       failures: [],
       manifest: { users: [] },
@@ -54,7 +54,7 @@ test("runWarmCacheJob creates a report using reportArgs from the payload", async
   assert.deepEqual(calls, [["--limit", "10"]]);
   assert.deepEqual(result, {
     outputFileName: "stories-report-test.json",
-    outputPath: "public/reports/stories-report-test.json",
+    reportKey: "stories-report-test.json",
     counts: {
       cache_hits: 1,
       cache_misses: 2,
@@ -140,7 +140,7 @@ test("startWarmCacheQueue schedules and processes warm-cache jobs", async () => 
       return Promise.resolve({
         counts: result.report.metadata.counts,
         outputFileName: result.outputFileName,
-        outputPath: result.outputPath,
+        reportKey: result.reportKey,
       });
     },
   });
@@ -150,7 +150,7 @@ test("startWarmCacheQueue schedules and processes warm-cache jobs", async () => 
   assert.deepEqual(await processor({ data: { reportArgs: ["--limit", "5"] } }), {
     counts: createReportResult().report.metadata.counts,
     outputFileName: "stories-report-test.json",
-    outputPath: "public/reports/stories-report-test.json",
+    reportKey: "stories-report-test.json",
   });
   assert.deepEqual(processedPayload, { reportArgs: ["--limit", "5"] });
 

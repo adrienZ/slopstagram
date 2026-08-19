@@ -1,7 +1,8 @@
 import type { Logger } from "./lib/logging-service.ts";
+import type { StoryRepository } from "./entities/story.ts";
 import type { StoryStorage } from "./lib/types.ts";
 import { extractReels } from "./story-client-service.ts";
-import { cacheReturnedReels } from "./story-cache-service.ts";
+import { storeReturnedReels } from "./story-cache-service.ts";
 import {
   addFailuresForPendingReelStories,
   createMissingResponseFailure,
@@ -23,6 +24,7 @@ export type FetchMissingStoriesOptions = {
   reelIdsPerRequest: number;
   retryOptions: RetryOptions;
   state: FetchState;
+  storyRepository: Pick<StoryRepository, "save">;
   storyStorage: StoryStorage;
   trayReelIds: string[];
 };
@@ -40,10 +42,17 @@ async function cacheSuccessfulResponse(
   idChunk: string[],
   logger: Logger,
   state: FetchState,
+  storyRepository: Pick<StoryRepository, "save">,
   storyStorage: StoryStorage,
 ): Promise<number> {
   const fetchedBefore = state.fetchedMediaPks.size;
-  await cacheReturnedReels(reels, state.cachedItems, state.fetchedMediaPks, storyStorage);
+  await storeReturnedReels(
+    reels,
+    state.cachedItems,
+    state.fetchedMediaPks,
+    storyStorage,
+    storyRepository,
+  );
   addFailuresForPendingReelStories(
     idChunk,
     state,
@@ -69,11 +78,12 @@ async function fetchSingleReel(
   );
 
   if (singleResult.ok) {
-    await cacheReturnedReels(
+    await storeReturnedReels(
       extractReels(singleResult.value),
       options.state.cachedItems,
       options.state.fetchedMediaPks,
       options.storyStorage,
+      options.storyRepository,
     );
     addFailuresForPendingReelStories(
       [reelId],
@@ -171,6 +181,7 @@ async function fetchReelChunk(
     idChunk,
     options.logger,
     options.state,
+    options.storyRepository,
     options.storyStorage,
   );
   logStoryProgress(

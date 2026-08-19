@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { installPlaywrightApiRequestPatch } from "./lib/playwright-api-request-patch.ts";
 import type { InstagramSession } from "./lib/playwright-service.ts";
 import { StoryReelSchema, StoryTrayEntrySchema } from "./lib/story-schemas.ts";
 import type { StoryReel } from "./lib/types.ts";
@@ -30,39 +29,92 @@ const IG_APP_ID = "936619743392459";
 const REELS_TRAY_URL = "https://www.instagram.com/api/v1/feed/reels_tray/";
 const REELS_MEDIA_URL = "https://www.instagram.com/api/v1/feed/reels_media/";
 
-export function createInstagramClient(session: InstagramSession): InstagramClient {
-  installPlaywrightApiRequestPatch();
+export class InstagramApiResponseError extends Error {
+  readonly nonRetryable = true;
+}
 
+function quoteNumericIdentifiers(body: string): string {
+  // Instagram sometimes emits IDs as JSON numbers. Its media IDs exceed
+  // JavaScript's safe-integer range, so JSON.parse would silently round them
+  // before the schema gets a chance to normalize them.
+  return body
+    .replaceAll(/("(?:id|pk|media_pk|reel_id)"\s*:\s*)(\d+)/gu, '$1"$2"')
+    .replaceAll(
+      /("(?:media_ids|reel_ids)"\s*:\s*\[)([^\]]*)(\])/gu,
+      (_match, opening: string, values: string, closing: string) =>
+        `${opening}${values.replaceAll(/(^|,)\s*(\d+)\s*(?=,|$)/gu, '$1"$2"')}${closing}`,
+    );
+}
+
+function parseInstagramResponse<T>(
+  body: string,
+  headers: Record<string, string>,
+  schema: z.ZodType<T>,
+): T {
+  try {
+    return schema.parse(JSON.parse(quoteNumericIdentifiers(body)));
+  } catch (error) {
+    const contentType = headers["content-type"] ?? "";
+    if (!contentType.includes("application/json")) {
+      throw new InstagramApiResponseError(
+        `Instagram returned ${contentType || "a non-JSON response"}; run npm run auth to refresh the browser session`,
+      );
+    }
+
+    throw error;
+  }
+}
+
+type BrowserFetchResponse = {
+  body: string;
+  headers: Record<string, string>;
+  ok: boolean;
+  status: number;
+};
+
+function fetchFromInstagramPage(
+  session: InstagramSession,
+  url: string,
+): Promise<BrowserFetchResponse> {
+  return session.page.evaluate(
+    async ({ appId, requestUrl }) => {
+      const response = await globalThis.fetch(requestUrl, { headers: { "x-ig-app-id": appId } });
+
+      return {
+        body: await response.text(),
+        headers: Object.fromEntries(response.headers.entries()),
+        ok: response.ok,
+        status: response.status,
+      };
+    },
+    { appId: IG_APP_ID, requestUrl: url },
+  );
+}
+
+function toClientResponse<T>(response: BrowserFetchResponse, schema: z.ZodType<T>) {
+  return {
+    headers: response.headers,
+    json: () => Promise.resolve(parseInstagramResponse(response.body, response.headers, schema)),
+    ok: response.ok,
+    status: response.status,
+  };
+}
+
+export function createInstagramClient(session: InstagramSession): InstagramClient {
   return {
     async getReelsMedia(reelIds) {
       const query = reelIds.map((reelId) => `reel_ids=${encodeURIComponent(reelId)}`).join("&");
-      const response = await session.context.request.get(`${REELS_MEDIA_URL}?${query}`, {
-        headers: {
-          "x-ig-app-id": IG_APP_ID,
-        },
-      });
-
-      return {
-        headers: response.headers(),
-        json: async () => ReelsMediaResponseSchema.parse(await response.json()),
-        ok: response.ok(),
-        status: response.status(),
-      };
+      return toClientResponse(
+        await fetchFromInstagramPage(session, `${REELS_MEDIA_URL}?${query}`),
+        ReelsMediaResponseSchema,
+      );
     },
 
     async getTray() {
-      const response = await session.context.request.get(REELS_TRAY_URL, {
-        headers: {
-          "x-ig-app-id": IG_APP_ID,
-        },
-      });
-
-      return {
-        headers: response.headers(),
-        json: async () => ReelTrayResponseSchema.parse(await response.json()),
-        ok: response.ok(),
-        status: response.status(),
-      };
+      return toClientResponse(
+        await fetchFromInstagramPage(session, REELS_TRAY_URL),
+        ReelTrayResponseSchema,
+      );
     },
   };
 }

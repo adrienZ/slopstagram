@@ -68,10 +68,10 @@ flowchart TD
     images --> apple["Run Apple OCR on cached story images"]
     apple --> vision["Run vision analysis on cached story images"]
     vision --> summaries["Generate user summaries"]
-    summaries --> save["Save the JSON report"]
+    summaries --> save["Save the report in SQLite"]
 ```
 
-View cached reports:
+View reports:
 
 ```bash
 npm run start
@@ -81,8 +81,7 @@ Open <http://localhost:5173/>.
 
 ## Development
 
-Runtime reports, cached media, the SQLite databases, and the Playwright profile are stored
-in `./data`.
+Cached media, the SQLite databases, and the Playwright profile are stored in `./data`.
 Database migrations are applied automatically when the Nitro server starts and before report
 creation. After changing an entity schema, generate a migration with:
 

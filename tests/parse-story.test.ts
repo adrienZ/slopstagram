@@ -5,11 +5,10 @@ import {
   parseStoryManifestReport,
   parseStoryReport,
 } from "../sdk/lib/parser-service.ts";
-import { createCacheStorages, getMediaCacheKey } from "../sdk/lib/cache-service.ts";
 import { STORY_MEDIA_TYPES } from "../sdk/lib/types.ts";
 import type { StoriesManifestReport, StoriesMediaReport, StoryVersion } from "../sdk/lib/types.ts";
 import storiesFixture from "./fixtures/instagram-story-data.json" with { type: "json" };
-import { createMemoryStorage } from "./memory-storage.ts";
+import { createMemoryStoryRepository } from "./mock-helpers.ts";
 
 const report = storiesFixture as StoriesMediaReport;
 
@@ -84,7 +83,7 @@ describe("parseStoryReport", () => {
   });
 
   test("resolves manifest stories from story cache", async () => {
-    const { storiesStorage } = createCacheStorages(createMemoryStorage());
+    const storyRepository = createMemoryStoryRepository();
     const cachedItem = {
       image_versions2: {
         candidates: [
@@ -159,9 +158,9 @@ describe("parseStoryReport", () => {
       },
     };
 
-    await storiesStorage.setItem(getMediaCacheKey("cached-pk"), cachedItem);
+    await storyRepository.save(cachedItem);
 
-    assert.deepEqual(await parseStoryManifestReport(manifestReport, "cached-pk", storiesStorage), {
+    assert.deepEqual(await parseStoryManifestReport(manifestReport, "cached-pk", storyRepository), {
       height: 120,
       media_type: STORY_MEDIA_TYPES.IMAGE,
       pk: "cached-pk",

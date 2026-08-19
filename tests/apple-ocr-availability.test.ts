@@ -7,7 +7,7 @@ import { fetchStoriesManifest } from "../sdk/stories.ts";
 import {
   createCapturingLogger,
   createClient,
-  createMemoryCacheStorages,
+  createMemoryStoryRepository,
   fixedNow,
   noSleep,
   reel,
@@ -16,7 +16,7 @@ import {
 } from "./mock-helpers.ts";
 
 test("reads cached local previews and stops after the first unavailable result", async () => {
-  const { storiesStorage } = createMemoryCacheStorages();
+  const storyRepository = createMemoryStoryRepository();
   const logger = createCapturingLogger();
   const client = createClient(
     [{ id: "r1", media_ids: ["m1", "m2"], user: { username: "one" } }],
@@ -26,7 +26,8 @@ test("reads cached local previews and stops after the first unavailable result",
     logger,
     now: fixedNow,
     sleep: noSleep,
-    storyStorage: storiesStorage,
+    storyRepository,
+    storyStorage: storyRepository.storyStorage,
   });
   const resolvedPaths: string[] = [];
 
@@ -35,13 +36,13 @@ test("reads cached local previews and stops after the first unavailable result",
     {
       profilePicPathByUrl: new Map(),
       storyPreviewPathByUrl: new Map([
-        ["https://example.com/m1.jpg", "../images/story-previews/m1.jpg"],
-        ["https://example.com/m2.jpg", "../images/story-previews/m2.jpg"],
+        ["https://example.com/m1.jpg", "images/story-previews/m1.jpg"],
+        ["https://example.com/m2.jpg", "images/story-previews/m2.jpg"],
       ]),
     },
     {
       logger,
-      reportDirectory: "/cache/reports",
+      cacheDirectory: "/cache",
       resolver: (_mediaPk, imagePath) => {
         resolvedPaths.push(imagePath);
         throw new AppleOcrUnavailableError("Vision is unavailable");
@@ -60,7 +61,7 @@ test("reads cached local previews and stops after the first unavailable result",
 });
 
 test("resolves local OCR without embedding it in the report", async () => {
-  const { storiesStorage } = createMemoryCacheStorages();
+  const storyRepository = createMemoryStoryRepository();
   const logger = createCapturingLogger();
   const client = createClient(
     [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
@@ -70,7 +71,8 @@ test("resolves local OCR without embedding it in the report", async () => {
     logger,
     now: fixedNow,
     sleep: noSleep,
-    storyStorage: storiesStorage,
+    storyRepository,
+    storyStorage: storyRepository.storyStorage,
   });
 
   await resolveAppleCaptionsForReport(
@@ -78,12 +80,12 @@ test("resolves local OCR without embedding it in the report", async () => {
     {
       profilePicPathByUrl: new Map(),
       storyPreviewPathByUrl: new Map([
-        ["https://example.com/m1.jpg", "../images/story-previews/m1.jpg"],
+        ["https://example.com/m1.jpg", "images/story-previews/m1.jpg"],
       ]),
     },
     {
       logger,
-      reportDirectory: "/cache/reports",
+      cacheDirectory: "/cache",
       resolver: (mediaPk, imagePath) => {
         assert.equal(mediaPk, "m1");
         assert.equal(imagePath, path.resolve("/cache/images/story-previews/m1.jpg"));

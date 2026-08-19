@@ -17,10 +17,10 @@ type FetchResponse = {
 type FetchImage = (url: string) => Promise<FetchResponse>;
 
 export type CacheReportImagesOptions = {
+  cacheDirectory?: string;
   convertToJpeg?: typeof convertImageToJpeg;
   fetchImage?: FetchImage;
   logger: Logger;
-  reportDirectory?: string;
   storage?: ImageCacheStorage;
 };
 
@@ -32,7 +32,7 @@ export type CachedReportImages = {
 type ResolvedCacheReportImagesOptions = Required<
   Pick<
     CacheReportImagesOptions,
-    "convertToJpeg" | "fetchImage" | "logger" | "reportDirectory" | "storage"
+    "cacheDirectory" | "convertToJpeg" | "fetchImage" | "logger" | "storage"
   >
 >;
 
@@ -43,9 +43,9 @@ type StoryPreviewEntry = {
 
 type ProfilePicEntry = { pk: string; source: string };
 
-function getRelativeReportImagePath(reportDirectory: string, rawKey: string): string {
+function getRelativeCacheImagePath(cacheDirectory: string, rawKey: string): string {
   return path
-    .relative(reportDirectory, path.resolve(BASE_CACHE_DIR, IMAGES_STORAGE_DIR, rawKey))
+    .relative(cacheDirectory, path.resolve(BASE_CACHE_DIR, IMAGES_STORAGE_DIR, rawKey))
     .split(path.sep)
     .join("/");
 }
@@ -65,7 +65,7 @@ async function cacheImage(
 ): Promise<string | null> {
   const rawKey = getJpegRawKey(namespace, options.imageKey);
   const cachedPath = (await options.storage.hasItem(rawKey))
-    ? getRelativeReportImagePath(options.reportDirectory, rawKey)
+    ? getRelativeCacheImagePath(options.cacheDirectory, rawKey)
     : null;
 
   if (cachedPath !== null && options.refresh !== true) {
@@ -88,15 +88,15 @@ async function cacheImage(
     return cachedPath;
   }
 
-  return getRelativeReportImagePath(options.reportDirectory, rawKey);
+  return getRelativeCacheImagePath(options.cacheDirectory, rawKey);
 }
 
 function resolveCacheOptions(options: CacheReportImagesOptions): ResolvedCacheReportImagesOptions {
   return {
+    cacheDirectory: options.cacheDirectory ?? BASE_CACHE_DIR,
     convertToJpeg: options.convertToJpeg ?? convertImageToJpeg,
     fetchImage: options.fetchImage ?? globalThis.fetch,
     logger: options.logger,
-    reportDirectory: options.reportDirectory ?? path.resolve(BASE_CACHE_DIR, "reports"),
     storage: options.storage ?? imageCacheStorage,
   };
 }

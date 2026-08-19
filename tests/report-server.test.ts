@@ -16,12 +16,12 @@ const storiesReport = StoriesManifestReportSchema.parse(reportJson);
 const reportKeys = ["stories-report-earlier.json", "stories-report-fixture.json"];
 let requestedReportKey: string | undefined;
 
-mockModule("../server/report-cache.ts", {
-  getCachedReportKeys: () => reportKeys,
-  readCachedReport: (reportKey: string) => {
+mockModule("../server/report-repository.ts", {
+  getReportKeys: () => reportKeys,
+  readReport: (reportKey: string) => {
     requestedReportKey = reportKey;
     if (reportKey !== "stories-report-fixture.json") {
-      throw new Error(`cached report ${reportKey} could not be read`);
+      throw new Error(`report ${reportKey} could not be read`);
     }
     return globalThis.structuredClone(storiesReport);
   },
@@ -32,9 +32,9 @@ mockModule("../server/report-view-model.ts", {
     Promise.resolve({
       appleCaptionByMediaPk: new Map([["story-pk-1", "apple <text>"]]),
       cachedImages: {
-        profilePicPathByUrl: new Map([["../images/avatars/avatar.jpg", "/media/avatar.jpg"]]),
+        profilePicPathByUrl: new Map([["images/avatars/avatar.jpg", "/media/avatar.jpg"]]),
         storyPreviewPathByUrl: new Map([
-          ["../images/story-previews/story-pk-1.jpg", "/media/story.jpg"],
+          ["images/story-previews/story-pk-1.jpg", "/media/story.jpg"],
         ]),
       },
       report: fixture,
@@ -42,7 +42,7 @@ mockModule("../server/report-view-model.ts", {
         [getReportUserKey(fixture.output.users[0]), "A text-focused story with extracted details."],
       ]),
       visionByPreviewUrl: new Map([
-        ["../images/story-previews/story-pk-1.jpg", { text: "OCR text", visual: "Vision text" }],
+        ["images/story-previews/story-pk-1.jpg", { text: "OCR text", visual: "Vision text" }],
       ]),
     }),
 });
@@ -102,6 +102,6 @@ test("GET /report selects a requested report and returns 404 when unavailable", 
   assert.equal(missingResponse.status, 404);
   assert.equal(
     await missingResponse.text(),
-    "cached report stories-report-missing.json could not be read",
+    "report stories-report-missing.json could not be read",
   );
 });

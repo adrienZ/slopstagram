@@ -46,8 +46,8 @@ test("createReport resolves entities before persisting the report", async () => 
   const report = createFixtureReport();
   const calls: string[] = [];
   const cachedImages = {
-    profilePicPathByUrl: new Map([["avatar-source", "../images/avatar.jpg"]]),
-    storyPreviewPathByUrl: new Map([["story-source", "../images/story.jpg"]]),
+    profilePicPathByUrl: new Map([["avatar-source", "images/avatar.jpg"]]),
+    storyPreviewPathByUrl: new Map([["story-source", "images/story.jpg"]]),
   };
   const visionByPreviewUrl = new Map([
     ["story-source", { text: "cached text", visual: "cached visual" }],

@@ -7,8 +7,8 @@ import type { StoriesManifestReport } from "./lib/types.ts";
 type AppleCaptionResolver = (mediaPk: string, imagePath: string) => Promise<string>;
 
 export type ResolveAppleCaptionsOptions = {
+  cacheDirectory: string;
   logger: Logger;
-  reportDirectory: string;
   resolver?: AppleCaptionResolver;
 };
 
@@ -20,7 +20,7 @@ type LocalStoryPreview = {
 function getLocalStoryPreviews(
   report: StoriesManifestReport,
   cachedImages: CachedReportImages,
-  reportDirectory: string,
+  cacheDirectory: string,
 ): LocalStoryPreview[] {
   const previews = report.output.users.flatMap((user) =>
     user.stories.flatMap((story) => {
@@ -30,7 +30,7 @@ function getLocalStoryPreviews(
           : undefined;
 
       return story.status === "ok" && cachedPath !== undefined && cachedPath.length > 0
-        ? [{ imagePath: path.resolve(reportDirectory, cachedPath), mediaPk: story.media_pk }]
+        ? [{ imagePath: path.resolve(cacheDirectory, cachedPath), mediaPk: story.media_pk }]
         : [];
     }),
   );
@@ -43,7 +43,7 @@ export async function resolveAppleCaptionsForReport(
   cachedImages: CachedReportImages,
   options: ResolveAppleCaptionsOptions,
 ): Promise<void> {
-  const previews = getLocalStoryPreviews(report, cachedImages, options.reportDirectory);
+  const previews = getLocalStoryPreviews(report, cachedImages, options.cacheDirectory);
   const resolver = options.resolver ?? recognizeAppleCaption;
 
   for (const [index, preview] of previews.entries()) {

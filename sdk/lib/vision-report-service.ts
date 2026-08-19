@@ -15,12 +15,12 @@ import {
 type VisionFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
 type VisionOptions = {
+  cacheDirectory: string;
   endpoint?: string;
   fetchVision?: VisionFetch;
   logger: Logger;
   model?: string;
   prompt?: string;
-  reportDirectory: string;
   repository?: Pick<VisionRepository, "findByMediaPk" | "save">;
 };
 
@@ -42,7 +42,7 @@ type ResolvePreviewEntryOptions = {
   logger: Logger;
   model: string;
   prompt: string;
-  reportDirectory: string;
+  cacheDirectory: string;
   resultByPreviewUrl: Map<string, VisionResult>;
   sourcesByMediaPk: Map<string, string[]>;
   repository: Pick<VisionRepository, "findByMediaPk" | "save">;
@@ -57,8 +57,8 @@ function resolveVisionHost(endpoint: string | undefined): string {
   return (endpoint ?? "http://127.0.0.1:11434").replace(/\/api\/generate\/?$/u, "");
 }
 
-function resolveReportImagePath(reportDirectory: string, imagePath: string): string {
-  return path.isAbsolute(imagePath) ? imagePath : path.resolve(reportDirectory, imagePath);
+function resolveCachedImagePath(cacheDirectory: string, imagePath: string): string {
+  return path.isAbsolute(imagePath) ? imagePath : path.resolve(cacheDirectory, imagePath);
 }
 
 function getPreviewEntries(report: StoriesManifestReport): PreviewEntry[] {
@@ -158,14 +158,13 @@ async function resolvePreviewEntry(options: ResolvePreviewEntryOptions): Promise
   });
   const result = await analyzeImage(
     preview.itemLabel,
-    resolveReportImagePath(options.reportDirectory, preview.cachedPath),
+    resolveCachedImagePath(options.cacheDirectory, preview.cachedPath),
     {
       client: options.client,
       logger: options.logger,
       mediaPk: options.entry.mediaPk,
       model: options.model,
       prompt: options.prompt,
-      reportDirectory: options.reportDirectory,
       repository: options.repository,
     },
   );
@@ -200,7 +199,7 @@ export async function resolveVisionForReport(
       logger,
       model: options.model ?? VISION_MODEL,
       prompt: options.prompt ?? VISION_PROMPT,
-      reportDirectory: options.reportDirectory,
+      cacheDirectory: options.cacheDirectory,
       resultByPreviewUrl,
       sourcesByMediaPk: entrySet.sourcesByMediaPk,
       repository: options.repository ?? visionRepository,

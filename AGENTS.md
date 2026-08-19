@@ -18,3 +18,7 @@ Make sure to run `npm run check` to validate your code changes.
 To close existing instance of playwright browser, you can use the `kill-all` command.
 
 instagram.com is an SPA application so make to wait loaded / idle state.
+
+## Database
+
+No JSON blob please

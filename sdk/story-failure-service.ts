@@ -1,4 +1,3 @@
-import { getMediaCacheKey } from "./lib/cache-service.ts";
 import type { Logger } from "./lib/logging-service.ts";
 import type {
   StoryFetchFailure,
@@ -104,15 +103,4 @@ export function createMissingResponseFailure(): RequestFailure {
     reason: "request_failed",
     status: null,
   };
-}
-
-export function getStoryCacheStatus(state: FetchState): { hitCount: number; missCount: number } {
-  return {
-    hitCount: state.cacheHitPks.size,
-    missCount: state.expectedMediaPks.filter((mediaPk) => !state.cacheHitPks.has(mediaPk)).length,
-  };
-}
-
-export function getMediaCacheLabel(mediaPk: string): string {
-  return getMediaCacheKey(mediaPk);
 }

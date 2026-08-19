@@ -32,7 +32,7 @@ function getHash(value: string): string {
 }
 
 function getLocalImageUrl(imagePath: string): string | null {
-  const marker = "../images/";
+  const marker = "images/";
   return imagePath.startsWith(marker) ? `/media/${imagePath.slice(marker.length)}` : null;
 }
 

@@ -12,7 +12,7 @@ export type WarmCachePayload = z.infer<typeof WarmCachePayloadSchema>;
 
 export interface WarmCacheJobResult {
   outputFileName: string;
-  outputPath: string;
+  reportKey: string;
   counts: CreateReportResult["report"]["metadata"]["counts"];
 }
 
@@ -41,7 +41,7 @@ export async function runWarmCacheJob({
 
   return {
     outputFileName: report.outputFileName,
-    outputPath: report.outputPath,
+    reportKey: report.reportKey,
     counts: report.report.metadata.counts,
   };
 }

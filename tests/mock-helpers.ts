@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { mock } from "node:test";
 import path from "node:path";
 import { createConsola } from "consola";
-import { createCacheStorages } from "../sdk/lib/cache-service.ts";
+import type { StoryRepository } from "../sdk/entities/story.ts";
 import type { CachedReportImages } from "../sdk/lib/image-cache-service.ts";
 import type { Logger } from "../sdk/lib/logging-service.ts";
 import type {
@@ -13,8 +13,9 @@ import type {
   StoriesManifestReport,
   StoryTrayEntry,
 } from "../sdk/lib/types.ts";
-import type { InstagramClient, InstagramClientResponse } from "../sdk/stories.ts";
+import type { StoryStorage } from "../sdk/lib/types.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
+import type { InstagramClient, InstagramClientResponse } from "../sdk/stories.ts";
 
 export const previewSource = "https://example.com/story-preview.webp";
 
@@ -55,8 +56,22 @@ export function createCapturingLogger(): Logger & { messages: string[] } {
   });
 }
 
-export function createMemoryCacheStorages(): ReturnType<typeof createCacheStorages> {
-  return createCacheStorages(createMemoryStorage());
+export function createMemoryStoryRepository(): Pick<StoryRepository, "findByMediaPk" | "save"> & {
+  entries: Map<string, StoryItem>;
+  storyStorage: StoryStorage;
+} {
+  const entries = new Map<string, StoryItem>();
+  const storyStorage = createMemoryStorage<StoryItem>();
+
+  return {
+    entries,
+    storyStorage,
+    findByMediaPk: (mediaPk) => Promise.resolve(entries.get(mediaPk) ?? null),
+    save: (story) => {
+      entries.set(story.pk, story);
+      return Promise.resolve();
+    },
+  };
 }
 
 export function mockModule(specifier: string, namedExports: Record<string, unknown>): void {
@@ -90,7 +105,7 @@ export function createSummaryReport(): StoriesManifestReport {
 }
 
 export async function withReportImage<T>(
-  run: (reportDirectory: string, cachedImages: CachedReportImages) => Promise<T>,
+  run: (cacheDirectory: string, cachedImages: CachedReportImages) => Promise<T>,
   storyPreviewPathByUrl: Map<string, string> = new Map([[previewSource, "story.jpg"]]),
 ): Promise<T> {
   const directory = await mkdtemp(path.join(tmpdir(), "slopstagram-vision-test-"));

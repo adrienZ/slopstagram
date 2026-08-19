@@ -13,7 +13,12 @@ type InstagramUserFields = {
 type InstagramUserStore = Pick<InstagramUserRepository, "findByUsername" | "save">;
 
 function hasEmbeddedUser(user: InstagramUserFields): boolean {
-  return "full_name" in user || "id" in user || "pk" in user || "profile_pic_url" in user;
+  return (
+    (user.full_name !== null && user.full_name !== undefined) ||
+    user.id !== undefined ||
+    user.pk !== undefined ||
+    (user.profile_pic_url !== null && user.profile_pic_url !== undefined)
+  );
 }
 
 function toInstagramUser(user: InstagramUserFields): InstagramUserEntry {
@@ -70,7 +75,7 @@ export async function hydrateReportInstagramUsers(
     const entity = usersByUsername.get(user.username);
     if (entity !== null && entity !== undefined) {
       user.full_name = entity.full_name;
-      user.profile_pic_url = `../images/avatars/${entity.pk}.jpg`;
+      user.profile_pic_url = `images/avatars/${entity.pk}.jpg`;
     }
   }
 }

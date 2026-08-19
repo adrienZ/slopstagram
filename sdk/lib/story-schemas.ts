@@ -7,16 +7,21 @@ export const StoryVersionSchema = z.object({
   width: z.number().optional(),
 });
 
+// Instagram returns identifiers as either JSON strings or numbers, depending on
+// the endpoint and account. Keep the application boundary consistently string
+// based so identifiers remain suitable for map keys and database columns.
+const InstagramIdentifierSchema = z.union([z.string(), z.number()]).transform(String);
+
 export const StoryTrayEntrySchema = z.object({
-  id: z.string(),
+  id: InstagramIdentifierSchema,
   full_name: z.string().optional(),
-  media_ids: z.array(z.string()),
+  media_ids: z.array(InstagramIdentifierSchema),
   ranked_position: z.number().optional(),
   seen_ranked_position: z.number().optional(),
   user: z.object({
     full_name: z.string().optional(),
-    id: z.string().optional(),
-    pk: z.string().optional(),
+    id: InstagramIdentifierSchema.optional(),
+    pk: InstagramIdentifierSchema.optional(),
     profile_pic_url: z.string().optional(),
     username: z.string(),
   }),
@@ -30,11 +35,11 @@ export const StoryItemSchema = z
         candidates: z.array(StoryVersionSchema).optional(),
       })
       .optional(),
-    id: z.string().optional(),
+    id: InstagramIdentifierSchema.optional(),
     media_type: z.number().optional(),
     original_height: z.number().optional(),
     original_width: z.number().optional(),
-    pk: z.string(),
+    pk: InstagramIdentifierSchema,
     story_bloks_stickers: z.array(z.unknown()).nullable().optional(),
     story_bloks_tappables: z.array(z.unknown()).nullable().optional(),
     story_cta: z.array(z.unknown()).nullable().optional(),
@@ -52,14 +57,14 @@ export const StoryItemSchema = z
 
 export const StoryReelSchema = z
   .object({
-    id: z.string().optional(),
+    id: InstagramIdentifierSchema.optional(),
     items: z.array(StoryItemSchema).optional(),
-    media_ids: z.array(z.string()).optional(),
+    media_ids: z.array(InstagramIdentifierSchema).optional(),
     user: z
       .object({
         full_name: z.string().optional(),
-        id: z.string().optional(),
-        pk: z.string().optional(),
+        id: InstagramIdentifierSchema.optional(),
+        pk: InstagramIdentifierSchema.optional(),
         profile_pic_url: z.string().optional(),
         username: z.string(),
       })

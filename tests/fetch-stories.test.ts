@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { fetchStoriesManifest } from "../sdk/stories.ts";
 import { getMediaCacheKey } from "../sdk/lib/cache-service.ts";
+import { fetchStoriesManifest } from "../sdk/stories.ts";
 import {
   createCapturingLogger,
   createClient,
-  createMemoryCacheStorages,
+  createMemoryStoryRepository,
   fixedNow,
   noSleep,
   reel,
@@ -15,10 +15,10 @@ import {
 } from "./mock-helpers.ts";
 
 describe("fetchStoriesManifest", () => {
-  test("uses cached media items without calling reels media", async () => {
-    const { storiesStorage } = createMemoryCacheStorages();
-    await storiesStorage.setItem(getMediaCacheKey("m1"), storyItem("m1"));
-    await storiesStorage.setItem(getMediaCacheKey("m2"), storyItem("m2"));
+  test("fetches API media even when story storage has existing entries", async () => {
+    const storyRepository = createMemoryStoryRepository();
+    await storyRepository.save(storyItem("m1"));
+    await storyRepository.save(storyItem("m2"));
 
     const client = createClient(
       [
@@ -34,22 +34,30 @@ describe("fetchStoriesManifest", () => {
         },
         { id: "r2", media_ids: ["m2"], user: { username: "two" } },
       ],
-      [],
+      [
+        response({
+          reels: {
+            r1: reel("r1", [storyItem("m1")]),
+            r2: reel("r2", [storyItem("m2")]),
+          },
+        }),
+      ],
     );
 
     const report = await fetchStoriesManifest(client, {
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
-      storyStorage: storiesStorage,
+      storyRepository,
+      storyStorage: storyRepository.storyStorage,
     });
 
-    assert.deepEqual(client.reelsCalls, []);
+    assert.deepEqual(client.reelsCalls, [["r1", "r2"]]);
     assert.deepEqual(report.metadata.counts, {
-      cache_hits: 2,
-      cache_misses: 0,
+      cache_hits: 0,
+      cache_misses: 2,
       failed: 0,
-      fetched: 0,
+      fetched: 2,
       reels: 2,
       stories: 2,
     });
@@ -129,11 +137,15 @@ describe("fetchStoriesManifest", () => {
         username: "two",
       },
     ]);
+    assert.deepEqual(
+      await storyRepository.storyStorage.getItem(getMediaCacheKey("m1")),
+      JSON.parse(JSON.stringify(storyItem("m1"))),
+    );
   });
 
-  test("fetches only reels with missing media and caches returned items", async () => {
-    const { storiesStorage } = createMemoryCacheStorages();
-    await storiesStorage.setItem(getMediaCacheKey("m1"), storyItem("m1", "Cached image caption"));
+  test("stores every returned media item as a side effect", async () => {
+    const storyRepository = createMemoryStoryRepository();
+    await storyRepository.save(storyItem("m1", "Cached image caption"));
 
     const client = createClient(
       [
@@ -143,6 +155,7 @@ describe("fetchStoriesManifest", () => {
       [
         response({
           reels: {
+            r1: reel("r1", [storyItem("m1", "Latest image caption")]),
             r2: reel("r2", [storyItem("m2")]),
           },
         }),
@@ -153,11 +166,16 @@ describe("fetchStoriesManifest", () => {
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
-      storyStorage: storiesStorage,
+      storyRepository,
+      storyStorage: storyRepository.storyStorage,
     });
 
-    assert.deepEqual(client.reelsCalls, [["r2"]]);
-    assert.equal(await storiesStorage.hasItem(getMediaCacheKey("m2")), true);
+    assert.deepEqual(client.reelsCalls, [["r1", "r2"]]);
+    assert.deepEqual(await storyRepository.findByMediaPk("m2"), storyItem("m2"));
+    assert.deepEqual(
+      await storyRepository.storyStorage.getItem(getMediaCacheKey("m2")),
+      JSON.parse(JSON.stringify(storyItem("m2"))),
+    );
     assert.deepEqual(
       report.manifest.users.map((user) => ({
         ig_caption: user.stories[0]?.ig_caption,
@@ -167,7 +185,7 @@ describe("fetchStoriesManifest", () => {
       })),
       [
         {
-          ig_caption: "Cached image caption",
+          ig_caption: "Latest image caption",
           locations: [],
           status: "ok",
           stickers: [],
@@ -180,12 +198,12 @@ describe("fetchStoriesManifest", () => {
         },
       ],
     );
-    assert.equal(report.metadata.counts.cache_hits, 1);
-    assert.equal(report.metadata.counts.fetched, 1);
+    assert.equal(report.metadata.counts.cache_hits, 0);
+    assert.equal(report.metadata.counts.fetched, 2);
   });
 
   test("groups final output by user with story accessibility captions", async () => {
-    const { storiesStorage } = createMemoryCacheStorages();
+    const storyRepository = createMemoryStoryRepository();
     const client = createClient(
       [
         {
@@ -235,7 +253,8 @@ describe("fetchStoriesManifest", () => {
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
-      storyStorage: storiesStorage,
+      storyRepository,
+      storyStorage: storyRepository.storyStorage,
     });
 
     assert.deepEqual(report.output.users, [

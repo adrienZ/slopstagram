@@ -109,6 +109,15 @@ function createThrownFailure(error: unknown, attemptCount: number): RequestFailu
   };
 }
 
+function isNonRetryableError(error: unknown): boolean {
+  return (
+    error !== null &&
+    typeof error === "object" &&
+    "nonRetryable" in error &&
+    error.nonRetryable === true
+  );
+}
+
 async function handleFailedResponse<T>(
   response: InstagramClientResponse<T>,
   attemptIndex: number,
@@ -141,7 +150,7 @@ async function handleThrownRequest<T>(
   const attemptCount = attemptIndex + 1;
   const failure = createThrownFailure(error, attemptCount);
 
-  if (attemptCount >= options.maxAttempts) {
+  if (attemptCount >= options.maxAttempts || isNonRetryableError(error)) {
     options.logger.warn(`${label} failed after ${attemptCount} attempt(s): ${failure.message}`);
     return { failure, ok: false };
   }
