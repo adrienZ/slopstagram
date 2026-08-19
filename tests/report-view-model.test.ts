@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
+import { migrateDatabase } from "../sdk/database/migrate.ts";
 import type { StoriesManifestReport } from "../sdk/lib/types.ts";
 import { createReportViewModel } from "../server/report-view-model.ts";
 
@@ -48,6 +49,7 @@ function createUncachedReport(cacheKey: string): StoriesManifestReport {
 }
 
 test("createReportViewModel never fetches external resources on cache misses", async () => {
+  migrateDatabase();
   const originalFetch = globalThis.fetch;
   let fetchCount = 0;
   globalThis.fetch = () => {
