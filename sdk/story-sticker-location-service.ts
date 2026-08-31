@@ -1,32 +1,35 @@
 import { URL } from "node:url";
-import { isRecord, type StoryItem } from "./lib/types.ts";
+import { z } from "zod";
+import { isJsonObject, type JsonObject, type JsonValue } from "./lib/json-value.ts";
+import type { StoryItem } from "./lib/types.ts";
 
-function getNestedRecord(value: unknown, key: string): Record<string, unknown> | null {
-  if (!isRecord(value)) {
+function getNestedRecord(value: JsonValue, key: string): JsonObject | null {
+  if (!isJsonObject(value)) {
     return null;
   }
 
   const nested = value[key];
 
-  return isRecord(nested) ? nested : null;
+  return isJsonObject(nested) ? nested : null;
 }
 
-function getNestedString(value: unknown, keys: readonly string[]): string | null {
-  if (!isRecord(value)) {
+function getNestedString(value: JsonValue, keys: readonly string[]): string | null {
+  if (!isJsonObject(value)) {
     return null;
   }
 
   for (const key of keys) {
     const candidate = value[key];
-    if (typeof candidate === "string" && candidate.trim().length > 0) {
-      return candidate.trim();
+    const stringCandidate = z.string().safeParse(candidate);
+    if (stringCandidate.success && stringCandidate.data.trim().length > 0) {
+      return stringCandidate.data.trim();
     }
   }
 
   return null;
 }
 
-function getMentionStickerLabel(value: unknown): string | null {
+function getMentionStickerLabel(value: JsonValue): string | null {
   const stickerData = getNestedRecord(value, "bloks_sticker");
   const bloksData = stickerData ? getNestedRecord(stickerData, "sticker_data") : null;
   const mention = bloksData ? getNestedRecord(bloksData, "ig_mention") : null;
@@ -44,7 +47,7 @@ function getMentionStickerLabel(value: unknown): string | null {
   return fullName !== null && fullName.length > 0 ? `mention:${fullName}` : null;
 }
 
-function getMusicStickerLabel(value: unknown): string | null {
+function getMusicStickerLabel(value: JsonValue): string | null {
   const info = getNestedRecord(value, "music_asset_info");
 
   if (info === null) {
@@ -61,7 +64,7 @@ function getMusicStickerLabel(value: unknown): string | null {
   return title !== null && title.length > 0 ? `music:${title}` : null;
 }
 
-function getHashtagStickerLabel(value: unknown): string | null {
+function getHashtagStickerLabel(value: JsonValue): string | null {
   const hashtag =
     getNestedString(value, ["hashtag", "name", "tag_name"]) ??
     getNestedString(getNestedRecord(value, "hashtag"), ["name", "tag_name"]);
@@ -88,7 +91,7 @@ function unwrapInstagramRedirectUrl(value: string): string {
   }
 }
 
-function getLinkStickerLabel(value: unknown): string | null {
+function getLinkStickerLabel(value: JsonValue): string | null {
   const rawDirectUrl = getNestedString(value, ["url", "uri", "link_url", "webUri", "web_uri"]);
   const directUrl =
     rawDirectUrl !== null && rawDirectUrl.length > 0
@@ -112,7 +115,7 @@ function getLinkStickerLabel(value: unknown): string | null {
   return getNestedLinkStickerLabel(value) ?? getDirectTitleLabel(directTitle);
 }
 
-function getNestedLinkStickerLabel(value: unknown): string | null {
+function getNestedLinkStickerLabel(value: JsonValue): string | null {
   for (const key of [
     "story_link",
     "link_sticker",
@@ -135,8 +138,8 @@ function getDirectTitleLabel(directTitle: string | null): string | null {
   return directTitle !== null && directTitle.length > 0 ? `link:${directTitle}` : null;
 }
 
-function getLocationRecord(value: unknown): Record<string, unknown> | null {
-  if (!isRecord(value)) {
+function getLocationRecord(value: JsonValue): JsonObject | null {
+  if (!isJsonObject(value)) {
     return null;
   }
 
@@ -150,7 +153,7 @@ function getLocationRecord(value: unknown): Record<string, unknown> | null {
   return getNestedLocationRecord(value);
 }
 
-function getNestedLocationRecord(record: Record<string, unknown>): Record<string, unknown> | null {
+function getNestedLocationRecord(record: JsonObject): JsonObject | null {
   for (const key of [
     "location",
     "venue",
@@ -170,7 +173,7 @@ function getNestedLocationRecord(record: Record<string, unknown>): Record<string
   return null;
 }
 
-function getLocationFromValue(value: unknown): { address: string; name: string } | null {
+function getLocationFromValue(value: JsonValue): { address: string; name: string } | null {
   const location = getLocationRecord(value);
 
   if (!location) {
@@ -234,7 +237,7 @@ function getStickerLabels(story: StoryItem): string[] {
     ...(story.story_cta ?? []),
     ...(story.story_bloks_tappables ?? []),
     ...(story.text_post_share_to_ig_story_stickers ?? []),
-    story.link,
+    story.link ?? null,
   ]) {
     addUniqueLabel(labels, seen, getLinkStickerLabel(sticker));
   }

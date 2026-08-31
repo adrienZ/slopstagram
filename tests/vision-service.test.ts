@@ -99,7 +99,7 @@ describe("resolveVisionForReport", () => {
       assert.equal(repository.entries.size, 1);
       const entry = repository.entries.get("story-pk");
       assert.equal("prompt" in (entry ?? {}), false);
-      assert.equal(typeof entry?.prompt_hash, "string");
+      assert.equal(entry?.prompt_hash.length, 64);
       assert.equal(fetchCount, 1);
     });
   });

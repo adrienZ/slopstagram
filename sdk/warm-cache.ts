@@ -16,12 +16,12 @@ export interface WarmCacheJobResult {
   counts: CreateReportResult["report"]["metadata"]["counts"];
 }
 
-export function parseWarmCachePayload(payload: unknown): WarmCachePayload {
+export function parseWarmCachePayload(payload: WarmCachePayload | undefined): WarmCachePayload {
   return WarmCachePayloadSchema.parse(payload ?? {});
 }
 
 interface RunWarmCacheJobOptions {
-  payload?: unknown;
+  payload?: WarmCachePayload;
   logger?: Logger;
   dependencies?: {
     createReport?: typeof createReport;

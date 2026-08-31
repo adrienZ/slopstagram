@@ -18,6 +18,7 @@ import {
   type ResolveUserSummariesOptions,
   type RunUserSummary,
 } from "./user-summary-core-service.ts";
+import { z } from "zod";
 
 type ResolvedUserSummaryOptions = {
   logger: NonNullable<ResolveUserSummariesOptions["logger"]>;
@@ -124,8 +125,9 @@ async function resolveUserSummary(
     });
     return [userKey, summary];
   } catch (error) {
-    const status = getHttpStatus(error);
-    const message = error instanceof Error ? error.message : String(error);
+    const statusError = z.object({ status_code: z.number() }).safeParse(error);
+    const status = statusError.success ? getHttpStatus(statusError.data) : null;
+    const message = error instanceof Error ? error.message : "unknown request error";
     resolved.logger.warn(
       `could not summarize user ${userKey} with Ollama${
         status === null ? "" : ` HTTP ${status}`

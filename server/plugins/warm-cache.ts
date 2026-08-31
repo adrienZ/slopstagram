@@ -4,8 +4,8 @@ import { Queue, Worker } from "bunqueue-client";
 import { definePlugin } from "nitro";
 import { startWarmCacheQueue, WARM_CACHE_QUEUE_NAME } from "../../sdk/warm-cache-queue.ts";
 
-function toError(error: unknown): Error {
-  return error instanceof Error ? error : new Error(String(error));
+function toError(error: Error): Error {
+  return error;
 }
 
 function spawnBunqueueServer(onError: (error: Error) => void) {
@@ -54,8 +54,10 @@ export default definePlugin((nitroApp) => {
     onError: capturePluginError,
   });
 
-  void runtime.ready.catch((error: unknown) => {
-    capturePluginError(toError(error));
+  void runtime.ready.catch((error) => {
+    capturePluginError(
+      error instanceof Error ? toError(error) : new Error("warm-cache startup failed"),
+    );
   });
 
   nitroApp.hooks.hook("close", () => {
@@ -63,13 +65,17 @@ export default definePlugin((nitroApp) => {
       try {
         await runtime.close();
       } catch (error) {
-        capturePluginError(toError(error));
+        capturePluginError(
+          error instanceof Error ? toError(error) : new Error("queue shutdown failed"),
+        );
       }
 
       try {
         await server.close();
       } catch (error) {
-        capturePluginError(toError(error));
+        capturePluginError(
+          error instanceof Error ? toError(error) : new Error("server shutdown failed"),
+        );
       }
     };
 

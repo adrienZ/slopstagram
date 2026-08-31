@@ -10,6 +10,7 @@ import type { StoriesManifestReport, StoriesMediaReport, StoryVersion } from "..
 import storiesFixture from "./fixtures/instagram-story-data.json" with { type: "json" };
 import { createMemoryStoryRepository } from "./mock-helpers.ts";
 
+// SAFETY: This checked-in JSON fixture is maintained as a StoriesMediaReport test input.
 const report = storiesFixture as StoriesMediaReport;
 
 describe("parseStoryReport", () => {

@@ -24,8 +24,8 @@ function normalizeOcrText(value: string): string {
   return normalized.length > 0 ? normalized : NO_APPLE_CAPTION;
 }
 
-export function isAppleOcrUnavailable(error: unknown): error is Error & { kind: "unavailable" } {
-  return error instanceof Error && "kind" in error && error.kind === "unavailable";
+export function isAppleOcrUnavailable(error: Error): error is AppleOcrUnavailableError {
+  return error instanceof AppleOcrUnavailableError;
 }
 
 async function runAppleOcr(image: Uint8Array, platform: NodeJS.Platform): Promise<string> {
@@ -36,8 +36,8 @@ async function runAppleOcr(image: Uint8Array, platform: NodeJS.Platform): Promis
   let macOcr: typeof import("mac-ocr");
   try {
     macOcr = await import("mac-ocr");
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown import failure";
     throw new AppleOcrUnavailableError(`mac-ocr package is unavailable: ${message}`);
   }
 

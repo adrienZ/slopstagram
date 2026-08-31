@@ -2,7 +2,9 @@ import { storyRepository } from "./entity-repository-service.ts";
 import type { StoryRepository } from "../entities/story.ts";
 import { STORY_MEDIA_TYPES, type StoriesManifestReport, type StoryMediaType } from "./types.ts";
 
-function formatStoryMediaType(value: unknown): StoryMediaType | null {
+function formatStoryMediaType(
+  value: StoryMediaType | number | null | undefined,
+): StoryMediaType | null {
   if (value === STORY_MEDIA_TYPES.IMAGE || value === STORY_MEDIA_TYPES.VIDEO) {
     return value;
   }

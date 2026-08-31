@@ -4,6 +4,7 @@ import { getStoryTrayUiSortPosition, parseStoriesTrayReport } from "../sdk/lib/p
 import type { StoriesReport } from "../sdk/lib/types.ts";
 import reelsTrayFixture from "./fixtures/xdt_api__v1__feed__reels_tray.json" with { type: "json" };
 
+// SAFETY: This checked-in JSON fixture is maintained as a StoriesReport test input.
 const report = reelsTrayFixture as StoriesReport;
 
 describe("parseStoriesTrayReport", () => {

@@ -1,13 +1,12 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { test } from "node:test";
+import { mock, test } from "node:test";
 import { URL } from "node:url";
 import { H3, defineEventHandler } from "nitro/h3";
 import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
 import { StoriesManifestReportSchema } from "../sdk/lib/story-schemas.ts";
 import type { StoriesManifestReport } from "../sdk/lib/types.ts";
 import type { ReportViewModel } from "../server/report-view-model.ts";
-import { mockModule } from "./mock-helpers.ts";
 
 const reportJson: unknown = JSON.parse(
   await readFile(new URL("./fixtures/stories-report-server.json", import.meta.url), "utf8"),
@@ -16,35 +15,45 @@ const storiesReport = StoriesManifestReportSchema.parse(reportJson);
 const reportKeys = ["stories-report-earlier.json", "stories-report-fixture.json"];
 let requestedReportKey: string | undefined;
 
-mockModule("../server/report-repository.ts", {
-  getReportKeys: () => reportKeys,
-  readReport: (reportKey: string) => {
-    requestedReportKey = reportKey;
-    if (reportKey !== "stories-report-fixture.json") {
-      throw new Error(`report ${reportKey} could not be read`);
-    }
-    return globalThis.structuredClone(storiesReport);
+void mock.module("../server/report-repository.ts", {
+  // Node 24 does not yet support the replacement `exports` option.
+  // oxlint-disable-next-line typescript/no-deprecated
+  namedExports: {
+    getReportKeys: () => reportKeys,
+    readReport: (reportKey: string) => {
+      requestedReportKey = reportKey;
+      if (reportKey !== "stories-report-fixture.json") {
+        throw new Error(`report ${reportKey} could not be read`);
+      }
+      return globalThis.structuredClone(storiesReport);
+    },
   },
 });
 
-mockModule("../server/report-view-model.ts", {
-  createReportViewModel: (fixture: StoriesManifestReport): Promise<ReportViewModel> =>
-    Promise.resolve({
-      appleCaptionByMediaPk: new Map([["story-pk-1", "apple <text>"]]),
-      cachedImages: {
-        profilePicPathByUrl: new Map([["images/avatars/avatar.jpg", "/media/avatar.jpg"]]),
-        storyPreviewPathByUrl: new Map([
-          ["images/story-previews/story-pk-1.jpg", "/media/story.jpg"],
+void mock.module("../server/report-view-model.ts", {
+  // oxlint-disable-next-line typescript/no-deprecated -- Node's test mock API currently requires namedExports.
+  namedExports: {
+    createReportViewModel: (fixture: StoriesManifestReport): Promise<ReportViewModel> =>
+      Promise.resolve({
+        appleCaptionByMediaPk: new Map([["story-pk-1", "apple <text>"]]),
+        cachedImages: {
+          profilePicPathByUrl: new Map([["images/avatars/avatar.jpg", "/media/avatar.jpg"]]),
+          storyPreviewPathByUrl: new Map([
+            ["images/story-previews/story-pk-1.jpg", "/media/story.jpg"],
+          ]),
+        },
+        report: fixture,
+        userSummaryByUserKey: new Map([
+          [
+            getReportUserKey(fixture.output.users[0]),
+            "A text-focused story with extracted details.",
+          ],
         ]),
-      },
-      report: fixture,
-      userSummaryByUserKey: new Map([
-        [getReportUserKey(fixture.output.users[0]), "A text-focused story with extracted details."],
-      ]),
-      visionByPreviewUrl: new Map([
-        ["images/story-previews/story-pk-1.jpg", { text: "OCR text", visual: "Vision text" }],
-      ]),
-    }),
+        visionByPreviewUrl: new Map([
+          ["images/story-previews/story-pk-1.jpg", { text: "OCR text", visual: "Vision text" }],
+        ]),
+      }),
+  },
 });
 
 const { renderReport } = await import("../server/report-handler.tsx");

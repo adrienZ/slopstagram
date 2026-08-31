@@ -60,9 +60,9 @@ async function downloadImage(url: string): Promise<string> {
   return imagePath;
 }
 
-function parseResponse(value: string): unknown {
+function parseResponse(value: string): z.output<typeof z.json> {
   try {
-    return JSON.parse(value);
+    return z.json().parse(JSON.parse(value));
   } catch {
     return value;
   }

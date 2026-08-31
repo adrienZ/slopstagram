@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { InstagramSession } from "./lib/playwright-service.ts";
 import { StoryReelSchema, StoryTrayEntrySchema } from "./lib/story-schemas.ts";
 import type { StoryReel } from "./lib/types.ts";
 import type { InstagramClient } from "./stories.ts";
@@ -72,8 +71,19 @@ type BrowserFetchResponse = {
   status: number;
 };
 
+type InstagramClientPage = {
+  evaluate(
+    pageFunction: (input: { appId: string; requestUrl: string }) => Promise<BrowserFetchResponse>,
+    input: { appId: string; requestUrl: string },
+  ): Promise<BrowserFetchResponse>;
+};
+
+type InstagramClientSession = {
+  page: InstagramClientPage;
+};
+
 function fetchFromInstagramPage(
-  session: InstagramSession,
+  session: InstagramClientSession,
   url: string,
 ): Promise<BrowserFetchResponse> {
   return session.page.evaluate(
@@ -100,7 +110,7 @@ function toClientResponse<T>(response: BrowserFetchResponse, schema: z.ZodType<T
   };
 }
 
-export function createInstagramClient(session: InstagramSession): InstagramClient {
+export function createInstagramClient(session: InstagramClientSession): InstagramClient {
   return {
     async getReelsMedia(reelIds) {
       const query = reelIds.map((reelId) => `reel_ids=${encodeURIComponent(reelId)}`).join("&");
@@ -127,7 +137,7 @@ export function extractReels(response: ReelsMediaResponse): Record<string, Story
   if (Array.isArray(response.reels_media)) {
     return Object.fromEntries(
       response.reels_media
-        .filter((reel): reel is StoryReel & { id: string } => typeof reel.id === "string")
+        .filter((reel): reel is StoryReel & { id: string } => reel.id !== undefined)
         .map((reel) => [reel.id, reel]),
     );
   }

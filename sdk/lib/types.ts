@@ -1,4 +1,5 @@
 import type { Storage } from "unstorage";
+import type { JsonValue } from "./json-value.ts";
 
 export const STORY_MEDIA_TYPES = {
   IMAGE: "image",
@@ -26,7 +27,7 @@ export type StoryTrayEntry = {
 
 export type StoriesReport = {
   xdt_api__v1__feed__reels_tray: {
-    broadcasts: unknown[];
+    broadcasts: JsonValue[];
     status: string;
     story_ranking_token: string;
     tray: StoryTrayEntry[];
@@ -62,16 +63,16 @@ export type StoryItem = {
   original_height?: number;
   original_width?: number;
   pk: string;
-  story_bloks_stickers?: unknown[] | null;
-  story_bloks_tappables?: unknown[] | null;
-  story_cta?: unknown[] | null;
-  story_hashtags?: unknown[] | null;
-  story_locations?: unknown[] | null;
-  story_link_stickers?: unknown[] | null;
-  story_music_stickers?: unknown[] | null;
-  text_post_share_to_ig_story_stickers?: unknown[] | null;
+  story_bloks_stickers?: JsonValue[] | null;
+  story_bloks_tappables?: JsonValue[] | null;
+  story_cta?: JsonValue[] | null;
+  story_hashtags?: JsonValue[] | null;
+  story_locations?: JsonValue[] | null;
+  story_link_stickers?: JsonValue[] | null;
+  story_music_stickers?: JsonValue[] | null;
+  text_post_share_to_ig_story_stickers?: JsonValue[] | null;
   video_versions?: StoryVideoVersion[] | null;
-  [key: string]: unknown;
+  [key: string]: JsonValue | undefined;
 };
 
 export type StoryReel = {
@@ -79,7 +80,6 @@ export type StoryReel = {
   items?: StoryItem[];
   media_ids?: string[];
   user?: StoryTrayUser;
-  [key: string]: unknown;
 };
 
 export type StoriesMediaReport = {
@@ -209,16 +209,8 @@ export type ParsedStory = {
   height: number | null;
   media_type: StoryMediaType;
   pk: string;
-  story_bloks_stickers: unknown[] | null;
-  story_music_stickers: unknown[] | null;
+  story_bloks_stickers: JsonValue[] | null;
+  story_music_stickers: JsonValue[] | null;
   url: string | null;
   width: number | null;
 };
-
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object";
-}
-
-export function isStoryItem(value: unknown): value is StoryItem {
-  return isRecord(value) && typeof value.pk === "string";
-}

@@ -176,18 +176,8 @@ export function createSummaryPrompt(
   ].join("\n");
 }
 
-export function getHttpStatus(error: unknown): number | null {
-  if (
-    error !== null &&
-    error !== undefined &&
-    typeof error === "object" &&
-    "status_code" in error &&
-    typeof error.status_code === "number"
-  ) {
-    return error.status_code;
-  }
-
-  return null;
+export function getHttpStatus(error: { status_code: number }): number {
+  return error.status_code;
 }
 
 function resolveOllamaHost(endpoint: string | undefined): string {

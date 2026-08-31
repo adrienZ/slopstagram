@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { defineEventHandler } from "nitro/h3";
+import { z } from "zod";
 import { BASE_CACHE_DIR, IMAGES_STORAGE_DIR } from "../../../sdk/lib/cache-service.ts";
 
 export const mediaDirectory = path.resolve(BASE_CACHE_DIR, IMAGES_STORAGE_DIR);
@@ -59,5 +60,6 @@ export async function createMediaResponse(
 
 export default defineEventHandler((event) => {
   const requestPath = event.context.params?.path;
-  return typeof requestPath === "string" ? createMediaResponse(requestPath) : notFound();
+  const parsedPath = z.string().safeParse(requestPath);
+  return parsedPath.success ? createMediaResponse(parsedPath.data) : notFound();
 });

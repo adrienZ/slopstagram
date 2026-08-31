@@ -7,7 +7,7 @@ import {
   WARM_CACHE_QUEUE_NAME,
   type WarmCacheQueueDependencies,
 } from "../sdk/warm-cache-queue.ts";
-import { runWarmCacheJob } from "../sdk/warm-cache.ts";
+import { runWarmCacheJob, type WarmCachePayload } from "../sdk/warm-cache.ts";
 import { createMockLogger } from "./mock-helpers.ts";
 
 function createReportResult(): CreateReportResult {
@@ -45,7 +45,9 @@ test("runWarmCacheJob creates a report using reportArgs from the payload", async
     dependencies: {
       createReport: (options) => {
         calls.push(options.args ?? []);
-        assert.equal(typeof options.logger.progress, "function");
+        assert.doesNotThrow(() => {
+          options.logger.progress(0, 1);
+        });
         return Promise.resolve(createReportResult());
       },
     },
@@ -88,7 +90,7 @@ test("startWarmCacheQueue schedules and processes warm-cache jobs", async () => 
   let workerErrorListener: ((error: Error) => void) | undefined;
   const workerError = new Error("worker failed");
   const capturedErrors: Error[] = [];
-  let processedPayload: unknown;
+  let processedPayload: WarmCachePayload | undefined;
 
   const runtime = startWarmCacheQueue({
     dependencies: {
@@ -104,7 +106,7 @@ test("startWarmCacheQueue schedules and processes warm-cache jobs", async () => 
           },
           upsertJobScheduler(...arguments_) {
             calls.push({ arguments: arguments_, name: "queue:schedule" });
-            return Promise.resolve("scheduled");
+            return Promise.resolve();
           },
         };
       },
@@ -145,7 +147,7 @@ test("startWarmCacheQueue schedules and processes warm-cache jobs", async () => 
     },
   });
 
-  assert.equal(await runtime.ready, undefined);
+  await runtime.ready;
   assert.ok(processor);
   assert.deepEqual(await processor({ data: { reportArgs: ["--limit", "5"] } }), {
     counts: createReportResult().report.metadata.counts,

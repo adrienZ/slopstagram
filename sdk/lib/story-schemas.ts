@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { JsonValueSchema } from "./json-value.ts";
 import { STORY_MEDIA_TYPES } from "./types.ts";
 
 export const StoryVersionSchema = z.object({
@@ -40,20 +41,20 @@ export const StoryItemSchema = z
     original_height: z.number().optional(),
     original_width: z.number().optional(),
     pk: InstagramIdentifierSchema,
-    story_bloks_stickers: z.array(z.unknown()).nullable().optional(),
-    story_bloks_tappables: z.array(z.unknown()).nullable().optional(),
-    story_cta: z.array(z.unknown()).nullable().optional(),
-    story_hashtags: z.array(z.unknown()).nullable().optional(),
-    story_locations: z.array(z.unknown()).nullable().optional(),
-    story_link_stickers: z.array(z.unknown()).nullable().optional(),
-    story_music_stickers: z.array(z.unknown()).nullable().optional(),
-    text_post_share_to_ig_story_stickers: z.array(z.unknown()).nullable().optional(),
+    story_bloks_stickers: z.array(JsonValueSchema).nullable().optional(),
+    story_bloks_tappables: z.array(JsonValueSchema).nullable().optional(),
+    story_cta: z.array(JsonValueSchema).nullable().optional(),
+    story_hashtags: z.array(JsonValueSchema).nullable().optional(),
+    story_locations: z.array(JsonValueSchema).nullable().optional(),
+    story_link_stickers: z.array(JsonValueSchema).nullable().optional(),
+    story_music_stickers: z.array(JsonValueSchema).nullable().optional(),
+    text_post_share_to_ig_story_stickers: z.array(JsonValueSchema).nullable().optional(),
     video_versions: z
       .array(StoryVersionSchema.extend({ type: z.number().optional() }))
       .nullable()
       .optional(),
   })
-  .catchall(z.unknown());
+  .catchall(JsonValueSchema);
 
 export const StoryReelSchema = z
   .object({
@@ -70,7 +71,7 @@ export const StoryReelSchema = z
       })
       .optional(),
   })
-  .catchall(z.unknown());
+  .catchall(JsonValueSchema);
 
 const StoryManifestItemStatusSchema = z.enum(["ok", "failed"]);
 const StoryMediaTypeSchema = z.enum([STORY_MEDIA_TYPES.IMAGE, STORY_MEDIA_TYPES.VIDEO]);

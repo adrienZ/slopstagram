@@ -14,7 +14,7 @@ import { getStoryLocations, getStoryStickers } from "./story-sticker-location-se
 function getAccessibilityCaption(mediaPk: string, cachedItems: Map<string, StoryItem>): string {
   const caption = cachedItems.get(mediaPk)?.accessibility_caption;
 
-  return typeof caption === "string" && caption.trim().length > 0
+  return caption !== null && caption !== undefined && caption.trim().length > 0
     ? caption
     : NO_ACCESSIBILITY_CAPTION;
 }
@@ -53,8 +53,7 @@ function createManifestStory(
 ): StoryManifestItem {
   const failureIndex = failureByMediaPk.get(mediaPk);
 
-  return {
-    ...(failureIndex === undefined ? {} : { failure_index: failureIndex }),
+  const story: StoryManifestItem = {
     ig_caption: getAccessibilityCaption(mediaPk, cachedItems),
     locations: getStoryLocations(mediaPk, cachedItems),
     media_type: getStoryMediaType(mediaPk, cachedItems),
@@ -63,6 +62,8 @@ function createManifestStory(
     stickers: getStoryStickers(mediaPk, cachedItems),
     status: failureIndex === undefined ? "ok" : "failed",
   };
+  if (failureIndex !== undefined) story.failure_index = failureIndex;
+  return story;
 }
 
 export function createManifestUsers(
@@ -88,16 +89,7 @@ export function createManifestUsers(
 function appendOutputUserStories(group: StoryOutputUser, user: StoryManifestReel): void {
   group.reel_ids.push(user.reel_id);
   group.stories.push(
-    ...user.stories.map((story) => ({
-      ...(story.failure_index === undefined ? {} : { failure_index: story.failure_index }),
-      ig_caption: story.ig_caption,
-      locations: story.locations,
-      media_type: story.media_type ?? null,
-      media_pk: story.media_pk,
-      preview_image_url: story.preview_image_url,
-      stickers: story.stickers,
-      status: story.status,
-    })),
+    ...user.stories.map((story) => ({ ...story, media_type: story.media_type ?? null })),
   );
 }
 

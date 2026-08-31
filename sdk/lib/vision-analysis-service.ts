@@ -80,11 +80,7 @@ function parseOcrText(value: string[]): string {
     .join("\n");
 }
 
-function parseVisionResponse(value: unknown): VisionResult {
-  if (typeof value !== "string") {
-    return createFailureResult("vision failed: invalid response");
-  }
-
+function parseVisionResponse(value: string): VisionResult {
   const response = normalizeVisionText(value);
 
   if (!response) {
@@ -108,33 +104,7 @@ function parseVisionResponse(value: unknown): VisionResult {
   };
 }
 
-function normalizeStoredResult(value: unknown): VisionResult | null {
-  if (typeof value === "string") {
-    return {
-      text: "",
-      visual: normalizeVisionText(value),
-    };
-  }
-
-  if (
-    value !== null &&
-    value !== undefined &&
-    typeof value === "object" &&
-    "text" in value &&
-    "visual" in value &&
-    typeof value.text === "string" &&
-    typeof value.visual === "string"
-  ) {
-    return normalizeVisionResult({
-      text: value.text,
-      visual: value.visual,
-    });
-  }
-
-  return null;
-}
-
-function isServerUnavailableError(error: unknown): boolean {
+function isServerUnavailableError(error: Error): boolean {
   if (error instanceof TypeError) {
     return true;
   }
@@ -146,18 +116,13 @@ function isServerUnavailableError(error: unknown): boolean {
   return false;
 }
 
-function getVisionHttpStatus(error: unknown): number | null {
-  if (
-    error !== null &&
-    error !== undefined &&
-    typeof error === "object" &&
-    "status_code" in error &&
-    typeof error.status_code === "number"
-  ) {
-    return error.status_code;
-  }
+const VisionHttpErrorSchema = z
+  .object({ status_code: z.number() })
+  .transform(({ status_code }) => ({ status_code }));
+type VisionRequestError = Error | z.output<typeof VisionHttpErrorSchema>;
 
-  return null;
+function getVisionHttpStatus(error: VisionRequestError): number | null {
+  return "status_code" in error ? error.status_code : null;
 }
 
 async function getStoredVisionResult(
@@ -167,7 +132,7 @@ async function getStoredVisionResult(
   const entry = await options.repository.findByMediaPk(options.mediaPk);
 
   if (isUsableVisionEntry(entry, { ...options, promptHash })) {
-    return normalizeStoredResult(entry.result);
+    return normalizeVisionResult(entry.result);
   }
 
   return null;
@@ -200,7 +165,7 @@ async function runVisionRequest(
 }
 
 function handleVisionError(
-  error: unknown,
+  error: VisionRequestError,
   itemLabel: string,
   options: ResolvedVisionOptions,
 ): VisionResult {
@@ -212,12 +177,12 @@ function handleVisionError(
     );
   }
 
-  if (isServerUnavailableError(error)) {
+  if (error instanceof Error && isServerUnavailableError(error)) {
     options.logger.warn(`vision unavailable for ${itemLabel}`);
     return createFailureResult(VISION_SERVER_NOT_RUNNING);
   }
 
-  const message = error instanceof Error ? error.message : String(error);
+  const message = error instanceof Error ? error.message : "unknown request error";
   options.logger.warn(`could not run vision for ${itemLabel}: ${message}`);
   return createFailureResult(`vision failed: ${message}`);
 }
@@ -237,6 +202,12 @@ export async function analyzeImage(
   try {
     return await runVisionRequest(imagePath, promptHash, options);
   } catch (error) {
-    return handleVisionError(error, itemLabel, options);
+    const httpError = VisionHttpErrorSchema.safeParse(error);
+    const requestError = httpError.success
+      ? httpError.data
+      : error instanceof Error
+        ? error
+        : new Error("unknown request error");
+    return handleVisionError(requestError, itemLabel, options);
   }
 }

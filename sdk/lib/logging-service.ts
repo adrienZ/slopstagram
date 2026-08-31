@@ -12,8 +12,8 @@ export type Logger = ConsolaInstance & {
 };
 
 type ActiveProgressBar = { bar: ProgressBar; key: string };
-type WrappedLogMethod = ((message?: unknown, ...args: unknown[]) => void) & {
-  raw: (...args: unknown[]) => void;
+type WrappedLogMethod = ((message?: string, ...args: string[]) => void) & {
+  raw: (...args: string[]) => void;
 };
 
 function createBar(prefix: string): ProgressBar {
@@ -28,12 +28,12 @@ function createBar(prefix: string): ProgressBar {
 
 function wrapLogMethod(log: WrappedLogMethod, stopActiveBar: () => void): WrappedLogMethod {
   return Object.assign(
-    (message?: unknown, ...args: unknown[]) => {
+    (message?: string, ...args: string[]) => {
       stopActiveBar();
       log(message, ...args);
     },
     {
-      raw: (...args: unknown[]) => {
+      raw: (...args: string[]) => {
         stopActiveBar();
         log.raw(...args);
       },

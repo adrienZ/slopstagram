@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { InstagramSession } from "../sdk/lib/playwright-service.ts";
+import { z } from "zod";
+import type { JsonValue } from "../sdk/lib/json-value.ts";
 import { createInstagramClient } from "../sdk/story-client-service.ts";
 
 type BrowserFetchCall = {
@@ -9,22 +10,21 @@ type BrowserFetchCall = {
 };
 
 function createSession(
-  body: unknown,
+  body: Error | JsonValue,
   calls: BrowserFetchCall[] = [],
   contentType = "application/json",
-): InstagramSession {
+): Parameters<typeof createInstagramClient>[0] {
+  const rawBody = z.string().safeParse(body);
   const serializedBody =
     body instanceof Error
       ? "<!DOCTYPE html>"
-      : typeof body === "string"
-        ? body
+      : rawBody.success
+        ? rawBody.data
         : JSON.stringify(body);
 
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Test double only needs page.evaluate for this adapter.
   return {
-    context: {},
     page: {
-      evaluate: (_callback: unknown, input: BrowserFetchCall) => {
+      evaluate: (_callback, input) => {
         calls.push(input);
         return Promise.resolve({
           body: serializedBody,
@@ -34,7 +34,7 @@ function createSession(
         });
       },
     },
-  } as unknown as InstagramSession;
+  };
 }
 
 test("createInstagramClient fetches tray through the authenticated browser page", async () => {

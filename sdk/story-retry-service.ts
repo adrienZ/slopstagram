@@ -100,22 +100,17 @@ function createHttpFailure(
   };
 }
 
-function createThrownFailure(error: unknown, attemptCount: number): RequestFailure {
+function createThrownFailure(error: Error, attemptCount: number): RequestFailure {
   return {
     attemptCount,
-    message: error instanceof Error ? error.message : String(error),
+    message: error.message,
     reason: "request_failed",
     status: null,
   };
 }
 
-function isNonRetryableError(error: unknown): boolean {
-  return (
-    error !== null &&
-    typeof error === "object" &&
-    "nonRetryable" in error &&
-    error.nonRetryable === true
-  );
+function isNonRetryableError(error: Error): boolean {
+  return "nonRetryable" in error && error.nonRetryable === true;
 }
 
 async function handleFailedResponse<T>(
@@ -142,7 +137,7 @@ async function handleFailedResponse<T>(
 
 // oxlint-disable-next-line typescript/no-unnecessary-type-parameters https://typescript-eslint.io/rules/no-unnecessary-type-parameters/#the-return-type-is-only-used-as-an-input-so-why-isnt-the-rule-reporting
 async function handleThrownRequest<T>(
-  error: unknown,
+  error: Error,
   attemptIndex: number,
   options: RetryOptions,
   label: string,
@@ -186,9 +181,10 @@ export async function requestWithRetry<T>(
       if (result !== null) {
         return result;
       }
-    } catch (error: unknown) {
-      lastFailure = createThrownFailure(error, attemptIndex + 1);
-      const result = await handleThrownRequest<T>(error, attemptIndex, options, label);
+    } catch (error) {
+      const requestError = error instanceof Error ? error : new Error("request failed");
+      lastFailure = createThrownFailure(requestError, attemptIndex + 1);
+      const result = await handleThrownRequest<T>(requestError, attemptIndex, options, label);
       if (result !== null) {
         return result;
       }

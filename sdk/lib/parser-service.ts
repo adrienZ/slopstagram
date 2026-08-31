@@ -69,11 +69,11 @@ function findStoryItem(report: StoriesMediaReport, pk: string): StoryItem {
 export function getStoryTrayUiSortPosition(
   entry: Pick<StoryTrayEntry, "ranked_position" | "seen_ranked_position">,
 ): number {
-  if (typeof entry.seen_ranked_position === "number") {
+  if (entry.seen_ranked_position !== undefined) {
     return entry.seen_ranked_position;
   }
 
-  if (typeof entry.ranked_position === "number") {
+  if (entry.ranked_position !== undefined) {
     return entry.ranked_position;
   }
 

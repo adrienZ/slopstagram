@@ -73,13 +73,17 @@ test("createReport resolves entities before persisting the report", async () => 
       },
       cacheReportImages: (_report, options) => {
         calls.push("cache-images");
-        assert.equal(typeof options.logger.progress, "function");
+        assert.doesNotThrow(() => {
+          options.logger.progress(0, 1);
+        });
         return Promise.resolve(cachedImages);
       },
       resolveAppleCaptionsForReport: (_report, images, options) => {
         calls.push("resolve-apple-captions");
         assert.equal(images, cachedImages);
-        assert.equal(typeof options.logger.progress, "function");
+        assert.doesNotThrow(() => {
+          options.logger.progress(0, 1);
+        });
         return Promise.resolve();
       },
       resolveVisionForReport: (_report, images) => {
@@ -89,7 +93,9 @@ test("createReport resolves entities before persisting the report", async () => 
       },
       resolveUserSummariesForReport: (_report, options) => {
         calls.push("resolve-summaries");
-        assert.equal(typeof options.logger.progress, "function");
+        assert.doesNotThrow(() => {
+          options.logger.progress(0, 1);
+        });
         assert.equal(options.visionByPreviewUrl, visionByPreviewUrl);
         return Promise.resolve(new Map());
       },

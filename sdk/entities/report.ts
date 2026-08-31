@@ -2,11 +2,16 @@
 import { asc, eq } from "drizzle-orm";
 import { integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-orm/zod";
+import { z } from "zod";
 import type { DrizzleDatabase } from "../database/client.ts";
 import { createOutputUsers } from "../story-output-service.ts";
 import { StoriesManifestReportSchema } from "../lib/story-schemas.ts";
-import type { StoriesManifestReport, StoryManifestItem } from "../lib/types.ts";
-
+import type {
+  StoriesManifestReport,
+  StoryFetchFailure,
+  StoryManifestItem,
+  StoryManifestReel,
+} from "../lib/types.ts";
 export const reports = sqliteTable("reports", {
   broadcastsCount: integer().notNull(),
   cacheHits: integer().notNull(),
@@ -75,7 +80,6 @@ export const reportFailures = sqliteTable(
 export const NewReportSchema = createInsertSchema(reports);
 function toReportEntry(key: string, report: StoriesManifestReport): typeof reports.$inferInsert {
   const { counts } = report.metadata;
-
   return NewReportSchema.parse({
     broadcastsCount: report.metadata.broadcasts_count,
     cacheHits: counts.cache_hits,
@@ -111,35 +115,36 @@ function toReportStoryEntry(
     stickers: JSON.stringify(story.stickers),
   };
 }
-function parseJson(value: string): unknown {
-  return JSON.parse(value) as unknown;
+function parseStringArray(value: string): string[] {
+  return z.array(z.string()).parse(JSON.parse(value));
 }
-function toManifestStory(row: typeof reportStories.$inferSelect): unknown {
-  return {
-    ...(row.failureIndex === null ? {} : { failure_index: row.failureIndex }),
+function toManifestStory(row: typeof reportStories.$inferSelect): StoryManifestItem {
+  const story: StoryManifestItem = {
     ig_caption: row.igCaption,
-    locations: parseJson(row.locations),
-    media_type: row.mediaType,
+    locations: parseStringArray(row.locations),
+    media_type: z.enum(["image", "video"]).nullable().parse(row.mediaType),
     media_pk: row.mediaPk,
     preview_image_url: row.previewImageUrl,
-    status: row.status,
-    stickers: parseJson(row.stickers),
+    status: z.enum(["ok", "failed"]).parse(row.status),
+    stickers: parseStringArray(row.stickers),
   };
+  if (row.failureIndex !== null) story.failure_index = row.failureIndex;
+  return story;
 }
-function toFailure(row: typeof reportFailures.$inferSelect): unknown {
+function toFailure(row: typeof reportFailures.$inferSelect): StoryFetchFailure {
   return {
     attempt_count: row.attemptCount,
     http_status: row.httpStatus,
     media_pk: row.mediaPk,
     message: row.message,
-    reason: row.reason,
+    reason: z.enum(["request_failed", "rate_limited", "missing_from_response"]).parse(row.reason),
     reel_id: row.reelId,
   };
 }
 function buildManifestUsers(
   reels: Array<typeof reportReels.$inferSelect>,
   storyRows: Array<typeof reportStories.$inferSelect>,
-): unknown[] {
+): StoryManifestReel[] {
   return reels.map((reel) => {
     const stories = storyRows
       .filter((story) => story.reelId === reel.reelId)
@@ -200,7 +205,6 @@ function toReport(
     },
     output: { users: [] },
   });
-
   return {
     ...parsedReport,
     output: { users: createOutputUsers(parsedReport.manifest.users) },
@@ -238,7 +242,6 @@ async function replaceReportRelations(
   await database.delete(reportFailures).where(eq(reportFailures.reportKey, key));
   await database.delete(reportStories).where(eq(reportStories.reportKey, key));
   await database.delete(reportReels).where(eq(reportReels.reportKey, key));
-
   for (const reel of report.manifest.users) {
     await database.insert(reportReels).values({
       fullName: reel.full_name ?? null,
@@ -256,7 +259,6 @@ async function replaceReportRelations(
         .values(toReportStoryEntry(key, reel.reel_id, sortOrder, story));
     }
   }
-
   for (const [failureIndex, failure] of report.failures.entries()) {
     await database.insert(reportFailures).values({
       attemptCount: failure.attempt_count,
@@ -273,13 +275,11 @@ async function replaceReportRelations(
 
 export class ReportRepository {
   constructor(private readonly database: DrizzleDatabase) {}
-
   findByKey(key: string): Promise<StoriesManifestReport | null> {
     const report = this.database.select().from(reports).where(eq(reports.key, key)).get();
     if (report === undefined) return Promise.resolve(null);
     return Promise.resolve(toReport(report, readReportRows(this.database, key)));
   }
-
   listKeys(): Promise<string[]> {
     const keys = this.database
       .select({ key: reports.key })

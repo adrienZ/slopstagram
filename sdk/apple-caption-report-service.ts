@@ -53,13 +53,16 @@ export async function resolveAppleCaptionsForReport(
         suffix: preview.mediaPk,
       });
       await resolver(preview.mediaPk, preview.imagePath);
-    } catch (error: unknown) {
-      if (isAppleOcrUnavailable(error)) {
-        options.logger.warn(`apple ocr unavailable; skipping remaining captions: ${error.message}`);
+    } catch (error) {
+      const ocrError = error instanceof Error ? error : new Error("unknown OCR failure");
+      if (isAppleOcrUnavailable(ocrError)) {
+        options.logger.warn(
+          `apple ocr unavailable; skipping remaining captions: ${ocrError.message}`,
+        );
         return;
       }
 
-      const message = error instanceof Error ? error.message : String(error);
+      const message = ocrError.message;
       options.logger.warn(`apple ocr failed for story ${preview.mediaPk}: ${message}`);
     }
 

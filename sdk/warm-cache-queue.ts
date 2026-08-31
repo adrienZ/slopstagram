@@ -21,7 +21,7 @@ interface WarmCacheQueue {
         backoff: { type: "exponential"; delay: number };
       };
     },
-  ): Promise<unknown>;
+  ): Promise<void>;
 }
 
 interface WarmCacheWorker {
@@ -57,7 +57,7 @@ export interface StartWarmCacheQueueOptions {
 }
 
 export interface WarmCacheQueueRuntime {
-  ready: Promise<unknown>;
+  ready: Promise<void>;
   close(): Promise<void>;
 }
 

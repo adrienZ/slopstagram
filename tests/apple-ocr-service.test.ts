@@ -63,7 +63,7 @@ describe("recognizeAppleCaption", () => {
         readImage: () => Promise.resolve(Buffer.from("local-image")),
         repository: repository,
       }),
-      (error: unknown) =>
+      (error) =>
         error instanceof Error &&
         "kind" in error &&
         error.kind === "unavailable" &&
