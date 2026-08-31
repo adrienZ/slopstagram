@@ -18,3 +18,5 @@ the browser on `about:blank` while `launchPersistentContext()` waits indefinitel
 for Chromium's remote-debugging pipe. Running the same entrypoint through Node.js
 works correctly. Using `tsx` keeps the commands cross-platform without requiring a
 build step or spelling out Node loader flags.
+
+you can find migration steps on this [commit](https://github.com/adrienZ/slopstagram/commit/b91a74e72028713b235150317f5509360f181715)
