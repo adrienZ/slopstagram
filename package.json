@@ -42,7 +42,7 @@
     "@types/node": "^26.1.1",
     "drizzle-kit": "^1.0.0-rc.4",
     "husky": "^9.1.7",
-    "knip": "^6.33.0",
+    "knip": "^6.34.0",
     "lint-staged": "^17.3.0",
     "mono-jsx": "^0.9.14",
     "nitro": "^3.0.260610-beta",
@@ -63,5 +63,5 @@
   "engines": {
     "node": ">=24.0.0"
   },
-  "packageManager": "npm@11.6.1"
+  "packageManager": "npm@11.17.0"
 }
