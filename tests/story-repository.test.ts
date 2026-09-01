@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
+import { InstagramUserRepository } from "../sdk/entities/instagram-user.ts";
 import { StoryRepository } from "../sdk/entities/story.ts";
 
 describe("StoryRepository", () => {
@@ -75,5 +76,69 @@ describe("StoryRepository", () => {
       storyColumns.some((column) => String(column.name).toLowerCase().includes("json")),
       false,
     );
+  });
+
+  test("lists a user's stories by their Instagram publication date", async (context) => {
+    const database = createDrizzle(":memory:");
+    migrateDatabase(database);
+    context.after(() => {
+      database.$client.close();
+    });
+    const repository = new StoryRepository(database);
+    const userRepository = new InstagramUserRepository(database);
+
+    await userRepository.save({
+      full_name: "Timeline User",
+      id: "user-id",
+      pk: "user-pk",
+      username: "timeline-user",
+    });
+
+    await repository.save(
+      {
+        media_type: 1,
+        pk: "older-story",
+        story_hashtags: [{ hashtag: "weekend" }],
+        taken_at: 1_767_225_600,
+      },
+      { full_name: "Timeline User", pk: "user-pk", username: "timeline-user" },
+    );
+    await repository.save(
+      { media_type: 2, pk: "newer-story", taken_at: 1_767_312_000 },
+      { full_name: "Timeline User", pk: "user-pk", username: "timeline-user" },
+    );
+    await repository.save(
+      { media_type: 1, pk: "without-published-date" },
+      {
+        full_name: "Timeline User",
+        pk: "user-pk",
+        username: "timeline-user",
+      },
+    );
+
+    assert.deepEqual(await repository.listByUsername("timeline-user"), [
+      {
+        full_name: "Timeline User",
+        locations: [],
+        owner_pk: "user-pk",
+        story: { media_type: 2, pk: "newer-story", taken_at: 1_767_312_000 },
+        stickers: [],
+        taken_at: 1_767_312_000,
+        username: "timeline-user",
+      },
+      {
+        full_name: "Timeline User",
+        locations: [],
+        owner_pk: "user-pk",
+        story: {
+          media_type: 1,
+          pk: "older-story",
+          taken_at: 1_767_225_600,
+        },
+        stickers: ["hashtag:#weekend"],
+        taken_at: 1_767_225_600,
+        username: "timeline-user",
+      },
+    ]);
   });
 });

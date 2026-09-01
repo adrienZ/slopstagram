@@ -101,7 +101,11 @@ if (dialog) {
   dialog.addEventListener("close", clearOpenParam);
 
   document.addEventListener("keydown", (event) => {
-    if (!dialog.open || event.key === "Escape") return;
+    if (!dialog.open) return;
+    if (event.key === "Escape") {
+      dialog.close();
+      return;
+    }
     if (event.key === "ArrowLeft") openAt(index - 1);
     if (event.key === "ArrowRight") openAt(index + 1);
   });
@@ -140,6 +144,10 @@ export function formatUserName(user: StoryOutputUser): string {
   }
 
   return fullName !== undefined && fullName.length > 0 ? fullName : username;
+}
+
+export function getUserTimelineUrl(username: string): string {
+  return `/users/${encodeURIComponent(username.trim())}`;
 }
 
 export function getRankedUsers(report: StoriesManifestReport): StoryOutputUser[] {

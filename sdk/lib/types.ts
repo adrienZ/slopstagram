@@ -70,9 +70,27 @@ export type StoryItem = {
   story_locations?: JsonValue[] | null;
   story_link_stickers?: JsonValue[] | null;
   story_music_stickers?: JsonValue[] | null;
+  taken_at?: number;
   text_post_share_to_ig_story_stickers?: JsonValue[] | null;
   video_versions?: StoryVideoVersion[] | null;
   [key: string]: JsonValue | undefined;
+};
+
+export type StoryOwner = {
+  full_name?: string;
+  pk?: string;
+  profile_pic_url?: string;
+  username: string;
+};
+
+export type UserTimelineStory = {
+  full_name: string | null;
+  locations: string[];
+  owner_pk: string | null;
+  story: StoryItem;
+  stickers: string[];
+  taken_at: number;
+  username: string;
 };
 
 export type StoryReel = {

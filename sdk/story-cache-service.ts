@@ -16,7 +16,7 @@ export async function storeReturnedReels(
       }
 
       await storage.setItem(getMediaCacheKey(item.pk), item);
-      await storyRepository.save(item);
+      await storyRepository.save(item, reel.user);
       cachedItems.set(item.pk, item);
       fetchedMediaPks.add(item.pk);
     }

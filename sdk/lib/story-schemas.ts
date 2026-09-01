@@ -48,6 +48,7 @@ export const StoryItemSchema = z
     story_locations: z.array(JsonValueSchema).nullable().optional(),
     story_link_stickers: z.array(JsonValueSchema).nullable().optional(),
     story_music_stickers: z.array(JsonValueSchema).nullable().optional(),
+    taken_at: z.number().int().optional(),
     text_post_share_to_ig_story_stickers: z.array(JsonValueSchema).nullable().optional(),
     video_versions: z
       .array(StoryVersionSchema.extend({ type: z.number().optional() }))

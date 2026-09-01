@@ -4,13 +4,18 @@ import { STORY_MEDIA_TYPES, type StoryOutputUser } from "../../sdk/lib/types.ts"
 import { getStoryUrl } from "../helper.ts";
 import type { ReportViewModel } from "../report-view-model.ts";
 
+export type StoryCardViewModel = Pick<
+  ReportViewModel,
+  "appleCaptionByMediaPk" | "cachedImages" | "visionByPreviewUrl"
+>;
+
 type StoryCardProps = {
   count: number;
   position: number;
   story: StoryOutputUser["stories"][number];
   user: StoryOutputUser;
   userName: string;
-  viewModel: ReportViewModel;
+  viewModel: StoryCardViewModel;
 };
 
 export const storyCardStyles = css`

@@ -2,7 +2,7 @@ import cx from "clsx";
 import { css } from "mono-jsx/jsx-runtime";
 import { getReportUserKey } from "../../sdk/lib/report-user-key-service.ts";
 import type { StoryOutputUser } from "../../sdk/lib/types.ts";
-import { formatUserName } from "../helper.ts";
+import { formatUserName, getUserTimelineUrl } from "../helper.ts";
 import type { ReportViewModel } from "../report-view-model.ts";
 import { StoryCard } from "./story-card.tsx";
 
@@ -21,6 +21,16 @@ export const userSectionStyles = css`
     align-items: center;
     gap: 18px;
     margin-bottom: 14px;
+  }
+
+  .user-link {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .user-link:hover h2,
+  .user-link:focus-visible h2 {
+    text-decoration: underline;
   }
 
   .avatar,
@@ -63,7 +73,7 @@ export function UserSection({ user, viewModel }: UserSectionProps) {
 
   return (
     <section class={cx("user-section")}>
-      <div class={cx("user-header")}>
+      <a class={cx("user-link", "user-header")} href={getUserTimelineUrl(user.username)}>
         {avatar !== undefined && avatar.length > 0 ? (
           <img
             class={cx("avatar")}
@@ -78,7 +88,7 @@ export function UserSection({ user, viewModel }: UserSectionProps) {
         <div>
           <h2>{userName}</h2>
         </div>
-      </div>
+      </a>
       {summary !== undefined && summary.length > 0 && <p class={cx("user-summary")}>{summary}</p>}
       {user.stories.length > 0 && (
         <div class={cx("story-images")}>

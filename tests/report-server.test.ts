@@ -88,6 +88,7 @@ test("GET /report renders the latest fixture report", async () => {
   assert.match(html, /const openParam = "story"/u);
   assert.match(html, /url\.searchParams\.set\(openParam, value\)/u);
   assert.match(html, /dialog\.addEventListener\("close", clearOpenParam\)/u);
+  assert.match(html, /if \(event\.key === "Escape"\) \{\s*dialog\.close\(\);/u);
   assert.match(
     html,
     /const initialStory = new URL\(location\.href\)\.searchParams\.get\(openParam\)/u,
