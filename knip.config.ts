@@ -13,7 +13,6 @@ const config: KnipConfig = {
     // Used by agents.
     "@playwright/cli",
   ],
-  ignore: [".agents/skills/install-anti-slop/**"],
 };
 
 export default config;
