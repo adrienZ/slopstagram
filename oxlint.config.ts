@@ -34,7 +34,6 @@ export default defineConfig({
     perf: "error",
   },
   rules: {
-    "oxc/no-barrel-file": ["error", { threshold: 0 }],
     "slopstagram/no-barrel-files": "error",
   },
   overrides: [
