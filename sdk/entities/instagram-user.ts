@@ -20,7 +20,7 @@ export class InstagramUserRepository {
     this.database = database;
   }
 
-  findByUsername(username: string): Promise<InstagramUserEntry | null> {
+  findByUsername(username: string): InstagramUserEntry | null {
     const row = this.database
       .select()
       .from(instagramUsers)
@@ -28,15 +28,15 @@ export class InstagramUserRepository {
       .get();
 
     if (row === undefined) {
-      return Promise.resolve(null);
+      return null;
     }
 
-    return Promise.resolve({
+    return {
       full_name: row.fullName,
       id: row.id,
       pk: row.pk,
       username: row.username,
-    });
+    };
   }
 
   async save(value: InstagramUserEntry): Promise<void> {

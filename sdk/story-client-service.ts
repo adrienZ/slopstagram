@@ -92,11 +92,11 @@ interface InstagramClientSession {
   page: InstagramClientPage;
 }
 
-function fetchFromInstagramPage(
+async function fetchFromInstagramPage(
   session: InstagramClientSession,
   url: string,
 ): Promise<BrowserFetchResponse> {
-  return session.page.evaluate(
+  return await session.page.evaluate(
     async ({ appId, requestUrl }) => {
       const response = await globalThis.fetch(requestUrl, { headers: { "x-ig-app-id": appId } });
 
@@ -114,7 +114,7 @@ function fetchFromInstagramPage(
 function toClientResponse<T>(response: BrowserFetchResponse, schema: z.ZodType<T>) {
   return {
     headers: response.headers,
-    json: () => Promise.resolve(parseInstagramResponse(response.body, response.headers, schema)),
+    json: () => parseInstagramResponse(response.body, response.headers, schema),
     ok: response.ok,
     status: response.status,
   };

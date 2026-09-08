@@ -81,22 +81,24 @@ describe("cacheReportImages", () => {
 
     const report = createReport(source, previewSource);
     const cachedImages = await cacheReportImages(report, {
-      convertToJpeg: (body) => {
+      convertToJpeg: async (body) => {
         convertCount += 1;
-        return Promise.resolve(Buffer.from(`jpeg:${body.toString()}`));
+        return Buffer.from(`jpeg:${body.toString()}`);
       },
-      fetchImage: () => {
+      fetchImage: async () => {
         fetchCount += 1;
         const body = new TextEncoder().encode("image-bytes");
-        return Promise.resolve({
-          arrayBuffer: () =>
-            Promise.resolve(body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength)),
+        return {
+          arrayBuffer: async () =>
+            await Promise.resolve(
+              body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength),
+            ),
           headers: {
             get: (name) => (name.toLowerCase() === "content-type" ? "image/jpeg" : null),
           },
           ok: true,
           status: 200,
-        });
+        };
       },
       logger: createMockLogger(),
       cacheDirectory,
@@ -133,16 +135,18 @@ describe("cacheReportImages", () => {
     await imageCacheStorage.setItemRaw(`avatars/${PROFILE_PK}.jpg`, Buffer.from("jpeg-avatar"));
 
     const cachedImages = await cacheReportImages(createReport(source), {
-      convertToJpeg: (body) => Promise.resolve(Buffer.from(`jpeg:${body.toString()}`)),
-      fetchImage: () => {
+      convertToJpeg: async (body) => Buffer.from(`jpeg:${body.toString()}`),
+      fetchImage: async () => {
         const body = new TextEncoder().encode("updated-avatar");
-        return Promise.resolve({
-          arrayBuffer: () =>
-            Promise.resolve(body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength)),
+        return {
+          arrayBuffer: async () =>
+            await Promise.resolve(
+              body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength),
+            ),
           headers: { get: () => "image/jpeg" },
           ok: true,
           status: 200,
-        });
+        };
       },
       logger: createMockLogger(),
       cacheDirectory,
@@ -168,7 +172,9 @@ describe("cacheReportImages", () => {
     );
 
     const cachedImages = await cacheReportImages(createReport(source, previewSource), {
-      fetchImage: () => Promise.reject(new Error("should not fetch")),
+      fetchImage: async () => {
+        throw new Error("should not fetch");
+      },
       logger: createMockLogger(),
       cacheDirectory,
       storage: imageCacheStorage,
@@ -193,19 +199,21 @@ describe("cacheReportImages", () => {
     let fetchCount = 0;
 
     const options = {
-      convertToJpeg: (body: Buffer) => Promise.resolve(Buffer.from(`jpeg:${body.toString()}`)),
-      fetchImage: (url: string) => {
+      convertToJpeg: async (body: Buffer) => Buffer.from(`jpeg:${body.toString()}`),
+      fetchImage: async (url: string) => {
         fetchCount += 1;
         const body = new TextEncoder().encode(url.includes("avatar") ? "avatar" : "story");
-        return Promise.resolve({
-          arrayBuffer: () =>
-            Promise.resolve(body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength)),
+        return {
+          arrayBuffer: async () =>
+            await Promise.resolve(
+              body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength),
+            ),
           headers: {
             get: (name: string) => (name.toLowerCase() === "content-type" ? "image/webp" : null),
           },
           ok: true,
           status: 200,
-        });
+        };
       },
       logger: createMockLogger(),
       cacheDirectory,

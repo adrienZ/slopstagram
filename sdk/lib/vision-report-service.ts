@@ -191,6 +191,7 @@ export async function resolveVisionForReport(
   const resultByPreviewUrl = new Map<string, VisionResult>();
 
   for (const [index, entry] of entrySet.uniquePreviewEntries.entries()) {
+    // oxlint-disable-next-line no-await-in-loop -- Vision analysis runs serially to bound local model resource use and preserve progress.
     await resolvePreviewEntry({
       cachedImages,
       client,

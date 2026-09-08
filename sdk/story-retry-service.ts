@@ -39,8 +39,8 @@ export function chunk<T>(items: Array<T>, size: number): Array<Array<T>> {
   return chunks;
 }
 
-export function sleep(durationMs: number): Promise<void> {
-  return delay(durationMs);
+export async function sleep(durationMs: number): Promise<void> {
+  await delay(durationMs);
 }
 
 function normalizeHeaders(headers: Record<string, string>): Record<string, string> {
@@ -170,11 +170,13 @@ export async function requestWithRetry<T>(
 
   for (let attemptIndex = 0; attemptIndex < options.maxAttempts; attemptIndex += 1) {
     try {
+      // oxlint-disable-next-line no-await-in-loop -- Retry attempts must wait for the prior request result.
       const response = await runRequest();
       if (response.ok) {
-        return { ok: true, value: await response.json() };
+        return { ok: true, value: response.json() };
       }
       lastFailure = createHttpFailure(response, attemptIndex + 1);
+      // oxlint-disable-next-line no-await-in-loop -- Retry backoff determines whether the next attempt may run.
       const result = await handleFailedResponse(response, attemptIndex, options, label);
       if (result !== null) {
         return result;
@@ -182,6 +184,7 @@ export async function requestWithRetry<T>(
     } catch (error) {
       const requestError = error instanceof Error ? error : new Error("request failed");
       lastFailure = createThrownFailure(requestError, attemptIndex + 1);
+      // oxlint-disable-next-line no-await-in-loop -- Retry backoff determines whether the next attempt may run.
       const result = await handleThrownRequest<T>(requestError, attemptIndex, options, label);
       if (result !== null) {
         return result;

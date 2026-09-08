@@ -21,6 +21,6 @@ describe("UserSummaryRepository", () => {
 
     await repository.save(entry);
 
-    assert.deepEqual(await repository.findBySourceHash("source-hash"), entry);
+    assert.deepEqual(repository.findBySourceHash("source-hash"), entry);
   });
 });

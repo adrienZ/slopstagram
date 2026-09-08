@@ -91,11 +91,11 @@ describe("ReportRepository", () => {
     await repository.save(older.metadata.report_name, older);
     await repository.save(newer.metadata.report_name, newer);
 
-    assert.deepEqual(await repository.listKeys(), [
+    assert.deepEqual(repository.listKeys(), [
       older.metadata.report_name,
       newer.metadata.report_name,
     ]);
-    assert.deepEqual(await repository.findByKey(older.metadata.report_name), older);
+    assert.deepEqual(repository.findByKey(older.metadata.report_name), older);
   });
 
   test("links a story to each report while keeping report metadata as columns", async (context) => {
@@ -119,7 +119,7 @@ describe("ReportRepository", () => {
       { mediaPk: "shared-story", reportKey: first.metadata.report_name },
       { mediaPk: "shared-story", reportKey: second.metadata.report_name },
     ]);
-    assert.deepEqual(await repository.findByKey(second.metadata.report_name), second);
+    assert.deepEqual(repository.findByKey(second.metadata.report_name), second);
     const [storedReport] = database.$client
       .prepare("SELECT createdAt, reportName, storiesCount FROM reports WHERE key = ?")
       .all(second.metadata.report_name)

@@ -97,7 +97,7 @@ describe("backfillReportStoryMediaTypes", () => {
       pk: "story-pk-2",
     });
 
-    await backfillReportStoryMediaTypes(report, storyRepository);
+    backfillReportStoryMediaTypes(report, storyRepository);
 
     assert.deepEqual(
       report.output.users[0]?.stories.map((story) => story.media_type),

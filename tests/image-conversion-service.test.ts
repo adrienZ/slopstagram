@@ -24,6 +24,6 @@ describe("convertImageToJpeg", () => {
   });
 
   test("rejects invalid image bytes", async () => {
-    await assert.rejects(() => convertImageToJpeg(Buffer.from("not an image")));
+    await assert.rejects(async () => await convertImageToJpeg(Buffer.from("not an image")));
   });
 });

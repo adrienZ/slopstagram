@@ -20,10 +20,9 @@ export function createAppleVisionRepositoryAdapter(): InMemoryRepository<
 
   return {
     entries,
-    findByMediaPk: (mediaPk) => Promise.resolve(entries.get(mediaPk) ?? null),
-    save: (mediaPk, caption) => {
+    findByMediaPk: (mediaPk) => entries.get(mediaPk) ?? null,
+    save: async (mediaPk, caption) => {
       entries.set(mediaPk, caption);
-      return Promise.resolve();
     },
   };
 }
@@ -38,10 +37,9 @@ export function createVisionRepositoryAdapter(): InMemoryRepository<
 
   return {
     entries,
-    findByMediaPk: (mediaPk) => Promise.resolve(entries.get(mediaPk) ?? null),
-    save: (mediaPk, value) => {
+    findByMediaPk: (mediaPk) => entries.get(mediaPk) ?? null,
+    save: async (mediaPk, value) => {
       entries.set(mediaPk, value);
-      return Promise.resolve();
     },
   };
 }
@@ -56,10 +54,9 @@ export function createUserSummaryRepositoryAdapter(): Pick<
 
   return {
     entries,
-    findBySourceHash: (sourceHash) => Promise.resolve(entries.get(sourceHash) ?? null),
-    save: (value) => {
+    findBySourceHash: (sourceHash) => entries.get(sourceHash) ?? null,
+    save: async (value) => {
       entries.set(value.source_hash, value);
-      return Promise.resolve();
     },
   };
 }

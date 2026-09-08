@@ -33,26 +33,22 @@ void mock.module("../server/report-repository.ts", {
 void mock.module("../server/report-view-model.ts", {
   // oxlint-disable-next-line typescript/no-deprecated -- Node's test mock API currently requires namedExports.
   namedExports: {
-    createReportViewModel: (fixture: StoriesManifestReport): Promise<ReportViewModel> =>
-      Promise.resolve({
-        appleCaptionByMediaPk: new Map([["story-pk-1", "apple <text>"]]),
-        cachedImages: {
-          profilePicPathByUrl: new Map([["images/avatars/avatar.jpg", "/media/avatar.jpg"]]),
-          storyPreviewPathByUrl: new Map([
-            ["images/story-previews/story-pk-1.jpg", "/media/story.jpg"],
-          ]),
-        },
-        report: fixture,
-        userSummaryByUserKey: new Map([
-          [
-            getReportUserKey(fixture.output.users[0]),
-            "A text-focused story with extracted details.",
-          ],
+    createReportViewModel: (fixture: StoriesManifestReport): ReportViewModel => ({
+      appleCaptionByMediaPk: new Map([["story-pk-1", "apple <text>"]]),
+      cachedImages: {
+        profilePicPathByUrl: new Map([["images/avatars/avatar.jpg", "/media/avatar.jpg"]]),
+        storyPreviewPathByUrl: new Map([
+          ["images/story-previews/story-pk-1.jpg", "/media/story.jpg"],
         ]),
-        visionByPreviewUrl: new Map([
-          ["images/story-previews/story-pk-1.jpg", { text: "OCR text", visual: "Vision text" }],
-        ]),
-      }),
+      },
+      report: fixture,
+      userSummaryByUserKey: new Map([
+        [getReportUserKey(fixture.output.users[0]), "A text-focused story with extracted details."],
+      ]),
+      visionByPreviewUrl: new Map([
+        ["images/story-previews/story-pk-1.jpg", { text: "OCR text", visual: "Vision text" }],
+      ]),
+    }),
   },
 });
 

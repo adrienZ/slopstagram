@@ -52,6 +52,7 @@ export async function resolveAppleCaptionsForReport(
         prefix: "apple-captions",
         suffix: preview.mediaPk,
       });
+      // oxlint-disable-next-line no-await-in-loop -- Stop subsequent OCR work when the local OCR service is unavailable.
       await resolver(preview.mediaPk, preview.imagePath);
     } catch (error) {
       const ocrError = error instanceof Error ? error : new Error("unknown OCR failure");

@@ -17,14 +17,14 @@ export class AppleVisionRepository {
     this.database = database;
   }
 
-  findByMediaPk(mediaPk: string): Promise<string | null> {
+  findByMediaPk(mediaPk: string): string | null {
     const row = this.database
       .select()
       .from(appleVision)
       .where(eq(appleVision.mediaPk, mediaPk))
       .get();
 
-    return Promise.resolve(row?.caption ?? null);
+    return row?.caption ?? null;
   }
 
   async save(mediaPk: string, caption: string): Promise<void> {

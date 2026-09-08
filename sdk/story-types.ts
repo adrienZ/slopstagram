@@ -13,7 +13,7 @@ export interface ReelTrayResponse {
 
 export interface InstagramClientResponse<T> {
   headers: Record<string, string>;
-  json: () => Promise<T>;
+  json: () => T;
   ok: boolean;
   status: number;
 }

@@ -72,7 +72,7 @@ async function fetchSingleReel(
 ): Promise<"continue" | "stop"> {
   logStoryProgress(options.logger, options.state, `fetching reel ${reelId}`);
   const singleResult = await requestWithRetry(
-    () => options.client.getReelsMedia([reelId]),
+    async () => await options.client.getReelsMedia([reelId]),
     options.retryOptions,
     `reels media request for reel ${reelId}`,
   );
@@ -123,6 +123,7 @@ async function fetchSingleReelsAfterChunkFailure(
   let nextReelIndex = reelIndex;
 
   for (const reelId of idChunk) {
+    // oxlint-disable-next-line no-await-in-loop -- Preserve reel order and stop immediately when a rate limit is reached.
     const result = await fetchSingleReel(reelId, reelIdsToFetch, nextReelIndex, options);
 
     if (result === "stop") {
@@ -167,7 +168,7 @@ async function fetchReelChunk(
     `fetching reel chunk ${chunkIndex + 1}/${reelChunksLength} reels=${idChunk.length}`,
   );
   const chunkResult = await requestWithRetry(
-    () => options.client.getReelsMedia(idChunk),
+    async () => await options.client.getReelsMedia(idChunk),
     options.retryOptions,
     `reels media chunk ${chunkIndex + 1}/${reelChunksLength}`,
   );
@@ -222,11 +223,13 @@ export async function fetchMissingStories(options: FetchMissingStoriesOptions): 
   const reelChunks = chunk(reelIdsToFetch, options.reelIdsPerRequest);
 
   for (const [chunkIndex, idChunk] of reelChunks.entries()) {
+    // oxlint-disable-next-line no-await-in-loop -- Process chunks in order so rate-limit handling prevents later requests.
     const result = await fetchReelChunk(idChunk, chunkIndex, reelChunks.length, options);
     const next =
       result === "continue"
         ? { reelIndex: reelIndex + idChunk.length, stopped: false }
-        : await handleChunkFailure(
+        : // oxlint-disable-next-line no-await-in-loop -- Failure recovery updates the ordered reel position.
+          await handleChunkFailure(
             idChunk,
             reelIdsToFetch,
             reelIndex,

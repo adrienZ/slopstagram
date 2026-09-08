@@ -30,16 +30,19 @@ const VisionRequestBodySchema = z.object({
   prompt: z.string().optional(),
 });
 
+function requestBodyToString(body: BodyInit | null | undefined): string {
+  return z.string().parse(body);
+}
+
 describe("resolveVisionForReport", () => {
   test("reuses successful vision responses from the repository", async () => {
     const repository = createVisionRepositoryAdapter();
     let fetchCount = 0;
 
     await withReportImage(async (cacheDirectory, cachedImages) => {
-      function fetchVision(_url: string | URL | Request, init?: RequestInit) {
+      async function fetchVision(_url: string | URL | Request, init?: RequestInit) {
         fetchCount += 1;
-        // oxlint-disable-next-line typescript/no-base-to-string
-        const body = VisionRequestBodySchema.parse(JSON.parse(String(init?.body)));
+        const body = VisionRequestBodySchema.parse(JSON.parse(requestBodyToString(init?.body)));
         const { images } = body;
 
         assert.equal(images.length, 1);
@@ -59,18 +62,16 @@ describe("resolveVisionForReport", () => {
         assert.equal(description.type, "string");
         assert.match(description.description ?? "", /image description/u);
 
-        return Promise.resolve(
-          new globalThis.Response(
-            JSON.stringify({
-              response: JSON.stringify({
-                description: "  cat on a counter\nwith a cup  ",
-                ocrText: ["  readable text  "],
-              }),
+        return new globalThis.Response(
+          JSON.stringify({
+            response: JSON.stringify({
+              description: "  cat on a counter\nwith a cup  ",
+              ocrText: ["  readable text  "],
             }),
-            {
-              status: 200,
-            },
-          ),
+          }),
+          {
+            status: 200,
+          },
         );
       }
 
@@ -111,21 +112,19 @@ describe("resolveVisionForReport", () => {
 
     await withReportImage(
       async (cacheDirectory, cachedImages) => {
-        function fetchVision() {
+        async function fetchVision() {
           fetchCount += 1;
 
-          return Promise.resolve(
-            new globalThis.Response(
-              JSON.stringify({
-                response: JSON.stringify({
-                  description: "same story",
-                  ocrText: ["same text"],
-                }),
+          return new globalThis.Response(
+            JSON.stringify({
+              response: JSON.stringify({
+                description: "same story",
+                ocrText: ["same text"],
               }),
-              {
-                status: 200,
-              },
-            ),
+            }),
+            {
+              status: 200,
+            },
           );
         }
 
@@ -172,7 +171,9 @@ describe("resolveVisionForReport", () => {
 
     await withReportImage(async (cacheDirectory, cachedImages) => {
       const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
-        fetchVision: () => Promise.reject(new TypeError("fetch failed")),
+        fetchVision: async () => {
+          throw new TypeError("fetch failed");
+        },
         logger: createMockLogger(),
         cacheDirectory,
         repository,
@@ -190,19 +191,17 @@ describe("resolveVisionForReport", () => {
 
     await withReportImage(async (cacheDirectory, cachedImages) => {
       const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
-        fetchVision: () =>
-          Promise.resolve(
-            new globalThis.Response(
-              JSON.stringify({
-                response: JSON.stringify({
-                  description: "A street gathering with bunting and people talking.",
-                  ocrText: [],
-                }),
+        fetchVision: async () =>
+          new globalThis.Response(
+            JSON.stringify({
+              response: JSON.stringify({
+                description: "A street gathering with bunting and people talking.",
+                ocrText: [],
               }),
-              {
-                status: 200,
-              },
-            ),
+            }),
+            {
+              status: 200,
+            },
           ),
         logger: createMockLogger(),
         cacheDirectory,
@@ -221,19 +220,17 @@ describe("resolveVisionForReport", () => {
 
     await withReportImage(async (cacheDirectory, cachedImages) => {
       const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
-        fetchVision: () =>
-          Promise.resolve(
-            new globalThis.Response(
-              JSON.stringify({
-                response: JSON.stringify({
-                  description: "A stylized fantasy illustration on an old map background.",
-                  ocrText: ["Oui", "Évêque de nier"],
-                }),
+        fetchVision: async () =>
+          new globalThis.Response(
+            JSON.stringify({
+              response: JSON.stringify({
+                description: "A stylized fantasy illustration on an old map background.",
+                ocrText: ["Oui", "Évêque de nier"],
               }),
-              {
-                status: 200,
-              },
-            ),
+            }),
+            {
+              status: 200,
+            },
           ),
         logger: createMockLogger(),
         cacheDirectory,
@@ -252,13 +249,11 @@ describe("resolveVisionForReport", () => {
 
     await withReportImage(async (cacheDirectory, cachedImages) => {
       const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
-        fetchVision: () =>
-          Promise.resolve(
-            new globalThis.Response(JSON.stringify({ error: "bad request" }), {
-              headers: { "content-type": "application/json" },
-              status: 400,
-            }),
-          ),
+        fetchVision: async () =>
+          new globalThis.Response(JSON.stringify({ error: "bad request" }), {
+            headers: { "content-type": "application/json" },
+            status: 400,
+          }),
         logger: createMockLogger(),
         cacheDirectory,
         repository,

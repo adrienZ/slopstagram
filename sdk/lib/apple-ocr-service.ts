@@ -52,12 +52,12 @@ export async function recognizeAppleCaption(
   imagePath: string,
   {
     platform = process.platform,
-    readImage: read = (path) => readFile(path),
-    runAppleOcr: runOcr = (image) => runAppleOcr(image, platform),
+    readImage: read = async (path) => await readFile(path),
+    runAppleOcr: runOcr = async (image) => await runAppleOcr(image, platform),
     repository = appleVisionRepository,
   }: RecognizeAppleCaptionOptions = {},
 ): Promise<string> {
-  const storedCaption = await repository.findByMediaPk(mediaPk);
+  const storedCaption = repository.findByMediaPk(mediaPk);
 
   if (storedCaption !== null && storedCaption.length > 0) {
     return storedCaption;

@@ -26,14 +26,14 @@ function createSession(
 
   return {
     page: {
-      evaluate: (_callback, input) => {
+      evaluate: async (_callback, input) => {
         calls.push(input);
-        return Promise.resolve({
+        return {
           body: serializedBody,
           headers: { "content-type": contentType },
           ok: true,
           status: 200,
-        });
+        };
       },
     },
   };
@@ -55,7 +55,7 @@ test("createInstagramClient fetches tray through the authenticated browser page"
 
   assert.equal(response.ok, true);
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), {
+  assert.deepEqual(response.json(), {
     broadcasts: [],
     status: "ok",
     story_ranking_token: "ranking-token",
@@ -84,7 +84,7 @@ test("normalizes numeric Instagram tray identifiers to strings", async () => {
   });
 
   const response = await createInstagramClient(session).getTray();
-  const body = await response.json();
+  const body = response.json();
 
   assert.deepEqual(body.tray, [
     {
@@ -108,7 +108,7 @@ test("preserves large numeric Instagram identifiers exactly", async () => {
   }`);
 
   const response = await createInstagramClient(session).getTray();
-  const body = await response.json();
+  const body = response.json();
 
   assert.deepEqual(body.tray, [
     {
@@ -142,7 +142,7 @@ test("createInstagramClient fetches reels media through the authenticated browse
 
   assert.equal(response.ok, true);
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { reels: {}, status: "ok" });
+  assert.deepEqual(response.json(), { reels: {}, status: "ok" });
   assert.deepEqual(calls, [
     {
       appId: "936619743392459",

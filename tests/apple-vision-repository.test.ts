@@ -16,6 +16,6 @@ describe("AppleVisionRepository", () => {
     await repository.save("story-1", "first caption");
     await repository.save("story-1", "updated caption");
 
-    assert.equal(await repository.findByMediaPk("story-1"), "updated caption");
+    assert.equal(repository.findByMediaPk("story-1"), "updated caption");
   });
 });

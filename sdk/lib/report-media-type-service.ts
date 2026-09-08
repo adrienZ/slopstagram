@@ -19,22 +19,25 @@ function formatStoryMediaType(
   return null;
 }
 
-async function getStoredStoryMediaType(
+function getStoredStoryMediaType(
   mediaPk: string,
   repository: Pick<StoryRepository, "findByMediaPk">,
-): Promise<StoryMediaType | null> {
-  const story = await repository.findByMediaPk(mediaPk);
+): StoryMediaType | null {
+  const story = repository.findByMediaPk(mediaPk);
   if (story === null) {
     return null;
   }
   return formatStoryMediaType(story.media_type);
 }
 
-export async function backfillReportStoryMediaTypes(
+export function backfillReportStoryMediaTypes(
   report: StoriesManifestReport,
   repository: Pick<StoryRepository, "findByMediaPk"> = storyRepository,
-): Promise<void> {
+): void {
   const mediaTypeByPk = new Map<string, StoryMediaType>();
+  const manifestStoriesWithoutMediaType: Array<
+    (typeof report.manifest.users)[number]["stories"][number]
+  > = [];
 
   for (const user of report.manifest.users) {
     for (const story of user.stories) {
@@ -46,14 +49,24 @@ export async function backfillReportStoryMediaTypes(
         continue;
       }
 
-      const cachedMediaType = await getStoredStoryMediaType(story.media_pk, repository);
-      if (cachedMediaType) {
-        mediaTypeByPk.set(story.media_pk, cachedMediaType);
-        story.media_type = cachedMediaType;
-      }
+      manifestStoriesWithoutMediaType.push(story);
     }
   }
 
+  const manifestMediaTypes = manifestStoriesWithoutMediaType.map((story) => ({
+    mediaType: getStoredStoryMediaType(story.media_pk, repository),
+    story,
+  }));
+  for (const { mediaType, story } of manifestMediaTypes) {
+    if (mediaType) {
+      mediaTypeByPk.set(story.media_pk, mediaType);
+      story.media_type = mediaType;
+    }
+  }
+
+  const outputStoriesWithoutMediaType: Array<
+    (typeof report.output.users)[number]["stories"][number]
+  > = [];
   for (const user of report.output.users) {
     for (const story of user.stories) {
       const outputMediaType = formatStoryMediaType(story.media_type);
@@ -69,11 +82,18 @@ export async function backfillReportStoryMediaTypes(
         continue;
       }
 
-      const cachedMediaType = await getStoredStoryMediaType(story.media_pk, repository);
-      story.media_type = cachedMediaType;
-      if (cachedMediaType) {
-        mediaTypeByPk.set(story.media_pk, cachedMediaType);
-      }
+      outputStoriesWithoutMediaType.push(story);
+    }
+  }
+
+  const outputMediaTypes = outputStoriesWithoutMediaType.map((story) => ({
+    mediaType: getStoredStoryMediaType(story.media_pk, repository),
+    story,
+  }));
+  for (const { mediaType, story } of outputMediaTypes) {
+    story.media_type = mediaType;
+    if (mediaType) {
+      mediaTypeByPk.set(story.media_pk, mediaType);
     }
   }
 }

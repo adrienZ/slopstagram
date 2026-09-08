@@ -127,10 +127,9 @@ export function createMemoryStoryRepository(): Pick<StoryRepository, "findByMedi
   return {
     entries,
     storyStorage,
-    findByMediaPk: (mediaPk) => Promise.resolve(entries.get(mediaPk) ?? null),
-    save: (story) => {
+    findByMediaPk: (mediaPk) => entries.get(mediaPk) ?? null,
+    save: async (story) => {
       entries.set(story.pk, story);
-      return Promise.resolve();
     },
   };
 }
@@ -227,7 +226,7 @@ export function response<T>(
 ): InstagramClientResponse<T> {
   return {
     headers,
-    json: () => Promise.resolve(value),
+    json: () => value,
     ok: status >= 200 && status < 300,
     status,
   };
@@ -241,17 +240,15 @@ export function createClient(
 
   return {
     reelsCalls,
-    getTray() {
-      return Promise.resolve(
-        response({
-          broadcasts: [],
-          status: "ok",
-          story_ranking_token: "ranking-token",
-          tray,
-        }),
-      );
+    async getTray() {
+      return response({
+        broadcasts: [],
+        status: "ok",
+        story_ranking_token: "ranking-token",
+        tray,
+      });
     },
-    getReelsMedia(reelIds) {
+    async getReelsMedia(reelIds) {
       reelsCalls.push(reelIds);
       const nextResponse = reelsResponses.shift();
 
@@ -259,7 +256,7 @@ export function createClient(
         throw new Error("Unexpected reels media request");
       }
 
-      return Promise.resolve(nextResponse);
+      return nextResponse;
     },
   };
 }
@@ -268,6 +265,6 @@ export function fixedNow(): Date {
   return new Date("2026-07-26T00:00:00.000Z");
 }
 
-export function noSleep(): Promise<void> {
-  return Promise.resolve();
+export async function noSleep(): Promise<void> {
+  await Promise.resolve();
 }

@@ -171,7 +171,7 @@ describe("fetchStoriesManifest", () => {
     });
 
     assert.deepEqual(client.reelsCalls, [["r1", "r2"]]);
-    assert.deepEqual(await storyRepository.findByMediaPk("m2"), storyItem("m2"));
+    assert.deepEqual(storyRepository.findByMediaPk("m2"), storyItem("m2"));
     assert.deepEqual(
       await storyRepository.storyStorage.getItem(getMediaCacheKey("m2")),
       globalThis.structuredClone(storyItem("m2")),

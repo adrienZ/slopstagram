@@ -57,7 +57,8 @@ export default definePlugin((nitroApp) => {
     }
   })();
 
-  nitroApp.hooks.hook("close", () => {
+  // oxlint-disable-next-line typescript/strict-void-return -- Nitro awaits close hook promises.
+  nitroApp.hooks.hook("close", async () => {
     async function close(): Promise<void> {
       try {
         await runtime.close();
@@ -72,7 +73,6 @@ export default definePlugin((nitroApp) => {
       }
     }
 
-    // oxlint-disable-next-line typescript/strict-void-return -- Nitro awaits close hook promises.
-    return close();
+    await close();
   });
 });

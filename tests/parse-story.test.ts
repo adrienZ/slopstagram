@@ -161,7 +161,7 @@ describe("parseStoryReport", () => {
 
     await storyRepository.save(cachedItem);
 
-    assert.deepEqual(await parseStoryManifestReport(manifestReport, "cached-pk", storyRepository), {
+    assert.deepEqual(parseStoryManifestReport(manifestReport, "cached-pk", storyRepository), {
       height: 120,
       media_type: STORY_MEDIA_TYPES.IMAGE,
       pk: "cached-pk",

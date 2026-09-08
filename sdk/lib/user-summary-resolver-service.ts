@@ -50,12 +50,12 @@ function resolveOptions(options: ResolveUserSummariesOptions): ResolvedUserSumma
   };
 }
 
-async function getStoredSummary(options: {
+function getStoredSummary(options: {
   sourceHash: string;
   userKey: string;
   resolved: ResolvedUserSummaryOptions;
-}): Promise<string | null> {
-  const entry = await options.resolved.repository.findBySourceHash(options.sourceHash);
+}): string | null {
+  const entry = options.resolved.repository.findBySourceHash(options.sourceHash);
 
   if (
     entry?.source_hash === options.sourceHash &&
@@ -103,7 +103,7 @@ async function resolveUserSummary(
   const userKey = getReportUserKey(user);
   const prompt = createSummaryPrompt(user, resolved.visionByPreviewUrl);
   const sourceHash = getUserSummarySourceHash({ model: resolved.model, prompt, userKey });
-  const storedSummary = await getStoredSummary({ sourceHash, userKey, resolved });
+  const storedSummary = getStoredSummary({ sourceHash, userKey, resolved });
 
   if (storedSummary !== null) {
     resolved.logger.progress(current, total, {
@@ -145,6 +145,7 @@ export async function resolveUserSummariesForReport(
   const summaryByUserKey = new Map<string, string>();
 
   for (const [index, user] of report.output.users.entries()) {
+    // oxlint-disable-next-line no-await-in-loop -- User summaries run serially to bound local model resource use and preserve progress.
     const [userKey, summary] = await resolveUserSummary(
       user,
       index + 1,

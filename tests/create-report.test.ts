@@ -59,51 +59,48 @@ test("createReport resolves entities before persisting the report", async () => 
       migrateDatabase: () => {
         calls.push("migrate-database");
       },
-      persistReportInstagramUsers: () => {
+      persistReportInstagramUsers: async () => {
         calls.push("persist-instagram-users");
-        return Promise.resolve();
       },
-      fetchStories: (_args, options) => {
+      fetchStories: async (_args, options) => {
         calls.push("fetch-stories");
         if (options === undefined) {
           assert.fail("expected fetch stories options");
         }
         assert.match(options.reportName ?? "", /^stories-report-/u);
-        return Promise.resolve(report);
+        return report;
       },
-      cacheReportImages: (_report, options) => {
+      cacheReportImages: async (_report, options) => {
         calls.push("cache-images");
         assert.doesNotThrow(() => {
           options.logger.progress(0, 1);
         });
-        return Promise.resolve(cachedImages);
+        return cachedImages;
       },
-      resolveAppleCaptionsForReport: (_report, images, options) => {
+      resolveAppleCaptionsForReport: async (_report, images, options) => {
         calls.push("resolve-apple-captions");
         assert.equal(images, cachedImages);
         assert.doesNotThrow(() => {
           options.logger.progress(0, 1);
         });
-        return Promise.resolve();
       },
-      resolveVisionForReport: (_report, images) => {
+      resolveVisionForReport: async (_report, images) => {
         calls.push("resolve-vision");
         assert.equal(images, cachedImages);
-        return Promise.resolve(visionByPreviewUrl);
+        return visionByPreviewUrl;
       },
-      resolveUserSummariesForReport: (_report, options) => {
+      resolveUserSummariesForReport: async (_report, options) => {
         calls.push("resolve-summaries");
         assert.doesNotThrow(() => {
           options.logger.progress(0, 1);
         });
         assert.equal(options.visionByPreviewUrl, visionByPreviewUrl);
-        return Promise.resolve(new Map());
+        return new Map();
       },
-      saveReport: (key, savedReport) => {
+      saveReport: async (key, savedReport) => {
         calls.push("save-report");
         assert.equal(savedReport, report);
         savedKey = key;
-        return Promise.resolve();
       },
     },
     logger: createMockLogger(),

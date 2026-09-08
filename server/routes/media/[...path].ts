@@ -60,8 +60,8 @@ export async function createMediaResponse(
   }
 }
 
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
   const requestPath = event.context.params?.path;
   const parsedPath = z.string().safeParse(requestPath);
-  return parsedPath.success ? createMediaResponse(parsedPath.data) : notFound();
+  return parsedPath.success ? await createMediaResponse(parsedPath.data) : notFound();
 });

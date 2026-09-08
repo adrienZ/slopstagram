@@ -5,9 +5,9 @@ import { ReportPage } from "./components/report-page.tsx";
 import { getReportKeys, readReport } from "./report-repository.ts";
 import { createReportViewModel } from "./report-view-model.ts";
 
-export async function renderReport(event: H3Event): Promise<globalThis.Response> {
+export function renderReport(event: H3Event): globalThis.Response {
   try {
-    const reportKeys = await getReportKeys();
+    const reportKeys = getReportKeys();
     const query = getQuery(event);
     const reportQuery = query.report;
     const parsedReportKey = z.string().safeParse(reportQuery);
@@ -17,7 +17,7 @@ export async function renderReport(event: H3Event): Promise<globalThis.Response>
       throw new Error("no stories reports found");
     }
 
-    const viewModel = await createReportViewModel(await readReport(selectedReportKey));
+    const viewModel = createReportViewModel(readReport(selectedReportKey));
 
     return ReportPage({ reportKeys, selectedReportKey, viewModel });
   } catch (error) {

@@ -58,7 +58,7 @@ test("createReportViewModel never fetches external resources on cache misses", a
   };
 
   try {
-    const viewModel = await createReportViewModel(createUncachedReport(randomUUID()));
+    const viewModel = createReportViewModel(createUncachedReport(randomUUID()));
 
     assert.equal(fetchCount, 0);
     assert.equal(viewModel.cachedImages.profilePicPathByUrl.size, 0);

@@ -33,6 +33,10 @@ const UserSummaryRequestSchema = z.object({
   think: z.unknown().optional(),
 });
 
+function requestBodyToString(body: BodyInit | null | undefined): string {
+  return z.string().parse(body);
+}
+
 describe("resolveUserSummariesForReport", () => {
   test("selects an OS-compatible summary model", () => {
     assert.equal(getUserSummaryModel("darwin", "arm64"), "qwen3.5:0.8b-mlx");
@@ -67,7 +71,7 @@ describe("resolveUserSummariesForReport", () => {
     const first = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
       visionByPreviewUrl,
-      runUserSummary: (prompt) => {
+      runUserSummary: async (prompt) => {
         runCount += 1;
         assert.match(prompt, /A food stall with readable prices\./u);
         assert.match(prompt, /Paris Market/u);
@@ -79,21 +83,19 @@ describe("resolveUserSummariesForReport", () => {
         assert.doesNotMatch(prompt, /"ok"/u);
         assert.match(prompt, /Réponds en français\./u);
 
-        return Promise.resolve(
-          JSON.stringify({
-            summary:
-              "Summary User shared a Paris food story with a visible menu. The post centers on street food and readable prices.",
-          }),
-        );
+        return JSON.stringify({
+          summary:
+            "Summary User shared a Paris food story with a visible menu. The post centers on street food and readable prices.",
+        });
       },
       repository,
     });
     const second = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
       visionByPreviewUrl,
-      runUserSummary: () => {
+      runUserSummary: async () => {
         runCount += 1;
-        return Promise.resolve("should not be used");
+        return "should not be used";
       },
       repository,
     });
@@ -117,18 +119,18 @@ describe("resolveUserSummariesForReport", () => {
 
     const first = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
-      runUserSummary: () => {
+      runUserSummary: async () => {
         runCount += 1;
-        return Promise.resolve(JSON.stringify({ summary: "default model summary" }));
+        return JSON.stringify({ summary: "default model summary" });
       },
       repository,
     });
     const second = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
       model: "different-model",
-      runUserSummary: () => {
+      runUserSummary: async () => {
         runCount += 1;
-        return Promise.resolve(JSON.stringify({ summary: "custom model summary" }));
+        return JSON.stringify({ summary: "custom model summary" });
       },
       repository,
     });
@@ -146,11 +148,9 @@ describe("resolveUserSummariesForReport", () => {
 
     const summaries = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
-      fetchOllama: (url, init) => {
-        // oxlint-disable-next-line typescript/no-base-to-string
-        assert.match(String(url), /\/api\/generate$/u);
-        // oxlint-disable-next-line typescript/no-base-to-string typescript/no-unsafe-type-assertion
-        const body = UserSummaryRequestSchema.parse(JSON.parse(String(init?.body)));
+      fetchOllama: async (url, init) => {
+        assert.match(z.string().parse(url), /\/api\/generate$/u);
+        const body = UserSummaryRequestSchema.parse(JSON.parse(requestBodyToString(init?.body)));
 
         assert.equal(body.model, getUserSummaryModel());
         assert.equal(body.stream, false);
@@ -166,13 +166,11 @@ describe("resolveUserSummariesForReport", () => {
         assert.doesNotMatch(String(body.prompt), /May be food/u);
         assert.doesNotMatch(String(body.prompt), /menu prices/u);
 
-        return Promise.resolve(
-          new globalThis.Response(
-            JSON.stringify({
-              response: JSON.stringify({ summary: "sdk summary" }),
-            }),
-            { status: 200 },
-          ),
+        return new globalThis.Response(
+          JSON.stringify({
+            response: JSON.stringify({ summary: "sdk summary" }),
+          }),
+          { status: 200 },
         );
       },
       repository,
@@ -188,7 +186,9 @@ describe("resolveUserSummariesForReport", () => {
 
     const summaries = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
-      runUserSummary: () => Promise.reject(new Error("not signed in")),
+      runUserSummary: async () => {
+        throw new Error("not signed in");
+      },
       repository,
     });
 
@@ -202,7 +202,7 @@ describe("resolveUserSummariesForReport", () => {
 
     const summaries = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
-      runUserSummary: () => Promise.resolve(""),
+      runUserSummary: async () => "",
       repository,
     });
     assert.equal(
@@ -228,12 +228,12 @@ describe("resolveUserSummariesForReport", () => {
 
     const summaries = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
-      runUserSummary: () => {
+      runUserSummary: async () => {
         runCount += 1;
-        return Promise.resolve(JSON.stringify({ summary: "regenerated summary" }));
+        return JSON.stringify({ summary: "regenerated summary" });
       },
       repository: {
-        findBySourceHash: () => Promise.resolve(repository.entries.get(sourceHash) ?? null),
+        findBySourceHash: () => repository.entries.get(sourceHash) ?? null,
         save: repository.save,
       },
     });

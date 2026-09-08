@@ -125,11 +125,11 @@ function getVisionHttpStatus(error: VisionRequestError): number | null {
   return "status_code" in error ? error.status_code : null;
 }
 
-async function getStoredVisionResult(
+function getStoredVisionResult(
   promptHash: string,
   options: ResolvedVisionOptions,
-): Promise<VisionResult | null> {
-  const entry = await options.repository.findByMediaPk(options.mediaPk);
+): VisionResult | null {
+  const entry = options.repository.findByMediaPk(options.mediaPk);
 
   if (isUsableVisionEntry(entry, { ...options, promptHash })) {
     return normalizeVisionResult(entry.result);
@@ -193,7 +193,7 @@ export async function analyzeImage(
   options: ResolvedVisionOptions,
 ): Promise<VisionResult> {
   const promptHash = getPromptHash(options.prompt);
-  const storedResult = await getStoredVisionResult(promptHash, options);
+  const storedResult = getStoredVisionResult(promptHash, options);
 
   if (storedResult) {
     return storedResult;

@@ -86,10 +86,10 @@ test("resolves local OCR without embedding it in the report", async () => {
     {
       logger,
       cacheDirectory: "/cache",
-      resolver: (mediaPk, imagePath) => {
+      resolver: async (mediaPk, imagePath) => {
         assert.equal(mediaPk, "m1");
         assert.equal(imagePath, path.resolve("/cache/images/story-previews/m1.jpg"));
-        return Promise.resolve("local OCR text");
+        return "local OCR text";
       },
     },
   );

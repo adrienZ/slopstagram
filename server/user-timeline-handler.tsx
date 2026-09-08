@@ -1,9 +1,9 @@
 import { UserTimelinePage } from "./components/user-timeline-page.tsx";
 import { createUserTimeline } from "./user-timeline.ts";
 
-export async function renderUserTimeline(username: string): Promise<globalThis.Response> {
+export function renderUserTimeline(username: string): globalThis.Response {
   try {
-    const timeline = await createUserTimeline(username);
+    const timeline = createUserTimeline(username);
     if (timeline === null) {
       throw new Error(`no published stories found for ${username}`);
     }

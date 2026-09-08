@@ -20,7 +20,7 @@ describe("VisionRepository", () => {
 
     await repository.save("story-2", entry);
 
-    assert.deepEqual(await repository.findByMediaPk("story-2"), entry);
+    assert.deepEqual(repository.findByMediaPk("story-2"), entry);
     const storedResult = database.$client
       .prepare("SELECT text, visual FROM vision WHERE mediaPk = ?")
       .get("story-2");

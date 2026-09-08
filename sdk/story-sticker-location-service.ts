@@ -91,7 +91,12 @@ function unwrapInstagramRedirectUrl(value: string): string {
   }
 }
 
-function getLinkStickerLabel(value: JsonValue): string | null {
+function getLinkStickerLabel(value: JsonValue, visited = new Set<JsonValue>()): string | null {
+  if (visited.has(value)) {
+    return null;
+  }
+
+  visited.add(value);
   const rawDirectUrl = getNestedString(value, ["url", "uri", "link_url", "webUri", "web_uri"]);
   const directUrl =
     rawDirectUrl !== null && rawDirectUrl.length > 0
@@ -112,12 +117,6 @@ function getLinkStickerLabel(value: JsonValue): string | null {
     return `link:${directUrl}`;
   }
 
-  // The link helpers are mutually recursive so nested Instagram payloads can be traversed.
-  // oxlint-disable-next-line eslint/no-use-before-define
-  return getNestedLinkStickerLabel(value) ?? getDirectTitleLabel(directTitle);
-}
-
-function getNestedLinkStickerLabel(value: JsonValue): string | null {
   for (const key of [
     "story_link",
     "link_sticker",
@@ -126,24 +125,26 @@ function getNestedLinkStickerLabel(value: JsonValue): string | null {
     "bloks_tappable_sticker",
   ] as const) {
     const nested = getNestedRecord(value, key);
-    const nestedLabel = nested === null ? null : getLinkStickerLabel(nested);
+    const nestedLabel = nested === null ? null : getLinkStickerLabel(nested, visited);
 
     if (nestedLabel !== null && nestedLabel.length > 0) {
       return nestedLabel;
     }
   }
 
-  return null;
-}
-
-function getDirectTitleLabel(directTitle: string | null): string | null {
   return directTitle !== null && directTitle.length > 0 ? `link:${directTitle}` : null;
 }
 
-function getLocationRecord(value: JsonValue): JsonObject | null {
+function getLocationRecord(value: JsonValue, visited = new Set<JsonValue>()): JsonObject | null {
   if (!isJsonObject(value)) {
     return null;
   }
+
+  if (visited.has(value)) {
+    return null;
+  }
+
+  visited.add(value);
 
   const name = getNestedString(value, ["name", "location_name", "title"]);
   const address = getNestedString(value, ["address", "full_address", "street_address", "subtitle"]);
@@ -152,11 +153,6 @@ function getLocationRecord(value: JsonValue): JsonObject | null {
     return value;
   }
 
-  // oxlint-disable-next-line eslint/no-use-before-define -- This traversal is mutually recursive.
-  return getNestedLocationRecord(value);
-}
-
-function getNestedLocationRecord(record: JsonObject): JsonObject | null {
   for (const key of [
     "location",
     "venue",
@@ -166,7 +162,7 @@ function getNestedLocationRecord(record: JsonObject): JsonObject | null {
     "bloks_sticker",
     "sticker_data",
   ] as const) {
-    const nestedLocation = getLocationRecord(getNestedRecord(record, key));
+    const nestedLocation = getLocationRecord(getNestedRecord(value, key), visited);
 
     if (nestedLocation) {
       return nestedLocation;

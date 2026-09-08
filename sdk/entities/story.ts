@@ -141,24 +141,28 @@ async function replaceStoryVersions(database: DrizzleDatabase, story: StoryItem)
   await database.delete(storyImageVersions).where(eq(storyImageVersions.mediaPk, story.pk));
   await database.delete(storyVideoVersions).where(eq(storyVideoVersions.mediaPk, story.pk));
 
-  for (const [sortOrder, version] of (story.image_versions2?.candidates ?? []).entries()) {
-    await database.insert(storyImageVersions).values({
+  const imageVersionEntries = (story.image_versions2?.candidates ?? []).map(
+    (version, sortOrder) => ({
       height: version.height ?? null,
       mediaPk: story.pk,
       sortOrder,
       url: version.url ?? null,
       width: version.width ?? null,
-    });
+    }),
+  );
+  if (imageVersionEntries.length > 0) {
+    await database.insert(storyImageVersions).values(imageVersionEntries);
   }
-  for (const [sortOrder, version] of (story.video_versions ?? []).entries()) {
-    await database.insert(storyVideoVersions).values({
-      height: version.height ?? null,
-      mediaPk: story.pk,
-      sortOrder,
-      type: version.type ?? null,
-      url: version.url ?? null,
-      width: version.width ?? null,
-    });
+  const videoVersionEntries = (story.video_versions ?? []).map((version, sortOrder) => ({
+    height: version.height ?? null,
+    mediaPk: story.pk,
+    sortOrder,
+    type: version.type ?? null,
+    url: version.url ?? null,
+    width: version.width ?? null,
+  }));
+  if (videoVersionEntries.length > 0) {
+    await database.insert(storyVideoVersions).values(videoVersionEntries);
   }
 }
 
@@ -166,22 +170,22 @@ async function replaceStoryAnnotations(database: DrizzleDatabase, story: StoryIt
   await database.delete(storyStickers).where(eq(storyStickers.mediaPk, story.pk));
   await database.delete(storyLocations).where(eq(storyLocations.mediaPk, story.pk));
 
-  for (const [sortOrder, label] of getStoryStickers(
-    story.pk,
-    new Map([[story.pk, story]]),
-  ).entries()) {
-    await database.insert(storyStickers).values({
+  const stickerEntries = getStoryStickers(story.pk, new Map([[story.pk, story]])).map(
+    (label, sortOrder) => ({
       kind: getStickerKind(label),
       label,
       mediaPk: story.pk,
       sortOrder,
-    });
+    }),
+  );
+  if (stickerEntries.length > 0) {
+    await database.insert(storyStickers).values(stickerEntries);
   }
-  for (const [sortOrder, label] of getStoryLocations(
-    story.pk,
-    new Map([[story.pk, story]]),
-  ).entries()) {
-    await database.insert(storyLocations).values({ mediaPk: story.pk, label, sortOrder });
+  const locationEntries = getStoryLocations(story.pk, new Map([[story.pk, story]])).map(
+    (label, sortOrder) => ({ mediaPk: story.pk, label, sortOrder }),
+  );
+  if (locationEntries.length > 0) {
+    await database.insert(storyLocations).values(locationEntries);
   }
 }
 
@@ -239,10 +243,10 @@ export class StoryRepository {
     this.database = database;
   }
 
-  findByMediaPk(mediaPk: string): Promise<StoryItem | null> {
+  findByMediaPk(mediaPk: string): StoryItem | null {
     const story = this.database.select().from(stories).where(eq(stories.mediaPk, mediaPk)).get();
     if (story === undefined) {
-      return Promise.resolve(null);
+      return null;
     }
 
     const imageVersions = this.database
@@ -258,7 +262,7 @@ export class StoryRepository {
       .orderBy(asc(storyVideoVersions.sortOrder))
       .all();
 
-    return Promise.resolve(toStoryItem(story, imageVersions, videoVersions));
+    return toStoryItem(story, imageVersions, videoVersions);
   }
 
   async save(value: StoryItem, owner?: StoryOwner): Promise<void> {
@@ -273,7 +277,7 @@ export class StoryRepository {
     await replaceStoryAnnotations(this.database, story);
   }
 
-  listByUsername(username: string): Promise<Array<UserTimelineStory>> {
+  listByUsername(username: string): Array<UserTimelineStory> {
     const rows = this.database
       .select({ story: stories, user: instagramUsers })
       .from(stories)
@@ -282,11 +286,9 @@ export class StoryRepository {
       .orderBy(desc(stories.takenAt), desc(stories.mediaPk))
       .all();
 
-    return Promise.resolve(
-      rows.flatMap(({ story, user }) => {
-        const timelineStory = getTimelineStory(this.database, story, user);
-        return timelineStory === null ? [] : [timelineStory];
-      }),
-    );
+    return rows.flatMap(({ story, user }) => {
+      const timelineStory = getTimelineStory(this.database, story, user);
+      return timelineStory === null ? [] : [timelineStory];
+    });
   }
 }

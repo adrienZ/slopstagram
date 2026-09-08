@@ -11,10 +11,12 @@ describe("recognizeAppleCaption", () => {
 
     let runCount = 0;
     const caption = await recognizeAppleCaption("story-1", "/cache/story-1.jpg", {
-      readImage: () => Promise.reject(new Error("should not read")),
-      runAppleOcr: () => {
+      readImage: async () => {
+        throw new Error("should not read");
+      },
+      runAppleOcr: async () => {
         runCount += 1;
-        return Promise.resolve("fresh caption");
+        return "fresh caption";
       },
       repository,
     });
@@ -28,10 +30,10 @@ describe("recognizeAppleCaption", () => {
     let receivedImage: Uint8Array | undefined;
 
     const caption = await recognizeAppleCaption("story-2", "/cache/story-2.jpg", {
-      readImage: () => Promise.resolve(Buffer.from("local-image")),
-      runAppleOcr: (image) => {
+      readImage: async () => Buffer.from("local-image"),
+      runAppleOcr: async (image) => {
         receivedImage = image;
-        return Promise.resolve("fresh caption");
+        return "fresh caption";
       },
       repository,
     });
@@ -45,8 +47,8 @@ describe("recognizeAppleCaption", () => {
     const repository = createAppleVisionRepositoryAdapter();
 
     const caption = await recognizeAppleCaption("story-3", "/cache/story-3.jpg", {
-      readImage: () => Promise.resolve(Buffer.from("local-image")),
-      runAppleOcr: () => Promise.resolve("\r\n  fresh caption  \n"),
+      readImage: async () => Buffer.from("local-image"),
+      runAppleOcr: async () => "\r\n  fresh caption  \n",
       repository,
     });
 
@@ -60,7 +62,7 @@ describe("recognizeAppleCaption", () => {
     await assert.rejects(
       recognizeAppleCaption("story-4", "/cache/story-4.jpg", {
         platform: "win32",
-        readImage: () => Promise.resolve(Buffer.from("local-image")),
+        readImage: async () => Buffer.from("local-image"),
         repository,
       }),
       (error) =>

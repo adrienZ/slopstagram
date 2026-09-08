@@ -15,7 +15,9 @@ export async function storeReturnedReels(
         continue;
       }
 
+      // oxlint-disable-next-line no-await-in-loop -- Persist cache data before its matching database record.
       await storage.setItem(getMediaCacheKey(item.pk), item);
+      // oxlint-disable-next-line no-await-in-loop -- Persist each database record before exposing the item as cached.
       await storyRepository.save(item, reel.user);
       cachedItems.set(item.pk, item);
       fetchedMediaPks.add(item.pk);

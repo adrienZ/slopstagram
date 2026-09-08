@@ -111,7 +111,7 @@ async function fetchTray(
   logger: Logger,
 ) {
   const trayResult = await requestWithRetry(
-    () => client.getTray(),
+    async () => await client.getTray(),
     createRetryOptions(options, logger),
     "reels tray request",
   );

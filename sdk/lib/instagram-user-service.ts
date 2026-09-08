@@ -61,26 +61,36 @@ export async function persistReportInstagramUsers(
     usersByUsername.set(user.username, toInstagramUser(user));
   }
 
-  for (const user of usersByUsername.values()) {
-    await repository.save(user);
-  }
+  await Promise.all(
+    [...usersByUsername.values()].map(async (user) => {
+      await repository.save(user);
+    }),
+  );
   for (const user of [...report.manifest.users, ...report.output.users]) {
     removeEmbeddedUser(user);
   }
 }
 
-export async function hydrateReportInstagramUsers(
+export function hydrateReportInstagramUsers(
   report: StoriesManifestReport,
   repository: InstagramUserStore = instagramUserRepository,
-): Promise<void> {
+): void {
   const usersByUsername = new Map<string, InstagramUserEntry | null>();
 
-  for (const user of [...report.manifest.users, ...report.output.users]) {
+  const users = [...report.manifest.users, ...report.output.users];
+  const missingUsernames = new Set(
+    users.filter((user) => !hasEmbeddedUser(user)).map((user) => user.username),
+  );
+  const entries = [...missingUsernames].map(
+    (username) => [username, repository.findByUsername(username)] as const,
+  );
+  for (const [username, entity] of entries) {
+    usersByUsername.set(username, entity);
+  }
+
+  for (const user of users) {
     if (hasEmbeddedUser(user)) {
       continue;
-    }
-    if (!usersByUsername.has(user.username)) {
-      usersByUsername.set(user.username, await repository.findByUsername(user.username));
     }
     const entity = usersByUsername.get(user.username);
     if (entity !== null && entity !== undefined) {

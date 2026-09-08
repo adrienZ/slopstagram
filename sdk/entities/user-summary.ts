@@ -20,7 +20,7 @@ export class UserSummaryRepository {
     this.database = database;
   }
 
-  findBySourceHash(sourceHash: string): Promise<UserSummaryEntry | null> {
+  findBySourceHash(sourceHash: string): UserSummaryEntry | null {
     const row = this.database
       .select()
       .from(userSummaries)
@@ -28,15 +28,15 @@ export class UserSummaryRepository {
       .get();
 
     if (row === undefined) {
-      return Promise.resolve(null);
+      return null;
     }
 
-    return Promise.resolve({
+    return {
       prompt_hash: row.promptHash,
       result: row.result,
       source_hash: row.sourceHash,
       user_key: row.userKey,
-    });
+    };
   }
 
   async save(value: UserSummaryEntry): Promise<void> {

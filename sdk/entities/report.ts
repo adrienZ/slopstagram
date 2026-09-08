@@ -1,4 +1,3 @@
-// oxlint-disable eslint(max-lines) -- The report aggregate and persistence mapping belong together.
 import { asc, eq } from "drizzle-orm";
 import { integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-orm/zod";
@@ -245,34 +244,37 @@ async function replaceReportRelations(
   await database.delete(reportFailures).where(eq(reportFailures.reportKey, key));
   await database.delete(reportStories).where(eq(reportStories.reportKey, key));
   await database.delete(reportReels).where(eq(reportReels.reportKey, key));
-  for (const reel of report.manifest.users) {
-    await database.insert(reportReels).values({
-      fullName: reel.full_name ?? null,
-      instagramId: reel.id ?? null,
-      instagramPk: reel.pk ?? null,
-      profilePicUrl: reel.profile_pic_url ?? null,
-      reelId: reel.reel_id,
-      reportKey: key,
-      sortOrder: reel.order,
-      username: reel.username,
-    });
-    for (const [sortOrder, story] of reel.stories.entries()) {
-      await database
-        .insert(reportStories)
-        .values(toReportStoryEntry(key, reel.reel_id, sortOrder, story));
-    }
+  const reelEntries = report.manifest.users.map((reel) => ({
+    fullName: reel.full_name ?? null,
+    instagramId: reel.id ?? null,
+    instagramPk: reel.pk ?? null,
+    profilePicUrl: reel.profile_pic_url ?? null,
+    reelId: reel.reel_id,
+    reportKey: key,
+    sortOrder: reel.order,
+    username: reel.username,
+  }));
+  if (reelEntries.length > 0) {
+    await database.insert(reportReels).values(reelEntries);
   }
-  for (const [failureIndex, failure] of report.failures.entries()) {
-    await database.insert(reportFailures).values({
-      attemptCount: failure.attempt_count,
-      failureIndex,
-      httpStatus: failure.http_status,
-      mediaPk: failure.media_pk,
-      message: failure.message,
-      reason: failure.reason,
-      reelId: failure.reel_id,
-      reportKey: key,
-    });
+  const storyEntries = report.manifest.users.flatMap((reel) =>
+    reel.stories.map((story, sortOrder) => toReportStoryEntry(key, reel.reel_id, sortOrder, story)),
+  );
+  if (storyEntries.length > 0) {
+    await database.insert(reportStories).values(storyEntries);
+  }
+  const failureEntries = report.failures.map((failure, failureIndex) => ({
+    attemptCount: failure.attempt_count,
+    failureIndex,
+    httpStatus: failure.http_status,
+    mediaPk: failure.media_pk,
+    message: failure.message,
+    reason: failure.reason,
+    reelId: failure.reel_id,
+    reportKey: key,
+  }));
+  if (failureEntries.length > 0) {
+    await database.insert(reportFailures).values(failureEntries);
   }
 }
 
@@ -282,14 +284,14 @@ export class ReportRepository {
   constructor(database: DrizzleDatabase) {
     this.database = database;
   }
-  findByKey(key: string): Promise<StoriesManifestReport | null> {
+  findByKey(key: string): StoriesManifestReport | null {
     const report = this.database.select().from(reports).where(eq(reports.key, key)).get();
     if (report === undefined) {
-      return Promise.resolve(null);
+      return null;
     }
-    return Promise.resolve(toReport(report, readReportRows(this.database, key)));
+    return toReport(report, readReportRows(this.database, key));
   }
-  listKeys(): Promise<Array<string>> {
+  listKeys(): Array<string> {
     const keys = this.database
       .select({ key: reports.key })
       .from(reports)
@@ -297,7 +299,7 @@ export class ReportRepository {
       .all()
       .map((row) => row.key);
 
-    return Promise.resolve(keys);
+    return keys;
   }
 
   async save(key: string, value: StoriesManifestReport): Promise<void> {

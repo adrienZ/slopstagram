@@ -57,10 +57,9 @@ function createRepository() {
   const entries = new Map<string, InstagramUserEntry>();
   return {
     entries,
-    findByUsername: (username: string) => Promise.resolve(entries.get(username) ?? null),
-    save: (value: InstagramUserEntry) => {
+    findByUsername: (username: string) => entries.get(username) ?? null,
+    save: async (value: InstagramUserEntry) => {
       entries.set(value.username, value);
-      return Promise.resolve();
     },
   };
 }
@@ -85,7 +84,7 @@ describe("Instagram user report persistence", () => {
     assert.equal("pk" in report.manifest.users[0], false);
     assert.equal("profile_pic_url" in report.manifest.users[0], false);
 
-    await hydrateReportInstagramUsers(report, repository);
+    hydrateReportInstagramUsers(report, repository);
 
     assert.equal(report.output.users[0]?.full_name, "Fixture User");
     assert.equal(report.output.users[0]?.profile_pic_url, "images/avatars/instagram-pk-1.jpg");
@@ -101,7 +100,7 @@ describe("Instagram user report persistence", () => {
     report.output.users[0].full_name = null;
     report.output.users[0].profile_pic_url = null;
 
-    await hydrateReportInstagramUsers(report, repository);
+    hydrateReportInstagramUsers(report, repository);
 
     assert.equal(report.output.users[0]?.full_name, "Fixture User");
     assert.equal(report.output.users[0]?.profile_pic_url, "images/avatars/instagram-pk-1.jpg");

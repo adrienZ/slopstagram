@@ -43,12 +43,12 @@ test("runWarmCacheJob creates a report using reportArgs from the payload", async
     payload: { args: ["ignored"], reportArgs: ["--limit", "10"] },
     logger: createMockLogger(),
     dependencies: {
-      createReport: (options) => {
+      createReport: async (options) => {
         calls.push(options.args ?? []);
         assert.doesNotThrow(() => {
           options.logger.progress(0, 1);
         });
-        return Promise.resolve(createReportResult());
+        return createReportResult();
       },
     },
   });
@@ -74,9 +74,9 @@ test("runWarmCacheJob accepts an empty payload", async () => {
   await runWarmCacheJob({
     logger: createMockLogger(),
     dependencies: {
-      createReport: (options) => {
+      createReport: async (options) => {
         calls.push(options.args ?? []);
-        return Promise.resolve(createReportResult());
+        return createReportResult();
       },
     },
   });
@@ -100,13 +100,11 @@ test("startWarmCacheQueue schedules and processes warm-cache jobs", async () => 
           close() {
             calls.push({ arguments: [], name: "queue:close" });
           },
-          waitUntilReady() {
+          async waitUntilReady() {
             calls.push({ arguments: [], name: "queue:ready" });
-            return Promise.resolve();
           },
-          upsertJobScheduler(...arguments_) {
+          async upsertJobScheduler(...arguments_) {
             calls.push({ arguments: arguments_, name: "queue:schedule" });
-            return Promise.resolve();
           },
         };
       },
@@ -114,9 +112,8 @@ test("startWarmCacheQueue schedules and processes warm-cache jobs", async () => 
         calls.push({ arguments: [options], name: `worker:${name}` });
         processor = nextProcessor;
         return {
-          close() {
+          async close() {
             calls.push({ arguments: [], name: "worker:close" });
-            return Promise.resolve();
           },
           on(_event, listener) {
             workerErrorListener = listener;
@@ -125,9 +122,8 @@ test("startWarmCacheQueue schedules and processes warm-cache jobs", async () => 
           run() {
             calls.push({ arguments: [], name: "worker:run" });
           },
-          waitUntilReady() {
+          async waitUntilReady() {
             calls.push({ arguments: [], name: "worker:ready" });
-            return Promise.resolve();
           },
         };
       },
@@ -136,14 +132,14 @@ test("startWarmCacheQueue schedules and processes warm-cache jobs", async () => 
     onError(error) {
       capturedErrors.push(error);
     },
-    runJob: (options = {}) => {
+    runJob: async (options = {}) => {
       processedPayload = options.payload;
       const result = createReportResult();
-      return Promise.resolve({
+      return {
         counts: result.report.metadata.counts,
         outputFileName: result.outputFileName,
         reportKey: result.reportKey,
-      });
+      };
     },
   });
 
@@ -201,30 +197,28 @@ test("startWarmCacheQueue retries while the standalone server starts", async () 
       createQueue() {
         return {
           close() {},
-          waitUntilReady() {
+          async waitUntilReady() {
             readyAttempts += 1;
-            return readyAttempts === 1
-              ? Promise.reject(new Error("server is starting"))
-              : Promise.resolve();
+            if (readyAttempts === 1) {
+              throw new Error("server is starting");
+            }
           },
-          upsertJobScheduler() {
+          async upsertJobScheduler() {
             calls.push("schedule");
-            return Promise.resolve();
           },
         };
       },
       createWorker() {
         return {
-          close: () => Promise.resolve(),
+          close: async () => {},
           on() {
             return this;
           },
           run() {
             calls.push("worker:run");
           },
-          waitUntilReady() {
+          async waitUntilReady() {
             calls.push("worker:ready");
-            return Promise.resolve();
           },
         };
       },
@@ -248,21 +242,21 @@ test("startWarmCacheQueue cleans up when its worker fails to close", async () =>
           close() {
             calls.push("queue:close");
           },
-          waitUntilReady: () => Promise.resolve(),
-          upsertJobScheduler: () => Promise.resolve(),
+          waitUntilReady: async () => {},
+          upsertJobScheduler: async () => {},
         };
       },
       createWorker() {
         return {
-          close() {
+          async close() {
             calls.push("worker:close");
-            return Promise.reject(closeFailure);
+            throw closeFailure;
           },
           on() {
             return this;
           },
           run() {},
-          waitUntilReady: () => Promise.resolve(),
+          waitUntilReady: async () => {},
         };
       },
     },

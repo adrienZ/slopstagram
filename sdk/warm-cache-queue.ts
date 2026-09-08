@@ -67,12 +67,14 @@ async function waitForServer(queue: WarmCacheQueue): Promise<void> {
 
   for (;;) {
     try {
+      // oxlint-disable-next-line no-await-in-loop -- Each readiness attempt must finish before deciding whether to back off.
       await queue.waitUntilReady();
       return;
     } catch (error) {
       if (Date.now() >= deadline) {
         throw error;
       }
+      // oxlint-disable-next-line no-await-in-loop -- Backoff is deliberately sequential between readiness attempts.
       await sleep(retryDelay);
       retryDelay = Math.min(retryDelay * 2, 500);
     }
@@ -89,7 +91,7 @@ export function startWarmCacheQueue({
 
   const worker = dependencies.createWorker(
     WARM_CACHE_QUEUE_NAME,
-    (job) => runJob({ payload: job.data, logger }),
+    async (job) => await runJob({ payload: job.data, logger }),
     { autorun: false, concurrency: 1 },
   );
 

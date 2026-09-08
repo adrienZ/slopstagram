@@ -7,7 +7,13 @@ const ultraciteSoftenerConfig = defineConfig({
     "import/consistent-type-specifier-style": ["error", "prefer-top-level-if-only-type-imports"],
     "typescript/array-type": ["error", { default: "generic" }],
     "func-style": ["error", "declaration"],
+    "oxc/no-barrel-file": ["error", { threshold: 0 }],
     "sort-keys": "off",
+    // This flags concurrency opportunities, but retries, rate limits, and resource-heavy work may require serial awaits.
+    "no-await-in-loop": "warn",
+    // require-await only when useful using type aware rule
+    "require-await": "off",
+    "typescript/require-await": "error",
   },
 });
 
@@ -25,27 +31,30 @@ export default defineConfig({
     suspicious: "error",
     pedantic: "error",
     nursery: "error",
-    // perf: "off",
+    perf: "error",
   },
   rules: {
     "oxc/no-barrel-file": ["error", { threshold: 0 }],
     "slopstagram/no-barrel-files": "error",
-    "typescript/promise-function-async": "off",
-    // temp rules
-    "no-await-in-loop": "off",
   },
   overrides: [
     {
       files: ["sdk/index.ts"],
       rules: {
-        "oxc/no-barrel-file": "off",
         "slopstagram/no-barrel-files": "off",
       },
     },
     {
-      files: ["tests/**/*.test.ts"],
+      files: [
+        "tests/**/*.test.ts",
+        "tests/**/*.spec.ts",
+        "tests/repository-adapters.ts",
+        "tests/mock-helpers.ts",
+      ],
       rules: {
-        "max-lines-per-function": "off",
+        // oxlint-disable-next-line no-warning-comments
+        // TODO: Enable require-await rule
+        "typescript/require-await": "off",
         "typescript/no-floating-promises": [
           "error",
           {

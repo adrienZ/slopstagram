@@ -21,18 +21,18 @@ export class VisionRepository {
     this.database = database;
   }
 
-  findByMediaPk(mediaPk: string): Promise<VisionEntry | null> {
+  findByMediaPk(mediaPk: string): VisionEntry | null {
     const row = this.database.select().from(vision).where(eq(vision.mediaPk, mediaPk)).get();
 
     if (row === undefined) {
-      return Promise.resolve(null);
+      return null;
     }
 
-    return Promise.resolve({
+    return {
       model: row.model,
       prompt_hash: row.promptHash,
       result: { text: row.text, visual: row.visual },
-    });
+    };
   }
 
   async save(mediaPk: string, value: VisionEntry): Promise<void> {

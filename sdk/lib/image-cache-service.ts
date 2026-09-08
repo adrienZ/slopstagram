@@ -115,6 +115,7 @@ async function cacheProfilePics(
 
   for (const { pk, source } of new Map(entries.map((entry) => [entry.pk, entry])).values()) {
     try {
+      // oxlint-disable-next-line no-await-in-loop -- Serial image caching limits network, conversion, and storage pressure.
       const cachedPath = await cacheImage(source, "avatars", {
         ...options,
         imageKey: pk,
@@ -154,6 +155,7 @@ async function cacheStoryPreviewByMediaPk(
     entries.map((entry) => [entry.mediaPk, entry]),
   ).values()) {
     try {
+      // oxlint-disable-next-line no-await-in-loop -- Serial image caching limits network, conversion, and storage pressure.
       const cachedPath = await cacheImage(source, "story-previews", {
         ...options,
         imageKey: mediaPk,

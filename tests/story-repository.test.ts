@@ -31,7 +31,7 @@ describe("StoryRepository", () => {
       ],
     });
 
-    assert.deepEqual(await repository.findByMediaPk("story-1"), {
+    assert.deepEqual(repository.findByMediaPk("story-1"), {
       accessibility_caption: "Updated",
       image_versions2: {
         candidates: [{ height: 100, url: "https://example.com/image.jpg", width: 80 }],
@@ -116,7 +116,7 @@ describe("StoryRepository", () => {
       },
     );
 
-    assert.deepEqual(await repository.listByUsername("timeline-user"), [
+    assert.deepEqual(repository.listByUsername("timeline-user"), [
       {
         full_name: "Timeline User",
         locations: [],

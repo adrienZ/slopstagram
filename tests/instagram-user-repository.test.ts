@@ -26,7 +26,7 @@ describe("InstagramUserRepository", () => {
       username: "fixture-user",
     });
 
-    assert.deepEqual(await repository.findByUsername("fixture-user"), {
+    assert.deepEqual(repository.findByUsername("fixture-user"), {
       full_name: "Updated Name",
       id: "id-2",
       pk: "pk-1",

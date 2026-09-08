@@ -161,40 +161,45 @@ function createTimelineUser(
   };
 }
 
-async function readTimelineDetails(stories: Array<UserTimelineStory>): Promise<{
+interface TimelineDetails {
   appleCaptionByMediaPk: Map<string, string>;
   visionByPreviewUrl: Map<string, VisionResult>;
-}> {
+}
+
+function readTimelineDetails(stories: Array<UserTimelineStory>): TimelineDetails {
   const appleCaptionByMediaPk = new Map<string, string>();
   const visionByPreviewUrl = new Map<string, VisionResult>();
 
-  for (const story of stories) {
-    const [appleCaption, vision] = await Promise.all([
-      appleVisionRepository.findByMediaPk(story.story.pk),
-      visionRepository.findByMediaPk(story.story.pk),
-    ]);
+  const details = stories.map((story) => ({
+    appleCaption: appleVisionRepository.findByMediaPk(story.story.pk),
+    previewUrl: getStoryPreviewSource(story),
+    storyPk: story.story.pk,
+    vision: visionRepository.findByMediaPk(story.story.pk),
+  }));
+
+  for (const { appleCaption, previewUrl, storyPk, vision } of details) {
     if (appleCaption !== null) {
-      appleCaptionByMediaPk.set(story.story.pk, appleCaption);
+      appleCaptionByMediaPk.set(storyPk, appleCaption);
     }
     if (vision !== null) {
-      visionByPreviewUrl.set(getStoryPreviewSource(story), vision.result);
+      visionByPreviewUrl.set(previewUrl, vision.result);
     }
   }
 
   return { appleCaptionByMediaPk, visionByPreviewUrl };
 }
 
-export async function createUserTimeline(
+export function createUserTimeline(
   username: string,
   repository: Pick<StoryRepository, "listByUsername"> = storyRepository,
-): Promise<UserTimeline | null> {
-  const stories = await repository.listByUsername(username);
+): UserTimeline | null {
+  const stories = repository.listByUsername(username);
   if (stories.length === 0) {
     return null;
   }
 
   const timelineUser = createTimelineUser(stories[0], stories);
-  const details = await readTimelineDetails(stories);
+  const details = readTimelineDetails(stories);
   const avatarPath = timelineUser.profile_pic_url?.replace(/^images\//u, "/media/") ?? null;
 
   return {

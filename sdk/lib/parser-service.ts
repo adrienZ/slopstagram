@@ -168,11 +168,11 @@ export function parseStoryReport(report: StoriesMediaReport, pk: string): Parsed
   return parseStoryItem(item);
 }
 
-export async function parseStoryManifestReport(
+export function parseStoryManifestReport(
   report: StoriesManifestReport,
   pk: string,
   repository: Pick<StoryRepository, "findByMediaPk">,
-): Promise<ParsedStory> {
+): ParsedStory {
   const manifestItem = report.manifest.users
     .flatMap((user) => user.stories)
     .find((story) => story.media_pk === pk);
@@ -185,7 +185,7 @@ export async function parseStoryManifestReport(
     throw new Error(`Story with pk ${pk} was not fetched successfully`);
   }
 
-  const item = await repository.findByMediaPk(manifestItem.media_pk);
+  const item = repository.findByMediaPk(manifestItem.media_pk);
   if (item === null) {
     throw new Error(`Story item ${manifestItem.media_pk} not found`);
   }

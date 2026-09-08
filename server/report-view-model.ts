@@ -73,51 +73,55 @@ function readCachedImages(report: StoriesManifestReport): CachedReportImages {
   return { profilePicPathByUrl, storyPreviewPathByUrl };
 }
 
-async function readCachedVision(
+function readCachedVision(
   report: StoriesManifestReport,
   cachedImages: CachedReportImages,
-): Promise<Map<string, VisionResult>> {
+): Map<string, VisionResult> {
   const visionByPreviewUrl = new Map<string, VisionResult>();
   const promptHash = getHash(VISION_PROMPT);
 
-  for (const user of report.output.users) {
-    for (const story of user.stories) {
-      const previewUrl = story.preview_image_url?.trim();
-      if (
-        previewUrl === undefined ||
-        previewUrl.length === 0 ||
-        !cachedImages.storyPreviewPathByUrl.has(previewUrl)
-      ) {
-        continue;
-      }
+  const stories = report.output.users.flatMap((user) => user.stories);
+  const entries = stories.map((story) => ({
+    entry: visionRepository.findByMediaPk(story.media_pk),
+    previewUrl: story.preview_image_url?.trim(),
+  }));
 
-      const entry = await visionRepository.findByMediaPk(story.media_pk);
-      if (!entry || entry.model !== VISION_MODEL || entry.prompt_hash !== promptHash) {
-        continue;
-      }
-
-      visionByPreviewUrl.set(previewUrl, entry.result);
+  for (const { entry, previewUrl } of entries) {
+    if (
+      previewUrl === undefined ||
+      previewUrl.length === 0 ||
+      !cachedImages.storyPreviewPathByUrl.has(previewUrl) ||
+      !entry ||
+      entry.model !== VISION_MODEL ||
+      entry.prompt_hash !== promptHash
+    ) {
+      continue;
     }
+
+    visionByPreviewUrl.set(previewUrl, entry.result);
   }
 
   return visionByPreviewUrl;
 }
 
-async function readCachedUserSummaries(
+function readCachedUserSummaries(
   report: StoriesManifestReport,
   visionByPreviewUrl: Map<string, VisionResult>,
-): Promise<Map<string, string>> {
+): Map<string, string> {
   const userSummaryByUserKey = new Map<string, string>();
 
-  for (const user of report.output.users) {
+  const entries = report.output.users.map((user) => {
     const userKey = getReportUserKey(user);
     const prompt = createSummaryPrompt(user, visionByPreviewUrl);
-    const sourceHash = getUserSummarySourceHash({
-      model: USER_SUMMARY_MODEL,
-      prompt,
+    const sourceHash = getUserSummarySourceHash({ model: USER_SUMMARY_MODEL, prompt, userKey });
+    return {
+      entry: userSummaryRepository.findBySourceHash(sourceHash),
+      sourceHash,
       userKey,
-    });
-    const entry = await userSummaryRepository.findBySourceHash(sourceHash);
+    };
+  });
+
+  for (const { entry, sourceHash, userKey } of entries) {
     const result = entry?.result.trim();
 
     if (
@@ -135,14 +139,18 @@ async function readCachedUserSummaries(
   return userSummaryByUserKey;
 }
 
-async function readAppleCaptions(report: StoriesManifestReport): Promise<Map<string, string>> {
+function readAppleCaptions(report: StoriesManifestReport): Map<string, string> {
   const captionByMediaPk = new Map<string, string>();
   const mediaPks = new Set(
     report.output.users.flatMap((user) => user.stories.map((story) => story.media_pk)),
   );
 
-  for (const mediaPk of mediaPks) {
-    const caption = await appleVisionRepository.findByMediaPk(mediaPk);
+  const captions = [...mediaPks].map((mediaPk) => ({
+    caption: appleVisionRepository.findByMediaPk(mediaPk),
+    mediaPk,
+  }));
+
+  for (const { caption, mediaPk } of captions) {
     if (caption !== null) {
       captionByMediaPk.set(mediaPk, caption);
     }
@@ -151,15 +159,13 @@ async function readAppleCaptions(report: StoriesManifestReport): Promise<Map<str
   return captionByMediaPk;
 }
 
-export async function createReportViewModel(
-  report: StoriesManifestReport,
-): Promise<ReportViewModel> {
-  await backfillReportStoryMediaTypes(report);
-  await hydrateReportInstagramUsers(report);
+export function createReportViewModel(report: StoriesManifestReport): ReportViewModel {
+  backfillReportStoryMediaTypes(report);
+  hydrateReportInstagramUsers(report);
   const cachedImages = readCachedImages(report);
-  const visionByPreviewUrl = await readCachedVision(report, cachedImages);
-  const userSummaryByUserKey = await readCachedUserSummaries(report, visionByPreviewUrl);
-  const appleCaptionByMediaPk = await readAppleCaptions(report);
+  const visionByPreviewUrl = readCachedVision(report, cachedImages);
+  const userSummaryByUserKey = readCachedUserSummaries(report, visionByPreviewUrl);
+  const appleCaptionByMediaPk = readAppleCaptions(report);
 
   return {
     appleCaptionByMediaPk,
