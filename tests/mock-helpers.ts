@@ -10,15 +10,75 @@ import type {
   StoryItem,
   StoryReel,
   StoriesManifestReport,
+  StoryStorage,
   StoryTrayEntry,
 } from "../sdk/lib/types.ts";
-import type { StoryStorage } from "../sdk/lib/types.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 import type { InstagramClient, InstagramClientResponse } from "../sdk/stories.ts";
 
 export const previewSource = "https://example.com/story-preview.webp";
 
-function log(): void {}
+function createReportMetadata(): StoriesManifestReport["metadata"] {
+  return {
+    broadcasts_count: 0,
+    counts: {
+      cache_hits: 0,
+      cache_misses: 0,
+      failed: 0,
+      fetched: 0,
+      reels: 0,
+      stories: 1,
+    },
+    created_at: "2026-07-26T09:48:26.773Z",
+    report_name: "stories-report.json",
+    status: "ok",
+    story_ranking_token: null,
+  };
+}
+
+function createReportUser(
+  options: Parameters<typeof createSingleStoryReport>[0],
+): StoriesManifestReport["output"]["users"][number] {
+  return {
+    full_name: options.fullName,
+    profile_pic_url: null,
+    reel_ids: ["r1"],
+    stories: [
+      {
+        ig_caption: options.igCaption,
+        locations: options.locations,
+        media_pk: "story-pk",
+        preview_image_url: options.previewImageUrl,
+        stickers: options.stickers,
+        status: "ok",
+      },
+    ],
+    username: options.username,
+  };
+}
+
+function createSingleStoryReport(options: {
+  appleCaption: string;
+  fullName: string;
+  igCaption: string;
+  locations: Array<string>;
+  previewImageUrl: string;
+  stickers: Array<string>;
+  username: string;
+}): StoriesManifestReport {
+  return {
+    failures: [],
+    manifest: { users: [] },
+    metadata: createReportMetadata(),
+    output: {
+      users: [createReportUser(options)],
+    },
+  };
+}
+
+function log(): void {
+  // empty mocked log
+}
 
 log.raw = log;
 
@@ -28,18 +88,20 @@ export function createMockLogger(): Logger {
   logger.mockTypes(() => log);
 
   return Object.assign(logger, {
-    progress: () => {},
+    progress: () => {
+      // empty mocked progress
+    },
   });
 }
 
-export function createCapturingLogger(): Logger & { messages: string[] } {
-  const messages: string[] = [];
+export function createCapturingLogger(): Logger & { messages: Array<string> } {
+  const messages: Array<string> = [];
   const logger = createConsola();
 
   logger.mockTypes((typeName) => {
-    const capturingLog = (...args: unknown[]) => {
+    function capturingLog(...args: Array<unknown>): void {
       messages.push(`${typeName}: ${args.join(" ")}`);
-    };
+    }
     capturingLog.raw = capturingLog;
 
     return capturingLog;
@@ -99,7 +161,9 @@ export function createSummaryReport(): StoriesManifestReport {
 
 export async function withReportImage<T>(
   run: (cacheDirectory: string, cachedImages: CachedReportImages) => Promise<T>,
-  storyPreviewPathByUrl: Map<string, string> = new Map([[previewSource, "story.jpg"]]),
+  storyPreviewPathByUrl: Map<string, string> = new Map<string, string>([
+    [previewSource, "story.jpg"],
+  ]),
 ): Promise<T> {
   const directory = await mkdtemp(path.join(tmpdir(), "slopstagram-vision-test-"));
   const imagePath = path.join(directory, "story.jpg");
@@ -116,8 +180,7 @@ export async function withReportImage<T>(
 }
 
 export function storyItem(pk: string, accessibilityCaption?: string | null): StoryItem {
-  return {
-    accessibility_caption: accessibilityCaption,
+  const item: StoryItem = {
     image_versions2: {
       candidates: [
         {
@@ -130,6 +193,12 @@ export function storyItem(pk: string, accessibilityCaption?: string | null): Sto
     media_type: 1,
     pk,
   };
+
+  if (accessibilityCaption !== undefined) {
+    item.accessibility_caption = accessibilityCaption;
+  }
+
+  return item;
 }
 
 export function storyItemWithStickers(
@@ -143,7 +212,7 @@ export function storyItemWithStickers(
   };
 }
 
-export function reel(id: string, items: StoryItem[]): StoryReel {
+export function reel(id: string, items: Array<StoryItem>): StoryReel {
   return {
     id,
     items,
@@ -165,10 +234,10 @@ export function response<T>(
 }
 
 export function createClient(
-  tray: StoryTrayEntry[],
+  tray: Array<StoryTrayEntry>,
   reelsResponses: Array<InstagramClientResponse<{ reels?: Record<string, StoryReel> }>>,
-): InstagramClient & { reelsCalls: string[][] } {
-  const reelsCalls: string[][] = [];
+): InstagramClient & { reelsCalls: Array<Array<string>> } {
+  const reelsCalls: Array<Array<string>> = [];
 
   return {
     reelsCalls,
@@ -195,62 +264,10 @@ export function createClient(
   };
 }
 
-export const fixedNow = () => new Date("2026-07-26T00:00:00.000Z");
-export const noSleep = () => Promise.resolve();
-function createSingleStoryReport(options: {
-  appleCaption: string;
-  fullName: string;
-  igCaption: string;
-  locations: string[];
-  previewImageUrl: string;
-  stickers: string[];
-  username: string;
-}): StoriesManifestReport {
-  return {
-    failures: [],
-    manifest: { users: [] },
-    metadata: createReportMetadata(),
-    output: {
-      users: [createReportUser(options)],
-    },
-  };
+export function fixedNow(): Date {
+  return new Date("2026-07-26T00:00:00.000Z");
 }
 
-function createReportMetadata(): StoriesManifestReport["metadata"] {
-  return {
-    broadcasts_count: 0,
-    counts: {
-      cache_hits: 0,
-      cache_misses: 0,
-      failed: 0,
-      fetched: 0,
-      reels: 0,
-      stories: 1,
-    },
-    created_at: "2026-07-26T09:48:26.773Z",
-    report_name: "stories-report.json",
-    status: "ok",
-    story_ranking_token: null,
-  };
-}
-
-function createReportUser(
-  options: Parameters<typeof createSingleStoryReport>[0],
-): StoriesManifestReport["output"]["users"][number] {
-  return {
-    full_name: options.fullName,
-    profile_pic_url: null,
-    reel_ids: ["r1"],
-    stories: [
-      {
-        ig_caption: options.igCaption,
-        locations: options.locations,
-        media_pk: "story-pk",
-        preview_image_url: options.previewImageUrl,
-        stickers: options.stickers,
-        status: "ok",
-      },
-    ],
-    username: options.username,
-  };
+export function noSleep(): Promise<void> {
+  return Promise.resolve();
 }

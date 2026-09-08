@@ -9,8 +9,12 @@ function formatStoryMediaType(
     return value;
   }
 
-  if (value === 1) return STORY_MEDIA_TYPES.IMAGE;
-  if (value === 2) return STORY_MEDIA_TYPES.VIDEO;
+  if (value === 1) {
+    return STORY_MEDIA_TYPES.IMAGE;
+  }
+  if (value === 2) {
+    return STORY_MEDIA_TYPES.VIDEO;
+  }
 
   return null;
 }
@@ -20,7 +24,9 @@ async function getStoredStoryMediaType(
   repository: Pick<StoryRepository, "findByMediaPk">,
 ): Promise<StoryMediaType | null> {
   const story = await repository.findByMediaPk(mediaPk);
-  if (story === null) return null;
+  if (story === null) {
+    return null;
+  }
   return formatStoryMediaType(story.media_type);
 }
 
@@ -65,7 +71,9 @@ export async function backfillReportStoryMediaTypes(
 
       const cachedMediaType = await getStoredStoryMediaType(story.media_pk, repository);
       story.media_type = cachedMediaType;
-      if (cachedMediaType) mediaTypeByPk.set(story.media_pk, cachedMediaType);
+      if (cachedMediaType) {
+        mediaTypeByPk.set(story.media_pk, cachedMediaType);
+      }
     }
   }
 }

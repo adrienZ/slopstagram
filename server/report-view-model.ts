@@ -19,13 +19,13 @@ import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
 import type { StoriesManifestReport, VisionResult } from "../sdk/lib/types.ts";
 import { VISION_MODEL, VISION_PROMPT } from "../sdk/lib/vision-analysis-service.ts";
 
-export type ReportViewModel = {
+export interface ReportViewModel {
   appleCaptionByMediaPk: Map<string, string>;
   cachedImages: CachedReportImages;
   report: StoriesManifestReport;
   userSummaryByUserKey: Map<string, string>;
   visionByPreviewUrl: Map<string, VisionResult>;
-};
+}
 
 function getHash(value: string): string {
   return createHash("sha256").update(value).digest("hex");
@@ -143,7 +143,9 @@ async function readAppleCaptions(report: StoriesManifestReport): Promise<Map<str
 
   for (const mediaPk of mediaPks) {
     const caption = await appleVisionRepository.findByMediaPk(mediaPk);
-    if (caption !== null) captionByMediaPk.set(mediaPk, caption);
+    if (caption !== null) {
+      captionByMediaPk.set(mediaPk, caption);
+    }
   }
 
   return captionByMediaPk;

@@ -10,11 +10,11 @@ const ReelTrayResponseSchema = z.object({
   tray: z.array(StoryTrayEntrySchema),
 });
 
-export type ReelsMediaResponse = {
+export interface ReelsMediaResponse {
   reels?: Record<string, StoryReel>;
-  reels_media?: Record<string, StoryReel> | StoryReel[];
+  reels_media?: Record<string, StoryReel> | Array<StoryReel>;
   status?: string | null;
-};
+}
 
 const ReelsMediaResponseSchema = z.object({
   reels: z.record(z.string(), StoryReelSchema).optional(),
@@ -29,6 +29,7 @@ const REELS_TRAY_URL = "https://www.instagram.com/api/v1/feed/reels_tray/";
 const REELS_MEDIA_URL = "https://www.instagram.com/api/v1/feed/reels_media/";
 
 export class InstagramApiResponseError extends Error {
+  override readonly name = "InstagramApiResponseError";
   readonly nonRetryable = true;
 }
 
@@ -37,11 +38,20 @@ function quoteNumericIdentifiers(body: string): string {
   // JavaScript's safe-integer range, so JSON.parse would silently round them
   // before the schema gets a chance to normalize them.
   return body
-    .replaceAll(/("(?:id|pk|media_pk|reel_id)"\s*:\s*)(\d+)/gu, '$1"$2"')
     .replaceAll(
-      /("(?:media_ids|reel_ids)"\s*:\s*\[)([^\]]*)(\])/gu,
-      (_match, opening: string, values: string, closing: string) =>
-        `${opening}${values.replaceAll(/(^|,)\s*(\d+)\s*(?=,|$)/gu, '$1"$2"')}${closing}`,
+      /(?<identifier>"(?:id|pk|media_pk|reel_id)"\s*:\s*)(?<numericIdentifier>\d+)/gu,
+      '$<identifier>"$<numericIdentifier>"',
+    )
+    .replaceAll(
+      /(?<arrayStart>"(?:media_ids|reel_ids)"\s*:\s*\[)(?<values>[^\]]*)(?<arrayEnd>\])/gu,
+      (_match, _arrayStart: string, values: string) =>
+        _match.replace(
+          values,
+          values.replaceAll(
+            /(?<separator>^|,)\s*(?<numericIdentifier>\d+)\s*(?=,|$)/gu,
+            '$<separator>"$<numericIdentifier>"',
+          ),
+        ),
     );
 }
 
@@ -64,23 +74,23 @@ function parseInstagramResponse<T>(
   }
 }
 
-type BrowserFetchResponse = {
+interface BrowserFetchResponse {
   body: string;
   headers: Record<string, string>;
   ok: boolean;
   status: number;
-};
+}
 
-type InstagramClientPage = {
-  evaluate(
+interface InstagramClientPage {
+  evaluate: (
     pageFunction: (input: { appId: string; requestUrl: string }) => Promise<BrowserFetchResponse>,
     input: { appId: string; requestUrl: string },
-  ): Promise<BrowserFetchResponse>;
-};
+  ) => Promise<BrowserFetchResponse>;
+}
 
-type InstagramClientSession = {
+interface InstagramClientSession {
   page: InstagramClientPage;
-};
+}
 
 function fetchFromInstagramPage(
   session: InstagramClientSession,

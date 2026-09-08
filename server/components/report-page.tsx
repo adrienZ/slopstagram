@@ -6,11 +6,11 @@ import { ReportHeader, ReportHeaderStyles } from "./report-header.tsx";
 import { StoryCardStyles } from "./story-card.tsx";
 import { UserSection, UserSectionStyles } from "./user-section.tsx";
 
-type ReportPageProps = {
-  reportKeys: string[];
+interface ReportPageProps {
+  reportKeys: Array<string>;
   selectedReportKey: string;
   viewModel: ReportViewModel;
-};
+}
 
 const reportPageStyles = css`
   :root {

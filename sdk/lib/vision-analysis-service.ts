@@ -30,14 +30,14 @@ const VISION_OUTPUT_SCHEMA = z.toJSONSchema(VisionResponseSchema);
 
 type VisionClient = Pick<VisionSdk, "generate">;
 
-export type ResolvedVisionOptions = {
+export interface ResolvedVisionOptions {
   client: VisionClient;
   logger: Logger;
   mediaPk: string;
   model: string;
   prompt: string;
   repository: Pick<VisionRepository, "findByMediaPk" | "save">;
-};
+}
 
 function isUsableVisionEntry(
   entry: VisionEntry | null | undefined,
@@ -73,7 +73,7 @@ export function createFailureResult(message: string): VisionResult {
   };
 }
 
-function parseOcrText(value: string[]): string {
+function parseOcrText(value: Array<string>): string {
   return value
     .map((entry) => normalizeVisionText(entry))
     .filter((entry) => entry.length > 0)
@@ -203,11 +203,14 @@ export async function analyzeImage(
     return await runVisionRequest(imagePath, promptHash, options);
   } catch (error) {
     const httpError = VisionHttpErrorSchema.safeParse(error);
-    const requestError = httpError.success
-      ? httpError.data
-      : error instanceof Error
-        ? error
-        : new Error("unknown request error");
+    let requestError: VisionRequestError;
+    if (httpError.success) {
+      requestError = httpError.data;
+    } else if (error instanceof Error) {
+      requestError = error;
+    } else {
+      requestError = new Error("unknown request error");
+    }
     return handleVisionError(requestError, itemLabel, options);
   }
 }

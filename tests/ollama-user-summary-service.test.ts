@@ -86,7 +86,7 @@ describe("resolveUserSummariesForReport", () => {
           }),
         );
       },
-      repository: repository,
+      repository,
     });
     const second = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
@@ -95,7 +95,7 @@ describe("resolveUserSummariesForReport", () => {
         runCount += 1;
         return Promise.resolve("should not be used");
       },
-      repository: repository,
+      repository,
     });
 
     assert.equal(
@@ -121,7 +121,7 @@ describe("resolveUserSummariesForReport", () => {
         runCount += 1;
         return Promise.resolve(JSON.stringify({ summary: "default model summary" }));
       },
-      repository: repository,
+      repository,
     });
     const second = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
@@ -130,7 +130,7 @@ describe("resolveUserSummariesForReport", () => {
         runCount += 1;
         return Promise.resolve(JSON.stringify({ summary: "custom model summary" }));
       },
-      repository: repository,
+      repository,
     });
 
     assert.equal(USER_SUMMARY_MODEL, getUserSummaryModel());
@@ -175,7 +175,7 @@ describe("resolveUserSummariesForReport", () => {
           ),
         );
       },
-      repository: repository,
+      repository,
     });
 
     assert.equal(summaries.get(userKey), "sdk summary");
@@ -188,10 +188,8 @@ describe("resolveUserSummariesForReport", () => {
 
     const summaries = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
-      runUserSummary: () => {
-        return Promise.reject(new Error("not signed in"));
-      },
-      repository: repository,
+      runUserSummary: () => Promise.reject(new Error("not signed in")),
+      repository,
     });
 
     assert.equal(summaries.get(userKey), USER_SUMMARY_UNAVAILABLE);
@@ -205,7 +203,7 @@ describe("resolveUserSummariesForReport", () => {
     const summaries = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
       runUserSummary: () => Promise.resolve(""),
-      repository: repository,
+      repository,
     });
     assert.equal(
       summaries.get(userKey),

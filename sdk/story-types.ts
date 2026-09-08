@@ -4,26 +4,26 @@ import type { StoryRepository } from "./entities/story.ts";
 import type { StoryStorage, StoryTrayEntry } from "./lib/types.ts";
 import type { ReelsMediaResponse } from "./story-client-service.ts";
 
-export type ReelTrayResponse = {
-  broadcasts: unknown[];
+export interface ReelTrayResponse {
+  broadcasts: Array<unknown>;
   story_ranking_token: string;
   status: string;
-  tray: StoryTrayEntry[];
-};
+  tray: Array<StoryTrayEntry>;
+}
 
-export type InstagramClientResponse<T> = {
+export interface InstagramClientResponse<T> {
   headers: Record<string, string>;
   json: () => Promise<T>;
   ok: boolean;
   status: number;
-};
+}
 
-export type InstagramClient = {
-  getReelsMedia: (reelIds: string[]) => Promise<InstagramClientResponse<ReelsMediaResponse>>;
+export interface InstagramClient {
+  getReelsMedia: (reelIds: Array<string>) => Promise<InstagramClientResponse<ReelsMediaResponse>>;
   getTray: () => Promise<InstagramClientResponse<ReelTrayResponse>>;
-};
+}
 
-export type FetchStoriesManifestOptions = {
+export interface FetchStoriesManifestOptions {
   baseDelayMs?: number;
   maxAttempts?: number;
   maxRateLimitDelayMs?: number;
@@ -35,7 +35,7 @@ export type FetchStoriesManifestOptions = {
   sleep?: (durationMs: number) => Promise<void>;
   storyRepository?: Pick<StoryRepository, "save">;
   storyStorage?: StoryStorage;
-};
+}
 
 export type FetchStoriesOptions = FetchStoriesManifestOptions & {
   client?: InstagramClient;

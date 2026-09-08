@@ -29,7 +29,7 @@ test("reads cached local previews and stops after the first unavailable result",
     storyRepository,
     storyStorage: storyRepository.storyStorage,
   });
-  const resolvedPaths: string[] = [];
+  const resolvedPaths: Array<string> = [];
 
   await resolveAppleCaptionsForReport(
     report,

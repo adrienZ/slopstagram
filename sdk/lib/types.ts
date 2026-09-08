@@ -8,204 +8,207 @@ export const STORY_MEDIA_TYPES = {
 
 export type StoryMediaType = (typeof STORY_MEDIA_TYPES)[keyof typeof STORY_MEDIA_TYPES];
 
-type StoryTrayUser = {
+interface StoryTrayUser {
   full_name?: string;
   id?: string;
   pk?: string;
   profile_pic_url?: string;
   username: string;
-};
+}
 
-export type StoryTrayEntry = {
+export interface StoryTrayEntry {
   id: string;
   full_name?: string;
-  media_ids: string[];
+  media_ids: Array<string>;
   ranked_position?: number;
   seen_ranked_position?: number;
   user: StoryTrayUser;
-};
+}
 
-export type StoriesReport = {
+export interface StoriesReport {
   xdt_api__v1__feed__reels_tray: {
-    broadcasts: JsonValue[];
+    broadcasts: Array<JsonValue>;
     status: string;
     story_ranking_token: string;
-    tray: StoryTrayEntry[];
+    tray: Array<StoryTrayEntry>;
   };
-};
+}
 
-type ParsedStoryTrayItem = {
-  media_ids: string[];
-};
+interface ParsedStoryTrayItem {
+  media_ids: Array<string>;
+}
 
-export type ParsedStoryTrayUser = {
-  items: ParsedStoryTrayItem[];
+export interface ParsedStoryTrayUser {
+  items: Array<ParsedStoryTrayItem>;
   username: string;
-};
+}
 
-export type StoryVersion = {
+export interface StoryVersion {
   height?: number;
   url?: string;
   width?: number;
-};
+}
+
+interface StoryImageVersions {
+  candidates?: Array<StoryVersion>;
+}
 
 type StoryVideoVersion = StoryVersion & {
   type?: number;
 };
 
-export type StoryItem = {
+export interface StoryItem {
   accessibility_caption?: string | null;
-  image_versions2?: {
-    candidates?: StoryVersion[];
-  };
+  image_versions2?: StoryImageVersions;
   id?: string;
+  link?: JsonValue;
   media_type?: number;
   original_height?: number;
   original_width?: number;
   pk: string;
-  story_bloks_stickers?: JsonValue[] | null;
-  story_bloks_tappables?: JsonValue[] | null;
-  story_cta?: JsonValue[] | null;
-  story_hashtags?: JsonValue[] | null;
-  story_locations?: JsonValue[] | null;
-  story_link_stickers?: JsonValue[] | null;
-  story_music_stickers?: JsonValue[] | null;
+  story_bloks_stickers?: Array<JsonValue> | null;
+  story_bloks_tappables?: Array<JsonValue> | null;
+  story_cta?: Array<JsonValue> | null;
+  story_hashtags?: Array<JsonValue> | null;
+  story_locations?: Array<JsonValue> | null;
+  story_link_stickers?: Array<JsonValue> | null;
+  story_music_stickers?: Array<JsonValue> | null;
   taken_at?: number;
-  text_post_share_to_ig_story_stickers?: JsonValue[] | null;
-  video_versions?: StoryVideoVersion[] | null;
-  [key: string]: JsonValue | undefined;
-};
+  text_post_share_to_ig_story_stickers?: Array<JsonValue> | null;
+  video_versions?: Array<StoryVideoVersion> | null;
+  [key: string]: Array<StoryVideoVersion> | JsonValue | StoryImageVersions | undefined;
+}
 
-export type StoryOwner = {
+export interface StoryOwner {
   full_name?: string;
   pk?: string;
   profile_pic_url?: string;
   username: string;
-};
+}
 
-export type UserTimelineStory = {
+export interface UserTimelineStory {
   full_name: string | null;
-  locations: string[];
+  locations: Array<string>;
   owner_pk: string | null;
   story: StoryItem;
-  stickers: string[];
+  stickers: Array<string>;
   taken_at: number;
   username: string;
-};
+}
 
-export type StoryReel = {
+export interface StoryReel {
   id?: string;
-  items?: StoryItem[];
-  media_ids?: string[];
+  items?: Array<StoryItem>;
+  media_ids?: Array<string>;
   user?: StoryTrayUser;
-};
+}
 
-export type StoriesMediaReport = {
+export interface StoriesMediaReport {
   reels?: Record<string, StoryReel>;
   data?: {
     xdt_api__v1__feed__reels_media__connection?: {
       edges?: Array<{
         node?: {
-          items?: StoryItem[];
+          items?: Array<StoryItem>;
         };
       }>;
     };
   };
-};
+}
 
 export type StoryFetchFailureReason = "request_failed" | "rate_limited" | "missing_from_response";
 
 type StoryManifestItemStatus = "ok" | "failed";
 
-export type StoryFetchFailure = {
+export interface StoryFetchFailure {
   attempt_count: number;
   http_status: number | null;
   media_pk: string | null;
   message: string;
   reason: StoryFetchFailureReason;
   reel_id: string;
-};
+}
 
-export type StoryManifestItem = {
+export interface StoryManifestItem {
   failure_index?: number;
   ig_caption: string;
-  locations: string[];
+  locations: Array<string>;
   media_type?: StoryMediaType | null;
   media_pk: string;
   preview_image_url: string | null;
-  stickers: string[];
+  stickers: Array<string>;
   status: StoryManifestItemStatus;
-};
+}
 
-export type StoryManifestReel = {
+export interface StoryManifestReel {
   full_name?: string | null;
   id?: string;
-  media_ids: string[];
+  media_ids: Array<string>;
   order: number;
   pk?: string;
   profile_pic_url?: string | null;
   reel_id: string;
-  stories: StoryManifestItem[];
+  stories: Array<StoryManifestItem>;
   username: string;
-};
+}
 
-type StoryOutputItem = {
+interface StoryOutputItem {
   failure_index?: number;
   ig_caption: string;
-  locations: string[];
+  locations: Array<string>;
   media_type?: StoryMediaType | null;
   media_pk: string;
   preview_image_url: string | null;
-  stickers: string[];
+  stickers: Array<string>;
   status: StoryManifestItemStatus;
-};
+}
 
-export type StoryOutputUser = {
+export interface StoryOutputUser {
   full_name?: string | null;
   profile_pic_url?: string | null;
-  reel_ids: string[];
-  stories: StoryOutputItem[];
+  reel_ids: Array<string>;
+  stories: Array<StoryOutputItem>;
   username: string;
-};
+}
 
-export type InstagramUserEntry = {
+export interface InstagramUserEntry {
   full_name: string | null;
   id: string;
   pk: string;
   username: string;
-};
+}
 
-type StoryFetchCounts = {
+interface StoryFetchCounts {
   cache_hits: number;
   cache_misses: number;
   failed: number;
   fetched: number;
   reels: number;
   stories: number;
-};
+}
 
-export type VisionResult = {
+export interface VisionResult {
   text: string;
   visual: string;
-};
+}
 
-export type VisionEntry = {
+export interface VisionEntry {
   model: string;
   prompt_hash: string;
   result: VisionResult;
-};
+}
 
-export type UserSummaryEntry = {
+export interface UserSummaryEntry {
   prompt_hash: string;
   result: string;
   source_hash: string;
   user_key: string;
-};
+}
 
-export type StoriesManifestReport = {
-  failures: StoryFetchFailure[];
+export interface StoriesManifestReport {
+  failures: Array<StoryFetchFailure>;
   manifest: {
-    users: StoryManifestReel[];
+    users: Array<StoryManifestReel>;
   };
   metadata: {
     broadcasts_count: number;
@@ -216,19 +219,19 @@ export type StoriesManifestReport = {
     story_ranking_token: string | null;
   };
   output: {
-    users: StoryOutputUser[];
+    users: Array<StoryOutputUser>;
   };
-};
+}
 
 export type ImageCacheStorage = Storage<Record<string, never>>;
 export type StoryStorage = Storage<StoryItem>;
 
-export type ParsedStory = {
+export interface ParsedStory {
   height: number | null;
   media_type: StoryMediaType;
   pk: string;
-  story_bloks_stickers: JsonValue[] | null;
-  story_music_stickers: JsonValue[] | null;
+  story_bloks_stickers: Array<JsonValue> | null;
+  story_music_stickers: Array<JsonValue> | null;
   url: string | null;
   width: number | null;
-};
+}

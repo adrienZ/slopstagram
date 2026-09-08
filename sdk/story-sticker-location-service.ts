@@ -13,7 +13,7 @@ function getNestedRecord(value: JsonValue, key: string): JsonObject | null {
   return isJsonObject(nested) ? nested : null;
 }
 
-function getNestedString(value: JsonValue, keys: readonly string[]): string | null {
+function getNestedString(value: JsonValue, keys: ReadonlyArray<string>): string | null {
   if (!isJsonObject(value)) {
     return null;
   }
@@ -112,6 +112,8 @@ function getLinkStickerLabel(value: JsonValue): string | null {
     return `link:${directUrl}`;
   }
 
+  // The link helpers are mutually recursive so nested Instagram payloads can be traversed.
+  // oxlint-disable-next-line eslint/no-use-before-define
   return getNestedLinkStickerLabel(value) ?? getDirectTitleLabel(directTitle);
 }
 
@@ -150,6 +152,7 @@ function getLocationRecord(value: JsonValue): JsonObject | null {
     return value;
   }
 
+  // oxlint-disable-next-line eslint/no-use-before-define -- This traversal is mutually recursive.
   return getNestedLocationRecord(value);
 }
 
@@ -187,8 +190,8 @@ function getLocationFromValue(value: JsonValue): { address: string; name: string
   return name || address ? { address, name } : null;
 }
 
-function getStoryLocationsFromItem(story: StoryItem): string[] {
-  const locations: string[] = [];
+function getStoryLocationsFromItem(story: StoryItem): Array<string> {
+  const locations: Array<string> = [];
   const seen = new Set<string>();
 
   for (const value of [...(story.story_locations ?? []), ...(story.story_bloks_stickers ?? [])]) {
@@ -207,7 +210,7 @@ function getStoryLocationsFromItem(story: StoryItem): string[] {
   return locations;
 }
 
-function addUniqueLabel(labels: string[], seen: Set<string>, label: string | null): void {
+function addUniqueLabel(labels: Array<string>, seen: Set<string>, label: string | null): void {
   if (label === null || label.length === 0 || seen.has(label)) {
     return;
   }
@@ -216,8 +219,8 @@ function addUniqueLabel(labels: string[], seen: Set<string>, label: string | nul
   labels.push(label);
 }
 
-function getStickerLabels(story: StoryItem): string[] {
-  const labels: string[] = [];
+function getStickerLabels(story: StoryItem): Array<string> {
+  const labels: Array<string> = [];
   const seen = new Set<string>();
 
   for (const sticker of story.story_bloks_stickers ?? []) {
@@ -245,13 +248,19 @@ function getStickerLabels(story: StoryItem): string[] {
   return labels;
 }
 
-export function getStoryStickers(mediaPk: string, cachedItems: Map<string, StoryItem>): string[] {
+export function getStoryStickers(
+  mediaPk: string,
+  cachedItems: Map<string, StoryItem>,
+): Array<string> {
   const story = cachedItems.get(mediaPk);
 
   return story ? getStickerLabels(story) : [];
 }
 
-export function getStoryLocations(mediaPk: string, cachedItems: Map<string, StoryItem>): string[] {
+export function getStoryLocations(
+  mediaPk: string,
+  cachedItems: Map<string, StoryItem>,
+): Array<string> {
   const story = cachedItems.get(mediaPk);
 
   return story ? getStoryLocationsFromItem(story) : [];

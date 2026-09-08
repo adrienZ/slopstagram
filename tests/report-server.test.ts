@@ -9,7 +9,7 @@ import type { StoriesManifestReport } from "../sdk/lib/types.ts";
 import type { ReportViewModel } from "../server/report-view-model.ts";
 
 const reportJson: unknown = JSON.parse(
-  await readFile(new URL("./fixtures/stories-report-server.json", import.meta.url), "utf8"),
+  await readFile(new URL("fixtures/stories-report-server.json", import.meta.url), "utf-8"),
 );
 const storiesReport = StoriesManifestReportSchema.parse(reportJson);
 const reportKeys = ["stories-report-earlier.json", "stories-report-fixture.json"];

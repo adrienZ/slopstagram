@@ -38,7 +38,7 @@ function createReportResult(): CreateReportResult {
 }
 
 test("runWarmCacheJob creates a report using reportArgs from the payload", async () => {
-  const calls: string[][] = [];
+  const calls: Array<Array<string>> = [];
   const result = await runWarmCacheJob({
     payload: { args: ["ignored"], reportArgs: ["--limit", "10"] },
     logger: createMockLogger(),
@@ -69,7 +69,7 @@ test("runWarmCacheJob creates a report using reportArgs from the payload", async
 });
 
 test("runWarmCacheJob accepts an empty payload", async () => {
-  const calls: string[][] = [];
+  const calls: Array<Array<string>> = [];
 
   await runWarmCacheJob({
     logger: createMockLogger(),
@@ -85,11 +85,11 @@ test("runWarmCacheJob accepts an empty payload", async () => {
 });
 
 test("startWarmCacheQueue schedules and processes warm-cache jobs", async () => {
-  const calls: Array<{ arguments: unknown[]; name: string }> = [];
+  const calls: Array<{ arguments: Array<unknown>; name: string }> = [];
   let processor: Parameters<WarmCacheQueueDependencies["createWorker"]>[1] | undefined;
   let workerErrorListener: ((error: Error) => void) | undefined;
   const workerError = new Error("worker failed");
-  const capturedErrors: Error[] = [];
+  const capturedErrors: Array<Error> = [];
   let processedPayload: WarmCachePayload | undefined;
 
   const runtime = startWarmCacheQueue({
@@ -179,7 +179,7 @@ test("startWarmCacheQueue schedules and processes warm-cache jobs", async () => 
           name: WARM_CACHE_QUEUE_NAME,
           opts: {
             attempts: 3,
-            backoff: { delay: 1_000, type: "exponential" },
+            backoff: { delay: 1000, type: "exponential" },
           },
         },
       ],
@@ -194,7 +194,7 @@ test("startWarmCacheQueue schedules and processes warm-cache jobs", async () => 
 
 test("startWarmCacheQueue retries while the standalone server starts", async () => {
   let readyAttempts = 0;
-  const calls: string[] = [];
+  const calls: Array<string> = [];
 
   const runtime = startWarmCacheQueue({
     dependencies: {
@@ -238,7 +238,7 @@ test("startWarmCacheQueue retries while the standalone server starts", async () 
 });
 
 test("startWarmCacheQueue cleans up when its worker fails to close", async () => {
-  const calls: string[] = [];
+  const calls: Array<string> = [];
   const closeFailure = new Error("close failed");
 
   const runtime = startWarmCacheQueue({

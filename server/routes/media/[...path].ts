@@ -44,7 +44,9 @@ export async function createMediaResponse(
   root: string = mediaDirectory,
 ): Promise<Response> {
   const mediaPath = resolveMediaPath(requestPath, root);
-  if (mediaPath === null) return notFound();
+  if (mediaPath === null) {
+    return notFound();
+  }
 
   try {
     return new globalThis.Response(await readFile(mediaPath), {

@@ -1,13 +1,20 @@
 import { defineConfig } from "oxlint";
+import ultracite from "ultracite/oxlint/core";
+import antiSlop from "ultracite/oxlint/anti-slop";
 
-const antiSlop = import.meta.resolve("oxlint-plugin-anti-slop");
+const ultraciteSoftenerConfig = defineConfig({
+  rules: {
+    "import/consistent-type-specifier-style": ["error", "prefer-top-level-if-only-type-imports"],
+    "typescript/array-type": ["error", { default: "generic" }],
+    "func-style": ["error", "declaration"],
+    "sort-keys": "off",
+  },
+});
 
 export default defineConfig({
-  ignorePatterns: [".agents/**"],
-  jsPlugins: [
-    "./oxlint/plugins/rules/no-barrel-files.ts",
-    { name: "anti-slop", specifier: antiSlop },
-  ],
+  extends: [ultracite, antiSlop, ultraciteSoftenerConfig],
+  ignorePatterns: ultracite.ignorePatterns,
+  jsPlugins: ["./oxlint/plugins/rules/no-barrel-files.ts"],
   options: {
     maxWarnings: 0,
     typeAware: true,
@@ -18,35 +25,14 @@ export default defineConfig({
     suspicious: "error",
     pedantic: "error",
     nursery: "error",
-    // perf: "error",
+    // perf: "off",
   },
   rules: {
-    "anti-slop/no-chained-type-assertions": "error",
-    "anti-slop/no-conditional-empty-object-spread": "error",
-    "anti-slop/no-known-value-widening": "error",
-    "anti-slop/no-module-mocking": "error",
-    "anti-slop/no-object-parameters": "error",
-    "anti-slop/no-reflect-apply": "error",
-    "anti-slop/no-reflect-get": "error",
-    "anti-slop/no-runtime-typeof": "error",
-    "anti-slop/no-shape-in-symbol-names": "error",
-    "anti-slop/no-unknown-parameters": "error",
-    "anti-slop/no-unknown-returns": "error",
-    "anti-slop/no-unknown-type-aliases": "error",
-    "anti-slop/no-unsafe-dictionary-type": "error",
-    "anti-slop/no-widen-then-assert": "error",
-    "anti-slop/require-safety-comment-for-type-assertion": "error",
     "oxc/no-barrel-file": ["error", { threshold: 0 }],
     "slopstagram/no-barrel-files": "error",
-    "typescript/prefer-readonly-parameter-types": "off",
-    "typescript/no-floating-promises": [
-      "error",
-      {
-        allowForKnownSafeCalls: [
-          { from: "package", name: ["describe", "test"], package: "node:test" },
-        ],
-      },
-    ],
+    "typescript/promise-function-async": "off",
+    // temp rules
+    "no-await-in-loop": "off",
   },
   overrides: [
     {
@@ -60,6 +46,14 @@ export default defineConfig({
       files: ["tests/**/*.test.ts"],
       rules: {
         "max-lines-per-function": "off",
+        "typescript/no-floating-promises": [
+          "error",
+          {
+            allowForKnownSafeCalls: [
+              { from: "package", name: ["describe", "test"], package: "node:test" },
+            ],
+          },
+        ],
       },
     },
   ],

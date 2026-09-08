@@ -8,9 +8,9 @@ const SERVER_READY_TIMEOUT_MS = 15_000;
 export const WARM_CACHE_CRON_PATTERN = EVERY_HOUR;
 
 interface WarmCacheQueue {
-  close(): void;
-  waitUntilReady(): Promise<void>;
-  upsertJobScheduler(
+  close: () => void;
+  waitUntilReady: () => Promise<void>;
+  upsertJobScheduler: (
     id: string,
     repeat: { pattern: string },
     job: {
@@ -21,14 +21,14 @@ interface WarmCacheQueue {
         backoff: { type: "exponential"; delay: number };
       };
     },
-  ): Promise<void>;
+  ) => Promise<void>;
 }
 
 interface WarmCacheWorker {
-  close(): Promise<void>;
-  on(event: "error", listener: (error: Error) => void): this;
-  run(): void;
-  waitUntilReady(): Promise<void>;
+  close: () => Promise<void>;
+  on: (event: "error", listener: (error: Error) => void) => WarmCacheWorker;
+  run: () => void;
+  waitUntilReady: () => Promise<void>;
 }
 
 interface WarmCacheJob {
@@ -41,12 +41,12 @@ interface WorkerOptions {
 }
 
 export interface WarmCacheQueueDependencies {
-  createQueue(name: string): WarmCacheQueue;
-  createWorker(
+  createQueue: (name: string) => WarmCacheQueue;
+  createWorker: (
     name: string,
     processor: (job: WarmCacheJob) => Promise<WarmCacheJobResult>,
     options: WorkerOptions,
-  ): WarmCacheWorker;
+  ) => WarmCacheWorker;
 }
 
 export interface StartWarmCacheQueueOptions {
@@ -58,7 +58,7 @@ export interface StartWarmCacheQueueOptions {
 
 export interface WarmCacheQueueRuntime {
   ready: Promise<void>;
-  close(): Promise<void>;
+  close: () => Promise<void>;
 }
 
 async function waitForServer(queue: WarmCacheQueue): Promise<void> {
@@ -70,7 +70,9 @@ async function waitForServer(queue: WarmCacheQueue): Promise<void> {
       await queue.waitUntilReady();
       return;
     } catch (error) {
-      if (Date.now() >= deadline) throw error;
+      if (Date.now() >= deadline) {
+        throw error;
+      }
       await sleep(retryDelay);
       retryDelay = Math.min(retryDelay * 2, 500);
     }
@@ -103,7 +105,7 @@ export function startWarmCacheQueue({
         data: {},
         opts: {
           attempts: 3,
-          backoff: { type: "exponential", delay: 1_000 },
+          backoff: { type: "exponential", delay: 1000 },
         },
       },
     );

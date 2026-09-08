@@ -2,18 +2,21 @@ import process from "node:process";
 import { ProgressBar } from "@opentf/cli-pbar";
 import { createConsola, type ConsolaInstance } from "consola";
 
-type ProgressOptions = {
+interface ProgressOptions {
   prefix?: string;
   suffix?: string;
-};
+}
 
 export type Logger = ConsolaInstance & {
-  progress(value: number, total: number, options?: ProgressOptions): void;
+  progress: (value: number, total: number, options?: ProgressOptions) => void;
 };
 
-type ActiveProgressBar = { bar: ProgressBar; key: string };
-type WrappedLogMethod = ((message?: string, ...args: string[]) => void) & {
-  raw: (...args: string[]) => void;
+interface ActiveProgressBar {
+  bar: ProgressBar;
+  key: string;
+}
+type WrappedLogMethod = ((message?: string, ...args: Array<string>) => void) & {
+  raw: (...args: Array<string>) => void;
 };
 
 function createBar(prefix: string): ProgressBar {
@@ -28,12 +31,12 @@ function createBar(prefix: string): ProgressBar {
 
 function wrapLogMethod(log: WrappedLogMethod, stopActiveBar: () => void): WrappedLogMethod {
   return Object.assign(
-    (message?: string, ...args: string[]) => {
+    (message?: string, ...args: Array<string>) => {
       stopActiveBar();
       log(message, ...args);
     },
     {
-      raw: (...args: string[]) => {
+      raw: (...args: Array<string>) => {
         stopActiveBar();
         log.raw(...args);
       },

@@ -1,4 +1,4 @@
-import { type StoriesManifestReport, type StoryOutputUser } from "../sdk/lib/types.ts";
+import type { StoriesManifestReport, StoryOutputUser } from "../sdk/lib/types.ts";
 
 export const reportPickerScript = `
 document.querySelector("#report-picker")?.addEventListener("change", (event) => {
@@ -150,7 +150,7 @@ export function getUserTimelineUrl(username: string): string {
   return `/users/${encodeURIComponent(username.trim())}`;
 }
 
-export function getRankedUsers(report: StoriesManifestReport): StoryOutputUser[] {
+export function getRankedUsers(report: StoriesManifestReport): Array<StoryOutputUser> {
   const orderByReel = new Map<string, number>();
   for (const user of report.manifest.users) {
     orderByReel.set(user.reel_id, Math.min(orderByReel.get(user.reel_id) ?? Infinity, user.order));

@@ -1,8 +1,10 @@
 import { z } from "zod";
 
 export type JsonPrimitive = boolean | null | number | string;
-export type JsonObject = { readonly [key: string]: JsonValue };
-export type JsonValue = JsonObject | JsonPrimitive | JsonValue[];
+export interface JsonObject {
+  readonly [key: string]: JsonValue;
+}
+export type JsonValue = JsonObject | JsonPrimitive | Array<JsonValue>;
 
 export const JsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
   z.union([

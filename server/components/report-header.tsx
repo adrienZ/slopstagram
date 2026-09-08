@@ -1,10 +1,10 @@
 import cx from "clsx";
 import { css } from "mono-jsx/jsx-runtime";
 
-type ReportHeaderProps = {
-  reportKeys: string[];
+interface ReportHeaderProps {
+  reportKeys: Array<string>;
   selectedReportKey: string;
-};
+}
 
 export const reportHeaderStyles = css`
   .report-page-header {

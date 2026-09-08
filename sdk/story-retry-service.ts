@@ -1,13 +1,13 @@
-import { setTimeout } from "node:timers";
+import { setTimeout as delay } from "node:timers/promises";
 import type { Logger } from "./lib/logging-service.ts";
 import type { InstagramClientResponse } from "./stories.ts";
 
-export type RequestFailure = {
+export interface RequestFailure {
   attemptCount: number;
   message: string;
   reason: "request_failed" | "rate_limited";
   status: number | null;
-};
+}
 
 export type RequestResult<T> =
   | {
@@ -19,7 +19,7 @@ export type RequestResult<T> =
       ok: false;
     };
 
-export type RetryOptions = {
+export interface RetryOptions {
   baseDelayMs: number;
   logger: Logger;
   maxAttempts: number;
@@ -27,12 +27,12 @@ export type RetryOptions = {
   now: () => Date;
   random: () => number;
   sleep: (durationMs: number) => Promise<void>;
-};
+}
 
 const TRANSIENT_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
 
-export function chunk<T>(items: T[], size: number): T[][] {
-  const chunks: T[][] = [];
+export function chunk<T>(items: Array<T>, size: number): Array<Array<T>> {
+  const chunks: Array<Array<T>> = [];
   for (let index = 0; index < items.length; index += size) {
     chunks.push(items.slice(index, index + size));
   }
@@ -40,9 +40,7 @@ export function chunk<T>(items: T[], size: number): T[][] {
 }
 
 export function sleep(durationMs: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, durationMs);
-  });
+  return delay(durationMs);
 }
 
 function normalizeHeaders(headers: Record<string, string>): Record<string, string> {
@@ -135,7 +133,7 @@ async function handleFailedResponse<T>(
   return null;
 }
 
-// oxlint-disable-next-line typescript/no-unnecessary-type-parameters https://typescript-eslint.io/rules/no-unnecessary-type-parameters/#the-return-type-is-only-used-as-an-input-so-why-isnt-the-rule-reporting
+// oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- https://typescript-eslint.io/rules/no-unnecessary-type-parameters/#the-return-type-is-only-used-as-an-input-so-why-isnt-the-rule-reporting
 async function handleThrownRequest<T>(
   error: Error,
   attemptIndex: number,

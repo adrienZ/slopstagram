@@ -36,7 +36,7 @@ describe("resolveVisionForReport", () => {
     let fetchCount = 0;
 
     await withReportImage(async (cacheDirectory, cachedImages) => {
-      const fetchVision = (_url: string | URL | Request, init?: RequestInit) => {
+      function fetchVision(_url: string | URL | Request, init?: RequestInit) {
         fetchCount += 1;
         // oxlint-disable-next-line typescript/no-base-to-string
         const body = VisionRequestBodySchema.parse(JSON.parse(String(init?.body)));
@@ -50,8 +50,7 @@ describe("resolveVisionForReport", () => {
         );
         assert.match(String(body.prompt), /ignore all texts/iu);
         const { format: schema } = body;
-        const ocrText = schema.properties.ocrText;
-        const description = schema.properties.description;
+        const { ocrText, description } = schema.properties;
         assert.equal(schema.type, "object");
         assert.equal(schema.additionalProperties, false);
         assert.deepEqual(schema.required?.toSorted(), ["description", "ocrText"]);
@@ -73,19 +72,19 @@ describe("resolveVisionForReport", () => {
             },
           ),
         );
-      };
+      }
 
       const first = await resolveVisionForReport(createVisionReport(), cachedImages, {
         fetchVision,
         logger: createMockLogger(),
         cacheDirectory,
-        repository: repository,
+        repository,
       });
       const second = await resolveVisionForReport(createVisionReport(), cachedImages, {
         fetchVision,
         logger: createMockLogger(),
         cacheDirectory,
-        repository: repository,
+        repository,
       });
 
       assert.deepEqual(first.get(previewSource), {
@@ -112,7 +111,7 @@ describe("resolveVisionForReport", () => {
 
     await withReportImage(
       async (cacheDirectory, cachedImages) => {
-        const fetchVision = () => {
+        function fetchVision() {
           fetchCount += 1;
 
           return Promise.resolve(
@@ -128,7 +127,7 @@ describe("resolveVisionForReport", () => {
               },
             ),
           );
-        };
+        }
 
         const first = await resolveVisionForReport(
           createVisionReport(firstPreviewSource),
@@ -137,7 +136,7 @@ describe("resolveVisionForReport", () => {
             fetchVision,
             logger: createMockLogger(),
             cacheDirectory,
-            repository: repository,
+            repository,
           },
         );
         const second = await resolveVisionForReport(
@@ -147,7 +146,7 @@ describe("resolveVisionForReport", () => {
             fetchVision,
             logger: createMockLogger(),
             cacheDirectory,
-            repository: repository,
+            repository,
           },
         );
 
@@ -173,12 +172,10 @@ describe("resolveVisionForReport", () => {
 
     await withReportImage(async (cacheDirectory, cachedImages) => {
       const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
-        fetchVision: () => {
-          return Promise.reject(new TypeError("fetch failed"));
-        },
+        fetchVision: () => Promise.reject(new TypeError("fetch failed")),
         logger: createMockLogger(),
         cacheDirectory,
-        repository: repository,
+        repository,
       });
 
       assert.deepEqual(result.get(previewSource), {
@@ -209,7 +206,7 @@ describe("resolveVisionForReport", () => {
           ),
         logger: createMockLogger(),
         cacheDirectory,
-        repository: repository,
+        repository,
       });
 
       assert.deepEqual(result.get(previewSource), {
@@ -240,7 +237,7 @@ describe("resolveVisionForReport", () => {
           ),
         logger: createMockLogger(),
         cacheDirectory,
-        repository: repository,
+        repository,
       });
 
       assert.deepEqual(result.get(previewSource), {
@@ -264,7 +261,7 @@ describe("resolveVisionForReport", () => {
           ),
         logger: createMockLogger(),
         cacheDirectory,
-        repository: repository,
+        repository,
       });
 
       assert.deepEqual(result.get(previewSource), {

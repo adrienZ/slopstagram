@@ -18,7 +18,7 @@ import {
 } from "./story-retry-service.ts";
 import type { InstagramClient } from "./stories.ts";
 
-export type FetchMissingStoriesOptions = {
+export interface FetchMissingStoriesOptions {
   client: InstagramClient;
   logger: Logger;
   reelIdsPerRequest: number;
@@ -26,8 +26,8 @@ export type FetchMissingStoriesOptions = {
   state: FetchState;
   storyRepository: Pick<StoryRepository, "save">;
   storyStorage: StoryStorage;
-  trayReelIds: string[];
-};
+  trayReelIds: Array<string>;
+}
 
 function getReelIdsToFetch(options: Pick<FetchMissingStoriesOptions, "state" | "trayReelIds">) {
   return options.trayReelIds.filter((reelId) =>
@@ -39,7 +39,7 @@ function getReelIdsToFetch(options: Pick<FetchMissingStoriesOptions, "state" | "
 
 async function cacheSuccessfulResponse(
   reels: ReturnType<typeof extractReels>,
-  idChunk: string[],
+  idChunk: Array<string>,
   logger: Logger,
   state: FetchState,
   storyRepository: Pick<StoryRepository, "save">,
@@ -66,7 +66,7 @@ async function cacheSuccessfulResponse(
 
 async function fetchSingleReel(
   reelId: string,
-  reelIdsToFetch: string[],
+  reelIdsToFetch: Array<string>,
   reelIndex: number,
   options: FetchMissingStoriesOptions,
 ): Promise<"continue" | "stop"> {
@@ -115,8 +115,8 @@ async function fetchSingleReel(
 }
 
 async function fetchSingleReelsAfterChunkFailure(
-  idChunk: string[],
-  reelIdsToFetch: string[],
+  idChunk: Array<string>,
+  reelIdsToFetch: Array<string>,
   reelIndex: number,
   options: FetchMissingStoriesOptions,
 ): Promise<{ reelIndex: number; stopped: boolean }> {
@@ -137,7 +137,7 @@ async function fetchSingleReelsAfterChunkFailure(
 
 function handleChunkRateLimit(
   chunkIndex: number,
-  reelIdsToFetch: string[],
+  reelIdsToFetch: Array<string>,
   reelIndex: number,
   options: FetchMissingStoriesOptions,
   failure: RequestFailure,
@@ -156,7 +156,7 @@ function handleChunkRateLimit(
 }
 
 async function fetchReelChunk(
-  idChunk: string[],
+  idChunk: Array<string>,
   chunkIndex: number,
   reelChunksLength: number,
   options: FetchMissingStoriesOptions,
@@ -193,8 +193,8 @@ async function fetchReelChunk(
 }
 
 function handleChunkFailure(
-  idChunk: string[],
-  reelIdsToFetch: string[],
+  idChunk: Array<string>,
+  reelIdsToFetch: Array<string>,
   reelIndex: number,
   chunkIndex: number,
   options: FetchMissingStoriesOptions,
@@ -234,9 +234,10 @@ export async function fetchMissingStories(options: FetchMissingStoriesOptions): 
             options,
             result.failure,
           );
-    reelIndex = next.reelIndex;
+    const { reelIndex: nextReelIndex, stopped } = next;
+    reelIndex = nextReelIndex;
 
-    if (next.stopped) {
+    if (stopped) {
       break;
     }
   }

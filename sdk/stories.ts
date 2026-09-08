@@ -34,7 +34,7 @@ const DEFAULT_REEL_IDS_PER_REQUEST = 25;
 const DEFAULT_MAX_ATTEMPTS = 3;
 const DEFAULT_BASE_DELAY_MS = 500;
 const DEFAULT_MAX_RATE_LIMIT_DELAY_MS = 10_000;
-function getArgValue(args: string[], flag: string): string | undefined {
+function getArgValue(args: Array<string>, flag: string): string | undefined {
   const index = args.indexOf(flag);
   if (index === -1) {
     return undefined;
@@ -83,7 +83,7 @@ function createReportMetadata(
 }
 
 function createStoriesReport(options: {
-  manifestUsers: StoryManifestReel[];
+  manifestUsers: Array<StoryManifestReel>;
   reportName: string;
   state: ReturnType<typeof createFetchState>;
   trayJson: ReelTrayResponse;
@@ -132,7 +132,7 @@ async function fetchMissingStoriesForReport(options: {
   state: ReturnType<typeof createFetchState>;
   storyRepository: Pick<StoryRepository, "save">;
   storyStorage: StoryStorage;
-  tray: StoryTrayEntry[];
+  tray: Array<StoryTrayEntry>;
 }): Promise<void> {
   await fetchMissingStories({
     client: options.client,
@@ -195,14 +195,14 @@ export async function fetchStoriesManifest(
 }
 
 export async function fetchStories(
-  args: string[] = [],
+  args: Array<string> = [],
   options: FetchStoriesOptions = {},
 ): Promise<StoriesManifestReport> {
   const reportName =
     options.reportName ?? getArgValue(args, "--report-name") ?? DEFAULT_REPORT_NAME;
 
   if (options.client) {
-    return fetchStoriesManifest(options.client, {
+    return await fetchStoriesManifest(options.client, {
       ...options,
       reportName,
     });

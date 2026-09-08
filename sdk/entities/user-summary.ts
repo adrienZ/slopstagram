@@ -14,7 +14,11 @@ export const userSummaries = sqliteTable("user_summaries", {
 export const NewUserSummarySchema = createInsertSchema(userSummaries);
 
 export class UserSummaryRepository {
-  constructor(private readonly database: DrizzleDatabase) {}
+  private readonly database: DrizzleDatabase;
+
+  constructor(database: DrizzleDatabase) {
+    this.database = database;
+  }
 
   findBySourceHash(sourceHash: string): Promise<UserSummaryEntry | null> {
     const row = this.database

@@ -120,10 +120,10 @@ describe("ReportRepository", () => {
       { mediaPk: "shared-story", reportKey: second.metadata.report_name },
     ]);
     assert.deepEqual(await repository.findByKey(second.metadata.report_name), second);
-    const storedReport = database.$client
+    const [storedReport] = database.$client
       .prepare("SELECT createdAt, reportName, storiesCount FROM reports WHERE key = ?")
       .all(second.metadata.report_name)
-      .map((row) => Object.fromEntries(Object.entries(row)))[0];
+      .map((row) => Object.fromEntries(Object.entries(row)));
     assert.deepEqual(storedReport, {
       createdAt: second.metadata.created_at,
       reportName: second.metadata.report_name,

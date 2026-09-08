@@ -14,7 +14,7 @@ import {
 
 type VisionFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
-type VisionOptions = {
+interface VisionOptions {
   cacheDirectory: string;
   endpoint?: string;
   fetchVision?: VisionFetch;
@@ -22,19 +22,19 @@ type VisionOptions = {
   model?: string;
   prompt?: string;
   repository?: Pick<VisionRepository, "findByMediaPk" | "save">;
-};
+}
 
-type PreviewEntry = {
+interface PreviewEntry {
   mediaPk: string;
   source: string;
-};
+}
 
-type PreviewEntrySet = {
-  sourcesByMediaPk: Map<string, string[]>;
-  uniquePreviewEntries: PreviewEntry[];
-};
+interface PreviewEntrySet {
+  sourcesByMediaPk: Map<string, Array<string>>;
+  uniquePreviewEntries: Array<PreviewEntry>;
+}
 
-type ResolvePreviewEntryOptions = {
+interface ResolvePreviewEntryOptions {
   cachedImages: CachedReportImages;
   client: Pick<VisionSdk, "generate">;
   entry: PreviewEntry;
@@ -44,10 +44,10 @@ type ResolvePreviewEntryOptions = {
   prompt: string;
   cacheDirectory: string;
   resultByPreviewUrl: Map<string, VisionResult>;
-  sourcesByMediaPk: Map<string, string[]>;
+  sourcesByMediaPk: Map<string, Array<string>>;
   repository: Pick<VisionRepository, "findByMediaPk" | "save">;
   total: number;
-};
+}
 
 type PreviewValidation =
   | { cachedPath: string; itemLabel: string; ok: true }
@@ -61,7 +61,7 @@ function resolveCachedImagePath(cacheDirectory: string, imagePath: string): stri
   return path.isAbsolute(imagePath) ? imagePath : path.resolve(cacheDirectory, imagePath);
 }
 
-function getPreviewEntries(report: StoriesManifestReport): PreviewEntry[] {
+function getPreviewEntries(report: StoriesManifestReport): Array<PreviewEntry> {
   return report.output.users
     .flatMap((user) =>
       user.stories.map((story) => ({
@@ -74,7 +74,7 @@ function getPreviewEntries(report: StoriesManifestReport): PreviewEntry[] {
 
 function createPreviewEntrySet(report: StoriesManifestReport): PreviewEntrySet {
   const entriesByMediaPk = new Map<string, PreviewEntry>();
-  const sourcesByMediaPk = new Map<string, string[]>();
+  const sourcesByMediaPk = new Map<string, Array<string>>();
 
   for (const entry of getPreviewEntries(report)) {
     entriesByMediaPk.set(entry.mediaPk, entry);
@@ -92,7 +92,7 @@ function createPreviewEntrySet(report: StoriesManifestReport): PreviewEntrySet {
 
 function setResultForPreviewSources(
   resultByPreviewUrl: Map<string, VisionResult>,
-  sourcesByMediaPk: Map<string, string[]>,
+  sourcesByMediaPk: Map<string, Array<string>>,
   entry: PreviewEntry,
   result: VisionResult,
 ): void {
@@ -108,7 +108,7 @@ function skipPreviewEntry(options: {
   logger: Logger;
   message: string;
   resultByPreviewUrl: Map<string, VisionResult>;
-  sourcesByMediaPk: Map<string, string[]>;
+  sourcesByMediaPk: Map<string, Array<string>>;
   total: number;
   warning: string;
 }): void {
@@ -186,7 +186,7 @@ export async function resolveVisionForReport(
     fetch: options.fetchVision,
     host,
   });
-  const logger = options.logger;
+  const { logger } = options;
   const entrySet = createPreviewEntrySet(report);
   const resultByPreviewUrl = new Map<string, VisionResult>();
 

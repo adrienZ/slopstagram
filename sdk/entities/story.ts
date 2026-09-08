@@ -80,12 +80,24 @@ function toStoryItem(
 ): StoryItem {
   const item: StoryItem = { pk: story.mediaPk };
 
-  if (story.accessibilityCaption !== null) item.accessibility_caption = story.accessibilityCaption;
-  if (story.id !== null) item.id = story.id;
-  if (story.mediaType !== null) item.media_type = story.mediaType;
-  if (story.originalHeight !== null) item.original_height = story.originalHeight;
-  if (story.originalWidth !== null) item.original_width = story.originalWidth;
-  if (story.takenAt !== null) item.taken_at = story.takenAt;
+  if (story.accessibilityCaption !== null) {
+    item.accessibility_caption = story.accessibilityCaption;
+  }
+  if (story.id !== null) {
+    item.id = story.id;
+  }
+  if (story.mediaType !== null) {
+    item.media_type = story.mediaType;
+  }
+  if (story.originalHeight !== null) {
+    item.original_height = story.originalHeight;
+  }
+  if (story.originalWidth !== null) {
+    item.original_width = story.originalWidth;
+  }
+  if (story.takenAt !== null) {
+    item.taken_at = story.takenAt;
+  }
   if (imageVersions.length > 0) {
     item.image_versions2 = {
       candidates: imageVersions.map((version) => ({
@@ -178,7 +190,9 @@ function getTimelineStory(
   story: StoryRow,
   user: typeof instagramUsers.$inferSelect,
 ): UserTimelineStory | null {
-  if (story.takenAt === null) return null;
+  if (story.takenAt === null) {
+    return null;
+  }
 
   const imageVersions = database
     .select()
@@ -219,11 +233,17 @@ function getTimelineStory(
 }
 
 export class StoryRepository {
-  constructor(private readonly database: DrizzleDatabase) {}
+  private readonly database: DrizzleDatabase;
+
+  constructor(database: DrizzleDatabase) {
+    this.database = database;
+  }
 
   findByMediaPk(mediaPk: string): Promise<StoryItem | null> {
     const story = this.database.select().from(stories).where(eq(stories.mediaPk, mediaPk)).get();
-    if (story === undefined) return Promise.resolve(null);
+    if (story === undefined) {
+      return Promise.resolve(null);
+    }
 
     const imageVersions = this.database
       .select()
@@ -253,7 +273,7 @@ export class StoryRepository {
     await replaceStoryAnnotations(this.database, story);
   }
 
-  listByUsername(username: string): Promise<UserTimelineStory[]> {
+  listByUsername(username: string): Promise<Array<UserTimelineStory>> {
     const rows = this.database
       .select({ story: stories, user: instagramUsers })
       .from(stories)

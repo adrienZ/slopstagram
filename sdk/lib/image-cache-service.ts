@@ -5,29 +5,29 @@ import { convertImageToJpeg } from "./image-conversion-service.ts";
 import type { Logger } from "./logging-service.ts";
 import type { ImageCacheStorage, StoriesManifestReport } from "./types.ts";
 
-type FetchResponse = {
+interface FetchResponse {
   arrayBuffer: () => Promise<ArrayBuffer>;
   headers: {
     get: (name: string) => string | null;
   };
   ok: boolean;
   status: number;
-};
+}
 
 type FetchImage = (url: string) => Promise<FetchResponse>;
 
-export type CacheReportImagesOptions = {
+export interface CacheReportImagesOptions {
   cacheDirectory?: string;
   convertToJpeg?: typeof convertImageToJpeg;
   fetchImage?: FetchImage;
   logger: Logger;
   storage?: ImageCacheStorage;
-};
+}
 
-export type CachedReportImages = {
+export interface CachedReportImages {
   profilePicPathByUrl: Map<string, string>;
   storyPreviewPathByUrl: Map<string, string>;
-};
+}
 
 type ResolvedCacheReportImagesOptions = Required<
   Pick<
@@ -36,12 +36,15 @@ type ResolvedCacheReportImagesOptions = Required<
   >
 >;
 
-type StoryPreviewEntry = {
+interface StoryPreviewEntry {
   mediaPk: string;
   source: string;
-};
+}
 
-type ProfilePicEntry = { pk: string; source: string };
+interface ProfilePicEntry {
+  pk: string;
+  source: string;
+}
 
 function getRelativeCacheImagePath(cacheDirectory: string, rawKey: string): string {
   return path
@@ -130,7 +133,7 @@ async function cacheProfilePics(
   return profilePicPathByUrl;
 }
 
-function getStoryPreviewEntries(report: StoriesManifestReport): StoryPreviewEntry[] {
+function getStoryPreviewEntries(report: StoriesManifestReport): Array<StoryPreviewEntry> {
   return report.output.users
     .flatMap((user) =>
       user.stories.map((story) => ({
@@ -142,7 +145,7 @@ function getStoryPreviewEntries(report: StoriesManifestReport): StoryPreviewEntr
 }
 
 async function cacheStoryPreviewByMediaPk(
-  entries: StoryPreviewEntry[],
+  entries: Array<StoryPreviewEntry>,
   options: ResolvedCacheReportImagesOptions,
 ): Promise<Map<string, string>> {
   const storyPreviewPathByMediaPk = new Map<string, string>();
@@ -169,7 +172,7 @@ async function cacheStoryPreviewByMediaPk(
 }
 
 function mapStoryPreviewPathsByUrl(
-  entries: StoryPreviewEntry[],
+  entries: Array<StoryPreviewEntry>,
   storyPreviewPathByMediaPk: Map<string, string>,
 ): Map<string, string> {
   const storyPreviewPathByUrl = new Map<string, string>();

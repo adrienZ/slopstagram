@@ -191,7 +191,9 @@ function TimelineGroups({ timeline, userName }: { timeline: UserTimeline; userNa
                   <div class={cx("timeline-day-stories")}>
                     {day.stories.map((entry) => {
                       const card = storyByMediaPk.get(entry.story.pk);
-                      if (card === undefined) return null;
+                      if (card === undefined) {
+                        return null;
+                      }
 
                       return (
                         <StoryCard

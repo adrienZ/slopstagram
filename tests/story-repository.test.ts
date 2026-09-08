@@ -44,10 +44,10 @@ describe("StoryRepository", () => {
         { height: 1920, type: 0, url: "https://example.com/video.mp4", width: 1080 },
       ],
     });
-    const storedStory = database.$client
+    const [storedStory] = database.$client
       .prepare("SELECT accessibilityCaption, mediaType, originalHeight, originalWidth FROM stories")
       .all()
-      .map((row) => Object.fromEntries(Object.entries(row)))[0];
+      .map((row) => Object.fromEntries(Object.entries(row)));
     assert.deepEqual(storedStory, {
       accessibilityCaption: "Updated",
       mediaType: 2,

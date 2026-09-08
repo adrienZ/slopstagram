@@ -8,15 +8,16 @@ type AppleOcrRunner = (image: Uint8Array) => Promise<string>;
 type ReadImage = (imagePath: string) => Promise<Uint8Array>;
 
 export class AppleOcrUnavailableError extends Error {
+  override readonly name = "AppleOcrUnavailableError";
   readonly kind = "unavailable";
 }
 
-export type RecognizeAppleCaptionOptions = {
+export interface RecognizeAppleCaptionOptions {
   platform?: NodeJS.Platform;
   readImage?: ReadImage;
   runAppleOcr?: AppleOcrRunner;
   repository?: Pick<AppleVisionRepository, "findByMediaPk" | "save">;
-};
+}
 
 function normalizeOcrText(value: string): string {
   const normalized = value.normalize("NFC").replaceAll("\r\n", "\n").trim();
@@ -33,6 +34,7 @@ async function runAppleOcr(image: Uint8Array, platform: NodeJS.Platform): Promis
     throw new AppleOcrUnavailableError(`unsupported platform ${platform}`);
   }
 
+  // oxlint-disable-next-line typescript/consistent-type-imports keep it async for non macOS platforms
   let macOcr: typeof import("mac-ocr");
   try {
     macOcr = await import("mac-ocr");

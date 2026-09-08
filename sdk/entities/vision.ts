@@ -15,7 +15,11 @@ export const vision = sqliteTable("vision", {
 export const NewVisionSchema = createInsertSchema(vision);
 
 export class VisionRepository {
-  constructor(private readonly database: DrizzleDatabase) {}
+  private readonly database: DrizzleDatabase;
+
+  constructor(database: DrizzleDatabase) {
+    this.database = database;
+  }
 
   findByMediaPk(mediaPk: string): Promise<VisionEntry | null> {
     const row = this.database.select().from(vision).where(eq(vision.mediaPk, mediaPk)).get();

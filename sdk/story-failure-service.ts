@@ -7,17 +7,17 @@ import type {
 } from "./lib/types.ts";
 import type { RequestFailure } from "./story-retry-service.ts";
 
-export type FetchState = {
+export interface FetchState {
   cachedItems: Map<string, StoryItem>;
   cacheHitPks: Set<string>;
-  expectedMediaIdsByReel: Map<string, string[]>;
-  expectedMediaPks: string[];
+  expectedMediaIdsByReel: Map<string, Array<string>>;
+  expectedMediaPks: Array<string>;
   failureByMediaPk: Map<string, number>;
-  failures: StoryFetchFailure[];
+  failures: Array<StoryFetchFailure>;
   fetchedMediaPks: Set<string>;
-};
+}
 
-export function createFetchState(tray: StoryTrayEntry[]): FetchState {
+export function createFetchState(tray: Array<StoryTrayEntry>): FetchState {
   return {
     cachedItems: new Map(),
     cacheHitPks: new Set(),
@@ -47,14 +47,14 @@ function createFailure(
 
 function getPendingMediaIds(
   reelId: string,
-  expectedMediaIdsByReel: Map<string, string[]>,
+  expectedMediaIdsByReel: Map<string, Array<string>>,
   cachedItems: Map<string, StoryItem>,
-): string[] {
+): Array<string> {
   return (expectedMediaIdsByReel.get(reelId) ?? []).filter((mediaPk) => !cachedItems.has(mediaPk));
 }
 
 export function addFailuresForPendingReelStories(
-  reelIds: string[],
+  reelIds: Array<string>,
   state: FetchState,
   logger: Logger,
   failure: RequestFailure,
@@ -92,7 +92,10 @@ export function logStoryProgress(logger: Logger, state: FetchState, suffix: stri
   });
 }
 
-export function getRemainingReelIds(reelIdsToFetch: string[], currentIndex: number): string[] {
+export function getRemainingReelIds(
+  reelIdsToFetch: Array<string>,
+  currentIndex: number,
+): Array<string> {
   return reelIdsToFetch.slice(currentIndex);
 }
 

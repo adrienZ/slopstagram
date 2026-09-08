@@ -16,7 +16,7 @@ describe("recognizeAppleCaption", () => {
         runCount += 1;
         return Promise.resolve("fresh caption");
       },
-      repository: repository,
+      repository,
     });
 
     assert.equal(caption, "stored caption");
@@ -33,7 +33,7 @@ describe("recognizeAppleCaption", () => {
         receivedImage = image;
         return Promise.resolve("fresh caption");
       },
-      repository: repository,
+      repository,
     });
 
     assert.equal(caption, "fresh caption");
@@ -47,7 +47,7 @@ describe("recognizeAppleCaption", () => {
     const caption = await recognizeAppleCaption("story-3", "/cache/story-3.jpg", {
       readImage: () => Promise.resolve(Buffer.from("local-image")),
       runAppleOcr: () => Promise.resolve("\r\n  fresh caption  \n"),
-      repository: repository,
+      repository,
     });
 
     assert.equal(caption, "fresh caption");
@@ -61,7 +61,7 @@ describe("recognizeAppleCaption", () => {
       recognizeAppleCaption("story-4", "/cache/story-4.jpg", {
         platform: "win32",
         readImage: () => Promise.resolve(Buffer.from("local-image")),
-        repository: repository,
+        repository,
       }),
       (error) =>
         error instanceof Error &&

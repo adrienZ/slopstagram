@@ -6,10 +6,10 @@ import { formatUserName, getUserTimelineUrl } from "../helper.ts";
 import type { ReportViewModel } from "../report-view-model.ts";
 import { StoryCard } from "./story-card.tsx";
 
-type UserSectionProps = {
+interface UserSectionProps {
   user: StoryOutputUser;
   viewModel: ReportViewModel;
-};
+}
 
 export const userSectionStyles = css`
   .user-section {

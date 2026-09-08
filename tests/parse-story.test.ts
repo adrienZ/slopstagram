@@ -175,7 +175,7 @@ describe("parseStoryReport", () => {
 
 describe("getLargestVersion", () => {
   test("returns the candidate with the largest area", () => {
-    const versions: StoryVersion[] = [
+    const versions: Array<StoryVersion> = [
       { height: 100, url: "small", width: 50 },
       { height: 90, url: "medium", width: 100 },
       { height: 200, url: "large", width: 80 },

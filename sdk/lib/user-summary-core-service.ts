@@ -36,7 +36,7 @@ const USER_SUMMARY_OUTPUT_SCHEMA = z.toJSONSchema(UserSummaryResponseSchema);
 
 export type RunUserSummary = (prompt: string) => Promise<string>;
 
-export type ResolveUserSummariesOptions = {
+export interface ResolveUserSummariesOptions {
   endpoint?: string;
   fetchOllama?: HttpFetch;
   logger: Logger;
@@ -45,7 +45,7 @@ export type ResolveUserSummariesOptions = {
   runUserSummary?: RunUserSummary;
   repository?: Pick<UserSummaryRepository, "findBySourceHash" | "save">;
   timeoutMs?: number;
-};
+}
 
 export function getUserSummarySourceHash(value: {
   model: string;
@@ -96,8 +96,8 @@ export function parseSummaryResponse(value: string): string | null {
 function collectFallbackDetails(
   user: StoryOutputUser,
   visionByPreviewUrl: Map<string, VisionResult> | undefined,
-): string[] {
-  const details: string[] = [];
+): Array<string> {
+  const details: Array<string> = [];
 
   for (const story of user.stories) {
     const vision =
@@ -185,7 +185,7 @@ function resolveOllamaHost(endpoint: string | undefined): string {
 }
 
 function createTimeoutFetch(fetchOllama: HttpFetch, timeoutMs: number): OllamaFetch {
-  const timeoutFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+  async function timeoutFetch(input: RequestInfo | URL, init?: RequestInit) {
     const controller = new globalThis.AbortController();
     const timeout = setTimeout(() => {
       controller.abort();
@@ -199,7 +199,7 @@ function createTimeoutFetch(fetchOllama: HttpFetch, timeoutMs: number): OllamaFe
     } finally {
       clearTimeout(timeout);
     }
-  };
+  }
 
   return timeoutFetch;
 }

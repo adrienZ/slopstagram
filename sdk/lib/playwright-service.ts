@@ -6,15 +6,15 @@ import { PLAYWRIGHT_PROFILE_DIR } from "./app-data-paths.ts";
 const INSTAGRAM_HOME_URL = "https://www.instagram.com/";
 const DEFAULT_PROFILE_PATH = PLAYWRIGHT_PROFILE_DIR;
 
-export type InstagramSession = {
+export interface InstagramSession {
   context: BrowserContext;
   page: Page;
-};
+}
 
-export type OpenInstagramSessionOptions = {
+export interface OpenInstagramSessionOptions {
   headless?: boolean;
   profilePath?: string;
-};
+}
 
 export async function openInstagramSession(
   options: OpenInstagramSessionOptions = {},

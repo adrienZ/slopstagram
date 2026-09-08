@@ -12,6 +12,7 @@ import type {
   StoryManifestItem,
   StoryManifestReel,
 } from "../lib/types.ts";
+
 export const reports = sqliteTable("reports", {
   broadcastsCount: integer().notNull(),
   cacheHits: integer().notNull(),
@@ -115,7 +116,7 @@ function toReportStoryEntry(
     stickers: JSON.stringify(story.stickers),
   };
 }
-function parseStringArray(value: string): string[] {
+function parseStringArray(value: string): Array<string> {
   return z.array(z.string()).parse(JSON.parse(value));
 }
 function toManifestStory(row: typeof reportStories.$inferSelect): StoryManifestItem {
@@ -128,7 +129,9 @@ function toManifestStory(row: typeof reportStories.$inferSelect): StoryManifestI
     status: z.enum(["ok", "failed"]).parse(row.status),
     stickers: parseStringArray(row.stickers),
   };
-  if (row.failureIndex !== null) story.failure_index = row.failureIndex;
+  if (row.failureIndex !== null) {
+    story.failure_index = row.failureIndex;
+  }
   return story;
 }
 function toFailure(row: typeof reportFailures.$inferSelect): StoryFetchFailure {
@@ -144,7 +147,7 @@ function toFailure(row: typeof reportFailures.$inferSelect): StoryFetchFailure {
 function buildManifestUsers(
   reels: Array<typeof reportReels.$inferSelect>,
   storyRows: Array<typeof reportStories.$inferSelect>,
-): StoryManifestReel[] {
+): Array<StoryManifestReel> {
   return reels.map((reel) => {
     const stories = storyRows
       .filter((story) => story.reelId === reel.reelId)
@@ -274,13 +277,19 @@ async function replaceReportRelations(
 }
 
 export class ReportRepository {
-  constructor(private readonly database: DrizzleDatabase) {}
+  private readonly database: DrizzleDatabase;
+
+  constructor(database: DrizzleDatabase) {
+    this.database = database;
+  }
   findByKey(key: string): Promise<StoriesManifestReport | null> {
     const report = this.database.select().from(reports).where(eq(reports.key, key)).get();
-    if (report === undefined) return Promise.resolve(null);
+    if (report === undefined) {
+      return Promise.resolve(null);
+    }
     return Promise.resolve(toReport(report, readReportRows(this.database, key)));
   }
-  listKeys(): Promise<string[]> {
+  listKeys(): Promise<Array<string>> {
     const keys = this.database
       .select({ key: reports.key })
       .from(reports)

@@ -20,13 +20,13 @@ import {
 } from "./user-summary-core-service.ts";
 import { z } from "zod";
 
-type ResolvedUserSummaryOptions = {
+interface ResolvedUserSummaryOptions {
   logger: NonNullable<ResolveUserSummariesOptions["logger"]>;
   model: string;
   runUserSummary: RunUserSummary;
   repository: Pick<UserSummaryRepository, "findBySourceHash" | "save">;
   visionByPreviewUrl?: Map<string, VisionResult>;
-};
+}
 
 const USER_SUMMARY_PROMPT_HASH = getUserSummaryPromptHash(USER_SUMMARY_PROMPT);
 

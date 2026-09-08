@@ -6,22 +6,22 @@ import type { StoriesManifestReport } from "./lib/types.ts";
 
 type AppleCaptionResolver = (mediaPk: string, imagePath: string) => Promise<string>;
 
-export type ResolveAppleCaptionsOptions = {
+export interface ResolveAppleCaptionsOptions {
   cacheDirectory: string;
   logger: Logger;
   resolver?: AppleCaptionResolver;
-};
+}
 
-type LocalStoryPreview = {
+interface LocalStoryPreview {
   imagePath: string;
   mediaPk: string;
-};
+}
 
 function getLocalStoryPreviews(
   report: StoriesManifestReport,
   cachedImages: CachedReportImages,
   cacheDirectory: string,
-): LocalStoryPreview[] {
+): Array<LocalStoryPreview> {
   const previews = report.output.users.flatMap((user) =>
     user.stories.flatMap((story) => {
       const cachedPath =
@@ -62,7 +62,7 @@ export async function resolveAppleCaptionsForReport(
         return;
       }
 
-      const message = ocrError.message;
+      const { message } = ocrError;
       options.logger.warn(`apple ocr failed for story ${preview.mediaPk}: ${message}`);
     }
 

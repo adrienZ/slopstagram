@@ -13,33 +13,37 @@ import {
 
 const PARIS_TIME_ZONE = "Europe/Paris";
 
-export type UserTimelineDay = {
+export interface UserTimelineDay {
   key: string;
   label: string;
-  stories: UserTimelineStory[];
-};
+  stories: Array<UserTimelineStory>;
+}
 
-export type UserTimelineMonth = {
+export interface UserTimelineMonth {
   key: string;
   label: string;
-  days: UserTimelineDay[];
-};
+  days: Array<UserTimelineDay>;
+}
 
-export type UserTimelineYear = {
+export interface UserTimelineYear {
   label: string;
-  months: UserTimelineMonth[];
-};
+  months: Array<UserTimelineMonth>;
+}
 
-export type UserTimeline = {
+export interface UserTimeline {
   appleCaptionByMediaPk: Map<string, string>;
   avatarPath: string | null;
-  stories: UserTimelineStory[];
+  stories: Array<UserTimelineStory>;
   timelineUser: StoryOutputUser;
   visionByPreviewUrl: Map<string, VisionResult>;
-  years: UserTimelineYear[];
-};
+  years: Array<UserTimelineYear>;
+}
 
-type DateParts = { day: string; month: string; year: string };
+interface DateParts {
+  day: string;
+  month: string;
+  year: string;
+}
 
 function formatDateParts(date: Date): DateParts {
   const values = new Intl.DateTimeFormat("fr-FR", {
@@ -76,20 +80,25 @@ function getTimelineDate(story: UserTimelineStory): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-export function groupStoriesByPublishedDate(stories: UserTimelineStory[]): UserTimelineYear[] {
-  const years = new Map<string, Map<string, { days: UserTimelineDay[]; label: string }>>();
+export function groupStoriesByPublishedDate(
+  stories: Array<UserTimelineStory>,
+): Array<UserTimelineYear> {
+  const years = new Map<string, Map<string, { days: Array<UserTimelineDay>; label: string }>>();
 
   for (const story of stories) {
     const date = getTimelineDate(story);
-    if (date === null) continue;
+    if (date === null) {
+      continue;
+    }
 
     const { day, month, year } = formatDateParts(date);
     const keys = getDateKeyParts(date);
     const monthKey = `${keys.year}-${keys.month}`;
     const dayKey = `${monthKey}-${keys.day}`;
-    const months = years.get(year) ?? new Map<string, { days: UserTimelineDay[]; label: string }>();
+    const months =
+      years.get(year) ?? new Map<string, { days: Array<UserTimelineDay>; label: string }>();
     const monthEntry = months.get(monthKey) ?? { days: [], label: month };
-    const days = monthEntry.days;
+    const { days } = monthEntry;
     const currentDay = days.find((entry) => entry.key === dayKey);
 
     if (currentDay === undefined) {
@@ -121,14 +130,18 @@ function getStoryPreviewSource(story: UserTimelineStory): string {
 }
 
 function getStoryMediaType(story: UserTimelineStory): "image" | "video" | null {
-  if (story.story.media_type === 1) return STORY_MEDIA_TYPES.IMAGE;
-  if (story.story.media_type === 2) return STORY_MEDIA_TYPES.VIDEO;
+  if (story.story.media_type === 1) {
+    return STORY_MEDIA_TYPES.IMAGE;
+  }
+  if (story.story.media_type === 2) {
+    return STORY_MEDIA_TYPES.VIDEO;
+  }
   return null;
 }
 
 function createTimelineUser(
   latestStory: UserTimelineStory,
-  stories: UserTimelineStory[],
+  stories: Array<UserTimelineStory>,
 ): StoryOutputUser {
   return {
     full_name: latestStory.full_name,
@@ -148,7 +161,7 @@ function createTimelineUser(
   };
 }
 
-async function readTimelineDetails(stories: UserTimelineStory[]): Promise<{
+async function readTimelineDetails(stories: Array<UserTimelineStory>): Promise<{
   appleCaptionByMediaPk: Map<string, string>;
   visionByPreviewUrl: Map<string, VisionResult>;
 }> {
@@ -160,8 +173,12 @@ async function readTimelineDetails(stories: UserTimelineStory[]): Promise<{
       appleVisionRepository.findByMediaPk(story.story.pk),
       visionRepository.findByMediaPk(story.story.pk),
     ]);
-    if (appleCaption !== null) appleCaptionByMediaPk.set(story.story.pk, appleCaption);
-    if (vision !== null) visionByPreviewUrl.set(getStoryPreviewSource(story), vision.result);
+    if (appleCaption !== null) {
+      appleCaptionByMediaPk.set(story.story.pk, appleCaption);
+    }
+    if (vision !== null) {
+      visionByPreviewUrl.set(getStoryPreviewSource(story), vision.result);
+    }
   }
 
   return { appleCaptionByMediaPk, visionByPreviewUrl };
@@ -172,7 +189,9 @@ export async function createUserTimeline(
   repository: Pick<StoryRepository, "listByUsername"> = storyRepository,
 ): Promise<UserTimeline | null> {
   const stories = await repository.listByUsername(username);
-  if (stories.length === 0) return null;
+  if (stories.length === 0) {
+    return null;
+  }
 
   const timelineUser = createTimelineUser(stories[0], stories);
   const details = await readTimelineDetails(stories);
@@ -187,7 +206,7 @@ export async function createUserTimeline(
   };
 }
 
-export function getTimelinePreviewPaths(stories: UserTimelineStory[]): Map<string, string> {
+export function getTimelinePreviewPaths(stories: Array<UserTimelineStory>): Map<string, string> {
   return new Map(
     stories.map((story) => [
       getStoryPreviewSource(story),

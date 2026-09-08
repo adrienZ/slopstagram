@@ -1,5 +1,5 @@
 import { mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { drizzle } from "drizzle-orm/node-sqlite";
 import { APP_DATABASE_PATH } from "../lib/app-data-paths.ts";
@@ -8,7 +8,7 @@ export type DrizzleDatabase = ReturnType<typeof drizzle>;
 
 export function createDrizzle(filename: string): DrizzleDatabase {
   if (filename !== ":memory:") {
-    mkdirSync(dirname(filename), { recursive: true });
+    mkdirSync(path.dirname(filename), { recursive: true });
   }
 
   const sqlite = new DatabaseSync(filename);

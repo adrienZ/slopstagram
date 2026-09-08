@@ -13,22 +13,24 @@ import {
 } from "./types.ts";
 
 export function getLargestVersion<T extends StoryVersion>(
-  versions: T[] | null | undefined,
+  versions: Array<T> | null | undefined,
 ): T | null {
   if (!versions || versions.length === 0) {
     return null;
   }
 
-  return versions.reduce((largest, version) => {
+  let [largest] = versions;
+
+  for (const version of versions) {
     const largestArea = (largest.width ?? 0) * (largest.height ?? 0);
     const versionArea = (version.width ?? 0) * (version.height ?? 0);
 
     if (versionArea > largestArea) {
-      return version;
+      largest = version;
     }
+  }
 
-    return largest;
-  });
+  return largest;
 }
 
 function getStoryMediaType(value: number | undefined): StoryMediaType {
@@ -82,7 +84,7 @@ export function getStoryTrayUiSortPosition(
 
 export function parseStoriesTrayReport(
   report: StoriesReport | StoriesManifestReport,
-): ParsedStoryTrayUser[] {
+): Array<ParsedStoryTrayUser> {
   if (isStoriesManifestReport(report)) {
     return report.manifest.users.map((entry) => ({
       items: [
@@ -94,11 +96,11 @@ export function parseStoriesTrayReport(
     }));
   }
 
-  const tray = report.xdt_api__v1__feed__reels_tray.tray;
-  const groupedTray: ParsedStoryTrayUser[] = [];
+  const { tray } = report.xdt_api__v1__feed__reels_tray;
+  const groupedTray: Array<ParsedStoryTrayUser> = [];
   const groupByUsername = new Map<string, ParsedStoryTrayUser>();
 
-  [...tray]
+  const sortedTray = [...tray]
     .map((entry, originalIndex) => ({ entry, originalIndex }))
     .toSorted((left, right) => {
       const positionDelta =
@@ -109,62 +111,61 @@ export function parseStoriesTrayReport(
       }
 
       return left.originalIndex - right.originalIndex;
-    })
-    .forEach(({ entry }) => {
-      const username = entry.user.username;
-      let group = groupByUsername.get(username);
-
-      if (!group) {
-        group = {
-          items: [],
-          username,
-        };
-        groupByUsername.set(username, group);
-        groupedTray.push(group);
-      }
-
-      group.items.push({
-        media_ids: entry.media_ids,
-      });
     });
+
+  for (const { entry } of sortedTray) {
+    const { username } = entry.user;
+    let group = groupByUsername.get(username);
+
+    if (!group) {
+      group = {
+        items: [],
+        username,
+      };
+      groupByUsername.set(username, group);
+      groupedTray.push(group);
+    }
+
+    group.items.push({
+      media_ids: entry.media_ids,
+    });
+  }
 
   return groupedTray;
 }
 
-export function parseStoryReport(report: StoriesMediaReport, pk: string): ParsedStory {
-  const item = findStoryItem(report, pk);
-  return parseStoryItem(item);
+function toParsedStory(
+  item: StoryItem,
+  mediaType: StoryMediaType,
+  version: StoryVersion | null | undefined,
+): ParsedStory {
+  return {
+    height: version?.height ?? item.original_height ?? null,
+    media_type: mediaType,
+    pk: item.pk,
+    story_bloks_stickers: item.story_bloks_stickers ?? null,
+    story_music_stickers: item.story_music_stickers ?? null,
+    url: version?.url ?? null,
+    width: version?.width ?? item.original_width ?? null,
+  };
 }
 
 function parseStoryItem(item: StoryItem): ParsedStory {
   const mediaType = getStoryMediaType(item.media_type);
 
   if (mediaType === STORY_MEDIA_TYPES.IMAGE) {
-    const candidate = getLargestVersion(item.image_versions2?.candidates);
-
-    return {
-      height: candidate?.height ?? item.original_height ?? null,
-      media_type: mediaType,
-      pk: item.pk,
-      story_bloks_stickers: item.story_bloks_stickers ?? null,
-      story_music_stickers: item.story_music_stickers ?? null,
-      url: candidate?.url ?? null,
-      width: candidate?.width ?? item.original_width ?? null,
-    };
+    return toParsedStory(item, mediaType, getLargestVersion(item.image_versions2?.candidates));
   }
 
   const largestVideo = getLargestVersion(item.video_versions);
   const selectedVideo = largestVideo ?? item.video_versions?.[0] ?? null;
 
-  return {
-    height: selectedVideo?.height ?? item.original_height ?? null,
-    media_type: mediaType,
-    pk: item.pk,
-    story_bloks_stickers: item.story_bloks_stickers ?? null,
-    story_music_stickers: item.story_music_stickers ?? null,
-    url: selectedVideo?.url ?? null,
-    width: selectedVideo?.width ?? item.original_width ?? null,
-  };
+  return toParsedStory(item, mediaType, selectedVideo);
+}
+
+export function parseStoryReport(report: StoriesMediaReport, pk: string): ParsedStory {
+  const item = findStoryItem(report, pk);
+  return parseStoryItem(item);
 }
 
 export async function parseStoryManifestReport(
@@ -185,6 +186,8 @@ export async function parseStoryManifestReport(
   }
 
   const item = await repository.findByMediaPk(manifestItem.media_pk);
-  if (item === null) throw new Error(`Story item ${manifestItem.media_pk} not found`);
+  if (item === null) {
+    throw new Error(`Story item ${manifestItem.media_pk} not found`);
+  }
   return parseStoryItem(item);
 }

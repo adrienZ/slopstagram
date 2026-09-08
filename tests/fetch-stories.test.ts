@@ -139,7 +139,7 @@ describe("fetchStoriesManifest", () => {
     ]);
     assert.deepEqual(
       await storyRepository.storyStorage.getItem(getMediaCacheKey("m1")),
-      JSON.parse(JSON.stringify(storyItem("m1"))),
+      globalThis.structuredClone(storyItem("m1")),
     );
   });
 
@@ -174,7 +174,7 @@ describe("fetchStoriesManifest", () => {
     assert.deepEqual(await storyRepository.findByMediaPk("m2"), storyItem("m2"));
     assert.deepEqual(
       await storyRepository.storyStorage.getItem(getMediaCacheKey("m2")),
-      JSON.parse(JSON.stringify(storyItem("m2"))),
+      globalThis.structuredClone(storyItem("m2")),
     );
     assert.deepEqual(
       report.manifest.users.map((user) => ({

@@ -4,23 +4,25 @@ import { z } from "zod";
 import type { JsonValue } from "../sdk/lib/json-value.ts";
 import { createInstagramClient } from "../sdk/story-client-service.ts";
 
-type BrowserFetchCall = {
+interface BrowserFetchCall {
   appId: string;
   requestUrl: string;
-};
+}
 
 function createSession(
   body: Error | JsonValue,
-  calls: BrowserFetchCall[] = [],
+  calls: Array<BrowserFetchCall> = [],
   contentType = "application/json",
 ): Parameters<typeof createInstagramClient>[0] {
   const rawBody = z.string().safeParse(body);
-  const serializedBody =
-    body instanceof Error
-      ? "<!DOCTYPE html>"
-      : rawBody.success
-        ? rawBody.data
-        : JSON.stringify(body);
+  let serializedBody: string;
+  if (body instanceof Error) {
+    serializedBody = "<!DOCTYPE html>";
+  } else if (rawBody.success) {
+    serializedBody = rawBody.data;
+  } else {
+    serializedBody = JSON.stringify(body);
+  }
 
   return {
     page: {
@@ -38,7 +40,7 @@ function createSession(
 }
 
 test("createInstagramClient fetches tray through the authenticated browser page", async () => {
-  const calls: BrowserFetchCall[] = [];
+  const calls: Array<BrowserFetchCall> = [];
   const session = createSession(
     {
       broadcasts: [],
@@ -82,8 +84,9 @@ test("normalizes numeric Instagram tray identifiers to strings", async () => {
   });
 
   const response = await createInstagramClient(session).getTray();
+  const body = await response.json();
 
-  assert.deepEqual((await response.json()).tray, [
+  assert.deepEqual(body.tray, [
     {
       id: "123",
       media_ids: ["456", "789"],
@@ -105,8 +108,9 @@ test("preserves large numeric Instagram identifiers exactly", async () => {
   }`);
 
   const response = await createInstagramClient(session).getTray();
+  const body = await response.json();
 
-  assert.deepEqual((await response.json()).tray, [
+  assert.deepEqual(body.tray, [
     {
       id: "1767198846",
       media_ids: ["3967029617634386001"],
@@ -131,7 +135,7 @@ test("reports an expired browser session when Instagram returns HTML", async () 
 });
 
 test("createInstagramClient fetches reels media through the authenticated browser page", async () => {
-  const calls: BrowserFetchCall[] = [];
+  const calls: Array<BrowserFetchCall> = [];
   const session = createSession({ reels: {}, status: "ok" }, calls);
 
   const response = await createInstagramClient(session).getReelsMedia(["reel 1", "reel/2"]);

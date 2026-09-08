@@ -62,15 +62,17 @@ function createManifestStory(
     stickers: getStoryStickers(mediaPk, cachedItems),
     status: failureIndex === undefined ? "ok" : "failed",
   };
-  if (failureIndex !== undefined) story.failure_index = failureIndex;
+  if (failureIndex !== undefined) {
+    story.failure_index = failureIndex;
+  }
   return story;
 }
 
 export function createManifestUsers(
-  tray: StoryTrayEntry[],
+  tray: Array<StoryTrayEntry>,
   cachedItems: Map<string, StoryItem>,
   failureByMediaPk: Map<string, number>,
-): StoryManifestReel[] {
+): Array<StoryManifestReel> {
   return tray.map((entry, order) => ({
     full_name: entry.user.full_name ?? entry.full_name ?? null,
     id: entry.user.id ?? entry.id,
@@ -103,8 +105,8 @@ function createOutputUser(user: StoryManifestReel): StoryOutputUser {
   };
 }
 
-export function createOutputUsers(manifestUsers: StoryManifestReel[]): StoryOutputUser[] {
-  const outputUsers: StoryOutputUser[] = [];
+export function createOutputUsers(manifestUsers: Array<StoryManifestReel>): Array<StoryOutputUser> {
+  const outputUsers: Array<StoryOutputUser> = [];
   const groupByUser = new Map<string, StoryOutputUser>();
 
   for (const user of manifestUsers) {

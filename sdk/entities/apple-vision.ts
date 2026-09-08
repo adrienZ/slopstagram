@@ -11,7 +11,11 @@ export const appleVision = sqliteTable("apple_vision", {
 export const NewAppleVisionSchema = createInsertSchema(appleVision);
 
 export class AppleVisionRepository {
-  constructor(private readonly database: DrizzleDatabase) {}
+  private readonly database: DrizzleDatabase;
+
+  constructor(database: DrizzleDatabase) {
+    this.database = database;
+  }
 
   findByMediaPk(mediaPk: string): Promise<string | null> {
     const row = this.database

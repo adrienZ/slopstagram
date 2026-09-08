@@ -14,7 +14,11 @@ export const instagramUsers = sqliteTable("instagram_users", {
 export const NewInstagramUserSchema = createInsertSchema(instagramUsers);
 
 export class InstagramUserRepository {
-  constructor(private readonly database: DrizzleDatabase) {}
+  private readonly database: DrizzleDatabase;
+
+  constructor(database: DrizzleDatabase) {
+    this.database = database;
+  }
 
   findByUsername(username: string): Promise<InstagramUserEntry | null> {
     const row = this.database
@@ -23,7 +27,9 @@ export class InstagramUserRepository {
       .where(eq(instagramUsers.username, username))
       .get();
 
-    if (row === undefined) return Promise.resolve(null);
+    if (row === undefined) {
+      return Promise.resolve(null);
+    }
 
     return Promise.resolve({
       full_name: row.fullName,

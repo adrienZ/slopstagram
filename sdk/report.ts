@@ -1,18 +1,18 @@
 import { resolveAppleCaptionsForReport } from "./apple-caption-report-service.ts";
 import { migrateDatabase } from "./database/migrate.ts";
-import { ReportRepository } from "./entities/report.ts";
+import type { ReportRepository } from "./entities/report.ts";
 import { BASE_CACHE_DIR } from "./lib/cache-service.ts";
 import { reportRepository } from "./lib/entity-repository-service.ts";
 import { cacheReportImages } from "./lib/image-cache-service.ts";
 import { persistReportInstagramUsers } from "./lib/instagram-user-service.ts";
-import { type Logger } from "./lib/logging-service.ts";
+import type { Logger } from "./lib/logging-service.ts";
 import type { StoriesManifestReport } from "./lib/types.ts";
 import { resolveUserSummariesForReport } from "./lib/user-summary-resolver-service.ts";
 import { resolveVisionForReport } from "./lib/vision-report-service.ts";
 import { fetchStories } from "./stories.ts";
 import pkg from "../package.json" with { type: "json" };
 
-type CreateReportDependencies = {
+interface CreateReportDependencies {
   cacheReportImages: typeof cacheReportImages;
   fetchStories: typeof fetchStories;
   migrateDatabase: typeof migrateDatabase;
@@ -21,20 +21,20 @@ type CreateReportDependencies = {
   resolveUserSummariesForReport: typeof resolveUserSummariesForReport;
   resolveVisionForReport: typeof resolveVisionForReport;
   saveReport: Pick<ReportRepository, "save">["save"];
-};
+}
 
-export type CreateReportOptions = {
-  args?: string[];
+export interface CreateReportOptions {
+  args?: Array<string>;
   dependencies?: Partial<CreateReportDependencies>;
   logger: Logger;
   now?: () => Date;
-};
+}
 
-export type CreateReportResult = {
+export interface CreateReportResult {
   outputFileName: string;
   reportKey: string;
   report: StoriesManifestReport;
-};
+}
 
 const defaultDependencies: CreateReportDependencies = {
   cacheReportImages,
@@ -42,7 +42,7 @@ const defaultDependencies: CreateReportDependencies = {
   migrateDatabase,
   persistReportInstagramUsers,
   resolveAppleCaptionsForReport,
-  resolveUserSummariesForReport: resolveUserSummariesForReport,
+  resolveUserSummariesForReport,
   resolveVisionForReport,
   saveReport: reportRepository.save.bind(reportRepository),
 };
@@ -79,7 +79,7 @@ export async function createReport(options: CreateReportOptions): Promise<Create
   };
   const timestamp = formatFilenameTimestamp((options.now ?? (() => new Date()))());
   const outputFileName = `stories-report-${timestamp}.json`;
-  const logger = options.logger;
+  const { logger } = options;
 
   logger.box(`${pkg.name} - report ${outputFileName}`);
   dependencies.migrateDatabase();
@@ -106,7 +106,7 @@ export async function createReport(options: CreateReportOptions): Promise<Create
   });
   await dependencies.persistReportInstagramUsers(report);
   await dependencies.saveReport(outputFileName, report);
-  const counts = report.metadata.counts;
+  const { counts } = report.metadata;
 
   logger.info(
     [
