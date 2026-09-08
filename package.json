@@ -15,7 +15,7 @@
     "start": "vite dev --port 5173",
     "build": "vite build",
     "db:generate": "drizzle-kit generate",
-    "lint": "NODE_OPTIONS='--import tsx' oxlint",
+    "lint": "oxlint",
     "knip": "knip",
     "check": "npm run format && npm run lint && npm run knip && npm run test",
     "check:ci": "npm run format:check && npm run lint && npm run knip && npm run test:reporter",
