@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - "**"
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 permissions:
   actions: read
@@ -17,6 +19,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Initialize test report
         run: echo '<testsuites name="Tests" tests="0" failures="0" errors="0"></testsuites>' > reporter.xml
@@ -43,3 +47,9 @@ jobs:
           name: Tests
           path: reporter.xml
           reporter: java-junit
+
+      - name: SonarQube scan
+        if: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/main' }}
+        uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
