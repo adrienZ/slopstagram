@@ -22,7 +22,7 @@
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "test": "node --import tsx --test --experimental-test-module-mocks --experimental-test-coverage tests/*.test.ts",
-    "test:reporter": "c8 --reporter=lcov --reporter=text node --import tsx --test --experimental-test-module-mocks --test-force-exit --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=./reporter.xml tests/*.test.ts"
+    "test:reporter": "mkdir -p coverage && node --import tsx --test --experimental-test-module-mocks --experimental-test-coverage --test-force-exit --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=./reporter.xml --test-reporter=lcov --test-reporter-destination=./coverage/lcov.info tests/*.test.ts"
   },
   "dependencies": {
     "@opentf/cli-pbar": "^0.7.2",
@@ -40,7 +40,6 @@
   "devDependencies": {
     "@playwright/cli": "^0.1.17",
     "@types/node": "^26.1.1",
-    "c8": "^10.1.3",
     "drizzle-kit": "^1.0.0-rc.5-ab785fc",
     "husky": "^9.1.7",
     "knip": "^6.34.0",
