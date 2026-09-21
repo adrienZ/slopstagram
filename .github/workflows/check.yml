@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Initialize test report
         run: echo '<testsuites name="Tests" tests="0" failures="0" errors="0"></testsuites>' > reporter.xml
@@ -38,15 +40,6 @@ jobs:
       - name: Run checks
         run: npm run check:ci
 
-      - name: Upload coverage report
-        if: ${{ success() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage
-          path: coverage/lcov.info
-          if-no-files-found: error
-          retention-days: 1
-
       - name: Test report
         uses: dorny/test-reporter@v3
         if: ${{ !cancelled() }}
@@ -55,8 +48,8 @@ jobs:
           path: reporter.xml
           reporter: java-junit
 
-  sonar:
-    if: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/main' }}
-    needs: check
-    uses: ./.github/workflows/sonar.yml
-    secrets: inherit
+      - name: SonarQube scan
+        if: ${{ success() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
+        uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
