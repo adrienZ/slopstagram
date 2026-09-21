@@ -1,5 +1,7 @@
 # Slopstagram
 
+[![SonarQube Cloud Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=adrienZ_slopstagram&metric=alert_status)](https://sonarcloud.io/summary/overall?id=adrienZ_slopstagram)
+
 ## Prerequisites
 
 Install [Node.js](https://nodejs.org/) 24 or newer. The application runs on Node.js,

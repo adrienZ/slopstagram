@@ -38,6 +38,15 @@ jobs:
       - name: Run checks
         run: npm run check:ci
 
+      - name: Upload coverage report
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/lcov.info
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Test report
         uses: dorny/test-reporter@v3
         if: ${{ !cancelled() }}
@@ -45,3 +54,8 @@ jobs:
           name: Tests
           path: reporter.xml
           reporter: java-junit
+
+  sonar:
+    needs: check
+    uses: ./.github/workflows/sonar.yml
+    secrets: inherit
