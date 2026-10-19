@@ -7,6 +7,7 @@ import { createInstagramClient } from "../sdk/story-client-service.ts";
 interface BrowserFetchCall {
   appId: string;
   requestUrl: string;
+  mediaQuery?: { documentId: string; reelIds: Array<string> };
 }
 
 function createSession(
@@ -134,20 +135,54 @@ test("reports an expired browser session when Instagram returns HTML", async () 
   );
 });
 
-test("createInstagramClient fetches reels media through the authenticated browser page", async () => {
+test("createInstagramClient fetches reels media with the web viewer GraphQL query", async () => {
   const calls: Array<BrowserFetchCall> = [];
-  const session = createSession({ reels: {}, status: "ok" }, calls);
+  const session = createSession(
+    { data: { xdt_api__v1__feed__reels_media: { reels_media: [{ id: "reel 1", items: [] }] } } },
+    calls,
+  );
 
   const response = await createInstagramClient(session).getReelsMedia(["reel 1", "reel/2"]);
 
   assert.equal(response.ok, true);
   assert.equal(response.status, 200);
-  assert.deepEqual(response.json(), { reels: {}, status: "ok" });
+  assert.deepEqual(response.json(), { reels_media: [{ id: "reel 1", items: [] }] });
   assert.deepEqual(calls, [
     {
       appId: "936619743392459",
-      requestUrl:
-        "https://www.instagram.com/api/v1/feed/reels_media/?reel_ids=reel%201&reel_ids=reel%2F2",
+      requestUrl: "https://www.instagram.com/graphql/query",
+      mediaQuery: { documentId: "28449850404637481", reelIds: ["reel 1", "reel/2"] },
     },
   ]);
+});
+
+test("preserves large numeric media identifiers in GraphQL responses", async () => {
+  const session = createSession(`{
+    "data": { "xdt_api__v1__feed__reels_media": { "reels_media": [{
+      "id": 123,
+      "items": [{ "pk": 3967029617634386001, "taken_at": 1790000000 }]
+    }] } }
+  }`);
+
+  const response = await createInstagramClient(session).getReelsMedia(["123"]);
+  assert.deepEqual(response.json(), {
+    reels_media: [{ id: "123", items: [{ pk: "3967029617634386001", taken_at: 1_790_000_000 }] }],
+  });
+});
+
+test("rejects GraphQL errors returned with HTTP 200 instead of accepting empty media", async () => {
+  const failureBodies: Array<JsonValue> = [
+    { data: null, errors: [{ message: "Media query unavailable" }] },
+    {
+      data: { xdt_api__v1__feed__reels_media: { reels_media: [] } },
+      errors: [{ message: "Partial failure" }],
+    },
+    {},
+  ];
+  for (const body of failureBodies) {
+    const session = createSession(body);
+    // oxlint-disable-next-line no-await-in-loop -- Verify each distinct HTTP-success failure payload.
+    const response = await createInstagramClient(session).getReelsMedia(["123"]);
+    assert.throws(() => response.json(), /Instagram story media query failed/u);
+  }
 });

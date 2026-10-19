@@ -16,22 +16,37 @@ export interface ReelsMediaResponse {
   status?: string | null;
 }
 
-const ReelsMediaResponseSchema = z.object({
-  reels: z.record(z.string(), StoryReelSchema).optional(),
-  reels_media: z
-    .union([z.record(z.string(), StoryReelSchema), z.array(StoryReelSchema)])
-    .optional(),
-  status: z.string().nullable().optional(),
-});
-
 const IG_APP_ID = "936619743392459";
 const REELS_TRAY_URL = "https://www.instagram.com/api/v1/feed/reels_tray/";
-const REELS_MEDIA_URL = "https://www.instagram.com/api/v1/feed/reels_media/";
+const REELS_MEDIA_URL = "https://www.instagram.com/graphql/query";
+// PolarisStoriesV3ReelPageStandaloneQuery, verified against the web story viewer.
+const REELS_MEDIA_DOCUMENT_ID = "28449850404637481";
 
 export class InstagramApiResponseError extends Error {
   override readonly name = "InstagramApiResponseError";
   readonly nonRetryable = true;
 }
+
+const GraphqlReelsMediaResponseSchema = z
+  .object({
+    data: z
+      .object({
+        xdt_api__v1__feed__reels_media: z.object({
+          reels_media: z.array(StoryReelSchema),
+        }),
+      })
+      .nullish(),
+    errors: z.array(z.object({ message: z.string() })).optional(),
+  })
+  .transform((response) => {
+    if ((response.errors?.length ?? 0) > 0 || !response.data) {
+      throw new InstagramApiResponseError(
+        `Instagram story media query failed: ${response.errors?.[0]?.message ?? "missing media data"}`,
+      );
+    }
+
+    return response.data.xdt_api__v1__feed__reels_media;
+  });
 
 function quoteNumericIdentifiers(body: string): string {
   // Instagram sometimes emits IDs as JSON numbers. Its media IDs exceed
@@ -81,10 +96,16 @@ interface BrowserFetchResponse {
   status: number;
 }
 
+interface BrowserFetchInput {
+  appId: string;
+  requestUrl: string;
+  mediaQuery?: { documentId: string; reelIds: Array<string> };
+}
+
 interface InstagramClientPage {
   evaluate: (
-    pageFunction: (input: { appId: string; requestUrl: string }) => Promise<BrowserFetchResponse>,
-    input: { appId: string; requestUrl: string },
+    pageFunction: (input: BrowserFetchInput) => Promise<BrowserFetchResponse>,
+    input: BrowserFetchInput,
   ) => Promise<BrowserFetchResponse>;
 }
 
@@ -95,20 +116,45 @@ interface InstagramClientSession {
 async function fetchFromInstagramPage(
   session: InstagramClientSession,
   url: string,
+  mediaQuery?: BrowserFetchInput["mediaQuery"],
 ): Promise<BrowserFetchResponse> {
-  return await session.page.evaluate(
-    async ({ appId, requestUrl }) => {
-      const response = await globalThis.fetch(requestUrl, { headers: { "x-ig-app-id": appId } });
+  const input: BrowserFetchInput = { appId: IG_APP_ID, requestUrl: url };
+  if (mediaQuery) {
+    input.mediaQuery = mediaQuery;
+  }
+  return await session.page.evaluate(async ({ appId, requestUrl, mediaQuery: query }) => {
+    const headers = new globalThis.Headers({ "x-ig-app-id": appId });
+    let body: string | undefined;
+    if (query) {
+      headers.set("content-type", "application/x-www-form-urlencoded");
+      headers.set(
+        "x-csrftoken",
+        /(?:^|;\s*)csrftoken=(?<token>[^;]+)/u.exec(globalThis.document.cookie)?.groups?.token ??
+          "",
+      );
+      body = new globalThis.URLSearchParams({
+        doc_id: query.documentId,
+        variables: JSON.stringify({
+          reel_ids_arr: query.reelIds,
+          media_id: null,
+          is_highlight: false,
+          __relay_internal__pv__PolarisCommunityNoteStoriesLabelEnabledrelayprovider: false,
+        }),
+      }).toString();
+    }
+    const response = await globalThis.fetch(requestUrl, {
+      body,
+      headers,
+      method: query ? "POST" : "GET",
+    });
 
-      return {
-        body: await response.text(),
-        headers: Object.fromEntries(response.headers.entries()),
-        ok: response.ok,
-        status: response.status,
-      };
-    },
-    { appId: IG_APP_ID, requestUrl: url },
-  );
+    return {
+      body: await response.text(),
+      headers: Object.fromEntries(response.headers.entries()),
+      ok: response.ok,
+      status: response.status,
+    };
+  }, input);
 }
 
 function toClientResponse<T>(response: BrowserFetchResponse, schema: z.ZodType<T>) {
@@ -123,10 +169,12 @@ function toClientResponse<T>(response: BrowserFetchResponse, schema: z.ZodType<T
 export function createInstagramClient(session: InstagramClientSession): InstagramClient {
   return {
     async getReelsMedia(reelIds) {
-      const query = reelIds.map((reelId) => `reel_ids=${encodeURIComponent(reelId)}`).join("&");
       return toClientResponse(
-        await fetchFromInstagramPage(session, `${REELS_MEDIA_URL}?${query}`),
-        ReelsMediaResponseSchema,
+        await fetchFromInstagramPage(session, REELS_MEDIA_URL, {
+          documentId: REELS_MEDIA_DOCUMENT_ID,
+          reelIds,
+        }),
+        GraphqlReelsMediaResponseSchema,
       );
     },
 

@@ -87,6 +87,12 @@ export async function createReport(options: CreateReportOptions): Promise<Create
     logger,
     reportName: outputFileName,
   });
+  const { counts } = report.metadata;
+  if (counts.stories > 0 && counts.fetched + counts.cache_hits === 0) {
+    throw new Error(
+      `No story media could be fetched (${counts.failed}/${counts.stories} failed). Report was not saved. ${report.failures[0]?.message ?? "Instagram returned no story media"}`,
+    );
+  }
   const cacheDirectory = BASE_CACHE_DIR;
   const cachedImages = await dependencies.cacheReportImages(report, {
     cacheDirectory,
@@ -106,7 +112,6 @@ export async function createReport(options: CreateReportOptions): Promise<Create
   });
   await dependencies.persistReportInstagramUsers(report);
   await dependencies.saveReport(outputFileName, report);
-  const { counts } = report.metadata;
 
   logger.info(
     [

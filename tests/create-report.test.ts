@@ -120,3 +120,77 @@ test("createReport resolves entities before persisting the report", async () => 
   assert.equal(savedKey, result.outputFileName);
   assert.equal(result.report, report);
 });
+
+test("createReport rejects total media failure before caching or saving a report", async () => {
+  const report = createFixtureReport();
+  report.metadata.counts.fetched = 0;
+  report.metadata.counts.failed = 1;
+  report.failures.push({
+    attempt_count: 3,
+    http_status: 500,
+    media_pk: "123",
+    message: "Instagram request failed with HTTP 500",
+    reason: "request_failed",
+    reel_id: "456",
+  });
+  const calls: Array<string> = [];
+
+  await assert.rejects(
+    createReport({
+      dependencies: {
+        migrateDatabase: () => {},
+        fetchStories: async () => report,
+        cacheReportImages: async () => {
+          calls.push("cache-images");
+          return { profilePicPathByUrl: new Map(), storyPreviewPathByUrl: new Map() };
+        },
+        resolveAppleCaptionsForReport: async () => {},
+        resolveVisionForReport: async () => new Map(),
+        resolveUserSummariesForReport: async () => new Map(),
+        persistReportInstagramUsers: async () => {},
+        saveReport: async () => {
+          calls.push("save-report");
+        },
+      },
+      logger: createMockLogger(),
+    }),
+    /No story media could be fetched.*Report was not saved.*HTTP 500/u,
+  );
+  assert.deepEqual(calls, []);
+});
+
+for (const scenario of [
+  { name: "empty tray", stories: 0, fetched: 0, cacheHits: 0, failed: 0 },
+  { name: "cached stories", stories: 1, fetched: 0, cacheHits: 1, failed: 0 },
+  { name: "partial failure", stories: 2, fetched: 1, cacheHits: 0, failed: 1 },
+]) {
+  test(`createReport still saves a report with ${scenario.name}`, async () => {
+    const report = createFixtureReport();
+    Object.assign(report.metadata.counts, {
+      stories: scenario.stories,
+      fetched: scenario.fetched,
+      cache_hits: scenario.cacheHits,
+      failed: scenario.failed,
+    });
+    let saved = false;
+    await createReport({
+      dependencies: {
+        migrateDatabase: () => {},
+        fetchStories: async () => report,
+        cacheReportImages: async () => ({
+          profilePicPathByUrl: new Map(),
+          storyPreviewPathByUrl: new Map(),
+        }),
+        resolveAppleCaptionsForReport: async () => {},
+        resolveVisionForReport: async () => new Map(),
+        resolveUserSummariesForReport: async () => new Map(),
+        persistReportInstagramUsers: async () => {},
+        saveReport: async () => {
+          saved = true;
+        },
+      },
+      logger: createMockLogger(),
+    });
+    assert.equal(saved, true);
+  });
+}
