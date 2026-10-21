@@ -1,11 +1,14 @@
-import { getQuery } from "nitro/h3";
+import { getQuery, HTTPError } from "nitro/h3";
 import type { H3Event } from "nitro/h3";
 import { z } from "zod";
-import { ReportPage } from "./components/report-page.tsx";
+import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
+import { formatReportDate, getRankedUsers } from "./helper.ts";
+import { createStoryCards } from "./story-card-view-model.ts";
+import type { ReportContentProps } from "./pages/report-page.tsx";
 import { getReportKeys, readReport } from "./report-repository.ts";
 import { createReportViewModel } from "./report-view-model.ts";
 
-export function renderReport(event: H3Event): globalThis.Response {
+export function loadReport(event: H3Event): ReportContentProps {
   try {
     const reportKeys = getReportKeys();
     const query = getQuery(event);
@@ -14,15 +17,27 @@ export function renderReport(event: H3Event): globalThis.Response {
     const selectedReportKey = parsedReportKey.success ? parsedReportKey.data : reportKeys.at(-1);
 
     if (selectedReportKey === undefined || selectedReportKey.length === 0) {
-      throw new Error("no stories reports found");
+      throw new HTTPError({ status: 404, message: "no stories reports found" });
     }
 
     const viewModel = createReportViewModel(readReport(selectedReportKey));
 
-    return ReportPage({ reportKeys, selectedReportKey, viewModel });
+    const users = getRankedUsers(viewModel.report).map((user) => ({
+      user,
+      avatar: viewModel.cachedImages.profilePicPathByUrl.get(user.profile_pic_url?.trim() ?? ""),
+      summary: viewModel.userSummaryByUserKey.get(getReportUserKey(user)),
+      stories: createStoryCards(user, viewModel),
+    }));
+    return {
+      date: formatReportDate(viewModel.report.metadata.created_at),
+      reportKeys,
+      selectedReportKey,
+      users,
+    };
   } catch (error) {
-    return new globalThis.Response(error instanceof Error ? error.message : String(error), {
+    throw new HTTPError({
       status: 404,
+      message: error instanceof Error ? error.message : String(error),
     });
   }
 }

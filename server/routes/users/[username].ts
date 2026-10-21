@@ -1,6 +1,24 @@
+import { h } from "preact";
+import { renderToString } from "preact-render-to-string";
 import { defineEventHandler, getRouterParam } from "nitro/h3";
-import { renderUserTimeline } from "../../user-timeline-handler.tsx";
+import { UserTimelinePage } from "../../pages/user-timeline-page.tsx";
+import { loadUserTimeline } from "../../user-timeline-handler.tsx";
 
-export default defineEventHandler((event) =>
-  renderUserTimeline(getRouterParam(event, "username") ?? ""),
-);
+// oxlint-disable-next-line import/default -- Nitro generates the default asset manifest for this query import.
+import clientAssets from "../../../app/entry-client.tsx?assets=client";
+
+export default defineEventHandler((event) => {
+  try {
+    const props = loadUserTimeline(getRouterParam(event, "username") ?? "");
+    return new globalThis.Response(
+      `<!DOCTYPE html>${renderToString(h(UserTimelinePage, { ...props, clientEntry: clientAssets.entry }))}`,
+      {
+        headers: { "Content-Type": "text/html;charset=utf-8" },
+      },
+    );
+  } catch (error) {
+    return new globalThis.Response(error instanceof Error ? error.message : String(error), {
+      status: 404,
+    });
+  }
+});

@@ -1,17 +1,12 @@
-import { css } from "mono-jsx/jsx-runtime";
 import cx from "clsx";
 
-interface ReportHeaderProps {
+export interface ReportHeaderProps {
   reportKeys: Array<string>;
   selectedReportKey: string;
 }
 
 export function ReportHeaderStyles() {
-  return (
-    <style>{css`
-      @import url("/css/report-header.css");
-    `}</style>
-  );
+  return <link rel="stylesheet" href="/css/report-header.css" />;
 }
 
 export function ReportHeader({ reportKeys, selectedReportKey }: ReportHeaderProps) {
@@ -28,7 +23,7 @@ export function ReportHeader({ reportKeys, selectedReportKey }: ReportHeaderProp
             id="report-picker"
             name="report"
             onChange={(event) => {
-              event.target.form?.requestSubmit();
+              event.currentTarget.form?.requestSubmit();
             }}
           >
             {reportKeys.map((reportKey) => (

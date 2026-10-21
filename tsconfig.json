@@ -6,14 +6,15 @@
     "moduleResolution": "NodeNext",
     "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "mono-jsx",
+    "jsxImportSource": "preact",
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
-    "types": ["node"]
+    "types": ["node", "nitro/vite/types"]
   },
   "include": [
+    "app/**/*.tsx",
     "sdk/**/*.ts",
     "scripts/**/*.ts",
     "scripts/**/*.tsx",

@@ -1,42 +1,22 @@
-import { css } from "mono-jsx/jsx-runtime";
 import cx from "clsx";
 import { formatUserName } from "../helper.ts";
-import { createStoryCards } from "../story-card-view-model.ts";
-import type { StoryCardSources, StoryCardViewModel } from "../story-card-view-model.ts";
+import type { StoryCardViewModel } from "../story-card-view-model.ts";
 import type { UserTimeline } from "../user-timeline.ts";
-import { getTimelinePreviewPaths } from "../user-timeline.ts";
-import { BaseStyles } from "./base-styles.tsx";
-import { Lightbox, LightboxStyles } from "./lightbox.tsx";
-import { StoryCard, StoryCardStyles } from "./story-card.tsx";
+import { BaseStyles } from "../components/base-styles.tsx";
+import { Lightbox, LightboxStyles } from "../components/lightbox.tsx";
+import { StoryCard, StoryCardStyles } from "../components/story-card.tsx";
 
 function UserTimelineStyles() {
-  return (
-    <style>{css`
-      @import url("/css/user-timeline-page.css");
-    `}</style>
-  );
+  return <link rel="stylesheet" href="/css/user-timeline-page.css" />;
 }
 
-function getTimelineViewModel(timeline: UserTimeline): StoryCardSources {
-  const previewPaths = getTimelinePreviewPaths(timeline.stories);
-  const profilePicPathByUrl = new Map<string, string>();
-  const profilePicUrl = timeline.timelineUser.profile_pic_url;
-
-  if (profilePicUrl !== null && profilePicUrl !== undefined && timeline.avatarPath !== null) {
-    profilePicPathByUrl.set(profilePicUrl, timeline.avatarPath);
-  }
-
-  return {
-    appleCaptionByMediaPk: timeline.appleCaptionByMediaPk,
-    cachedImages: {
-      profilePicPathByUrl,
-      storyPreviewPathByUrl: previewPaths,
-    },
-    visionByPreviewUrl: timeline.visionByPreviewUrl,
-  };
-}
-
-function TimelineHeader({ timeline, userName }: { timeline: UserTimeline; userName: string }) {
+function TimelineHeader({
+  timeline,
+  userName,
+}: {
+  timeline: TimelineContentProps["timeline"];
+  userName: string;
+}) {
   return (
     <>
       <a class={cx("timeline-back")} href="/">
@@ -67,7 +47,7 @@ function TimelineGroups({
   timeline,
   storyByMediaPk,
 }: {
-  timeline: UserTimeline;
+  timeline: TimelineContentProps["timeline"];
   storyByMediaPk: Map<string, StoryCardViewModel>;
 }) {
   return (
@@ -101,27 +81,29 @@ function TimelineGroups({
   );
 }
 
-export function UserTimelinePage({ timeline }: { timeline: UserTimeline }) {
-  const userName = formatUserName(timeline.timelineUser);
-  const storyByMediaPk = new Map(
-    createStoryCards(timeline.timelineUser, getTimelineViewModel(timeline)).map((story) => [
-      story.mediaPk,
-      story,
-    ]),
-  );
-  const stories = timeline.years.flatMap((year) =>
-    year.months.flatMap((month) =>
-      month.days.flatMap((day) =>
-        day.stories.flatMap((entry) => {
-          const card = storyByMediaPk.get(entry.story.pk);
-          return card === undefined ? [] : [card];
-        }),
-      ),
-    ),
-  );
+export interface TimelineContentProps {
+  timeline: Pick<UserTimeline, "avatarPath" | "timelineUser" | "stories" | "years">;
+  stories: Array<StoryCardViewModel>;
+}
 
+export function TimelineContent({ timeline, stories }: TimelineContentProps) {
+  const storyByMediaPk = new Map(stories.map((story) => [story.mediaPk, story]));
   return (
-    <html lang="fr" app={{ storyMediaPk: "", stories: [] }}>
+    <>
+      <main>
+        <TimelineHeader timeline={timeline} userName={formatUserName(timeline.timelineUser)} />
+        <TimelineGroups timeline={timeline} storyByMediaPk={storyByMediaPk} />
+      </main>
+      <Lightbox stories={stories} />
+    </>
+  );
+}
+
+export function UserTimelinePage(props: TimelineContentProps & { clientEntry?: string }) {
+  const { timeline, clientEntry } = props;
+  const userName = formatUserName(timeline.timelineUser);
+  return (
+    <html lang="fr">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -132,11 +114,10 @@ export function UserTimelinePage({ timeline }: { timeline: UserTimeline }) {
         <LightboxStyles />
       </head>
       <body>
-        <main>
-          <TimelineHeader timeline={timeline} userName={userName} />
-          <TimelineGroups timeline={timeline} storyByMediaPk={storyByMediaPk} />
-        </main>
-        <Lightbox stories={stories} />
+        <div id="app">
+          <TimelineContent {...props} />
+        </div>
+        <script type="module" src={clientEntry} />
       </body>
     </html>
   );
