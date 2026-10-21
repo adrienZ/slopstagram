@@ -74,21 +74,17 @@ test("GET /report renders the latest fixture report", async () => {
   assert.doesNotMatch(html, /src="https?:\/\//u);
   assert.match(
     html,
-    /data-story-url="https:\/\/www\.instagram\.com\/stories\/ranked-second\/story-pk-1\/"/u,
+    /\\"url\\":\\"https:\/\/www\.instagram\.com\/stories\/ranked-second\/story-pk-1\/\\"/u,
   );
-  assert.match(html, /data-story-stickers="link:A &amp; B"/u);
-  assert.match(html, /data-story-apple-caption="apple &lt;text&gt;"/u);
-  assert.match(html, /data-story-vision-ocr="OCR text"/u);
+  assert.match(html, /\\"stickers\\":\\"link:A & B\\"/u);
+  assert.match(html, /\\"appleCaption\\":\\"apple \\\\u003ctext>\\"/u);
+  assert.match(html, /\\"visionOcr\\":\\"OCR text\\"/u);
+  assert.doesNotMatch(html, /data-(?:story-|user-|full-|direction)/u);
   assert.match(html, /<dialog class="image-lightbox" id="image-lightbox"/u);
-  assert.match(html, /const dialog = document\.querySelector\("#image-lightbox"\)/u);
-  assert.match(html, /const openParam = "story"/u);
-  assert.match(html, /url\.searchParams\.set\(openParam, value\)/u);
-  assert.match(html, /dialog\.addEventListener\("close", clearOpenParam\)/u);
-  assert.match(html, /if \(event\.key === "Escape"\) \{\s*dialog\.close\(\);/u);
-  assert.match(
-    html,
-    /const initialStory = new URL\(location\.href\)\.searchParams\.get\(openParam\)/u,
-  );
+  assert.match(html, /onclick="\$emit\(event,/u);
+  assert.match(html, /onchange="\$emit\(event,/u);
+  assert.match(html, /onclose="\$emit\(event,/u);
+  assert.match(html, /data-mono-jsx=/u);
   assert.ok(
     html.indexOf("Ranked First (ranked-first)") <
       html.indexOf("Html &quot;User&quot; (ranked-second)"),

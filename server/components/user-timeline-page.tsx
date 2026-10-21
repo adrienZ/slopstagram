@@ -1,10 +1,12 @@
 import cx from "clsx";
-import { css, js } from "mono-jsx/jsx-runtime";
-import { formatUserName, lightboxScript } from "../helper.ts";
+import { css } from "mono-jsx/jsx-runtime";
+import { formatUserName } from "../helper.ts";
+import { createStoryCards } from "../story-card-view-model.ts";
+import type { StoryCardSources, StoryCardViewModel } from "../story-card-view-model.ts";
 import type { UserTimeline } from "../user-timeline.ts";
 import { getTimelinePreviewPaths } from "../user-timeline.ts";
 import { Lightbox, LightboxStyles } from "./lightbox.tsx";
-import { StoryCard, StoryCardStyles, type StoryCardViewModel } from "./story-card.tsx";
+import { StoryCard, StoryCardStyles } from "./story-card.tsx";
 
 const userTimelineStyles = css`
   :root {
@@ -125,7 +127,7 @@ function UserTimelineStyles() {
   return <style>{userTimelineStyles}</style>;
 }
 
-function getTimelineViewModel(timeline: UserTimeline): StoryCardViewModel {
+function getTimelineViewModel(timeline: UserTimeline): StoryCardSources {
   const previewPaths = getTimelinePreviewPaths(timeline.stories);
   const profilePicPathByUrl = new Map<string, string>();
   const profilePicUrl = timeline.timelineUser.profile_pic_url;
@@ -171,12 +173,13 @@ function TimelineHeader({ timeline, userName }: { timeline: UserTimeline; userNa
   );
 }
 
-function TimelineGroups({ timeline, userName }: { timeline: UserTimeline; userName: string }) {
-  const cardViewModel = getTimelineViewModel(timeline);
-  const storyByMediaPk = new Map(
-    timeline.timelineUser.stories.map((story, position) => [story.media_pk, { position, story }]),
-  );
-
+function TimelineGroups({
+  timeline,
+  storyByMediaPk,
+}: {
+  timeline: UserTimeline;
+  storyByMediaPk: Map<string, StoryCardViewModel>;
+}) {
   return (
     <>
       {timeline.years.map((year) => (
@@ -195,16 +198,7 @@ function TimelineGroups({ timeline, userName }: { timeline: UserTimeline; userNa
                         return null;
                       }
 
-                      return (
-                        <StoryCard
-                          count={timeline.timelineUser.stories.length}
-                          position={card.position + 1}
-                          story={card.story}
-                          user={timeline.timelineUser}
-                          userName={userName}
-                          viewModel={cardViewModel}
-                        />
-                      );
+                      return <StoryCard story={card} />;
                     })}
                   </div>
                 </section>
@@ -219,9 +213,25 @@ function TimelineGroups({ timeline, userName }: { timeline: UserTimeline; userNa
 
 export function UserTimelinePage({ timeline }: { timeline: UserTimeline }) {
   const userName = formatUserName(timeline.timelineUser);
+  const storyByMediaPk = new Map(
+    createStoryCards(timeline.timelineUser, getTimelineViewModel(timeline)).map((story) => [
+      story.mediaPk,
+      story,
+    ]),
+  );
+  const stories = timeline.years.flatMap((year) =>
+    year.months.flatMap((month) =>
+      month.days.flatMap((day) =>
+        day.stories.flatMap((entry) => {
+          const card = storyByMediaPk.get(entry.story.pk);
+          return card === undefined ? [] : [card];
+        }),
+      ),
+    ),
+  );
 
   return (
-    <html lang="fr">
+    <html lang="fr" app={{ storyMediaPk: "", stories: [] }}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -233,10 +243,9 @@ export function UserTimelinePage({ timeline }: { timeline: UserTimeline }) {
       <body>
         <main>
           <TimelineHeader timeline={timeline} userName={userName} />
-          <TimelineGroups timeline={timeline} userName={userName} />
+          <TimelineGroups timeline={timeline} storyByMediaPk={storyByMediaPk} />
         </main>
-        <Lightbox />
-        <script>{js(lightboxScript)}</script>
+        <Lightbox stories={stories} />
       </body>
     </html>
   );

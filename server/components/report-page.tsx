@@ -1,6 +1,7 @@
-import { css, js } from "mono-jsx/jsx-runtime";
-import { formatReportDate, getRankedUsers, lightboxScript, reportPickerScript } from "../helper.ts";
+import { css } from "mono-jsx/jsx-runtime";
+import { formatReportDate, getRankedUsers } from "../helper.ts";
 import type { ReportViewModel } from "../report-view-model.ts";
+import { createStoryCards } from "../story-card-view-model.ts";
 import { Lightbox, LightboxStyles } from "./lightbox.tsx";
 import { ReportHeader, ReportHeaderStyles } from "./report-header.tsx";
 import { StoryCardStyles } from "./story-card.tsx";
@@ -56,8 +57,12 @@ function ReportPageStyles() {
 export function ReportPage({ reportKeys, selectedReportKey, viewModel }: ReportPageProps) {
   const { report } = viewModel;
   const date = formatReportDate(report.metadata.created_at);
+  const users = getRankedUsers(report).map((user) => ({
+    user,
+    stories: createStoryCards(user, viewModel),
+  }));
   return (
-    <html lang="fr">
+    <html lang="fr" app={{ storyMediaPk: "", stories: [] }}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -72,13 +77,11 @@ export function ReportPage({ reportKeys, selectedReportKey, viewModel }: ReportP
         <main>
           <ReportHeader reportKeys={reportKeys} selectedReportKey={selectedReportKey} />
           <h1>{`Rapport du ${date}`}</h1>
-          {getRankedUsers(report).map((user) => (
-            <UserSection user={user} viewModel={viewModel} />
+          {users.map(({ user, stories }) => (
+            <UserSection user={user} viewModel={viewModel} stories={stories} />
           ))}
         </main>
-        <Lightbox />
-        <script>{js(reportPickerScript)}</script>
-        <script>{js(lightboxScript)}</script>
+        <Lightbox stories={users.flatMap((user) => user.stories)} />
       </body>
     </html>
   );

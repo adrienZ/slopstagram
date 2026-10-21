@@ -4,11 +4,13 @@ import { getReportUserKey } from "../../sdk/lib/report-user-key-service.ts";
 import type { StoryOutputUser } from "../../sdk/lib/types.ts";
 import { formatUserName, getUserTimelineUrl } from "../helper.ts";
 import type { ReportViewModel } from "../report-view-model.ts";
+import type { StoryCardViewModel } from "../story-card-view-model.ts";
 import { StoryCard } from "./story-card.tsx";
 
 interface UserSectionProps {
   user: StoryOutputUser;
   viewModel: ReportViewModel;
+  stories: Array<StoryCardViewModel>;
 }
 
 export const userSectionStyles = css`
@@ -62,7 +64,7 @@ export function UserSectionStyles() {
   return <style>{userSectionStyles}</style>;
 }
 
-export function UserSection({ user, viewModel }: UserSectionProps) {
+export function UserSection({ user, viewModel, stories }: UserSectionProps) {
   const userName = formatUserName(user);
   const profilePicUrl = user.profile_pic_url?.trim();
   const avatar =
@@ -90,17 +92,10 @@ export function UserSection({ user, viewModel }: UserSectionProps) {
         </div>
       </a>
       {summary !== undefined && summary.length > 0 && <p class={cx("user-summary")}>{summary}</p>}
-      {user.stories.length > 0 && (
+      {stories.length > 0 && (
         <div class={cx("story-images")}>
-          {user.stories.map((story, position) => (
-            <StoryCard
-              story={story}
-              user={user}
-              userName={userName}
-              count={user.stories.length}
-              position={position + 1}
-              viewModel={viewModel}
-            />
+          {stories.map((story) => (
+            <StoryCard story={story} />
           ))}
         </div>
       )}

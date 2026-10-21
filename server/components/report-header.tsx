@@ -86,8 +86,14 @@ export function ReportHeader({ reportKeys, selectedReportKey }: ReportHeaderProp
         <p class={cx("report-page-header__title")}>Consulter un rapport</p>
       </div>
       <form class={cx("report-picker")} action="/report" method="GET">
-        <label for="report-picker">Rapport</label>
-        <select id="report-picker" name="report" aria-label="Choisir un rapport">
+        <label for="report-picker">Choisir un rapport</label>
+        <select
+          id="report-picker"
+          name="report"
+          onChange={(event) => {
+            event.target.form?.requestSubmit();
+          }}
+        >
           {reportKeys.map((reportKey) => (
             <option value={reportKey} selected={reportKey === selectedReportKey}>
               {reportKey.replace(/^stories-report-/u, "").replace(/\.json$/u, "")}

@@ -1,22 +1,9 @@
+/* oxlint-disable oxc/no-this-in-exported-function -- mono-jsx binds `this` to the component's signal scope. */
 import cx from "clsx";
 import { css } from "mono-jsx/jsx-runtime";
-import { STORY_MEDIA_TYPES, type StoryOutputUser } from "../../sdk/lib/types.ts";
-import { getStoryUrl } from "../helper.ts";
-import type { ReportViewModel } from "../report-view-model.ts";
-
-export type StoryCardViewModel = Pick<
-  ReportViewModel,
-  "appleCaptionByMediaPk" | "cachedImages" | "visionByPreviewUrl"
->;
-
-interface StoryCardProps {
-  count: number;
-  position: number;
-  story: StoryOutputUser["stories"][number];
-  user: StoryOutputUser;
-  userName: string;
-  viewModel: StoryCardViewModel;
-}
+import type { StoryCardViewModel } from "../story-card-view-model.ts";
+import { serializeSignalData } from "../signal-json.ts";
+import type { LightboxSignals } from "./lightbox.tsx";
 
 export const storyCardStyles = css`
   .story-slide {
@@ -51,52 +38,25 @@ export function StoryCardStyles() {
   return <style>{storyCardStyles}</style>;
 }
 
-export function StoryCard({ count, position, story, user, userName, viewModel }: StoryCardProps) {
-  const source = story.preview_image_url?.trim();
-  if (source === undefined || source.length === 0) {
-    return null;
-  }
-
-  const preview = viewModel.cachedImages.storyPreviewPathByUrl.get(source);
-  if (preview === undefined || preview.length === 0) {
-    return null;
-  }
-  const vision = viewModel.visionByPreviewUrl.get(source);
-  const profilePicUrl = user.profile_pic_url?.trim();
-  const avatar =
-    profilePicUrl !== undefined && profilePicUrl.length > 0
-      ? viewModel.cachedImages.profilePicPathByUrl.get(profilePicUrl)
-      : undefined;
-  let mediaType = "";
-  if (story.media_type === STORY_MEDIA_TYPES.IMAGE) {
-    mediaType = "Image";
-  } else if (story.media_type === STORY_MEDIA_TYPES.VIDEO) {
-    mediaType = "Vidéo";
-  }
+export function StoryCard(
+  this: WithAppSignals<FC<{ selectionJson: string }>, LightboxSignals>,
+  { story }: { story: StoryCardViewModel },
+) {
+  this.selectionJson = serializeSignalData({ mediaPk: story.mediaPk });
 
   return (
     <div class={cx("story-slide")}>
       <button
         class={cx("story-image-button")}
         type="button"
-        data-full-src={preview}
-        data-full-alt={`aperçu ${story.media_pk}`}
-        data-story-url={getStoryUrl(user.username, story.media_pk)}
-        data-user-name={userName}
-        data-user-avatar={avatar}
-        data-user-image-index={position}
-        data-user-image-count={count}
-        data-story-media-type={mediaType}
-        data-story-media-pk={story.media_pk}
-        data-story-stickers={story.stickers.join(", ")}
-        data-story-locations={story.locations.join("\n")}
-        data-story-ig-caption={story.ig_caption.trim()}
-        data-story-apple-caption={viewModel.appleCaptionByMediaPk.get(story.media_pk)?.trim() ?? ""}
-        data-story-vision-ocr={vision?.text ?? ""}
-        data-story-vision-description={vision?.visual ?? ""}
-        aria-label={`Ouvrir aperçu ${story.media_pk}`}
+        aria-label={`Ouvrir aperçu ${story.mediaPk}`}
+        onClick={() => {
+          // oxlint-disable-next-line typescript/no-unsafe-assignment -- The server serialized this card's typed mediaPk into the signal.
+          const selection: Pick<StoryCardViewModel, "mediaPk"> = JSON.parse(this.selectionJson);
+          this.app.storyMediaPk = selection.mediaPk;
+        }}
       >
-        <img class={cx("story-preview")} src={preview} alt={`aperçu ${story.media_pk}`} />
+        <img class={cx("story-preview")} src={story.preview} alt={story.alt} />
       </button>
     </div>
   );
