@@ -1,8 +1,7 @@
 import { Link } from "@solidjs/meta";
-import { createEffect, createSignal, onMount } from "solid-js";
+import { useSearchParams } from "@solidjs/router";
+import { createMemo, onCleanup, onMount } from "solid-js";
 import cx from "clsx";
-import { useStore } from "@nanostores/solid";
-import { $storyMediaPk } from "../store.ts";
 import type { StoryCardViewModel } from "../story-card-view-model.ts";
 
 function LightboxDetailsRow(props: {
@@ -45,51 +44,36 @@ export function LightboxStyles() {
   return <Link rel="stylesheet" href="/css/lightbox.css" />;
 }
 
-export function Lightbox({ stories }: { stories: Array<StoryCardViewModel> }) {
-  const mediaPk = useStore($storyMediaPk);
-  const [ready, setReady] = createSignal(false);
-  onMount(() => {
-    $storyMediaPk.set(new globalThis.URL(globalThis.location.href).searchParams.get("story") ?? "");
-    setReady(true);
-  });
+function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: StoryCardViewModel }) {
+  const [, setSearchParams] = useSearchParams();
   let dialog: HTMLDialogElement | undefined;
-  function selected() {
-    return stories.find((story) => story.mediaPk === mediaPk()) ?? null;
-  }
 
   function selectedCount() {
-    const story = selected();
-    return story === null ? "" : `${story.position} / ${story.count}`;
+    return `${props.story.position} / ${props.story.count}`;
   }
 
-  createEffect(() => {
-    if (!ready()) {
-      return;
-    }
-    if (selected() === null) {
-      dialog?.close();
-    } else if (dialog !== undefined && !dialog.open) {
-      dialog.showModal();
-    }
-    const url = new globalThis.URL(globalThis.location.href);
-    const story = selected();
-    if (story === null) {
-      url.searchParams.delete("story");
-    } else {
-      url.searchParams.set("story", story.mediaPk);
-    }
-    if (url.href !== globalThis.location.href) {
-      globalThis.history.replaceState(null, "", url);
-    }
+  onMount(() => {
+    dialog?.showModal();
+  });
+  onCleanup(() => {
+    dialog?.close();
   });
 
+  function close() {
+    setSearchParams({ story: undefined }, { replace: true });
+  }
+
   function navigate(direction: number) {
-    if (stories.length === 0) {
+    if (props.stories.length === 0) {
       return;
     }
-    const index = stories.findIndex((story) => story.mediaPk === mediaPk());
-    $storyMediaPk.set(
-      stories[(index + direction + stories.length) % stories.length]?.mediaPk ?? "",
+    const index = props.stories.findIndex((story) => story.mediaPk === props.story.mediaPk);
+    setSearchParams(
+      {
+        story:
+          props.stories[(index + direction + props.stories.length) % props.stories.length]?.mediaPk,
+      },
+      { replace: true },
     );
   }
 
@@ -103,11 +87,13 @@ export function Lightbox({ stories }: { stories: Array<StoryCardViewModel> }) {
       }}
       onClick={(event) => {
         if (event.target === event.currentTarget) {
-          $storyMediaPk.set("");
+          close();
         }
       }}
-      onClose={() => {
-        $storyMediaPk.set("");
+      onClose={(event) => {
+        if (event.currentTarget.isConnected) {
+          close();
+        }
       }}
       onKeyDown={(event) => {
         if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
@@ -120,9 +106,7 @@ export function Lightbox({ stories }: { stories: Array<StoryCardViewModel> }) {
         class={cx("lightbox-close")}
         type="button"
         aria-label="Fermer l’aperçu"
-        onClick={() => {
-          $storyMediaPk.set("");
-        }}
+        onClick={close}
       >
         ×
       </button>
@@ -131,7 +115,7 @@ export function Lightbox({ stories }: { stories: Array<StoryCardViewModel> }) {
         className="lightbox-prev"
         label="Image précédente"
         text="‹"
-        hidden={stories.length < 2}
+        hidden={props.stories.length < 2}
         onNavigate={navigate}
       />
       <div class={cx("lightbox-content")}>
@@ -140,15 +124,15 @@ export function Lightbox({ stories }: { stories: Array<StoryCardViewModel> }) {
             <img
               class={cx("lightbox-avatar")}
               alt=""
-              src={selected()?.avatar}
-              hidden={selected()?.avatar === undefined}
+              src={props.story.avatar}
+              hidden={props.story.avatar === undefined}
             />
             <div>
-              <strong class="lightbox-username">{selected()?.userName ?? ""}</strong>
+              <strong class="lightbox-username">{props.story.userName}</strong>
               <span class="lightbox-count">{selectedCount()}</span>
             </div>
           </div>
-          <img class={cx("lightbox-image")} src={selected()?.preview} alt={selected()?.alt ?? ""} />
+          <img class={cx("lightbox-image")} src={props.story.preview} alt={props.story.alt} />
         </div>
         <aside class={cx("lightbox-details-panel")} aria-label="Détails de la story">
           <h2>Détails</h2>
@@ -157,42 +141,42 @@ export function Lightbox({ stories }: { stories: Array<StoryCardViewModel> }) {
               <LightboxDetailsRow
                 label="Type"
                 className="lightbox-detail-media-type"
-                value={selected()?.mediaType}
+                value={props.story.mediaType}
               />
               <LightboxDetailsRow
                 label="Story"
                 className="lightbox-detail-media-pk"
-                value={selected()?.mediaPk}
+                value={props.story.mediaPk}
               />
               <LightboxDetailsRow
                 label="Stickers"
                 className="lightbox-detail-stickers"
-                value={selected()?.stickers}
+                value={props.story.stickers}
               />
               <LightboxDetailsRow
                 label="Lieux"
                 className="lightbox-detail-locations"
-                value={selected()?.locations}
+                value={props.story.locations}
               />
               <LightboxDetailsRow
                 label="Instagram"
                 className="lightbox-detail-ig-caption"
-                value={selected()?.igCaption}
+                value={props.story.igCaption}
               />
               <LightboxDetailsRow
                 label="Apple OCR"
                 className="lightbox-detail-apple-caption"
-                value={selected()?.appleCaption}
+                value={props.story.appleCaption}
               />
               <LightboxDetailsRow
                 label="Vision OCR"
                 className="lightbox-detail-vision-ocr"
-                value={selected()?.visionOcr}
+                value={props.story.visionOcr}
               />
               <LightboxDetailsRow
                 label="Vision description"
                 className="lightbox-detail-vision-description"
-                value={selected()?.visionDescription}
+                value={props.story.visionDescription}
               />
             </tbody>
           </table>
@@ -200,8 +184,7 @@ export function Lightbox({ stories }: { stories: Array<StoryCardViewModel> }) {
             class={cx("lightbox-story-link")}
             target="_blank"
             rel="noreferrer"
-            href={selected()?.url}
-            hidden={selected()?.url === undefined}
+            href={props.story.url}
           >
             Voir cette story sur Instagram
           </a>
@@ -212,9 +195,23 @@ export function Lightbox({ stories }: { stories: Array<StoryCardViewModel> }) {
         className="lightbox-next"
         label="Image suivante"
         text="›"
-        hidden={stories.length < 2}
+        hidden={props.stories.length < 2}
         onNavigate={navigate}
       />
     </dialog>
   );
+}
+
+export function Lightbox(props: { stories: Array<StoryCardViewModel> }) {
+  const [searchParams] = useSearchParams();
+  const selected = createMemo(
+    () => props.stories.find((story) => story.mediaPk === searchParams.story) ?? null,
+  );
+
+  function renderDialog() {
+    const story = selected();
+    return story === null ? null : <LightboxDialog stories={props.stories} story={story} />;
+  }
+
+  return <>{renderDialog()}</>;
 }

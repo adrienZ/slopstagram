@@ -1,5 +1,6 @@
-import { getRequestEvent } from "solid-js/web";
-import { $page } from "../../store.ts";
+import { createAsync, useParams } from "@solidjs/router";
+import type { RouteDefinition } from "@solidjs/router";
+import { getUserTimeline } from "../../query-service.ts";
 import { Link, Title } from "@solidjs/meta";
 import cx from "clsx";
 import { formatUserName } from "../../helper.ts";
@@ -115,10 +116,21 @@ export function UserTimelinePage(props: TimelineContentProps) {
   );
 }
 
+export const route = {
+  // oxlint-disable-next-line typescript/promise-function-async -- Preserve the query promise so the router handles preload rejections.
+  preload: ({ params }) => getUserTimeline(params.username ?? ""),
+} satisfies RouteDefinition;
+
 export default function TimelineRoute() {
-  const data = getRequestEvent()?.locals.page ?? $page.get();
-  if (data?.page !== "timeline") {
-    throw new Error("Timeline data could not be loaded");
+  const params = useParams();
+  const data = createAsync(
+    // oxlint-disable-next-line typescript/promise-function-async -- createAsync must receive the query promise directly during hydration.
+    () => getUserTimeline(params.username ?? ""),
+    { deferStream: true },
+  );
+  function renderPage() {
+    const props = data();
+    return props === undefined ? null : <UserTimelinePage {...props} />;
   }
-  return <UserTimelinePage {...data.props} />;
+  return <>{renderPage()}</>;
 }

@@ -35,6 +35,27 @@ export default defineConfig({
   },
   rules: {
     "slopstagram/no-barrel-files": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        paths: [
+          {
+            // frontend-side-effects
+            name: "solid-js",
+            importNames: ["createEffect"],
+            allowTypeImports: false,
+            message:
+              "createEffect is forbidden. Use derived state or explicit event subscriptions.",
+          },
+          {
+            // frontend-avoid-framework-specificity
+            name: "solid-js",
+            importNames: ["Show"],
+            message: "Show is forbidden. Use JavaScript conditionals in JSX.",
+          },
+        ],
+      },
+    ],
   },
   overrides: [
     {

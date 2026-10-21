@@ -1,3 +1,4 @@
+import "server-only";
 import { HTTPError } from "nitro/h3";
 import { createStoryCards } from "./story-card-view-model.ts";
 import type { StoryCardSources } from "./story-card-view-model.ts";

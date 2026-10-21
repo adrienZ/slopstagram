@@ -1,3 +1,4 @@
+import "server-only";
 import { HTTPError } from "nitro/h3";
 import { z } from "zod";
 import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
@@ -7,10 +8,9 @@ import type { ReportContentProps } from "./pages/report.tsx";
 import { getReportKeys, readReport } from "./report-repository.ts";
 import { createReportViewModel } from "./report-view-model.ts";
 
-export function loadReport(url: URL): ReportContentProps {
+export function loadReport(reportQuery: string | null): ReportContentProps {
   try {
     const reportKeys = getReportKeys();
-    const reportQuery = url.searchParams.get("report");
     const parsedReportKey = z.string().safeParse(reportQuery);
     const selectedReportKey = parsedReportKey.success ? parsedReportKey.data : reportKeys.at(-1);
 

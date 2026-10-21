@@ -73,6 +73,12 @@ const renderer = await createPageRenderer(
   "/server/pages/users/[username].tsx",
   "UserTimelinePage",
   props,
+  {
+    path: "/users/:username",
+    queryModule: "/server/query-service.ts",
+    queryName: "getUserTimeline",
+    args: ["timeline-user"],
+  },
 );
 after(async () => {
   await renderer.close();
@@ -102,4 +108,18 @@ test("timeline page does not embed initial state", async () => {
   const response = await request();
   const html = await response.text();
   assert.doesNotMatch(html, /app-state|app-props|application\/json|<script>caption/u);
+});
+
+test("timeline lightbox renders the story selected by the URL", () => {
+  const html = renderer.render("/users/timeline-user?story=story-pk");
+  assert.match(html, /<dialog[^>]*class="image-lightbox" id="image-lightbox"/u);
+  assert.match(html, /class="lightbox-detail-media-pk">story-pk<\/td>/u);
+});
+
+test("timeline route reads its username query and URL-selected story", async () => {
+  const html = await renderer.renderRoute("/users/timeline-user?story=story-pk");
+  assert.match(html, /Timeline User/u);
+  assert.match(html, /class="lightbox-detail-media-pk">story-pk<\/td>/u);
+  assert.match(html, /_\$HY\.r\[/u);
+  assert.doesNotMatch(html, /<script>caption/u);
 });
