@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
-import { describe, onTestFinished, test } from "vitest";
+import { describe, test } from "node:test";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { VisionRepository } from "../sdk/entities/vision.ts";
 
 describe("VisionRepository", () => {
-  test("stores scalar result columns in SQLite", async () => {
+  test("stores scalar result columns in SQLite", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
-    onTestFinished(() => {
+    context.after(() => {
       database.$client.close();
     });
     const repository = new VisionRepository(database);

@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 import assert from "node:assert/strict";
-import { describe, test } from "vitest";
+import { describe, test } from "node:test";
 import { TextEncoder } from "node:util";
 import { BASE_CACHE_DIR, createImageCacheStorage } from "../sdk/lib/cache-service.ts";
 import { cacheReportImages } from "../sdk/lib/image-cache-service.ts";

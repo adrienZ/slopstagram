@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "vitest";
+import { test } from "node:test";
 import type { StoryOutputUser } from "../sdk/lib/types.ts";
 import { createStoryCards } from "../server/story-card-view-model.ts";
 import type { StoryCardSources } from "../server/story-card-view-model.ts";

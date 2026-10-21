@@ -37,11 +37,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install browser
-        run: npm exec --no-install -- playwright install --with-deps chromium
-
       - name: Run checks
-        run: xvfb-run --auto-servernum npm run check:ci
+        run: npm run check:ci
 
       - name: Test report
         uses: dorny/test-reporter@v3

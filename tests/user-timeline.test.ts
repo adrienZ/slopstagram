@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "vitest";
+import { test } from "node:test";
 import { groupStoriesByPublishedDate } from "../server/user-timeline.ts";
 import type { UserTimelineStory } from "../sdk/lib/types.ts";
 
