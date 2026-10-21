@@ -1,6 +1,8 @@
-import { css, js } from "mono-jsx/jsx-runtime";
-import { formatReportDate, getRankedUsers, lightboxScript, reportPickerScript } from "../helper.ts";
+import { css } from "mono-jsx/jsx-runtime";
+import { formatReportDate, getRankedUsers } from "../helper.ts";
 import type { ReportViewModel } from "../report-view-model.ts";
+import { createStoryCards } from "../story-card-view-model.ts";
+import { BaseStyles } from "./base-styles.tsx";
 import { Lightbox, LightboxStyles } from "./lightbox.tsx";
 import { ReportHeader, ReportHeaderStyles } from "./report-header.tsx";
 import { StoryCardStyles } from "./story-card.tsx";
@@ -12,56 +14,28 @@ interface ReportPageProps {
   viewModel: ReportViewModel;
 }
 
-const reportPageStyles = css`
-  :root {
-    color-scheme: light dark;
-    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-    background: #f6f7f9;
-    color: #1f2933;
-  }
-
-  body {
-    margin: 0;
-    background: #f6f7f9;
-    color: #1f2933;
-  }
-
-  main {
-    max-width: 1440px;
-    margin: auto;
-    padding: 32px 24px 48px;
-  }
-
-  h1 {
-    font-size: 28px;
-    margin: 0 0 28px;
-  }
-
-  h2 {
-    font-size: 21px;
-    margin: 0 0 9px;
-  }
-
-  @media (max-width: 760px) {
-    main {
-      padding: 24px 16px;
-    }
-  }
-`;
-
 function ReportPageStyles() {
-  return <style>{reportPageStyles}</style>;
+  return (
+    <style>{css`
+      @import url("/css/report-page.css");
+    `}</style>
+  );
 }
 
 export function ReportPage({ reportKeys, selectedReportKey, viewModel }: ReportPageProps) {
   const { report } = viewModel;
   const date = formatReportDate(report.metadata.created_at);
+  const users = getRankedUsers(report).map((user) => ({
+    user,
+    stories: createStoryCards(user, viewModel),
+  }));
   return (
-    <html lang="fr">
+    <html lang="fr" app={{ storyMediaPk: "", stories: [] }}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{`Rapport Stories ${date}`}</title>
+        <BaseStyles />
         <ReportPageStyles />
         <ReportHeaderStyles />
         <UserSectionStyles />
@@ -72,13 +46,11 @@ export function ReportPage({ reportKeys, selectedReportKey, viewModel }: ReportP
         <main>
           <ReportHeader reportKeys={reportKeys} selectedReportKey={selectedReportKey} />
           <h1>{`Rapport du ${date}`}</h1>
-          {getRankedUsers(report).map((user) => (
-            <UserSection user={user} viewModel={viewModel} />
+          {users.map(({ user, stories }) => (
+            <UserSection user={user} viewModel={viewModel} stories={stories} />
           ))}
         </main>
-        <Lightbox />
-        <script>{js(reportPickerScript)}</script>
-        <script>{js(lightboxScript)}</script>
+        <Lightbox stories={users.flatMap((user) => user.stories)} />
       </body>
     </html>
   );

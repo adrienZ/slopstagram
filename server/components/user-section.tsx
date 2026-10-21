@@ -1,68 +1,27 @@
-import cx from "clsx";
 import { css } from "mono-jsx/jsx-runtime";
+import cx from "clsx";
 import { getReportUserKey } from "../../sdk/lib/report-user-key-service.ts";
 import type { StoryOutputUser } from "../../sdk/lib/types.ts";
 import { formatUserName, getUserTimelineUrl } from "../helper.ts";
 import type { ReportViewModel } from "../report-view-model.ts";
+import type { StoryCardViewModel } from "../story-card-view-model.ts";
 import { StoryCard } from "./story-card.tsx";
 
 interface UserSectionProps {
   user: StoryOutputUser;
   viewModel: ReportViewModel;
+  stories: Array<StoryCardViewModel>;
 }
-
-export const userSectionStyles = css`
-  .user-section {
-    margin: 0 0 42px;
-  }
-
-  .user-header {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    margin-bottom: 14px;
-  }
-
-  .user-link {
-    color: inherit;
-    text-decoration: none;
-  }
-
-  .user-link:hover h2,
-  .user-link:focus-visible h2 {
-    text-decoration: underline;
-  }
-
-  .avatar,
-  .avatar-placeholder {
-    width: 96px;
-    height: 96px;
-    border-radius: 8px;
-    object-fit: cover;
-    background: #d9dee7;
-  }
-
-  .user-summary {
-    max-width: 1040px;
-    margin: 0 0 18px;
-    font-size: 23px;
-    line-height: 1.45;
-  }
-
-  .story-images {
-    display: flex;
-    gap: 12px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    padding: 2px 0 14px;
-  }
-`;
 
 export function UserSectionStyles() {
-  return <style>{userSectionStyles}</style>;
+  return (
+    <style>{css`
+      @import url("/css/user-section.css");
+    `}</style>
+  );
 }
 
-export function UserSection({ user, viewModel }: UserSectionProps) {
+export function UserSection({ user, viewModel, stories }: UserSectionProps) {
   const userName = formatUserName(user);
   const profilePicUrl = user.profile_pic_url?.trim();
   const avatar =
@@ -90,17 +49,10 @@ export function UserSection({ user, viewModel }: UserSectionProps) {
         </div>
       </a>
       {summary !== undefined && summary.length > 0 && <p class={cx("user-summary")}>{summary}</p>}
-      {user.stories.length > 0 && (
+      {stories.length > 0 && (
         <div class={cx("story-images")}>
-          {user.stories.map((story, position) => (
-            <StoryCard
-              story={story}
-              user={user}
-              userName={userName}
-              count={user.stories.length}
-              position={position + 1}
-              viewModel={viewModel}
-            />
+          {stories.map((story) => (
+            <StoryCard story={story} />
           ))}
         </div>
       )}
