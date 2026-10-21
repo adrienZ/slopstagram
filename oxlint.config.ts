@@ -19,7 +19,7 @@ const ultraciteSoftenerConfig = defineConfig({
 
 export default defineConfig({
   extends: [ultracite, antiSlop, ultraciteSoftenerConfig],
-  ignorePatterns: ultracite.ignorePatterns,
+  ignorePatterns: [...(ultracite.ignorePatterns ?? []), "server/routeTree.gen.ts"],
   jsPlugins: ["./oxlint/plugins/rules/no-barrel-files.ts"],
   options: {
     maxWarnings: 0,
@@ -41,17 +41,10 @@ export default defineConfig({
         paths: [
           {
             // frontend-side-effects
-            name: "solid-js",
-            importNames: ["createEffect"],
+            name: "react",
+            importNames: ["useEffect", "useLayoutEffect", "useInsertionEffect"],
             allowTypeImports: false,
-            message:
-              "createEffect is forbidden. Use derived state or explicit event subscriptions.",
-          },
-          {
-            // frontend-avoid-framework-specificity
-            name: "solid-js",
-            importNames: ["Show"],
-            message: "Show is forbidden. Use JavaScript conditionals in JSX.",
+            message: "useEffect is forbidden. Use derived state or explicit event subscriptions.",
           },
         ],
       },

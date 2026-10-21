@@ -1,18 +1,13 @@
-import { createAsync, useParams } from "@solidjs/router";
-import type { RouteDefinition } from "@solidjs/router";
+import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
 import { getUserTimeline } from "../../query-service.ts";
-import { Link, Title } from "@solidjs/meta";
+
 import cx from "clsx";
 import { formatUserName } from "../../helper.ts";
 import type { StoryCardViewModel } from "../../story-card-view-model.ts";
 import type { UserTimeline } from "../../user-timeline.ts";
-import { BaseStyles } from "../../components/base-styles.tsx";
-import { Lightbox, LightboxStyles } from "../../components/lightbox.tsx";
-import { StoryCard, StoryCardStyles } from "../../components/story-card.tsx";
-
-function UserTimelineStyles() {
-  return <Link rel="stylesheet" href="/css/user-timeline-page.css" />;
-}
+import { Lightbox } from "../../components/lightbox.tsx";
+import { StoryCard } from "../../components/story-card.tsx";
 
 function TimelineHeader({
   timeline,
@@ -23,15 +18,15 @@ function TimelineHeader({
 }) {
   return (
     <>
-      <a class={cx("timeline-back")} href="/">
+      <a className={cx("timeline-back")} href="/">
         ← Tous les utilisateurs
       </a>
-      <header class={cx("timeline-user-header")}>
+      <header className={cx("timeline-user-header")}>
         {timeline.avatarPath === null ? (
-          <div class={cx("timeline-avatar-placeholder")} />
+          <div className={cx("timeline-avatar-placeholder")} />
         ) : (
           <img
-            class={cx("timeline-avatar")}
+            className={cx("timeline-avatar")}
             src={timeline.avatarPath}
             alt={`${userName} avatar`}
             width="96"
@@ -57,22 +52,22 @@ function TimelineGroups({
   return (
     <>
       {timeline.years.map((year) => (
-        <section class={cx("timeline-year")}>
+        <section key={year.label} className={cx("timeline-year")}>
           <h2>{year.label}</h2>
           {year.months.map((month) => (
-            <section class={cx("timeline-month")}>
+            <section key={month.key} className={cx("timeline-month")}>
               <h3>{month.label}</h3>
               {month.days.map((day) => (
-                <section class={cx("timeline-day")}>
-                  <div class={cx("timeline-day-label")}>{day.label}</div>
-                  <div class={cx("timeline-day-stories")}>
+                <section key={day.key} className={cx("timeline-day")}>
+                  <div className={cx("timeline-day-label")}>{day.label}</div>
+                  <div className={cx("timeline-day-stories")}>
                     {day.stories.map((entry) => {
                       const card = storyByMediaPk.get(entry.story.pk);
                       if (card === undefined) {
                         return null;
                       }
 
-                      return <StoryCard story={card} />;
+                      return <StoryCard key={card.mediaPk} story={card} />;
                     })}
                   </div>
                 </section>
@@ -90,7 +85,11 @@ export interface TimelineContentProps {
   stories: Array<StoryCardViewModel>;
 }
 
-export function TimelineContent({ timeline, stories }: TimelineContentProps) {
+export function TimelineContent({
+  timeline,
+  stories,
+  selectedStory,
+}: TimelineContentProps & { selectedStory?: string }) {
   const storyByMediaPk = new Map(stories.map((story) => [story.mediaPk, story]));
   return (
     <>
@@ -98,39 +97,36 @@ export function TimelineContent({ timeline, stories }: TimelineContentProps) {
         <TimelineHeader timeline={timeline} userName={formatUserName(timeline.timelineUser)} />
         <TimelineGroups timeline={timeline} storyByMediaPk={storyByMediaPk} />
       </main>
-      <Lightbox stories={stories} />
+      <Lightbox stories={stories} selectedStory={selectedStory} />
     </>
   );
 }
 
-export function UserTimelinePage(props: TimelineContentProps) {
+export function UserTimelinePage(props: TimelineContentProps & { selectedStory?: string }) {
   return (
     <>
-      <Title>{`Stories de ${formatUserName(props.timeline.timelineUser)}`}</Title>
-      <BaseStyles />
-      <UserTimelineStyles />
-      <StoryCardStyles />
-      <LightboxStyles />
       <TimelineContent {...props} />
     </>
   );
 }
 
-export const route = {
-  // oxlint-disable-next-line typescript/promise-function-async -- Preserve the query promise so the router handles preload rejections.
-  preload: ({ params }) => getUserTimeline(params.username ?? ""),
-} satisfies RouteDefinition;
-
-export default function TimelineRoute() {
-  const params = useParams();
-  const data = createAsync(
-    // oxlint-disable-next-line typescript/promise-function-async -- createAsync must receive the query promise directly during hydration.
-    () => getUserTimeline(params.username ?? ""),
-    { deferStream: true },
-  );
-  function renderPage() {
-    const props = data();
-    return props === undefined ? null : <UserTimelinePage {...props} />;
-  }
-  return <>{renderPage()}</>;
-}
+export const Route = createFileRoute("/users/$username")({
+  validateSearch: z.object({ story: z.coerce.string().optional() }),
+  loader: async ({ params }) => await getUserTimeline({ data: params.username }),
+  head: ({ loaderData }) => ({
+    meta: [
+      {
+        title: loaderData
+          ? `Stories de ${formatUserName(loaderData.timeline.timelineUser)}`
+          : "Stories",
+      },
+    ],
+    links: ["user-timeline-page", "story-card", "lightbox"].map((name) => ({
+      rel: "stylesheet",
+      href: `/css/${name}.css`,
+    })),
+  }),
+  component: () => (
+    <UserTimelinePage {...Route.useLoaderData()} selectedStory={Route.useSearch().story} />
+  ),
+});

@@ -9,6 +9,7 @@ coverage/
 # nitro
 .output/
 .nitro
+.tanstack/
 
 # data
 data/*

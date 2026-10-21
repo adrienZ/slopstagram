@@ -1,20 +1,7 @@
-// @refresh reload
-import { createHandler, StartServer } from "@solidjs/start/server";
+import handler, { createServerEntry } from "@tanstack/react-start/server-entry";
 
-export default createHandler(() => (
-  <StartServer
-    document={(props) => (
-      <html lang="fr">
-        <head>
-          <meta charset="utf-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
-          {props.assets}
-        </head>
-        <body>
-          <div id="app">{props.children}</div>
-          {props.scripts}
-        </body>
-      </html>
-    )}
-  />
-));
+export default createServerEntry({
+  async fetch(request) {
+    return await handler.fetch(request);
+  },
+});

@@ -1,6 +1,4 @@
-import { Link } from "@solidjs/meta";
-import { useSearchParams } from "@solidjs/router";
-import { createMemo, onCleanup, onMount } from "solid-js";
+import { useNavigate } from "@tanstack/react-router";
 import cx from "clsx";
 import type { StoryCardViewModel } from "../story-card-view-model.ts";
 
@@ -12,7 +10,7 @@ function LightboxDetailsRow(props: {
   return (
     <tr>
       <th>{props.label}</th>
-      <td class={props.className}>{props.value ?? "—"}</td>
+      <td className={props.className}>{props.value ?? "—"}</td>
     </tr>
   );
 }
@@ -27,7 +25,7 @@ function LightboxNavButton(props: {
 }) {
   return (
     <button
-      class={cx("lightbox-nav", props.className)}
+      className={cx("lightbox-nav", props.className)}
       type="button"
       aria-label={props.label}
       hidden={props.hidden}
@@ -40,27 +38,27 @@ function LightboxNavButton(props: {
   );
 }
 
-export function LightboxStyles() {
-  return <Link rel="stylesheet" href="/css/lightbox.css" />;
+function mountDialog(element: HTMLDialogElement | null) {
+  element?.showModal();
+  return () => {
+    element?.close();
+  };
 }
 
 function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: StoryCardViewModel }) {
-  const [, setSearchParams] = useSearchParams();
-  let dialog: HTMLDialogElement | undefined;
+  const navigateTo = useNavigate();
 
   function selectedCount() {
     return `${props.story.position} / ${props.story.count}`;
   }
 
-  onMount(() => {
-    dialog?.showModal();
-  });
-  onCleanup(() => {
-    dialog?.close();
-  });
-
   function close() {
-    setSearchParams({ story: undefined }, { replace: true });
+    void navigateTo({
+      to: ".",
+      search: (previous) => ({ ...previous, story: undefined }),
+      replace: true,
+      resetScroll: false,
+    });
   }
 
   function navigate(direction: number) {
@@ -68,22 +66,27 @@ function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: Stor
       return;
     }
     const index = props.stories.findIndex((story) => story.mediaPk === props.story.mediaPk);
-    setSearchParams(
-      {
+    void navigateTo({
+      to: ".",
+      search: (previous) => ({
+        ...previous,
         story:
           props.stories[(index + direction + props.stories.length) % props.stories.length]?.mediaPk,
-      },
-      { replace: true },
-    );
+      }),
+      replace: true,
+      resetScroll: false,
+    });
   }
 
   return (
     <dialog
-      class={cx("image-lightbox")}
+      className={cx("image-lightbox")}
       id="image-lightbox"
       aria-label="Aperçu de l’image"
-      ref={(element) => {
-        dialog = element;
+      ref={mountDialog}
+      onCancel={(event) => {
+        event.preventDefault();
+        close();
       }}
       onClick={(event) => {
         if (event.target === event.currentTarget) {
@@ -91,7 +94,7 @@ function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: Stor
         }
       }}
       onClose={(event) => {
-        if (event.currentTarget.isConnected) {
+        if (event.currentTarget.isConnected && !event.currentTarget.open) {
           close();
         }
       }}
@@ -103,7 +106,7 @@ function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: Stor
       }}
     >
       <button
-        class={cx("lightbox-close")}
+        className={cx("lightbox-close")}
         type="button"
         aria-label="Fermer l’aperçu"
         onClick={close}
@@ -118,25 +121,25 @@ function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: Stor
         hidden={props.stories.length < 2}
         onNavigate={navigate}
       />
-      <div class={cx("lightbox-content")}>
-        <div class={cx("lightbox-preview-panel")}>
-          <div class={cx("lightbox-header")}>
+      <div className={cx("lightbox-content")}>
+        <div className={cx("lightbox-preview-panel")}>
+          <div className={cx("lightbox-header")}>
             <img
-              class={cx("lightbox-avatar")}
+              className={cx("lightbox-avatar")}
               alt=""
               src={props.story.avatar}
               hidden={props.story.avatar === undefined}
             />
             <div>
-              <strong class="lightbox-username">{props.story.userName}</strong>
-              <span class="lightbox-count">{selectedCount()}</span>
+              <strong className="lightbox-username">{props.story.userName}</strong>
+              <span className="lightbox-count">{selectedCount()}</span>
             </div>
           </div>
-          <img class={cx("lightbox-image")} src={props.story.preview} alt={props.story.alt} />
+          <img className={cx("lightbox-image")} src={props.story.preview} alt={props.story.alt} />
         </div>
-        <aside class={cx("lightbox-details-panel")} aria-label="Détails de la story">
+        <aside className={cx("lightbox-details-panel")} aria-label="Détails de la story">
           <h2>Détails</h2>
-          <table class={cx("lightbox-details-table")}>
+          <table className={cx("lightbox-details-table")}>
             <tbody>
               <LightboxDetailsRow
                 label="Type"
@@ -181,7 +184,7 @@ function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: Stor
             </tbody>
           </table>
           <a
-            class={cx("lightbox-story-link")}
+            className={cx("lightbox-story-link")}
             target="_blank"
             rel="noreferrer"
             href={props.story.url}
@@ -202,16 +205,7 @@ function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: Stor
   );
 }
 
-export function Lightbox(props: { stories: Array<StoryCardViewModel> }) {
-  const [searchParams] = useSearchParams();
-  const selected = createMemo(
-    () => props.stories.find((story) => story.mediaPk === searchParams.story) ?? null,
-  );
-
-  function renderDialog() {
-    const story = selected();
-    return story === null ? null : <LightboxDialog stories={props.stories} story={story} />;
-  }
-
-  return <>{renderDialog()}</>;
+export function Lightbox(props: { stories: Array<StoryCardViewModel>; selectedStory?: string }) {
+  const story = props.stories.find((entry) => entry.mediaPk === props.selectedStory);
+  return story === undefined ? null : <LightboxDialog stories={props.stories} story={story} />;
 }

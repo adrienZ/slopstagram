@@ -1,4 +1,3 @@
-import { Link } from "@solidjs/meta";
 import cx from "clsx";
 
 export interface ReportHeaderProps {
@@ -6,29 +5,26 @@ export interface ReportHeaderProps {
   selectedReportKey: string;
 }
 
-export function ReportHeaderStyles() {
-  return <Link rel="stylesheet" href="/css/report-header.css" />;
-}
-
 export function ReportHeader({ reportKeys, selectedReportKey }: ReportHeaderProps) {
   return (
-    <header class={cx("report-page-header")}>
+    <header className={cx("report-page-header")}>
       <div>
-        <p class={cx("report-page-header__eyebrow")}>Storiesss Instagram</p>
-        <p class={cx("report-page-header__title")}>Consulter un rapport</p>
+        <p className={cx("report-page-header__eyebrow")}>Storiesss Instagram</p>
+        <p className={cx("report-page-header__title")}>Consulter un rapport</p>
       </div>
-      <form class={cx("report-picker")} action="/report" method="get">
-        <label for="report-picker">
+      <form className={cx("report-picker")} action="/report" method="get">
+        <label htmlFor="report-picker">
           <span>Choisir un rapport</span>
           <select
             id="report-picker"
             name="report"
+            defaultValue={selectedReportKey}
             onChange={(event) => {
               event.currentTarget.form?.requestSubmit();
             }}
           >
             {reportKeys.map((reportKey) => (
-              <option value={reportKey} selected={reportKey === selectedReportKey}>
+              <option key={reportKey} value={reportKey}>
                 {reportKey.replace(/^stories-report-/u, "").replace(/\.json$/u, "")}
               </option>
             ))}

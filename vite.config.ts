@@ -1,14 +1,19 @@
 import { defineConfig } from "vite";
-import { solidStart } from "@solidjs/start/config";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import react from "@vitejs/plugin-react";
 import { nitro } from "nitro/vite";
 
 export default defineConfig({
   plugins: [
-    solidStart({
-      appRoot: "./server",
-      routeDir: "./pages",
-      serverFunctions: { filter: { include: "server/**/*.{js,jsx,ts,tsx}" } },
+    tanstackStart({
+      srcDirectory: "server",
+      router: { routesDirectory: "pages" },
+      server: { entry: "entry-server.tsx" },
     }),
+    react(),
     nitro(),
   ],
+  environments: {
+    ssr: { build: { rolldownOptions: { input: "./server/entry-server.tsx" } } },
+  },
 });

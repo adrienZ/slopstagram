@@ -1,25 +1,25 @@
-import { Link } from "@solidjs/meta";
-import { useSearchParams } from "@solidjs/router";
+import { useNavigate } from "@tanstack/react-router";
 import cx from "clsx";
 import type { StoryCardViewModel } from "../story-card-view-model.ts";
 
-export function StoryCardStyles() {
-  return <Link rel="stylesheet" href="/css/story-card.css" />;
-}
-
 export function StoryCard({ story }: { story: StoryCardViewModel }) {
-  const [, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   return (
-    <div class={cx("story-slide")}>
+    <div className={cx("story-slide")}>
       <button
-        class={cx("story-image-button")}
+        className={cx("story-image-button")}
         type="button"
         aria-label={`Ouvrir aperçu ${story.mediaPk}`}
         onClick={() => {
-          setSearchParams({ story: story.mediaPk }, { replace: true });
+          void navigate({
+            to: ".",
+            search: (previous) => ({ ...previous, story: story.mediaPk }),
+            replace: true,
+            resetScroll: false,
+          });
         }}
       >
-        <img class={cx("story-preview")} src={story.preview} alt={story.alt} />
+        <img className={cx("story-preview")} src={story.preview} alt={story.alt} />
       </button>
     </div>
   );

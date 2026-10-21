@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { after, test } from "node:test";
+import { test } from "node:test";
 import { URL } from "node:url";
 import { H3 } from "nitro/h3";
 import { StoriesManifestReportSchema } from "../sdk/lib/story-schemas.ts";
 import { createPageRenderer } from "./render-page.ts";
-import type { ReportContentProps } from "../server/pages/report.tsx";
+import { Route, ReportPage, type ReportContentProps } from "../server/pages/report.tsx";
 import { getRankedUsers } from "../server/helper.ts";
 import { createStoryCards } from "../server/story-card-view-model.ts";
 
@@ -36,20 +36,12 @@ const props: ReportContentProps = {
     }).map((story) => ({ ...story, igCaption: caption })),
   })),
 };
-const renderer = await createPageRenderer("/server/pages/report.tsx", "ReportPage", props, {
-  path: "/report",
-  queryModule: "/server/query-service.ts",
-  queryName: "getReport",
-  args: [latestReportKey],
-});
-after(async () => {
-  await renderer.close();
-});
+const renderer = createPageRenderer(ReportPage, Route, props, "/report");
 const app = new H3();
 app.get(
   "/report",
-  () =>
-    new globalThis.Response(renderer.render(), {
+  async () =>
+    new globalThis.Response(await renderer.render(), {
       headers: { "Content-Type": "text/html;charset=utf-8" },
     }),
 );
@@ -71,22 +63,23 @@ test("report page renders fixture content", async () => {
   assert.doesNotMatch(html, /<dialog/u);
   assert.doesNotMatch(html, /data-mono-jsx|data-story-media-pk|on(?:click|change|close)=/u);
   assert.ok(
-    html.indexOf("Ranked First (ranked-first)") < html.indexOf('Html "User" (ranked-second)'),
+    html.indexOf("Ranked First (ranked-first)") <
+      html.indexOf("Html &quot;User&quot; (ranked-second)"),
   );
   assert.match(html, /<form class="report-picker" action="\/report" method="get">/u);
-  assert.match(html, /<option[^>]*value="stories-report-2026-07-26.json" selected>/u);
+  assert.match(html, /<option[^>]*value="stories-report-2026-07-26.json" selected="">/u);
 });
 
-test("report lightbox renders the story selected by the URL", () => {
-  const html = renderer.render("/report?story=story-pk-1");
+test("report lightbox renders the story selected by the URL", async () => {
+  const html = await renderer.render("/report?story=story-pk-1");
   assert.match(html, /<dialog[^>]*class="image-lightbox" id="image-lightbox"/u);
   assert.match(html, /class="lightbox-detail-media-pk">story-pk-1<\/td>/u);
-  assert.match(html, /class="lightbox-detail-apple-caption">apple &lt;text><\/td>/u);
+  assert.match(html, /class="lightbox-detail-apple-caption">apple &lt;text&gt;<\/td>/u);
   assert.doesNotMatch(html, /<script>caption/u);
 });
 
-test("report lightbox stays closed for an unknown story", () => {
-  assert.doesNotMatch(renderer.render("/report?story=missing"), /<dialog/u);
+test("report lightbox stays closed for an unknown story", async () => {
+  assert.doesNotMatch(await renderer.render("/report?story=missing"), /<dialog/u);
 });
 
 test("report page does not embed initial state", async () => {
@@ -100,7 +93,7 @@ test("report route renders its query result and safely serializes it for hydrati
   assert.match(html, /<h1[^>]*>Rapport du 26 juillet 2026 à 11:48 UTC\+2<\/h1>/u);
   assert.match(html, /class="lightbox-detail-media-pk">story-pk-1<\/td>/u);
   assert.match(html, /stories-report-2026-07-26.json/u);
-  assert.match(html, /_\$HY\.r\[/u);
+  assert.match(html, /\$_TSR/u);
   assert.doesNotMatch(html, /<script>caption/u);
 });
 
@@ -115,3 +108,16 @@ test("report route query data is isolated between requests", async () => {
   assert.match(second, /Rapport du deuxième requête/u);
   assert.doesNotMatch(second, /première requête/u);
 });
+
+for (const mediaPk of ["12345", "12345678901234568000", "12345678901234567890"]) {
+  test(`report deep links preserve numeric Instagram ID ${mediaPk}`, async () => {
+    const html = await renderer.renderRoute(`/report?story=${mediaPk}`, {
+      ...props,
+      users: props.users.map((user) => ({
+        ...user,
+        stories: user.stories.map((story) => ({ ...story, mediaPk })),
+      })),
+    });
+    assert.ok(html.includes(`class="lightbox-detail-media-pk">${mediaPk}</td>`));
+  });
+}

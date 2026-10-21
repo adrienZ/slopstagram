@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
-import { after, test } from "node:test";
+import { test } from "node:test";
 import { H3 } from "nitro/h3";
 import { createPageRenderer } from "./render-page.ts";
-import type { TimelineContentProps } from "../server/pages/users/[username].tsx";
+import {
+  Route,
+  UserTimelinePage,
+  type TimelineContentProps,
+} from "../server/pages/users/$username.tsx";
 import { createStoryCards } from "../server/story-card-view-model.ts";
 import type { UserTimeline } from "../server/user-timeline.ts";
 
@@ -69,25 +73,12 @@ const props: TimelineContentProps = {
     visionByPreviewUrl: timeline.visionByPreviewUrl,
   }),
 };
-const renderer = await createPageRenderer(
-  "/server/pages/users/[username].tsx",
-  "UserTimelinePage",
-  props,
-  {
-    path: "/users/:username",
-    queryModule: "/server/query-service.ts",
-    queryName: "getUserTimeline",
-    args: ["timeline-user"],
-  },
-);
-after(async () => {
-  await renderer.close();
-});
+const renderer = createPageRenderer(UserTimelinePage, Route, props, "/users/$username");
 const app = new H3();
 app.get(
   "/users/timeline-user",
-  () =>
-    new globalThis.Response(renderer.render(), {
+  async () =>
+    new globalThis.Response(await renderer.render(), {
       headers: { "Content-Type": "text/html;charset=utf-8" },
     }),
 );
@@ -110,8 +101,8 @@ test("timeline page does not embed initial state", async () => {
   assert.doesNotMatch(html, /app-state|app-props|application\/json|<script>caption/u);
 });
 
-test("timeline lightbox renders the story selected by the URL", () => {
-  const html = renderer.render("/users/timeline-user?story=story-pk");
+test("timeline lightbox renders the story selected by the URL", async () => {
+  const html = await renderer.render("/users/timeline-user?story=story-pk");
   assert.match(html, /<dialog[^>]*class="image-lightbox" id="image-lightbox"/u);
   assert.match(html, /class="lightbox-detail-media-pk">story-pk<\/td>/u);
 });
@@ -120,6 +111,6 @@ test("timeline route reads its username query and URL-selected story", async () 
   const html = await renderer.renderRoute("/users/timeline-user?story=story-pk");
   assert.match(html, /Timeline User/u);
   assert.match(html, /class="lightbox-detail-media-pk">story-pk<\/td>/u);
-  assert.match(html, /_\$HY\.r\[/u);
+  assert.match(html, /\$_TSR/u);
   assert.doesNotMatch(html, /<script>caption/u);
 });

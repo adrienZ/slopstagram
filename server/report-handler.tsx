@@ -1,4 +1,4 @@
-import "server-only";
+import "@tanstack/react-start/server-only";
 import { HTTPError } from "nitro/h3";
 import { z } from "zod";
 import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";

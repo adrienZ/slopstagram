@@ -1,9 +1,9 @@
-import "server-only";
+import "@tanstack/react-start/server-only";
 import { HTTPError } from "nitro/h3";
 import { createStoryCards } from "./story-card-view-model.ts";
 import type { StoryCardSources } from "./story-card-view-model.ts";
 import type { UserTimeline } from "./user-timeline.ts";
-import type { TimelineContentProps } from "./pages/users/[username].tsx";
+import type { TimelineContentProps } from "./pages/users/$username.tsx";
 import { createUserTimeline, getTimelinePreviewPaths } from "./user-timeline.ts";
 
 function getTimelineViewModel(

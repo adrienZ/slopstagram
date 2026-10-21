@@ -2,16 +2,15 @@
   "extends": ["nitro/tsconfig"],
   "compilerOptions": {
     "target": "ES2023",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "allowImportingTsExtensions": true,
-    "jsx": "preserve",
-    "jsxImportSource": "solid-js",
+    "jsx": "react-jsx",
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
-    "types": ["node", "@solidjs/start/env"]
+    "types": ["node", "vite/client"]
   },
   "include": [
     "sdk/**/*.ts",
