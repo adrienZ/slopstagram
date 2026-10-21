@@ -1,0 +1,11 @@
+@layer components {
+  .report-page h1 {
+    font-size: 28px;
+    margin: 0 0 28px;
+  }
+
+  .report-page h2 {
+    font-size: 21px;
+    margin: 0 0 9px;
+  }
+}
