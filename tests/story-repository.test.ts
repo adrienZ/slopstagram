@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
-import { describe, test } from "node:test";
+import { describe, onTestFinished, test } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { InstagramUserRepository } from "../sdk/entities/instagram-user.ts";
 import { StoryRepository } from "../sdk/entities/story.ts";
 
 describe("StoryRepository", () => {
-  test("stores story details in relational tables", async (context) => {
+  test("stores story details in relational tables", async () => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
-    context.after(() => {
+    onTestFinished(() => {
       database.$client.close();
     });
     const repository = new StoryRepository(database);
@@ -78,10 +78,10 @@ describe("StoryRepository", () => {
     );
   });
 
-  test("lists a user's stories by their Instagram publication date", async (context) => {
+  test("lists a user's stories by their Instagram publication date", async () => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
-    context.after(() => {
+    onTestFinished(() => {
       database.$client.close();
     });
     const repository = new StoryRepository(database);

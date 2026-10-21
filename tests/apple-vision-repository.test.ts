@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
-import { describe, test } from "node:test";
+import { describe, onTestFinished, test } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { AppleVisionRepository } from "../sdk/entities/apple-vision.ts";
 
 describe("AppleVisionRepository", () => {
-  test("stores and updates captions in SQLite", async (context) => {
+  test("stores and updates captions in SQLite", async () => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
-    context.after(() => {
+    onTestFinished(() => {
       database.$client.close();
     });
     const repository = new AppleVisionRepository(database);

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, test } from "node:test";
+import { describe, onTestFinished, test } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { ReportRepository } from "../sdk/entities/report.ts";
@@ -78,10 +78,10 @@ function createReportWithStory(name: string): StoriesManifestReport {
 }
 
 describe("ReportRepository", () => {
-  test("stores report snapshots and lists their keys in creation order", async (context) => {
+  test("stores report snapshots and lists their keys in creation order", async () => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
-    context.after(() => {
+    onTestFinished(() => {
       database.$client.close();
     });
     const repository = new ReportRepository(database);
@@ -98,10 +98,10 @@ describe("ReportRepository", () => {
     assert.deepEqual(repository.findByKey(older.metadata.report_name), older);
   });
 
-  test("links a story to each report while keeping report metadata as columns", async (context) => {
+  test("links a story to each report while keeping report metadata as columns", async () => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
-    context.after(() => {
+    onTestFinished(() => {
       database.$client.close();
     });
     const repository = new ReportRepository(database);

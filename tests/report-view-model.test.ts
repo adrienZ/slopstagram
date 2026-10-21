@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { test } from "node:test";
+import { test } from "vitest";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import type { StoriesManifestReport } from "../sdk/lib/types.ts";
 import { createReportViewModel } from "../server/report-view-model.ts";

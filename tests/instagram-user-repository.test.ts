@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
-import { describe, test } from "node:test";
+import { describe, onTestFinished, test } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { InstagramUserRepository } from "../sdk/entities/instagram-user.ts";
 
 describe("InstagramUserRepository", () => {
-  test("stores and updates Instagram users in SQLite", async (context) => {
+  test("stores and updates Instagram users in SQLite", async () => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
-    context.after(() => {
+    onTestFinished(() => {
       database.$client.close();
     });
     const repository = new InstagramUserRepository(database);

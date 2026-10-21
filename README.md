@@ -91,6 +91,14 @@ creation. After changing an entity schema, generate a migration with:
 npm run db:generate
 ```
 
+Tests use Vitest for Node.js and Solid server rendering, plus headed Chromium for browser
+interactions. Run the full suite with `npm test`, or just the Node.js tests with
+`npm test -- --project node`. On Linux without a display, use `xvfb-run --auto-servernum npm test`.
+
+`npm run test:reporter` also writes the JUnit report to `reporter.xml` and combined Node.js/browser
+coverage to `coverage/lcov.info` for SonarQube Cloud. `npm run check` runs formatting, lint,
+dependency checks, and the tests; CI uses `npm run check:ci` to include these reports.
+
 ## Runtime rationale
 
 The Nitro application and scripts run on Node.js. Bun is retained only for the

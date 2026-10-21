@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, test } from "node:test";
+import { describe, test } from "vitest";
 import { backfillReportStoryMediaTypes } from "../sdk/lib/report-media-type-service.ts";
 import type { StoriesManifestReport } from "../sdk/lib/types.ts";
 import { createMemoryStoryRepository } from "./mock-helpers.ts";

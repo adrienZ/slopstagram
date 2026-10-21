@@ -79,7 +79,7 @@ export default defineConfig({
           "error",
           {
             allowForKnownSafeCalls: [
-              { from: "package", name: ["describe", "test"], package: "node:test" },
+              { from: "package", name: ["describe", "test"], package: "vitest" },
             ],
           },
         ],

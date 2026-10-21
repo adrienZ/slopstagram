@@ -10,8 +10,6 @@ const config: KnipConfig = {
     "*.config.ts",
   ],
   ignoreDependencies: [
-    // Virtual module provided by SolidStart.
-    "server-only",
     // Used by agents.
     "@playwright/cli",
   ],

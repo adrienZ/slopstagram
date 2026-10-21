@@ -21,6 +21,7 @@
     "server/**/*.ts",
     "server/**/*.tsx",
     "types/**/*.d.ts",
-    "tests/**/*.ts"
+    "tests/**/*.ts",
+    "tests/**/*.tsx"
   ]
 }
