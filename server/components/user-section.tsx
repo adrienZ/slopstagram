@@ -1,3 +1,4 @@
+import { Link } from "@solidjs/meta";
 import cx from "clsx";
 import type { StoryOutputUser } from "../../sdk/lib/types.ts";
 import { formatUserName, getUserTimelineUrl } from "../helper.ts";
@@ -12,7 +13,7 @@ export interface UserSectionProps {
 }
 
 export function UserSectionStyles() {
-  return <link rel="stylesheet" href="/css/user-section.css" />;
+  return <Link rel="stylesheet" href="/css/user-section.css" />;
 }
 
 export function UserSection({ user, avatar, summary, stories }: UserSectionProps) {

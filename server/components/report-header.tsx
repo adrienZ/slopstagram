@@ -1,3 +1,4 @@
+import { Link } from "@solidjs/meta";
 import cx from "clsx";
 
 export interface ReportHeaderProps {
@@ -6,7 +7,7 @@ export interface ReportHeaderProps {
 }
 
 export function ReportHeaderStyles() {
-  return <link rel="stylesheet" href="/css/report-header.css" />;
+  return <Link rel="stylesheet" href="/css/report-header.css" />;
 }
 
 export function ReportHeader({ reportKeys, selectedReportKey }: ReportHeaderProps) {
@@ -16,7 +17,7 @@ export function ReportHeader({ reportKeys, selectedReportKey }: ReportHeaderProp
         <p class={cx("report-page-header__eyebrow")}>Storiesss Instagram</p>
         <p class={cx("report-page-header__title")}>Consulter un rapport</p>
       </div>
-      <form class={cx("report-picker")} action="/report" method="GET">
+      <form class={cx("report-picker")} action="/report" method="get">
         <label for="report-picker">
           <span>Choisir un rapport</span>
           <select

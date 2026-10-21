@@ -1,6 +1,6 @@
-import { hydrate } from "preact";
-import { App } from "./app.tsx";
-import type { AppData } from "./app.tsx";
+// @refresh reload
+import { mount, StartClient } from "@solidjs/start/client";
+import type { AppData } from "./store.ts";
 import { $page } from "./store.ts";
 
 async function main() {
@@ -10,8 +10,9 @@ async function main() {
       return;
     }
     const url = new globalThis.URL(globalThis.location.href);
-    const endpoint = url.pathname.startsWith("/users/")
-      ? `/api${url.pathname}`
+    const pathname = url.pathname.replace(/\/+$/u, "");
+    const endpoint = pathname.startsWith("/users/")
+      ? `/api${pathname}`
       : `/api/report${url.search}`;
     const response = await globalThis.fetch(endpoint, { headers: { Accept: "application/json" } });
     if (!response.ok) {
@@ -20,7 +21,7 @@ async function main() {
     // oxlint-disable-next-line typescript/no-unsafe-assignment -- These API routes return the shared AppData type.
     const data: AppData = await response.json();
     $page.set(data);
-    hydrate(<App />, root);
+    mount(() => <StartClient />, root);
   } catch {
     const message = globalThis.document.createElement("p");
     message.role = "alert";

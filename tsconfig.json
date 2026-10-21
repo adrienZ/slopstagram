@@ -5,16 +5,15 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "allowImportingTsExtensions": true,
-    "jsx": "react-jsx",
-    "jsxImportSource": "preact",
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
-    "types": ["node", "nitro/vite/types"]
+    "types": ["node", "@solidjs/start/env"]
   },
   "include": [
-    "app/**/*.tsx",
     "sdk/**/*.ts",
     "scripts/**/*.ts",
     "scripts/**/*.tsx",

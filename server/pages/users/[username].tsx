@@ -1,13 +1,16 @@
+import { getRequestEvent } from "solid-js/web";
+import { $page } from "../../store.ts";
+import { Link, Title } from "@solidjs/meta";
 import cx from "clsx";
-import { formatUserName } from "../helper.ts";
-import type { StoryCardViewModel } from "../story-card-view-model.ts";
-import type { UserTimeline } from "../user-timeline.ts";
-import { BaseStyles } from "../components/base-styles.tsx";
-import { Lightbox, LightboxStyles } from "../components/lightbox.tsx";
-import { StoryCard, StoryCardStyles } from "../components/story-card.tsx";
+import { formatUserName } from "../../helper.ts";
+import type { StoryCardViewModel } from "../../story-card-view-model.ts";
+import type { UserTimeline } from "../../user-timeline.ts";
+import { BaseStyles } from "../../components/base-styles.tsx";
+import { Lightbox, LightboxStyles } from "../../components/lightbox.tsx";
+import { StoryCard, StoryCardStyles } from "../../components/story-card.tsx";
 
 function UserTimelineStyles() {
-  return <link rel="stylesheet" href="/css/user-timeline-page.css" />;
+  return <Link rel="stylesheet" href="/css/user-timeline-page.css" />;
 }
 
 function TimelineHeader({
@@ -99,26 +102,23 @@ export function TimelineContent({ timeline, stories }: TimelineContentProps) {
   );
 }
 
-export function UserTimelinePage(props: TimelineContentProps & { clientEntry?: string }) {
-  const { timeline, clientEntry } = props;
-  const userName = formatUserName(timeline.timelineUser);
+export function UserTimelinePage(props: TimelineContentProps) {
   return (
-    <html lang="fr">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>{`Stories de ${userName}`}</title>
-        <BaseStyles />
-        <UserTimelineStyles />
-        <StoryCardStyles />
-        <LightboxStyles />
-      </head>
-      <body>
-        <div id="app">
-          <TimelineContent {...props} />
-        </div>
-        <script type="module" src={clientEntry} />
-      </body>
-    </html>
+    <>
+      <Title>{`Stories de ${formatUserName(props.timeline.timelineUser)}`}</Title>
+      <BaseStyles />
+      <UserTimelineStyles />
+      <StoryCardStyles />
+      <LightboxStyles />
+      <TimelineContent {...props} />
+    </>
   );
+}
+
+export default function TimelineRoute() {
+  const data = getRequestEvent()?.locals.page ?? $page.get();
+  if (data?.page !== "timeline") {
+    throw new Error("Timeline data could not be loaded");
+  }
+  return <UserTimelinePage {...data.props} />;
 }

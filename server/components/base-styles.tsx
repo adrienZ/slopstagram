@@ -1,3 +1,5 @@
+import { Link } from "@solidjs/meta";
+
 export function BaseStyles() {
-  return <link rel="stylesheet" href="/css/base.css" />;
+  return <Link rel="stylesheet" href="/css/base.css" />;
 }

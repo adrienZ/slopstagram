@@ -1,15 +1,7 @@
 import { defineConfig } from "vite";
+import { solidStart } from "@solidjs/start/config";
 import { nitro } from "nitro/vite";
-import { preact } from "@preact/preset-vite";
 
 export default defineConfig({
-  plugins: [nitro(), preact()],
-  environments: {
-    client: {
-      build: { rolldownOptions: { input: "./app/entry-client.tsx" } },
-    },
-  },
-  // resolve: {
-  //   tsconfigPaths: true,
-  // },
+  plugins: [solidStart({ appRoot: "./server", routeDir: "./pages" }), nitro()],
 });

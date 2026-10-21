@@ -3,5 +3,5 @@ import { loadReport } from "../../report-handler.tsx";
 
 export default defineEventHandler((event) => ({
   page: "report" as const,
-  props: loadReport(event),
+  props: loadReport(event.url),
 }));

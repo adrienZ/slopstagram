@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { after, test } from "node:test";
 import { H3 } from "nitro/h3";
-import { h } from "preact";
-import { renderToString } from "preact-render-to-string";
-import { UserTimelinePage } from "../server/pages/user-timeline-page.tsx";
+import { createPageRenderer } from "./render-page.ts";
+import type { TimelineContentProps } from "../server/pages/users/[username].tsx";
 import { createStoryCards } from "../server/story-card-view-model.ts";
 import type { UserTimeline } from "../server/user-timeline.ts";
 
@@ -52,7 +51,7 @@ const timeline: UserTimeline = {
   ],
 };
 
-const props = {
+const props: TimelineContentProps = {
   timeline: {
     avatarPath: timeline.avatarPath,
     timelineUser: timeline.timelineUser,
@@ -70,14 +69,21 @@ const props = {
     visionByPreviewUrl: timeline.visionByPreviewUrl,
   }),
 };
+const renderer = await createPageRenderer(
+  "/server/pages/users/[username].tsx",
+  "UserTimelinePage",
+  props,
+);
+after(async () => {
+  await renderer.close();
+});
 const app = new H3();
 app.get(
   "/users/timeline-user",
   () =>
-    new globalThis.Response(
-      `<!DOCTYPE html>${renderToString(h(UserTimelinePage, { ...props, clientEntry: "/assets/client.js" }))}`,
-      { headers: { "Content-Type": "text/html;charset=utf-8" } },
-    ),
+    new globalThis.Response(renderer.render(), {
+      headers: { "Content-Type": "text/html;charset=utf-8" },
+    }),
 );
 async function request() {
   return await app.fetch(new globalThis.Request("http://localhost/users/timeline-user"));
@@ -90,7 +96,6 @@ test("timeline page renders dated stories", async () => {
   assert.match(html, /<h2>2026<\/h2>/u);
   assert.match(html, /<h3>janvier<\/h3>/u);
   assert.match(html, /src="\/media\/story-previews\/story-pk.jpg"/u);
-  assert.match(html, /<script type="module" src="\/assets\/client\.js"><\/script>/u);
 });
 
 test("timeline page does not embed initial state", async () => {

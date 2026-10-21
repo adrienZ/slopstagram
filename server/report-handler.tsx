@@ -1,18 +1,16 @@
-import { getQuery, HTTPError } from "nitro/h3";
-import type { H3Event } from "nitro/h3";
+import { HTTPError } from "nitro/h3";
 import { z } from "zod";
 import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
 import { formatReportDate, getRankedUsers } from "./helper.ts";
 import { createStoryCards } from "./story-card-view-model.ts";
-import type { ReportContentProps } from "./pages/report-page.tsx";
+import type { ReportContentProps } from "./pages/report.tsx";
 import { getReportKeys, readReport } from "./report-repository.ts";
 import { createReportViewModel } from "./report-view-model.ts";
 
-export function loadReport(event: H3Event): ReportContentProps {
+export function loadReport(url: URL): ReportContentProps {
   try {
     const reportKeys = getReportKeys();
-    const query = getQuery(event);
-    const reportQuery = query.report;
+    const reportQuery = url.searchParams.get("report");
     const parsedReportKey = z.string().safeParse(reportQuery);
     const selectedReportKey = parsedReportKey.success ? parsedReportKey.data : reportKeys.at(-1);
 

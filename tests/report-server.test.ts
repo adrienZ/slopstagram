@@ -1,13 +1,11 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { test } from "node:test";
+import { after, test } from "node:test";
 import { URL } from "node:url";
 import { H3 } from "nitro/h3";
-import { h } from "preact";
-import { renderToString } from "preact-render-to-string";
 import { StoriesManifestReportSchema } from "../sdk/lib/story-schemas.ts";
-import { ReportPage } from "../server/pages/report-page.tsx";
-import type { ReportContentProps } from "../server/pages/report-page.tsx";
+import { createPageRenderer } from "./render-page.ts";
+import type { ReportContentProps } from "../server/pages/report.tsx";
 import { getRankedUsers } from "../server/helper.ts";
 import { createStoryCards } from "../server/story-card-view-model.ts";
 
@@ -38,41 +36,40 @@ const props: ReportContentProps = {
     }).map((story) => ({ ...story, igCaption: caption })),
   })),
 };
+const renderer = await createPageRenderer("/server/pages/report.tsx", "ReportPage", props);
+after(async () => {
+  await renderer.close();
+});
 const app = new H3();
 app.get(
   "/report",
   () =>
-    new globalThis.Response(
-      `<!DOCTYPE html>${renderToString(h(ReportPage, { ...props, clientEntry: "/assets/client.js" }))}`,
-      { headers: { "Content-Type": "text/html;charset=utf-8" } },
-    ),
+    new globalThis.Response(renderer.render(), {
+      headers: { "Content-Type": "text/html;charset=utf-8" },
+    }),
 );
 async function request() {
   return await app.fetch(new globalThis.Request("http://localhost/report"));
 }
 
-test("report page renders fixture content and its client entry", async () => {
+test("report page renders fixture content", async () => {
   const response = await request();
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("content-type"), "text/html;charset=utf-8");
   const html = await response.text();
-  assert.match(html, /<html lang="fr">/u);
   assert.match(html, /<h1>Rapport du 26 juillet 2026 à 11:48 UTC\+2<\/h1>/u);
   assert.match(html, /Html &quot;User&quot; \(ranked-second\)/u);
   assert.match(html, /A text-focused story with extracted details\./u);
   assert.match(html, /src="\/media\/avatars\/avatar.jpg"/u);
   assert.match(html, /src="\/media\/story-previews\/story-pk-1.jpg"/u);
   assert.doesNotMatch(html, /src="https?:\/\//u);
-  assert.match(html, /<div id="app">/u);
-  assert.match(html, /<dialog class="image-lightbox" id="image-lightbox"/u);
-  assert.match(html, /<script type="module" src="\/assets\/client\.js"><\/script>/u);
+  assert.match(html, /<dialog[^>]*class="image-lightbox" id="image-lightbox"/u);
   assert.doesNotMatch(html, /data-mono-jsx|data-story-media-pk|on(?:click|change|close)=/u);
   assert.ok(
-    html.indexOf("Ranked First (ranked-first)") <
-      html.indexOf("Html &quot;User&quot; (ranked-second)"),
+    html.indexOf("Ranked First (ranked-first)") < html.indexOf('Html "User" (ranked-second)'),
   );
-  assert.match(html, /<form class="report-picker" action="\/report" method="GET">/u);
-  assert.match(html, /<option value="stories-report-2026-07-26.json" selected>/u);
+  assert.match(html, /<form class="report-picker" action="\/report" method="get">/u);
+  assert.match(html, /<option[^>]*value="stories-report-2026-07-26.json" selected>/u);
 });
 
 test("report page does not embed initial state", async () => {

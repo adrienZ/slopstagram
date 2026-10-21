@@ -25,8 +25,11 @@
     "test:reporter": "mkdir -p coverage && node --import tsx --test --experimental-test-coverage --test-force-exit --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=./reporter.xml --test-reporter=lcov --test-reporter-destination=./coverage/lcov.info tests/*.test.ts"
   },
   "dependencies": {
-    "@nanostores/preact": "^1.1.1",
+    "@nanostores/solid": "^1.1.1",
     "@opentf/cli-pbar": "^0.7.2",
+    "@solidjs/meta": "^0.29.4",
+    "@solidjs/router": "^1.0.0",
+    "@solidjs/start": "^2.0.6",
     "bunqueue": "^2.8.59",
     "bunqueue-client": "^0.1.9",
     "clsx": "^2.1.1",
@@ -35,15 +38,13 @@
     "nanostores": "^1.5.5",
     "ollama": "^0.6.3",
     "playwright": "^1.62.1",
-    "preact": "^11.0.1",
-    "preact-render-to-string": "^6.8.1",
     "sharp": "^0.35.3",
+    "solid-js": "^1.9.17",
     "unstorage": "^1.17.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@playwright/cli": "^0.1.17",
-    "@preact/preset-vite": "^2.10.6",
     "@types/node": "^26.1.1",
     "drizzle-kit": "^1.0.0-rc.5-ab785fc",
     "husky": "^9.1.7",
@@ -56,7 +57,8 @@
     "tsx": "^4.23.1",
     "typescript": "^7.0.2",
     "ultracite": "^7.11.0",
-    "vite": "^8.2.2"
+    "vite": "^8.2.2",
+    "vite-plugin-solid": "^2.11.14"
   },
   "optionalDependencies": {
     "mac-ocr": "^1.1.1"
