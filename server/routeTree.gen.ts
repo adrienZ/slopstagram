@@ -9,9 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './pages/__root'
+import { Route as ChatRouteImport } from './pages/chat'
 import { Route as ReportRouteImport } from './pages/report'
 import { Route as UsersUsernameRouteImport } from './pages/users/$username'
 
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReportRoute = ReportRouteImport.update({
   id: '/report',
   path: '/report',
@@ -24,33 +30,44 @@ const UsersUsernameRoute = UsersUsernameRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/chat': typeof ChatRoute
   '/report': typeof ReportRoute
   '/users/$username': typeof UsersUsernameRoute
 }
 export interface FileRoutesByTo {
+  '/chat': typeof ChatRoute
   '/report': typeof ReportRoute
   '/users/$username': typeof UsersUsernameRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/chat': typeof ChatRoute
   '/report': typeof ReportRoute
   '/users/$username': typeof UsersUsernameRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/report' | '/users/$username'
+  fullPaths: '/chat' | '/report' | '/users/$username'
   fileRoutesByTo: FileRoutesByTo
-  to: '/report' | '/users/$username'
-  id: '__root__' | '/report' | '/users/$username'
+  to: '/chat' | '/report' | '/users/$username'
+  id: '__root__' | '/chat' | '/report' | '/users/$username'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  ChatRoute: typeof ChatRoute
   ReportRoute: typeof ReportRoute
   UsersUsernameRoute: typeof UsersUsernameRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/report': {
       id: '/report'
       path: '/report'
@@ -69,6 +86,7 @@ declare module '@tanstack/react-router' {
 }
 
 const rootRouteChildren: RootRouteChildren = {
+  ChatRoute: ChatRoute,
   ReportRoute: ReportRoute,
   UsersUsernameRoute: UsersUsernameRoute,
 }
