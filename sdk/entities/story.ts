@@ -221,7 +221,9 @@ function mergeAnnotationUpdates(
       .filter((sticker) => sticker.kind === "location")
       .map((sticker) => sticker.label),
     stickers,
-    sources: [...new Set([...(previous.sources ?? []), ...replaced])].toSorted(),
+    sources: [...new Set([...(previous.sources ?? []), ...replaced])].toSorted((left, right) =>
+      left.localeCompare(right),
+    ),
   };
 }
 
