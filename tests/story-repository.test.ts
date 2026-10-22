@@ -77,11 +77,6 @@ describe("StoryRepository", () => {
       { kind: "hashtag", label: "hashtag:#structured" },
       { kind: "location", label: "Paris" },
     ]);
-    const locations = database.$client
-      .prepare("SELECT label FROM story_locations")
-      .all()
-      .map((row) => Object.fromEntries(Object.entries(row)));
-    assert.deepEqual(locations, []);
     const storyColumns = database.$client.prepare("PRAGMA table_info(stories)").all();
     assert.equal(
       storyColumns.some((column) => String(column.name).toLowerCase().includes("json")),

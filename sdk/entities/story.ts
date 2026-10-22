@@ -65,16 +65,4 @@ export const storyStickerSources = sqliteTable(
   (table) => [primaryKey({ columns: [table.mediaPk, table.source] })],
 );
 
-export const storyLocations = sqliteTable(
-  "story_locations",
-  {
-    label: text().notNull(),
-    mediaPk: text()
-      .notNull()
-      .references(() => stories.mediaPk, { onDelete: "cascade" }),
-    sortOrder: integer().notNull(),
-  },
-  (table) => [primaryKey({ columns: [table.mediaPk, table.sortOrder] })],
-);
-
 export type StoryRow = typeof stories.$inferSelect;
