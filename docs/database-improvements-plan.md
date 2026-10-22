@@ -103,8 +103,10 @@ and the older migration checksum are separate follow-ups.
    SQL and expected data changes, validate against a consistent backup copy, and
    apply to the working database only after explicit approval.
 
-The sticker design decisions are recorded below. Implementation has not started;
-this workflow does not authorize migration or backfill execution.
+The sticker design decisions are recorded below. #13 was implemented and merged in
+[PR #17](https://github.com/adrienZ/slopstagram/pull/17). #14's additive schema and
+backfill passed [disposable validation after SQL review](sticker-migration-review.md).
+Production migration and backfill execution still require separate explicit approval.
 
 ### Approved and published ticket breakdown
 
@@ -119,7 +121,7 @@ The backfill runs only in #14. #16 removes obsolete storage without another back
 Each migration is reviewed before execution and validated on a consistent production
 copy. Application states remain compatible through the staged transition. All four
 tickets are native sub-issues of #12, with native blocking links forming
-#13 → #14 → #15 → #16. Only #13 can start immediately. The parent specification's
+#13 → #14 → #15 → #16. #13 is merged; #14 is now in progress. The parent specification's
 body, labels, and state are unchanged.
 
 ### Agreed sticker behavior
@@ -156,8 +158,8 @@ body, labels, and state are unchanged.
 
 ### Findings and design status
 
-- Cached reads currently omit annotations, and replacement writes can erase them
-  when the cached story is saved again. The refactor must close this round trip.
+- #13 closed the cached annotation read/resave round trip. Source-level partial
+  replacements and transactional application writes remain in #15.
 - Current extraction groups stickers by kind and deduplicates labels. The source
   does not establish a global visual order across kinds. The agreed deterministic
   source ordering must not claim to recover unavailable visual ordering.
@@ -181,7 +183,7 @@ body, labels, and state are unchanged.
   representations. A duplicate link across fields is possible from the extraction
   paths, but has not been established by a real fixture.
 - Q1–Q9 are resolved, specification #12 is published, and the approved ticket
-  breakdown is published as #13–#16. The first implementation ticket is #13.
+  breakdown is published as #13–#16. #13 is merged and #14 is in progress.
   Migration and backfill execution still require discussion of the concrete
   migration before application.
 - The test boundary was confirmed: public ingestion through a real repository on
