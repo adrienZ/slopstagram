@@ -59,8 +59,20 @@ export const storyStickers = sqliteTable(
       .notNull()
       .references(() => stories.mediaPk, { onDelete: "cascade" }),
     sortOrder: integer().notNull(),
+    source: text().notNull().default("unknown"),
   },
   (table) => [primaryKey({ columns: [table.mediaPk, table.sortOrder] })],
+);
+
+export const storyStickerSources = sqliteTable(
+  "story_sticker_sources",
+  {
+    mediaPk: text()
+      .notNull()
+      .references(() => stories.mediaPk, { onDelete: "cascade" }),
+    source: text().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.mediaPk, table.source] })],
 );
 
 export const storyLocations = sqliteTable(
