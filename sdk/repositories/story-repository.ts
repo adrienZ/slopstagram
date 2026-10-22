@@ -1,5 +1,5 @@
-import { asc, desc, eq } from "drizzle-orm";
-import type { DrizzleDatabase } from "../database/client.ts";
+import { and, asc, desc, eq, gt, lte } from "drizzle-orm";
+import { useDrizzle, type DrizzleDatabase } from "../database/client.ts";
 import { instagramUsers } from "../entities/instagram-user.ts";
 import {
   stories,
@@ -302,4 +302,24 @@ export class StoryRepository {
       return timelineStory === null ? [] : [timelineStory];
     });
   }
+
+  listActive(now: Date): Array<UserTimelineStory> {
+    const publishedBefore = now.getTime() / 1000;
+    const rows = this.database
+      .select({ story: stories, user: instagramUsers })
+      .from(stories)
+      .innerJoin(instagramUsers, eq(stories.instagramUserPk, instagramUsers.pk))
+      .where(
+        and(gt(stories.takenAt, publishedBefore - 86_400), lte(stories.takenAt, publishedBefore)),
+      )
+      .orderBy(desc(stories.takenAt), asc(instagramUsers.username), asc(stories.mediaPk))
+      .all();
+
+    return rows.flatMap(({ story, user }) => {
+      const entry = getTimelineStory(this.database, story, user);
+      return entry === null ? [] : [entry];
+    });
+  }
 }
+
+export const storyRepository = new StoryRepository(useDrizzle());

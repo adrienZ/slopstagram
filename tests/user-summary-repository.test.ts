@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
-import { InstagramUserRepository, instagramUsers } from "../sdk/entities/instagram-user.ts";
-import { UserSummaryRepository, userSummaries } from "../sdk/entities/user-summary.ts";
+import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
+import { instagramUsers } from "../sdk/entities/instagram-user.ts";
+import { UserSummaryRepository } from "../sdk/repositories/user-summary-repository.ts";
+import { userSummaries } from "../sdk/entities/user-summary.ts";
 
 const entry = {
   prompt_hash: "prompt-hash",

@@ -31,6 +31,11 @@ instagram.com is an SPA application so make to wait loaded / idle state.
 
 No JSON blob please
 
+Run application migrations during server startup in `server/plugins/database.ts`
+or explicitly with Drizzle Kit's `migrate` command.
+Scripts in `scripts/` require an initialized database and must not trigger migrations,
+directly or through SDK calls. Tests may migrate their isolated databases.
+
 ## Agent skills
 
 ### Issue tracker

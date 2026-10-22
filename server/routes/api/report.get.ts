@@ -1,7 +1,7 @@
 import { defineEventHandler } from "nitro/h3";
 import { loadReport } from "../../report-handler.tsx";
 
-export default defineEventHandler((event) => ({
+export default defineEventHandler(() => ({
   page: "report" as const,
-  props: loadReport(event.url.searchParams.get("report")),
+  props: loadReport(),
 }));

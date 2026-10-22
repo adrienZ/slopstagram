@@ -3,7 +3,7 @@ import process from "node:process";
 import { clearTimeout, setTimeout } from "node:timers";
 import { Ollama, type Fetch as OllamaFetch } from "ollama";
 import { z } from "zod";
-import type { UserSummaryRepository } from "../entities/user-summary.ts";
+import type { UserSummaryRepository } from "../repositories/user-summary-repository.ts";
 import type { Logger } from "./logging-service.ts";
 import type { StoryOutputUser, VisionResult } from "./types.ts";
 

@@ -2,10 +2,45 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
-import { InstagramUserRepository } from "../sdk/entities/instagram-user.ts";
+import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
 
 describe("StoryRepository", () => {
+  test("lists only stories published in the last 24 hours without deleting the archive", async (context) => {
+    const database = createDrizzle(":memory:");
+    migrateDatabase(database);
+    context.after(() => {
+      database.$client.close();
+    });
+    const repository = new StoryRepository(database);
+    await new InstagramUserRepository(database).save({
+      full_name: "Feed User",
+      id: "feed-id",
+      pk: "feed-pk",
+      username: "feed-user",
+    });
+    const owner = { pk: "feed-pk", username: "feed-user" };
+    await Promise.all(
+      [
+        ["expired", 1_792_612_799],
+        ["boundary", 1_792_612_800],
+        ["active", 1_792_612_801],
+        ["now", 1_792_699_200],
+        ["future", 1_792_699_201],
+      ].map(async ([pk, taken_at]) => {
+        await repository.save({ pk: String(pk), taken_at: Number(taken_at) }, owner);
+      }),
+    );
+    await repository.save({ pk: "undated" }, owner);
+    // A second observation of the same story must not duplicate it in the feed.
+    await repository.save({ pk: "active", taken_at: 1_792_612_801 }, owner);
+    assert.deepEqual(
+      repository.listActive(new Date(1_792_699_200_000)).map((entry) => entry.story.pk),
+      ["now", "active"],
+    );
+    assert.ok(repository.listByUsername("feed-user").some((entry) => entry.story.pk === "expired"));
+  });
+
   test("stores story details in relational tables", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);

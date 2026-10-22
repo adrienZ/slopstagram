@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
-import { VisionRepository } from "../sdk/entities/vision.ts";
+import { VisionRepository } from "../sdk/repositories/vision-repository.ts";
 
 describe("VisionRepository", () => {
   test("stores scalar result columns in SQLite", async (context) => {

@@ -1,11 +1,7 @@
-import { createHash } from "node:crypto";
-import {
-  appleVisionRepository,
-  userSummaryRepository,
-  visionRepository,
-} from "../sdk/lib/entity-repository-service.ts";
+import { appleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
+import { userSummaryRepository } from "../sdk/repositories/user-summary-repository.ts";
+import { visionRepository } from "../sdk/repositories/vision-repository.ts";
 import type { CachedReportImages } from "../sdk/lib/image-cache-service.ts";
-import { hydrateReportInstagramUsers } from "../sdk/lib/instagram-user-service.ts";
 import {
   createSummaryPrompt,
   getUserSummaryPromptHash,
@@ -14,21 +10,24 @@ import {
   USER_SUMMARY_PROMPT,
   USER_SUMMARY_UNAVAILABLE,
 } from "../sdk/lib/user-summary-core-service.ts";
-import { backfillReportStoryMediaTypes } from "../sdk/lib/report-media-type-service.ts";
 import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
-import type { StoriesManifestReport, VisionResult } from "../sdk/lib/types.ts";
-import { VISION_MODEL, VISION_PROMPT } from "../sdk/lib/vision-analysis-service.ts";
+import type { StoryOutputUser, VisionResult } from "../sdk/lib/types.ts";
+import { readStoryFeedVision } from "../sdk/story-feed.ts";
+import type { AppleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
+import type { UserSummaryRepository } from "../sdk/repositories/user-summary-repository.ts";
+import type { VisionRepository } from "../sdk/repositories/vision-repository.ts";
+
+interface FeedRepositories {
+  appleVision: Pick<AppleVisionRepository, "findByMediaPk">;
+  userSummary: Pick<UserSummaryRepository, "findBySourceHash">;
+  vision: Pick<VisionRepository, "findByMediaPk">;
+}
 
 export interface ReportViewModel {
   appleCaptionByMediaPk: Map<string, string>;
   cachedImages: CachedReportImages;
-  report: StoriesManifestReport;
   userSummaryByUserKey: Map<string, string>;
   visionByPreviewUrl: Map<string, VisionResult>;
-}
-
-function getHash(value: string): string {
-  return createHash("sha256").update(value).digest("hex");
 }
 
 function getLocalImageUrl(imagePath: string): string | null {
@@ -36,11 +35,11 @@ function getLocalImageUrl(imagePath: string): string | null {
   return imagePath.startsWith(marker) ? `/media/${imagePath.slice(marker.length)}` : null;
 }
 
-function readCachedImages(report: StoriesManifestReport): CachedReportImages {
+function readCachedImages(users: Array<StoryOutputUser>): CachedReportImages {
   const profilePicPathByUrl = new Map<string, string>();
   const storyPreviewPathByUrl = new Map<string, string>();
 
-  for (const user of report.output.users) {
+  for (const user of users) {
     const profilePicUrl = user.profile_pic_url?.trim();
     if (
       profilePicUrl !== undefined &&
@@ -73,49 +72,19 @@ function readCachedImages(report: StoriesManifestReport): CachedReportImages {
   return { profilePicPathByUrl, storyPreviewPathByUrl };
 }
 
-function readCachedVision(
-  report: StoriesManifestReport,
-  cachedImages: CachedReportImages,
-): Map<string, VisionResult> {
-  const visionByPreviewUrl = new Map<string, VisionResult>();
-  const promptHash = getHash(VISION_PROMPT);
-
-  const stories = report.output.users.flatMap((user) => user.stories);
-  const entries = stories.map((story) => ({
-    entry: visionRepository.findByMediaPk(story.media_pk),
-    previewUrl: story.preview_image_url?.trim(),
-  }));
-
-  for (const { entry, previewUrl } of entries) {
-    if (
-      previewUrl === undefined ||
-      previewUrl.length === 0 ||
-      !cachedImages.storyPreviewPathByUrl.has(previewUrl) ||
-      !entry ||
-      entry.model !== VISION_MODEL ||
-      entry.prompt_hash !== promptHash
-    ) {
-      continue;
-    }
-
-    visionByPreviewUrl.set(previewUrl, entry.result);
-  }
-
-  return visionByPreviewUrl;
-}
-
 function readCachedUserSummaries(
-  report: StoriesManifestReport,
+  users: Array<StoryOutputUser>,
   visionByPreviewUrl: Map<string, VisionResult>,
+  repository: FeedRepositories["userSummary"],
 ): Map<string, string> {
   const userSummaryByUserKey = new Map<string, string>();
 
-  const entries = report.output.users.map((user) => {
+  const entries = users.map((user) => {
     const userKey = getReportUserKey(user);
     const prompt = createSummaryPrompt(user, visionByPreviewUrl);
     const sourceHash = getUserSummarySourceHash({ model: USER_SUMMARY_MODEL, prompt, userKey });
     return {
-      entry: userSummaryRepository.findBySourceHash(sourceHash),
+      entry: repository.findBySourceHash(sourceHash),
       sourceHash,
       userKey,
     };
@@ -139,14 +108,15 @@ function readCachedUserSummaries(
   return userSummaryByUserKey;
 }
 
-function readAppleCaptions(report: StoriesManifestReport): Map<string, string> {
+function readAppleCaptions(
+  users: Array<StoryOutputUser>,
+  repository: FeedRepositories["appleVision"],
+): Map<string, string> {
   const captionByMediaPk = new Map<string, string>();
-  const mediaPks = new Set(
-    report.output.users.flatMap((user) => user.stories.map((story) => story.media_pk)),
-  );
+  const mediaPks = new Set(users.flatMap((user) => user.stories.map((story) => story.media_pk)));
 
   const captions = [...mediaPks].map((mediaPk) => ({
-    caption: appleVisionRepository.findByMediaPk(mediaPk),
+    caption: repository.findByMediaPk(mediaPk),
     mediaPk,
   }));
 
@@ -159,18 +129,28 @@ function readAppleCaptions(report: StoriesManifestReport): Map<string, string> {
   return captionByMediaPk;
 }
 
-export function createReportViewModel(report: StoriesManifestReport): ReportViewModel {
-  backfillReportStoryMediaTypes(report);
-  hydrateReportInstagramUsers(report);
-  const cachedImages = readCachedImages(report);
-  const visionByPreviewUrl = readCachedVision(report, cachedImages);
-  const userSummaryByUserKey = readCachedUserSummaries(report, visionByPreviewUrl);
-  const appleCaptionByMediaPk = readAppleCaptions(report);
+const defaultFeedRepositories: FeedRepositories = {
+  appleVision: appleVisionRepository,
+  userSummary: userSummaryRepository,
+  vision: visionRepository,
+};
+
+export function createReportViewModel(
+  users: Array<StoryOutputUser>,
+  repositories: FeedRepositories = defaultFeedRepositories,
+): ReportViewModel {
+  const cachedImages = readCachedImages(users);
+  const visionByPreviewUrl = readStoryFeedVision(users, repositories.vision);
+  const userSummaryByUserKey = readCachedUserSummaries(
+    users,
+    visionByPreviewUrl,
+    repositories.userSummary,
+  );
+  const appleCaptionByMediaPk = readAppleCaptions(users, repositories.appleVision);
 
   return {
     appleCaptionByMediaPk,
     cachedImages,
-    report,
     userSummaryByUserKey,
     visionByPreviewUrl,
   };

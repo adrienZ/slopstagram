@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
-import { InstagramUserRepository } from "../sdk/entities/instagram-user.ts";
+import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
 import { ReportRepository } from "../sdk/repositories/report-repository.ts";
 import { storyStickers } from "../sdk/entities/story.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";

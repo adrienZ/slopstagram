@@ -1,5 +1,5 @@
-import type { UserSummaryRepository } from "../entities/user-summary.ts";
-import { userSummaryRepository } from "./entity-repository-service.ts";
+import type { UserSummaryRepository } from "../repositories/user-summary-repository.ts";
+import { userSummaryRepository } from "../repositories/user-summary-repository.ts";
 import { getReportUserKey } from "./report-user-key-service.ts";
 import type { StoriesManifestReport, StoryOutputUser, VisionResult } from "./types.ts";
 import {
@@ -138,7 +138,7 @@ async function resolveUserSummary(
 }
 
 export async function resolveUserSummariesForReport(
-  report: StoriesManifestReport,
+  report: Pick<StoriesManifestReport, "output">,
   options: ResolveUserSummariesOptions,
 ): Promise<Map<string, string>> {
   const resolved = resolveOptions(options);

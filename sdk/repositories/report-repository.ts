@@ -1,6 +1,6 @@
 import { asc, eq, getTableColumns } from "drizzle-orm";
 import { z } from "zod";
-import type { DrizzleDatabase } from "../database/client.ts";
+import { useDrizzle, type DrizzleDatabase } from "../database/client.ts";
 import {
   NewReportSchema,
   reports,
@@ -261,3 +261,5 @@ export class ReportRepository {
     await replaceReportRelations(this.database, key, report);
   }
 }
+
+export const reportRepository = new ReportRepository(useDrizzle());

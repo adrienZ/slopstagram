@@ -1,8 +1,11 @@
 import { resolveAppleCaptionsForReport } from "./apple-caption-report-service.ts";
-import { migrateDatabase } from "./database/migrate.ts";
+import { recordFetchRun } from "./fetch-run.ts";
 import type { ReportRepository } from "./repositories/report-repository.ts";
 import { BASE_CACHE_DIR } from "./lib/cache-service.ts";
-import { reportRepository } from "./lib/entity-repository-service.ts";
+import { fetchRunRepository } from "./repositories/fetch-run-repository.ts";
+import { reportRepository } from "./repositories/report-repository.ts";
+import type { FetchRunRepository } from "./repositories/fetch-run-repository.ts";
+import { createStoryFeed, readStoryFeedVision } from "./story-feed.ts";
 import { cacheReportImages } from "./lib/image-cache-service.ts";
 import { persistReportInstagramUsers } from "./lib/instagram-user-service.ts";
 import type { Logger } from "./lib/logging-service.ts";
@@ -15,12 +18,14 @@ import pkg from "../package.json" with { type: "json" };
 interface CreateReportDependencies {
   cacheReportImages: typeof cacheReportImages;
   fetchStories: typeof fetchStories;
-  migrateDatabase: typeof migrateDatabase;
   persistReportInstagramUsers: typeof persistReportInstagramUsers;
   resolveAppleCaptionsForReport: typeof resolveAppleCaptionsForReport;
   resolveUserSummariesForReport: typeof resolveUserSummariesForReport;
   resolveVisionForReport: typeof resolveVisionForReport;
   saveReport: Pick<ReportRepository, "save">["save"];
+  fetchRunRepository: Pick<FetchRunRepository, "start" | "finish">;
+  createStoryFeed: typeof createStoryFeed;
+  readStoryFeedVision: typeof readStoryFeedVision;
 }
 
 export interface CreateReportOptions {
@@ -39,12 +44,14 @@ export interface CreateReportResult {
 const defaultDependencies: CreateReportDependencies = {
   cacheReportImages,
   fetchStories,
-  migrateDatabase,
   persistReportInstagramUsers,
   resolveAppleCaptionsForReport,
   resolveUserSummariesForReport,
   resolveVisionForReport,
   saveReport: reportRepository.save.bind(reportRepository),
+  fetchRunRepository,
+  createStoryFeed,
+  readStoryFeedVision,
 };
 
 function pad(value: number): string {
@@ -77,53 +84,63 @@ export async function createReport(options: CreateReportOptions): Promise<Create
     ...defaultDependencies,
     ...options.dependencies,
   };
-  const timestamp = formatFilenameTimestamp((options.now ?? (() => new Date()))());
-  const outputFileName = `stories-report-${timestamp}.json`;
-  const { logger } = options;
+  const now = options.now ?? (() => new Date());
+  return await recordFetchRun(
+    async (run) => {
+      const timestamp = formatFilenameTimestamp(run.startedAt);
+      const outputFileName = `stories-report-${timestamp}-${run.id}.json`;
+      const { logger } = options;
+      logger.box(`${pkg.name} - report ${outputFileName}`);
+      const report = await dependencies.fetchStories(options.args ?? [], {
+        logger,
+        reportName: outputFileName,
+      });
+      run.report = report;
+      // Keep the observation and failures even if enrichment or every media fetch fails.
+      await dependencies.saveReport(outputFileName, report);
+      run.reportKey = outputFileName;
+      const { counts } = report.metadata;
+      if (counts.stories > 0 && counts.fetched + counts.cache_hits === 0) {
+        throw new Error(
+          `No story media could be fetched (${counts.failed}/${counts.stories} failed). ${report.failures[0]?.message ?? "Instagram returned no story media"}`,
+        );
+      }
+      const cacheDirectory = BASE_CACHE_DIR;
+      const cachedImages = await dependencies.cacheReportImages(report, {
+        cacheDirectory,
+        logger,
+      });
+      await dependencies.resolveAppleCaptionsForReport(report, cachedImages, {
+        cacheDirectory,
+        logger,
+      });
+      await dependencies.resolveVisionForReport(report, cachedImages, {
+        cacheDirectory,
+        logger,
+      });
+      await dependencies.persistReportInstagramUsers(report);
+      // Generate from the same canonical, active story set used by the user app.
+      const feedUsers = dependencies.createStoryFeed(now());
+      await dependencies.resolveUserSummariesForReport(
+        { output: { users: feedUsers } },
+        {
+          logger,
+          visionByPreviewUrl: dependencies.readStoryFeedVision(feedUsers),
+        },
+      );
+      await dependencies.saveReport(outputFileName, report);
+      logger.info(
+        [
+          `stories=${counts.stories}`,
+          `cache_hits=${counts.cache_hits}`,
+          `fetched=${counts.fetched}`,
+          `failed=${counts.failed}`,
+        ].join(" "),
+      );
+      logger.success(`saved report ${outputFileName} to the database`);
 
-  logger.box(`${pkg.name} - report ${outputFileName}`);
-  dependencies.migrateDatabase();
-  const report = await dependencies.fetchStories(options.args ?? [], {
-    logger,
-    reportName: outputFileName,
-  });
-  const { counts } = report.metadata;
-  if (counts.stories > 0 && counts.fetched + counts.cache_hits === 0) {
-    throw new Error(
-      `No story media could be fetched (${counts.failed}/${counts.stories} failed). Report was not saved. ${report.failures[0]?.message ?? "Instagram returned no story media"}`,
-    );
-  }
-  const cacheDirectory = BASE_CACHE_DIR;
-  const cachedImages = await dependencies.cacheReportImages(report, {
-    cacheDirectory,
-    logger,
-  });
-  await dependencies.resolveAppleCaptionsForReport(report, cachedImages, {
-    cacheDirectory,
-    logger,
-  });
-  const visionByPreviewUrl = await dependencies.resolveVisionForReport(report, cachedImages, {
-    cacheDirectory,
-    logger,
-  });
-  // User persistence removes embedded profile fields; retain them for the summary prompt.
-  const summaryReport = globalThis.structuredClone(report);
-  await dependencies.persistReportInstagramUsers(report);
-  await dependencies.resolveUserSummariesForReport(summaryReport, {
-    logger,
-    visionByPreviewUrl,
-  });
-  await dependencies.saveReport(outputFileName, report);
-
-  logger.info(
-    [
-      `stories=${counts.stories}`,
-      `cache_hits=${counts.cache_hits}`,
-      `fetched=${counts.fetched}`,
-      `failed=${counts.failed}`,
-    ].join(" "),
+      return { outputFileName, reportKey: outputFileName, report };
+    },
+    { repository: dependencies.fetchRunRepository, now },
   );
-  logger.success(`saved report ${outputFileName} to the database`);
-
-  return { outputFileName, reportKey: outputFileName, report };
 }

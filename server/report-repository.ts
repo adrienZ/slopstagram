@@ -1,4 +1,4 @@
-import { reportRepository } from "../sdk/lib/entity-repository-service.ts";
+import { reportRepository } from "../sdk/repositories/report-repository.ts";
 import type { StoriesManifestReport } from "../sdk/lib/types.ts";
 
 export function getReportKeys(): Array<string> {

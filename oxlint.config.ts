@@ -2,6 +2,16 @@ import { defineConfig } from "oxlint";
 import ultracite from "ultracite/oxlint/core";
 import antiSlop from "ultracite/oxlint/anti-slop";
 
+const restrictedReactImports = [
+  {
+    // frontend-side-effects
+    name: "react",
+    importNames: ["useEffect", "useLayoutEffect", "useInsertionEffect"],
+    allowTypeImports: false,
+    message: "useEffect is forbidden. Use derived state or explicit event subscriptions.",
+  },
+];
+
 const ultraciteSoftenerConfig = defineConfig({
   rules: {
     "import/consistent-type-specifier-style": ["error", "prefer-top-level-if-only-type-imports"],
@@ -38,19 +48,29 @@ export default defineConfig({
     "no-restricted-imports": [
       "error",
       {
-        paths: [
-          {
-            // frontend-side-effects
-            name: "react",
-            importNames: ["useEffect", "useLayoutEffect", "useInsertionEffect"],
-            allowTypeImports: false,
-            message: "useEffect is forbidden. Use derived state or explicit event subscriptions.",
-          },
-        ],
+        paths: restrictedReactImports,
       },
     ],
   },
   overrides: [
+    {
+      files: ["scripts/**/*.ts"],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            paths: restrictedReactImports,
+            patterns: [
+              {
+                group: ["**/database/migrate*", "drizzle-orm/**/migrator"],
+                message:
+                  "Scripts require an initialized database. Run migrations at server startup in server/plugins/database.ts.",
+              },
+            ],
+          },
+        ],
+      },
+    },
     {
       files: ["sdk/index.ts"],
       rules: {
