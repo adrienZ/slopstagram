@@ -1,0 +1,1 @@
+ALTER TABLE `report_reels` RENAME TO `report_story_groups`;
