@@ -11,6 +11,14 @@ Humans can explore the [dashboard](https://egeominotti.github.io/bunqueue-dashbo
 
 Make sure to run `npm run check` to validate your code changes.
 
+### Persistence layout
+
+Put Drizzle table definitions and entity types in `sdk/entities/`. Keep repository
+classes, database queries, transactions, row mappings, and persistence helpers
+(including annotation merging) in `sdk/repositories/`. Import repositories directly
+from their repository modules. Apply this boundary to persistence code you add or
+refactor.
+
 ## playwright
 
 @playwright/cli is not globally installed. Always use the local package with the command separator: `npm exec --no-install -p @playwright/cli -- [command]`, always use headed mode.

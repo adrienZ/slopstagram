@@ -3,7 +3,7 @@ import { describe, test } from "node:test";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { InstagramUserRepository } from "../sdk/entities/instagram-user.ts";
-import { StoryRepository } from "../sdk/entities/story.ts";
+import { StoryRepository } from "../sdk/repositories/story-repository.ts";
 
 describe("StoryRepository", () => {
   test("stores story details in relational tables", async (context) => {

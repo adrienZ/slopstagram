@@ -4,7 +4,7 @@ import {
   type UserTimelineStory,
   type VisionResult,
 } from "../sdk/lib/types.ts";
-import type { StoryRepository } from "../sdk/entities/story.ts";
+import type { StoryRepository } from "../sdk/repositories/story-repository.ts";
 import {
   appleVisionRepository,
   storyRepository,

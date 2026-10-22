@@ -1,4 +1,4 @@
-import type { StoryRepository } from "./entities/story.ts";
+import type { StoryRepository } from "./repositories/story-repository.ts";
 import { getMediaCacheKey } from "./lib/cache-service.ts";
 import type { StoryItem, StoryReel, StoryStorage } from "./lib/types.ts";
 

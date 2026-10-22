@@ -1,5 +1,5 @@
 import type { Logger } from "./lib/logging-service.ts";
-import type { StoryRepository } from "./entities/story.ts";
+import type { StoryRepository } from "./repositories/story-repository.ts";
 import type { StoryStorage } from "./lib/types.ts";
 import { extractReels } from "./story-client-service.ts";
 import { storeReturnedReels } from "./story-cache-service.ts";

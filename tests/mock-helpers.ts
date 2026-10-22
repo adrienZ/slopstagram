@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createConsola } from "consola";
-import type { StoryRepository } from "../sdk/entities/story.ts";
+import type { StoryRepository } from "../sdk/repositories/story-repository.ts";
 import type { CachedReportImages } from "../sdk/lib/image-cache-service.ts";
 import type { Logger } from "../sdk/lib/logging-service.ts";
 import type {

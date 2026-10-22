@@ -107,7 +107,8 @@ The sticker design decisions are recorded below. #13 was implemented and merged 
 [PR #17](https://github.com/adrienZ/slopstagram/pull/17). #14's additive schema and
 backfill merged in [PR #18](https://github.com/adrienZ/slopstagram/pull/18) after
 [disposable validation and SQL review](sticker-migration-review.md).
-#15 now implements [unified ingestion, source updates, and reads](story-sticker-ingestion.md).
+#15 implements unified ingestion, source updates, and reads in
+[PR #19](https://github.com/adrienZ/slopstagram/pull/19).
 Production migration and backfill execution still require separate explicit approval.
 
 ### Approved and published ticket breakdown
