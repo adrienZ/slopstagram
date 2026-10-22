@@ -10,6 +10,7 @@ import type {
   StoryStorage,
   StoryTrayEntry,
 } from "./lib/types.ts";
+import { enrichTrayBiographies } from "./user-biography-service.ts";
 import { createInstagramClient } from "./story-client-service.ts";
 import { createFetchState } from "./story-failure-service.ts";
 import { fetchMissingStories } from "./story-live-fetch-service.ts";
@@ -175,6 +176,8 @@ export async function fetchStoriesManifest(
     storyStorage: storage,
     tray: trayJson.tray,
   });
+
+  await enrichTrayBiographies(trayJson.tray, client, logger);
 
   const manifestUsers = createManifestUsers(
     trayJson.tray,

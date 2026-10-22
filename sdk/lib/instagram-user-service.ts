@@ -3,6 +3,7 @@ import { instagramUserRepository } from "./entity-repository-service.ts";
 import type { InstagramUserEntry, StoriesManifestReport } from "./types.ts";
 
 interface InstagramUserFields {
+  biography?: string | null;
   full_name?: string | null;
   id?: string;
   pk?: string;
@@ -29,6 +30,7 @@ function toInstagramUser(user: InstagramUserFields): InstagramUserEntry {
   }
 
   return {
+    biography: user.biography,
     full_name: user.full_name ?? null,
     id,
     pk,
@@ -37,6 +39,7 @@ function toInstagramUser(user: InstagramUserFields): InstagramUserEntry {
 }
 
 function removeEmbeddedUser(user: InstagramUserFields): void {
+  delete user.biography;
   delete user.full_name;
   delete user.id;
   delete user.pk;
@@ -94,6 +97,7 @@ export function hydrateReportInstagramUsers(
     }
     const entity = usersByUsername.get(user.username);
     if (entity !== null && entity !== undefined) {
+      user.biography = entity.biography ?? null;
       user.full_name = entity.full_name;
       user.profile_pic_url = `images/avatars/${entity.pk}.jpg`;
     }

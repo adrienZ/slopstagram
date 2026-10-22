@@ -1,0 +1,1 @@
+ALTER TABLE `instagram_users` ADD `biography` text;

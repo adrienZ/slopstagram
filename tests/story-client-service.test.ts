@@ -186,3 +186,29 @@ test("rejects GraphQL errors returned with HTTP 200 instead of accepting empty m
     assert.throws(() => response.json(), /Instagram story media query failed/u);
   }
 });
+
+test("fetches biographies through the authenticated browser and preserves profile identifiers", async () => {
+  const calls: Array<BrowserFetchCall> = [];
+  const client = createInstagramClient(
+    createSession(
+      `{
+    "data": { "user": {
+      "id": 3967029617634386001,
+      "username": "fixture.user",
+      "full_name": "Fixture User",
+      "biography": "Description with a newline\\nsecond line"
+    } }
+  }`,
+      calls,
+    ),
+  );
+  assert.ok(client.getUserProfile);
+  const response = await client.getUserProfile("fixture.user");
+  const profile = response.json();
+  assert.equal(profile.pk, "3967029617634386001");
+  assert.equal(profile.biography, "Description with a newline\nsecond line");
+  assert.equal(
+    calls[0]?.requestUrl,
+    "https://www.instagram.com/api/v1/users/web_profile_info/?username=fixture.user",
+  );
+});

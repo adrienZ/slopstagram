@@ -16,6 +16,19 @@ export interface ReelsMediaResponse {
   status?: string | null;
 }
 
+const UserProfileResponseSchema = z
+  .object({
+    data: z.object({
+      user: z.object({
+        biography: z.string().nullable().optional(),
+        full_name: z.string().nullable(),
+        id: z.union([z.string(), z.number()]).transform(String),
+        username: z.string(),
+      }),
+    }),
+  })
+  .transform(({ data: { user } }) => ({ ...user, pk: user.id }));
+
 const IG_APP_ID = "936619743392459";
 const REELS_TRAY_URL = "https://www.instagram.com/api/v1/feed/reels_tray/";
 const REELS_MEDIA_URL = "https://www.instagram.com/graphql/query";
@@ -175,6 +188,15 @@ export function createInstagramClient(session: InstagramClientSession): Instagra
           reelIds,
         }),
         GraphqlReelsMediaResponseSchema,
+      );
+    },
+
+    async getUserProfile(username) {
+      const url = new globalThis.URL("https://www.instagram.com/api/v1/users/web_profile_info/");
+      url.searchParams.set("username", username);
+      return toClientResponse(
+        await fetchFromInstagramPage(session, url.href),
+        UserProfileResponseSchema,
       );
     },
 

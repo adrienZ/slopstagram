@@ -20,6 +20,7 @@ export const StoryTrayEntrySchema = z.object({
   ranked_position: z.number().optional(),
   seen_ranked_position: z.number().optional(),
   user: z.object({
+    biography: z.string().nullable().optional(),
     full_name: z.string().optional(),
     id: InstagramIdentifierSchema.optional(),
     pk: InstagramIdentifierSchema.optional(),
@@ -64,6 +65,7 @@ export const StoryReelSchema = z
     media_ids: z.array(InstagramIdentifierSchema).optional(),
     user: z
       .object({
+        biography: z.string().nullable().optional(),
         full_name: z.string().optional(),
         id: InstagramIdentifierSchema.optional(),
         pk: InstagramIdentifierSchema.optional(),
@@ -87,6 +89,7 @@ const StoryManifestItemSchema = z.object({
   status: StoryManifestItemStatusSchema,
 });
 const StoryManifestReelSchema = z.object({
+  biography: z.string().nullable().optional(),
   full_name: z.string().nullable().optional(),
   id: z.string().optional(),
   media_ids: z.array(z.string()),
@@ -99,6 +102,7 @@ const StoryManifestReelSchema = z.object({
 });
 const StoryOutputItemSchema = StoryManifestItemSchema;
 const StoryOutputUserSchema = z.object({
+  biography: z.string().nullable().optional(),
   full_name: z.string().nullable().optional(),
   profile_pic_url: z.string().nullable().optional(),
   reel_ids: z.array(z.string()),

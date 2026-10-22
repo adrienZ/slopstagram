@@ -9,6 +9,7 @@ export const STORY_MEDIA_TYPES = {
 export type StoryMediaType = (typeof STORY_MEDIA_TYPES)[keyof typeof STORY_MEDIA_TYPES];
 
 interface StoryTrayUser {
+  biography?: string | null;
   full_name?: string;
   id?: string;
   pk?: string;
@@ -141,6 +142,7 @@ export interface StoryManifestItem {
 }
 
 export interface StoryManifestReel {
+  biography?: string | null;
   full_name?: string | null;
   id?: string;
   media_ids: Array<string>;
@@ -164,6 +166,7 @@ interface StoryOutputItem {
 }
 
 export interface StoryOutputUser {
+  biography?: string | null;
   full_name?: string | null;
   profile_pic_url?: string | null;
   reel_ids: Array<string>;
@@ -172,6 +175,7 @@ export interface StoryOutputUser {
 }
 
 export interface InstagramUserEntry {
+  biography?: string | null;
   full_name: string | null;
   id: string;
   pk: string;

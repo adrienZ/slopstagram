@@ -12,6 +12,7 @@ function createReportWithInstagramUser(): StoriesManifestReport {
     manifest: {
       users: [
         {
+          biography: "A profile description",
           full_name: "Fixture User",
           id: "instagram-id-1",
           media_ids: [],
@@ -42,6 +43,7 @@ function createReportWithInstagramUser(): StoriesManifestReport {
     output: {
       users: [
         {
+          biography: "A profile description",
           full_name: "Fixture User",
           profile_pic_url: "images/avatars/fixture.jpg",
           reel_ids: ["reel-1"],
@@ -72,11 +74,14 @@ describe("Instagram user report persistence", () => {
     await persistReportInstagramUsers(report, repository);
 
     assert.deepEqual(repository.entries.get("fixture-user"), {
+      biography: "A profile description",
       full_name: "Fixture User",
       id: "instagram-id-1",
       pk: "instagram-pk-1",
       username: "fixture-user",
     });
+    assert.equal("biography" in report.output.users[0], false);
+    assert.equal("biography" in report.manifest.users[0], false);
     assert.equal("full_name" in report.output.users[0], false);
     assert.equal("profile_pic_url" in report.output.users[0], false);
     assert.equal("full_name" in report.manifest.users[0], false);
@@ -86,6 +91,7 @@ describe("Instagram user report persistence", () => {
 
     hydrateReportInstagramUsers(report, repository);
 
+    assert.equal(report.output.users[0]?.biography, "A profile description");
     assert.equal(report.output.users[0]?.full_name, "Fixture User");
     assert.equal(report.output.users[0]?.profile_pic_url, "images/avatars/instagram-pk-1.jpg");
   });
@@ -102,6 +108,7 @@ describe("Instagram user report persistence", () => {
 
     hydrateReportInstagramUsers(report, repository);
 
+    assert.equal(report.output.users[0]?.biography, "A profile description");
     assert.equal(report.output.users[0]?.full_name, "Fixture User");
     assert.equal(report.output.users[0]?.profile_pic_url, "images/avatars/instagram-pk-1.jpg");
   });

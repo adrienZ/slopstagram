@@ -1,7 +1,7 @@
 import type { closeInstagramSession, openInstagramSession } from "./lib/playwright-service.ts";
 import type { Logger } from "./lib/logging-service.ts";
 import type { StoryRepository } from "./entities/story.ts";
-import type { StoryStorage, StoryTrayEntry } from "./lib/types.ts";
+import type { InstagramUserEntry, StoryStorage, StoryTrayEntry } from "./lib/types.ts";
 import type { ReelsMediaResponse } from "./story-client-service.ts";
 
 export interface ReelTrayResponse {
@@ -19,6 +19,7 @@ export interface InstagramClientResponse<T> {
 }
 
 export interface InstagramClient {
+  getUserProfile?: (username: string) => Promise<InstagramClientResponse<InstagramUserEntry>>;
   getReelsMedia: (reelIds: Array<string>) => Promise<InstagramClientResponse<ReelsMediaResponse>>;
   getTray: () => Promise<InstagramClientResponse<ReelTrayResponse>>;
 }
