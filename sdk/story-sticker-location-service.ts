@@ -40,11 +40,11 @@ function getMentionStickerLabel(value: JsonValue): string | null {
 
   const username = getNestedString(mention, ["username"]);
   if (username !== null && username.length > 0) {
-    return `mention:@${username}`;
+    return `@${username}`;
   }
 
   const fullName = getNestedString(mention, ["full_name"]);
-  return fullName !== null && fullName.length > 0 ? `mention:${fullName}` : null;
+  return fullName !== null && fullName.length > 0 ? fullName : null;
 }
 
 function getMusicStickerLabel(value: JsonValue): string | null {
@@ -58,10 +58,10 @@ function getMusicStickerLabel(value: JsonValue): string | null {
   const artist = getNestedString(info, ["display_artist"]);
 
   if (title !== null && title.length > 0 && artist !== null && artist.length > 0) {
-    return `music:${title} - ${artist}`;
+    return `${title} - ${artist}`;
   }
 
-  return title !== null && title.length > 0 ? `music:${title}` : null;
+  return title !== null && title.length > 0 ? title : null;
 }
 
 function getHashtagStickerLabel(value: JsonValue): string | null {
@@ -73,7 +73,7 @@ function getHashtagStickerLabel(value: JsonValue): string | null {
     return null;
   }
 
-  return hashtag.startsWith("#") ? `hashtag:${hashtag}` : `hashtag:#${hashtag}`;
+  return hashtag.startsWith("#") ? hashtag : `#${hashtag}`;
 }
 
 function unwrapInstagramRedirectUrl(value: string): string {
@@ -110,11 +110,11 @@ function getLinkStickerLabel(value: JsonValue, visited = new Set<JsonValue>()): 
     directTitle !== null &&
     directTitle.length > 0
   ) {
-    return `link:${directTitle} (${directUrl})`;
+    return `${directTitle} (${directUrl})`;
   }
 
   if (directUrl !== null && directUrl.length > 0) {
-    return `link:${directUrl}`;
+    return directUrl;
   }
 
   for (const key of [
@@ -132,7 +132,7 @@ function getLinkStickerLabel(value: JsonValue, visited = new Set<JsonValue>()): 
     }
   }
 
-  return directTitle !== null && directTitle.length > 0 ? `link:${directTitle}` : null;
+  return directTitle !== null && directTitle.length > 0 ? directTitle : null;
 }
 
 function getLocationRecord(value: JsonValue, visited = new Set<JsonValue>()): JsonObject | null {

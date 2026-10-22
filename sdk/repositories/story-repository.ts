@@ -193,6 +193,12 @@ function replaceStoryAnnotations(
   }
   const stickerEntries = stickers.map((sticker, sortOrder) => ({
     ...sticker,
+    // Raw source extraction already produces content-only labels. Explicit
+    // annotations may come from older callers that still add the kind prefix.
+    label:
+      story.annotations !== undefined && sticker.label.startsWith(`${sticker.kind}:`)
+        ? sticker.label.slice(sticker.kind.length + 1)
+        : sticker.label,
     source: sticker.source ?? "unknown",
     mediaPk: story.pk,
     sortOrder,

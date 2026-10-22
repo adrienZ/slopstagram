@@ -269,7 +269,7 @@ describe("fetchStoriesManifest", () => {
             media_type: "image",
             media_pk: "m1",
             preview_image_url: "https://example.com/m1.jpg",
-            stickers: ["mention:@same"],
+            stickers: ["@same"],
             status: "ok",
           },
           {
