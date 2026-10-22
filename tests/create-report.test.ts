@@ -19,7 +19,7 @@ function createMockLogger(): Logger {
   });
 }
 
-function createFixtureReport(): StoriesManifestReport {
+function createFixtureReport({ includeUser = false } = {}): StoriesManifestReport {
   return {
     failures: [],
     manifest: { users: [] },
@@ -38,18 +38,24 @@ function createFixtureReport(): StoriesManifestReport {
       status: "ok",
       story_ranking_token: null,
     },
-    output: { users: [] },
+    output: {
+      users: includeUser
+        ? [
+            {
+              full_name: "Summary Display Name",
+              profile_pic_url: "avatar-source",
+              reel_ids: [],
+              stories: [],
+              username: "summary-user",
+            },
+          ]
+        : [],
+    },
   };
 }
 
 test("createReport resolves entities before persisting the report", async () => {
-  const report = createFixtureReport();
-  report.output.users.push({
-    full_name: "Summary Display Name",
-    reel_ids: [],
-    stories: [],
-    username: "summary-user",
-  });
+  const report = createFixtureReport({ includeUser: true });
   const calls: Array<string> = [];
   const cachedImages = {
     profilePicPathByUrl: new Map([["avatar-source", "images/avatar.jpg"]]),
@@ -67,7 +73,11 @@ test("createReport resolves entities before persisting the report", async () => 
       },
       persistReportInstagramUsers: async (persistedReport) => {
         calls.push("persist-instagram-users");
-        delete persistedReport.output.users[0].full_name;
+        // Match production: persistence removes embedded profiles from the report.
+        for (const user of persistedReport.output.users) {
+          delete user.full_name;
+          delete user.profile_pic_url;
+        }
       },
       fetchStories: async (_args, options) => {
         calls.push("fetch-stories");
@@ -99,7 +109,9 @@ test("createReport resolves entities before persisting the report", async () => 
       resolveUserSummariesForReport: async (summaryReport, options) => {
         calls.push("resolve-summaries");
         assert.equal(summaryReport.output.users[0].full_name, "Summary Display Name");
+        assert.equal(summaryReport.output.users[0].profile_pic_url, "avatar-source");
         assert.equal("full_name" in report.output.users[0], false);
+        assert.equal("profile_pic_url" in report.output.users[0], false);
         assert.doesNotThrow(() => {
           options.logger.progress(0, 1);
         });
