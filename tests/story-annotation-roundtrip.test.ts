@@ -4,7 +4,7 @@ import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { InstagramUserRepository } from "../sdk/entities/instagram-user.ts";
 import { ReportRepository } from "../sdk/entities/report.ts";
-import { storyLocations, storyStickers } from "../sdk/entities/story.ts";
+import { storyStickers } from "../sdk/entities/story.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
 import { createManifestUsers, createOutputUsers } from "../sdk/story-output-service.ts";
 import { fetchStoriesManifest } from "../sdk/stories.ts";
@@ -143,10 +143,6 @@ for (const unifiedLocations of [false, true]) {
     }
     database.$client.exec("DELETE FROM story_stickers WHERE mediaPk = 'm1'");
     await database.insert(storyStickers).values(stickers);
-    await database.insert(storyLocations).values([
-      { label: "Historical place", mediaPk: "m1", sortOrder: 1 },
-      { label: "First legacy place", mediaPk: "m1", sortOrder: -1 },
-    ]);
 
     const cold = new StoryRepository(database);
     const stored = cold.findByMediaPk("m1");
