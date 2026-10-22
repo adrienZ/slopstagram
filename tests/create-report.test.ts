@@ -45,7 +45,6 @@ function createFixture(context: TestContext) {
     },
   };
   const dependencies = {
-    migrateDatabase: () => {},
     fetchRunRepository: runs,
     fetchStories: async () => report,
     saveReport: reports.save.bind(reports),

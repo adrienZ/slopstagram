@@ -3,13 +3,11 @@ import { pathToFileURL } from "node:url";
 import { fetchStories } from "../sdk/index.ts";
 import { createLogger } from "../sdk/lib/logging-service.ts";
 import { recordFetchRun } from "../sdk/fetch-run.ts";
-import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { reportRepository } from "../sdk/repositories/report-repository.ts";
 import { persistReportInstagramUsers } from "../sdk/lib/instagram-user-service.ts";
 
 async function main(): Promise<void> {
   const logger = createLogger("fetch-stories");
-  migrateDatabase();
   const payload = await recordFetchRun(async (run) => {
     const reportName = `stories-fetch-${run.startedAt.toISOString()}-${run.id}.json`;
     const report = await fetchStories(process.argv.slice(2), { logger, reportName });

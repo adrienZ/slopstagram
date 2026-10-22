@@ -1,6 +1,5 @@
 import { resolveAppleCaptionsForReport } from "./apple-caption-report-service.ts";
 import { recordFetchRun } from "./fetch-run.ts";
-import { migrateDatabase } from "./database/migrate.ts";
 import type { ReportRepository } from "./repositories/report-repository.ts";
 import { BASE_CACHE_DIR } from "./lib/cache-service.ts";
 import { fetchRunRepository } from "./repositories/fetch-run-repository.ts";
@@ -19,7 +18,6 @@ import pkg from "../package.json" with { type: "json" };
 interface CreateReportDependencies {
   cacheReportImages: typeof cacheReportImages;
   fetchStories: typeof fetchStories;
-  migrateDatabase: typeof migrateDatabase;
   persistReportInstagramUsers: typeof persistReportInstagramUsers;
   resolveAppleCaptionsForReport: typeof resolveAppleCaptionsForReport;
   resolveUserSummariesForReport: typeof resolveUserSummariesForReport;
@@ -46,7 +44,6 @@ export interface CreateReportResult {
 const defaultDependencies: CreateReportDependencies = {
   cacheReportImages,
   fetchStories,
-  migrateDatabase,
   persistReportInstagramUsers,
   resolveAppleCaptionsForReport,
   resolveUserSummariesForReport,
@@ -88,7 +85,6 @@ export async function createReport(options: CreateReportOptions): Promise<Create
     ...options.dependencies,
   };
   const now = options.now ?? (() => new Date());
-  dependencies.migrateDatabase();
   return await recordFetchRun(
     async (run) => {
       const timestamp = formatFilenameTimestamp(run.startedAt);
