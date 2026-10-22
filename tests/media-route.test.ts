@@ -3,10 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import {
-  createMediaResponse,
-  resolveMediaPath,
-} from "../apps/web/server/routes/media/[...path].ts";
+import { createMediaResponse, resolveMediaPath } from "../server/routes/media/[...path].ts";
 
 test("createMediaResponse serves cached JPEG images", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "slopstagram-media-test-"));

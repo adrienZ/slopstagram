@@ -1,17 +1,17 @@
 import assert from "node:assert/strict";
 import { test, type TestContext } from "node:test";
 import { createConsola } from "consola";
-import { createReport } from "@slopstagram/sdk/report.ts";
-import { createDrizzle } from "@slopstagram/sdk/database/client.ts";
-import { migrateDatabase } from "@slopstagram/sdk/database/migrate.ts";
-import { FetchRunRepository } from "@slopstagram/sdk/repositories/fetch-run-repository.ts";
-import { ReportRepository } from "@slopstagram/sdk/repositories/report-repository.ts";
-import { StoryRepository } from "@slopstagram/sdk/repositories/story-repository.ts";
-import { InstagramUserRepository } from "@slopstagram/sdk/repositories/instagram-user-repository.ts";
-import { persistReportInstagramUsers } from "@slopstagram/sdk/lib/instagram-user-service.ts";
-import type { Logger } from "@slopstagram/sdk/lib/logging-service.ts";
-import type { StoriesManifestReport } from "@slopstagram/sdk/lib/types.ts";
-import { createStoryFeed } from "@slopstagram/sdk/story-feed.ts";
+import { createReport } from "../sdk/report.ts";
+import { createDrizzle } from "../sdk/database/client.ts";
+import { migrateDatabase } from "../sdk/database/migrate.ts";
+import { FetchRunRepository } from "../sdk/repositories/fetch-run-repository.ts";
+import { ReportRepository } from "../sdk/repositories/report-repository.ts";
+import { StoryRepository } from "../sdk/repositories/story-repository.ts";
+import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
+import { persistReportInstagramUsers } from "../sdk/lib/instagram-user-service.ts";
+import type { Logger } from "../sdk/lib/logging-service.ts";
+import type { StoriesManifestReport } from "../sdk/lib/types.ts";
+import { createStoryFeed } from "../sdk/story-feed.ts";
 
 function log(): void {}
 log.raw = log;

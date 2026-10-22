@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { createDrizzle } from "@slopstagram/sdk/database/client.ts";
-import { migrateDatabase } from "@slopstagram/sdk/database/migrate.ts";
-import { InstagramUserRepository } from "@slopstagram/sdk/repositories/instagram-user-repository.ts";
-import { StoryRepository } from "@slopstagram/sdk/repositories/story-repository.ts";
+import { createDrizzle } from "../sdk/database/client.ts";
+import { migrateDatabase } from "../sdk/database/migrate.ts";
+import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
+import { StoryRepository } from "../sdk/repositories/story-repository.ts";
 
 describe("StoryRepository", () => {
   test("lists only stories published in the last 24 hours without deleting the archive", async (context) => {

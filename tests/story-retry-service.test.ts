@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { requestWithRetry, type RetryOptions } from "@slopstagram/sdk/story-retry-service.ts";
+import { requestWithRetry, type RetryOptions } from "../sdk/story-retry-service.ts";
 import { createMockLogger, fixedNow, response } from "./mock-helpers.ts";
 
 function retryOptions(overrides: Partial<RetryOptions> = {}) {

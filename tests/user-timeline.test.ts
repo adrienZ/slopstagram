@@ -4,10 +4,10 @@ import {
   createUserTimeline,
   getTimelinePreviewPaths,
   groupStoriesByPublishedDate,
-} from "../apps/web/server/user-timeline.ts";
-import { appleVisionRepository } from "@slopstagram/sdk/repositories/apple-vision-repository.ts";
-import { visionRepository } from "@slopstagram/sdk/repositories/vision-repository.ts";
-import type { UserTimelineStory } from "@slopstagram/sdk/lib/types.ts";
+} from "../server/user-timeline.ts";
+import { appleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
+import { visionRepository } from "../sdk/repositories/vision-repository.ts";
+import type { UserTimelineStory } from "../sdk/lib/types.ts";
 
 function timelineStory(pk: string, takenAt: number): UserTimelineStory {
   return {

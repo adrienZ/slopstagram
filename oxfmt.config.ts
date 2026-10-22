@@ -8,9 +8,6 @@ export default defineConfig({
     "tests/fixtures/",
     "audit.json",
     ".nitro",
-    "apps/web/.nitro/",
-    "apps/web/.output/",
-    "apps/web/.tanstack/",
-    "apps/web/server/routeTree.gen.ts",
+    "server/routeTree.gen.ts",
   ],
 });

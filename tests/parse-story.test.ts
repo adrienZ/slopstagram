@@ -4,13 +4,9 @@ import {
   getLargestVersion,
   parseStoryManifestReport,
   parseStoryReport,
-} from "@slopstagram/sdk/lib/parser-service.ts";
-import { STORY_MEDIA_TYPES } from "@slopstagram/sdk/lib/types.ts";
-import type {
-  StoriesManifestReport,
-  StoriesMediaReport,
-  StoryVersion,
-} from "@slopstagram/sdk/lib/types.ts";
+} from "../sdk/lib/parser-service.ts";
+import { STORY_MEDIA_TYPES } from "../sdk/lib/types.ts";
+import type { StoriesManifestReport, StoriesMediaReport, StoryVersion } from "../sdk/lib/types.ts";
 import storiesFixture from "./fixtures/instagram-story-data.json" with { type: "json" };
 import { createMemoryStoryRepository } from "./mock-helpers.ts";
 
