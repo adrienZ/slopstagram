@@ -10,13 +10,16 @@
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
-    "types": ["node"]
+    "types": ["node", "vite/client"]
   },
   "include": [
-    "packages/sdk/**/*.ts",
-    "apps/web/**/*.ts",
-    "apps/web/**/*.tsx",
+    "sdk/**/*.ts",
+    "scripts/**/*.ts",
+    "scripts/**/*.tsx",
     "oxlint/**/*.ts",
+    "server/**/*.ts",
+    "server/**/*.tsx",
+    "types/**/*.d.ts",
     "tests/**/*.ts"
   ]
 }

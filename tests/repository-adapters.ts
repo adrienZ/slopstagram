@@ -1,7 +1,7 @@
-import type { AppleVisionRepository } from "@slopstagram/sdk/repositories/apple-vision-repository.ts";
-import type { UserSummaryRepository } from "@slopstagram/sdk/repositories/user-summary-repository.ts";
-import type { VisionRepository } from "@slopstagram/sdk/repositories/vision-repository.ts";
-import type { UserSummaryEntry, VisionEntry } from "@slopstagram/sdk/lib/types.ts";
+import type { AppleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
+import type { UserSummaryRepository } from "../sdk/repositories/user-summary-repository.ts";
+import type { VisionRepository } from "../sdk/repositories/vision-repository.ts";
+import type { UserSummaryEntry, VisionEntry } from "../sdk/lib/types.ts";
 
 type InMemoryRepository<TKey, TValue, TRepository> = Pick<
   TRepository,

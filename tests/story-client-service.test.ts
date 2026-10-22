@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { z } from "zod";
-import type { JsonValue } from "@slopstagram/sdk/lib/json-value.ts";
-import { createInstagramClient } from "@slopstagram/sdk/story-client-service.ts";
+import type { JsonValue } from "../sdk/lib/json-value.ts";
+import { createInstagramClient } from "../sdk/story-client-service.ts";
 
 interface BrowserFetchCall {
   appId: string;

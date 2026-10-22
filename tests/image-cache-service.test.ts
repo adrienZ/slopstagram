@@ -2,9 +2,9 @@ import { Buffer } from "node:buffer";
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { TextEncoder } from "node:util";
-import { BASE_CACHE_DIR, createImageCacheStorage } from "@slopstagram/sdk/lib/cache-service.ts";
-import { cacheReportImages } from "@slopstagram/sdk/lib/image-cache-service.ts";
-import type { StoriesManifestReport } from "@slopstagram/sdk/lib/types.ts";
+import { BASE_CACHE_DIR, createImageCacheStorage } from "../sdk/lib/cache-service.ts";
+import { cacheReportImages } from "../sdk/lib/image-cache-service.ts";
+import type { StoriesManifestReport } from "../sdk/lib/types.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 import { createMockLogger } from "./mock-helpers.ts";
 

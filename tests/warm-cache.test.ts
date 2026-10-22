@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { CreateReportResult } from "@slopstagram/sdk/report.ts";
+import type { CreateReportResult } from "../sdk/report.ts";
 import {
   startWarmCacheQueue,
   WARM_CACHE_CRON_PATTERN,
   WARM_CACHE_QUEUE_NAME,
   type WarmCacheQueueDependencies,
-} from "@slopstagram/sdk/warm-cache-queue.ts";
-import { runWarmCacheJob, type WarmCachePayload } from "@slopstagram/sdk/warm-cache.ts";
+} from "../sdk/warm-cache-queue.ts";
+import { runWarmCacheJob, type WarmCachePayload } from "../sdk/warm-cache.ts";
 import { createMockLogger } from "./mock-helpers.ts";
 
 function createReportResult(): CreateReportResult {

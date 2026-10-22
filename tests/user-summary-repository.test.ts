@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { createDrizzle } from "@slopstagram/sdk/database/client.ts";
-import { migrateDatabase } from "@slopstagram/sdk/database/migrate.ts";
-import { InstagramUserRepository } from "@slopstagram/sdk/repositories/instagram-user-repository.ts";
-import { instagramUsers } from "@slopstagram/sdk/entities/instagram-user.ts";
-import { UserSummaryRepository } from "@slopstagram/sdk/repositories/user-summary-repository.ts";
-import { userSummaries } from "@slopstagram/sdk/entities/user-summary.ts";
+import { createDrizzle } from "../sdk/database/client.ts";
+import { migrateDatabase } from "../sdk/database/migrate.ts";
+import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
+import { instagramUsers } from "../sdk/entities/instagram-user.ts";
+import { UserSummaryRepository } from "../sdk/repositories/user-summary-repository.ts";
+import { userSummaries } from "../sdk/entities/user-summary.ts";
 
 const entry = {
   prompt_hash: "prompt-hash",

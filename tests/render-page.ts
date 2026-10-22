@@ -12,7 +12,7 @@ import {
 } from "@tanstack/react-router";
 import type { AnyRoute } from "@tanstack/react-router";
 import { createRequestHandler, defaultRenderHandler } from "@tanstack/react-router/ssr/server";
-import { RootDocument, rootHead } from "../apps/web/server/pages/__root.tsx";
+import { RootDocument, rootHead } from "../server/pages/__root.tsx";
 
 export function createPageRenderer<Props extends object>(
   Page: ComponentType<Props>,

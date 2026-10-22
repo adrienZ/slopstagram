@@ -3,8 +3,8 @@ import { describe, test } from "node:test";
 import {
   hydrateReportInstagramUsers,
   persistReportInstagramUsers,
-} from "@slopstagram/sdk/lib/instagram-user-service.ts";
-import type { InstagramUserEntry, StoriesManifestReport } from "@slopstagram/sdk/lib/types.ts";
+} from "../sdk/lib/instagram-user-service.ts";
+import type { InstagramUserEntry, StoriesManifestReport } from "../sdk/lib/types.ts";
 
 function createReportWithInstagramUser(): StoriesManifestReport {
   return {

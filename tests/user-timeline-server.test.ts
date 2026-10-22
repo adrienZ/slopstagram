@@ -6,9 +6,9 @@ import {
   Route,
   UserTimelinePage,
   type TimelineContentProps,
-} from "../apps/web/server/pages/users/$username.tsx";
-import { createStoryCards } from "../apps/web/server/story-card-view-model.ts";
-import type { UserTimeline } from "../apps/web/server/user-timeline.ts";
+} from "../server/pages/users/$username.tsx";
+import { createStoryCards } from "../server/story-card-view-model.ts";
+import type { UserTimeline } from "../server/user-timeline.ts";
 
 const entry = {
   full_name: "Timeline User",

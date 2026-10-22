@@ -13,9 +13,9 @@ Make sure to run `npm run check` to validate your code changes.
 
 ### Persistence layout
 
-Put Drizzle table definitions and entity types in `packages/sdk/entities/`. Keep repository
+Put Drizzle table definitions and entity types in `sdk/entities/`. Keep repository
 classes, database queries, transactions, row mappings, and persistence helpers
-(including annotation merging) in `packages/sdk/repositories/`. Import repositories directly
+(including annotation merging) in `sdk/repositories/`. Import repositories directly
 from their repository modules. Apply this boundary to persistence code you add or
 refactor.
 
@@ -31,9 +31,9 @@ instagram.com is an SPA application so make to wait loaded / idle state.
 
 No JSON blob please
 
-Run application migrations during server startup in `apps/web/server/plugins/database.ts`
+Run application migrations during server startup in `server/plugins/database.ts`
 or explicitly with Drizzle Kit's `migrate` command.
-Scripts in `packages/sdk/scripts/` require an initialized database and must not trigger migrations,
+Scripts in `scripts/` require an initialized database and must not trigger migrations,
 directly or through SDK calls. Tests may migrate their isolated databases.
 
 ## Agent skills
