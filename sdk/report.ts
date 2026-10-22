@@ -10,7 +10,7 @@ import { cacheReportImages } from "./lib/image-cache-service.ts";
 import { persistReportInstagramUsers } from "./lib/instagram-user-service.ts";
 import type { Logger } from "./lib/logging-service.ts";
 import type { StoriesManifestReport } from "./lib/types.ts";
-import { resolveUserSummariesForReport } from "./lib/user-summary-resolver-service.ts";
+import { resolveUserSummariesForReport } from "./user-summary.ts";
 import { resolveVisionForReport } from "./lib/vision-report-service.ts";
 import { fetchStories } from "./stories.ts";
 import pkg from "../package.json" with { type: "json" };

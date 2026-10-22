@@ -1,12 +1,8 @@
 import assert from "node:assert/strict";
+import process from "node:process";
 import { describe, test } from "node:test";
 import { z } from "zod";
-import {
-  USER_SUMMARY_MODEL,
-  USER_SUMMARY_UNAVAILABLE,
-  getUserSummaryModel,
-} from "../sdk/lib/user-summary-core-service.ts";
-import { resolveUserSummariesForReport } from "../sdk/lib/user-summary-resolver-service.ts";
+import { readUserSummaries, resolveUserSummariesForReport } from "../sdk/user-summary.ts";
 import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
 import { createMockLogger, createSummaryReport } from "./mock-helpers.ts";
 import { createUserSummaryRepositoryAdapter } from "./repository-adapters.ts";
@@ -36,19 +32,36 @@ function requestBodyToString(body: BodyInit | null | undefined): string {
 }
 
 describe("resolveUserSummariesForReport", () => {
-  test("selects an OS-compatible summary model", () => {
-    assert.equal(getUserSummaryModel("darwin", "arm64"), "qwen3.5:0.8b-mlx");
-    assert.equal(getUserSummaryModel("darwin", "x64"), "qwen3.5:0.8b");
-    assert.equal(getUserSummaryModel("linux", "x64"), "qwen3.5:0.8b");
-  });
+  for (const [platform, architecture, expectedModel] of [
+    ["darwin", "arm64", "qwen3.5:0.8b-mlx"],
+    ["darwin", "x64", "qwen3.5:0.8b"],
+    ["linux", "x64", "qwen3.5:0.8b"],
+    ["win32", "x64", "qwen3.5:0.8b"],
+    ["win32", "arm64", "qwen3.5:0.8b"],
+  ] as const) {
+    test(`generates and reuses summaries with ${expectedModel} on ${platform}/${architecture}`, async (context) => {
+      const report = createSummaryReport();
+      const repository = createUserSummaryRepositoryAdapter();
+      const logger = createMockLogger();
+      context.mock.property(process, "platform", platform);
+      context.mock.property(process, "arch", architecture);
 
-  test("never selects the MLX summary model on Windows", () => {
-    for (const architecture of ["x64", "arm64"]) {
-      const model = getUserSummaryModel("win32", architecture);
+      const summaries = await resolveUserSummariesForReport(report, {
+        logger,
+        repository,
+        fetchOllama: async (_url, init) => {
+          const body = UserSummaryRequestSchema.parse(JSON.parse(requestBodyToString(init?.body)));
+          assert.equal(body.model, expectedModel);
+          return new globalThis.Response(
+            JSON.stringify({ response: JSON.stringify({ summary: "Platform summary." }) }),
+          );
+        },
+      });
 
-      assert.doesNotMatch(model, /mlx/u);
-    }
-  });
+      assert.equal(summaries.get("summaryuser"), "Platform summary.");
+      assert.deepEqual(readUserSummaries(report.output.users, { repository }), summaries);
+    });
+  }
 
   test("reuses successful user summaries from the repository", async () => {
     const repository = createUserSummaryRepositoryAdapter();
@@ -133,7 +146,6 @@ describe("resolveUserSummariesForReport", () => {
       repository,
     });
 
-    assert.equal(USER_SUMMARY_MODEL, getUserSummaryModel());
     assert.equal(first.get(userKey), "default model summary");
     assert.equal(second.get(userKey), "custom model summary");
     assert.equal(runCount, 2);
@@ -150,7 +162,6 @@ describe("resolveUserSummariesForReport", () => {
         assert.match(z.string().parse(url), /\/api\/generate$/u);
         const body = UserSummaryRequestSchema.parse(JSON.parse(requestBodyToString(init?.body)));
 
-        assert.equal(body.model, getUserSummaryModel());
         assert.equal(body.stream, false);
         assert.deepEqual(body.options, {
           num_predict: 300,
@@ -190,7 +201,7 @@ describe("resolveUserSummariesForReport", () => {
       repository,
     });
 
-    assert.equal(summaries.get(userKey), USER_SUMMARY_UNAVAILABLE);
+    assert.equal(summaries.get(userKey), "résumé indisponible");
   });
 
   test("uses report fallback and does not store empty user summary responses", async () => {

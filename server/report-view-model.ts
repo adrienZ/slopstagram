@@ -2,7 +2,7 @@ import { appleVisionRepository } from "../sdk/repositories/apple-vision-reposito
 import { userSummaryRepository } from "../sdk/repositories/user-summary-repository.ts";
 import { visionRepository } from "../sdk/repositories/vision-repository.ts";
 import type { CachedReportImages } from "../sdk/lib/image-cache-service.ts";
-import { readUserSummaries } from "../sdk/lib/user-summary-resolver-service.ts";
+import { readUserSummaries } from "../sdk/user-summary.ts";
 import type { StoryOutputUser, VisionResult } from "../sdk/lib/types.ts";
 import { readStoryFeedVision } from "../sdk/story-feed.ts";
 import type { AppleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";

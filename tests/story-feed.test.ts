@@ -9,7 +9,7 @@ import { AppleVisionRepository } from "../sdk/repositories/apple-vision-reposito
 import { VisionRepository } from "../sdk/repositories/vision-repository.ts";
 import { createStoryFeed } from "../sdk/story-feed.ts";
 import { createReportViewModel } from "../server/report-view-model.ts";
-import { resolveUserSummariesForReport } from "../sdk/lib/user-summary-resolver-service.ts";
+import { resolveUserSummariesForReport } from "../sdk/user-summary.ts";
 import { createLogger } from "../sdk/lib/logging-service.ts";
 
 async function createFixture(context: TestContext) {
