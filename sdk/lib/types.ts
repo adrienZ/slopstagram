@@ -59,7 +59,8 @@ type StoryVideoVersion = StoryVersion & {
 
 export interface StoryAnnotations {
   locations: Array<string>;
-  stickers: Array<{ kind: string; label: string }>;
+  stickers: Array<{ kind: string; label: string; source?: string }>;
+  sources?: Array<string>;
 }
 
 export interface StoryItem {
@@ -73,15 +74,15 @@ export interface StoryItem {
   original_height?: number;
   original_width?: number;
   pk: string;
-  story_bloks_stickers?: Array<JsonValue> | null;
-  story_bloks_tappables?: Array<JsonValue> | null;
-  story_cta?: Array<JsonValue> | null;
-  story_hashtags?: Array<JsonValue> | null;
-  story_locations?: Array<JsonValue> | null;
-  story_link_stickers?: Array<JsonValue> | null;
-  story_music_stickers?: Array<JsonValue> | null;
+  story_bloks_stickers?: JsonValue;
+  story_bloks_tappables?: JsonValue;
+  story_cta?: JsonValue;
+  story_hashtags?: JsonValue;
+  story_locations?: JsonValue;
+  story_link_stickers?: JsonValue;
+  story_music_stickers?: JsonValue;
   taken_at?: number;
-  text_post_share_to_ig_story_stickers?: Array<JsonValue> | null;
+  text_post_share_to_ig_story_stickers?: JsonValue;
   video_versions?: Array<StoryVideoVersion> | null;
   [key: string]:
     | Array<StoryVideoVersion>

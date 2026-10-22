@@ -7,7 +7,7 @@ export async function storeReturnedReels(
   cachedItems: Map<string, StoryItem>,
   fetchedMediaPks: Set<string>,
   storage: StoryStorage,
-  storyRepository: Pick<StoryRepository, "save">,
+  storyRepository: Pick<StoryRepository, "findByMediaPk" | "save">,
 ): Promise<void> {
   for (const reel of Object.values(reels)) {
     for (const item of reel.items ?? []) {
@@ -15,11 +15,15 @@ export async function storeReturnedReels(
         continue;
       }
 
-      // oxlint-disable-next-line no-await-in-loop -- Persist cache data before its matching database record.
-      await storage.setItem(getMediaCacheKey(item.pk), item);
-      // oxlint-disable-next-line no-await-in-loop -- Persist each database record before exposing the item as cached.
+      // oxlint-disable-next-line no-await-in-loop -- Persist each observation before exposing its merged annotations.
       await storyRepository.save(item, reel.user);
-      cachedItems.set(item.pk, item);
+      const stored = storyRepository.findByMediaPk(item.pk);
+      const effectiveItem = stored?.annotations
+        ? { ...item, annotations: stored.annotations }
+        : item;
+      // oxlint-disable-next-line no-await-in-loop -- Cache the effective saved annotations for this story.
+      await storage.setItem(getMediaCacheKey(item.pk), effectiveItem);
+      cachedItems.set(item.pk, effectiveItem);
       fetchedMediaPks.add(item.pk);
     }
   }

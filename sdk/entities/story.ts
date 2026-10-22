@@ -2,10 +2,13 @@ import { asc, desc, eq } from "drizzle-orm";
 import { integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import type { DrizzleDatabase } from "../database/client.ts";
 import { instagramUsers } from "./instagram-user.ts";
+import { createLogger, type Logger } from "../lib/logging-service.ts";
 import { StoryItemSchema } from "../lib/story-schemas.ts";
 import type { StoryAnnotations, StoryItem, StoryOwner, UserTimelineStory } from "../lib/types.ts";
 import {
   getStoryAnnotations,
+  getStoryAnnotationUpdates,
+  annotationSources,
   getStoryLocations,
   getStoryStickers,
 } from "../story-sticker-location-service.ts";
@@ -178,26 +181,101 @@ async function replaceStoryVersions(database: DrizzleDatabase, story: StoryItem)
   }
 }
 
-async function replaceStoryAnnotations(database: DrizzleDatabase, story: StoryItem): Promise<void> {
-  await database.delete(storyStickers).where(eq(storyStickers.mediaPk, story.pk));
-  await database.delete(storyLocations).where(eq(storyLocations.mediaPk, story.pk));
+type AnnotationDatabase = Pick<DrizzleDatabase, "select" | "insert" | "delete">;
 
-  const annotations = getStoryAnnotations(story);
-  const stickerEntries = annotations.stickers.map((sticker, sortOrder) => ({
+function mergeAnnotationUpdates(
+  previous: StoryAnnotations,
+  story: StoryItem,
+  logger: Pick<Logger, "warn">,
+): StoryAnnotations {
+  const updates = getStoryAnnotationUpdates(story, (source) => {
+    logger.warn(
+      `Malformed story annotation source: media_pk=${story.pk} source=${source}; preserving saved contribution`,
+    );
+  });
+  const replaced = new Set<string>(updates.map((update) => update.source));
+  const order: Array<string> = annotationSources.map(({ source }) => source);
+  const completedKinds = new Set<string>(
+    annotationSources
+      .flatMap(({ kinds }) => [...kinds])
+      .filter((kind) =>
+        annotationSources.every(
+          ({ source, kinds }) =>
+            !kinds.some((candidate) => candidate === kind) || replaced.has(source),
+        ),
+      ),
+  );
+  const stickers = [
+    ...previous.stickers.filter(
+      (sticker) =>
+        !replaced.has(sticker.source ?? "unknown") &&
+        !((sticker.source ?? "unknown") === "unknown" && completedKinds.has(sticker.kind)),
+    ),
+    ...updates.flatMap((update) => update.stickers),
+  ].toSorted(
+    (left, right) =>
+      order.indexOf(left.source ?? "unknown") - order.indexOf(right.source ?? "unknown"),
+  );
+  return {
+    locations: stickers
+      .filter((sticker) => sticker.kind === "location")
+      .map((sticker) => sticker.label),
+    stickers,
+    sources: [...new Set([...(previous.sources ?? []), ...replaced])].toSorted(),
+  };
+}
+
+function readStoryAnnotations(database: AnnotationDatabase, mediaPk: string): StoryAnnotations {
+  const stickers = database
+    .select({ kind: storyStickers.kind, label: storyStickers.label, source: storyStickers.source })
+    .from(storyStickers)
+    .where(eq(storyStickers.mediaPk, mediaPk))
+    .orderBy(asc(storyStickers.sortOrder))
+    .all();
+  const sources = database
+    .select({ source: storyStickerSources.source })
+    .from(storyStickerSources)
+    .where(eq(storyStickerSources.mediaPk, mediaPk))
+    .orderBy(asc(storyStickerSources.source))
+    .all()
+    .map((entry) => entry.source);
+  const locations = stickers
+    .filter((sticker) => sticker.kind === "location")
+    .map((sticker) => sticker.label);
+  return { locations, stickers, sources };
+}
+
+function replaceStoryAnnotations(
+  database: AnnotationDatabase,
+  story: StoryItem,
+  logger: Pick<Logger, "warn">,
+): void {
+  const previous = readStoryAnnotations(database, story.pk);
+  const annotations =
+    story.annotations === undefined
+      ? mergeAnnotationUpdates(previous, story, logger)
+      : getStoryAnnotations(story);
+  database.delete(storyStickers).where(eq(storyStickers.mediaPk, story.pk)).run();
+  database.delete(storyStickerSources).where(eq(storyStickerSources.mediaPk, story.pk)).run();
+  const stickers = [...annotations.stickers];
+  if (!stickers.some((sticker) => sticker.kind === "location")) {
+    stickers.push(...annotations.locations.map((label) => ({ kind: "location", label })));
+  }
+  const stickerEntries = stickers.map((sticker, sortOrder) => ({
     ...sticker,
+    source: sticker.source ?? "unknown",
     mediaPk: story.pk,
     sortOrder,
   }));
   if (stickerEntries.length > 0) {
-    await database.insert(storyStickers).values(stickerEntries);
+    database.insert(storyStickers).values(stickerEntries).run();
   }
-  const locationEntries = annotations.locations.map((label, sortOrder) => ({
-    mediaPk: story.pk,
-    label,
-    sortOrder,
-  }));
-  if (locationEntries.length > 0) {
-    await database.insert(storyLocations).values(locationEntries);
+  const sources = [...new Set(annotations.sources)];
+  if (sources.length > 0) {
+    database
+      .insert(storyStickerSources)
+      .values(sources.map((source) => ({ source, mediaPk: story.pk })))
+      .run();
   }
 }
 
@@ -214,21 +292,12 @@ function readStoryItem(database: DrizzleDatabase, story: StoryRow): StoryItem {
     .where(eq(storyVideoVersions.mediaPk, story.mediaPk))
     .orderBy(asc(storyVideoVersions.sortOrder))
     .all();
-  const stickers = database
-    .select({ kind: storyStickers.kind, label: storyStickers.label })
-    .from(storyStickers)
-    .where(eq(storyStickers.mediaPk, story.mediaPk))
-    .orderBy(asc(storyStickers.sortOrder))
-    .all();
-  const locations = database
-    .select({ label: storyLocations.label })
-    .from(storyLocations)
-    .where(eq(storyLocations.mediaPk, story.mediaPk))
-    .orderBy(asc(storyLocations.sortOrder))
-    .all()
-    .map((entry) => entry.label);
-
-  return toStoryItem(story, imageVersions, videoVersions, { locations, stickers });
+  return toStoryItem(
+    story,
+    imageVersions,
+    videoVersions,
+    readStoryAnnotations(database, story.mediaPk),
+  );
 }
 
 function getTimelineStory(
@@ -256,7 +325,13 @@ function getTimelineStory(
 export class StoryRepository {
   private readonly database: DrizzleDatabase;
 
-  constructor(database: DrizzleDatabase) {
+  private readonly logger: Pick<Logger, "warn">;
+
+  constructor(
+    database: DrizzleDatabase,
+    logger: Pick<Logger, "warn"> = createLogger("story-annotations"),
+  ) {
+    this.logger = logger;
     this.database = database;
   }
 
@@ -278,7 +353,9 @@ export class StoryRepository {
       target: stories.mediaPk,
     });
     await replaceStoryVersions(this.database, story);
-    await replaceStoryAnnotations(this.database, story);
+    this.database.transaction((transaction) => {
+      replaceStoryAnnotations(transaction, story, this.logger);
+    });
   }
 
   listByUsername(username: string): Array<UserTimelineStory> {

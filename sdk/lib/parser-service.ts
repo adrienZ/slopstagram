@@ -143,8 +143,12 @@ function toParsedStory(
     height: version?.height ?? item.original_height ?? null,
     media_type: mediaType,
     pk: item.pk,
-    story_bloks_stickers: item.story_bloks_stickers ?? null,
-    story_music_stickers: item.story_music_stickers ?? null,
+    story_bloks_stickers: Array.isArray(item.story_bloks_stickers)
+      ? item.story_bloks_stickers
+      : null,
+    story_music_stickers: Array.isArray(item.story_music_stickers)
+      ? item.story_music_stickers
+      : null,
     url: version?.url ?? null,
     width: version?.width ?? item.original_width ?? null,
   };

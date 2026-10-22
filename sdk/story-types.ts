@@ -33,7 +33,7 @@ export interface FetchStoriesManifestOptions {
   reportName?: string;
   logger?: Logger;
   sleep?: (durationMs: number) => Promise<void>;
-  storyRepository?: Pick<StoryRepository, "save">;
+  storyRepository?: Pick<StoryRepository, "findByMediaPk" | "save">;
   storyStorage?: StoryStorage;
 }
 

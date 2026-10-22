@@ -130,7 +130,7 @@ async function fetchMissingStoriesForReport(options: {
   manifestOptions: FetchStoriesManifestOptions;
   now: () => Date;
   state: ReturnType<typeof createFetchState>;
-  storyRepository: Pick<StoryRepository, "save">;
+  storyRepository: Pick<StoryRepository, "findByMediaPk" | "save">;
   storyStorage: StoryStorage;
   tray: Array<StoryTrayEntry>;
 }): Promise<void> {

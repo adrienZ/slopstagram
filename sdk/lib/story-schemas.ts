@@ -34,7 +34,10 @@ export const StoryItemSchema = z
     annotations: z
       .object({
         locations: z.array(z.string()),
-        stickers: z.array(z.object({ kind: z.string(), label: z.string() })),
+        stickers: z.array(
+          z.object({ kind: z.string(), label: z.string(), source: z.string().optional() }),
+        ),
+        sources: z.array(z.string()).optional(),
       })
       .optional(),
     image_versions2: z
@@ -47,15 +50,15 @@ export const StoryItemSchema = z
     original_height: z.number().optional(),
     original_width: z.number().optional(),
     pk: InstagramIdentifierSchema,
-    story_bloks_stickers: z.array(JsonValueSchema).nullable().optional(),
-    story_bloks_tappables: z.array(JsonValueSchema).nullable().optional(),
-    story_cta: z.array(JsonValueSchema).nullable().optional(),
-    story_hashtags: z.array(JsonValueSchema).nullable().optional(),
-    story_locations: z.array(JsonValueSchema).nullable().optional(),
-    story_link_stickers: z.array(JsonValueSchema).nullable().optional(),
-    story_music_stickers: z.array(JsonValueSchema).nullable().optional(),
+    story_bloks_stickers: JsonValueSchema.optional(),
+    story_bloks_tappables: JsonValueSchema.optional(),
+    story_cta: JsonValueSchema.optional(),
+    story_hashtags: JsonValueSchema.optional(),
+    story_locations: JsonValueSchema.optional(),
+    story_link_stickers: JsonValueSchema.optional(),
+    story_music_stickers: JsonValueSchema.optional(),
     taken_at: z.number().int().optional(),
-    text_post_share_to_ig_story_stickers: z.array(JsonValueSchema).nullable().optional(),
+    text_post_share_to_ig_story_stickers: JsonValueSchema.optional(),
     video_versions: z
       .array(StoryVersionSchema.extend({ type: z.number().optional() }))
       .nullable()
