@@ -72,7 +72,7 @@ describe("StoryRepository", () => {
         locations: ["Paris"],
         sources: ["story_hashtags", "story_locations"],
         stickers: [
-          { kind: "hashtag", label: "hashtag:#structured", source: "story_hashtags" },
+          { kind: "hashtag", label: "#structured", source: "story_hashtags" },
           { kind: "location", label: "Paris", source: "story_locations" },
         ],
       },
@@ -109,7 +109,7 @@ describe("StoryRepository", () => {
       .all()
       .map((row) => Object.fromEntries(Object.entries(row)));
     assert.deepEqual(stickers, [
-      { kind: "hashtag", label: "hashtag:#structured" },
+      { kind: "hashtag", label: "#structured" },
       { kind: "location", label: "Paris" },
     ]);
     const storyColumns = database.$client.prepare("PRAGMA table_info(stories)").all();
@@ -180,13 +180,13 @@ describe("StoryRepository", () => {
           annotations: {
             locations: [],
             sources: ["story_hashtags"],
-            stickers: [{ kind: "hashtag", label: "hashtag:#weekend", source: "story_hashtags" }],
+            stickers: [{ kind: "hashtag", label: "#weekend", source: "story_hashtags" }],
           },
           media_type: 1,
           pk: "older-story",
           taken_at: 1_767_225_600,
         },
-        stickers: ["hashtag:#weekend"],
+        stickers: ["#weekend"],
         taken_at: 1_767_225_600,
         username: "timeline-user",
       },

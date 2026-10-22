@@ -121,10 +121,10 @@ describe("fetchStoriesManifest edge cases", () => {
     });
 
     assert.deepEqual(report.manifest.users[0]?.stories[0]?.stickers, [
-      "mention:@friend",
-      "music:Track - Artist",
-      "hashtag:#summer",
-      "link:https://example.com/a",
+      "@friend",
+      "Track - Artist",
+      "#summer",
+      "https://example.com/a",
     ]);
     assert.deepEqual(report.output.users[0]?.stories[0]?.locations, [
       "Cafe Example, 1 Rue Example, Paris",
@@ -165,7 +165,7 @@ describe("fetchStoriesManifest edge cases", () => {
     });
 
     assert.deepEqual(report.output.users[0]?.stories[0]?.stickers, [
-      "link:Visit Link (https://installclaw.io/fr?fbclid=PAcGRvZgRleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAwyNTYyODEwNDA1NTgAAaees2JVYiKznrVRdrE8jUP0t055Ywo5c27Qe7zZvMdkJw4mRFLCM-_N39601g_aem_zcP2VBsrm0eIv1jimc94uQ)",
+      "Visit Link (https://installclaw.io/fr?fbclid=PAcGRvZgRleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAwyNTYyODEwNDA1NTgAAaees2JVYiKznrVRdrE8jUP0t055Ywo5c27Qe7zZvMdkJw4mRFLCM-_N39601g_aem_zcP2VBsrm0eIv1jimc94uQ)",
     ]);
   });
 

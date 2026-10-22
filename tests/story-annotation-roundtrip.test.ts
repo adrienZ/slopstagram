@@ -52,11 +52,11 @@ test("story annotations survive ingestion, cold reports, and repeated saves", as
   );
   assert.deepEqual(report.manifest.users[0]?.stories[0]?.locations, ["Paris", "Paris"]);
   assert.deepEqual(report.manifest.users[0]?.stories[0]?.stickers, [
-    "mention:@friend",
-    "mention:@friend",
-    "music:Song - Artist",
-    "hashtag:#weekend",
-    "link:https://example.com",
+    "@friend",
+    "@friend",
+    "Song - Artist",
+    "#weekend",
+    "https://example.com",
   ]);
   await reportRepository.save("original", report);
 
@@ -81,11 +81,11 @@ test("story annotations survive ingestion, cold reports, and repeated saves", as
   assert.deepEqual(coldRepository.findByMediaPk("m1"), stored);
   assert.deepEqual(coldRepository.listByUsername("one")[0]?.locations, ["Paris", "Paris"]);
   assert.deepEqual(coldRepository.listByUsername("one")[0]?.stickers, [
-    "mention:@friend",
-    "mention:@friend",
-    "music:Song - Artist",
-    "hashtag:#weekend",
-    "link:https://example.com",
+    "@friend",
+    "@friend",
+    "Song - Artist",
+    "#weekend",
+    "https://example.com",
   ]);
   assert.deepEqual(reportRepository.findByKey("original"), report);
 });
@@ -130,9 +130,9 @@ for (const unifiedLocations of [false, true]) {
     // Existing relational data may contain repeated labels and kinds unknown to the extractor.
     // Insert out of order to ensure reads use persisted occurrence order.
     const stickers = [
-      { kind: "mention", label: "mention:@same", mediaPk: "m1", sortOrder: 9 },
+      { kind: "mention", label: "@same", mediaPk: "m1", sortOrder: 9 },
       { kind: "custom", label: "mention:@same", mediaPk: "m1", sortOrder: 8 },
-      { kind: "mention", label: "mention:@same", mediaPk: "m1", sortOrder: 2 },
+      { kind: "mention", label: "@same", mediaPk: "m1", sortOrder: 2 },
     ];
     if (unifiedLocations) {
       stickers.push(
@@ -152,11 +152,7 @@ for (const unifiedLocations of [false, true]) {
       : [];
     const users = createManifestUsers(tray, new Map([[stored.pk, stored]]), new Map());
     assert.deepEqual(users[0]?.stories[0]?.locations, expectedLocations);
-    assert.deepEqual(users[0]?.stories[0]?.stickers, [
-      "mention:@same",
-      "mention:@same",
-      "mention:@same",
-    ]);
+    assert.deepEqual(users[0]?.stories[0]?.stickers, ["@same", "mention:@same", "@same"]);
     assert.deepEqual(
       stored.annotations?.stickers.map((sticker) => sticker.kind),
       unifiedLocations
@@ -225,12 +221,12 @@ test("partial ingestion merges sources for fresh reports, cold reads, and resave
   const updated = await ingest(partial);
   assert.deepEqual(updated.manifest.users[0]?.stories[0]?.locations, ["Paris"]);
   assert.deepEqual(updated.manifest.users[0]?.stories[0]?.stickers, [
-    "mention:@same",
-    "mention:@same",
-    "music:Song",
-    "hashtag:#new",
-    "link:https://example.com",
-    "link:https://example.com",
+    "@same",
+    "@same",
+    "Song",
+    "#new",
+    "https://example.com",
+    "https://example.com",
   ]);
   await ingest(partial);
   const cold = new StoryRepository(database);
@@ -296,7 +292,7 @@ test("malformed sources preserve saved contributions and report the affected fie
   assert.deepEqual(cleared.annotations?.locations, []);
   assert.deepEqual(
     cleared.annotations.stickers.map((sticker) => sticker.label),
-    ["mention:@friend", "link:https://example.com"],
+    ["@friend", "https://example.com"],
   );
   assert.equal(cleared.annotations.sources?.includes("story_locations"), true);
   assert.equal(cleared.annotations.sources.includes("story_hashtags"), true);
@@ -338,7 +334,7 @@ test("legacy provenance survives partial observations until one complete observa
   });
   assert.deepEqual(
     repository.findByMediaPk("legacy")?.annotations?.stickers.map((sticker) => sticker.label),
-    ["Old place", "link:old", "other:untouched"],
+    ["Old place", "old", "other:untouched"],
   );
   const links = {
     story_link_stickers: [],
@@ -349,7 +345,7 @@ test("legacy provenance survives partial observations until one complete observa
   await repository.save({ pk: "legacy", ...links });
   assert.deepEqual(
     repository.findByMediaPk("legacy")?.annotations?.stickers.map((sticker) => sticker.label),
-    ["Old place", "link:old", "other:untouched"],
+    ["Old place", "old", "other:untouched"],
   );
   await repository.save({
     pk: "legacy",
@@ -382,7 +378,7 @@ test("a failed annotation replacement rolls back occurrences and known empty sou
   });
   const before = repository.findByMediaPk("m1");
   database.$client.exec(`CREATE TEMP TRIGGER reject_annotation BEFORE INSERT ON story_stickers
-    WHEN NEW.label = 'hashtag:#fail' BEGIN SELECT RAISE(ABORT, 'fixture write failure'); END`);
+    WHEN NEW.label = '#fail' BEGIN SELECT RAISE(ABORT, 'fixture write failure'); END`);
   await assert.rejects(
     repository.save({ pk: "m1", story_hashtags: [{ hashtag: "fail" }], story_music_stickers: [] }),
   );
@@ -395,6 +391,6 @@ test("a failed annotation replacement rolls back occurrences and known empty sou
   });
   assert.deepEqual(
     repository.findByMediaPk("m1")?.annotations?.stickers.map((sticker) => sticker.label),
-    ["hashtag:#ok"],
+    ["#ok"],
   );
 });

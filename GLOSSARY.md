@@ -16,6 +16,13 @@ or link.
 One instance of a sticker on a story. Separate occurrences may have the same kind
 and label.
 
+**Sticker kind**:
+The category of a sticker, such as mention, music, hashtag, link, or location.
+
+**Sticker label**:
+The readable content of a sticker, without an added kind prefix. Mentions retain
+their @, hashtags retain their #, and links retain their full URL.
+
 **Story data**:
 The latest known information about a story, shared across reports.
 
