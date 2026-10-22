@@ -33,6 +33,10 @@ describe("StoryRepository", () => {
 
     assert.deepEqual(repository.findByMediaPk("story-1"), {
       accessibility_caption: "Updated",
+      annotations: {
+        locations: ["Paris"],
+        stickers: [{ kind: "hashtag", label: "hashtag:#structured" }],
+      },
       image_versions2: {
         candidates: [{ height: 100, url: "https://example.com/image.jpg", width: 80 }],
       },
@@ -121,7 +125,12 @@ describe("StoryRepository", () => {
         full_name: "Timeline User",
         locations: [],
         owner_pk: "user-pk",
-        story: { media_type: 2, pk: "newer-story", taken_at: 1_767_312_000 },
+        story: {
+          annotations: { locations: [], stickers: [] },
+          media_type: 2,
+          pk: "newer-story",
+          taken_at: 1_767_312_000,
+        },
         stickers: [],
         taken_at: 1_767_312_000,
         username: "timeline-user",
@@ -131,6 +140,10 @@ describe("StoryRepository", () => {
         locations: [],
         owner_pk: "user-pk",
         story: {
+          annotations: {
+            locations: [],
+            stickers: [{ kind: "hashtag", label: "hashtag:#weekend" }],
+          },
           media_type: 1,
           pk: "older-story",
           taken_at: 1_767_225_600,
