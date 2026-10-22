@@ -1,5 +1,5 @@
 import { storyRepository } from "./entity-repository-service.ts";
-import type { StoryRepository } from "../entities/story.ts";
+import type { StoryRepository } from "../repositories/story-repository.ts";
 import { STORY_MEDIA_TYPES, type StoriesManifestReport, type StoryMediaType } from "./types.ts";
 
 function formatStoryMediaType(

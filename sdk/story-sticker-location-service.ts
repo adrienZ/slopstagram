@@ -186,81 +186,111 @@ function getLocationFromValue(value: JsonValue): { address: string; name: string
   return name || address ? { address, name } : null;
 }
 
-function getStoryLocationsFromItem(story: StoryItem): Array<string> {
-  const locations: Array<string> = [];
-  const seen = new Set<string>();
+export const annotationSources = [
+  { source: "story_bloks_stickers", kinds: ["mention", "location"] },
+  { source: "story_music_stickers", kinds: ["music"] },
+  { source: "story_hashtags", kinds: ["hashtag"] },
+  { source: "story_link_stickers", kinds: ["link"] },
+  { source: "story_cta", kinds: ["link"] },
+  { source: "story_bloks_tappables", kinds: ["link"] },
+  { source: "text_post_share_to_ig_story_stickers", kinds: ["link"] },
+  { source: "link", kinds: ["link"] },
+  { source: "story_locations", kinds: ["location"] },
+] as const;
 
-  for (const value of [...(story.story_locations ?? []), ...(story.story_bloks_stickers ?? [])]) {
-    const location = getLocationFromValue(value);
-    const formattedLocation = location
-      ? [location.name, location.address].filter(Boolean).join(", ")
-      : "";
-    const key = formattedLocation.toLowerCase();
+type Sticker = StoryAnnotations["stickers"][number];
 
-    if (formattedLocation && !seen.has(key)) {
-      seen.add(key);
-      locations.push(formattedLocation);
+function extractSourceSticker(
+  source: string,
+  kind: string,
+  value: JsonValue,
+): Array<Sticker> | null {
+  if (!isJsonObject(value)) {
+    return null;
+  }
+  if (source === "story_bloks_stickers") {
+    const data = getNestedRecord(getNestedRecord(value, "bloks_sticker"), "sticker_data");
+    if (!data || Object.keys(data).length === 0) {
+      return null;
     }
+    const mention = getMentionStickerLabel(value);
+    const location = getLocationFromValue(value);
+    if (
+      (Object.hasOwn(data, "ig_mention") && mention === null) ||
+      (Object.hasOwn(data, "location") && location === null)
+    ) {
+      return null;
+    }
+    return [
+      ...(mention === null ? [] : [{ kind: "mention", label: mention }]),
+      ...(location
+        ? [
+            {
+              kind: "location",
+              label: [location.name, location.address].filter(Boolean).join(", "),
+            },
+          ]
+        : []),
+    ];
   }
-
-  return locations;
+  let label: string | null;
+  if (source === "story_locations") {
+    const location = getLocationFromValue(value);
+    label = location ? [location.name, location.address].filter(Boolean).join(", ") : null;
+  } else if (source === "story_music_stickers") {
+    label = getMusicStickerLabel(value);
+  } else if (source === "story_hashtags") {
+    label = getHashtagStickerLabel(value);
+  } else {
+    label = getLinkStickerLabel(value);
+  }
+  return label === null ? null : [{ kind, label }];
 }
 
-function addUniqueLabel(labels: Array<string>, seen: Set<string>, label: string | null): void {
-  if (label === null || label.length === 0 || seen.has(label)) {
-    return;
+export function getStoryAnnotationUpdates(
+  story: StoryItem,
+  reportMalformed?: (source: string) => void,
+): Array<{ source: string; stickers: Array<Sticker> }> {
+  const updates: Array<{ source: string; stickers: Array<Sticker> }> = [];
+  for (const { source, kinds } of annotationSources) {
+    const value = story[source];
+    if (value === undefined || value === null) {
+      continue;
+    }
+    const values = source === "link" && !Array.isArray(value) ? [value] : value;
+    if (!Array.isArray(values)) {
+      reportMalformed?.(source);
+      continue;
+    }
+    const entries = values.map((entry) => extractSourceSticker(source, kinds[0], entry));
+    if (entries.some((entry) => entry === null)) {
+      reportMalformed?.(source);
+      continue;
+    }
+    updates.push({
+      source,
+      stickers: entries.flatMap((entry) => entry ?? []).map((sticker) => ({ ...sticker, source })),
+    });
   }
-
-  seen.add(label);
-  labels.push(label);
-}
-
-function getStickerLabels(story: StoryItem): Array<string> {
-  const labels: Array<string> = [];
-  const seen = new Set<string>();
-
-  for (const sticker of story.story_bloks_stickers ?? []) {
-    addUniqueLabel(labels, seen, getMentionStickerLabel(sticker));
-  }
-
-  for (const sticker of story.story_music_stickers ?? []) {
-    addUniqueLabel(labels, seen, getMusicStickerLabel(sticker));
-  }
-
-  for (const sticker of story.story_hashtags ?? []) {
-    addUniqueLabel(labels, seen, getHashtagStickerLabel(sticker));
-  }
-
-  for (const sticker of [
-    ...(story.story_link_stickers ?? []),
-    ...(story.story_cta ?? []),
-    ...(story.story_bloks_tappables ?? []),
-    ...(story.text_post_share_to_ig_story_stickers ?? []),
-    story.link ?? null,
-  ]) {
-    addUniqueLabel(labels, seen, getLinkStickerLabel(sticker));
-  }
-
-  return labels;
+  return updates;
 }
 
 export function getStoryAnnotations(story: StoryItem): StoryAnnotations {
-  if (story.annotations !== undefined) {
-    const locations = story.annotations.stickers
+  const { annotations } = story;
+  if (annotations !== undefined) {
+    const locations = annotations.stickers
       .filter((sticker) => sticker.kind === "location")
       .map((sticker) => sticker.label);
-    return {
-      locations: locations.length > 0 ? locations : story.annotations.locations,
-      stickers: story.annotations.stickers,
-    };
+    return { ...annotations, locations: locations.length > 0 ? locations : annotations.locations };
   }
-
+  const updates = getStoryAnnotationUpdates(story);
+  const stickers = updates.flatMap((update) => update.stickers);
   return {
-    locations: getStoryLocationsFromItem(story),
-    stickers: getStickerLabels(story).map((label) => {
-      const separator = label.indexOf(":");
-      return { kind: separator === -1 ? "other" : label.slice(0, separator), label };
-    }),
+    sources: updates.map((update) => update.source),
+    locations: stickers
+      .filter((sticker) => sticker.kind === "location")
+      .map((sticker) => sticker.label),
+    stickers,
   };
 }
 

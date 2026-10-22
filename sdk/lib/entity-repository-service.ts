@@ -1,7 +1,7 @@
 import { AppleVisionRepository } from "../entities/apple-vision.ts";
 import { InstagramUserRepository } from "../entities/instagram-user.ts";
 import { ReportRepository } from "../entities/report.ts";
-import { StoryRepository } from "../entities/story.ts";
+import { StoryRepository } from "../repositories/story-repository.ts";
 import { UserSummaryRepository } from "../entities/user-summary.ts";
 import { VisionRepository } from "../entities/vision.ts";
 import { useDrizzle } from "../database/client.ts";

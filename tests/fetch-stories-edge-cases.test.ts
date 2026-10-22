@@ -128,6 +128,7 @@ describe("fetchStoriesManifest edge cases", () => {
     ]);
     assert.deepEqual(report.output.users[0]?.stories[0]?.locations, [
       "Cafe Example, 1 Rue Example, Paris",
+      "Cafe Example, 1 Rue Example, Paris",
     ]);
   });
 

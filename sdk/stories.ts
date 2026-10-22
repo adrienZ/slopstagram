@@ -1,6 +1,6 @@
 import { storiesStorage } from "./lib/cache-service.ts";
 import { storyRepository } from "./lib/entity-repository-service.ts";
-import type { StoryRepository } from "./entities/story.ts";
+import type { StoryRepository } from "./repositories/story-repository.ts";
 import type { Logger } from "./lib/logging-service.ts";
 import { createLogger } from "./lib/logging-service.ts";
 import { closeInstagramSession, openInstagramSession } from "./lib/playwright-service.ts";
@@ -130,7 +130,7 @@ async function fetchMissingStoriesForReport(options: {
   manifestOptions: FetchStoriesManifestOptions;
   now: () => Date;
   state: ReturnType<typeof createFetchState>;
-  storyRepository: Pick<StoryRepository, "save">;
+  storyRepository: Pick<StoryRepository, "findByMediaPk" | "save">;
   storyStorage: StoryStorage;
   tray: Array<StoryTrayEntry>;
 }): Promise<void> {

@@ -1,5 +1,5 @@
 import type { Logger } from "./lib/logging-service.ts";
-import type { StoryRepository } from "./entities/story.ts";
+import type { StoryRepository } from "./repositories/story-repository.ts";
 import type { StoryStorage } from "./lib/types.ts";
 import { extractReels } from "./story-client-service.ts";
 import { storeReturnedReels } from "./story-cache-service.ts";
@@ -24,7 +24,7 @@ export interface FetchMissingStoriesOptions {
   reelIdsPerRequest: number;
   retryOptions: RetryOptions;
   state: FetchState;
-  storyRepository: Pick<StoryRepository, "save">;
+  storyRepository: Pick<StoryRepository, "findByMediaPk" | "save">;
   storyStorage: StoryStorage;
   trayReelIds: Array<string>;
 }
@@ -42,7 +42,7 @@ async function cacheSuccessfulResponse(
   idChunk: Array<string>,
   logger: Logger,
   state: FetchState,
-  storyRepository: Pick<StoryRepository, "save">,
+  storyRepository: Pick<StoryRepository, "findByMediaPk" | "save">,
   storyStorage: StoryStorage,
 ): Promise<number> {
   const fetchedBefore = state.fetchedMediaPks.size;

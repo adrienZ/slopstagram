@@ -3,7 +3,7 @@ import { describe, test } from "node:test";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { InstagramUserRepository } from "../sdk/entities/instagram-user.ts";
-import { StoryRepository } from "../sdk/entities/story.ts";
+import { StoryRepository } from "../sdk/repositories/story-repository.ts";
 
 describe("StoryRepository", () => {
   test("stores story details in relational tables", async (context) => {
@@ -35,7 +35,11 @@ describe("StoryRepository", () => {
       accessibility_caption: "Updated",
       annotations: {
         locations: ["Paris"],
-        stickers: [{ kind: "hashtag", label: "hashtag:#structured" }],
+        sources: ["story_hashtags", "story_locations"],
+        stickers: [
+          { kind: "hashtag", label: "hashtag:#structured", source: "story_hashtags" },
+          { kind: "location", label: "Paris", source: "story_locations" },
+        ],
       },
       image_versions2: {
         candidates: [{ height: 100, url: "https://example.com/image.jpg", width: 80 }],
@@ -69,12 +73,15 @@ describe("StoryRepository", () => {
       .prepare("SELECT kind, label FROM story_stickers")
       .all()
       .map((row) => Object.fromEntries(Object.entries(row)));
-    assert.deepEqual(stickers, [{ kind: "hashtag", label: "hashtag:#structured" }]);
+    assert.deepEqual(stickers, [
+      { kind: "hashtag", label: "hashtag:#structured" },
+      { kind: "location", label: "Paris" },
+    ]);
     const locations = database.$client
       .prepare("SELECT label FROM story_locations")
       .all()
       .map((row) => Object.fromEntries(Object.entries(row)));
-    assert.deepEqual(locations, [{ label: "Paris" }]);
+    assert.deepEqual(locations, []);
     const storyColumns = database.$client.prepare("PRAGMA table_info(stories)").all();
     assert.equal(
       storyColumns.some((column) => String(column.name).toLowerCase().includes("json")),
@@ -126,7 +133,7 @@ describe("StoryRepository", () => {
         locations: [],
         owner_pk: "user-pk",
         story: {
-          annotations: { locations: [], stickers: [] },
+          annotations: { locations: [], stickers: [], sources: [] },
           media_type: 2,
           pk: "newer-story",
           taken_at: 1_767_312_000,
@@ -142,7 +149,8 @@ describe("StoryRepository", () => {
         story: {
           annotations: {
             locations: [],
-            stickers: [{ kind: "hashtag", label: "hashtag:#weekend" }],
+            sources: ["story_hashtags"],
+            stickers: [{ kind: "hashtag", label: "hashtag:#weekend", source: "story_hashtags" }],
           },
           media_type: 1,
           pk: "older-story",
