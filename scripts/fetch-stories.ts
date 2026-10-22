@@ -2,10 +2,23 @@ import process from "node:process";
 import { pathToFileURL } from "node:url";
 import { fetchStories } from "../sdk/index.ts";
 import { createLogger } from "../sdk/lib/logging-service.ts";
+import { recordFetchRun } from "../sdk/fetch-run.ts";
+import { migrateDatabase } from "../sdk/database/migrate.ts";
+import { reportRepository } from "../sdk/lib/entity-repository-service.ts";
+import { persistReportInstagramUsers } from "../sdk/lib/instagram-user-service.ts";
 
 async function main(): Promise<void> {
   const logger = createLogger("fetch-stories");
-  const payload = await fetchStories(process.argv.slice(2), { logger });
+  migrateDatabase();
+  const payload = await recordFetchRun(async (run) => {
+    const reportName = `stories-fetch-${run.startedAt.toISOString()}-${run.id}.json`;
+    const report = await fetchStories(process.argv.slice(2), { logger, reportName });
+    run.report = report;
+    await reportRepository.save(reportName, report);
+    run.reportKey = reportName;
+    await persistReportInstagramUsers(globalThis.structuredClone(report));
+    return report;
+  });
   process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
 }
 

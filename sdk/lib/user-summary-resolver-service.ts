@@ -138,7 +138,7 @@ async function resolveUserSummary(
 }
 
 export async function resolveUserSummariesForReport(
-  report: StoriesManifestReport,
+  report: Pick<StoriesManifestReport, "output">,
   options: ResolveUserSummariesOptions,
 ): Promise<Map<string, string>> {
   const resolved = resolveOptions(options);

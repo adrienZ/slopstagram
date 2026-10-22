@@ -9,23 +9,21 @@ import { UserSection } from "../components/user-section.tsx";
 
 export interface ReportContentProps {
   date: string;
-  reportKeys: Array<string>;
-  selectedReportKey: string;
   users: Array<UserSectionProps>;
 }
 
 export function ReportContent({
   date,
-  reportKeys,
-  selectedReportKey,
   users,
   selectedStory,
 }: ReportContentProps & { selectedStory?: string }) {
   return (
     <>
       <main>
-        <ReportHeader reportKeys={reportKeys} selectedReportKey={selectedReportKey} />
-        <h1>{`Rapport du ${date}`}</h1>
+        <ReportHeader />
+        <h1>Stories des dernières 24 heures</h1>
+        <p>{`Fil chargé le ${date}`}</p>
+        {users.length === 0 && <p>Aucune story publiée dans les dernières 24 heures.</p>}
         {users.map((props) => (
           <UserSection key={props.user.username} {...props} />
         ))}
@@ -47,13 +45,12 @@ export function ReportPage(props: ReportContentProps & { selectedStory?: string 
 
 export const Route = createFileRoute("/report")({
   validateSearch: z.object({
-    report: z.coerce.string().optional(),
     story: z.coerce.string().optional(),
   }),
-  loaderDeps: ({ search }) => ({ report: search.report }),
-  loader: async ({ deps }) => await getReport({ data: deps.report ?? null }),
-  head: ({ loaderData }) => ({
-    meta: [{ title: `Rapport Stories ${loaderData?.date ?? ""}` }],
+  loader: async () => await getReport(),
+  staleTime: Infinity,
+  head: () => ({
+    meta: [{ title: "Stories des dernières 24 heures" }],
     links: ["report-page", "report-header", "user-section", "story-card", "lightbox"].map(
       (name) => ({ rel: "stylesheet", href: `/css/${name}.css` }),
     ),

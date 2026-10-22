@@ -13,13 +13,10 @@ const reportJson: unknown = JSON.parse(
   await readFile(new URL("fixtures/stories-report-server.json", import.meta.url), "utf-8"),
 );
 const report = StoriesManifestReportSchema.parse(reportJson);
-const earlierReportKey = "stories-report-2026-07-25.json";
 const latestReportKey = "stories-report-2026-07-26.json";
 const caption = "</script><script>caption</script>";
 const props: ReportContentProps = {
   date: "26 juillet 2026 à 11:48 UTC+2",
-  reportKeys: [earlierReportKey, latestReportKey],
-  selectedReportKey: latestReportKey,
   users: getRankedUsers(report).map((user) => ({
     user,
     avatar: user.profile_pic_url === null ? undefined : "/media/avatars/avatar.jpg",
@@ -54,7 +51,7 @@ test("report page renders fixture content", async () => {
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("content-type"), "text/html;charset=utf-8");
   const html = await response.text();
-  assert.match(html, /<h1>Rapport du 26 juillet 2026 à 11:48 UTC\+2<\/h1>/u);
+  assert.match(html, /<h1>Stories des dernières 24 heures<\/h1>/u);
   assert.match(html, /Html &quot;User&quot; \(ranked-second\)/u);
   assert.match(html, /A text-focused story with extracted details\./u);
   assert.match(html, /src="\/media\/avatars\/avatar.jpg"/u);
@@ -66,8 +63,7 @@ test("report page renders fixture content", async () => {
     html.indexOf("Ranked First (ranked-first)") <
       html.indexOf("Html &quot;User&quot; (ranked-second)"),
   );
-  assert.match(html, /<form class="report-picker" action="\/report" method="get">/u);
-  assert.match(html, /<option[^>]*value="stories-report-2026-07-26.json" selected="">/u);
+  assert.doesNotMatch(html, /report-picker|Choisir un rapport|stories-report-/u);
 });
 
 test("report lightbox renders the story selected by the URL", async () => {
@@ -90,9 +86,9 @@ test("report page does not embed initial state", async () => {
 
 test("report route renders its query result and safely serializes it for hydration", async () => {
   const html = await renderer.renderRoute(`/report?report=${latestReportKey}&story=story-pk-1`);
-  assert.match(html, /<h1[^>]*>Rapport du 26 juillet 2026 à 11:48 UTC\+2<\/h1>/u);
+  assert.match(html, /<h1[^>]*>Stories des dernières 24 heures<\/h1>/u);
   assert.match(html, /class="lightbox-detail-media-pk">story-pk-1<\/td>/u);
-  assert.match(html, /stories-report-2026-07-26.json/u);
+  assert.doesNotMatch(html, /stories-report-|report-picker/u);
   assert.match(html, /\$_TSR/u);
   assert.doesNotMatch(html, /<script>caption/u);
 });
@@ -103,9 +99,9 @@ test("report route query data is isolated between requests", async () => {
     renderer.renderRoute(url, { ...props, date: "première requête" }),
     renderer.renderRoute(url, { ...props, date: "deuxième requête" }),
   ]);
-  assert.match(first, /Rapport du première requête/u);
+  assert.match(first, /Fil chargé le première requête/u);
   assert.doesNotMatch(first, /deuxième requête/u);
-  assert.match(second, /Rapport du deuxième requête/u);
+  assert.match(second, /Fil chargé le deuxième requête/u);
   assert.doesNotMatch(second, /première requête/u);
 });
 

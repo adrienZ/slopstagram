@@ -1,9 +1,5 @@
-import {
-  STORY_MEDIA_TYPES,
-  type StoryOutputUser,
-  type UserTimelineStory,
-  type VisionResult,
-} from "../sdk/lib/types.ts";
+import type { StoryOutputUser, UserTimelineStory, VisionResult } from "../sdk/lib/types.ts";
+import { createStoredStoryUser } from "../sdk/story-feed.ts";
 import type { StoryRepository } from "../sdk/repositories/story-repository.ts";
 import {
   appleVisionRepository,
@@ -129,38 +125,6 @@ function getStoryPreviewSource(story: UserTimelineStory): string {
   return `images/story-previews/${story.story.pk}.jpg`;
 }
 
-function getStoryMediaType(story: UserTimelineStory): "image" | "video" | null {
-  if (story.story.media_type === 1) {
-    return STORY_MEDIA_TYPES.IMAGE;
-  }
-  if (story.story.media_type === 2) {
-    return STORY_MEDIA_TYPES.VIDEO;
-  }
-  return null;
-}
-
-function createTimelineUser(
-  latestStory: UserTimelineStory,
-  stories: Array<UserTimelineStory>,
-): StoryOutputUser {
-  return {
-    full_name: latestStory.full_name,
-    profile_pic_url:
-      latestStory.owner_pk === null ? null : `images/avatars/${latestStory.owner_pk}.jpg`,
-    reel_ids: [],
-    stories: stories.map((entry) => ({
-      ig_caption: entry.story.accessibility_caption ?? "",
-      locations: entry.locations,
-      media_type: getStoryMediaType(entry),
-      media_pk: entry.story.pk,
-      preview_image_url: getStoryPreviewSource(entry),
-      status: "ok",
-      stickers: entry.stickers,
-    })),
-    username: latestStory.username,
-  };
-}
-
 interface TimelineDetails {
   appleCaptionByMediaPk: Map<string, string>;
   visionByPreviewUrl: Map<string, VisionResult>;
@@ -198,7 +162,7 @@ export function createUserTimeline(
     return null;
   }
 
-  const timelineUser = createTimelineUser(stories[0], stories);
+  const timelineUser = createStoredStoryUser(stories[0], stories);
   const details = readTimelineDetails(stories);
   const avatarPath = timelineUser.profile_pic_url?.replace(/^images\//u, "/media/") ?? null;
 
