@@ -2,11 +2,12 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { BASE_CACHE_DIR } from "./lib/cache-service.ts";
-import { storyRepository, visionRepository } from "./lib/entity-repository-service.ts";
+import { storyRepository } from "./repositories/story-repository.ts";
+import { visionRepository } from "./repositories/vision-repository.ts";
 import type { StoryRepository } from "./repositories/story-repository.ts";
 import type { StoryOutputUser, UserTimelineStory, VisionResult } from "./lib/types.ts";
 import { VISION_MODEL, VISION_PROMPT } from "./lib/vision-analysis-service.ts";
-import type { VisionRepository } from "./entities/vision.ts";
+import type { VisionRepository } from "./repositories/vision-repository.ts";
 
 function getMediaType(value: number | undefined): "image" | "video" | null {
   if (value === 1) {

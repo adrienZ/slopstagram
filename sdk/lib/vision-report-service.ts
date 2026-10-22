@@ -1,7 +1,7 @@
 import path from "node:path";
 import { Ollama as VisionSdk } from "ollama";
-import type { VisionRepository } from "../entities/vision.ts";
-import { visionRepository } from "./entity-repository-service.ts";
+import type { VisionRepository } from "../repositories/vision-repository.ts";
+import { visionRepository } from "../repositories/vision-repository.ts";
 import type { CachedReportImages } from "./image-cache-service.ts";
 import type { Logger } from "./logging-service.ts";
 import type { StoriesManifestReport, VisionResult } from "./types.ts";

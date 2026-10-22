@@ -4,7 +4,7 @@ import { fetchStories } from "../sdk/index.ts";
 import { createLogger } from "../sdk/lib/logging-service.ts";
 import { recordFetchRun } from "../sdk/fetch-run.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
-import { reportRepository } from "../sdk/lib/entity-repository-service.ts";
+import { reportRepository } from "../sdk/repositories/report-repository.ts";
 import { persistReportInstagramUsers } from "../sdk/lib/instagram-user-service.ts";
 
 async function main(): Promise<void> {

@@ -1,6 +1,6 @@
-import type { AppleVisionRepository } from "../sdk/entities/apple-vision.ts";
-import type { UserSummaryRepository } from "../sdk/entities/user-summary.ts";
-import type { VisionRepository } from "../sdk/entities/vision.ts";
+import type { AppleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
+import type { UserSummaryRepository } from "../sdk/repositories/user-summary-repository.ts";
+import type { VisionRepository } from "../sdk/repositories/vision-repository.ts";
 import type { UserSummaryEntry, VisionEntry } from "../sdk/lib/types.ts";
 
 type InMemoryRepository<TKey, TValue, TRepository> = Pick<

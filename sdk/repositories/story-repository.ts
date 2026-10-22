@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, gt, lte } from "drizzle-orm";
-import type { DrizzleDatabase } from "../database/client.ts";
+import { useDrizzle, type DrizzleDatabase } from "../database/client.ts";
 import { instagramUsers } from "../entities/instagram-user.ts";
 import {
   stories,
@@ -321,3 +321,5 @@ export class StoryRepository {
     });
   }
 }
+
+export const storyRepository = new StoryRepository(useDrizzle());

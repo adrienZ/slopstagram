@@ -1,5 +1,5 @@
-import type { InstagramUserRepository } from "../entities/instagram-user.ts";
-import { instagramUserRepository } from "./entity-repository-service.ts";
+import type { InstagramUserRepository } from "../repositories/instagram-user-repository.ts";
+import { instagramUserRepository } from "../repositories/instagram-user-repository.ts";
 import type { InstagramUserEntry, StoriesManifestReport } from "./types.ts";
 
 interface InstagramUserFields {

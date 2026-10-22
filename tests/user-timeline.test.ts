@@ -5,7 +5,8 @@ import {
   getTimelinePreviewPaths,
   groupStoriesByPublishedDate,
 } from "../server/user-timeline.ts";
-import { appleVisionRepository, visionRepository } from "../sdk/lib/entity-repository-service.ts";
+import { appleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
+import { visionRepository } from "../sdk/repositories/vision-repository.ts";
 import type { UserTimelineStory } from "../sdk/lib/types.ts";
 
 function timelineStory(pk: string, takenAt: number): UserTimelineStory {

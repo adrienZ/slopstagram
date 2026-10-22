@@ -1,11 +1,9 @@
 import type { StoryOutputUser, UserTimelineStory, VisionResult } from "../sdk/lib/types.ts";
 import { createStoredStoryUser } from "../sdk/story-feed.ts";
 import type { StoryRepository } from "../sdk/repositories/story-repository.ts";
-import {
-  appleVisionRepository,
-  storyRepository,
-  visionRepository,
-} from "../sdk/lib/entity-repository-service.ts";
+import { appleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
+import { storyRepository } from "../sdk/repositories/story-repository.ts";
+import { visionRepository } from "../sdk/repositories/vision-repository.ts";
 
 const PARIS_TIME_ZONE = "Europe/Paris";
 

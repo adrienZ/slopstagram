@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import type { Ollama as VisionSdk } from "ollama";
 import { z } from "zod";
-import type { VisionRepository } from "../entities/vision.ts";
+import type { VisionRepository } from "../repositories/vision-repository.ts";
 import type { Logger } from "./logging-service.ts";
 import type { VisionEntry, VisionResult } from "./types.ts";
 

@@ -7,7 +7,7 @@ import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { FetchRunRepository } from "../sdk/repositories/fetch-run-repository.ts";
 import { ReportRepository } from "../sdk/repositories/report-repository.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
-import { InstagramUserRepository } from "../sdk/entities/instagram-user.ts";
+import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
 import { persistReportInstagramUsers } from "../sdk/lib/instagram-user-service.ts";
 import type { Logger } from "../sdk/lib/logging-service.ts";
 import type { StoriesManifestReport } from "../sdk/lib/types.ts";

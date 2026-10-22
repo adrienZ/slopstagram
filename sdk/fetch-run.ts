@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { fetchRunRepository } from "./lib/entity-repository-service.ts";
+import { fetchRunRepository } from "./repositories/fetch-run-repository.ts";
 import type { StoriesManifestReport } from "./lib/types.ts";
 import type { FetchRunRepository } from "./repositories/fetch-run-repository.ts";
 
