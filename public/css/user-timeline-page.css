@@ -37,6 +37,39 @@
     padding-left: 28px;
   }
 
+  .timeline-stickers {
+    margin-bottom: 40px;
+  }
+
+  .timeline-stickers-scroll {
+    overflow-x: auto;
+  }
+
+  .timeline-stickers table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  .timeline-stickers th,
+  .timeline-stickers td {
+    border: 1px solid #ccd4dd;
+    padding: 8px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .timeline-stickers td {
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+
+  .timeline-stickers .story-preview {
+    height: 32px;
+    max-width: none;
+    object-fit: contain;
+    width: 18px;
+  }
+
   .timeline-year > h2 {
     font-size: 25px;
     margin: 0 0 22px -42px;

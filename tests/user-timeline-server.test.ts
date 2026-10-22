@@ -95,6 +95,69 @@ test("timeline page renders dated stories", async () => {
   assert.match(html, /src="\/media\/story-previews\/story-pk.jpg"/u);
 });
 
+test("timeline sticker table preserves occurrences across history and caps rows at 50", async () => {
+  const kinds = ["mention", "music", "hashtag", "link"];
+  const tableProps: TimelineContentProps = {
+    ...props,
+    timeline: {
+      ...props.timeline,
+      stories: [
+        {
+          ...entry,
+          story: {
+            ...entry.story,
+            annotations: {
+              locations: [],
+              stickers: Array.from({ length: 49 }, (_, position) => ({
+                kind: kinds[position % kinds.length],
+                label: "repeated sticker",
+              })),
+            },
+          },
+        },
+        {
+          ...entry,
+          taken_at: entry.taken_at - 7 * 24 * 60 * 60,
+          story: {
+            ...entry.story,
+            pk: "older-story",
+            annotations: {
+              locations: ["older <location>"],
+              stickers: [
+                { kind: "location", label: "older <location>" },
+                { kind: "mention", label: "beyond the limit" },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  };
+  const tableRenderer = createPageRenderer(UserTimelinePage, Route, tableProps, "/users/$username");
+  const html = await tableRenderer.render();
+  const table = /<table>(?<table>[\s\S]*?)<\/table>/u.exec(html)?.groups?.table ?? "";
+  const body = /<tbody>(?<body>[\s\S]*?)<\/tbody>/u.exec(table)?.groups?.body ?? "";
+  assert.equal((body.match(/<tr>/gu) ?? []).length, 50);
+  assert.equal((body.match(/repeated sticker/gu) ?? []).length, 49);
+  for (const kind of [...kinds, "location"]) {
+    assert.ok(body.includes(`<td>${kind}</td>`));
+  }
+  assert.match(body, /older &lt;location&gt;/u);
+  assert.doesNotMatch(body, /beyond the limit/u);
+  assert.ok(body.indexOf("repeated sticker") < body.indexOf("older &lt;location&gt;"));
+  assert.ok(html.indexOf("<table>") < html.indexOf('class="timeline-year"'));
+  assert.match(body, /aria-label="Ouvrir aperçu story-pk"/u);
+  assert.match(body, /Preview unavailable/u);
+  assert.match(body, /<time dateTime="2025-12-25T00:00:00.000Z">/u);
+});
+
+test("timeline shows an empty message when no stickers are stored", async () => {
+  const html = await renderer.render();
+  assert.match(html, /Latest sticker occurrences \(up to 50\)/u);
+  assert.match(html, /No sticker occurrences stored\./u);
+  assert.doesNotMatch(html, /<table>/u);
+});
+
 test("timeline page does not embed initial state", async () => {
   const response = await request();
   const html = await response.text();

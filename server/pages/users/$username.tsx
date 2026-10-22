@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getUserTimeline } from "../../query-service.ts";
 
 import cx from "clsx";
-import { formatUserName } from "../../helper.ts";
+import { formatReportDate, formatUserName } from "../../helper.ts";
 import type { StoryCardViewModel } from "../../story-card-view-model.ts";
 import type { UserTimeline } from "../../user-timeline.ts";
 import { Lightbox } from "../../components/lightbox.tsx";
@@ -80,6 +80,64 @@ function TimelineGroups({
   );
 }
 
+function TimelineStickers({
+  timeline,
+  storyByMediaPk,
+}: {
+  timeline: TimelineContentProps["timeline"];
+  storyByMediaPk: Map<string, StoryCardViewModel>;
+}) {
+  const occurrences = timeline.stories
+    .flatMap((entry) =>
+      (entry.story.annotations?.stickers ?? []).map((sticker, position) => ({
+        entry,
+        sticker,
+        key: `${entry.story.pk}:${position}`,
+      })),
+    )
+    .slice(0, 50);
+
+  return (
+    <section className={cx("timeline-stickers")}>
+      <h2>Latest sticker occurrences (up to 50)</h2>
+      {occurrences.length === 0 ? (
+        <p>No sticker occurrences stored.</p>
+      ) : (
+        <div className={cx("timeline-stickers-scroll")}>
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Story preview</th>
+                <th scope="col">Story date</th>
+                <th scope="col">Sticker type</th>
+                <th scope="col">Sticker label</th>
+              </tr>
+            </thead>
+            <tbody>
+              {occurrences.map(({ entry, sticker, key }) => {
+                const card = storyByMediaPk.get(entry.story.pk);
+                const date = new Date(entry.taken_at * 1000).toISOString();
+                return (
+                  <tr key={key}>
+                    <td>
+                      {card === undefined ? "Preview unavailable" : <StoryCard story={card} />}
+                    </td>
+                    <td>
+                      <time dateTime={date}>{formatReportDate(date)}</time>
+                    </td>
+                    <td>{sticker.kind}</td>
+                    <td>{sticker.label}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export interface TimelineContentProps {
   timeline: Pick<UserTimeline, "avatarPath" | "timelineUser" | "stories" | "years">;
   stories: Array<StoryCardViewModel>;
@@ -95,6 +153,7 @@ export function TimelineContent({
     <>
       <main>
         <TimelineHeader timeline={timeline} userName={formatUserName(timeline.timelineUser)} />
+        <TimelineStickers timeline={timeline} storyByMediaPk={storyByMediaPk} />
         <TimelineGroups timeline={timeline} storyByMediaPk={storyByMediaPk} />
       </main>
       <Lightbox stories={stories} selectedStory={selectedStory} />
