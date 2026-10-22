@@ -4,7 +4,10 @@ import type { ReportRepository } from "./entities/report.ts";
 import { BASE_CACHE_DIR } from "./lib/cache-service.ts";
 import { reportRepository } from "./lib/entity-repository-service.ts";
 import { cacheReportImages } from "./lib/image-cache-service.ts";
-import { persistReportInstagramUsers } from "./lib/instagram-user-service.ts";
+import {
+  persistReportInstagramUsers,
+  stripReportInstagramUsers,
+} from "./lib/instagram-user-service.ts";
 import type { Logger } from "./lib/logging-service.ts";
 import type { StoriesManifestReport } from "./lib/types.ts";
 import { resolveUserSummariesForReport } from "./lib/user-summary-resolver-service.ts";
@@ -106,11 +109,12 @@ export async function createReport(options: CreateReportOptions): Promise<Create
     cacheDirectory,
     logger,
   });
+  await dependencies.persistReportInstagramUsers(report, undefined, false);
   await dependencies.resolveUserSummariesForReport(report, {
     logger,
     visionByPreviewUrl,
   });
-  await dependencies.persistReportInstagramUsers(report);
+  stripReportInstagramUsers(report);
   await dependencies.saveReport(outputFileName, report);
 
   logger.info(

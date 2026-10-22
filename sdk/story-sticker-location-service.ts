@@ -244,13 +244,31 @@ function getStickerLabels(story: StoryItem): Array<string> {
   return labels;
 }
 
+export function getStickerKind(label: string): string {
+  const separator = label.indexOf(":");
+  return separator === -1 ? "other" : label.slice(0, separator);
+}
+
+export function getStoryAnnotations(story: StoryItem): Array<{ kind: string; label: string }> {
+  const labels = [
+    ...(story.story_stickers ?? []).map((sticker) => sticker.label),
+    ...getStickerLabels(story),
+    ...getStoryLocationsFromItem(story).map((label) => `location:${label}`),
+  ];
+  return [...new Set(labels)].map((label) => ({ kind: getStickerKind(label), label }));
+}
+
 export function getStoryStickers(
   mediaPk: string,
   cachedItems: Map<string, StoryItem>,
 ): Array<string> {
   const story = cachedItems.get(mediaPk);
 
-  return story ? getStickerLabels(story) : [];
+  return story
+    ? getStoryAnnotations(story)
+        .filter((sticker) => sticker.kind !== "location")
+        .map((sticker) => sticker.label)
+    : [];
 }
 
 export function getStoryLocations(
@@ -259,5 +277,9 @@ export function getStoryLocations(
 ): Array<string> {
   const story = cachedItems.get(mediaPk);
 
-  return story ? getStoryLocationsFromItem(story) : [];
+  return story
+    ? getStoryAnnotations(story)
+        .filter((sticker) => sticker.kind === "location")
+        .map((sticker) => sticker.label.slice("location:".length))
+    : [];
 }

@@ -1,15 +1,22 @@
 import { eq } from "drizzle-orm";
-import { sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-orm/zod";
 import type { DrizzleDatabase } from "../database/client.ts";
 import type { UserSummaryEntry } from "../lib/types.ts";
+import { instagramUsers } from "./instagram-user.ts";
 
-export const userSummaries = sqliteTable("user_summaries", {
-  promptHash: text().notNull(),
-  result: text().notNull(),
-  sourceHash: text().primaryKey(),
-  userKey: text().notNull(),
-});
+export const userSummaries = sqliteTable(
+  "user_summaries",
+  {
+    instagramUserPk: text().references(() => instagramUsers.pk),
+    // Only unmatched historical summaries retain a username until their user is ingested.
+    legacyUsername: text(),
+    promptHash: text().notNull(),
+    result: text().notNull(),
+    sourceHash: text().primaryKey(),
+  },
+  (table) => [index("user_summaries_instagram_user_idx").on(table.instagramUserPk)],
+);
 
 export const NewUserSummarySchema = createInsertSchema(userSummaries);
 
@@ -22,8 +29,9 @@ export class UserSummaryRepository {
 
   findBySourceHash(sourceHash: string): UserSummaryEntry | null {
     const row = this.database
-      .select()
+      .select({ summary: userSummaries, username: instagramUsers.username })
       .from(userSummaries)
+      .leftJoin(instagramUsers, eq(userSummaries.instagramUserPk, instagramUsers.pk))
       .where(eq(userSummaries.sourceHash, sourceHash))
       .get();
 
@@ -32,19 +40,28 @@ export class UserSummaryRepository {
     }
 
     return {
-      prompt_hash: row.promptHash,
-      result: row.result,
-      source_hash: row.sourceHash,
-      user_key: row.userKey,
+      prompt_hash: row.summary.promptHash,
+      result: row.summary.result,
+      source_hash: row.summary.sourceHash,
+      user_key: row.username ?? row.summary.legacyUsername ?? "",
     };
   }
 
   async save(value: UserSummaryEntry): Promise<void> {
+    const users = this.database
+      .select({ pk: instagramUsers.pk })
+      .from(instagramUsers)
+      .where(eq(instagramUsers.username, value.user_key.trim()))
+      .all();
+    if (users.length !== 1) {
+      throw new Error(`Cannot link summary to Instagram user ${value.user_key}`);
+    }
     const entry = NewUserSummarySchema.parse({
+      instagramUserPk: users[0].pk,
+      legacyUsername: null,
       promptHash: value.prompt_hash,
       result: value.result,
       sourceHash: value.source_hash,
-      userKey: value.user_key,
     });
     await this.database
       .insert(userSummaries)
@@ -53,7 +70,8 @@ export class UserSummaryRepository {
         set: {
           promptHash: entry.promptHash,
           result: entry.result,
-          userKey: entry.userKey,
+          instagramUserPk: entry.instagramUserPk,
+          legacyUsername: null,
         },
         target: userSummaries.sourceHash,
       });

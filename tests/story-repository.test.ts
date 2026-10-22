@@ -4,8 +4,63 @@ import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { InstagramUserRepository } from "../sdk/entities/instagram-user.ts";
 import { StoryRepository } from "../sdk/entities/story.ts";
+import { getStoryLocations, getStoryStickers } from "../sdk/story-sticker-location-service.ts";
 
 describe("StoryRepository", () => {
+  test("rolls back a story update if annotation persistence fails", async (context) => {
+    const database = createDrizzle(":memory:");
+    migrateDatabase(database);
+    context.after(() => {
+      database.$client.close();
+    });
+    const repository = new StoryRepository(database);
+    await repository.save({
+      pk: "atomic",
+      accessibility_caption: "Original",
+      story_hashtags: [{ hashtag: "original" }],
+    });
+    const original = repository.findByMediaPk("atomic");
+    database.$client.exec(`CREATE TRIGGER reject_sticker BEFORE INSERT ON story_stickers
+      WHEN NEW.label = 'hashtag:#fail' BEGIN SELECT RAISE(ABORT, 'annotation failure'); END;`);
+    await assert.rejects(
+      repository.save({
+        pk: "atomic",
+        accessibility_caption: "Changed",
+        story_hashtags: [{ hashtag: "fail" }],
+      }),
+      /Failed query: insert into "story_stickers"/u,
+    );
+    assert.deepEqual(repository.findByMediaPk("atomic"), original);
+  });
+  test("retains every supported sticker kind across cold reads and resaves", async (context) => {
+    const database = createDrizzle(":memory:");
+    migrateDatabase(database);
+    context.after(() => {
+      database.$client.close();
+    });
+    const repository = new StoryRepository(database);
+    await repository.save({
+      pk: "annotated",
+      story_bloks_stickers: [
+        { bloks_sticker: { sticker_data: { ig_mention: { username: "friend" } } } },
+      ],
+      story_music_stickers: [{ music_asset_info: { title: "Song", display_artist: "Artist" } }],
+      story_hashtags: [{ hashtag: "trip" }],
+      story_link_stickers: [{ story_link: { url: "https://example.com" } }],
+      story_locations: [{ location: { name: "Paris" } }, { location: { name: "Paris" } }],
+    });
+    const stored = repository.findByMediaPk("annotated");
+    assert.ok(stored);
+    assert.deepEqual(getStoryStickers("annotated", new Map([["annotated", stored]])), [
+      "mention:@friend",
+      "music:Song - Artist",
+      "hashtag:#trip",
+      "link:https://example.com",
+    ]);
+    assert.deepEqual(getStoryLocations("annotated", new Map([["annotated", stored]])), ["Paris"]);
+    await repository.save(stored);
+    assert.deepEqual(repository.findByMediaPk("annotated"), stored);
+  });
   test("stores story details in relational tables", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
@@ -40,6 +95,10 @@ describe("StoryRepository", () => {
       original_height: 1920,
       original_width: 1080,
       pk: "story-1",
+      story_stickers: [
+        { kind: "hashtag", label: "hashtag:#structured" },
+        { kind: "location", label: "location:Paris" },
+      ],
       video_versions: [
         { height: 1920, type: 0, url: "https://example.com/video.mp4", width: 1080 },
       ],
@@ -65,12 +124,15 @@ describe("StoryRepository", () => {
       .prepare("SELECT kind, label FROM story_stickers")
       .all()
       .map((row) => Object.fromEntries(Object.entries(row)));
-    assert.deepEqual(stickers, [{ kind: "hashtag", label: "hashtag:#structured" }]);
+    assert.deepEqual(stickers, [
+      { kind: "hashtag", label: "hashtag:#structured" },
+      { kind: "location", label: "location:Paris" },
+    ]);
     const locations = database.$client
-      .prepare("SELECT label FROM story_locations")
+      .prepare("SELECT label FROM story_stickers WHERE kind = 'location'")
       .all()
       .map((row) => Object.fromEntries(Object.entries(row)));
-    assert.deepEqual(locations, [{ label: "Paris" }]);
+    assert.deepEqual(locations, [{ label: "location:Paris" }]);
     const storyColumns = database.$client.prepare("PRAGMA table_info(stories)").all();
     assert.equal(
       storyColumns.some((column) => String(column.name).toLowerCase().includes("json")),
@@ -133,6 +195,7 @@ describe("StoryRepository", () => {
         story: {
           media_type: 1,
           pk: "older-story",
+          story_stickers: [{ kind: "hashtag", label: "hashtag:#weekend" }],
           taken_at: 1_767_225_600,
         },
         stickers: ["hashtag:#weekend"],

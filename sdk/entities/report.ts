@@ -26,8 +26,8 @@ export const reports = sqliteTable("reports", {
   storiesCount: integer().notNull(),
   storyRankingToken: text(),
 });
-export const reportReels = sqliteTable(
-  "report_reels",
+export const reportStoryGroups = sqliteTable(
+  "report_story_groups",
   {
     fullName: text(),
     instagramId: text(),
@@ -144,7 +144,7 @@ function toFailure(row: typeof reportFailures.$inferSelect): StoryFetchFailure {
   };
 }
 function buildManifestUsers(
-  reels: Array<typeof reportReels.$inferSelect>,
+  reels: Array<typeof reportStoryGroups.$inferSelect>,
   storyRows: Array<typeof reportStories.$inferSelect>,
 ): Array<StoryManifestReel> {
   return reels.map((reel) => {
@@ -176,9 +176,9 @@ function readReportRows(database: DrizzleDatabase, key: string) {
       .map((row) => toFailure(row)),
     reels: database
       .select()
-      .from(reportReels)
-      .where(eq(reportReels.reportKey, key))
-      .orderBy(asc(reportReels.sortOrder))
+      .from(reportStoryGroups)
+      .where(eq(reportStoryGroups.reportKey, key))
+      .orderBy(asc(reportStoryGroups.sortOrder))
       .all(),
     stories: database.select().from(reportStories).where(eq(reportStories.reportKey, key)).all(),
   };
@@ -243,7 +243,7 @@ async function replaceReportRelations(
 ): Promise<void> {
   await database.delete(reportFailures).where(eq(reportFailures.reportKey, key));
   await database.delete(reportStories).where(eq(reportStories.reportKey, key));
-  await database.delete(reportReels).where(eq(reportReels.reportKey, key));
+  await database.delete(reportStoryGroups).where(eq(reportStoryGroups.reportKey, key));
   const reelEntries = report.manifest.users.map((reel) => ({
     fullName: reel.full_name ?? null,
     instagramId: reel.id ?? null,
@@ -255,7 +255,7 @@ async function replaceReportRelations(
     username: reel.username,
   }));
   if (reelEntries.length > 0) {
-    await database.insert(reportReels).values(reelEntries);
+    await database.insert(reportStoryGroups).values(reelEntries);
   }
   const storyEntries = report.manifest.users.flatMap((reel) =>
     reel.stories.map((story, sortOrder) => toReportStoryEntry(key, reel.reel_id, sortOrder, story)),

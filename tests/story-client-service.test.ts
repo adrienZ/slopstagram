@@ -70,6 +70,35 @@ test("createInstagramClient fetches tray through the authenticated browser page"
   ]);
 });
 
+test("fetches profile biographies through the authenticated browser and preserves identifiers", async () => {
+  const calls: Array<BrowserFetchCall> = [];
+  const client = createInstagramClient(
+    createSession(
+      {
+        data: {
+          user: {
+            biography: "Travel photographer",
+            id: "123",
+            username: "travel.user",
+          },
+        },
+      },
+      calls,
+    ),
+  );
+  assert.ok(client.getUserProfile);
+  const response = await client.getUserProfile("travel.user");
+  assert.deepEqual(response.json(), {
+    biography: "Travel photographer",
+    id: "123",
+    username: "travel.user",
+  });
+  assert.equal(
+    calls[0].requestUrl,
+    "https://www.instagram.com/api/v1/users/web_profile_info/?username=travel.user",
+  );
+});
+
 test("normalizes numeric Instagram tray identifiers to strings", async () => {
   const session = createSession({
     broadcasts: [],

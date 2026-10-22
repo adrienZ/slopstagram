@@ -73,19 +73,25 @@ export function createManifestUsers(
   cachedItems: Map<string, StoryItem>,
   failureByMediaPk: Map<string, number>,
 ): Array<StoryManifestReel> {
-  return tray.map((entry, order) => ({
-    full_name: entry.user.full_name ?? entry.full_name ?? null,
-    id: entry.user.id ?? entry.id,
-    media_ids: entry.media_ids,
-    order,
-    pk: entry.user.pk ?? entry.user.id ?? entry.id,
-    profile_pic_url: entry.user.profile_pic_url ?? null,
-    reel_id: entry.id,
-    stories: entry.media_ids.map((mediaPk) =>
-      createManifestStory(mediaPk, cachedItems, failureByMediaPk),
-    ),
-    username: entry.user.username,
-  }));
+  return tray.map((entry, order) => {
+    const user: StoryManifestReel = {
+      full_name: entry.user.full_name ?? entry.full_name ?? null,
+      id: entry.user.id ?? entry.id,
+      media_ids: entry.media_ids,
+      order,
+      pk: entry.user.pk ?? entry.user.id ?? entry.id,
+      profile_pic_url: entry.user.profile_pic_url ?? null,
+      reel_id: entry.id,
+      stories: entry.media_ids.map((mediaPk) =>
+        createManifestStory(mediaPk, cachedItems, failureByMediaPk),
+      ),
+      username: entry.user.username,
+    };
+    if (entry.user.biography !== undefined) {
+      user.biography = entry.user.biography;
+    }
+    return user;
+  });
 }
 
 function appendOutputUserStories(group: StoryOutputUser, user: StoryManifestReel): void {
@@ -96,13 +102,17 @@ function appendOutputUserStories(group: StoryOutputUser, user: StoryManifestReel
 }
 
 function createOutputUser(user: StoryManifestReel): StoryOutputUser {
-  return {
+  const output: StoryOutputUser = {
     full_name: user.full_name,
     profile_pic_url: user.profile_pic_url,
     reel_ids: [],
     stories: [],
     username: user.username,
   };
+  if (user.biography !== undefined) {
+    output.biography = user.biography;
+  }
+  return output;
 }
 
 export function createOutputUsers(manifestUsers: Array<StoryManifestReel>): Array<StoryOutputUser> {

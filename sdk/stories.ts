@@ -1,5 +1,6 @@
 import { storiesStorage } from "./lib/cache-service.ts";
 import { storyRepository } from "./lib/entity-repository-service.ts";
+import { enrichTrayBiographies } from "./instagram-profile-service.ts";
 import type { StoryRepository } from "./entities/story.ts";
 import type { Logger } from "./lib/logging-service.ts";
 import { createLogger } from "./lib/logging-service.ts";
@@ -176,6 +177,7 @@ export async function fetchStoriesManifest(
     tray: trayJson.tray,
   });
 
+  await enrichTrayBiographies(client, trayJson.tray, createRetryOptions(options, logger));
   const manifestUsers = createManifestUsers(
     trayJson.tray,
     state.cachedItems,

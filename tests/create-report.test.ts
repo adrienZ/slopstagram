@@ -113,8 +113,8 @@ test("createReport resolves entities before persisting the report", async () => 
     "cache-images",
     "resolve-apple-captions",
     "resolve-vision",
-    "resolve-summaries",
     "persist-instagram-users",
+    "resolve-summaries",
     "save-report",
   ]);
   assert.equal(savedKey, result.outputFileName);

@@ -14,6 +14,7 @@ describe("InstagramUserRepository", () => {
     const repository = new InstagramUserRepository(database);
 
     await repository.save({
+      biography: "Travels and photography",
       full_name: "First Name",
       id: "id-1",
       pk: "pk-1",
@@ -27,6 +28,7 @@ describe("InstagramUserRepository", () => {
     });
 
     assert.deepEqual(repository.findByUsername("fixture-user"), {
+      biography: "Travels and photography",
       full_name: "Updated Name",
       id: "id-2",
       pk: "pk-1",

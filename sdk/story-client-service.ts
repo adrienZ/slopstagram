@@ -168,6 +168,26 @@ function toClientResponse<T>(response: BrowserFetchResponse, schema: z.ZodType<T
 
 export function createInstagramClient(session: InstagramClientSession): InstagramClient {
   return {
+    async getUserProfile(username) {
+      const schema = z
+        .object({
+          data: z.object({
+            user: z.object({
+              biography: z.string().nullable(),
+              id: z.union([z.string(), z.number()]).transform(String),
+              username: z.string(),
+            }),
+          }),
+        })
+        .transform((response) => response.data.user);
+      return toClientResponse(
+        await fetchFromInstagramPage(
+          session,
+          `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`,
+        ),
+        schema,
+      );
+    },
     async getReelsMedia(reelIds) {
       return toClientResponse(
         await fetchFromInstagramPage(session, REELS_MEDIA_URL, {

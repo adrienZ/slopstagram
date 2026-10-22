@@ -1,10 +1,11 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-orm/zod";
 import type { DrizzleDatabase } from "../database/client.ts";
 import type { InstagramUserEntry } from "../lib/types.ts";
 
 export const instagramUsers = sqliteTable("instagram_users", {
+  biography: text(),
   fullName: text(),
   id: text().notNull(),
   pk: text().notNull().primaryKey(),
@@ -32,6 +33,7 @@ export class InstagramUserRepository {
     }
 
     return {
+      biography: row.biography,
       full_name: row.fullName,
       id: row.id,
       pk: row.pk,
@@ -41,6 +43,7 @@ export class InstagramUserRepository {
 
   async save(value: InstagramUserEntry): Promise<void> {
     const entry = NewInstagramUserSchema.parse({
+      biography: value.biography,
       fullName: value.full_name,
       id: value.id,
       pk: value.pk,
@@ -51,6 +54,7 @@ export class InstagramUserRepository {
       .values(entry)
       .onConflictDoUpdate({
         set: {
+          biography: value.biography === undefined ? instagramUsers.biography : entry.biography,
           fullName: entry.fullName,
           id: entry.id,
           pk: entry.pk,
@@ -58,5 +62,10 @@ export class InstagramUserRepository {
         },
         target: instagramUsers.pk,
       });
+    this.database.run(sql`
+      UPDATE user_summaries SET instagramUserPk = ${entry.pk}, legacyUsername = NULL
+      WHERE instagramUserPk IS NULL AND trim(legacyUsername) = ${entry.username}
+        AND (SELECT count(*) FROM instagram_users WHERE username = ${entry.username}) = 1
+    `);
   }
 }

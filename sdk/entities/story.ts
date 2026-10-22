@@ -4,7 +4,11 @@ import type { DrizzleDatabase } from "../database/client.ts";
 import { instagramUsers } from "./instagram-user.ts";
 import { StoryItemSchema } from "../lib/story-schemas.ts";
 import type { StoryItem, StoryOwner, UserTimelineStory } from "../lib/types.ts";
-import { getStoryLocations, getStoryStickers } from "../story-sticker-location-service.ts";
+import {
+  getStoryAnnotations,
+  getStoryLocations,
+  getStoryStickers,
+} from "../story-sticker-location-service.ts";
 
 export const stories = sqliteTable("stories", {
   accessibilityCaption: text(),
@@ -59,26 +63,18 @@ export const storyStickers = sqliteTable(
   (table) => [primaryKey({ columns: [table.mediaPk, table.sortOrder] })],
 );
 
-export const storyLocations = sqliteTable(
-  "story_locations",
-  {
-    label: text().notNull(),
-    mediaPk: text()
-      .notNull()
-      .references(() => stories.mediaPk, { onDelete: "cascade" }),
-    sortOrder: integer().notNull(),
-  },
-  (table) => [primaryKey({ columns: [table.mediaPk, table.sortOrder] })],
-);
-
 type StoryRow = typeof stories.$inferSelect;
 
 function toStoryItem(
   story: StoryRow,
   imageVersions: Array<typeof storyImageVersions.$inferSelect>,
   videoVersions: Array<typeof storyVideoVersions.$inferSelect>,
+  stickers: Array<typeof storyStickers.$inferSelect>,
 ): StoryItem {
   const item: StoryItem = { pk: story.mediaPk };
+  if (stickers.length > 0) {
+    item.story_stickers = stickers.map(({ kind, label }) => ({ kind, label }));
+  }
 
   if (story.accessibilityCaption !== null) {
     item.accessibility_caption = story.accessibilityCaption;
@@ -119,11 +115,6 @@ function toStoryItem(
   return StoryItemSchema.parse(item);
 }
 
-function getStickerKind(label: string): string {
-  const separator = label.indexOf(":");
-  return separator === -1 ? "other" : label.slice(0, separator);
-}
-
 function toStoryEntry(story: StoryItem, owner?: StoryOwner): typeof stories.$inferInsert {
   return {
     accessibilityCaption: story.accessibility_caption ?? null,
@@ -137,9 +128,12 @@ function toStoryEntry(story: StoryItem, owner?: StoryOwner): typeof stories.$inf
   };
 }
 
-async function replaceStoryVersions(database: DrizzleDatabase, story: StoryItem): Promise<void> {
-  await database.delete(storyImageVersions).where(eq(storyImageVersions.mediaPk, story.pk));
-  await database.delete(storyVideoVersions).where(eq(storyVideoVersions.mediaPk, story.pk));
+function replaceStoryVersions(
+  database: Pick<DrizzleDatabase, "insert" | "delete">,
+  story: StoryItem,
+): void {
+  database.delete(storyImageVersions).where(eq(storyImageVersions.mediaPk, story.pk)).run();
+  database.delete(storyVideoVersions).where(eq(storyVideoVersions.mediaPk, story.pk)).run();
 
   const imageVersionEntries = (story.image_versions2?.candidates ?? []).map(
     (version, sortOrder) => ({
@@ -151,7 +145,7 @@ async function replaceStoryVersions(database: DrizzleDatabase, story: StoryItem)
     }),
   );
   if (imageVersionEntries.length > 0) {
-    await database.insert(storyImageVersions).values(imageVersionEntries);
+    database.insert(storyImageVersions).values(imageVersionEntries).run();
   }
   const videoVersionEntries = (story.video_versions ?? []).map((version, sortOrder) => ({
     height: version.height ?? null,
@@ -162,30 +156,23 @@ async function replaceStoryVersions(database: DrizzleDatabase, story: StoryItem)
     width: version.width ?? null,
   }));
   if (videoVersionEntries.length > 0) {
-    await database.insert(storyVideoVersions).values(videoVersionEntries);
+    database.insert(storyVideoVersions).values(videoVersionEntries).run();
   }
 }
 
-async function replaceStoryAnnotations(database: DrizzleDatabase, story: StoryItem): Promise<void> {
-  await database.delete(storyStickers).where(eq(storyStickers.mediaPk, story.pk));
-  await database.delete(storyLocations).where(eq(storyLocations.mediaPk, story.pk));
+function replaceStoryAnnotations(
+  database: Pick<DrizzleDatabase, "insert" | "delete">,
+  story: StoryItem,
+): void {
+  database.delete(storyStickers).where(eq(storyStickers.mediaPk, story.pk)).run();
 
-  const stickerEntries = getStoryStickers(story.pk, new Map([[story.pk, story]])).map(
-    (label, sortOrder) => ({
-      kind: getStickerKind(label),
-      label,
-      mediaPk: story.pk,
-      sortOrder,
-    }),
-  );
+  const stickerEntries = getStoryAnnotations(story).map((sticker, sortOrder) => ({
+    ...sticker,
+    mediaPk: story.pk,
+    sortOrder,
+  }));
   if (stickerEntries.length > 0) {
-    await database.insert(storyStickers).values(stickerEntries);
-  }
-  const locationEntries = getStoryLocations(story.pk, new Map([[story.pk, story]])).map(
-    (label, sortOrder) => ({ mediaPk: story.pk, label, sortOrder }),
-  );
-  if (locationEntries.length > 0) {
-    await database.insert(storyLocations).values(locationEntries);
+    database.insert(storyStickers).values(stickerEntries).run();
   }
 }
 
@@ -211,26 +198,20 @@ function getTimelineStory(
     .orderBy(asc(storyVideoVersions.sortOrder))
     .all();
   const stickers = database
-    .select({ label: storyStickers.label })
+    .select()
     .from(storyStickers)
     .where(eq(storyStickers.mediaPk, story.mediaPk))
     .orderBy(asc(storyStickers.sortOrder))
-    .all()
-    .map((entry) => entry.label);
-  const locations = database
-    .select({ label: storyLocations.label })
-    .from(storyLocations)
-    .where(eq(storyLocations.mediaPk, story.mediaPk))
-    .orderBy(asc(storyLocations.sortOrder))
-    .all()
-    .map((entry) => entry.label);
+    .all();
+  const item = toStoryItem(story, imageVersions, videoVersions, stickers);
+  const items = new Map([[story.mediaPk, item]]);
 
   return {
     full_name: user.fullName,
-    locations,
+    locations: getStoryLocations(story.mediaPk, items),
     owner_pk: user.pk,
-    story: toStoryItem(story, imageVersions, videoVersions),
-    stickers,
+    story: item,
+    stickers: getStoryStickers(story.mediaPk, items),
     taken_at: story.takenAt,
     username: user.username,
   };
@@ -262,19 +243,32 @@ export class StoryRepository {
       .orderBy(asc(storyVideoVersions.sortOrder))
       .all();
 
-    return toStoryItem(story, imageVersions, videoVersions);
+    const stickers = this.database
+      .select()
+      .from(storyStickers)
+      .where(eq(storyStickers.mediaPk, mediaPk))
+      .orderBy(asc(storyStickers.sortOrder))
+      .all();
+    return toStoryItem(story, imageVersions, videoVersions, stickers);
   }
 
+  // oxlint-disable-next-line typescript/require-await -- Keep rejected-promise errors at the asynchronous repository boundary around synchronous SQLite transactions.
   async save(value: StoryItem, owner?: StoryOwner): Promise<void> {
     const story = StoryItemSchema.parse(value);
     const entry = toStoryEntry(story, owner);
 
-    await this.database.insert(stories).values(entry).onConflictDoUpdate({
-      set: entry,
-      target: stories.mediaPk,
+    this.database.transaction((database) => {
+      database
+        .insert(stories)
+        .values(entry)
+        .onConflictDoUpdate({
+          set: entry,
+          target: stories.mediaPk,
+        })
+        .run();
+      replaceStoryVersions(database, story);
+      replaceStoryAnnotations(database, story);
     });
-    await replaceStoryVersions(this.database, story);
-    await replaceStoryAnnotations(this.database, story);
   }
 
   listByUsername(username: string): Array<UserTimelineStory> {

@@ -19,6 +19,9 @@ export interface InstagramClientResponse<T> {
 }
 
 export interface InstagramClient {
+  getUserProfile?: (
+    username: string,
+  ) => Promise<InstagramClientResponse<{ biography: string | null; id: string; username: string }>>;
   getReelsMedia: (reelIds: Array<string>) => Promise<InstagramClientResponse<ReelsMediaResponse>>;
   getTray: () => Promise<InstagramClientResponse<ReelTrayResponse>>;
 }

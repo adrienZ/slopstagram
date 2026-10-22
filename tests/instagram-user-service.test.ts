@@ -105,4 +105,18 @@ describe("Instagram user report persistence", () => {
     assert.equal(report.output.users[0]?.full_name, "Fixture User");
     assert.equal(report.output.users[0]?.profile_pic_url, "images/avatars/instagram-pk-1.jpg");
   });
+
+  test("persists biographies before stripping them and restores them on read", async () => {
+    const report = createReportWithInstagramUser();
+    report.manifest.users[0].biography = "Traveler and photographer";
+    const repository = createRepository();
+    await persistReportInstagramUsers(report, repository, false);
+    assert.equal(repository.entries.get("fixture-user")?.biography, "Traveler and photographer");
+    assert.equal(report.manifest.users[0].full_name, "Fixture User");
+    await persistReportInstagramUsers(report, repository);
+    assert.equal("biography" in report.manifest.users[0], false);
+    hydrateReportInstagramUsers(report, repository);
+    assert.equal(report.manifest.users[0].biography, "Traveler and photographer");
+    assert.equal(report.output.users[0].biography, "Traveler and photographer");
+  });
 });

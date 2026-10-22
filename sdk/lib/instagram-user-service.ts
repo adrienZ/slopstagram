@@ -3,6 +3,7 @@ import { instagramUserRepository } from "./entity-repository-service.ts";
 import type { InstagramUserEntry, StoriesManifestReport } from "./types.ts";
 
 interface InstagramUserFields {
+  biography?: string | null;
   full_name?: string | null;
   id?: string;
   pk?: string;
@@ -28,24 +29,36 @@ function toInstagramUser(user: InstagramUserFields): InstagramUserEntry {
     throw new Error(`Instagram user ${user.username} has no id or pk`);
   }
 
-  return {
+  const entry: InstagramUserEntry = {
     full_name: user.full_name ?? null,
     id,
     pk,
     username: user.username,
   };
+  if (user.biography !== undefined) {
+    entry.biography = user.biography;
+  }
+  return entry;
 }
 
 function removeEmbeddedUser(user: InstagramUserFields): void {
+  delete user.biography;
   delete user.full_name;
   delete user.id;
   delete user.pk;
   delete user.profile_pic_url;
 }
 
+export function stripReportInstagramUsers(report: StoriesManifestReport): void {
+  for (const user of [...report.manifest.users, ...report.output.users]) {
+    removeEmbeddedUser(user);
+  }
+}
+
 export async function persistReportInstagramUsers(
   report: StoriesManifestReport,
   repository: InstagramUserStore = instagramUserRepository,
+  stripEmbedded = true,
 ): Promise<void> {
   const usersByUsername = new Map<string, InstagramUserEntry>();
 
@@ -66,8 +79,8 @@ export async function persistReportInstagramUsers(
       await repository.save(user);
     }),
   );
-  for (const user of [...report.manifest.users, ...report.output.users]) {
-    removeEmbeddedUser(user);
+  if (stripEmbedded) {
+    stripReportInstagramUsers(report);
   }
 }
 
@@ -94,6 +107,7 @@ export function hydrateReportInstagramUsers(
     }
     const entity = usersByUsername.get(user.username);
     if (entity !== null && entity !== undefined) {
+      user.biography = entity.biography;
       user.full_name = entity.full_name;
       user.profile_pic_url = `images/avatars/${entity.pk}.jpg`;
     }

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
+import { useDrizzle } from "../sdk/database/client.ts";
 import type { StoriesManifestReport } from "../sdk/lib/types.ts";
 import { createReportViewModel } from "../server/report-view-model.ts";
 
@@ -47,6 +48,11 @@ function createUncachedReport(cacheKey: string): StoriesManifestReport {
     },
   };
 }
+
+test("default repository connection is isolated from the working database in tests", () => {
+  const databasePath = useDrizzle().$client.prepare("PRAGMA database_list").get()?.file;
+  assert.equal(databasePath, "", "the default test database must be in memory");
+});
 
 test("createReportViewModel never fetches external resources on cache misses", async () => {
   migrateDatabase();
