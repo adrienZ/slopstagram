@@ -91,6 +91,20 @@ creation. After changing an entity schema, generate a migration with:
 npm run db:generate
 ```
 
+### Matt Pocock's engineering skills
+
+This repository is configured for Matt Pocock's engineering skills. The
+[agent instructions](./AGENTS.md#agent-skills) point to the repository conventions:
+
+- [Issue tracker](./docs/agents/issue-tracker.md): GitHub Issues in `adrienZ/slopstagram`.
+- [Triage labels](./docs/agents/triage-labels.md): `needs-triage`, `needs-info`,
+  `ready-for-agent`, `ready-for-human`, and `wontfix`.
+- [Domain docs](./docs/agents/domain.md): a root `GLOSSARY.md` and `docs/adr/`, created
+  as terminology and decisions are resolved.
+
+Edit `docs/agents/*.md` directly to update these conventions. Re-running
+`/setup-matt-pocock-skills` is only needed to switch issue trackers or restart setup.
+
 ## Runtime rationale
 
 The Nitro application and scripts run on Node.js. Bun is retained only for the
