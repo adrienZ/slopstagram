@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
-import { ReportRepository } from "../sdk/entities/report.ts";
+import { ReportRepository } from "../sdk/repositories/report-repository.ts";
+import { StoryRepository } from "../sdk/repositories/story-repository.ts";
 import type { StoriesManifestReport } from "../sdk/lib/types.ts";
 
 function createReport(name: string): StoriesManifestReport {
@@ -78,6 +79,30 @@ function createReportWithStory(name: string): StoriesManifestReport {
 }
 
 describe("ReportRepository", () => {
+  test("reads the current story caption instead of a conflicting report caption", async (context) => {
+    const database = createDrizzle(":memory:");
+    migrateDatabase(database);
+    context.after(() => {
+      database.$client.close();
+    });
+    const repository = new ReportRepository(database);
+    const stories = new StoryRepository(database);
+    await stories.save({ pk: "shared-story", accessibility_caption: "Canonical caption" });
+    const report = createReportWithStory("conflicting-caption");
+    await repository.save("conflicting-caption", report);
+
+    const stored = repository.findByKey("conflicting-caption");
+    assert.equal(stored?.manifest.users[0]?.stories[0]?.ig_caption, "Canonical caption");
+    assert.equal(stored.output.users[0]?.stories[0]?.ig_caption, "Canonical caption");
+
+    await stories.save({ pk: "shared-story", accessibility_caption: "Updated caption" });
+    assert.equal(
+      repository.findByKey("conflicting-caption")?.output.users[0]?.stories[0]?.ig_caption,
+      "Updated caption",
+    );
+    assert.equal(stories.findByMediaPk("shared-story")?.accessibility_caption, "Updated caption");
+  });
+
   test("stores report snapshots and lists their keys in creation order", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
@@ -107,6 +132,10 @@ describe("ReportRepository", () => {
     const repository = new ReportRepository(database);
     const first = createReportWithStory("stories-report-2026-08-16T12-00-00+0000.json");
     const second = createReportWithStory("stories-report-2026-08-17T12-00-00+0000.json");
+    await new StoryRepository(database).save({
+      pk: "shared-story",
+      accessibility_caption: "Story caption",
+    });
 
     await repository.save(first.metadata.report_name, first);
     await repository.save(second.metadata.report_name, second);
@@ -129,5 +158,60 @@ describe("ReportRepository", () => {
       reportName: second.metadata.report_name,
       storiesCount: 1,
     });
+  });
+
+  for (const caption of [undefined, null, "", " \t\n "]) {
+    test(`uses N/A for an absent story caption (${JSON.stringify(caption)}) without falling back to the report`, async (context) => {
+      const database = createDrizzle(":memory:");
+      migrateDatabase(database);
+      context.after(() => {
+        database.$client.close();
+      });
+      const repository = new ReportRepository(database);
+      const stories = new StoryRepository(database);
+      await stories.save({ pk: "shared-story", accessibility_caption: caption });
+      const report = createReportWithStory("absent-caption");
+      await repository.save("absent-caption", report);
+
+      const stored = repository.findByKey("absent-caption");
+      assert.equal(stored?.manifest.users[0]?.stories[0]?.ig_caption, "N/A");
+      assert.deepEqual(stored.output.users[0]?.stories[0], {
+        ...report.output.users[0].stories[0],
+        ig_caption: "N/A",
+      });
+      assert.equal(
+        stories.findByMediaPk("shared-story")?.accessibility_caption,
+        caption ?? undefined,
+      );
+    });
+  }
+
+  test("keeps a failed report story when no associated story was saved", async (context) => {
+    const database = createDrizzle(":memory:");
+    migrateDatabase(database);
+    context.after(() => {
+      database.$client.close();
+    });
+    const repository = new ReportRepository(database);
+    const report = createReportWithStory("missing-story");
+    report.manifest.users[0].stories[0].status = "failed";
+    report.manifest.users[0].stories[0].failure_index = 0;
+    report.failures.push({
+      attempt_count: 1,
+      http_status: null,
+      media_pk: "shared-story",
+      message: "Story unavailable",
+      reason: "missing_from_response",
+      reel_id: "reel-1",
+    });
+    await repository.save("missing-story", report);
+
+    const stored = repository.findByKey("missing-story");
+    assert.deepEqual(stored?.manifest.users[0].stories[0], {
+      ...report.manifest.users[0].stories[0],
+      ig_caption: "N/A",
+    });
+    assert.deepEqual(stored.failures, report.failures);
+    assert.equal(new StoryRepository(database).findByMediaPk("shared-story"), null);
   });
 });
