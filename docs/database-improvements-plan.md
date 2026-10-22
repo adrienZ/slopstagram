@@ -11,7 +11,7 @@ Updated: 2026-10-22. Base: `origin/main` at `435eeb8`.
   `legacyUsername`.
 - [PR #10](https://github.com/adrienZ/slopstagram/pull/10) dropped:
   do not add per-account profile requests for biographies. See [the rationale](../RATIONALE.md).
-- Keep report-level location/sticker snapshots separate from canonical story data.
+- Keep report-level location/sticker snapshots separate from story data.
   Preserve the existing report snapshot columns and behavior.
 - Keep source media URLs and cached local previews. Do not download videos.
 
@@ -30,7 +30,7 @@ Updated: 2026-10-22. Base: `origin/main` at `435eeb8`.
       until their corresponding inputs are processed again.
 - [x] Apply the rename and summary-reference migrations using the application's
       Drizzle migrator. Preserve all 66 reports, 6,112 report-story rows, and 2,647 report
-      groups. Restore 7,737 available report annotations and 82 canonical locations.
+      groups. Restore 7,737 available report annotations and 82 story locations.
       Leave OCR, vision analysis, stories, and image/video-version records intact.
 - [x] Verify SQLite integrity and foreign keys; confirm repeat migration is a no-op.
 - [x] Remove the report view-model test that migrated the default database.
@@ -52,7 +52,7 @@ pre-recovery backup retains the normalized source data and old summaries.
    Preserve the report's historical display name while validating cached results
    against a stable owner. Do not rebuild old summary ownership solely from current
    usernames. Decide whether any historical summaries need explicit regeneration.
-2. **Canonical sticker model.** Merge `story_locations` into `story_stickers` with
+2. **Story sticker model.** Merge `story_locations` into `story_stickers` with
    `kind = 'location'`. Support mentions, music, hashtags, links, and locations through
    the same persistence path. Keep report snapshots as agreed above. Do not introduce
    new JSON storage columns.
@@ -74,7 +74,7 @@ pre-recovery backup retains the normalized source data and old summaries.
    `20260814142011_abnormal_sway`. Its recorded hash was already present in the
    pre-recovery backup. Both newly applied migration hashes match their files;
    do not rewrite the old journal entry merely to silence the difference.
-7. **Canonical accessibility caption.** Track separately in
+7. **Story accessibility caption.** Track separately in
    [issue #11](https://github.com/adrienZ/slopstagram/issues/11):
    `report_stories.igCaption` and `stories.accessibilityCaption` represent the same
    data; make the story value the source of truth and remove redundant storage
@@ -85,7 +85,7 @@ pre-recovery backup retains the normalized source data and old summaries.
 Scope this work to items 2–4 above. Summary identity, media URL documentation,
 and the older migration checksum are separate follow-ups.
 
-1. Use `/grill-with-docs` to agree on the canonical sticker model, ingestion and
+1. Use `/grill-with-docs` to agree on the story sticker model, ingestion and
    cached-read behavior, ordering, duplicate handling, and reliable historical
    backfill sources. Preserve existing report snapshots. Record resolved terms in
    `GLOSSARY.md` and significant trade-offs in `docs/adr/` where appropriate.
@@ -108,12 +108,12 @@ this workflow does not authorize migration or backfill execution.
 
 ### Approved and published ticket breakdown
 
-| Ticket                                                                                         | Blocked by | Deliverable                                                                                                                                                   |
-| ---------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [#13: Lossless annotation reads and resaves](https://github.com/adrienZ/slopstagram/issues/13) | None       | Normalize existing annotations for cold reads, manifests, timelines, and resaves; prepare compatibility with location-kind sticker rows.                      |
-| [#14: Additive schema and one-time backfill](https://github.com/adrienZ/slopstagram/issues/14) | #13        | Drizzle Kit migration PR introducing the unified model and source provenance; transfer canonical locations once while retaining the legacy table temporarily. |
-| [#15: Unified ingestion and consumers](https://github.com/adrienZ/slopstagram/issues/15)       | #14        | Preserve occurrences, apply atomic source-level updates, handle legacy provenance, and move all readers/writers to the unified model.                         |
-| [#16: Remove obsolete location storage](https://github.com/adrienZ/slopstagram/issues/16)      | #15        | Separate Drizzle Kit cleanup migration PR after no caller needs the old table; validate the complete transition.                                              |
+| Ticket                                                                                         | Blocked by | Deliverable                                                                                                                                               |
+| ---------------------------------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [#13: Lossless annotation reads and resaves](https://github.com/adrienZ/slopstagram/issues/13) | None       | Normalize existing annotations for cold reads, manifests, timelines, and resaves; prepare compatibility with location-kind sticker rows.                  |
+| [#14: Additive schema and one-time backfill](https://github.com/adrienZ/slopstagram/issues/14) | #13        | Drizzle Kit migration PR introducing the unified model and source provenance; transfer story locations once while retaining the legacy table temporarily. |
+| [#15: Unified ingestion and consumers](https://github.com/adrienZ/slopstagram/issues/15)       | #14        | Preserve occurrences, apply atomic source-level updates, handle legacy provenance, and move all readers/writers to the unified model.                     |
+| [#16: Remove obsolete location storage](https://github.com/adrienZ/slopstagram/issues/16)      | #15        | Separate Drizzle Kit cleanup migration PR after no caller needs the old table; validate the complete transition.                                          |
 
 The backfill runs only in #14. #16 removes obsolete storage without another backfill.
 Each migration is reviewed before execution and validated on a consistent production
@@ -130,7 +130,7 @@ body, labels, and state are unchanged.
 - Keep entries from different Instagram source fields when they share a label;
   do not infer that equal labels identify one sticker. This may retain multiple
   representations when the source provides no reliable occurrence identity.
-- Canonical annotations represent the latest complete observation, rather than
+- Story annotations represent the latest complete observation, rather than
   an accumulation across observations. Each supplied annotation field replaces
   its own stored contribution; an explicitly empty array clears that contribution.
   Omitted fields preserve existing data. Apply all replacements atomically in one
@@ -166,13 +166,13 @@ body, labels, and state are unchanged.
   all original metadata.
 - Raw story cache files may offer richer backfill data if present and validated
   against the exact story ID. Their completeness and freshness are not established
-  by the current storage code; do not assume they supersede canonical data.
-- Candidate historical sources are the canonical annotation tables, report
+  by the current storage code; do not assume they supersede story data.
+- Candidate historical sources are the story annotation tables, report
   snapshots, raw per-story cache files, and earlier database/cache backups. Only
   the first two are available from a production database copy alone. Cache files
   and older backups would need to be supplied separately and reviewed; availability
   has not been checked.
-- The selected backfill sources are the two canonical annotation tables only;
+- The selected backfill sources are the two story annotation tables only;
   the other sources above are excluded from this migration.
 - A real anonymized fixture contains separate mention occurrences with the same
   username but different occurrence IDs and positions. A synthetic extraction test

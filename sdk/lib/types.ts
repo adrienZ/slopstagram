@@ -64,7 +64,7 @@ export interface StoryAnnotations {
 
 export interface StoryItem {
   accessibility_caption?: string | null;
-  // Canonical labels and kinds read from SQLite, separate from Instagram's raw fields.
+  // Labels and kinds from stored story data, separate from Instagram's raw fields.
   annotations?: StoryAnnotations;
   image_versions2?: StoryImageVersions;
   id?: string;

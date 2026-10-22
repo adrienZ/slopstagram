@@ -125,9 +125,9 @@ for (const unifiedLocations of [false, true]) {
     ];
     if (unifiedLocations) {
       stickers.push(
-        { kind: "location", label: "Canonical place", mediaPk: "m1", sortOrder: 6 },
-        { kind: "location", label: "Canonical place", mediaPk: "m1", sortOrder: 5 },
-        { kind: "location", label: "First canonical place", mediaPk: "m1", sortOrder: 3 },
+        { kind: "location", label: "Unified place", mediaPk: "m1", sortOrder: 6 },
+        { kind: "location", label: "Unified place", mediaPk: "m1", sortOrder: 5 },
+        { kind: "location", label: "First unified place", mediaPk: "m1", sortOrder: 3 },
       );
     }
     await database.insert(storyStickers).values(stickers);
@@ -140,7 +140,7 @@ for (const unifiedLocations of [false, true]) {
     const stored = cold.findByMediaPk("m1");
     assert.ok(stored);
     const expectedLocations = unifiedLocations
-      ? ["First canonical place", "Canonical place", "Canonical place"]
+      ? ["First unified place", "Unified place", "Unified place"]
       : ["First legacy place", "Historical place", "Historical place"];
     const users = createManifestUsers(tray, new Map([[stored.pk, stored]]), new Map());
     assert.deepEqual(users[0]?.stories[0]?.locations, expectedLocations);

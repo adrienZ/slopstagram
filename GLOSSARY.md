@@ -15,9 +15,8 @@ or link.
 One instance of a sticker on a story. Separate occurrences may have the same kind
 and label.
 
-**Canonical story data**:
-The shared information about a story, independent of any individual report.
+**Story data**:
+The latest known information about a story, shared across reports.
 
 **Report snapshot**:
-The information captured about a story for a particular report. It retains that
-report's historical view separately from canonical story data.
+The information captured about a story when a particular report was created.
