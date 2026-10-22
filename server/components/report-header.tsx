@@ -11,9 +11,6 @@ export function ReportHeader({ reportKeys, selectedReportKey }: ReportHeaderProp
       <div>
         <p className={cx("report-page-header__eyebrow")}>Storiesss Instagram</p>
         <p className={cx("report-page-header__title")}>Consulter un rapport</p>
-        <a className="report-chat-link" href="/chat">
-          Ouvrir le chat ↗
-        </a>
       </div>
       <form className={cx("report-picker")} action="/report" method="get">
         <label htmlFor="report-picker">
