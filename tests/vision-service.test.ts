@@ -35,6 +35,41 @@ function requestBodyToString(body: BodyInit | null | undefined): string {
 }
 
 describe("resolveVisionForReport", () => {
+  for (const entry of [
+    { name: "missing", cachedPath: undefined, warning: "no cached preview" },
+    { name: "empty", cachedPath: "", warning: "no cached preview" },
+    { name: "non-JPEG", cachedPath: "story.webp", warning: "preview is not JPEG" },
+  ]) {
+    test(`skips ${entry.name} cached previews without contacting vision`, async () => {
+      const repository = createVisionRepositoryAdapter();
+      let fetchCount = 0;
+      const paths = new Map<string, string>();
+      if (entry.cachedPath !== undefined) {
+        paths.set(previewSource, entry.cachedPath);
+      }
+      const result = await resolveVisionForReport(
+        createVisionReport(),
+        { profilePicPathByUrl: new Map(), storyPreviewPathByUrl: paths },
+        {
+          cacheDirectory: "/unused-vision-cache",
+          repository,
+          logger: createMockLogger(),
+          fetchVision: async () => {
+            fetchCount += 1;
+            throw new Error("vision must not be called for invalid previews");
+          },
+        },
+      );
+
+      assert.deepEqual(result.get(previewSource), {
+        text: "",
+        visual: `vision failed: ${entry.warning}`,
+      });
+      assert.equal(fetchCount, 0);
+      assert.equal(repository.entries.size, 0);
+    });
+  }
+
   test("reuses successful vision responses from the repository", async () => {
     const repository = createVisionRepositoryAdapter();
     let fetchCount = 0;

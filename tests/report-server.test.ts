@@ -1,109 +1,123 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { mock, test } from "node:test";
+import { test } from "node:test";
 import { URL } from "node:url";
-import { H3, defineEventHandler } from "nitro/h3";
-import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
+import { H3 } from "nitro/h3";
 import { StoriesManifestReportSchema } from "../sdk/lib/story-schemas.ts";
-import type { StoriesManifestReport } from "../sdk/lib/types.ts";
-import type { ReportViewModel } from "../server/report-view-model.ts";
+import { createPageRenderer } from "./render-page.ts";
+import { Route, ReportPage, type ReportContentProps } from "../server/pages/report.tsx";
+import { getRankedUsers } from "../server/helper.ts";
+import { createStoryCards } from "../server/story-card-view-model.ts";
 
 const reportJson: unknown = JSON.parse(
   await readFile(new URL("fixtures/stories-report-server.json", import.meta.url), "utf-8"),
 );
-const storiesReport = StoriesManifestReportSchema.parse(reportJson);
-const reportKeys = ["stories-report-earlier.json", "stories-report-fixture.json"];
-let requestedReportKey: string | undefined;
-
-void mock.module("../server/report-repository.ts", {
-  // Node 24 does not yet support the replacement `exports` option.
-  // oxlint-disable-next-line typescript/no-deprecated
-  namedExports: {
-    getReportKeys: () => reportKeys,
-    readReport: (reportKey: string) => {
-      requestedReportKey = reportKey;
-      if (reportKey !== "stories-report-fixture.json") {
-        throw new Error(`report ${reportKey} could not be read`);
-      }
-      return globalThis.structuredClone(storiesReport);
-    },
-  },
-});
-
-void mock.module("../server/report-view-model.ts", {
-  // oxlint-disable-next-line typescript/no-deprecated -- Node's test mock API currently requires namedExports.
-  namedExports: {
-    createReportViewModel: (fixture: StoriesManifestReport): ReportViewModel => ({
+const report = StoriesManifestReportSchema.parse(reportJson);
+const earlierReportKey = "stories-report-2026-07-25.json";
+const latestReportKey = "stories-report-2026-07-26.json";
+const caption = "</script><script>caption</script>";
+const props: ReportContentProps = {
+  date: "26 juillet 2026 à 11:48 UTC+2",
+  reportKeys: [earlierReportKey, latestReportKey],
+  selectedReportKey: latestReportKey,
+  users: getRankedUsers(report).map((user) => ({
+    user,
+    avatar: user.profile_pic_url === null ? undefined : "/media/avatars/avatar.jpg",
+    summary: "A text-focused story with extracted details.",
+    stories: createStoryCards(user, {
       appleCaptionByMediaPk: new Map([["story-pk-1", "apple <text>"]]),
       cachedImages: {
-        profilePicPathByUrl: new Map([["images/avatars/avatar.jpg", "/media/avatar.jpg"]]),
+        profilePicPathByUrl: new Map([["images/avatars/avatar.jpg", "/media/avatars/avatar.jpg"]]),
         storyPreviewPathByUrl: new Map([
-          ["images/story-previews/story-pk-1.jpg", "/media/story.jpg"],
+          ["images/story-previews/story-pk-1.jpg", "/media/story-previews/story-pk-1.jpg"],
         ]),
       },
-      report: fixture,
-      userSummaryByUserKey: new Map([
-        [getReportUserKey(fixture.output.users[0]), "A text-focused story with extracted details."],
-      ]),
-      visionByPreviewUrl: new Map([
-        ["images/story-previews/story-pk-1.jpg", { text: "OCR text", visual: "Vision text" }],
-      ]),
-    }),
-  },
-});
-
-const { renderReport } = await import("../server/report-handler.tsx");
+      visionByPreviewUrl: new Map(),
+    }).map((story) => ({ ...story, igCaption: caption })),
+  })),
+};
+const renderer = createPageRenderer(ReportPage, Route, props, "/report");
 const app = new H3();
-app.on("GET", "/", defineEventHandler(renderReport));
-app.on("GET", "/report", defineEventHandler(renderReport));
-const request = app.fetch.bind(app);
+app.get(
+  "/report",
+  async () =>
+    new globalThis.Response(await renderer.render(), {
+      headers: { "Content-Type": "text/html;charset=utf-8" },
+    }),
+);
+async function request() {
+  return await app.fetch(new globalThis.Request("http://localhost/report"));
+}
 
-test("GET /report renders the latest fixture report", async () => {
-  const response = await request(new globalThis.Request("http://localhost/report"));
-
+test("report page renders fixture content", async () => {
+  const response = await request();
   assert.equal(response.status, 200);
-  assert.equal(requestedReportKey, "stories-report-fixture.json");
-
+  assert.equal(response.headers.get("content-type"), "text/html;charset=utf-8");
   const html = await response.text();
-  assert.match(html, /<html lang="fr">/u);
   assert.match(html, /<h1>Rapport du 26 juillet 2026 à 11:48 UTC\+2<\/h1>/u);
   assert.match(html, /Html &quot;User&quot; \(ranked-second\)/u);
   assert.match(html, /A text-focused story with extracted details\./u);
-  assert.match(html, /src="\/media\/avatar.jpg"/u);
-  assert.match(html, /src="\/media\/story.jpg"/u);
+  assert.match(html, /src="\/media\/avatars\/avatar.jpg"/u);
+  assert.match(html, /src="\/media\/story-previews\/story-pk-1.jpg"/u);
   assert.doesNotMatch(html, /src="https?:\/\//u);
-  assert.match(
-    html,
-    /\\"url\\":\\"https:\/\/www\.instagram\.com\/stories\/ranked-second\/story-pk-1\/\\"/u,
-  );
-  assert.match(html, /\\"stickers\\":\\"link:A & B\\"/u);
-  assert.match(html, /\\"appleCaption\\":\\"apple \\\\u003ctext>\\"/u);
-  assert.match(html, /\\"visionOcr\\":\\"OCR text\\"/u);
-  assert.doesNotMatch(html, /data-(?:story-|user-|full-|direction)/u);
-  assert.match(html, /<dialog class="image-lightbox" id="image-lightbox"/u);
-  assert.match(html, /onclick="\$emit\(event,/u);
-  assert.match(html, /onchange="\$emit\(event,/u);
-  assert.match(html, /onclose="\$emit\(event,/u);
-  assert.match(html, /data-mono-jsx=/u);
+  assert.doesNotMatch(html, /<dialog/u);
+  assert.doesNotMatch(html, /data-mono-jsx|data-story-media-pk|on(?:click|change|close)=/u);
   assert.ok(
     html.indexOf("Ranked First (ranked-first)") <
       html.indexOf("Html &quot;User&quot; (ranked-second)"),
   );
+  assert.match(html, /<form class="report-picker" action="\/report" method="get">/u);
+  assert.match(html, /<option[^>]*value="stories-report-2026-07-26.json" selected="">/u);
 });
 
-test("GET /report selects a requested report and returns 404 when unavailable", async () => {
-  const selectedResponse = await request(
-    new globalThis.Request("http://localhost/report?report=stories-report-fixture.json"),
-  );
-  assert.equal(selectedResponse.status, 200);
-  assert.equal(requestedReportKey, "stories-report-fixture.json");
-
-  const missingResponse = await request(
-    new globalThis.Request("http://localhost/report?report=stories-report-missing.json"),
-  );
-  assert.equal(missingResponse.status, 404);
-  assert.equal(
-    await missingResponse.text(),
-    "report stories-report-missing.json could not be read",
-  );
+test("report lightbox renders the story selected by the URL", async () => {
+  const html = await renderer.render("/report?story=story-pk-1");
+  assert.match(html, /<dialog[^>]*class="image-lightbox" id="image-lightbox"/u);
+  assert.match(html, /class="lightbox-detail-media-pk">story-pk-1<\/td>/u);
+  assert.match(html, /class="lightbox-detail-apple-caption">apple &lt;text&gt;<\/td>/u);
+  assert.doesNotMatch(html, /<script>caption/u);
 });
+
+test("report lightbox stays closed for an unknown story", async () => {
+  assert.doesNotMatch(await renderer.render("/report?story=missing"), /<dialog/u);
+});
+
+test("report page does not embed initial state", async () => {
+  const response = await request();
+  const html = await response.text();
+  assert.doesNotMatch(html, /app-state|app-props|application\/json|<script>caption/u);
+});
+
+test("report route renders its query result and safely serializes it for hydration", async () => {
+  const html = await renderer.renderRoute(`/report?report=${latestReportKey}&story=story-pk-1`);
+  assert.match(html, /<h1[^>]*>Rapport du 26 juillet 2026 à 11:48 UTC\+2<\/h1>/u);
+  assert.match(html, /class="lightbox-detail-media-pk">story-pk-1<\/td>/u);
+  assert.match(html, /stories-report-2026-07-26.json/u);
+  assert.match(html, /\$_TSR/u);
+  assert.doesNotMatch(html, /<script>caption/u);
+});
+
+test("report route query data is isolated between requests", async () => {
+  const url = `/report?report=${latestReportKey}`;
+  const [first, second] = await Promise.all([
+    renderer.renderRoute(url, { ...props, date: "première requête" }),
+    renderer.renderRoute(url, { ...props, date: "deuxième requête" }),
+  ]);
+  assert.match(first, /Rapport du première requête/u);
+  assert.doesNotMatch(first, /deuxième requête/u);
+  assert.match(second, /Rapport du deuxième requête/u);
+  assert.doesNotMatch(second, /première requête/u);
+});
+
+for (const mediaPk of ["12345", "12345678901234568000", "12345678901234567890"]) {
+  test(`report deep links preserve numeric Instagram ID ${mediaPk}`, async () => {
+    const html = await renderer.renderRoute(`/report?story=${mediaPk}`, {
+      ...props,
+      users: props.users.map((user) => ({
+        ...user,
+        stories: user.stories.map((story) => ({ ...story, mediaPk })),
+      })),
+    });
+    assert.ok(html.includes(`class="lightbox-detail-media-pk">${mediaPk}</td>`));
+  });
+}

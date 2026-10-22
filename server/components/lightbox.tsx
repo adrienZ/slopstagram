@@ -1,135 +1,115 @@
-/* oxlint-disable oxc/no-this-in-exported-function -- mono-jsx binds `this` to the component's signal scope. */
-import { css } from "mono-jsx/jsx-runtime";
+import { useNavigate } from "@tanstack/react-router";
 import cx from "clsx";
 import type { StoryCardViewModel } from "../story-card-view-model.ts";
-import { serializeSignalData } from "../signal-json.ts";
 
-export interface LightboxSignals {
-  storyMediaPk: string;
-  stories: Array<StoryCardViewModel>;
-}
-
-type LightboxNavigationScope = WithAppSignals<FC<{ direction: number }>, LightboxSignals>;
-
-type LightboxScope = WithAppSignals<
-  FC<
-    { direction: number; selected: StoryCardViewModel | null; storiesJson: string },
-    { dialog: HTMLDialogElement }
-  >,
-  LightboxSignals
->;
-
-function LightboxDetailsRow(props: { label: string; className: string; value: string }) {
+function LightboxDetailsRow(props: {
+  label: string;
+  className: string;
+  value: string | undefined;
+}) {
   return (
     <tr>
       <th>{props.label}</th>
-      <td class={props.className}>{props.value}</td>
+      <td className={props.className}>{props.value ?? "—"}</td>
     </tr>
   );
 }
 
-function navigateLightbox(this: LightboxNavigationScope, event: KeyboardEvent | MouseEvent) {
-  let { direction } = this;
-  if (event instanceof globalThis.KeyboardEvent) {
-    direction = 0;
-    if (event.key === "ArrowLeft") {
-      direction = -1;
-    } else if (event.key === "ArrowRight") {
-      direction = 1;
-    }
-  }
-  if (direction === 0 || this.app.stories.length === 0) {
-    return;
-  }
-
-  event.preventDefault();
-  const index = this.app.stories.findIndex((story) => story.mediaPk === this.app.storyMediaPk);
-  const next = (index + direction + this.app.stories.length) % this.app.stories.length;
-  this.app.storyMediaPk = this.app.stories[next]?.mediaPk ?? "";
-}
-
-function LightboxNavButton(
-  this: LightboxNavigationScope,
-  props: { direction: number; className: string; label: string; text: string },
-) {
-  this.direction = props.direction;
+function LightboxNavButton(props: {
+  direction: number;
+  className: string;
+  label: string;
+  text: string;
+  hidden: boolean;
+  onNavigate: (direction: number) => void;
+}) {
   return (
     <button
-      class={cx("lightbox-nav", props.className)}
+      className={cx("lightbox-nav", props.className)}
       type="button"
       aria-label={props.label}
-      hidden={this.$(() => this.app.stories.length < 2)}
-      onClick={navigateLightbox}
+      hidden={props.hidden}
+      onClick={() => {
+        props.onNavigate(props.direction);
+      }}
     >
       {props.text}
     </button>
   );
 }
 
-export function LightboxStyles() {
-  return (
-    <style>{css`
-      @import url("/css/lightbox.css");
-    `}</style>
-  );
+function mountDialog(element: HTMLDialogElement | null) {
+  element?.showModal();
+  return () => {
+    element?.close();
+  };
 }
 
-export function Lightbox(this: LightboxScope, { stories }: { stories: Array<StoryCardViewModel> }) {
-  this.init({ direction: 0, selected: null, storiesJson: serializeSignalData(stories) });
-  this.effect(() => {
-    // oxlint-disable-next-line typescript/no-unsafe-assignment -- The server serialized the typed story props into this signal.
-    const hydratedStories: Array<StoryCardViewModel> = JSON.parse(this.storiesJson);
-    this.app.stories = hydratedStories;
-    this.app.storyMediaPk =
-      new globalThis.URL(globalThis.location.href).searchParams.get("story") ?? "";
-  });
+function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: StoryCardViewModel }) {
+  const navigateTo = useNavigate();
 
-  this.effect(() => {
-    const selected =
-      this.app.stories.find((story) => story.mediaPk === this.app.storyMediaPk) ?? null;
-    this.selected = selected;
+  function selectedCount() {
+    return `${props.story.position} / ${props.story.count}`;
+  }
 
-    const { dialog } = this.refs;
-    if (selected === null) {
-      dialog.close();
-    } else if (!dialog.open) {
-      dialog.showModal();
-    }
+  function close() {
+    void navigateTo({
+      to: ".",
+      search: (previous) => ({ ...previous, story: undefined }),
+      replace: true,
+      resetScroll: false,
+    });
+  }
 
-    const url = new globalThis.URL(globalThis.location.href);
-    if (selected === null) {
-      url.searchParams.delete("story");
-    } else {
-      url.searchParams.set("story", selected.mediaPk);
+  function navigate(direction: number) {
+    if (props.stories.length === 0) {
+      return;
     }
-    if (url.href !== globalThis.location.href) {
-      globalThis.history.replaceState(null, "", url);
-    }
-  });
+    const index = props.stories.findIndex((story) => story.mediaPk === props.story.mediaPk);
+    void navigateTo({
+      to: ".",
+      search: (previous) => ({
+        ...previous,
+        story:
+          props.stories[(index + direction + props.stories.length) % props.stories.length]?.mediaPk,
+      }),
+      replace: true,
+      resetScroll: false,
+    });
+  }
 
   return (
     <dialog
-      class={cx("image-lightbox")}
+      className={cx("image-lightbox")}
       id="image-lightbox"
       aria-label="Aperçu de l’image"
-      ref={this.refs.dialog}
+      ref={mountDialog}
+      onCancel={(event) => {
+        event.preventDefault();
+        close();
+      }}
       onClick={(event) => {
         if (event.target === event.currentTarget) {
-          this.refs.dialog.close();
+          close();
         }
       }}
-      onClose={() => {
-        this.app.storyMediaPk = "";
+      onClose={(event) => {
+        if (event.currentTarget.isConnected && !event.currentTarget.open) {
+          close();
+        }
       }}
-      onKeyDown={navigateLightbox}
+      onKeyDown={(event) => {
+        if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+          event.preventDefault();
+          navigate(event.key === "ArrowLeft" ? -1 : 1);
+        }
+      }}
     >
       <button
-        class={cx("lightbox-close")}
+        className={cx("lightbox-close")}
         type="button"
         aria-label="Fermer l’aperçu"
-        onClick={() => {
-          this.refs.dialog.close();
-        }}
+        onClick={close}
       >
         ×
       </button>
@@ -138,93 +118,94 @@ export function Lightbox(this: LightboxScope, { stories }: { stories: Array<Stor
         className="lightbox-prev"
         label="Image précédente"
         text="‹"
+        hidden={props.stories.length < 2}
+        onNavigate={navigate}
       />
-      <div class={cx("lightbox-content")}>
-        <div class={cx("lightbox-preview-panel")}>
-          <div class={cx("lightbox-header")}>
+      <div className={cx("lightbox-content")}>
+        <div className={cx("lightbox-preview-panel")}>
+          <div className={cx("lightbox-header")}>
             <img
-              class={cx("lightbox-avatar")}
+              className={cx("lightbox-avatar")}
               alt=""
-              src={this.$(() => this.selected?.avatar)}
-              hidden={this.$(() => this.selected?.avatar === undefined)}
+              src={props.story.avatar}
+              hidden={props.story.avatar === undefined}
             />
             <div>
-              <strong class="lightbox-username">
-                {this.$(() => this.selected?.userName ?? "")}
-              </strong>
-              <span class="lightbox-count">
-                {this.$(() =>
-                  this.selected === null
-                    ? ""
-                    : `${this.selected.position} / ${this.selected.count}`,
-                )}
-              </span>
+              <strong className="lightbox-username">{props.story.userName}</strong>
+              <span className="lightbox-count">{selectedCount()}</span>
             </div>
           </div>
-          <img
-            class={cx("lightbox-image")}
-            src={this.$(() => this.selected?.preview)}
-            alt={this.$(() => this.selected?.alt ?? "")}
-          />
+          <img className={cx("lightbox-image")} src={props.story.preview} alt={props.story.alt} />
         </div>
-        <aside class={cx("lightbox-details-panel")} aria-label="Détails de la story">
+        <aside className={cx("lightbox-details-panel")} aria-label="Détails de la story">
           <h2>Détails</h2>
-          <table class={cx("lightbox-details-table")}>
+          <table className={cx("lightbox-details-table")}>
             <tbody>
               <LightboxDetailsRow
                 label="Type"
                 className="lightbox-detail-media-type"
-                value={this.$(() => this.selected?.mediaType ?? "—")}
+                value={props.story.mediaType}
               />
               <LightboxDetailsRow
                 label="Story"
                 className="lightbox-detail-media-pk"
-                value={this.$(() => this.selected?.mediaPk ?? "—")}
+                value={props.story.mediaPk}
               />
               <LightboxDetailsRow
                 label="Stickers"
                 className="lightbox-detail-stickers"
-                value={this.$(() => this.selected?.stickers ?? "—")}
+                value={props.story.stickers}
               />
               <LightboxDetailsRow
                 label="Lieux"
                 className="lightbox-detail-locations"
-                value={this.$(() => this.selected?.locations ?? "—")}
+                value={props.story.locations}
               />
               <LightboxDetailsRow
                 label="Instagram"
                 className="lightbox-detail-ig-caption"
-                value={this.$(() => this.selected?.igCaption ?? "—")}
+                value={props.story.igCaption}
               />
               <LightboxDetailsRow
                 label="Apple OCR"
                 className="lightbox-detail-apple-caption"
-                value={this.$(() => this.selected?.appleCaption ?? "—")}
+                value={props.story.appleCaption}
               />
               <LightboxDetailsRow
                 label="Vision OCR"
                 className="lightbox-detail-vision-ocr"
-                value={this.$(() => this.selected?.visionOcr ?? "—")}
+                value={props.story.visionOcr}
               />
               <LightboxDetailsRow
                 label="Vision description"
                 className="lightbox-detail-vision-description"
-                value={this.$(() => this.selected?.visionDescription ?? "—")}
+                value={props.story.visionDescription}
               />
             </tbody>
           </table>
           <a
-            class={cx("lightbox-story-link")}
+            className={cx("lightbox-story-link")}
             target="_blank"
             rel="noreferrer"
-            href={this.$(() => this.selected?.url)}
-            hidden={this.$(() => this.selected?.url === undefined)}
+            href={props.story.url}
           >
             Voir cette story sur Instagram
           </a>
         </aside>
       </div>
-      <LightboxNavButton direction={1} className="lightbox-next" label="Image suivante" text="›" />
+      <LightboxNavButton
+        direction={1}
+        className="lightbox-next"
+        label="Image suivante"
+        text="›"
+        hidden={props.stories.length < 2}
+        onNavigate={navigate}
+      />
     </dialog>
   );
+}
+
+export function Lightbox(props: { stories: Array<StoryCardViewModel>; selectedStory?: string }) {
+  const story = props.stories.find((entry) => entry.mediaPk === props.selectedStory);
+  return story === undefined ? null : <LightboxDialog stories={props.stories} story={story} />;
 }

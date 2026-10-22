@@ -19,7 +19,7 @@ const ultraciteSoftenerConfig = defineConfig({
 
 export default defineConfig({
   extends: [ultracite, antiSlop, ultraciteSoftenerConfig],
-  ignorePatterns: ultracite.ignorePatterns,
+  ignorePatterns: [...(ultracite.ignorePatterns ?? []), "server/routeTree.gen.ts"],
   jsPlugins: ["./oxlint/plugins/rules/no-barrel-files.ts"],
   options: {
     maxWarnings: 0,
@@ -35,6 +35,20 @@ export default defineConfig({
   },
   rules: {
     "slopstagram/no-barrel-files": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        paths: [
+          {
+            // frontend-side-effects
+            name: "react",
+            importNames: ["useEffect", "useLayoutEffect", "useInsertionEffect"],
+            allowTypeImports: false,
+            message: "useEffect is forbidden. Use derived state or explicit event subscriptions.",
+          },
+        ],
+      },
+    ],
   },
   overrides: [
     {
