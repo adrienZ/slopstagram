@@ -3,8 +3,12 @@ import { integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core"
 import type { DrizzleDatabase } from "../database/client.ts";
 import { instagramUsers } from "./instagram-user.ts";
 import { StoryItemSchema } from "../lib/story-schemas.ts";
-import type { StoryItem, StoryOwner, UserTimelineStory } from "../lib/types.ts";
-import { getStoryLocations, getStoryStickers } from "../story-sticker-location-service.ts";
+import type { StoryAnnotations, StoryItem, StoryOwner, UserTimelineStory } from "../lib/types.ts";
+import {
+  getStoryAnnotations,
+  getStoryLocations,
+  getStoryStickers,
+} from "../story-sticker-location-service.ts";
 
 export const stories = sqliteTable("stories", {
   accessibilityCaption: text(),
@@ -77,8 +81,9 @@ function toStoryItem(
   story: StoryRow,
   imageVersions: Array<typeof storyImageVersions.$inferSelect>,
   videoVersions: Array<typeof storyVideoVersions.$inferSelect>,
+  annotations: StoryAnnotations,
 ): StoryItem {
-  const item: StoryItem = { pk: story.mediaPk };
+  const item: StoryItem = { annotations, pk: story.mediaPk };
 
   if (story.accessibilityCaption !== null) {
     item.accessibility_caption = story.accessibilityCaption;
@@ -116,12 +121,7 @@ function toStoryItem(
     }));
   }
 
-  return StoryItemSchema.parse(item);
-}
-
-function getStickerKind(label: string): string {
-  const separator = label.indexOf(":");
-  return separator === -1 ? "other" : label.slice(0, separator);
+  return StoryItemSchema.parse({ ...item, annotations: getStoryAnnotations(item) });
 }
 
 function toStoryEntry(story: StoryItem, owner?: StoryOwner): typeof stories.$inferInsert {
@@ -170,34 +170,26 @@ async function replaceStoryAnnotations(database: DrizzleDatabase, story: StoryIt
   await database.delete(storyStickers).where(eq(storyStickers.mediaPk, story.pk));
   await database.delete(storyLocations).where(eq(storyLocations.mediaPk, story.pk));
 
-  const stickerEntries = getStoryStickers(story.pk, new Map([[story.pk, story]])).map(
-    (label, sortOrder) => ({
-      kind: getStickerKind(label),
-      label,
-      mediaPk: story.pk,
-      sortOrder,
-    }),
-  );
+  const annotations = getStoryAnnotations(story);
+  const stickerEntries = annotations.stickers.map((sticker, sortOrder) => ({
+    ...sticker,
+    mediaPk: story.pk,
+    sortOrder,
+  }));
   if (stickerEntries.length > 0) {
     await database.insert(storyStickers).values(stickerEntries);
   }
-  const locationEntries = getStoryLocations(story.pk, new Map([[story.pk, story]])).map(
-    (label, sortOrder) => ({ mediaPk: story.pk, label, sortOrder }),
-  );
+  const locationEntries = annotations.locations.map((label, sortOrder) => ({
+    mediaPk: story.pk,
+    label,
+    sortOrder,
+  }));
   if (locationEntries.length > 0) {
     await database.insert(storyLocations).values(locationEntries);
   }
 }
 
-function getTimelineStory(
-  database: DrizzleDatabase,
-  story: StoryRow,
-  user: typeof instagramUsers.$inferSelect,
-): UserTimelineStory | null {
-  if (story.takenAt === null) {
-    return null;
-  }
-
+function readStoryItem(database: DrizzleDatabase, story: StoryRow): StoryItem {
   const imageVersions = database
     .select()
     .from(storyImageVersions)
@@ -211,12 +203,11 @@ function getTimelineStory(
     .orderBy(asc(storyVideoVersions.sortOrder))
     .all();
   const stickers = database
-    .select({ label: storyStickers.label })
+    .select({ kind: storyStickers.kind, label: storyStickers.label })
     .from(storyStickers)
     .where(eq(storyStickers.mediaPk, story.mediaPk))
     .orderBy(asc(storyStickers.sortOrder))
-    .all()
-    .map((entry) => entry.label);
+    .all();
   const locations = database
     .select({ label: storyLocations.label })
     .from(storyLocations)
@@ -225,12 +216,26 @@ function getTimelineStory(
     .all()
     .map((entry) => entry.label);
 
+  return toStoryItem(story, imageVersions, videoVersions, { locations, stickers });
+}
+
+function getTimelineStory(
+  database: DrizzleDatabase,
+  story: StoryRow,
+  user: typeof instagramUsers.$inferSelect,
+): UserTimelineStory | null {
+  if (story.takenAt === null) {
+    return null;
+  }
+
+  const item = readStoryItem(database, story);
+  const cachedItems = new Map([[item.pk, item]]);
   return {
     full_name: user.fullName,
-    locations,
+    locations: getStoryLocations(item.pk, cachedItems),
     owner_pk: user.pk,
-    story: toStoryItem(story, imageVersions, videoVersions),
-    stickers,
+    story: item,
+    stickers: getStoryStickers(item.pk, cachedItems),
     taken_at: story.takenAt,
     username: user.username,
   };
@@ -249,20 +254,7 @@ export class StoryRepository {
       return null;
     }
 
-    const imageVersions = this.database
-      .select()
-      .from(storyImageVersions)
-      .where(eq(storyImageVersions.mediaPk, mediaPk))
-      .orderBy(asc(storyImageVersions.sortOrder))
-      .all();
-    const videoVersions = this.database
-      .select()
-      .from(storyVideoVersions)
-      .where(eq(storyVideoVersions.mediaPk, mediaPk))
-      .orderBy(asc(storyVideoVersions.sortOrder))
-      .all();
-
-    return toStoryItem(story, imageVersions, videoVersions);
+    return readStoryItem(this.database, story);
   }
 
   async save(value: StoryItem, owner?: StoryOwner): Promise<void> {

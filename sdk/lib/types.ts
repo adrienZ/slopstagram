@@ -57,8 +57,15 @@ type StoryVideoVersion = StoryVersion & {
   type?: number;
 };
 
+export interface StoryAnnotations {
+  locations: Array<string>;
+  stickers: Array<{ kind: string; label: string }>;
+}
+
 export interface StoryItem {
   accessibility_caption?: string | null;
+  // Labels and kinds from stored story data, separate from Instagram's raw fields.
+  annotations?: StoryAnnotations;
   image_versions2?: StoryImageVersions;
   id?: string;
   link?: JsonValue;
@@ -76,7 +83,12 @@ export interface StoryItem {
   taken_at?: number;
   text_post_share_to_ig_story_stickers?: Array<JsonValue> | null;
   video_versions?: Array<StoryVideoVersion> | null;
-  [key: string]: Array<StoryVideoVersion> | JsonValue | StoryImageVersions | undefined;
+  [key: string]:
+    | Array<StoryVideoVersion>
+    | JsonValue
+    | StoryAnnotations
+    | StoryImageVersions
+    | undefined;
 }
 
 export interface StoryOwner {

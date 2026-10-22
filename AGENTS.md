@@ -23,6 +23,23 @@ instagram.com is an SPA application so make to wait loaded / idle state.
 
 No JSON blob please
 
+## Agent skills
+
+### Issue tracker
+
+Track issues and specs in GitHub Issues for `adrienZ/slopstagram`.
+Before issue operations, read `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the five default triage labels.
+Before triage, read `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Use a single-context layout: root `GLOSSARY.md` and `docs/adr/`.
+Before codebase exploration, read `docs/agents/domain.md`.
+
 <!-- sonar:begin:codex-secrets-on-read -->
 # SonarQube secrets scanning for files protocol
 

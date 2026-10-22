@@ -31,6 +31,12 @@ export const StoryTrayEntrySchema = z.object({
 export const StoryItemSchema = z
   .object({
     accessibility_caption: z.string().nullable().optional(),
+    annotations: z
+      .object({
+        locations: z.array(z.string()),
+        stickers: z.array(z.object({ kind: z.string(), label: z.string() })),
+      })
+      .optional(),
     image_versions2: z
       .object({
         candidates: z.array(StoryVersionSchema).optional(),

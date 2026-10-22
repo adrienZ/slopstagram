@@ -20,3 +20,8 @@ works correctly. Using `tsx` keeps the commands cross-platform without requiring
 build step or spelling out Node loader flags.
 
 you can find migration steps on this [commit](https://github.com/adrienZ/slopstagram/commit/b91a74e72028713b235150317f5509360f181715)
+
+## Why don't we fetch Instagram user biographies?
+
+Collecting biographies would add a separate authenticated profile request for each
+account because the story tray does not reliably include them. We dropped [PR #10](https://github.com/adrienZ/slopstagram/pull/10) for that reason.

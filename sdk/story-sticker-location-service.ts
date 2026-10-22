@@ -1,7 +1,7 @@
 import { URL } from "node:url";
 import { z } from "zod";
 import { isJsonObject, type JsonObject, type JsonValue } from "./lib/json-value.ts";
-import type { StoryItem } from "./lib/types.ts";
+import type { StoryAnnotations, StoryItem } from "./lib/types.ts";
 
 function getNestedRecord(value: JsonValue, key: string): JsonObject | null {
   if (!isJsonObject(value)) {
@@ -244,13 +244,37 @@ function getStickerLabels(story: StoryItem): Array<string> {
   return labels;
 }
 
+export function getStoryAnnotations(story: StoryItem): StoryAnnotations {
+  if (story.annotations !== undefined) {
+    const locations = story.annotations.stickers
+      .filter((sticker) => sticker.kind === "location")
+      .map((sticker) => sticker.label);
+    return {
+      locations: locations.length > 0 ? locations : story.annotations.locations,
+      stickers: story.annotations.stickers,
+    };
+  }
+
+  return {
+    locations: getStoryLocationsFromItem(story),
+    stickers: getStickerLabels(story).map((label) => {
+      const separator = label.indexOf(":");
+      return { kind: separator === -1 ? "other" : label.slice(0, separator), label };
+    }),
+  };
+}
+
 export function getStoryStickers(
   mediaPk: string,
   cachedItems: Map<string, StoryItem>,
 ): Array<string> {
   const story = cachedItems.get(mediaPk);
 
-  return story ? getStickerLabels(story) : [];
+  return story
+    ? getStoryAnnotations(story)
+        .stickers.filter((sticker) => sticker.kind !== "location")
+        .map((sticker) => sticker.label)
+    : [];
 }
 
 export function getStoryLocations(
@@ -259,5 +283,5 @@ export function getStoryLocations(
 ): Array<string> {
   const story = cachedItems.get(mediaPk);
 
-  return story ? getStoryLocationsFromItem(story) : [];
+  return story ? getStoryAnnotations(story).locations : [];
 }
