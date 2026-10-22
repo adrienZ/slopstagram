@@ -10,6 +10,7 @@ import {
   getUserSummaryPromptHash,
   getUserSummarySourceHash,
   isUsableSummary,
+  normalizeSummary,
   parseSummaryResponse,
   USER_SUMMARY_MODEL,
   USER_SUMMARY_PROMPT,
@@ -29,6 +30,23 @@ interface ResolvedUserSummaryOptions {
 }
 
 const USER_SUMMARY_PROMPT_HASH = getUserSummaryPromptHash(USER_SUMMARY_PROMPT);
+
+interface ReadUserSummariesOptions {
+  model?: string;
+  repository?: Pick<UserSummaryRepository, "findBySourceHash">;
+  visionByPreviewUrl?: Map<string, VisionResult>;
+}
+
+function createUserSummarySource(
+  user: StoryOutputUser,
+  options: { model: string; visionByPreviewUrl?: Map<string, VisionResult> },
+) {
+  const userKey = getReportUserKey(user);
+  const prompt = createSummaryPrompt(user, options.visionByPreviewUrl);
+  const sourceHash = getUserSummarySourceHash({ model: options.model, prompt, userKey });
+
+  return { prompt, sourceHash, userKey };
+}
 
 function resolveOptions(options: ResolveUserSummariesOptions): ResolvedUserSummaryOptions {
   const model = options.model ?? USER_SUMMARY_MODEL;
@@ -53,34 +71,55 @@ function resolveOptions(options: ResolveUserSummariesOptions): ResolvedUserSumma
 function getStoredSummary(options: {
   sourceHash: string;
   userKey: string;
-  resolved: ResolvedUserSummaryOptions;
+  repository: Pick<UserSummaryRepository, "findBySourceHash">;
 }): string | null {
-  const entry = options.resolved.repository.findBySourceHash(options.sourceHash);
+  const entry = options.repository.findBySourceHash(options.sourceHash);
 
   if (
     entry?.source_hash === options.sourceHash &&
     entry.prompt_hash === USER_SUMMARY_PROMPT_HASH &&
     entry.user_key === options.userKey
   ) {
-    return isUsableSummary(entry.result) ? entry.result : null;
+    return isUsableSummary(entry.result) ? normalizeSummary(entry.result) : null;
   }
 
   return null;
 }
 
+export function readUserSummaries(
+  users: Array<StoryOutputUser>,
+  options: ReadUserSummariesOptions = {},
+): Map<string, string> {
+  const repository = options.repository ?? userSummaryRepository;
+  const model = options.model ?? USER_SUMMARY_MODEL;
+  const summaries = new Map<string, string>();
+
+  for (const user of users) {
+    const source = createUserSummarySource(user, {
+      model,
+      visionByPreviewUrl: options.visionByPreviewUrl,
+    });
+    const summary = getStoredSummary({ ...source, repository });
+
+    if (summary !== null) {
+      summaries.set(source.userKey, summary);
+    }
+  }
+
+  return summaries;
+}
+
 async function runSummaryForUser(
   user: StoryOutputUser,
-  userKey: string,
-  sourceHash: string,
+  source: ReturnType<typeof createUserSummarySource>,
   resolved: ResolvedUserSummaryOptions,
 ): Promise<string> {
-  const prompt = createSummaryPrompt(user, resolved.visionByPreviewUrl);
-  const response = await resolved.runUserSummary(prompt);
+  const response = await resolved.runUserSummary(source.prompt);
   const result = parseSummaryResponse(response);
 
   if (result === null || result.length === 0) {
     resolved.logger.warn(
-      `user summary returned empty response for ${userKey}; using report fallback`,
+      `user summary returned empty response for ${source.userKey}; using report fallback`,
     );
     return createFallbackSummary(user, resolved.visionByPreviewUrl);
   }
@@ -88,8 +127,8 @@ async function runSummaryForUser(
   await resolved.repository.save({
     prompt_hash: USER_SUMMARY_PROMPT_HASH,
     result,
-    source_hash: sourceHash,
-    user_key: userKey,
+    source_hash: source.sourceHash,
+    user_key: source.userKey,
   });
   return result;
 }
@@ -100,10 +139,9 @@ async function resolveUserSummary(
   total: number,
   resolved: ResolvedUserSummaryOptions,
 ): Promise<[string, string]> {
-  const userKey = getReportUserKey(user);
-  const prompt = createSummaryPrompt(user, resolved.visionByPreviewUrl);
-  const sourceHash = getUserSummarySourceHash({ model: resolved.model, prompt, userKey });
-  const storedSummary = getStoredSummary({ sourceHash, userKey, resolved });
+  const source = createUserSummarySource(user, resolved);
+  const { userKey } = source;
+  const storedSummary = getStoredSummary({ ...source, repository: resolved.repository });
 
   if (storedSummary !== null) {
     resolved.logger.progress(current, total, {
@@ -118,7 +156,7 @@ async function resolveUserSummary(
       prefix: "user-summary",
       suffix: `summarizing ${userKey}`,
     });
-    const summary = await runSummaryForUser(user, userKey, sourceHash, resolved);
+    const summary = await runSummaryForUser(user, source, resolved);
     resolved.logger.progress(current, total, {
       prefix: "user-summary",
       suffix: `summarized ${userKey}`,

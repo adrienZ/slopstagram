@@ -2,15 +2,7 @@ import { appleVisionRepository } from "../sdk/repositories/apple-vision-reposito
 import { userSummaryRepository } from "../sdk/repositories/user-summary-repository.ts";
 import { visionRepository } from "../sdk/repositories/vision-repository.ts";
 import type { CachedReportImages } from "../sdk/lib/image-cache-service.ts";
-import {
-  createSummaryPrompt,
-  getUserSummaryPromptHash,
-  getUserSummarySourceHash,
-  USER_SUMMARY_MODEL,
-  USER_SUMMARY_PROMPT,
-  USER_SUMMARY_UNAVAILABLE,
-} from "../sdk/lib/user-summary-core-service.ts";
-import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
+import { readUserSummaries } from "../sdk/lib/user-summary-resolver-service.ts";
 import type { StoryOutputUser, VisionResult } from "../sdk/lib/types.ts";
 import { readStoryFeedVision } from "../sdk/story-feed.ts";
 import type { AppleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
@@ -72,42 +64,6 @@ function readCachedImages(users: Array<StoryOutputUser>): CachedReportImages {
   return { profilePicPathByUrl, storyPreviewPathByUrl };
 }
 
-function readCachedUserSummaries(
-  users: Array<StoryOutputUser>,
-  visionByPreviewUrl: Map<string, VisionResult>,
-  repository: FeedRepositories["userSummary"],
-): Map<string, string> {
-  const userSummaryByUserKey = new Map<string, string>();
-
-  const entries = users.map((user) => {
-    const userKey = getReportUserKey(user);
-    const prompt = createSummaryPrompt(user, visionByPreviewUrl);
-    const sourceHash = getUserSummarySourceHash({ model: USER_SUMMARY_MODEL, prompt, userKey });
-    return {
-      entry: repository.findBySourceHash(sourceHash),
-      sourceHash,
-      userKey,
-    };
-  });
-
-  for (const { entry, sourceHash, userKey } of entries) {
-    const result = entry?.result.trim();
-
-    if (
-      entry?.source_hash === sourceHash &&
-      entry.prompt_hash === getUserSummaryPromptHash(USER_SUMMARY_PROMPT) &&
-      entry.user_key === userKey &&
-      result !== undefined &&
-      result.length > 0 &&
-      result !== USER_SUMMARY_UNAVAILABLE
-    ) {
-      userSummaryByUserKey.set(userKey, result);
-    }
-  }
-
-  return userSummaryByUserKey;
-}
-
 function readAppleCaptions(
   users: Array<StoryOutputUser>,
   repository: FeedRepositories["appleVision"],
@@ -141,11 +97,10 @@ export function createReportViewModel(
 ): ReportViewModel {
   const cachedImages = readCachedImages(users);
   const visionByPreviewUrl = readStoryFeedVision(users, repositories.vision);
-  const userSummaryByUserKey = readCachedUserSummaries(
-    users,
+  const userSummaryByUserKey = readUserSummaries(users, {
     visionByPreviewUrl,
-    repositories.userSummary,
-  );
+    repository: repositories.userSummary,
+  });
   const appleCaptionByMediaPk = readAppleCaptions(users, repositories.appleVision);
 
   return {

@@ -11,6 +11,8 @@ Humans can explore the [dashboard](https://egeominotti.github.io/bunqueue-dashbo
 
 Make sure to run `npm run check` to validate your code changes.
 
+Keep UI components limited to rendering, local UI behavior, and presentation transformations; place business rules and application orchestration in hooks/composables or dedicated modules.
+
 ### Persistence layout
 
 Put Drizzle table definitions and entity types in `sdk/entities/`. Keep repository

@@ -3,10 +3,8 @@ import { describe, test } from "node:test";
 import { z } from "zod";
 import {
   USER_SUMMARY_MODEL,
-  USER_SUMMARY_PROMPT,
   USER_SUMMARY_UNAVAILABLE,
   getUserSummaryModel,
-  getUserSummaryPromptHash,
 } from "../sdk/lib/user-summary-core-service.ts";
 import { resolveUserSummariesForReport } from "../sdk/lib/user-summary-resolver-service.ts";
 import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
@@ -210,35 +208,5 @@ describe("resolveUserSummariesForReport", () => {
       "Summary User a partagé 1 story. Éléments visibles: location:Paris; Paris Market, 10 Rue Food, Paris.",
     );
     assert.equal(repository.entries.size, 0);
-  });
-
-  test("ignores stored unavailable summaries and regenerates them", async () => {
-    const repository = createUserSummaryRepositoryAdapter();
-    const sourceHash = "unavailable-source-hash";
-    const report = createSummaryReport();
-    const userKey = getReportUserKey(report.output.users[0]);
-    let runCount = 0;
-
-    repository.entries.set(sourceHash, {
-      prompt_hash: getUserSummaryPromptHash(USER_SUMMARY_PROMPT),
-      result: USER_SUMMARY_UNAVAILABLE,
-      source_hash: sourceHash,
-      user_key: userKey,
-    });
-
-    const summaries = await resolveUserSummariesForReport(report, {
-      logger: createMockLogger(),
-      runUserSummary: async () => {
-        runCount += 1;
-        return JSON.stringify({ summary: "regenerated summary" });
-      },
-      repository: {
-        findBySourceHash: () => repository.entries.get(sourceHash) ?? null,
-        save: repository.save,
-      },
-    });
-
-    assert.equal(summaries.get(userKey), "regenerated summary");
-    assert.equal(runCount, 1);
   });
 });

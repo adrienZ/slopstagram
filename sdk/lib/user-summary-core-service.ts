@@ -59,7 +59,7 @@ export function getUserSummaryPromptHash(prompt: string): string {
   return createHash("sha256").update(prompt).digest("hex");
 }
 
-function normalizeSummary(value: string): string {
+export function normalizeSummary(value: string): string {
   return value.normalize("NFC").replaceAll(/\s+/gu, " ").trim();
 }
 
