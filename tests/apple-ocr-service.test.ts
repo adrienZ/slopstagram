@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { recognizeAppleCaption } from "../sdk/lib/apple-ocr-service.ts";
+import { recognizeAppleCaption } from "@slopstagram/sdk/lib/apple-ocr-service.ts";
 import { createAppleVisionRepositoryAdapter } from "./repository-adapters.ts";
 
 describe("recognizeAppleCaption", () => {

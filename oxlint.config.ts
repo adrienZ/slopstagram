@@ -29,7 +29,7 @@ const ultraciteSoftenerConfig = defineConfig({
 
 export default defineConfig({
   extends: [ultracite, antiSlop, ultraciteSoftenerConfig],
-  ignorePatterns: [...(ultracite.ignorePatterns ?? []), "server/routeTree.gen.ts"],
+  ignorePatterns: [...(ultracite.ignorePatterns ?? []), "apps/web/server/routeTree.gen.ts"],
   jsPlugins: ["./oxlint/plugins/rules/no-barrel-files.ts"],
   options: {
     maxWarnings: 0,
@@ -54,7 +54,7 @@ export default defineConfig({
   },
   overrides: [
     {
-      files: ["scripts/**/*.ts"],
+      files: ["packages/sdk/scripts/**/*.ts"],
       rules: {
         "no-restricted-imports": [
           "error",
@@ -64,7 +64,7 @@ export default defineConfig({
               {
                 group: ["**/database/migrate*", "drizzle-orm/**/migrator"],
                 message:
-                  "Scripts require an initialized database. Run migrations at server startup in server/plugins/database.ts.",
+                  "Scripts require an initialized database. Run migrations at server startup in apps/web/server/plugins/database.ts.",
               },
             ],
           },
@@ -72,7 +72,7 @@ export default defineConfig({
       },
     },
     {
-      files: ["sdk/index.ts"],
+      files: ["packages/sdk/index.ts"],
       rules: {
         "slopstagram/no-barrel-files": "off",
       },

@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { createDrizzle } from "../sdk/database/client.ts";
-import { migrateDatabase } from "../sdk/database/migrate.ts";
-import { VisionRepository } from "../sdk/repositories/vision-repository.ts";
+import { createDrizzle } from "@slopstagram/sdk/database/client.ts";
+import { migrateDatabase } from "@slopstagram/sdk/database/migrate.ts";
+import { VisionRepository } from "@slopstagram/sdk/repositories/vision-repository.ts";
 
 describe("VisionRepository", () => {
   test("stores scalar result columns in SQLite", async (context) => {

@@ -7,9 +7,9 @@ import {
   USER_SUMMARY_UNAVAILABLE,
   getUserSummaryModel,
   getUserSummaryPromptHash,
-} from "../sdk/lib/user-summary-core-service.ts";
-import { resolveUserSummariesForReport } from "../sdk/lib/user-summary-resolver-service.ts";
-import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
+} from "@slopstagram/sdk/lib/user-summary-core-service.ts";
+import { resolveUserSummariesForReport } from "@slopstagram/sdk/lib/user-summary-resolver-service.ts";
+import { getReportUserKey } from "@slopstagram/sdk/lib/report-user-key-service.ts";
 import { createMockLogger, createSummaryReport } from "./mock-helpers.ts";
 import { createUserSummaryRepositoryAdapter } from "./repository-adapters.ts";
 

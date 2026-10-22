@@ -3,11 +3,11 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import { URL } from "node:url";
 import { H3 } from "nitro/h3";
-import { StoriesManifestReportSchema } from "../sdk/lib/story-schemas.ts";
+import { StoriesManifestReportSchema } from "@slopstagram/sdk/lib/story-schemas.ts";
 import { createPageRenderer } from "./render-page.ts";
-import { Route, ReportPage, type ReportContentProps } from "../server/pages/report.tsx";
-import { getRankedUsers } from "../server/helper.ts";
-import { createStoryCards } from "../server/story-card-view-model.ts";
+import { Route, ReportPage, type ReportContentProps } from "../apps/web/server/pages/report.tsx";
+import { getRankedUsers } from "../apps/web/server/helper.ts";
+import { createStoryCards } from "../apps/web/server/story-card-view-model.ts";
 
 const reportJson: unknown = JSON.parse(
   await readFile(new URL("fixtures/stories-report-server.json", import.meta.url), "utf-8"),

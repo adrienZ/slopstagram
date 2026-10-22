@@ -5,12 +5,12 @@ import path from "node:path";
 import { fileURLToPath, URL } from "node:url";
 import { test, type TestContext } from "node:test";
 import { migrate } from "drizzle-orm/node-sqlite/migrator";
-import { createDrizzle } from "../sdk/database/client.ts";
-import { migrateDatabase } from "../sdk/database/migrate.ts";
-import { ReportRepository } from "../sdk/repositories/report-repository.ts";
+import { createDrizzle } from "@slopstagram/sdk/database/client.ts";
+import { migrateDatabase } from "@slopstagram/sdk/database/migrate.ts";
+import { ReportRepository } from "@slopstagram/sdk/repositories/report-repository.ts";
 
 const captionMigration = "20261022145708_use_story_accessibility_caption";
-const migrations = fileURLToPath(new URL("../sdk/database/migrations", import.meta.url));
+const migrations = fileURLToPath(new URL("../packages/sdk/database/migrations", import.meta.url));
 
 function createLegacyDatabase(context: TestContext) {
   const directory = mkdtempSync(path.join(tmpdir(), "report-caption-migration-"));

@@ -1,14 +1,17 @@
 import type { KnipConfig } from "knip";
 
 const config: KnipConfig = {
-  entry: [
-    "sdk/**/*.ts",
-    "tests/**/*.test.ts",
-    "server/**/*.ts",
-    "server/**/*.tsx",
-    "scripts/**/*.ts",
-    "*.config.ts",
-  ],
+  workspaces: {
+    ".": {
+      entry: ["tests/**/*.test.ts", "*.config.ts"],
+    },
+    "apps/web": {
+      entry: ["server/**/*.ts", "server/**/*.tsx", "*.config.ts"],
+    },
+    "packages/sdk": {
+      entry: ["**/*.ts"],
+    },
+  },
   ignoreDependencies: [
     // Used by agents.
     "@playwright/cli",

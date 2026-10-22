@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { getStoryTrayUiSortPosition, parseStoriesTrayReport } from "../sdk/lib/parser-service.ts";
-import type { StoriesReport } from "../sdk/lib/types.ts";
+import {
+  getStoryTrayUiSortPosition,
+  parseStoriesTrayReport,
+} from "@slopstagram/sdk/lib/parser-service.ts";
+import type { StoriesReport } from "@slopstagram/sdk/lib/types.ts";
 import reelsTrayFixture from "./fixtures/xdt_api__v1__feed__reels_tray.json" with { type: "json" };
 
 // SAFETY: This checked-in JSON fixture is maintained as a StoriesReport test input.

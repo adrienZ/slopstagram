@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { createDrizzle } from "../sdk/database/client.ts";
-import { migrateDatabase } from "../sdk/database/migrate.ts";
-import { AppleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
+import { createDrizzle } from "@slopstagram/sdk/database/client.ts";
+import { migrateDatabase } from "@slopstagram/sdk/database/migrate.ts";
+import { AppleVisionRepository } from "@slopstagram/sdk/repositories/apple-vision-repository.ts";
 
 describe("AppleVisionRepository", () => {
   test("stores and updates captions in SQLite", async (context) => {

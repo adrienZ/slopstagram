@@ -1,16 +1,16 @@
 import assert from "node:assert/strict";
 import { test, type TestContext } from "node:test";
-import { createDrizzle } from "../sdk/database/client.ts";
-import { migrateDatabase } from "../sdk/database/migrate.ts";
-import { StoryRepository } from "../sdk/repositories/story-repository.ts";
-import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
-import { UserSummaryRepository } from "../sdk/repositories/user-summary-repository.ts";
-import { AppleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
-import { VisionRepository } from "../sdk/repositories/vision-repository.ts";
-import { createStoryFeed } from "../sdk/story-feed.ts";
-import { createReportViewModel } from "../server/report-view-model.ts";
-import { resolveUserSummariesForReport } from "../sdk/lib/user-summary-resolver-service.ts";
-import { createLogger } from "../sdk/lib/logging-service.ts";
+import { createDrizzle } from "@slopstagram/sdk/database/client.ts";
+import { migrateDatabase } from "@slopstagram/sdk/database/migrate.ts";
+import { StoryRepository } from "@slopstagram/sdk/repositories/story-repository.ts";
+import { InstagramUserRepository } from "@slopstagram/sdk/repositories/instagram-user-repository.ts";
+import { UserSummaryRepository } from "@slopstagram/sdk/repositories/user-summary-repository.ts";
+import { AppleVisionRepository } from "@slopstagram/sdk/repositories/apple-vision-repository.ts";
+import { VisionRepository } from "@slopstagram/sdk/repositories/vision-repository.ts";
+import { createStoryFeed } from "@slopstagram/sdk/story-feed.ts";
+import { createReportViewModel } from "../apps/web/server/report-view-model.ts";
+import { resolveUserSummariesForReport } from "@slopstagram/sdk/lib/user-summary-resolver-service.ts";
+import { createLogger } from "@slopstagram/sdk/lib/logging-service.ts";
 
 async function createFixture(context: TestContext) {
   const database = createDrizzle(":memory:");

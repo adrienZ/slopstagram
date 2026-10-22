@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import path from "node:path";
 import { test } from "node:test";
-import { resolveAppleCaptionsForReport } from "../sdk/apple-caption-report-service.ts";
-import { AppleOcrUnavailableError } from "../sdk/lib/apple-ocr-service.ts";
-import { fetchStoriesManifest } from "../sdk/stories.ts";
+import { resolveAppleCaptionsForReport } from "@slopstagram/sdk/apple-caption-report-service.ts";
+import { AppleOcrUnavailableError } from "@slopstagram/sdk/lib/apple-ocr-service.ts";
+import { fetchStoriesManifest } from "@slopstagram/sdk/stories.ts";
 import {
   createCapturingLogger,
   createClient,

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { backfillReportStoryMediaTypes } from "../sdk/lib/report-media-type-service.ts";
-import type { StoriesManifestReport } from "../sdk/lib/types.ts";
+import { backfillReportStoryMediaTypes } from "@slopstagram/sdk/lib/report-media-type-service.ts";
+import type { StoriesManifestReport } from "@slopstagram/sdk/lib/types.ts";
 import { createMemoryStoryRepository } from "./mock-helpers.ts";
 
 function createLegacyReport(): StoriesManifestReport {

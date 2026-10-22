@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createDrizzle } from "../sdk/database/client.ts";
-import { migrateDatabase } from "../sdk/database/migrate.ts";
-import { StoryRepository } from "../sdk/repositories/story-repository.ts";
-import { getStoryAnnotations } from "../sdk/story-sticker-location-service.ts";
+import { createDrizzle } from "@slopstagram/sdk/database/client.ts";
+import { migrateDatabase } from "@slopstagram/sdk/database/migrate.ts";
+import { StoryRepository } from "@slopstagram/sdk/repositories/story-repository.ts";
+import { getStoryAnnotations } from "@slopstagram/sdk/story-sticker-location-service.ts";
 
 test("extracts content-only labels including fallback forms and literal colons", () => {
   const { stickers } = getStoryAnnotations({

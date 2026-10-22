@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createDrizzle } from "../sdk/database/client.ts";
-import { migrateDatabase } from "../sdk/database/migrate.ts";
-import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
-import { ReportRepository } from "../sdk/repositories/report-repository.ts";
-import { storyStickers } from "../sdk/entities/story.ts";
-import { StoryRepository } from "../sdk/repositories/story-repository.ts";
-import { createManifestUsers, createOutputUsers } from "../sdk/story-output-service.ts";
-import { fetchStoriesManifest } from "../sdk/stories.ts";
+import { createDrizzle } from "@slopstagram/sdk/database/client.ts";
+import { migrateDatabase } from "@slopstagram/sdk/database/migrate.ts";
+import { InstagramUserRepository } from "@slopstagram/sdk/repositories/instagram-user-repository.ts";
+import { ReportRepository } from "@slopstagram/sdk/repositories/report-repository.ts";
+import { storyStickers } from "@slopstagram/sdk/entities/story.ts";
+import { StoryRepository } from "@slopstagram/sdk/repositories/story-repository.ts";
+import { createManifestUsers, createOutputUsers } from "@slopstagram/sdk/story-output-service.ts";
+import { fetchStoriesManifest } from "@slopstagram/sdk/stories.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 import {
   createCapturingLogger,
@@ -17,7 +17,7 @@ import {
   response,
   storyItemWithStickers,
 } from "./mock-helpers.ts";
-import type { StoryItem } from "../sdk/lib/types.ts";
+import type { StoryItem } from "@slopstagram/sdk/lib/types.ts";
 
 test("story annotations survive ingestion, cold reports, and repeated saves", async (context) => {
   const database = createDrizzle(":memory:");

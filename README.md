@@ -83,9 +83,26 @@ Open <http://localhost:5173/>.
 
 ## Development
 
-Cached media, the SQLite databases, and the Playwright profile are stored in `./data`.
-Database migrations are applied automatically when the Nitro server starts and before report
-creation. After changing an entity schema, generate a migration with:
+The repository uses two npm workspaces:
+
+- `apps/web`: the TanStack application and Nitro server. Nitro still starts the
+  bunqueue server and report worker automatically.
+- `packages/sdk`: collection, enrichment, CLI scripts, entities, repositories,
+  and database migrations.
+
+Run the existing commands from the repository root. They forward to the relevant
+workspace and preserve CLI arguments, for example `npm run create:report -- --limit 10`.
+Shared tooling and integration tests remain at the root.
+
+Cached media, the SQLite databases, and the Playwright profile remain in the
+repository root's `data/` directory, regardless of the working directory. To use
+another data directory, set `SLOPSTAGRAM_DATA_DIR` to an absolute path for both
+the web application and scripts. Relative values resolve from the repository root.
+
+Database migrations are applied automatically when Nitro starts. Scripts require
+an initialized database and never run migrations. To initialize it without starting
+the server, run `npm run db:migrate`. After changing an entity schema, generate a
+migration with:
 
 ```bash
 npm run db:generate

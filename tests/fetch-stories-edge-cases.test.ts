@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { fetchStoriesManifest } from "../sdk/stories.ts";
+import { fetchStoriesManifest } from "@slopstagram/sdk/stories.ts";
 import {
   createCapturingLogger,
   createClient,

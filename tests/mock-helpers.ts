@@ -3,18 +3,18 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createConsola } from "consola";
-import type { StoryRepository } from "../sdk/repositories/story-repository.ts";
-import type { CachedReportImages } from "../sdk/lib/image-cache-service.ts";
-import type { Logger } from "../sdk/lib/logging-service.ts";
+import type { StoryRepository } from "@slopstagram/sdk/repositories/story-repository.ts";
+import type { CachedReportImages } from "@slopstagram/sdk/lib/image-cache-service.ts";
+import type { Logger } from "@slopstagram/sdk/lib/logging-service.ts";
 import type {
   StoryItem,
   StoryReel,
   StoriesManifestReport,
   StoryStorage,
   StoryTrayEntry,
-} from "../sdk/lib/types.ts";
+} from "@slopstagram/sdk/lib/types.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
-import type { InstagramClient, InstagramClientResponse } from "../sdk/stories.ts";
+import type { InstagramClient, InstagramClientResponse } from "@slopstagram/sdk/stories.ts";
 
 export const previewSource = "https://example.com/story-preview.webp";
 

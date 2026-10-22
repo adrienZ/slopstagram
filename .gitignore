@@ -16,8 +16,8 @@ data/*
 !data/.gitkeep
 
 public
-!/public/
-/public/*
-!/public/css/
-/public/css/*
-!/public/css/*.css
+!/apps/web/public/
+/apps/web/public/*
+!/apps/web/public/css/
+/apps/web/public/css/*
+!/apps/web/public/css/*.css
