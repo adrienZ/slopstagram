@@ -1,8 +1,8 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "7a8e3a6b-4198-4c52-89df-eff1aa6b9579",
-  "prevIds": ["73f78fbd-33e5-4a25-be30-6cc00008990b"],
+  "id": "e6d5464c-2527-41a7-b6cb-e1b8778412b4",
+  "prevIds": ["63dc7449-c77e-4bdc-95ce-213cc0bc083d"],
   "ddl": [
     {
       "name": "apple_vision",
@@ -17,11 +17,11 @@
       "entityType": "tables"
     },
     {
-      "name": "report_reels",
+      "name": "report_stories",
       "entityType": "tables"
     },
     {
-      "name": "report_stories",
+      "name": "report_story_groups",
       "entityType": "tables"
     },
     {
@@ -197,86 +197,6 @@
       "table": "report_failures"
     },
     {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "fullName",
-      "entityType": "columns",
-      "table": "report_reels"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "instagramId",
-      "entityType": "columns",
-      "table": "report_reels"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "instagramPk",
-      "entityType": "columns",
-      "table": "report_reels"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "profilePicUrl",
-      "entityType": "columns",
-      "table": "report_reels"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "reelId",
-      "entityType": "columns",
-      "table": "report_reels"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "reportKey",
-      "entityType": "columns",
-      "table": "report_reels"
-    },
-    {
-      "type": "integer",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "sortOrder",
-      "entityType": "columns",
-      "table": "report_reels"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "username",
-      "entityType": "columns",
-      "table": "report_reels"
-    },
-    {
       "type": "integer",
       "notNull": false,
       "autoincrement": false,
@@ -385,6 +305,86 @@
       "name": "stickers",
       "entityType": "columns",
       "table": "report_stories"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fullName",
+      "entityType": "columns",
+      "table": "report_story_groups"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "instagramId",
+      "entityType": "columns",
+      "table": "report_story_groups"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "instagramPk",
+      "entityType": "columns",
+      "table": "report_story_groups"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "profilePicUrl",
+      "entityType": "columns",
+      "table": "report_story_groups"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "reelId",
+      "entityType": "columns",
+      "table": "report_story_groups"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "reportKey",
+      "entityType": "columns",
+      "table": "report_story_groups"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "sortOrder",
+      "entityType": "columns",
+      "table": "report_story_groups"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "username",
+      "entityType": "columns",
+      "table": "report_story_groups"
     },
     {
       "type": "integer",
@@ -884,9 +884,9 @@
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
-      "name": "fk_report_reels_reportKey_reports_key_fk",
+      "name": "fk_report_stories_reportKey_reports_key_fk",
       "entityType": "fks",
-      "table": "report_reels"
+      "table": "report_stories"
     },
     {
       "columns": ["reportKey"],
@@ -895,9 +895,9 @@
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
-      "name": "fk_report_stories_reportKey_reports_key_fk",
+      "name": "fk_report_reels_reportKey_reports_key_fk",
       "entityType": "fks",
-      "table": "report_stories"
+      "table": "report_story_groups"
     },
     {
       "columns": ["mediaPk"],
@@ -962,18 +962,18 @@
       "table": "report_failures"
     },
     {
-      "columns": ["reportKey", "reelId"],
-      "nameExplicit": false,
-      "name": "report_reels_pk",
-      "entityType": "pks",
-      "table": "report_reels"
-    },
-    {
       "columns": ["reportKey", "reelId", "mediaPk"],
       "nameExplicit": false,
       "name": "report_stories_pk",
       "entityType": "pks",
       "table": "report_stories"
+    },
+    {
+      "columns": ["reportKey", "reelId"],
+      "nameExplicit": false,
+      "name": "report_reels_pk",
+      "entityType": "pks",
+      "table": "report_story_groups"
     },
     {
       "columns": ["mediaPk", "sortOrder"],
