@@ -1,6 +1,6 @@
 import { resolveAppleCaptionsForReport } from "./apple-caption-report-service.ts";
 import { migrateDatabase } from "./database/migrate.ts";
-import type { ReportRepository } from "./entities/report.ts";
+import type { ReportRepository } from "./repositories/report-repository.ts";
 import { BASE_CACHE_DIR } from "./lib/cache-service.ts";
 import { reportRepository } from "./lib/entity-repository-service.ts";
 import { cacheReportImages } from "./lib/image-cache-service.ts";
