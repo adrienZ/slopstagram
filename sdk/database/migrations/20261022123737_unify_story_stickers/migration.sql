@@ -7,9 +7,6 @@ CREATE TABLE `story_sticker_sources` (
 --> statement-breakpoint
 ALTER TABLE `story_stickers` ADD `source` text DEFAULT 'unknown' NOT NULL;
 --> statement-breakpoint
--- Both historical tables lack reliable Instagram source provenance. Keep every
--- occurrence, with existing stickers first and legacy locations second. Dense
--- ordering avoids collisions even when the old sortOrder values have gaps.
 CREATE TEMP TABLE `__story_sticker_backfill` AS
 SELECT `mediaPk`, `kind`, `label`, `source`,
   ROW_NUMBER() OVER (
@@ -32,5 +29,3 @@ SELECT `mediaPk`, `kind`, `label`, `source`, `sortOrder`
 FROM `__story_sticker_backfill`;
 --> statement-breakpoint
 DROP TABLE `__story_sticker_backfill`;
--- No historical source-presence rows are inferred: absence does not prove that
--- Instagram supplied an empty field. Leave story_locations for preceding writers.

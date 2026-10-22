@@ -82,9 +82,9 @@ and SQLite backup API produced the fresh target
 contents. The target is a new file with a distinct identity, in a private temporary
 directory; no existing backup or database was overwritten.
 
-Validation covers:
+Validation performed with temporary fixtures, removed after verification at the user's request:
 
-1. Run the migration fixture using direct `DatabaseSync(':memory:')` and Drizzle,
+1. Ran the migration fixture using direct `DatabaseSync(':memory:')` and Drizzle,
    without importing the default database client. It migrates to the preceding
    schema first, seeds historical data, then applies the new migration. Check
    locations-only, stickers-only, both (including a kind-location collision),
@@ -113,7 +113,7 @@ Regenerate the Drizzle snapshot if preceding migration history changes before me
 ### Recorded results
 
 - The schema-only regression failed with missing legacy location occurrences;
-  the complete backfill passed. Both migration fixtures pass, including an injected
+  the complete backfill passed. Both temporary migration fixtures passed, including an injected
   insertion failure restoring the original schema, rows, temporary schema and ledger.
 - The production source was at `20261022091929_user_summary_instagram_pk`.
   Only `20261022123737_unify_story_stickers` was applied to the disposable copy.
@@ -128,5 +128,6 @@ Regenerate the Drizzle snapshot if preceding migration history changes before me
   rows nor ledger. The production source schema and ledger remained unchanged.
 - Local result details are retained in
   `/private/tmp/slopstagram-issue-14-h2c81ohi/validation-result.json`.
-- `npm run check` passed: 114 tests, 19 suites, zero failures or skips. Typechecking
+- After removing the temporary fixtures, `npm run check` passed: 112 tests, 19 suites,
+  zero failures or skips. Typechecking
   also passed. Final Standards and Spec reviews found no actionable issues.

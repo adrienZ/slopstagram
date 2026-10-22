@@ -59,13 +59,11 @@ export const storyStickers = sqliteTable(
       .notNull()
       .references(() => stories.mediaPk, { onDelete: "cascade" }),
     sortOrder: integer().notNull(),
-    // Historical rows and preceding writers cannot establish the Instagram source field.
     source: text().notNull().default("unknown"),
   },
   (table) => [primaryKey({ columns: [table.mediaPk, table.sortOrder] })],
 );
 
-// A row records a successfully observed source field, even when it has no occurrences.
 export const storyStickerSources = sqliteTable(
   "story_sticker_sources",
   {
