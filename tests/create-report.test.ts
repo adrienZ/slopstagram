@@ -44,6 +44,12 @@ function createFixtureReport(): StoriesManifestReport {
 
 test("createReport resolves entities before persisting the report", async () => {
   const report = createFixtureReport();
+  report.output.users.push({
+    full_name: "Summary Display Name",
+    reel_ids: [],
+    stories: [],
+    username: "summary-user",
+  });
   const calls: Array<string> = [];
   const cachedImages = {
     profilePicPathByUrl: new Map([["avatar-source", "images/avatar.jpg"]]),
@@ -59,8 +65,9 @@ test("createReport resolves entities before persisting the report", async () => 
       migrateDatabase: () => {
         calls.push("migrate-database");
       },
-      persistReportInstagramUsers: async () => {
+      persistReportInstagramUsers: async (persistedReport) => {
         calls.push("persist-instagram-users");
+        delete persistedReport.output.users[0].full_name;
       },
       fetchStories: async (_args, options) => {
         calls.push("fetch-stories");
@@ -89,8 +96,10 @@ test("createReport resolves entities before persisting the report", async () => 
         assert.equal(images, cachedImages);
         return visionByPreviewUrl;
       },
-      resolveUserSummariesForReport: async (_report, options) => {
+      resolveUserSummariesForReport: async (summaryReport, options) => {
         calls.push("resolve-summaries");
+        assert.equal(summaryReport.output.users[0].full_name, "Summary Display Name");
+        assert.equal("full_name" in report.output.users[0], false);
         assert.doesNotThrow(() => {
           options.logger.progress(0, 1);
         });
@@ -113,8 +122,8 @@ test("createReport resolves entities before persisting the report", async () => 
     "cache-images",
     "resolve-apple-captions",
     "resolve-vision",
-    "resolve-summaries",
     "persist-instagram-users",
+    "resolve-summaries",
     "save-report",
   ]);
   assert.equal(savedKey, result.outputFileName);

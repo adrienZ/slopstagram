@@ -106,11 +106,13 @@ export async function createReport(options: CreateReportOptions): Promise<Create
     cacheDirectory,
     logger,
   });
-  await dependencies.resolveUserSummariesForReport(report, {
+  // User persistence removes embedded profile fields; retain them for the summary prompt.
+  const summaryReport = globalThis.structuredClone(report);
+  await dependencies.persistReportInstagramUsers(report);
+  await dependencies.resolveUserSummariesForReport(summaryReport, {
     logger,
     visionByPreviewUrl,
   });
-  await dependencies.persistReportInstagramUsers(report);
   await dependencies.saveReport(outputFileName, report);
 
   logger.info(
