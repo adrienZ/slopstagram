@@ -1,8 +1,9 @@
 import { createHash } from "node:crypto";
 import process from "node:process";
 import { clearTimeout, setTimeout } from "node:timers";
-import { Ollama, type Fetch as OllamaFetch } from "ollama";
+import type { Fetch as OllamaFetch } from "ollama";
 import { z } from "zod";
+import { getOllamaClient } from "./ollama.ts";
 import {
   userSummaryRepository,
   type UserSummaryRepository,
@@ -178,10 +179,6 @@ function createSummaryPrompt(
   ].join("\n");
 }
 
-function resolveOllamaHost(endpoint: string | undefined): string {
-  return (endpoint ?? "http://127.0.0.1:11434").replace(/\/api\/generate\/?$/u, "");
-}
-
 function createTimeoutFetch(fetchOllama: HttpFetch, timeoutMs: number): OllamaFetch {
   async function timeoutFetch(input: RequestInfo | URL, init?: RequestInit) {
     const controller = new globalThis.AbortController();
@@ -208,9 +205,9 @@ function createDefaultOllamaRunner(options: {
   model: string;
   timeoutMs: number;
 }): RunUserSummary {
-  const ollama = new Ollama({
+  const ollama = getOllamaClient({
     fetch: createTimeoutFetch(options.fetchOllama ?? globalThis.fetch, options.timeoutMs),
-    host: resolveOllamaHost(options.endpoint),
+    host: options.endpoint,
   });
 
   return async (prompt) => {

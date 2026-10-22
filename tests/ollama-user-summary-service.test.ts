@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import process from "node:process";
 import { describe, test } from "node:test";
+import { setTimeout as delay } from "node:timers/promises";
 import { z } from "zod";
 import { readUserSummaries, resolveUserSummariesForReport } from "../sdk/user-summary.ts";
 import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
@@ -151,7 +152,11 @@ describe("resolveUserSummariesForReport", () => {
     assert.equal(runCount, 2);
   });
 
-  test("runs the default Ollama client with qwen3.5", async () => {
+  test("runs the default Ollama client with qwen3.5 and OLLAMA_HOST", async (context) => {
+    context.mock.property(process, "env", {
+      ...process.env,
+      OLLAMA_HOST: "http://summary.example:11434/api/generate",
+    });
     const repository = createUserSummaryRepositoryAdapter();
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
@@ -159,7 +164,7 @@ describe("resolveUserSummariesForReport", () => {
     const summaries = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
       fetchOllama: async (url, init) => {
-        assert.match(z.string().parse(url), /\/api\/generate$/u);
+        assert.equal(url, "http://summary.example:11434/api/generate");
         const body = UserSummaryRequestSchema.parse(JSON.parse(requestBodyToString(init?.body)));
 
         assert.equal(body.stream, false);
@@ -186,6 +191,28 @@ describe("resolveUserSummariesForReport", () => {
     });
 
     assert.equal(summaries.get(userKey), "sdk summary");
+  });
+
+  test("honors a custom timeout for a blocked summary request", { timeout: 1000 }, async () => {
+    const repository = createUserSummaryRepositoryAdapter();
+    let requestSignal: AbortSignal | null | undefined;
+    const result = resolveUserSummariesForReport(createSummaryReport(), {
+      logger: createMockLogger(),
+      repository,
+      timeoutMs: 5,
+      fetchOllama: async (_url, init) => {
+        requestSignal = init?.signal;
+        assert.ok(requestSignal);
+        await delay(10_000, undefined, { signal: requestSignal });
+        return globalThis.Response.json({ response: "too late" });
+      },
+    });
+
+    const summaries = await result;
+    assert.equal(summaries.get("summaryuser"), "résumé indisponible");
+    assert.ok(requestSignal);
+    assert.equal(requestSignal.aborted, true);
+    assert.equal(repository.entries.size, 0);
   });
 
   test("returns fallback text when user summary fails", async () => {

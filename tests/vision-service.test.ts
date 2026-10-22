@@ -1,5 +1,6 @@
 import { Buffer } from "node:buffer";
 import assert from "node:assert/strict";
+import process from "node:process";
 import { describe, test } from "node:test";
 import { z } from "zod";
 import { VISION_SERVER_NOT_RUNNING } from "../sdk/lib/vision-analysis-service.ts";
@@ -70,12 +71,17 @@ describe("resolveVisionForReport", () => {
     });
   }
 
-  test("reuses successful vision responses from the repository", async () => {
+  test("uses OLLAMA_HOST and reuses successful vision responses from the repository", async (context) => {
+    context.mock.property(process, "env", {
+      ...process.env,
+      OLLAMA_HOST: "http://vision.example:11434/api/generate/",
+    });
     const repository = createVisionRepositoryAdapter();
     let fetchCount = 0;
 
     await withReportImage(async (cacheDirectory, cachedImages) => {
-      async function fetchVision(_url: string | URL | Request, init?: RequestInit) {
+      async function fetchVision(url: string | URL | Request, init?: RequestInit) {
+        assert.equal(url, "http://vision.example:11434/api/generate");
         fetchCount += 1;
         const body = VisionRequestBodySchema.parse(JSON.parse(requestBodyToString(init?.body)));
         const { images } = body;

@@ -1,5 +1,6 @@
 import path from "node:path";
-import { Ollama as VisionSdk } from "ollama";
+import type { Ollama as VisionSdk } from "ollama";
+import { getOllamaClient } from "../ollama.ts";
 import type { VisionRepository } from "../repositories/vision-repository.ts";
 import { visionRepository } from "../repositories/vision-repository.ts";
 import type { CachedReportImages } from "./image-cache-service.ts";
@@ -52,10 +53,6 @@ interface ResolvePreviewEntryOptions {
 type PreviewValidation =
   | { cachedPath: string; itemLabel: string; ok: true }
   | { itemLabel: string; message: string; ok: false; warning: string };
-
-function resolveVisionHost(endpoint: string | undefined): string {
-  return (endpoint ?? "http://127.0.0.1:11434").replace(/\/api\/generate\/?$/u, "");
-}
 
 function resolveCachedImagePath(cacheDirectory: string, imagePath: string): string {
   return path.isAbsolute(imagePath) ? imagePath : path.resolve(cacheDirectory, imagePath);
@@ -181,10 +178,9 @@ export async function resolveVisionForReport(
   cachedImages: CachedReportImages,
   options: VisionOptions,
 ): Promise<Map<string, VisionResult>> {
-  const host = resolveVisionHost(options.endpoint);
-  const client = new VisionSdk({
+  const client = getOllamaClient({
     fetch: options.fetchVision,
-    host,
+    host: options.endpoint,
   });
   const { logger } = options;
   const entrySet = createPreviewEntrySet(report);
