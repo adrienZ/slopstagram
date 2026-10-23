@@ -6,7 +6,7 @@ import { URL } from "node:url";
 import { H3 } from "nitro/h3";
 import { StoriesManifestReportSchema } from "../sdk/lib/story-schemas.ts";
 import { createPageRenderer } from "./render-page.ts";
-import { Route, ReportPage, type ReportContentProps } from "../server/pages/report.tsx";
+import { Route, ReportPage, type ReportPageProps } from "../server/pages/report.tsx";
 import { getRankedUsers } from "../server/helper.ts";
 import { createStoryCards } from "../server/story-card-view-model.ts";
 
@@ -16,8 +16,12 @@ const reportJson: unknown = JSON.parse(
 const report = StoriesManifestReportSchema.parse(reportJson);
 const latestReportKey = "stories-report-2026-07-26.json";
 const caption = "</script><script>caption</script>";
-const props: ReportContentProps = {
+const props: ReportPageProps = {
   date: "26 juillet 2026 à 11:48 UTC+2",
+  selectedDate: "2026-07-26",
+  today: "2026-07-26",
+  availableDates: ["2026-07-25", "2026-07-26"],
+  sidebarUsers: [{ username: "outside-feed", avatarPath: null }],
   users: getRankedUsers(report).map((user) => ({
     user,
     avatar: user.profile_pic_url === null ? undefined : "/media/avatars/avatar.jpg",
@@ -53,7 +57,8 @@ test("report page renders fixture content", async () => {
   assert.equal(response.headers.get("content-type"), "text/html;charset=utf-8");
   const html = await response.text();
   assert.match(html, /<h1[^>]*>Stories des dernières 24 heures<\/h1>/u);
-  assert.match(html, /Html &quot;User&quot; \(ranked-second\)/u);
+  assert.match(html, /Html &quot;User&quot; \(@ranked-second\)/u);
+  assert.match(html, />@ranked-second<\/span>/u);
   assert.match(html, /A text-focused story with extracted details\./u);
   assert.match(html, /src="\/media\/avatars\/avatar.jpg"/u);
   assert.match(html, /src="\/media\/story-previews\/story-pk-1.jpg"/u);
@@ -61,10 +66,68 @@ test("report page renders fixture content", async () => {
   assert.doesNotMatch(html, /<dialog|role="dialog"/u);
   assert.doesNotMatch(html, /data-mono-jsx|data-story-media-pk|on(?:click|change|close)=/u);
   assert.ok(
-    html.indexOf("Ranked First (ranked-first)") <
-      html.indexOf("Html &quot;User&quot; (ranked-second)"),
+    html.indexOf("Ranked First (@ranked-first)") <
+      html.indexOf("Html &quot;User&quot; (@ranked-second)"),
   );
   assert.doesNotMatch(html, /report-picker|Choisir un rapport|stories-report-/u);
+});
+
+test("report sidebar uses calendar day buttons and includes the theme control", async () => {
+  const html = await renderer.renderRoute("/report?date=2026-07-26");
+  assert.match(html, /Navigation des stories/u);
+  assert.match(html, /Slopstagram/u);
+  assert.match(html, /<button[^>]*aria-label="[^"]*25 juillet 2026[^"]*"/u);
+  assert.match(html, /data-selected-single="true"/u);
+  assert.match(html, /aria-label="Choisir le thème"/u);
+  assert.match(html, /href="\/users\/outside-feed"/u);
+});
+
+test("historical SSR pages use the selected day and handle empty results", async () => {
+  const html = await renderer.renderRoute("/report?date=2026-07-25", {
+    ...props,
+    selectedDate: "2026-07-25",
+    users: [],
+  });
+  assert.match(html, /Stories du 25 juillet 2026/u);
+  assert.match(html, /Aucune story publiée ce jour-là/u);
+  assert.doesNotMatch(html, /Fil chargé le/u);
+  assert.match(html, /data-day="2026-07-25"[^>]*data-selected="true"/u);
+  assert.match(html, /data-day="2026-07-26"[^>]*data-today="true"/u);
+});
+
+test("future calendar dates are disabled buttons without navigation links", async () => {
+  const html = await renderer.renderRoute("/report");
+  assert.doesNotMatch(html, /href="\/report\?date=2026-07-27"/u);
+  const tomorrow =
+    /<button\b[^>]*aria-label="[^"]*27 juillet 2026[^"]*"[^>]*>/u.exec(html)?.[0] ?? "";
+  assert.match(tomorrow, /disabled=""/u);
+});
+
+test("report calendar disables past days without visible stories", async () => {
+  const html = await renderer.renderRoute("/report");
+  const emptyDay =
+    /<button\b[^>]*aria-label="[^"]*24 juillet 2026[^"]*"[^>]*>/u.exec(html)?.[0] ?? "";
+  const availableDay =
+    /<button\b[^>]*aria-label="[^"]*25 juillet 2026[^"]*"[^>]*>/u.exec(html)?.[0] ?? "";
+  assert.match(emptyDay, /disabled=""/u);
+  assert.doesNotMatch(availableDay, /disabled=""/u);
+  assert.match(availableDay, /25 juillet 2026/u);
+});
+
+test("an empty today feed explains the rolling window and shows when it was loaded", async () => {
+  const html = await renderer.renderRoute("/report", { ...props, users: [] });
+  assert.match(html, /Stories des dernières 24 heures/u);
+  assert.match(html, /Aucune story publiée dans les dernières 24 heures/u);
+  assert.match(html, /Fil chargé le/u);
+});
+
+test("invalid report dates fall back to the default search while preserving story IDs", () => {
+  const validate = Route.options.validateSearch;
+  assert.ok(validate && "parse" in validate);
+  assert.deepEqual(validate.parse({ date: "2026-02-30", story: "12345678901234567890" }), {
+    date: undefined,
+    story: "12345678901234567890",
+  });
 });
 
 test("report defers the selected lightbox portal until hydration", async () => {

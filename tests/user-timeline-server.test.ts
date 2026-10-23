@@ -56,6 +56,12 @@ const timeline: UserTimeline = {
 };
 
 const props: TimelineContentProps = {
+  today: "2026-10-23",
+  stickerKinds: ["hashtag", "link", "location", "mention", "music"],
+  sidebarUsers: [
+    { username: "timeline-user", avatarPath: "/media/avatar.jpg" },
+    { username: "other-user", avatarPath: null },
+  ],
   timeline: {
     avatarPath: timeline.avatarPath,
     timelineUser: timeline.timelineUser,
@@ -95,9 +101,80 @@ test("timeline page renders dated stories", async () => {
   assert.match(html, /src="\/media\/story-previews\/story-pk.jpg"/u);
 });
 
-test("timeline sticker table preserves occurrences across history and caps rows at 50", async () => {
-  const kinds = ["mention", "music", "hashtag", "link"];
+test("timeline shares the sidebar and exposes scroll targets for its available calendar days", async () => {
+  const html = await renderer.renderRoute("/users/timeline-user");
+  assert.match(html, /Navigation des stories/u);
+  assert.match(html, /id="story-day-2026-01-01"/u);
+  assert.match(html, /<button[^>]*aria-label="[^"]*1 janvier 2026[^"]*"/u);
+  const unavailable =
+    /<button[^>]*aria-label="[^"]*vendredi 2 janvier 2026[^"]*"[^>]*>/u.exec(html)?.[0] ?? "";
+  assert.match(unavailable, /disabled=""/u);
+  assert.doesNotMatch(html, /href="\/report\?date=/u);
+  assert.match(html, /aria-label="Choisir le thème"/u);
+});
+
+test("sidebar links all saved accounts and marks the current user", async () => {
+  const html = await renderer.renderRoute("/users/timeline-user");
+  assert.match(html, /<nav aria-label="Utilisateurs">/u);
+  assert.match(html, /<a[^>]*href="\/users\/timeline-user"[^>]*aria-current="page"/u);
+  assert.match(html, /href="\/users\/other-user"/u);
+  assert.match(html, /data-slot="avatar"/u);
+  assert.match(html, /data-slot="sidebar-menu-sub"/u);
+  assert.match(html, /data-slot="sidebar-menu-sub-button"/u);
+});
+
+test("saved accounts without stories render an empty page", async () => {
+  const html = await renderer.renderRoute("/users/timeline-user", {
+    ...props,
+    stories: [],
+    timeline: { ...props.timeline, stories: [], years: [] },
+  });
+  assert.match(html, /Aucune story enregistrée pour cet utilisateur/u);
+  assert.match(html, /href="\/users\/other-user"/u);
+});
+
+test("sticker cards render every database kind, with three results and pagination", async () => {
   const tableProps: TimelineContentProps = {
+    ...props,
+    timeline: {
+      ...props.timeline,
+      stories: Array.from({ length: 7 }, (_, index) => ({
+        ...entry,
+        taken_at: entry.taken_at - index * 60,
+        story: {
+          ...entry.story,
+          pk: `sticker-${index}`,
+          annotations: { locations: [], stickers: [{ kind: "mention", label: `@user-${index}` }] },
+        },
+      })),
+    },
+  };
+  const tableRenderer = createPageRenderer(UserTimelinePage, Route, tableProps, "/users/$username");
+  const html = await tableRenderer.render();
+  assert.equal((html.match(/aria-label="Type de sticker : /gu) ?? []).length, 5);
+  assert.equal((html.match(/data-slot="empty"/gu) ?? []).length, 0);
+  const table =
+    /<table[^>]*aria-label="Stickers : mention"[^>]*>(?<table>[\s\S]*?)<\/table>/u.exec(html)
+      ?.groups?.table ?? "";
+  assert.equal((table.match(/data-slot="table-row"/gu) ?? []).length, 4);
+  assert.match(table, /@user-0/u);
+  assert.match(table, /@user-2/u);
+  assert.doesNotMatch(table, /@user-3|@user-4|@user-5|@user-6/u);
+  assert.match(html, /aria-label="Page suivante : mention"/u);
+  assert.match(html, /aria-label="Tout afficher : mention"/u);
+  assert.match(html, /aria-label="Afficher ou masquer : mention"/u);
+});
+
+test("empty sticker cards stay collapsed and do not offer expansion", async () => {
+  const html = await renderer.render();
+  assert.equal((html.match(/aria-label="Type de sticker : /gu) ?? []).length, 5);
+  assert.equal((html.match(/Aucun sticker/gu) ?? []).length, 5);
+  assert.doesNotMatch(html, /aria-label="Tout afficher :|aria-label="Afficher ou masquer :/u);
+  assert.doesNotMatch(html, /<table[^>]*aria-label="Stickers :/u);
+});
+
+test("sticker mentions link to saved accounts and leave unknown users as text", async () => {
+  const html = await renderer.renderRoute("/users/timeline-user", {
     ...props,
     timeline: {
       ...props.timeline,
@@ -108,54 +185,30 @@ test("timeline sticker table preserves occurrences across history and caps rows 
             ...entry.story,
             annotations: {
               locations: [],
-              stickers: Array.from({ length: 49 }, (_, position) => ({
-                kind: kinds[position % kinds.length],
-                label: "repeated sticker",
-              })),
-            },
-          },
-        },
-        {
-          ...entry,
-          taken_at: entry.taken_at - 7 * 24 * 60 * 60,
-          story: {
-            ...entry.story,
-            pk: "older-story",
-            annotations: {
-              locations: ["older <location>"],
               stickers: [
-                { kind: "location", label: "older <location>" },
-                { kind: "mention", label: "beyond the limit" },
+                { kind: "mention", label: "@OTHER-user" },
+                { kind: "mention", label: "@unknown-user" },
               ],
             },
           },
         },
       ],
     },
-  };
-  const tableRenderer = createPageRenderer(UserTimelinePage, Route, tableProps, "/users/$username");
-  const html = await tableRenderer.render();
-  const table = /<table[^>]*>(?<table>[\s\S]*?)<\/table>/u.exec(html)?.groups?.table ?? "";
-  const body = /<tbody>(?<body>[\s\S]*?)<\/tbody>/u.exec(table)?.groups?.body ?? "";
-  assert.equal((body.match(/<tr>/gu) ?? []).length, 50);
-  assert.equal((body.match(/repeated sticker/gu) ?? []).length, 49);
-  for (const kind of [...kinds, "location"]) {
-    assert.ok(body.includes(`>${kind}</td>`));
-  }
-  assert.match(body, /older &lt;location&gt;/u);
-  assert.doesNotMatch(body, /beyond the limit/u);
-  assert.ok(body.indexOf("repeated sticker") < body.indexOf("older &lt;location&gt;"));
-  assert.ok(html.indexOf(table) < html.indexOf(">2026</h2>"));
-  assert.match(body, /aria-label="Ouvrir aperçu story-pk"/u);
-  assert.match(body, /Preview unavailable/u);
-  assert.match(body, /<time dateTime="2025-12-25T00:00:00.000Z">/u);
+  });
+  const table =
+    /<table[^>]*aria-label="Stickers : mention"[^>]*>(?<table>[\s\S]*?)<\/table>/u.exec(html)
+      ?.groups?.table ?? "";
+  assert.match(table, /<a[^>]*href="\/users\/other-user"[^>]*>@OTHER-user<\/a>/u);
+  assert.doesNotMatch(table, /href="\/users\/unknown-user"/u);
+  assert.match(table, />@unknown-user<\/span>/u);
 });
 
-test("timeline shows an empty message when no stickers are stored", async () => {
+test("timeline renders a photo grid grouped by day", async () => {
   const html = await renderer.render();
-  assert.match(html, /Latest sticker occurrences \(up to 50\)/u);
-  assert.match(html, /No sticker occurrences stored\./u);
-  assert.doesNotMatch(html, /<table(?:\s|>)/u);
+  assert.match(html, /aria-label="Galerie des stories"/u);
+  assert.match(html, /id="story-day-2026-01-01"/u);
+  assert.match(html, /grid-cols-\[repeat\(auto-fill/u);
+  assert.match(html, /aspect-\[9\/14\]/u);
 });
 
 test("timeline page does not embed initial state", async () => {

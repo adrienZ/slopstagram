@@ -72,6 +72,25 @@ test("returns no timeline when the user has no stories", () => {
   assert.equal(result, null);
 });
 
+test("returns an empty timeline for a saved account without stories", () => {
+  const result = createUserTimeline(
+    "saved-user",
+    { listByUsername: () => [] },
+    {
+      findByUsername: () => ({
+        username: "saved-user",
+        full_name: "Saved User",
+        id: "saved",
+        pk: "saved",
+      }),
+    },
+  );
+  assert.ok(result);
+  assert.equal(result.timelineUser.username, "saved-user");
+  assert.deepEqual(result.stories, []);
+  assert.deepEqual(result.years, []);
+});
+
 test("assembles timeline media, captions, cached vision and local paths", () => {
   const image = timelineStory("image", 1_767_225_600);
   image.story.accessibility_caption = "Instagram caption";

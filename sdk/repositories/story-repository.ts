@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, lte } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, lt, lte } from "drizzle-orm";
 import { useDrizzle, type DrizzleDatabase } from "../database/client.ts";
 import { instagramUsers } from "../entities/instagram-user.ts";
 import {
@@ -280,6 +280,15 @@ export class StoryRepository {
     return readStoryItem(this.database, story);
   }
 
+  listStickerKinds(): Array<string> {
+    return this.database
+      .selectDistinct({ kind: storyStickers.kind })
+      .from(storyStickers)
+      .orderBy(asc(storyStickers.kind))
+      .all()
+      .map(({ kind }) => kind);
+  }
+
   async save(value: StoryItem, owner?: StoryOwner): Promise<void> {
     const story = StoryItemSchema.parse(value);
     const entry = toStoryEntry(story, owner);
@@ -309,6 +318,16 @@ export class StoryRepository {
     });
   }
 
+  listPublicationTimes(now: Date) {
+    return this.database
+      .select({ mediaPk: stories.mediaPk, takenAt: stories.takenAt })
+      .from(stories)
+      .innerJoin(instagramUsers, eq(stories.instagramUserPk, instagramUsers.pk))
+      .where(lte(stories.takenAt, now.getTime() / 1000))
+      .all()
+      .flatMap(({ mediaPk, takenAt }) => (takenAt === null ? [] : [{ mediaPk, takenAt }]));
+  }
+
   listActive(now: Date): Array<UserTimelineStory> {
     const publishedBefore = now.getTime() / 1000;
     const rows = this.database
@@ -317,6 +336,26 @@ export class StoryRepository {
       .innerJoin(instagramUsers, eq(stories.instagramUserPk, instagramUsers.pk))
       .where(
         and(gt(stories.takenAt, publishedBefore - 86_400), lte(stories.takenAt, publishedBefore)),
+      )
+      .orderBy(desc(stories.takenAt), asc(instagramUsers.username), asc(stories.mediaPk))
+      .all();
+
+    return rows.flatMap(({ story, user }) => {
+      const entry = getTimelineStory(this.database, story, user);
+      return entry === null ? [] : [entry];
+    });
+  }
+
+  listPublishedBetween(start: Date, end: Date): Array<UserTimelineStory> {
+    const rows = this.database
+      .select({ story: stories, user: instagramUsers })
+      .from(stories)
+      .innerJoin(instagramUsers, eq(stories.instagramUserPk, instagramUsers.pk))
+      .where(
+        and(
+          gte(stories.takenAt, start.getTime() / 1000),
+          lt(stories.takenAt, end.getTime() / 1000),
+        ),
       )
       .orderBy(desc(stories.takenAt), asc(instagramUsers.username), asc(stories.mediaPk))
       .all();

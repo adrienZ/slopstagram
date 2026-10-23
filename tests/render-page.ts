@@ -9,10 +9,16 @@ import {
   useSearch,
   parseSearchWith,
   stringifySearchWith,
+  Outlet,
 } from "@tanstack/react-router";
 import type { AnyRoute } from "@tanstack/react-router";
 import { createRequestHandler, defaultRenderHandler } from "@tanstack/react-router/ssr/server";
 import { RootDocument, rootHead } from "../server/pages/__root.tsx";
+import { ThemeProvider } from "../server/components/theme-provider.tsx";
+
+function FixtureThemeProvider() {
+  return createElement(ThemeProvider, null, createElement(Outlet));
+}
 
 export function createPageRenderer<Props extends object>(
   Page: ComponentType<Props>,
@@ -23,7 +29,7 @@ export function createPageRenderer<Props extends object>(
   function createFixtureRouter(requestProps: Props, contentOnly: boolean) {
     // Clone route definitions so concurrent requests never share fixture loader state.
     const root = contentOnly
-      ? createRootRoute()
+      ? createRootRoute({ component: FixtureThemeProvider })
       : createRootRoute({
           shellComponent: RootDocument,
           head: rootHead,

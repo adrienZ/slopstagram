@@ -5,6 +5,7 @@ import { nitro } from "nitro/vite";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
+  devtools: { apply: "serve" },
   resolve: {
     tsconfigPaths: true,
   },

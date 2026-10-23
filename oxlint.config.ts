@@ -6,7 +6,7 @@ const restrictedReactImports = [
   {
     // frontend-side-effects
     name: "react",
-    importNames: ["useEffect", "useLayoutEffect", "useInsertionEffect"],
+    importNames: ["useEffect", "useLayoutEffect", "useInsertionEffect", "useCallback"],
     allowTypeImports: false,
     message: "useEffect is forbidden. Use derived state or explicit event subscriptions.",
   },
