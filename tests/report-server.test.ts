@@ -52,7 +52,7 @@ test("report page renders fixture content", async () => {
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("content-type"), "text/html;charset=utf-8");
   const html = await response.text();
-  assert.match(html, /<h1>Stories des dernières 24 heures<\/h1>/u);
+  assert.match(html, /<h1[^>]*>Stories des dernières 24 heures<\/h1>/u);
   assert.match(html, /Html &quot;User&quot; \(ranked-second\)/u);
   assert.match(html, /A text-focused story with extracted details\./u);
   assert.match(html, /src="\/media\/avatars\/avatar.jpg"/u);
@@ -86,6 +86,8 @@ test("report page does not embed initial state", async () => {
 
 test("report route renders its query result and safely serializes it for hydration", async () => {
   const html = await renderer.renderRoute(`/report?report=${latestReportKey}&story=story-pk-1`);
+  assert.equal((html.match(/<main(?:\s|>)/gu) ?? []).length, 1);
+  assert.doesNotMatch(html, /href="\/css\//u);
   assert.match(html, /<h1[^>]*>Stories des dernières 24 heures<\/h1>/u);
   assert.match(html, /data-story-preview="story-pk-1"/u);
   assert.doesNotMatch(html, /stories-report-|report-picker/u);

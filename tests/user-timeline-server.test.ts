@@ -90,8 +90,8 @@ test("timeline page renders dated stories", async () => {
   const response = await request();
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /<h2>2026<\/h2>/u);
-  assert.match(html, /<h3>janvier<\/h3>/u);
+  assert.match(html, /<h2[^>]*>2026<\/h2>/u);
+  assert.match(html, /<h3[^>]*>janvier<\/h3>/u);
   assert.match(html, /src="\/media\/story-previews\/story-pk.jpg"/u);
 });
 
@@ -135,17 +135,17 @@ test("timeline sticker table preserves occurrences across history and caps rows 
   };
   const tableRenderer = createPageRenderer(UserTimelinePage, Route, tableProps, "/users/$username");
   const html = await tableRenderer.render();
-  const table = /<table>(?<table>[\s\S]*?)<\/table>/u.exec(html)?.groups?.table ?? "";
+  const table = /<table[^>]*>(?<table>[\s\S]*?)<\/table>/u.exec(html)?.groups?.table ?? "";
   const body = /<tbody>(?<body>[\s\S]*?)<\/tbody>/u.exec(table)?.groups?.body ?? "";
   assert.equal((body.match(/<tr>/gu) ?? []).length, 50);
   assert.equal((body.match(/repeated sticker/gu) ?? []).length, 49);
   for (const kind of [...kinds, "location"]) {
-    assert.ok(body.includes(`<td>${kind}</td>`));
+    assert.ok(body.includes(`>${kind}</td>`));
   }
   assert.match(body, /older &lt;location&gt;/u);
   assert.doesNotMatch(body, /beyond the limit/u);
   assert.ok(body.indexOf("repeated sticker") < body.indexOf("older &lt;location&gt;"));
-  assert.ok(html.indexOf("<table>") < html.indexOf('class="timeline-year"'));
+  assert.ok(html.indexOf(table) < html.indexOf(">2026</h2>"));
   assert.match(body, /aria-label="Ouvrir aperçu story-pk"/u);
   assert.match(body, /Preview unavailable/u);
   assert.match(body, /<time dateTime="2025-12-25T00:00:00.000Z">/u);
@@ -155,7 +155,7 @@ test("timeline shows an empty message when no stickers are stored", async () => 
   const html = await renderer.render();
   assert.match(html, /Latest sticker occurrences \(up to 50\)/u);
   assert.match(html, /No sticker occurrences stored\./u);
-  assert.doesNotMatch(html, /<table>/u);
+  assert.doesNotMatch(html, /<table(?:\s|>)/u);
 });
 
 test("timeline page does not embed initial state", async () => {
@@ -172,6 +172,8 @@ test("timeline defers the selected lightbox portal until hydration", async () =>
 
 test("timeline route reads its username query and URL-selected story", async () => {
   const html = await renderer.renderRoute("/users/timeline-user?story=story-pk");
+  assert.equal((html.match(/<main(?:\s|>)/gu) ?? []).length, 1);
+  assert.doesNotMatch(html, /href="\/css\//u);
   assert.match(html, /Timeline User/u);
   assert.match(html, /data-story-preview="story-pk"/u);
   assert.match(html, /\$_TSR/u);
