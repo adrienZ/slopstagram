@@ -3,22 +3,22 @@ import { cn } from "cn";
 import type { StoryCardViewModel } from "../story-card-view-model.ts";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "../shadcn/ui/dialog.tsx";
 
-function LightboxDetailsRow(props: {
-  label: string;
-  className: string;
-  value: string | undefined;
-}) {
+const detailsCellClassName =
+  "tw:border tw:border-border tw:px-3 tw:py-2.75 tw:text-left tw:align-top tw:wrap-anywhere tw:whitespace-pre-wrap tw:max-[760px]:block tw:max-[760px]:w-auto tw:max-[760px]:border-0 tw:max-[760px]:px-2.5 tw:max-[760px]:py-2";
+
+function LightboxDetailsRow(props: { label: string; value: string | undefined }) {
   return (
-    <tr>
-      <th>{props.label}</th>
-      <td className={props.className}>{props.value ?? "—"}</td>
+    <tr className="tw:max-[760px]:block">
+      <th className={cn(detailsCellClassName, "tw:w-32 tw:bg-muted")} scope="row">
+        {props.label}
+      </th>
+      <td className={detailsCellClassName}>{props.value ?? "—"}</td>
     </tr>
   );
 }
 
 function LightboxNavButton(props: {
   direction: number;
-  className: string;
   label: string;
   text: string;
   hidden: boolean;
@@ -26,7 +26,10 @@ function LightboxNavButton(props: {
 }) {
   return (
     <button
-      className={cn("lightbox-nav", props.className)}
+      className={cn(
+        "tw:absolute tw:top-1/2 tw:size-10.5 tw:cursor-pointer tw:rounded-lg tw:border tw:border-background/40 tw:bg-foreground/70 tw:text-[28px] tw:text-background",
+        props.direction < 0 ? "tw:left-4" : "tw:right-4",
+      )}
       type="button"
       aria-label={props.label}
       hidden={props.hidden}
@@ -79,7 +82,7 @@ function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: Stor
       }}
     >
       <DialogContent
-        className="image-lightbox tw:block tw:h-auto tw:max-h-[calc(100dvh-56px)] tw:w-[calc(100%-56px)] tw:max-w-none tw:gap-0 tw:rounded-lg tw:bg-transparent tw:p-0 tw:text-base tw:ring-0 tw:max-[760px]:max-h-[calc(100dvh-24px)] tw:max-[760px]:w-[calc(100%-24px)] tw:sm:max-w-none"
+        className="tw:block tw:h-auto tw:max-h-[calc(100dvh-56px)] tw:w-[calc(100%-56px)] tw:max-w-none tw:gap-0 tw:rounded-lg tw:bg-transparent tw:p-0 tw:text-base tw:ring-0 tw:max-[760px]:max-h-[calc(100dvh-24px)] tw:max-[760px]:w-[calc(100%-24px)] tw:sm:max-w-none"
         id="image-lightbox"
         aria-describedby={undefined}
         showCloseButton={false}
@@ -100,82 +103,63 @@ function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: Stor
       >
         <DialogTitle className="tw:sr-only">Aperçu de l’image</DialogTitle>
         <DialogClose asChild>
-          <button className={cn("lightbox-close")} type="button" aria-label="Fermer l’aperçu">
+          <button
+            className="tw:absolute tw:top-4 tw:right-4 tw:z-1 tw:size-10.5 tw:cursor-pointer tw:rounded-lg tw:border tw:border-background/40 tw:bg-foreground/70 tw:text-[28px] tw:text-background"
+            type="button"
+            aria-label="Fermer l’aperçu"
+          >
             ×
           </button>
         </DialogClose>
         <LightboxNavButton
           direction={-1}
-          className="lightbox-prev"
           label="Image précédente"
           text="‹"
           hidden={props.stories.length < 2}
           onNavigate={navigate}
         />
-        <div className={cn("lightbox-content")}>
-          <div className={cn("lightbox-preview-panel")}>
-            <div className={cn("lightbox-header")}>
+        <div className="tw:mx-auto tw:flex tw:h-[min(900px,calc(100dvh-56px))] tw:w-full tw:overflow-hidden tw:rounded-lg tw:bg-foreground tw:max-[760px]:h-[calc(100dvh-24px)] tw:max-[760px]:flex-col">
+          <div className="tw:flex tw:max-w-[calc(100%-320px)] tw:flex-[0_1_auto] tw:flex-col tw:max-[760px]:min-h-0 tw:max-[760px]:max-w-none tw:max-[760px]:flex-[1_1_66%]">
+            <div className="tw:flex tw:items-center tw:gap-2.5 tw:px-3 tw:py-2.5 tw:text-background">
               <img
-                className={cn("lightbox-avatar")}
+                className="tw:size-10.5 tw:rounded-lg tw:object-cover"
                 alt=""
                 src={props.story.avatar}
                 hidden={props.story.avatar === undefined}
               />
               <div>
-                <strong className="lightbox-username">{props.story.userName}</strong>
-                <span className="lightbox-count">{selectedCount()}</span>
+                <strong>{props.story.userName}</strong>
+                <span>{selectedCount()}</span>
               </div>
             </div>
-            <img className={cn("lightbox-image")} src={props.story.preview} alt={props.story.alt} />
+            <img
+              className="tw:m-auto tw:h-auto tw:max-h-[calc(100%-62px)] tw:w-auto tw:max-w-full tw:object-contain"
+              src={props.story.preview}
+              alt={props.story.alt}
+            />
           </div>
-          <aside className={cn("lightbox-details-panel")} aria-label="Détails de la story">
-            <h2>Détails</h2>
-            <table className={cn("lightbox-details-table")}>
-              <tbody>
-                <LightboxDetailsRow
-                  label="Type"
-                  className="lightbox-detail-media-type"
-                  value={props.story.mediaType}
-                />
-                <LightboxDetailsRow
-                  label="Story"
-                  className="lightbox-detail-media-pk"
-                  value={props.story.mediaPk}
-                />
-                <LightboxDetailsRow
-                  label="Stickers"
-                  className="lightbox-detail-stickers"
-                  value={props.story.stickers}
-                />
-                <LightboxDetailsRow
-                  label="Lieux"
-                  className="lightbox-detail-locations"
-                  value={props.story.locations}
-                />
-                <LightboxDetailsRow
-                  label="Instagram"
-                  className="lightbox-detail-ig-caption"
-                  value={props.story.igCaption}
-                />
-                <LightboxDetailsRow
-                  label="Apple OCR"
-                  className="lightbox-detail-apple-caption"
-                  value={props.story.appleCaption}
-                />
-                <LightboxDetailsRow
-                  label="Vision OCR"
-                  className="lightbox-detail-vision-ocr"
-                  value={props.story.visionOcr}
-                />
+          <aside
+            className="tw:flex-[1_1_360px] tw:overflow-auto tw:bg-muted tw:p-4.5 tw:text-foreground tw:max-[760px]:min-h-[34%] tw:max-[760px]:min-w-0 tw:max-[760px]:flex-[1_1_34%] tw:max-[760px]:p-3.5"
+            aria-label="Détails de la story"
+          >
+            <h2 className="tw:my-5 tw:text-2xl tw:leading-normal tw:font-bold">Détails</h2>
+            <table className="tw:w-full tw:table-fixed tw:border-collapse tw:bg-card tw:text-card-foreground tw:max-[760px]:block tw:max-[760px]:w-auto">
+              <tbody className="tw:max-[760px]:block">
+                <LightboxDetailsRow label="Type" value={props.story.mediaType} />
+                <LightboxDetailsRow label="Story" value={props.story.mediaPk} />
+                <LightboxDetailsRow label="Stickers" value={props.story.stickers} />
+                <LightboxDetailsRow label="Lieux" value={props.story.locations} />
+                <LightboxDetailsRow label="Instagram" value={props.story.igCaption} />
+                <LightboxDetailsRow label="Apple OCR" value={props.story.appleCaption} />
+                <LightboxDetailsRow label="Vision OCR" value={props.story.visionOcr} />
                 <LightboxDetailsRow
                   label="Vision description"
-                  className="lightbox-detail-vision-description"
                   value={props.story.visionDescription}
                 />
               </tbody>
             </table>
             <a
-              className={cn("lightbox-story-link")}
+              className="tw:mt-3.5 tw:inline-block tw:rounded-lg tw:bg-primary tw:px-3 tw:py-2.25 tw:text-primary-foreground tw:no-underline"
               target="_blank"
               rel="noreferrer"
               href={props.story.url}
@@ -186,7 +170,6 @@ function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: Stor
         </div>
         <LightboxNavButton
           direction={1}
-          className="lightbox-next"
           label="Image suivante"
           text="›"
           hidden={props.stories.length < 2}

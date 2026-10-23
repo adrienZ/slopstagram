@@ -1,4 +1,3 @@
-import { cn } from "cn";
 import type { StoryOutputUser } from "../../sdk/lib/types.ts";
 import { formatUserName, getUserTimelineUrl } from "../helper.ts";
 import type { StoryCardViewModel } from "../story-card-view-model.ts";
@@ -15,28 +14,33 @@ export function UserSection({ user, avatar, summary, stories }: UserSectionProps
   const userName = formatUserName(user);
 
   return (
-    <section className={cn("user-section")}>
-      <a className={cn("user-link", "user-header")} href={getUserTimelineUrl(user.username)}>
+    <section className="tw:mb-10.5">
+      <a
+        className="tw:group tw:mb-3.5 tw:flex tw:items-center tw:gap-4.5 tw:text-inherit tw:no-underline"
+        href={getUserTimelineUrl(user.username)}
+      >
         {avatar !== undefined && avatar.length > 0 ? (
           <img
-            className={cn("avatar")}
+            className="tw:size-24 tw:rounded-lg tw:bg-muted tw:object-cover"
             src={avatar}
             alt={`${userName} avatar`}
             width="96"
             height="96"
           />
         ) : (
-          <div className={cn("avatar-placeholder")} />
+          <div className="tw:size-24 tw:rounded-lg tw:bg-muted" />
         )}
         <div>
-          <h2>{userName}</h2>
+          <h2 className="tw:mb-2.25 tw:text-[21px] tw:font-bold tw:group-hover:underline tw:group-focus-visible:underline">
+            {userName}
+          </h2>
         </div>
       </a>
       {summary !== undefined && summary.length > 0 && (
-        <p className={cn("user-summary")}>{summary}</p>
+        <p className="tw:mb-4.5 tw:max-w-260 tw:text-[23px] tw:leading-[1.45]">{summary}</p>
       )}
       {stories.length > 0 && (
-        <div className={cn("story-images")}>
+        <div className="tw:flex tw:snap-x tw:snap-mandatory tw:gap-3 tw:overflow-x-auto tw:pt-0.5 tw:pb-3.5">
           {stories.map((story) => (
             <StoryCard key={story.mediaPk} story={story} />
           ))}

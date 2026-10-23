@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { getUserTimeline } from "../../query-service.ts";
 
-import { cn } from "cn";
 import { formatReportDate, formatUserName } from "../../helper.ts";
 import type { StoryCardViewModel } from "../../story-card-view-model.ts";
 import type { UserTimeline } from "../../user-timeline.ts";
@@ -18,15 +17,15 @@ function TimelineHeader({
 }) {
   return (
     <>
-      <a className={cn("timeline-back")} href="/">
+      <a className="tw:mb-6 tw:inline-block tw:text-muted-foreground" href="/">
         ← Tous les utilisateurs
       </a>
-      <header className={cn("timeline-user-header")}>
+      <header className="tw:mb-10 tw:flex tw:items-center tw:gap-4.5">
         {timeline.avatarPath === null ? (
-          <div className={cn("timeline-avatar-placeholder")} />
+          <div className="tw:size-24 tw:rounded-lg tw:bg-muted" />
         ) : (
           <img
-            className={cn("timeline-avatar")}
+            className="tw:size-24 tw:rounded-lg tw:bg-muted tw:object-cover"
             src={timeline.avatarPath}
             alt={`${userName} avatar`}
             width="96"
@@ -34,8 +33,8 @@ function TimelineHeader({
           />
         )}
         <div>
-          <h1>{userName}</h1>
-          <p>{`${timeline.stories.length} story${timeline.stories.length > 1 ? "s" : ""} · dates de publication`}</p>
+          <h1 className="tw:text-[28px] tw:font-bold">{userName}</h1>
+          <p className="tw:mt-1 tw:text-muted-foreground">{`${timeline.stories.length} story${timeline.stories.length > 1 ? "s" : ""} · dates de publication`}</p>
         </div>
       </header>
     </>
@@ -52,15 +51,25 @@ function TimelineGroups({
   return (
     <>
       {timeline.years.map((year) => (
-        <section key={year.label} className={cn("timeline-year")}>
-          <h2>{year.label}</h2>
+        <section
+          key={year.label}
+          className="tw:mb-10 tw:ml-11.75 tw:border-l-2 tw:border-border tw:pl-7 tw:max-[760px]:ml-4.5 tw:max-[760px]:pl-5"
+        >
+          <h2 className="tw:mb-5.5 tw:-ml-10.5 tw:text-[25px] tw:font-bold tw:max-[760px]:-ml-8">
+            {year.label}
+          </h2>
           {year.months.map((month) => (
-            <section key={month.key} className={cn("timeline-month")}>
-              <h3>{month.label}</h3>
+            <section key={month.key} className="tw:mb-7">
+              <h3 className="tw:mb-3.5 tw:text-[19px] tw:font-bold tw:capitalize">{month.label}</h3>
               {month.days.map((day) => (
-                <section key={day.key} className={cn("timeline-day")}>
-                  <div className={cn("timeline-day-label")}>{day.label}</div>
-                  <div className={cn("timeline-day-stories")}>
+                <section
+                  key={day.key}
+                  className="tw:mb-5.5 tw:grid tw:grid-cols-[42px_minmax(0,1fr)] tw:gap-3.5"
+                >
+                  <div className="tw:flex tw:size-9.5 tw:items-center tw:justify-center tw:rounded-full tw:bg-muted tw:text-base tw:font-bold">
+                    {day.label}
+                  </div>
+                  <div className="tw:flex tw:gap-3 tw:overflow-x-auto tw:pt-0.5 tw:pb-3.5">
                     {day.stories.map((entry) => {
                       const card = storyByMediaPk.get(entry.story.pk);
                       if (card === undefined) {
@@ -98,19 +107,41 @@ function TimelineStickers({
     .slice(0, 50);
 
   return (
-    <section className={cn("timeline-stickers")}>
-      <h2>Latest sticker occurrences (up to 50)</h2>
+    <section className="tw:mb-10">
+      <h2 className="tw:my-5 tw:text-2xl tw:leading-normal tw:font-bold">
+        Latest sticker occurrences (up to 50)
+      </h2>
       {occurrences.length === 0 ? (
-        <p>No sticker occurrences stored.</p>
+        <p className="tw:my-4">No sticker occurrences stored.</p>
       ) : (
-        <div className={cn("timeline-stickers-scroll")}>
-          <table>
+        <div className="tw:overflow-x-auto">
+          <table className="tw:w-full tw:border-collapse">
             <thead>
               <tr>
-                <th scope="col">Story preview</th>
-                <th scope="col">Story date</th>
-                <th scope="col">Sticker type</th>
-                <th scope="col">Sticker label</th>
+                <th
+                  className="tw:border tw:border-border tw:p-2 tw:text-left tw:align-top"
+                  scope="col"
+                >
+                  Story preview
+                </th>
+                <th
+                  className="tw:border tw:border-border tw:p-2 tw:text-left tw:align-top"
+                  scope="col"
+                >
+                  Story date
+                </th>
+                <th
+                  className="tw:border tw:border-border tw:p-2 tw:text-left tw:align-top"
+                  scope="col"
+                >
+                  Sticker type
+                </th>
+                <th
+                  className="tw:border tw:border-border tw:p-2 tw:text-left tw:align-top"
+                  scope="col"
+                >
+                  Sticker label
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -119,14 +150,22 @@ function TimelineStickers({
                 const date = new Date(entry.taken_at * 1000).toISOString();
                 return (
                   <tr key={key}>
-                    <td>
-                      {card === undefined ? "Preview unavailable" : <StoryCard story={card} />}
+                    <td className="tw:border tw:border-border tw:p-2 tw:text-left tw:align-top tw:wrap-anywhere tw:whitespace-pre-wrap">
+                      {card === undefined ? (
+                        "Preview unavailable"
+                      ) : (
+                        <StoryCard story={card} compact />
+                      )}
                     </td>
-                    <td>
+                    <td className="tw:border tw:border-border tw:p-2 tw:text-left tw:align-top tw:wrap-anywhere tw:whitespace-pre-wrap">
                       <time dateTime={date}>{formatReportDate(date)}</time>
                     </td>
-                    <td>{sticker.kind}</td>
-                    <td>{sticker.label}</td>
+                    <td className="tw:border tw:border-border tw:p-2 tw:text-left tw:align-top tw:wrap-anywhere tw:whitespace-pre-wrap">
+                      {sticker.kind}
+                    </td>
+                    <td className="tw:border tw:border-border tw:p-2 tw:text-left tw:align-top tw:wrap-anywhere tw:whitespace-pre-wrap">
+                      {sticker.label}
+                    </td>
                   </tr>
                 );
               })}
@@ -151,11 +190,9 @@ export function TimelineContent({
   const storyByMediaPk = new Map(stories.map((story) => [story.mediaPk, story]));
   return (
     <>
-      <main>
-        <TimelineHeader timeline={timeline} userName={formatUserName(timeline.timelineUser)} />
-        <TimelineStickers timeline={timeline} storyByMediaPk={storyByMediaPk} />
-        <TimelineGroups timeline={timeline} storyByMediaPk={storyByMediaPk} />
-      </main>
+      <TimelineHeader timeline={timeline} userName={formatUserName(timeline.timelineUser)} />
+      <TimelineStickers timeline={timeline} storyByMediaPk={storyByMediaPk} />
+      <TimelineGroups timeline={timeline} storyByMediaPk={storyByMediaPk} />
       <Lightbox stories={stories} selectedStory={selectedStory} />
     </>
   );
@@ -180,10 +217,6 @@ export const Route = createFileRoute("/users/$username")({
           : "Stories",
       },
     ],
-    links: ["user-timeline-page", "story-card", "lightbox"].map((name) => ({
-      rel: "stylesheet",
-      href: `/css/${name}.css`,
-    })),
   }),
   component: () => (
     <UserTimelinePage {...Route.useLoaderData()} selectedStory={Route.useSearch().story} />

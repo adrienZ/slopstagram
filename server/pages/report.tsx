@@ -19,28 +19,22 @@ export function ReportContent({
 }: ReportContentProps & { selectedStory?: string }) {
   return (
     <>
-      <main>
-        <ReportHeader />
-        <h1>Stories des dernières 24 heures</h1>
-        <p>{`Fil chargé le ${date}`}</p>
-        {users.length === 0 && <p>Aucune story publiée dans les dernières 24 heures.</p>}
-        {users.map((props) => (
-          <UserSection key={props.user.username} {...props} />
-        ))}
-      </main>
+      <ReportHeader />
+      <h1 className="tw:mb-7 tw:text-[28px] tw:font-bold">Stories des dernières 24 heures</h1>
+      <p className="tw:my-4">{`Fil chargé le ${date}`}</p>
+      {users.length === 0 && (
+        <p className="tw:my-4">Aucune story publiée dans les dernières 24 heures.</p>
+      )}
+      {users.map((props) => (
+        <UserSection key={props.user.username} {...props} />
+      ))}
       <Lightbox stories={users.flatMap((user) => user.stories)} selectedStory={selectedStory} />
     </>
   );
 }
 
 export function ReportPage(props: ReportContentProps & { selectedStory?: string }) {
-  return (
-    <>
-      <div className="report-page">
-        <ReportContent {...props} />
-      </div>
-    </>
-  );
+  return <ReportContent {...props} />;
 }
 
 export const Route = createFileRoute("/report")({
@@ -51,9 +45,6 @@ export const Route = createFileRoute("/report")({
   staleTime: Infinity,
   head: () => ({
     meta: [{ title: "Stories des dernières 24 heures" }],
-    links: ["report-page", "report-header", "user-section", "story-card", "lightbox"].map(
-      (name) => ({ rel: "stylesheet", href: `/css/${name}.css` }),
-    ),
   }),
   component: () => (
     <ReportPage {...Route.useLoaderData()} selectedStory={Route.useSearch().story} />
