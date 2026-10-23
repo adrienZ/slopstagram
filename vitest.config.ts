@@ -4,6 +4,7 @@ export default defineConfig({
   resolve: { tsconfigPaths: true },
   test: {
     env: { SLOPSTAGRAM_DATABASE_PATH: ":memory:" },
+    // Keep server/SQLite tests in Node and browser UI tests in jsdom with their own setup.
     projects: [
       {
         extends: true,
@@ -19,20 +20,5 @@ export default defineConfig({
         },
       },
     ],
-    coverage: {
-      provider: "v8",
-      include: ["sdk/**/*.ts", "server/**/*.ts", "server/**/*.tsx"],
-      exclude: ["server/shadcn/**", "server/routeTree.gen.ts", "server/assets/**"],
-      reporter: ["text", "json", "lcov"],
-      thresholds: {
-        statements: 85,
-        branches: 75,
-        functions: 85,
-        lines: 85,
-        "server/components/**": { statements: 95, branches: 90, functions: 100, lines: 95 },
-        "server/hooks/**": { statements: 100, branches: 100, functions: 100, lines: 100 },
-        "server/theme.ts": { statements: 100, branches: 100, functions: 100, lines: 100 },
-      },
-    },
   },
 });

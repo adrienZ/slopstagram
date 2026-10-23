@@ -3,7 +3,6 @@ import { screen, waitFor, within } from "@testing-library/react";
 import { UserTimelinePage } from "../../server/pages/users/$username.tsx";
 import { timelineProps, timelineEntry } from "../page-fixtures.ts";
 import { renderPage } from "./render.tsx";
-import { matchMedia } from "./browser.ts";
 
 test("timeline shows separate display name and handle, dated gallery and active account", async () => {
   await renderPage(UserTimelinePage, timelineProps, "/users/timeline-user");
@@ -40,7 +39,11 @@ test("timeline calendar scrolls to the selected day without changing the route",
   });
   expect(scroll.mock.instances[0]).toBe(screen.getByRole("region", { name: "2026-01-01" }));
   expect(router.state.location.href).toBe("/users/timeline-user");
-  matchMedia("(prefers-reduced-motion: reduce)").setMatches(true);
+  vi.spyOn(
+    globalThis.matchMedia("(prefers-reduced-motion: reduce)"),
+    "matches",
+    "get",
+  ).mockReturnValue(true);
   await user.click(screen.getByRole("button", { name: /Aujourd’hui/u }));
   await waitFor(() => {
     expect(scroll).toHaveBeenLastCalledWith({ behavior: "instant", block: "start" });
