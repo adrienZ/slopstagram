@@ -62,13 +62,22 @@ test("groups stories by their Paris publication day, month, and year", () => {
   );
 });
 
-test("returns no timeline when the user has no stories", () => {
-  const result = createUserTimeline("missing-user", {
-    listByUsername: (username) => {
-      assert.equal(username, "missing-user");
-      return [];
+test("returns no timeline for an unknown user", () => {
+  const result = createUserTimeline(
+    "missing-user",
+    {
+      listByUsername: (username) => {
+        assert.equal(username, "missing-user");
+        return [];
+      },
     },
-  });
+    {
+      findByUsername: (username) => {
+        assert.equal(username, "missing-user");
+        return null;
+      },
+    },
+  );
   assert.equal(result, null);
 });
 
