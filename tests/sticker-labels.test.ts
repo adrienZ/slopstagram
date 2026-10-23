@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { test } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
@@ -44,7 +44,7 @@ test("extracts content-only labels including fallback forms and literal colons",
 test("normalizes legacy explicit annotations and keeps raw content intact", async (context) => {
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
-  context.after(() => {
+  context.onTestFinished(() => {
     database.$client.close();
   });
   const repository = new StoryRepository(database);

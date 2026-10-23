@@ -21,8 +21,8 @@
     "check:ci": "npm run format:check && npm run lint && npm run knip && npm run test:reporter",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
-    "test": "node --import tsx --test --experimental-test-coverage tests/*.test.ts",
-    "test:reporter": "mkdir -p coverage && node --import tsx --test --experimental-test-coverage --test-force-exit --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=./reporter.xml --test-reporter=lcov --test-reporter-destination=./coverage/lcov.info tests/*.test.ts"
+    "test": "vitest run --coverage tests/*.test.ts",
+    "test:reporter": "vitest run --coverage --coverage.reportOnFailure --coverage.reporter=text --coverage.reporter=lcov --reporter=default --reporter=junit --outputFile.junit=./reporter.xml tests/*.test.ts"
   },
   "dependencies": {
     "@opentf/cli-pbar": "^0.7.2",
@@ -47,6 +47,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.1.2",
+    "@vitest/coverage-v8": "^5.0.5",
     "drizzle-kit": "^1.0.0-rc.5-ab785fc",
     "husky": "^9.1.7",
     "knip": "^6.42.1",
@@ -58,7 +59,8 @@
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "ultracite": "^7.12.4",
-    "vite": "^8.3.5"
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
   },
   "optionalDependencies": {
     "mac-ocr": "^1.2.1"

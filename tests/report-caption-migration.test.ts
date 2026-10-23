@@ -3,7 +3,7 @@ import { cpSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, URL } from "node:url";
-import { test, type TestContext } from "node:test";
+import { test, type TestContext } from "vitest";
 import { migrate } from "drizzle-orm/node-sqlite/migrator";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
@@ -15,7 +15,7 @@ const migrations = fileURLToPath(new URL("../sdk/database/migrations", import.me
 function createLegacyDatabase(context: TestContext) {
   const directory = mkdtempSync(path.join(tmpdir(), "report-caption-migration-"));
   const database = createDrizzle(":memory:");
-  context.after(() => {
+  context.onTestFinished(() => {
     database.$client.close();
     rmSync(directory, { recursive: true, force: true });
   });

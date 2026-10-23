@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { test } from "vitest";
 import { H3 } from "nitro/h3";
 import { createPageRenderer } from "./render-page.ts";
 import {

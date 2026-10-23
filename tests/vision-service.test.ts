@@ -1,7 +1,6 @@
 import { Buffer } from "node:buffer";
 import assert from "node:assert/strict";
-import process from "node:process";
-import { describe, test } from "node:test";
+import { describe, test, vi } from "vitest";
 import { z } from "zod";
 import { VISION_SERVER_NOT_RUNNING } from "../sdk/lib/vision-analysis-service.ts";
 import { resolveVisionForReport } from "../sdk/lib/vision-report-service.ts";
@@ -71,11 +70,8 @@ describe("resolveVisionForReport", () => {
     });
   }
 
-  test("uses OLLAMA_HOST and reuses successful vision responses from the repository", async (context) => {
-    context.mock.property(process, "env", {
-      ...process.env,
-      OLLAMA_HOST: "http://vision.example:11434/api/generate/",
-    });
+  test("uses OLLAMA_HOST and reuses successful vision responses from the repository", async () => {
+    vi.stubEnv("OLLAMA_HOST", "http://vision.example:11434/api/generate/");
     const repository = createVisionRepositoryAdapter();
     let fetchCount = 0;
 

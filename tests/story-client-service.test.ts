@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { test } from "vitest";
 import { z } from "zod";
 import type { JsonValue } from "../sdk/lib/json-value.ts";
 import { createInstagramClient } from "../sdk/story-client-service.ts";

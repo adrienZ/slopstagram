@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import process from "node:process";
-import { describe, test } from "node:test";
+import { describe, test, vi } from "vitest";
 import { setTimeout as delay } from "node:timers/promises";
 import { z } from "zod";
 import { readUserSummaries, resolveUserSummariesForReport } from "../sdk/user-summary.ts";
@@ -40,12 +40,12 @@ describe("resolveUserSummariesForReport", () => {
     ["win32", "x64", "qwen3.5:0.8b"],
     ["win32", "arm64", "qwen3.5:0.8b"],
   ] as const) {
-    test(`generates and reuses summaries with ${expectedModel} on ${platform}/${architecture}`, async (context) => {
+    test(`generates and reuses summaries with ${expectedModel} on ${platform}/${architecture}`, async () => {
       const report = createSummaryReport();
       const repository = createUserSummaryRepositoryAdapter();
       const logger = createMockLogger();
-      context.mock.property(process, "platform", platform);
-      context.mock.property(process, "arch", architecture);
+      vi.spyOn(process, "platform", "get").mockImplementation(() => platform);
+      vi.spyOn(process, "arch", "get").mockImplementation(() => architecture);
 
       const summaries = await resolveUserSummariesForReport(report, {
         logger,
@@ -152,11 +152,8 @@ describe("resolveUserSummariesForReport", () => {
     assert.equal(runCount, 2);
   });
 
-  test("runs the default Ollama client with qwen3.5 and OLLAMA_HOST", async (context) => {
-    context.mock.property(process, "env", {
-      ...process.env,
-      OLLAMA_HOST: "http://summary.example:11434/api/generate",
-    });
+  test("runs the default Ollama client with qwen3.5 and OLLAMA_HOST", async () => {
+    vi.stubEnv("OLLAMA_HOST", "http://summary.example:11434/api/generate");
     const repository = createUserSummaryRepositoryAdapter();
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);

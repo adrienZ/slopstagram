@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, test } from "node:test";
+import { describe, test } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
@@ -17,7 +17,7 @@ const entry = {
 describe("UserSummaryRepository", () => {
   test("stores summaries by Instagram PK and follows username changes", async (context) => {
     const database = createDrizzle(":memory:");
-    context.after(() => {
+    context.onTestFinished(() => {
       database.$client.close();
     });
     migrateDatabase(database);
@@ -47,7 +47,7 @@ describe("UserSummaryRepository", () => {
 
   test("rejects new summaries with missing or ambiguous owners", async (context) => {
     const database = createDrizzle(":memory:");
-    context.after(() => {
+    context.onTestFinished(() => {
       database.$client.close();
     });
     migrateDatabase(database);

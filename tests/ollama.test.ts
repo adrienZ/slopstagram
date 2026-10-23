@@ -1,13 +1,9 @@
 import assert from "node:assert/strict";
-import process from "node:process";
-import { test } from "node:test";
+import { test, vi } from "vitest";
 import { getOllamaClient } from "../sdk/ollama.ts";
 
-test("an explicit host overrides OLLAMA_HOST and accepts a generation endpoint", async (context) => {
-  context.mock.property(process, "env", {
-    ...process.env,
-    OLLAMA_HOST: "http://environment.example:11434",
-  });
+test("an explicit host overrides OLLAMA_HOST and accepts a generation endpoint", async () => {
+  vi.stubEnv("OLLAMA_HOST", "http://environment.example:11434");
   const client = getOllamaClient({
     host: "http://custom.example:11434/api/generate/",
     fetch: async (url) => {
@@ -20,11 +16,8 @@ test("an explicit host overrides OLLAMA_HOST and accepts a generation endpoint",
   assert.equal(response.response, "custom response");
 });
 
-test("uses and normalizes OLLAMA_HOST when no host override is supplied", async (context) => {
-  context.mock.property(process, "env", {
-    ...process.env,
-    OLLAMA_HOST: "http://environment.example:11434/api/generate",
-  });
+test("uses and normalizes OLLAMA_HOST when no host override is supplied", async () => {
+  vi.stubEnv("OLLAMA_HOST", "http://environment.example:11434/api/generate");
   const client = getOllamaClient({
     fetch: async (url) => {
       assert.equal(url, "http://environment.example:11434/api/generate");
@@ -36,11 +29,10 @@ test("uses and normalizes OLLAMA_HOST when no host override is supplied", async 
   assert.equal(response.response, "environment response");
 });
 
-test("reuses the default localhost client and isolates host and transport overrides", async (context) => {
-  const environment = { ...process.env };
-  delete environment.OLLAMA_HOST;
-  context.mock.property(process, "env", environment);
-  context.mock.method(globalThis, "fetch", async (url: RequestInfo | URL) => {
+test("reuses the default localhost client and isolates host and transport overrides", async () => {
+  // oxlint-disable-next-line no-useless-undefined -- Vitest requires undefined to remove the environment variable.
+  vi.stubEnv("OLLAMA_HOST", undefined);
+  vi.spyOn(globalThis, "fetch").mockImplementation(async (url: RequestInfo | URL) => {
     assert.equal(url, "http://127.0.0.1:11434/api/generate");
     return globalThis.Response.json({ response: "default response" });
   });
