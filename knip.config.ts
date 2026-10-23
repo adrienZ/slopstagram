@@ -5,6 +5,7 @@ const config: KnipConfig = {
   entry: [
     "sdk/**/*.ts",
     "tests/**/*.test.ts",
+    "tests/**/*.test.tsx",
     "server/**/*.ts",
     "server/**/*.tsx",
     "scripts/**/*.ts",
