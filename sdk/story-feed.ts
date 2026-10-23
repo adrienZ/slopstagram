@@ -144,7 +144,7 @@ export function createReportFeed(
   return {
     today,
     selectedDate,
-    availableDates: [...availableDates].toSorted(),
+    availableDates: [...availableDates].toSorted((left, right) => left.localeCompare(right)),
     users,
   };
 }
