@@ -9,6 +9,9 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
+    "paths": {
+      "@/*": ["./server/*"]
+    },
     "noEmit": true,
     "types": ["node", "vite/client"]
   },
@@ -20,6 +23,7 @@
     "server/**/*.ts",
     "server/**/*.tsx",
     "types/**/*.d.ts",
-    "tests/**/*.ts"
+    "tests/**/*.ts",
+    "tests/**/*.tsx"
   ]
 }

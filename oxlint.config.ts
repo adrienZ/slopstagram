@@ -6,7 +6,7 @@ const restrictedReactImports = [
   {
     // frontend-side-effects
     name: "react",
-    importNames: ["useEffect", "useLayoutEffect", "useInsertionEffect"],
+    importNames: ["useEffect", "useLayoutEffect", "useInsertionEffect", "useCallback"],
     allowTypeImports: false,
     message: "useEffect is forbidden. Use derived state or explicit event subscriptions.",
   },
@@ -29,7 +29,12 @@ const ultraciteSoftenerConfig = defineConfig({
 
 export default defineConfig({
   extends: [ultracite, antiSlop, ultraciteSoftenerConfig],
-  ignorePatterns: [...(ultracite.ignorePatterns ?? []), "server/routeTree.gen.ts"],
+  ignorePatterns: [
+    ...(ultracite.ignorePatterns ?? []),
+    ".agents/**",
+    "server/routeTree.gen.ts",
+    "server/shadcn/**",
+  ],
   jsPlugins: ["./oxlint/plugins/rules/no-barrel-files.ts"],
   options: {
     maxWarnings: 0,
@@ -80,6 +85,7 @@ export default defineConfig({
     {
       files: [
         "tests/**/*.test.ts",
+        "tests/**/*.test.tsx",
         "tests/**/*.spec.ts",
         "tests/repository-adapters.ts",
         "tests/mock-helpers.ts",
