@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { getUserTimeline } from "../../query-service.ts";
 
-import cx from "clsx";
+import { cn } from "cn";
 import { formatReportDate, formatUserName } from "../../helper.ts";
 import type { StoryCardViewModel } from "../../story-card-view-model.ts";
 import type { UserTimeline } from "../../user-timeline.ts";
@@ -18,15 +18,15 @@ function TimelineHeader({
 }) {
   return (
     <>
-      <a className={cx("timeline-back")} href="/">
+      <a className={cn("timeline-back")} href="/">
         ← Tous les utilisateurs
       </a>
-      <header className={cx("timeline-user-header")}>
+      <header className={cn("timeline-user-header")}>
         {timeline.avatarPath === null ? (
-          <div className={cx("timeline-avatar-placeholder")} />
+          <div className={cn("timeline-avatar-placeholder")} />
         ) : (
           <img
-            className={cx("timeline-avatar")}
+            className={cn("timeline-avatar")}
             src={timeline.avatarPath}
             alt={`${userName} avatar`}
             width="96"
@@ -52,15 +52,15 @@ function TimelineGroups({
   return (
     <>
       {timeline.years.map((year) => (
-        <section key={year.label} className={cx("timeline-year")}>
+        <section key={year.label} className={cn("timeline-year")}>
           <h2>{year.label}</h2>
           {year.months.map((month) => (
-            <section key={month.key} className={cx("timeline-month")}>
+            <section key={month.key} className={cn("timeline-month")}>
               <h3>{month.label}</h3>
               {month.days.map((day) => (
-                <section key={day.key} className={cx("timeline-day")}>
-                  <div className={cx("timeline-day-label")}>{day.label}</div>
-                  <div className={cx("timeline-day-stories")}>
+                <section key={day.key} className={cn("timeline-day")}>
+                  <div className={cn("timeline-day-label")}>{day.label}</div>
+                  <div className={cn("timeline-day-stories")}>
                     {day.stories.map((entry) => {
                       const card = storyByMediaPk.get(entry.story.pk);
                       if (card === undefined) {
@@ -98,12 +98,12 @@ function TimelineStickers({
     .slice(0, 50);
 
   return (
-    <section className={cx("timeline-stickers")}>
+    <section className={cn("timeline-stickers")}>
       <h2>Latest sticker occurrences (up to 50)</h2>
       {occurrences.length === 0 ? (
         <p>No sticker occurrences stored.</p>
       ) : (
-        <div className={cx("timeline-stickers-scroll")}>
+        <div className={cn("timeline-stickers-scroll")}>
           <table>
             <thead>
               <tr>

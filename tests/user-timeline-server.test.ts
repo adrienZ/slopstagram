@@ -164,16 +164,16 @@ test("timeline page does not embed initial state", async () => {
   assert.doesNotMatch(html, /app-state|app-props|application\/json|<script>caption/u);
 });
 
-test("timeline lightbox renders the story selected by the URL", async () => {
+test("timeline defers the selected lightbox portal until hydration", async () => {
   const html = await renderer.render("/users/timeline-user?story=story-pk");
-  assert.match(html, /<dialog[^>]*class="image-lightbox" id="image-lightbox"/u);
-  assert.match(html, /class="lightbox-detail-media-pk">story-pk<\/td>/u);
+  assert.doesNotMatch(html, /<dialog|role="dialog"/u);
+  assert.match(html, /data-story-preview="story-pk"/u);
 });
 
 test("timeline route reads its username query and URL-selected story", async () => {
   const html = await renderer.renderRoute("/users/timeline-user?story=story-pk");
   assert.match(html, /Timeline User/u);
-  assert.match(html, /class="lightbox-detail-media-pk">story-pk<\/td>/u);
+  assert.match(html, /data-story-preview="story-pk"/u);
   assert.match(html, /\$_TSR/u);
   assert.doesNotMatch(html, /<script>caption/u);
 });

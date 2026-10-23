@@ -29,7 +29,12 @@ const ultraciteSoftenerConfig = defineConfig({
 
 export default defineConfig({
   extends: [ultracite, antiSlop, ultraciteSoftenerConfig],
-  ignorePatterns: [...(ultracite.ignorePatterns ?? []), "server/routeTree.gen.ts"],
+  ignorePatterns: [
+    ...(ultracite.ignorePatterns ?? []),
+    ".agents/**",
+    "server/routeTree.gen.ts",
+    "server/shadcn/**",
+  ],
   jsPlugins: ["./oxlint/plugins/rules/no-barrel-files.ts"],
   options: {
     maxWarnings: 0,

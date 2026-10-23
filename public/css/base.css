@@ -3,15 +3,25 @@
 @layer base {
   :root {
     color-scheme: light dark;
-    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-    background: #f6f7f9;
-    color: #1f2933;
+    font-family: var(--tw-font-sans);
+    background: var(--background);
+    color: var(--foreground);
   }
 
   body {
     margin: 0;
-    background: #f6f7f9;
-    color: #1f2933;
+    background: var(--background);
+    color: var(--foreground);
+  }
+
+  /* Preserve document typography when Tailwind's reset is loaded. */
+  body h1,
+  body h2,
+  body h3,
+  body p {
+    font-size: revert;
+    font-weight: revert;
+    margin-block: revert;
   }
 
   main {

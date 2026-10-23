@@ -1,13 +1,14 @@
 import { useNavigate } from "@tanstack/react-router";
-import cx from "clsx";
+import { cn } from "cn";
 import type { StoryCardViewModel } from "../story-card-view-model.ts";
 
 export function StoryCard({ story }: { story: StoryCardViewModel }) {
   const navigate = useNavigate();
   return (
-    <div className={cx("story-slide")}>
+    <div className={cn("story-slide")}>
       <button
-        className={cx("story-image-button")}
+        data-story-preview={story.mediaPk}
+        className={cn("story-image-button")}
         type="button"
         aria-label={`Ouvrir aperçu ${story.mediaPk}`}
         onClick={() => {
@@ -19,7 +20,7 @@ export function StoryCard({ story }: { story: StoryCardViewModel }) {
           });
         }}
       >
-        <img className={cx("story-preview")} src={story.preview} alt={story.alt} />
+        <img className={cn("story-preview")} src={story.preview} alt={story.alt} />
       </button>
     </div>
   );

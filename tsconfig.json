@@ -9,6 +9,9 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
+    "paths": {
+      "@/*": ["./server/*"]
+    },
     "noEmit": true,
     "types": ["node", "vite/client"]
   },

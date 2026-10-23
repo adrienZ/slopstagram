@@ -11,19 +11,25 @@
       "source": "privatenumber/mac-ocr",
       "sourceType": "github",
       "skillPath": "skills/mac-ocr/SKILL.md",
-      "computedHash": "0e4ee9026528352e672913e6c2362865419d11359fecb33f9b0d50d8bde08f0c"
+      "computedHash": "06fa528c973830c5f1fe9af676de85f25debccd48c092b82de9578063cdbe393"
     },
     "nitro": {
       "source": "antfu/skills",
       "sourceType": "github",
       "skillPath": "skills/nitro/SKILL.md",
-      "computedHash": "f8341eaf6fbdc604c2c8123a275407acea5a74ad3b0870cdd0ed2a3007e36c12"
+      "computedHash": "ab59b74e7ca03aa5565f810f7a162f31522648ba5252c3ab6ad1c6ad0d8d3c95"
     },
     "playwright-cli": {
       "source": "microsoft/playwright-cli",
       "sourceType": "github",
       "skillPath": "skills/playwright-cli/SKILL.md",
-      "computedHash": "19b6942c9cbcf9b9e3000fc497f8f156b8251d66055de806017e4aaa651e0c7b"
+      "computedHash": "ffbd59a973d4e2c19c6ecc31254a14497069c362f1d1820b6a6cfbe62de34a73"
+    },
+    "shadcn": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "b864a958765563321f485a96f4d59c0bb6539f4286ab6d8b8b66895b7ebd302d"
     }
   }
 }

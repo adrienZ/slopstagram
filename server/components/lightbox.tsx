@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
-import cx from "clsx";
+import { cn } from "cn";
 import type { StoryCardViewModel } from "../story-card-view-model.ts";
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "../shadcn/ui/dialog.tsx";
 
 function LightboxDetailsRow(props: {
   label: string;
@@ -25,7 +26,7 @@ function LightboxNavButton(props: {
 }) {
   return (
     <button
-      className={cx("lightbox-nav", props.className)}
+      className={cn("lightbox-nav", props.className)}
       type="button"
       aria-label={props.label}
       hidden={props.hidden}
@@ -38,19 +39,8 @@ function LightboxNavButton(props: {
   );
 }
 
-function mountDialog(element: HTMLDialogElement | null) {
-  element?.showModal();
-  return () => {
-    element?.close();
-  };
-}
-
 function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: StoryCardViewModel }) {
   const navigateTo = useNavigate();
-
-  function selectedCount() {
-    return `${props.story.position} / ${props.story.count}`;
-  }
 
   function close() {
     void navigateTo({
@@ -62,10 +52,7 @@ function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: Stor
   }
 
   function navigate(direction: number) {
-    if (props.stories.length === 0) {
-      return;
-    }
-    const index = props.stories.findIndex((story) => story.mediaPk === props.story.mediaPk);
+    const index = props.stories.findIndex((entry) => entry.mediaPk === props.story.mediaPk);
     void navigateTo({
       to: ".",
       search: (previous) => ({
@@ -78,130 +65,135 @@ function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: Stor
     });
   }
 
+  function selectedCount() {
+    return `${props.story.position} / ${props.story.count}`;
+  }
+
   return (
-    <dialog
-      className={cx("image-lightbox")}
-      id="image-lightbox"
-      aria-label="Aperçu de l’image"
-      ref={mountDialog}
-      onCancel={(event) => {
-        event.preventDefault();
-        close();
-      }}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) {
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) {
           close();
-        }
-      }}
-      onClose={(event) => {
-        if (event.currentTarget.isConnected && !event.currentTarget.open) {
-          close();
-        }
-      }}
-      onKeyDown={(event) => {
-        if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-          event.preventDefault();
-          navigate(event.key === "ArrowLeft" ? -1 : 1);
         }
       }}
     >
-      <button
-        className={cx("lightbox-close")}
-        type="button"
-        aria-label="Fermer l’aperçu"
-        onClick={close}
+      <DialogContent
+        className="image-lightbox tw:block tw:h-auto tw:max-h-[calc(100dvh-56px)] tw:w-[calc(100%-56px)] tw:max-w-none tw:gap-0 tw:rounded-lg tw:bg-transparent tw:p-0 tw:text-base tw:ring-0 tw:max-[760px]:max-h-[calc(100dvh-24px)] tw:max-[760px]:w-[calc(100%-24px)] tw:sm:max-w-none"
+        id="image-lightbox"
+        aria-describedby={undefined}
+        showCloseButton={false}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          globalThis.document
+            .querySelector<HTMLButtonElement>(
+              `[data-story-preview="${globalThis.CSS.escape(props.story.mediaPk)}"]`,
+            )
+            ?.focus();
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+            event.preventDefault();
+            navigate(event.key === "ArrowLeft" ? -1 : 1);
+          }
+        }}
       >
-        ×
-      </button>
-      <LightboxNavButton
-        direction={-1}
-        className="lightbox-prev"
-        label="Image précédente"
-        text="‹"
-        hidden={props.stories.length < 2}
-        onNavigate={navigate}
-      />
-      <div className={cx("lightbox-content")}>
-        <div className={cx("lightbox-preview-panel")}>
-          <div className={cx("lightbox-header")}>
-            <img
-              className={cx("lightbox-avatar")}
-              alt=""
-              src={props.story.avatar}
-              hidden={props.story.avatar === undefined}
-            />
-            <div>
-              <strong className="lightbox-username">{props.story.userName}</strong>
-              <span className="lightbox-count">{selectedCount()}</span>
+        <DialogTitle className="tw:sr-only">Aperçu de l’image</DialogTitle>
+        <DialogClose asChild>
+          <button className={cn("lightbox-close")} type="button" aria-label="Fermer l’aperçu">
+            ×
+          </button>
+        </DialogClose>
+        <LightboxNavButton
+          direction={-1}
+          className="lightbox-prev"
+          label="Image précédente"
+          text="‹"
+          hidden={props.stories.length < 2}
+          onNavigate={navigate}
+        />
+        <div className={cn("lightbox-content")}>
+          <div className={cn("lightbox-preview-panel")}>
+            <div className={cn("lightbox-header")}>
+              <img
+                className={cn("lightbox-avatar")}
+                alt=""
+                src={props.story.avatar}
+                hidden={props.story.avatar === undefined}
+              />
+              <div>
+                <strong className="lightbox-username">{props.story.userName}</strong>
+                <span className="lightbox-count">{selectedCount()}</span>
+              </div>
             </div>
+            <img className={cn("lightbox-image")} src={props.story.preview} alt={props.story.alt} />
           </div>
-          <img className={cx("lightbox-image")} src={props.story.preview} alt={props.story.alt} />
+          <aside className={cn("lightbox-details-panel")} aria-label="Détails de la story">
+            <h2>Détails</h2>
+            <table className={cn("lightbox-details-table")}>
+              <tbody>
+                <LightboxDetailsRow
+                  label="Type"
+                  className="lightbox-detail-media-type"
+                  value={props.story.mediaType}
+                />
+                <LightboxDetailsRow
+                  label="Story"
+                  className="lightbox-detail-media-pk"
+                  value={props.story.mediaPk}
+                />
+                <LightboxDetailsRow
+                  label="Stickers"
+                  className="lightbox-detail-stickers"
+                  value={props.story.stickers}
+                />
+                <LightboxDetailsRow
+                  label="Lieux"
+                  className="lightbox-detail-locations"
+                  value={props.story.locations}
+                />
+                <LightboxDetailsRow
+                  label="Instagram"
+                  className="lightbox-detail-ig-caption"
+                  value={props.story.igCaption}
+                />
+                <LightboxDetailsRow
+                  label="Apple OCR"
+                  className="lightbox-detail-apple-caption"
+                  value={props.story.appleCaption}
+                />
+                <LightboxDetailsRow
+                  label="Vision OCR"
+                  className="lightbox-detail-vision-ocr"
+                  value={props.story.visionOcr}
+                />
+                <LightboxDetailsRow
+                  label="Vision description"
+                  className="lightbox-detail-vision-description"
+                  value={props.story.visionDescription}
+                />
+              </tbody>
+            </table>
+            <a
+              className={cn("lightbox-story-link")}
+              target="_blank"
+              rel="noreferrer"
+              href={props.story.url}
+            >
+              Voir cette story sur Instagram
+            </a>
+          </aside>
         </div>
-        <aside className={cx("lightbox-details-panel")} aria-label="Détails de la story">
-          <h2>Détails</h2>
-          <table className={cx("lightbox-details-table")}>
-            <tbody>
-              <LightboxDetailsRow
-                label="Type"
-                className="lightbox-detail-media-type"
-                value={props.story.mediaType}
-              />
-              <LightboxDetailsRow
-                label="Story"
-                className="lightbox-detail-media-pk"
-                value={props.story.mediaPk}
-              />
-              <LightboxDetailsRow
-                label="Stickers"
-                className="lightbox-detail-stickers"
-                value={props.story.stickers}
-              />
-              <LightboxDetailsRow
-                label="Lieux"
-                className="lightbox-detail-locations"
-                value={props.story.locations}
-              />
-              <LightboxDetailsRow
-                label="Instagram"
-                className="lightbox-detail-ig-caption"
-                value={props.story.igCaption}
-              />
-              <LightboxDetailsRow
-                label="Apple OCR"
-                className="lightbox-detail-apple-caption"
-                value={props.story.appleCaption}
-              />
-              <LightboxDetailsRow
-                label="Vision OCR"
-                className="lightbox-detail-vision-ocr"
-                value={props.story.visionOcr}
-              />
-              <LightboxDetailsRow
-                label="Vision description"
-                className="lightbox-detail-vision-description"
-                value={props.story.visionDescription}
-              />
-            </tbody>
-          </table>
-          <a
-            className={cx("lightbox-story-link")}
-            target="_blank"
-            rel="noreferrer"
-            href={props.story.url}
-          >
-            Voir cette story sur Instagram
-          </a>
-        </aside>
-      </div>
-      <LightboxNavButton
-        direction={1}
-        className="lightbox-next"
-        label="Image suivante"
-        text="›"
-        hidden={props.stories.length < 2}
-        onNavigate={navigate}
-      />
-    </dialog>
+        <LightboxNavButton
+          direction={1}
+          className="lightbox-next"
+          label="Image suivante"
+          text="›"
+          hidden={props.stories.length < 2}
+          onNavigate={navigate}
+        />
+      </DialogContent>
+    </Dialog>
   );
 }
 
