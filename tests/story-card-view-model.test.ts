@@ -55,7 +55,7 @@ test("story cards supply complete lightbox details and normalize absent values",
   const sources = createSources();
   const user = createUser();
   const [first] = createStoryCards(user, sources);
-  assert.equal(first.userName, "Story User (@story-user)");
+  assert.equal(first.userName, "Story User (story-user)");
   assert.equal(first.avatar, "/media/avatar.jpg");
   assert.equal(first.url, "https://www.instagram.com/stories/story-user/first/");
   assert.equal(first.mediaType, "Image");

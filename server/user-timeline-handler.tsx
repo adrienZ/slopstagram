@@ -5,9 +5,6 @@ import type { StoryCardSources } from "./story-card-view-model.ts";
 import type { UserTimeline } from "./user-timeline.ts";
 import type { TimelineContentProps } from "./pages/users/$username.tsx";
 import { createUserTimeline, getTimelinePreviewPaths } from "./user-timeline.ts";
-import { getStoryDate } from "../sdk/lib/story-date-service.ts";
-import { loadSidebarUsers } from "./sidebar-users.ts";
-import { storyRepository } from "../sdk/repositories/story-repository.ts";
 
 function getTimelineViewModel(
   timeline: UserTimeline,
@@ -30,7 +27,7 @@ function getTimelineViewModel(
   };
 }
 
-export function loadUserTimeline(username: string, now: Date = new Date()): TimelineContentProps {
+export function loadUserTimeline(username: string): TimelineContentProps {
   const timeline = createUserTimeline(username);
   if (timeline === null) {
     throw new HTTPError({ status: 404, message: `no published stories found for ${username}` });
@@ -53,9 +50,6 @@ export function loadUserTimeline(username: string, now: Date = new Date()): Time
   );
 
   return {
-    today: getStoryDate(now),
-    sidebarUsers: loadSidebarUsers(),
-    stickerKinds: storyRepository.listStickerKinds(),
     timeline: {
       avatarPath: timeline.avatarPath,
       timelineUser: timeline.timelineUser,

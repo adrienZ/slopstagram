@@ -13,19 +13,6 @@ Make sure to run `npm run check` to validate your code changes.
 
 Keep UI components limited to rendering, local UI behavior, and presentation transformations; place business rules and application orchestration in hooks/composables or dedicated modules.
 
-### Generated UI
-
-Treat `server/shadcn/**` as generated shadcn/ui code. Never hand-edit these files,
-including formatting, imports, or lint fixes. Regenerate them through the shadcn CLI:
-
-- Components: `npm exec --no-install -- shadcn add <components> --overwrite`.
-- Preset and stylesheet: `npm run shadcn:generate`. This also applies the configured
-  Tailwind prefix to CSS, which the CLI currently leaves unprefixed.
-
-Put component styling in Tailwind classes and shared base CSS in
-`server/assets/css/base.css`. Put behavior in callers or wrappers outside the
-generated files. Keep generated files excluded from linting and formatting.
-
 ### Persistence layout
 
 Put Drizzle table definitions and entity types in `sdk/entities/`. Keep repository

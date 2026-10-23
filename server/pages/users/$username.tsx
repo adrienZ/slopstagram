@@ -1,18 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { Card, CardHeader, CardTitle, CardDescription } from "../../shadcn/ui/card.tsx";
 import { getUserTimeline } from "../../query-service.ts";
 
-import { formatUserHandle, formatUserName } from "../../helper.ts";
+import cx from "clsx";
+import { formatReportDate, formatUserName } from "../../helper.ts";
 import type { StoryCardViewModel } from "../../story-card-view-model.ts";
 import type { UserTimeline } from "../../user-timeline.ts";
 import { Lightbox } from "../../components/lightbox.tsx";
-import { StoryLayout } from "../../components/story-layout.tsx";
-import { useTimelineCalendar } from "../../hooks/use-timeline-calendar.ts";
-import { groupTimelineStickers } from "../../timeline-stickers.ts";
-import { TimelineStickers } from "../../components/timeline-stickers.tsx";
-import { TimelineGallery } from "../../components/timeline-gallery.tsx";
-import type { SidebarUser } from "../../sidebar-users.ts";
+import { StoryCard } from "../../components/story-card.tsx";
 
 function TimelineHeader({
   timeline,
@@ -21,47 +16,129 @@ function TimelineHeader({
   timeline: TimelineContentProps["timeline"];
   userName: string;
 }) {
-  const displayName = timeline.timelineUser.full_name?.trim();
-  const handle = formatUserHandle(timeline.timelineUser.username);
   return (
     <>
-      <a className="tw:mb-6 tw:inline-block tw:text-muted-foreground" href="/">
+      <a className={cx("timeline-back")} href="/">
         ← Tous les utilisateurs
       </a>
-      <Card className="tw:mb-8">
-        <CardHeader className="tw:flex tw:flex-col tw:items-start tw:gap-4.5 tw:sm:flex-row tw:sm:items-center">
-          {timeline.avatarPath === null ? (
-            <div className="tw:size-30 tw:shrink-0 tw:rounded-full tw:bg-muted" />
-          ) : (
-            <img
-              className="tw:size-30 tw:shrink-0 tw:rounded-full tw:bg-muted tw:object-cover"
-              src={timeline.avatarPath}
-              alt={`${userName} avatar`}
-              width="120"
-              height="120"
-            />
-          )}
-          <div className="tw:min-w-0">
-            <CardTitle>
-              <h1 className="tw:text-[28px] tw:font-bold tw:wrap-anywhere">
-                {displayName !== undefined && displayName.length > 0 ? displayName : handle}
-              </h1>
-            </CardTitle>
-            <span className="tw:mt-1 tw:block tw:text-base tw:text-muted-foreground">{handle}</span>
-            <CardDescription className="tw:mt-1">
-              <p>{`${timeline.stories.length} story${timeline.stories.length > 1 ? "s" : ""} · dates de publication`}</p>
-            </CardDescription>
-          </div>
-        </CardHeader>
-      </Card>
+      <header className={cx("timeline-user-header")}>
+        {timeline.avatarPath === null ? (
+          <div className={cx("timeline-avatar-placeholder")} />
+        ) : (
+          <img
+            className={cx("timeline-avatar")}
+            src={timeline.avatarPath}
+            alt={`${userName} avatar`}
+            width="96"
+            height="96"
+          />
+        )}
+        <div>
+          <h1>{userName}</h1>
+          <p>{`${timeline.stories.length} story${timeline.stories.length > 1 ? "s" : ""} · dates de publication`}</p>
+        </div>
+      </header>
     </>
   );
 }
 
+function TimelineGroups({
+  timeline,
+  storyByMediaPk,
+}: {
+  timeline: TimelineContentProps["timeline"];
+  storyByMediaPk: Map<string, StoryCardViewModel>;
+}) {
+  return (
+    <>
+      {timeline.years.map((year) => (
+        <section key={year.label} className={cx("timeline-year")}>
+          <h2>{year.label}</h2>
+          {year.months.map((month) => (
+            <section key={month.key} className={cx("timeline-month")}>
+              <h3>{month.label}</h3>
+              {month.days.map((day) => (
+                <section key={day.key} className={cx("timeline-day")}>
+                  <div className={cx("timeline-day-label")}>{day.label}</div>
+                  <div className={cx("timeline-day-stories")}>
+                    {day.stories.map((entry) => {
+                      const card = storyByMediaPk.get(entry.story.pk);
+                      if (card === undefined) {
+                        return null;
+                      }
+
+                      return <StoryCard key={card.mediaPk} story={card} />;
+                    })}
+                  </div>
+                </section>
+              ))}
+            </section>
+          ))}
+        </section>
+      ))}
+    </>
+  );
+}
+
+function TimelineStickers({
+  timeline,
+  storyByMediaPk,
+}: {
+  timeline: TimelineContentProps["timeline"];
+  storyByMediaPk: Map<string, StoryCardViewModel>;
+}) {
+  const occurrences = timeline.stories
+    .flatMap((entry) =>
+      (entry.story.annotations?.stickers ?? []).map((sticker, position) => ({
+        entry,
+        sticker,
+        key: `${entry.story.pk}:${position}`,
+      })),
+    )
+    .slice(0, 50);
+
+  return (
+    <section className={cx("timeline-stickers")}>
+      <h2>Latest sticker occurrences (up to 50)</h2>
+      {occurrences.length === 0 ? (
+        <p>No sticker occurrences stored.</p>
+      ) : (
+        <div className={cx("timeline-stickers-scroll")}>
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Story preview</th>
+                <th scope="col">Story date</th>
+                <th scope="col">Sticker type</th>
+                <th scope="col">Sticker label</th>
+              </tr>
+            </thead>
+            <tbody>
+              {occurrences.map(({ entry, sticker, key }) => {
+                const card = storyByMediaPk.get(entry.story.pk);
+                const date = new Date(entry.taken_at * 1000).toISOString();
+                return (
+                  <tr key={key}>
+                    <td>
+                      {card === undefined ? "Preview unavailable" : <StoryCard story={card} />}
+                    </td>
+                    <td>
+                      <time dateTime={date}>{formatReportDate(date)}</time>
+                    </td>
+                    <td>{sticker.kind}</td>
+                    <td>{sticker.label}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export interface TimelineContentProps {
-  today: string;
-  stickerKinds: Array<string>;
-  sidebarUsers: Array<SidebarUser>;
   timeline: Pick<UserTimeline, "avatarPath" | "timelineUser" | "stories" | "years">;
   stories: Array<StoryCardViewModel>;
 }
@@ -70,40 +147,25 @@ export function TimelineContent({
   timeline,
   stories,
   selectedStory,
-  stickerKinds,
-  sidebarUsers,
 }: TimelineContentProps & { selectedStory?: string }) {
   const storyByMediaPk = new Map(stories.map((story) => [story.mediaPk, story]));
   return (
     <>
-      <TimelineHeader timeline={timeline} userName={formatUserName(timeline.timelineUser)} />
-      <TimelineStickers
-        groups={groupTimelineStickers(timeline.stories, stickerKinds)}
-        storyByMediaPk={storyByMediaPk}
-        usernames={sidebarUsers.map((user) => user.username)}
-      />
-      {timeline.stories.length === 0 && <p>Aucune story enregistrée pour cet utilisateur.</p>}
-      <TimelineGallery years={timeline.years} storyByMediaPk={storyByMediaPk} />
+      <main>
+        <TimelineHeader timeline={timeline} userName={formatUserName(timeline.timelineUser)} />
+        <TimelineStickers timeline={timeline} storyByMediaPk={storyByMediaPk} />
+        <TimelineGroups timeline={timeline} storyByMediaPk={storyByMediaPk} />
+      </main>
       <Lightbox stories={stories} selectedStory={selectedStory} />
     </>
   );
 }
 
 export function UserTimelinePage(props: TimelineContentProps & { selectedStory?: string }) {
-  const days = props.timeline.years.flatMap((year) =>
-    year.months.flatMap((month) => month.days.map((day) => day.key)),
-  );
-  const calendar = useTimelineCalendar(days, props.today);
   return (
-    <StoryLayout
-      {...calendar}
-      today={props.today}
-      title={formatUserName(props.timeline.timelineUser)}
-      users={props.sidebarUsers}
-      selectedUsername={props.timeline.timelineUser.username}
-    >
+    <>
       <TimelineContent {...props} />
-    </StoryLayout>
+    </>
   );
 }
 
@@ -118,6 +180,10 @@ export const Route = createFileRoute("/users/$username")({
           : "Stories",
       },
     ],
+    links: ["user-timeline-page", "story-card", "lightbox"].map((name) => ({
+      rel: "stylesheet",
+      href: `/css/${name}.css`,
+    })),
   }),
   component: () => (
     <UserTimelinePage {...Route.useLoaderData()} selectedStory={Route.useSearch().story} />

@@ -4,8 +4,6 @@ import type { StoryRepository } from "../sdk/repositories/story-repository.ts";
 import { appleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
 import { storyRepository } from "../sdk/repositories/story-repository.ts";
 import { visionRepository } from "../sdk/repositories/vision-repository.ts";
-import { instagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
-import type { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
 
 const PARIS_TIME_ZONE = "Europe/Paris";
 
@@ -156,28 +154,10 @@ function readTimelineDetails(stories: Array<UserTimelineStory>): TimelineDetails
 export function createUserTimeline(
   username: string,
   repository: Pick<StoryRepository, "listByUsername"> = storyRepository,
-  users: Pick<InstagramUserRepository, "findByUsername"> = instagramUserRepository,
 ): UserTimeline | null {
   const stories = repository.listByUsername(username);
   if (stories.length === 0) {
-    const user = users.findByUsername(username);
-    if (user === null) {
-      return null;
-    }
-    return {
-      appleCaptionByMediaPk: new Map(),
-      avatarPath: `/media/avatars/${user.pk}.jpg`,
-      stories: [],
-      timelineUser: {
-        username: user.username,
-        full_name: user.full_name,
-        profile_pic_url: `images/avatars/${user.pk}.jpg`,
-        reel_ids: [],
-        stories: [],
-      },
-      visionByPreviewUrl: new Map(),
-      years: [],
-    };
+    return null;
   }
 
   const timelineUser = createStoredStoryUser(stories[0], stories);

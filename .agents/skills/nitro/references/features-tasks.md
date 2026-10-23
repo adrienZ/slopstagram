@@ -5,24 +5,21 @@ description: On-demand and scheduled (cron) tasks in Nitro, defineTask, runTask,
 
 # Tasks
 
-Tasks are one-off runtime operations (migrations, cleanups, cache refresh). **Experimental** — enable the flag first. Tasks are scanned from `serverDir`, which must also be set.
+Tasks are one-off runtime operations (migrations, cleanups, cache refresh). **Experimental** — enable the flag first.
 
 ```ts [nitro.config.ts]
 import { defineConfig } from "nitro";
 
 export default defineConfig({
-  serverDir: "./server",
   experimental: { tasks: true },
 });
 ```
 
 ## Defining tasks
 
-Files in `<serverDir>/tasks/[name].ts`. Nested dirs join with `:` (e.g. `tasks/db/migrate.ts` → `db:migrate`). Import `defineTask` from `nitro/task` (no auto-imports in v3).
+Files in `tasks/[name].ts`. Nested dirs join with `:` (e.g. `tasks/db/migrate.ts` → `db:migrate`). `defineTask` is auto-imported.
 
-```ts [server/tasks/db/migrate.ts]
-import { defineTask } from "nitro/task";
-
+```ts [tasks/db/migrate.ts]
 export default defineTask({
   meta: {
     name: "db:migrate",
@@ -40,18 +37,10 @@ export default defineTask({
 Tasks can also be registered in config (config `handler` wins over a scanned file of the same name):
 
 ```ts [nitro.config.ts]
-import { fileURLToPath } from "node:url";
-
 export default defineConfig({
-  serverDir: "./server",
   experimental: { tasks: true },
   tasks: {
-    "db:migrate": { description: "Describe a scanned task" },
-    // A config handler is imported as-is (NOT resolved against rootDir) — use an absolute path:
-    "db:seed": {
-      handler: fileURLToPath(new URL("scripts/seed.ts", import.meta.url)),
-      description: "Seed the database",
-    },
+    "db:migrate": { handler: "./tasks/custom-migrate.ts", description: "Migrations" },
   },
 });
 ```
@@ -96,8 +85,6 @@ export default defineHandler(async (event) => {
 ## Background work with `waitUntil`
 
 ```ts [tasks/sync.ts]
-import { defineTask } from "nitro/task";
-
 export default defineTask({
   run({ context }) {
     const promise = fetch("https://api.example.com/sync");
@@ -116,7 +103,7 @@ While `nitro dev` runs:
 
 ## Key Points
 
-- Requires `experimental.tasks: true` **and** `serverDir` set; `defineTask` and `runTask` both come from `nitro/task` (no auto-imports in v3).
+- Requires `experimental.tasks: true`; `defineTask` is auto-imported, `runTask` comes from `nitro/task`.
 - Each task has one running instance — parallel calls of the same name share a single run/result.
 - `scheduledTasks` cron config is translated to native triggers on Cloudflare and Vercel automatically.
 

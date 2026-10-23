@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { useDrizzle, type DrizzleDatabase } from "../database/client.ts";
 import { instagramUsers, NewInstagramUserSchema } from "../entities/instagram-user.ts";
 import type { InstagramUserEntry } from "../lib/types.ts";
@@ -8,20 +8,6 @@ export class InstagramUserRepository {
 
   constructor(database: DrizzleDatabase) {
     this.database = database;
-  }
-
-  listAll(): Array<InstagramUserEntry> {
-    return this.database
-      .select()
-      .from(instagramUsers)
-      .orderBy(asc(instagramUsers.username), asc(instagramUsers.pk))
-      .all()
-      .map((row) => ({
-        full_name: row.fullName,
-        id: row.id,
-        pk: row.pk,
-        username: row.username,
-      }));
   }
 
   findByUsername(username: string): InstagramUserEntry | null {

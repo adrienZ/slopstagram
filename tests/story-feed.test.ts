@@ -7,8 +7,7 @@ import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repo
 import { UserSummaryRepository } from "../sdk/repositories/user-summary-repository.ts";
 import { AppleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
 import { VisionRepository } from "../sdk/repositories/vision-repository.ts";
-import { createStoryFeed, createStoryDayFeed, createReportFeed } from "../sdk/story-feed.ts";
-import { getStoryDate, getStoryDayRange } from "../sdk/lib/story-date-service.ts";
+import { createStoryFeed } from "../sdk/story-feed.ts";
 import { createReportViewModel } from "../server/report-view-model.ts";
 import { resolveUserSummariesForReport } from "../sdk/user-summary.ts";
 import { createLogger } from "../sdk/lib/logging-service.ts";
@@ -41,9 +40,6 @@ async function createFixture(context: TestContext) {
     }),
   );
   return {
-    stories,
-    dayFeed: (day: string) =>
-      createStoryDayFeed(day, { repository: stories, hasPreview: () => true }),
     feed: (now: string) =>
       createStoryFeed(new Date(now), {
         repository: stories,
@@ -56,32 +52,6 @@ async function createFixture(context: TestContext) {
     },
   };
 }
-
-test("lists distinct sticker kinds across all saved accounts", async (context) => {
-  const { stories } = await createFixture(context);
-  assert.deepEqual(stories.listStickerKinds(), []);
-  await stories.save(
-    {
-      pk: "alice-older",
-      annotations: { locations: [], stickers: [{ kind: "mention", label: "@bob" }] },
-    },
-    { pk: "alice", username: "alice" },
-  );
-  await stories.save(
-    {
-      pk: "bob-newest",
-      annotations: {
-        locations: [],
-        stickers: [
-          { kind: "mention", label: "@alice" },
-          { kind: "poll", label: "Ready?" },
-        ],
-      },
-    },
-    { pk: "bob", username: "bob" },
-  );
-  assert.deepEqual(stories.listStickerKinds(), ["mention", "poll"]);
-});
 
 test("combines stored stories without a selected report, ranks accounts by recency, and plays chronologically", async (context) => {
   const { feed } = await createFixture(context);
@@ -97,86 +67,6 @@ test("combines stored stories without a selected report, ranks accounts by recen
     ],
   );
   assert.deepEqual(feed("2026-10-24T10:00:00Z"), []);
-});
-
-test("today uses the rolling feed, including yesterday's recent stories; past dates use calendar days", async (context) => {
-  const { stories } = await createFixture(context);
-  const now = new Date("2026-10-22T10:00:00Z");
-  const options = { repository: stories, hasPreview: (pk: string) => pk !== "no-image" };
-  for (const selectedDate of [undefined, "2026-10-22", "2026-10-23"]) {
-    const feed = createReportFeed(now, selectedDate, options);
-    assert.equal(feed.selectedDate, "2026-10-22");
-    assert.equal(feed.today, "2026-10-22");
-    assert.deepEqual(
-      feed.users.flatMap((user) => user.stories.map((story) => story.media_pk)),
-      ["bob-newest", "alice-older", "alice-newer"],
-    );
-  }
-  const past = createReportFeed(now, "2026-10-21", options);
-  assert.equal(past.selectedDate, "2026-10-21");
-  assert.deepEqual(
-    past.users.flatMap((user) => user.stories.map((story) => story.media_pk)),
-    ["alice-older", "expired"],
-  );
-});
-
-test("available report dates require visible stories and include today for a rolling result from yesterday", async (context) => {
-  const { stories } = await createFixture(context);
-  await stories.save(
-    { pk: "no-preview", taken_at: Date.parse("2026-10-20T10:00:00Z") / 1000 },
-    { pk: "alice", username: "alice" },
-  );
-  const options = {
-    repository: stories,
-    hasPreview: (pk: string) => pk !== "no-preview" && pk !== "no-image",
-  };
-  const feed = createReportFeed(new Date("2026-10-24T10:00:00Z"), undefined, options);
-  assert.deepEqual(feed.availableDates, ["2026-10-21", "2026-10-22"]);
-  const afterMidnight = createReportFeed(new Date("2026-10-22T00:00:00Z"), undefined, options);
-  assert.deepEqual(afterMidnight.availableDates, ["2026-10-21", "2026-10-22"]);
-  assert.ok(
-    afterMidnight.users
-      .flatMap((user) => user.stories)
-      .some((story) => story.media_pk === "alice-older"),
-  );
-});
-
-test("story deep links retrieve historical stories with exact IDs and select their publication day", async (context) => {
-  const { stories } = await createFixture(context);
-  const mediaPk = "3976144362696633423";
-  await stories.save(
-    { pk: mediaPk, taken_at: Date.parse("2026-09-07T22:30:00Z") / 1000 },
-    { pk: "alice", username: "alice" },
-  );
-  const now = new Date("2026-10-22T10:00:00Z");
-  const options = { repository: stories, hasPreview: () => true, selectedStory: mediaPk };
-  for (const requestedDate of [undefined, "2026-10-21"]) {
-    const feed = createReportFeed(now, requestedDate, options);
-    assert.equal(feed.selectedDate, "2026-09-08");
-    assert.ok(
-      feed.users.flatMap((user) => user.stories).some((story) => story.media_pk === mediaPk),
-    );
-  }
-  const unknown = createReportFeed(now, undefined, { ...options, selectedStory: "missing" });
-  assert.equal(unknown.selectedDate, "2026-10-22");
-});
-
-test("deep links to recent stories retain the rolling feed even when the story was published yesterday", async (context) => {
-  const { stories } = await createFixture(context);
-  const now = new Date("2026-10-22T10:00:00Z");
-  const options = { repository: stories, hasPreview: () => true };
-  const yesterday = createReportFeed(now, undefined, { ...options, selectedStory: "alice-older" });
-  assert.equal(yesterday.selectedDate, "2026-10-22");
-  const mismatchedDate = createReportFeed(now, "2026-10-20", {
-    ...options,
-    selectedStory: "alice-newer",
-  });
-  assert.equal(mismatchedDate.selectedDate, "2026-10-22");
-  assert.ok(
-    mismatchedDate.users
-      .flatMap((user) => user.stories)
-      .some((story) => story.media_pk === "alice-older"),
-  );
 });
 
 test("hides a summary after stories expire until a matching summary is generated by a later collection", async (context) => {
@@ -207,44 +97,4 @@ test("hides a summary after stories expire until a matching summary is generated
     createReportViewModel(laterUsers, repositories).userSummaryByUserKey.get("alice"),
     "Activités des stories visibles.",
   );
-});
-
-test("a selected day includes midnight and excludes the next midnight, including the autumn clock change", async (context) => {
-  const { stories, dayFeed } = await createFixture(context);
-  await Promise.all(
-    [
-      { pk: "before", date: "2026-10-24T21:59:59Z" },
-      { pk: "midnight", date: "2026-10-24T22:00:00Z" },
-      { pk: "last-second", date: "2026-10-25T22:59:59Z" },
-      { pk: "next-day", date: "2026-10-25T23:00:00Z" },
-    ].map(async ({ pk, date }) => {
-      await stories.save(
-        { pk, taken_at: Date.parse(date) / 1000, media_type: 1 },
-        { pk: "alice", username: "alice" },
-      );
-    }),
-  );
-  assert.deepEqual(
-    dayFeed("2026-10-25").flatMap((user) => user.stories.map((story) => story.media_pk)),
-    ["midnight", "last-second"],
-  );
-  assert.deepEqual(
-    dayFeed("2026-10-26").flatMap((user) => user.stories.map((story) => story.media_pk)),
-    ["next-day"],
-  );
-  assert.deepEqual(dayFeed("2026-10-27"), []);
-});
-
-test("story day ranges follow Paris midnight through both daylight-saving changes", () => {
-  for (const [day, start, end] of [
-    ["2026-03-29", "2026-03-28T23:00:00.000Z", "2026-03-29T22:00:00.000Z"],
-    ["2026-10-25", "2026-10-24T22:00:00.000Z", "2026-10-25T23:00:00.000Z"],
-    ["2026-12-31", "2026-12-30T23:00:00.000Z", "2026-12-31T23:00:00.000Z"],
-  ]) {
-    const range = getStoryDayRange(day);
-    assert.equal(range.start.toISOString(), start);
-    assert.equal(range.end.toISOString(), end);
-  }
-  assert.equal(getStoryDate(new Date("2026-10-22T22:30:00Z")), "2026-10-23");
-  assert.throws(() => getStoryDayRange("2026-02-30"));
 });

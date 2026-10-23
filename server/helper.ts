@@ -18,18 +18,14 @@ export function formatReportDate(value: string): string {
         .replace(",", " à");
 }
 
-export function formatUserHandle(username: string): string {
-  return `@${username.trim().replace(/^@/u, "")}`;
-}
-
 export function formatUserName(user: StoryOutputUser): string {
   const fullName = user.full_name?.trim();
   const username = user.username.trim();
   if (fullName !== undefined && fullName.length > 0 && username.length > 0) {
-    return `${fullName} (@${username})`;
+    return `${fullName} (${username})`;
   }
 
-  return fullName !== undefined && fullName.length > 0 ? fullName : formatUserHandle(username);
+  return fullName !== undefined && fullName.length > 0 ? fullName : username;
 }
 
 export function getUserTimelineUrl(username: string): string {

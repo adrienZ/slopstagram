@@ -7,8 +7,6 @@ description: File-based routing, event handlers, dynamic params, middleware, and
 
 Nitro maps files in `routes/` and `api/` to HTTP routes at build time (no runtime router). Handlers receive an [H3 v2](https://h3.dev) `event` and should **return** the response body or **throw** an error.
 
-> **v3:** filesystem routing only runs when [`serverDir`](core-configuration.md) (or `scanDirs`) is set — no directories are scanned by default. Auto-imports are removed, so import `defineHandler`/`HTTPError` explicitly.
-
 ## Event handlers
 
 ```ts [routes/hello.ts]
@@ -56,7 +54,7 @@ routes/
 
 ### HTTP method suffix
 
-Append the method to match only that verb (`get`, `post`, `put`, `delete`, `patch`, `head`, `options`, `query`, `connect`, `trace`):
+Append the method to match only that verb (`get`, `post`, `put`, `delete`, `patch`, `head`, `options`...):
 
 ```ts [routes/users.post.ts]
 import { defineHandler } from "nitro";
@@ -78,7 +76,7 @@ export default defineHandler((event) => {
 
 - Multiple params: each as its own folder/segment `[a]/[b]` (not in one filename).
 - Catch-all: `[...name].ts` captures the rest of the path (includes `/`).
-- Global catch-all: `[...].ts` matches all otherwise-unmatched routes; its wildcard is on `event.context.params._`. It chains before the [server entry](core-rendering.md) and renderer.
+- Global catch-all: `[...].ts` matches all otherwise-unmatched routes.
 
 ### Route groups & environment handlers
 
@@ -98,12 +96,12 @@ export default defineHandler((event) => {
 });
 ```
 
-Control execution order with numeric prefixes (`1.logger.ts`, `2.auth.ts` — pad to `01.` etc. beyond 9 to keep string sort correct). Scope manually with `event.url.pathname`, or register route-scoped middleware in config (keep the file **outside** `middleware/` so it isn't also registered globally):
+Control execution order with numeric prefixes (`01.logger.ts`, `02.auth.ts` — pad to keep string sort correct). Scope manually with `event.url.pathname`, or register route-scoped middleware in config:
 
 ```ts [nitro.config.ts]
 export default defineConfig({
   handlers: [
-    { route: "/api/**", handler: "./utils/api-auth.ts", middleware: true },
+    { route: "/api/**", handler: "./middleware/api-auth.ts", middleware: true },
   ],
 });
 ```
@@ -142,68 +140,43 @@ export default defineHandler((event) => {
 });
 ```
 
-`HTTPError` has several forms: `new HTTPError("msg", { status: 400 })`, `HTTPError.status(400, "Bad Request")`, or the full object form. Any other thrown value is treated as unhandled (always `500`, message/stack hidden).
-
-In dev, browsers (Accept: text/html) get an HTML error page; production always returns JSON (`{ error, status, message, data }`). Customize with the `errorHandler` config (a path or array of paths) to a module exporting `defineErrorHandler((error, event) => Response)` from `nitro`. Handlers run in order (first response wins; built-in default is always appended); `devErrorHandler` overrides dev-only rendering.
+In dev, browsers (Accept: text/html) get an HTML error page; production always returns JSON. Customize with `errorHandler` config pointing to a module that exports `defineErrorHandler((error, event) => Response)`.
 
 ## Route rules
 
-Apply per-route behavior (caching, headers, redirects, proxy, CORS) by glob pattern (rou3 syntax). Rules merge least-specific to most-specific; set a rule to `false` to disable an inherited one. When `cache` is set, matching handlers are auto-wrapped with `defineCachedHandler`.
+Apply per-route behavior (caching, headers, redirects, proxy, auth) by glob pattern. Rules merge least-specific to most-specific; set a rule to `false` to disable an inherited one.
 
 ```ts [nitro.config.ts]
 import { defineConfig } from "nitro";
 
 export default defineConfig({
   routeRules: {
-    "/blog/**": { swr: 600 },                   // stale-while-revalidate w/ maxAge
+    "/blog/**": { swr: true },                  // stale-while-revalidate (cache)
+    "/blog/posts/**": { swr: 600 },             // swr with maxAge seconds
     "/api/data/**": { cache: { maxAge: 60 } },  // full cache options
     "/api/realtime/**": { cache: false },       // disable caching
     "/assets/**": { headers: { "cache-control": "s-maxage=0" } },
-    "/api/public/**": { cors: true },           // permissive CORS defaults
-    "/api/v1/**": { cors: { origin: ["https://app.example.com"], credentials: true } },
+    "/api/v1/**": { cors: true, headers: { "access-control-allow-methods": "GET" } },
     "/old-page": { redirect: "/new-page" },     // 307 by default
     "/legacy": { redirect: { to: "https://example.com/", status: 308 } },
     "/old-blog/**": { redirect: "https://blog.example.com/**" }, // wildcard preserves suffix
     "/proxy/**": { proxy: "https://api.example.com/**" },
+    "/admin/**": { basicAuth: { username: "admin", password: "secret" } },
     "/about": { prerender: true },
     "/isr/**": { isr: 60 },                      // Vercel ISR
   },
 });
 ```
 
-Route rule keys: `headers`, `redirect`, `proxy`, `cors`, `cache`, `swr`, `static`, `prerender`, `isr`. `swr: true` = `cache: { swr: true }` (1s default `maxAge`); `swr: <n>` adds `maxAge: <n>`. Rules can also be supplied via `runtimeConfig.nitro.routeRules` for env-var overrides without rebuilding.
-
-> **No `auth`/`basicAuth` route rule.** Auth needs executable logic → use [middleware](#middleware). For a single route use h3's `basicAuth` from `nitro/h3` in the handler's `middleware` array:
-> ```ts
-> import { defineHandler } from "nitro";
-> import { basicAuth } from "nitro/h3";
-> export default defineHandler({
->   middleware: [basicAuth({ username: "admin", password: "secret" })],
->   handler: (event) => `Hello, ${event.context.basicAuth?.username}!`,
-> });
-> ```
-
-### Method-scoped rules
-
-Prefix a key with an uppercase HTTP method + space to scope it; unprefixed keys apply to every method and are merged underneath:
-
-```ts
-routeRules: {
-  "/api/**": { headers: { "x-api": "true" } },     // every method
-  "POST /api/**": { headers: { "x-write": "true" } },
-  "GET /feed": { swr: 600 },
-}
-```
-
-> Platform-native static config (Netlify/Cloudflare `_headers`/`_redirects`, Vercel `config.json`) does not split by method — prefer method-agnostic keys for `headers`/`redirect`/`proxy` you expect emitted statically. Do not combine `prerender` and `isr` on the same route.
+Route rule keys: `headers`, `redirect`, `proxy`, `cors`, `cache`, `swr`, `static`, `basicAuth`, `prerender`, `isr`. `swr: true` is shorthand for `cache: { swr: true }`; `swr: <n>` adds `maxAge: <n>`. Rules can also be supplied via `runtimeConfig.nitro.routeRules` for env-var overrides without rebuilding.
 
 ## Key Points
 
 - Handlers **return** the body or **throw**; H3 v1 `send*` helpers are gone.
 - Use `event.req.json()/text()/formData()` instead of v2 `readBody`.
-- Params live on `event.context.params` (unnamed catch-all on `params._`).
+- Params live on `event.context.params`; the `!` non-null assertion is common in TS.
 - Each route handler is a separate code-split chunk (set `inlineDynamicImports: true` to bundle into one file).
-- Route rules wrap matching handlers in caching, proxying, redirects, and CORS without handler code — auth goes in middleware.
+- Route rules wrap matching handlers in caching, proxying, redirects, and auth without handler code.
 
 <!--
 Source references:

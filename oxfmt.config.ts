@@ -9,6 +9,5 @@ export default defineConfig({
     "audit.json",
     ".nitro",
     "server/routeTree.gen.ts",
-    "server/shadcn/**",
   ],
 });
