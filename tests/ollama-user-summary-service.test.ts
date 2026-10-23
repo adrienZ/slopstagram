@@ -231,6 +231,21 @@ describe("resolveUserSummariesForReport", () => {
     assert.equal(summaries.get(userKey), "résumé indisponible");
   });
 
+  test("uses report fallback and does not store a missing Ollama response", async () => {
+    const repository = createUserSummaryRepositoryAdapter();
+    const summaries = await resolveUserSummariesForReport(createSummaryReport(), {
+      logger: createMockLogger(),
+      fetchOllama: async () => globalThis.Response.json({ done: true }),
+      repository,
+    });
+
+    assert.equal(
+      summaries.get("summaryuser"),
+      "Summary User a partagé 1 story. Éléments visibles: location:Paris; Paris Market, 10 Rue Food, Paris.",
+    );
+    assert.equal(repository.entries.size, 0);
+  });
+
   test("uses report fallback and does not store empty user summary responses", async () => {
     const repository = createUserSummaryRepositoryAdapter();
     const report = createSummaryReport();

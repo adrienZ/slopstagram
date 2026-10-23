@@ -96,11 +96,12 @@ async function main(): Promise<void> {
     prompt,
     stream: false,
   });
+  const responseText = response.response ?? "";
 
   writeOutput("\nraw response:");
-  writeOutput(response.response);
+  writeOutput(responseText);
   writeOutput("\nparsed response:");
-  const parsedResponse = parseResponse(response.response);
+  const parsedResponse = parseResponse(responseText);
   writeOutput(JSON.stringify(parsedResponse, null, 2));
 
   writeOutput("\nvalidation:");

@@ -153,7 +153,7 @@ async function runVisionRequest(
     prompt: options.prompt,
     stream: false,
   });
-  const result = parseVisionResponse(payload.response);
+  const result = parseVisionResponse(payload.response ?? "");
 
   await options.repository.save(options.mediaPk, {
     model: options.model,

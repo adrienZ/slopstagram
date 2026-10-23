@@ -223,7 +223,7 @@ function createDefaultOllamaRunner(options: {
       think: false,
     });
 
-    return response.response;
+    return response.response ?? "";
   };
 }
 

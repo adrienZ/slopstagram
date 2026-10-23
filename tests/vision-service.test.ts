@@ -285,6 +285,21 @@ describe("resolveVisionForReport", () => {
     });
   });
 
+  test("treats a missing Ollama response as an empty vision result", async () => {
+    const repository = createVisionRepositoryAdapter();
+
+    await withReportImage(async (cacheDirectory, cachedImages) => {
+      const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
+        fetchVision: async () => globalThis.Response.json({ done: true }),
+        logger: createMockLogger(),
+        cacheDirectory,
+        repository,
+      });
+
+      assert.deepEqual(result.get(previewSource), { text: "", visual: "" });
+    });
+  });
+
   test("returns short per-image text for non-server failures", async () => {
     const repository = createVisionRepositoryAdapter();
 
