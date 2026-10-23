@@ -62,14 +62,42 @@ test("groups stories by their Paris publication day, month, and year", () => {
   );
 });
 
-test("returns no timeline when the user has no stories", () => {
-  const result = createUserTimeline("missing-user", {
-    listByUsername: (username) => {
-      assert.equal(username, "missing-user");
-      return [];
+test("returns no timeline for an unknown user", () => {
+  const result = createUserTimeline(
+    "missing-user",
+    {
+      listByUsername: (username) => {
+        assert.equal(username, "missing-user");
+        return [];
+      },
     },
-  });
+    {
+      findByUsername: (username) => {
+        assert.equal(username, "missing-user");
+        return null;
+      },
+    },
+  );
   assert.equal(result, null);
+});
+
+test("returns an empty timeline for a saved account without stories", () => {
+  const result = createUserTimeline(
+    "saved-user",
+    { listByUsername: () => [] },
+    {
+      findByUsername: () => ({
+        username: "saved-user",
+        full_name: "Saved User",
+        id: "saved",
+        pk: "saved",
+      }),
+    },
+  );
+  assert.ok(result);
+  assert.equal(result.timelineUser.username, "saved-user");
+  assert.deepEqual(result.stories, []);
+  assert.deepEqual(result.years, []);
 });
 
 test("assembles timeline media, captions, cached vision and local paths", () => {

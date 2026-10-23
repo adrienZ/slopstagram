@@ -1,0 +1,312 @@
+import { useState } from "react";
+import { cn } from "cn";
+import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ExpandIcon } from "lucide-react";
+import type { StoryCardViewModel } from "../story-card-view-model.ts";
+import { formatReportDate } from "../helper.ts";
+import {
+  formatStickerLabel,
+  formatStickerStoryDate,
+  getMentionProfileUrl,
+  type StickerKindGroup,
+  type StoryStickerGroup,
+} from "../timeline-stickers.ts";
+import { Badge } from "../shadcn/ui/badge.tsx";
+import { Button } from "../shadcn/ui/button.tsx";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardAction,
+  CardContent,
+  CardFooter,
+} from "../shadcn/ui/card.tsx";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../shadcn/ui/collapsible.tsx";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "../shadcn/ui/dialog.tsx";
+import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "../shadcn/ui/empty.tsx";
+import { Pagination, PaginationContent, PaginationItem } from "../shadcn/ui/pagination.tsx";
+import {
+  Table,
+  TableHeader,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "../shadcn/ui/table.tsx";
+import { StoryCard } from "./story-card.tsx";
+
+const STICKER_PAGE_SIZE = 3;
+
+interface StickerTableProps {
+  kind: string;
+  stories: Array<StoryStickerGroup>;
+  storyByMediaPk: Map<string, StoryCardViewModel>;
+  usernames: Array<string>;
+  expanded?: boolean;
+}
+
+function StickerTable({
+  kind,
+  stories,
+  storyByMediaPk,
+  usernames,
+  expanded = false,
+}: StickerTableProps) {
+  if (stories.length === 0) {
+    return (
+      <Empty className="tw:min-h-48 tw:px-2">
+        <EmptyHeader>
+          <EmptyTitle>Aucun sticker</EmptyTitle>
+          <EmptyDescription>Aucun sticker de type {kind} pour cet utilisateur.</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    );
+  }
+  return (
+    <Table aria-label={`Stickers : ${kind}`}>
+      <TableHeader>
+        <TableRow>
+          <TableHead scope="col">Story</TableHead>
+          <TableHead scope="col">Stickers</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {stories.map((story) => {
+          const card = storyByMediaPk.get(story.mediaPk);
+          return (
+            <TableRow key={story.mediaPk}>
+              <TableCell
+                className={cn(
+                  "tw:w-20 tw:align-top tw:whitespace-normal",
+                  expanded && "tw:sm:w-64",
+                )}
+              >
+                <div
+                  className={cn(
+                    "tw:flex tw:flex-col tw:gap-1",
+                    expanded && "tw:sm:flex-row tw:sm:items-center tw:sm:gap-3",
+                  )}
+                >
+                  {card === undefined ? (
+                    <span className="tw:text-xs tw:text-muted-foreground">Preview unavailable</span>
+                  ) : (
+                    <StoryCard story={card} size="sticker" />
+                  )}
+                  <div className="tw:flex tw:min-w-0 tw:flex-col tw:gap-1">
+                    <time
+                      className="tw:text-xs tw:text-muted-foreground"
+                      dateTime={story.date}
+                      title={formatReportDate(story.date)}
+                    >
+                      {formatStickerStoryDate(story.date)}
+                    </time>
+                    {expanded && (
+                      <span className="tw:text-xs tw:text-muted-foreground tw:wrap-anywhere">
+                        {story.mediaPk}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </TableCell>
+              <TableCell className="tw:align-top tw:whitespace-normal">
+                <ul className="tw:flex tw:min-w-0 tw:flex-wrap tw:gap-1.5">
+                  {story.labels.map(({ key, label }) => {
+                    const profileUrl = getMentionProfileUrl(kind, label, usernames);
+                    const displayLabel =
+                      expanded && kind !== "mention" ? label : formatStickerLabel(kind, label);
+                    return (
+                      <li key={key} className="tw:min-w-0 tw:max-w-full">
+                        <Badge
+                          asChild
+                          variant="secondary"
+                          title={label}
+                          className="tw:h-auto tw:max-w-full tw:py-1 tw:whitespace-normal"
+                        >
+                          {profileUrl === undefined ? (
+                            <span className="tw:wrap-anywhere">{displayLabel}</span>
+                          ) : (
+                            <a
+                              href={profileUrl}
+                              className="tw:wrap-anywhere tw:underline tw:underline-offset-2"
+                            >
+                              {displayLabel}
+                            </a>
+                          )}
+                        </Badge>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </TableCell>
+            </TableRow>
+          );
+        })}
+      </TableBody>
+    </Table>
+  );
+}
+
+function StickerKindCard({
+  group,
+  storyByMediaPk,
+  usernames,
+}: {
+  group: StickerKindGroup;
+  storyByMediaPk: Map<string, StoryCardViewModel>;
+  usernames: Array<string>;
+}) {
+  const [page, setPage] = useState(1);
+  const hasStories = group.stories.length > 0;
+  const pageCount = Math.max(1, Math.ceil(group.stories.length / STICKER_PAGE_SIZE));
+  const occurrences = group.stories.reduce((count, story) => count + story.labels.length, 0);
+  return (
+    <Dialog>
+      <Collapsible defaultOpen={hasStories} className="tw:group/kind tw:h-full tw:min-w-0">
+        <Card
+          size="sm"
+          role="region"
+          aria-label={`Type de sticker : ${group.kind}`}
+          className="tw:h-84"
+        >
+          <CardHeader>
+            <CardTitle>
+              <h3 className="tw:capitalize">{group.kind}</h3>
+            </CardTitle>
+            <CardDescription>
+              {hasStories
+                ? `${occurrences} stickers · ${group.stories.length} stories`
+                : "Aucun sticker"}
+            </CardDescription>
+            {hasStories && (
+              <CardAction className="tw:flex tw:gap-0.5">
+                <DialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={`Tout afficher : ${group.kind}`}
+                  >
+                    <ExpandIcon />
+                  </Button>
+                </DialogTrigger>
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={`Afficher ou masquer : ${group.kind}`}
+                  >
+                    <ChevronDownIcon className="tw:transition-transform tw:group-data-[state=closed]/kind:-rotate-90" />
+                  </Button>
+                </CollapsibleTrigger>
+              </CardAction>
+            )}
+          </CardHeader>
+          <CollapsibleContent className="tw:flex tw:min-h-0 tw:flex-1 tw:flex-col tw:data-[state=closed]:hidden">
+            <CardContent className="tw:min-h-0 tw:flex-1 tw:overflow-y-auto">
+              <StickerTable
+                kind={group.kind}
+                stories={group.stories.slice(
+                  (page - 1) * STICKER_PAGE_SIZE,
+                  page * STICKER_PAGE_SIZE,
+                )}
+                storyByMediaPk={storyByMediaPk}
+                usernames={usernames}
+              />
+            </CardContent>
+            {pageCount > 1 && (
+              <CardFooter className="tw:shrink-0">
+                <Pagination aria-label={`Pagination : ${group.kind}`}>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={`Page précédente : ${group.kind}`}
+                        disabled={page === 1}
+                        onClick={() => {
+                          setPage(page - 1);
+                        }}
+                      >
+                        <ChevronLeftIcon />
+                      </Button>
+                    </PaginationItem>
+                    <PaginationItem>
+                      <span
+                        className="tw:px-2 tw:text-xs tw:text-muted-foreground"
+                        aria-live="polite"
+                      >
+                        {page} / {pageCount}
+                      </span>
+                    </PaginationItem>
+                    <PaginationItem>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={`Page suivante : ${group.kind}`}
+                        disabled={page === pageCount}
+                        onClick={() => {
+                          setPage(page + 1);
+                        }}
+                      >
+                        <ChevronRightIcon />
+                      </Button>
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </CardFooter>
+            )}
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+      {hasStories && (
+        <DialogContent className="tw:max-h-[90svh] tw:overflow-y-auto tw:sm:max-w-5xl">
+          <DialogHeader>
+            <DialogTitle>Stickers · {group.kind}</DialogTitle>
+            <DialogDescription>
+              {occurrences} stickers dans {group.stories.length} stories · historique complet
+            </DialogDescription>
+          </DialogHeader>
+          <StickerTable
+            kind={group.kind}
+            stories={group.stories}
+            storyByMediaPk={storyByMediaPk}
+            usernames={usernames}
+            expanded
+          />
+        </DialogContent>
+      )}
+    </Dialog>
+  );
+}
+
+export function TimelineStickers({
+  groups,
+  storyByMediaPk,
+  usernames,
+}: {
+  groups: Array<StickerKindGroup>;
+  storyByMediaPk: Map<string, StoryCardViewModel>;
+  usernames: Array<string>;
+}) {
+  return (
+    <section aria-label="Stickers" className="tw:mb-10">
+      <h2 className="tw:mb-4 tw:text-xl tw:font-semibold">Stickers</h2>
+      <div className="tw:grid tw:grid-cols-1 tw:gap-4 tw:md:grid-cols-2 tw:xl:grid-cols-4">
+        {groups.map((group) => (
+          <StickerKindCard
+            key={group.kind}
+            group={group}
+            storyByMediaPk={storyByMediaPk}
+            usernames={usernames}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
