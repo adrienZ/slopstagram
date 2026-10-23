@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { test } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
@@ -22,7 +22,7 @@ import type { StoryItem } from "../sdk/lib/types.ts";
 test("story annotations survive ingestion, cold reports, and repeated saves", async (context) => {
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
-  context.after(() => {
+  context.onTestFinished(() => {
     database.$client.close();
   });
   const repository = new StoryRepository(database);
@@ -94,7 +94,7 @@ for (const unifiedLocations of [false, true]) {
   test(`cold reads preserve occurrences using ${unifiedLocations ? "unified locations" : "no unified locations"}`, async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
-    context.after(() => {
+    context.onTestFinished(() => {
       database.$client.close();
     });
     const repository = new StoryRepository(database);
@@ -173,7 +173,7 @@ for (const unifiedLocations of [false, true]) {
 test("partial ingestion merges sources for fresh reports, cold reads, and resaves", async (context) => {
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
-  context.after(() => {
+  context.onTestFinished(() => {
     database.$client.close();
   });
   const repository = new StoryRepository(database);
@@ -246,7 +246,7 @@ test("partial ingestion merges sources for fresh reports, cold reads, and resave
 test("malformed sources preserve saved contributions and report the affected fields", async (context) => {
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
-  context.after(() => {
+  context.onTestFinished(() => {
     database.$client.close();
   });
   const logger = createCapturingLogger();
@@ -301,7 +301,7 @@ test("malformed sources preserve saved contributions and report the affected fie
 test("legacy provenance survives partial observations until one complete observation supersedes its kind", async (context) => {
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
-  context.after(() => {
+  context.onTestFinished(() => {
     database.$client.close();
   });
   const repository = new StoryRepository(database);
@@ -366,7 +366,7 @@ test("legacy provenance survives partial observations until one complete observa
 test("a failed annotation replacement rolls back occurrences and known empty sources", async (context) => {
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
-  context.after(() => {
+  context.onTestFinished(() => {
     database.$client.close();
   });
   const repository = new StoryRepository(database);

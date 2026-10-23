@@ -43,7 +43,20 @@ export default definePlugin((nitroApp) => {
   const server = spawnBunqueueServer(capturePluginError);
   const runtime = startWarmCacheQueue({
     dependencies: {
-      createQueue: (name) => new Queue(name),
+      createQueue(name) {
+        const queue = new Queue(name);
+        return {
+          close() {
+            queue.close();
+          },
+          async waitUntilReady() {
+            await queue.waitUntilReady();
+          },
+          async upsertJobScheduler(...args) {
+            await queue.upsertJobScheduler(...args);
+          },
+        };
+      },
       createWorker: (name, processor, options) => new Worker(name, processor, options),
     },
     onError: capturePluginError,
@@ -59,20 +72,16 @@ export default definePlugin((nitroApp) => {
 
   // oxlint-disable-next-line typescript/strict-void-return -- Nitro awaits close hook promises.
   nitroApp.hooks.hook("close", async () => {
-    async function close(): Promise<void> {
-      try {
-        await runtime.close();
-      } catch (error) {
-        capturePluginError(error instanceof Error ? error : new Error("queue shutdown failed"));
-      }
-
-      try {
-        await server.close();
-      } catch (error) {
-        capturePluginError(error instanceof Error ? error : new Error("server shutdown failed"));
-      }
+    try {
+      await runtime.close();
+    } catch (error) {
+      capturePluginError(error instanceof Error ? error : new Error("queue shutdown failed"));
     }
 
-    await close();
+    try {
+      await server.close();
+    } catch (error) {
+      capturePluginError(error instanceof Error ? error : new Error("server shutdown failed"));
+    }
   });
 });

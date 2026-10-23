@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { test, vi } from "vitest";
 import {
   createUserTimeline,
   getTimelinePreviewPaths,
@@ -72,7 +72,7 @@ test("returns no timeline when the user has no stories", () => {
   assert.equal(result, null);
 });
 
-test("assembles timeline media, captions, cached vision and local paths", (context) => {
+test("assembles timeline media, captions, cached vision and local paths", () => {
   const image = timelineStory("image", 1_767_225_600);
   image.story.accessibility_caption = "Instagram caption";
   image.locations = ["Paris"];
@@ -83,10 +83,10 @@ test("assembles timeline media, captions, cached vision and local paths", (conte
   unknown.story.media_type = 99;
   const stories = [image, video, unknown];
   const vision = { text: "visible text", visual: "a street" };
-  context.mock.method(appleVisionRepository, "findByMediaPk", (pk: string) =>
+  vi.spyOn(appleVisionRepository, "findByMediaPk").mockImplementation((pk: string) =>
     pk === "image" ? "Apple caption" : null,
   );
-  context.mock.method(visionRepository, "findByMediaPk", (pk: string) =>
+  vi.spyOn(visionRepository, "findByMediaPk").mockImplementation((pk: string) =>
     pk === "video" ? { model: "test-model", prompt_hash: "test-hash", result: vision } : null,
   );
 
@@ -130,11 +130,11 @@ test("assembles timeline media, captions, cached vision and local paths", (conte
   );
 });
 
-test("omits avatar and analysis when the story has no owner or cached details", (context) => {
+test("omits avatar and analysis when the story has no owner or cached details", () => {
   const story = timelineStory("no-owner", 1_767_225_600);
   story.owner_pk = null;
-  context.mock.method(appleVisionRepository, "findByMediaPk", () => null);
-  context.mock.method(visionRepository, "findByMediaPk", () => null);
+  vi.spyOn(appleVisionRepository, "findByMediaPk").mockImplementation(() => null);
+  vi.spyOn(visionRepository, "findByMediaPk").mockImplementation(() => null);
 
   const timeline = createUserTimeline("timeline-user", { listByUsername: () => [story] });
 

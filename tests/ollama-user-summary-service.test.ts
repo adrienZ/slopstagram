@@ -1,14 +1,9 @@
 import assert from "node:assert/strict";
-import { describe, test } from "node:test";
+import process from "node:process";
+import { describe, test, vi } from "vitest";
+import { setTimeout as delay } from "node:timers/promises";
 import { z } from "zod";
-import {
-  USER_SUMMARY_MODEL,
-  USER_SUMMARY_PROMPT,
-  USER_SUMMARY_UNAVAILABLE,
-  getUserSummaryModel,
-  getUserSummaryPromptHash,
-} from "../sdk/lib/user-summary-core-service.ts";
-import { resolveUserSummariesForReport } from "../sdk/lib/user-summary-resolver-service.ts";
+import { readUserSummaries, resolveUserSummariesForReport } from "../sdk/user-summary.ts";
 import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
 import { createMockLogger, createSummaryReport } from "./mock-helpers.ts";
 import { createUserSummaryRepositoryAdapter } from "./repository-adapters.ts";
@@ -38,19 +33,36 @@ function requestBodyToString(body: BodyInit | null | undefined): string {
 }
 
 describe("resolveUserSummariesForReport", () => {
-  test("selects an OS-compatible summary model", () => {
-    assert.equal(getUserSummaryModel("darwin", "arm64"), "qwen3.5:0.8b-mlx");
-    assert.equal(getUserSummaryModel("darwin", "x64"), "qwen3.5:0.8b");
-    assert.equal(getUserSummaryModel("linux", "x64"), "qwen3.5:0.8b");
-  });
+  for (const [platform, architecture, expectedModel] of [
+    ["darwin", "arm64", "qwen3.5:0.8b-mlx"],
+    ["darwin", "x64", "qwen3.5:0.8b"],
+    ["linux", "x64", "qwen3.5:0.8b"],
+    ["win32", "x64", "qwen3.5:0.8b"],
+    ["win32", "arm64", "qwen3.5:0.8b"],
+  ] as const) {
+    test(`generates and reuses summaries with ${expectedModel} on ${platform}/${architecture}`, async () => {
+      const report = createSummaryReport();
+      const repository = createUserSummaryRepositoryAdapter();
+      const logger = createMockLogger();
+      vi.spyOn(process, "platform", "get").mockImplementation(() => platform);
+      vi.spyOn(process, "arch", "get").mockImplementation(() => architecture);
 
-  test("never selects the MLX summary model on Windows", () => {
-    for (const architecture of ["x64", "arm64"]) {
-      const model = getUserSummaryModel("win32", architecture);
+      const summaries = await resolveUserSummariesForReport(report, {
+        logger,
+        repository,
+        fetchOllama: async (_url, init) => {
+          const body = UserSummaryRequestSchema.parse(JSON.parse(requestBodyToString(init?.body)));
+          assert.equal(body.model, expectedModel);
+          return new globalThis.Response(
+            JSON.stringify({ response: JSON.stringify({ summary: "Platform summary." }) }),
+          );
+        },
+      });
 
-      assert.doesNotMatch(model, /mlx/u);
-    }
-  });
+      assert.equal(summaries.get("summaryuser"), "Platform summary.");
+      assert.deepEqual(readUserSummaries(report.output.users, { repository }), summaries);
+    });
+  }
 
   test("reuses successful user summaries from the repository", async () => {
     const repository = createUserSummaryRepositoryAdapter();
@@ -135,13 +147,13 @@ describe("resolveUserSummariesForReport", () => {
       repository,
     });
 
-    assert.equal(USER_SUMMARY_MODEL, getUserSummaryModel());
     assert.equal(first.get(userKey), "default model summary");
     assert.equal(second.get(userKey), "custom model summary");
     assert.equal(runCount, 2);
   });
 
-  test("runs the default Ollama client with qwen3.5", async () => {
+  test("runs the default Ollama client with qwen3.5 and OLLAMA_HOST", async () => {
+    vi.stubEnv("OLLAMA_HOST", "http://summary.example:11434/api/generate");
     const repository = createUserSummaryRepositoryAdapter();
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
@@ -149,10 +161,9 @@ describe("resolveUserSummariesForReport", () => {
     const summaries = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
       fetchOllama: async (url, init) => {
-        assert.match(z.string().parse(url), /\/api\/generate$/u);
+        assert.equal(url, "http://summary.example:11434/api/generate");
         const body = UserSummaryRequestSchema.parse(JSON.parse(requestBodyToString(init?.body)));
 
-        assert.equal(body.model, getUserSummaryModel());
         assert.equal(body.stream, false);
         assert.deepEqual(body.options, {
           num_predict: 300,
@@ -179,6 +190,28 @@ describe("resolveUserSummariesForReport", () => {
     assert.equal(summaries.get(userKey), "sdk summary");
   });
 
+  test("honors a custom timeout for a blocked summary request", { timeout: 1000 }, async () => {
+    const repository = createUserSummaryRepositoryAdapter();
+    let requestSignal: AbortSignal | null | undefined;
+    const result = resolveUserSummariesForReport(createSummaryReport(), {
+      logger: createMockLogger(),
+      repository,
+      timeoutMs: 5,
+      fetchOllama: async (_url, init) => {
+        requestSignal = init?.signal;
+        assert.ok(requestSignal);
+        await delay(10_000, undefined, { signal: requestSignal });
+        return globalThis.Response.json({ response: "too late" });
+      },
+    });
+
+    const summaries = await result;
+    assert.equal(summaries.get("summaryuser"), "résumé indisponible");
+    assert.ok(requestSignal);
+    assert.equal(requestSignal.aborted, true);
+    assert.equal(repository.entries.size, 0);
+  });
+
   test("returns fallback text when user summary fails", async () => {
     const repository = createUserSummaryRepositoryAdapter();
     const report = createSummaryReport();
@@ -192,7 +225,22 @@ describe("resolveUserSummariesForReport", () => {
       repository,
     });
 
-    assert.equal(summaries.get(userKey), USER_SUMMARY_UNAVAILABLE);
+    assert.equal(summaries.get(userKey), "résumé indisponible");
+  });
+
+  test("uses report fallback and does not store a missing Ollama response", async () => {
+    const repository = createUserSummaryRepositoryAdapter();
+    const summaries = await resolveUserSummariesForReport(createSummaryReport(), {
+      logger: createMockLogger(),
+      fetchOllama: async () => globalThis.Response.json({ done: true }),
+      repository,
+    });
+
+    assert.equal(
+      summaries.get("summaryuser"),
+      "Summary User a partagé 1 story. Éléments visibles: location:Paris; Paris Market, 10 Rue Food, Paris.",
+    );
+    assert.equal(repository.entries.size, 0);
   });
 
   test("uses report fallback and does not store empty user summary responses", async () => {
@@ -210,35 +258,5 @@ describe("resolveUserSummariesForReport", () => {
       "Summary User a partagé 1 story. Éléments visibles: location:Paris; Paris Market, 10 Rue Food, Paris.",
     );
     assert.equal(repository.entries.size, 0);
-  });
-
-  test("ignores stored unavailable summaries and regenerates them", async () => {
-    const repository = createUserSummaryRepositoryAdapter();
-    const sourceHash = "unavailable-source-hash";
-    const report = createSummaryReport();
-    const userKey = getReportUserKey(report.output.users[0]);
-    let runCount = 0;
-
-    repository.entries.set(sourceHash, {
-      prompt_hash: getUserSummaryPromptHash(USER_SUMMARY_PROMPT),
-      result: USER_SUMMARY_UNAVAILABLE,
-      source_hash: sourceHash,
-      user_key: userKey,
-    });
-
-    const summaries = await resolveUserSummariesForReport(report, {
-      logger: createMockLogger(),
-      runUserSummary: async () => {
-        runCount += 1;
-        return JSON.stringify({ summary: "regenerated summary" });
-      },
-      repository: {
-        findBySourceHash: () => repository.entries.get(sourceHash) ?? null,
-        save: repository.save,
-      },
-    });
-
-    assert.equal(summaries.get(userKey), "regenerated summary");
-    assert.equal(runCount, 1);
   });
 });

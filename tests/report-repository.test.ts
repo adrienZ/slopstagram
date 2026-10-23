@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, test } from "node:test";
+import { describe, test } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { ReportRepository } from "../sdk/repositories/report-repository.ts";
@@ -82,7 +82,7 @@ describe("ReportRepository", () => {
   test("reads the current story caption instead of a conflicting report caption", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
-    context.after(() => {
+    context.onTestFinished(() => {
       database.$client.close();
     });
     const repository = new ReportRepository(database);
@@ -106,7 +106,7 @@ describe("ReportRepository", () => {
   test("stores report snapshots and lists their keys in creation order", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
-    context.after(() => {
+    context.onTestFinished(() => {
       database.$client.close();
     });
     const repository = new ReportRepository(database);
@@ -126,7 +126,7 @@ describe("ReportRepository", () => {
   test("links a story to each report while keeping report metadata as columns", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
-    context.after(() => {
+    context.onTestFinished(() => {
       database.$client.close();
     });
     const repository = new ReportRepository(database);
@@ -164,7 +164,7 @@ describe("ReportRepository", () => {
     test(`uses N/A for an absent story caption (${JSON.stringify(caption)}) without falling back to the report`, async (context) => {
       const database = createDrizzle(":memory:");
       migrateDatabase(database);
-      context.after(() => {
+      context.onTestFinished(() => {
         database.$client.close();
       });
       const repository = new ReportRepository(database);
@@ -189,7 +189,7 @@ describe("ReportRepository", () => {
   test("keeps a failed report story when no associated story was saved", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
-    context.after(() => {
+    context.onTestFinished(() => {
       database.$client.close();
     });
     const repository = new ReportRepository(database);

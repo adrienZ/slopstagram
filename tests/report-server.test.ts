@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { test } from "node:test";
+import { test } from "vitest";
 import { URL } from "node:url";
 import { H3 } from "nitro/h3";
 import { StoriesManifestReportSchema } from "../sdk/lib/story-schemas.ts";

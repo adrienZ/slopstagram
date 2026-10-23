@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, test } from "node:test";
+import { describe, test } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
@@ -9,7 +9,7 @@ describe("StoryRepository", () => {
   test("lists only stories published in the last 24 hours without deleting the archive", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
-    context.after(() => {
+    context.onTestFinished(() => {
       database.$client.close();
     });
     const repository = new StoryRepository(database);
@@ -44,7 +44,7 @@ describe("StoryRepository", () => {
   test("stores story details in relational tables", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
-    context.after(() => {
+    context.onTestFinished(() => {
       database.$client.close();
     });
     const repository = new StoryRepository(database);
@@ -122,7 +122,7 @@ describe("StoryRepository", () => {
   test("lists a user's stories by their Instagram publication date", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
-    context.after(() => {
+    context.onTestFinished(() => {
       database.$client.close();
     });
     const repository = new StoryRepository(database);

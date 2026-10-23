@@ -3,8 +3,8 @@ import { writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
-import { Ollama } from "ollama";
 import { z } from "zod";
+import { getOllamaClient } from "../sdk/ollama.ts";
 import {
   VISION_MODEL,
   // VISION_PROMPT,
@@ -75,11 +75,11 @@ function writeOutput(value: string): void {
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const imageUrl = DEFAULT_IMAGE_URL;
-  const host = getArgValue(args, "--host") ?? "http://127.0.0.1:11434";
+  const host = getArgValue(args, "--host");
   const model = getArgValue(args, "--model") ?? VISION_MODEL;
   const prompt = getArgValue(args, "--prompt") ?? VISION_PROMPT;
   const imagePath = await downloadImage(imageUrl);
-  const client = new Ollama({ host });
+  const client = getOllamaClient({ host });
 
   writeOutput(JSON.stringify({ imagePath, model, prompt }, null, 2));
 
@@ -96,11 +96,12 @@ async function main(): Promise<void> {
     prompt,
     stream: false,
   });
+  const responseText = response.response ?? "";
 
   writeOutput("\nraw response:");
-  writeOutput(response.response);
+  writeOutput(responseText);
   writeOutput("\nparsed response:");
-  const parsedResponse = parseResponse(response.response);
+  const parsedResponse = parseResponse(responseText);
   writeOutput(JSON.stringify(parsedResponse, null, 2));
 
   writeOutput("\nvalidation:");

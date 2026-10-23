@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 import assert from "node:assert/strict";
-import { describe, test } from "node:test";
+import { describe, test, vi } from "vitest";
 import { z } from "zod";
 import { VISION_SERVER_NOT_RUNNING } from "../sdk/lib/vision-analysis-service.ts";
 import { resolveVisionForReport } from "../sdk/lib/vision-report-service.ts";
@@ -70,12 +70,14 @@ describe("resolveVisionForReport", () => {
     });
   }
 
-  test("reuses successful vision responses from the repository", async () => {
+  test("uses OLLAMA_HOST and reuses successful vision responses from the repository", async () => {
+    vi.stubEnv("OLLAMA_HOST", "http://vision.example:11434/api/generate/");
     const repository = createVisionRepositoryAdapter();
     let fetchCount = 0;
 
     await withReportImage(async (cacheDirectory, cachedImages) => {
-      async function fetchVision(_url: string | URL | Request, init?: RequestInit) {
+      async function fetchVision(url: string | URL | Request, init?: RequestInit) {
+        assert.equal(url, "http://vision.example:11434/api/generate");
         fetchCount += 1;
         const body = VisionRequestBodySchema.parse(JSON.parse(requestBodyToString(init?.body)));
         const { images } = body;
@@ -276,6 +278,21 @@ describe("resolveVisionForReport", () => {
         text: "Oui\nÉvêque de nier",
         visual: "A stylized fantasy illustration on an old map background.",
       });
+    });
+  });
+
+  test("treats a missing Ollama response as an empty vision result", async () => {
+    const repository = createVisionRepositoryAdapter();
+
+    await withReportImage(async (cacheDirectory, cachedImages) => {
+      const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
+        fetchVision: async () => globalThis.Response.json({ done: true }),
+        logger: createMockLogger(),
+        cacheDirectory,
+        repository,
+      });
+
+      assert.deepEqual(result.get(previewSource), { text: "", visual: "" });
     });
   });
 

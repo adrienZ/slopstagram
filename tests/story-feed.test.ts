@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test, type TestContext } from "node:test";
+import { test, type TestContext } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
@@ -9,13 +9,13 @@ import { AppleVisionRepository } from "../sdk/repositories/apple-vision-reposito
 import { VisionRepository } from "../sdk/repositories/vision-repository.ts";
 import { createStoryFeed } from "../sdk/story-feed.ts";
 import { createReportViewModel } from "../server/report-view-model.ts";
-import { resolveUserSummariesForReport } from "../sdk/lib/user-summary-resolver-service.ts";
+import { resolveUserSummariesForReport } from "../sdk/user-summary.ts";
 import { createLogger } from "../sdk/lib/logging-service.ts";
 
 async function createFixture(context: TestContext) {
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
-  context.after(() => {
+  context.onTestFinished(() => {
     database.$client.close();
   });
   const stories = new StoryRepository(database);

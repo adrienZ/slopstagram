@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test, type TestContext } from "node:test";
+import { test, type TestContext } from "vitest";
 import { createConsola } from "consola";
 import { createReport } from "../sdk/report.ts";
 import { createDrizzle } from "../sdk/database/client.ts";
@@ -24,7 +24,7 @@ function createMockLogger(): Logger {
 function createFixture(context: TestContext) {
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
-  context.after(() => {
+  context.onTestFinished(() => {
     database.$client.close();
   });
   const runs = new FetchRunRepository(database);
