@@ -1,3 +1,7 @@
+## General rules
+
+Even if I talk to you in french always use english when writing something on Github.
+
 ## Bunqueue
 
 This project runs on Node.js and uses [bunqueue](https://bunqueue.dev) in server

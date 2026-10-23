@@ -2,7 +2,6 @@ import { expect, test, vi } from "vitest";
 import { act, screen, within } from "@testing-library/react";
 import { ThemeToggle } from "../../server/components/theme-toggle.tsx";
 import { renderContent } from "./render.tsx";
-import { matchMedia } from "./browser.ts";
 
 const storageKey = "slopstagram-theme";
 
@@ -25,13 +24,17 @@ test("theme choices persist, apply document colors, and update the trigger icon"
   expect(trigger.querySelector("svg")).toHaveClass("lucide-sun");
   await user.click(trigger);
   await user.click(screen.getByRole("menuitemradio", { name: "Système" }));
+  const preference = globalThis.matchMedia("(prefers-color-scheme: dark)");
+  const matches = vi.spyOn(preference, "matches", "get");
   act(() => {
-    matchMedia("(prefers-color-scheme: dark)").setMatches(true);
+    matches.mockReturnValue(true);
+    preference.dispatchEvent(new globalThis.Event("change"));
   });
   expect(globalThis.document.documentElement).toHaveClass("dark");
   expect(trigger.querySelector("svg")).toHaveClass("lucide-monitor");
   act(() => {
-    matchMedia("(prefers-color-scheme: dark)").setMatches(false);
+    matches.mockReturnValue(false);
+    preference.dispatchEvent(new globalThis.Event("change"));
   });
   expect(globalThis.document.documentElement).toHaveClass("light");
 });
