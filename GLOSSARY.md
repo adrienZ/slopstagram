@@ -23,6 +23,22 @@ The category of a sticker, such as mention, music, hashtag, link, or location.
 The readable content of a sticker, without an added kind prefix. Mentions retain
 their @, hashtags retain their #, and links retain their full URL.
 
+**Tagged place**:
+A place referenced by a location sticker. Multiple sticker occurrences can refer
+to the same tagged place.
+
+**Music asset**:
+An Instagram audio item referenced by a music sticker. Multiple sticker
+occurrences can refer to the same music asset.
+
+**Spotify match**:
+An association between a music asset referenced on Instagram and a track in
+Spotify's catalog.
+
+**Partial sticker metadata**:
+An observation that lacks information required to map a tagged place or identify
+a music asset for Spotify matching.
+
 **Story data**:
 The latest known information about a story, shared across reports.
 
