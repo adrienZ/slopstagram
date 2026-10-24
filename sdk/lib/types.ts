@@ -1,4 +1,5 @@
 import type { Storage } from "unstorage";
+import type { StorySticker } from "../entities/story.ts";
 import type { JsonValue } from "./json-value.ts";
 
 export const STORY_MEDIA_TYPES = {
@@ -59,7 +60,7 @@ type StoryVideoVersion = StoryVersion & {
 
 export interface StoryAnnotations {
   locations: Array<string>;
-  stickers: Array<{ kind: string; label: string; source?: string }>;
+  stickers: Array<StorySticker>;
   sources?: Array<string>;
 }
 

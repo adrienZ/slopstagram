@@ -1,4 +1,13 @@
-import { integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { randomUUID } from "node:crypto";
+import { index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
+
+export interface StorySticker {
+  occurrenceId?: string;
+  providerOccurrenceId?: string;
+  kind: string;
+  label: string;
+  source?: string;
+}
 
 export const stories = sqliteTable("stories", {
   accessibilityCaption: text(),
@@ -43,6 +52,8 @@ export const storyVideoVersions = sqliteTable(
 export const storyStickers = sqliteTable(
   "story_stickers",
   {
+    occurrenceId: text().primaryKey().notNull().$defaultFn(randomUUID),
+    providerOccurrenceId: text(),
     kind: text().notNull(),
     label: text().notNull(),
     mediaPk: text()
@@ -51,7 +62,7 @@ export const storyStickers = sqliteTable(
     sortOrder: integer().notNull(),
     source: text().notNull().default("unknown"),
   },
-  (table) => [primaryKey({ columns: [table.mediaPk, table.sortOrder] })],
+  (table) => [index("story_stickers_media_order").on(table.mediaPk, table.sortOrder)],
 );
 
 export const storyStickerSources = sqliteTable(
