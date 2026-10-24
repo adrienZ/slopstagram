@@ -35,7 +35,13 @@ export const StoryItemSchema = z
       .object({
         locations: z.array(z.string()),
         stickers: z.array(
-          z.object({ kind: z.string(), label: z.string(), source: z.string().optional() }),
+          z.object({
+            occurrenceId: z.string().min(1).optional(),
+            providerOccurrenceId: z.string().min(1).optional(),
+            kind: z.string(),
+            label: z.string(),
+            source: z.string().optional(),
+          }),
         ),
         sources: z.array(z.string()).optional(),
       })
