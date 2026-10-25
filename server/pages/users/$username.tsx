@@ -10,6 +10,7 @@ import { Lightbox } from "../../components/lightbox.tsx";
 import { StoryLayout } from "../../components/story-layout.tsx";
 import { useTimelineCalendar } from "../../hooks/use-timeline-calendar.ts";
 import { groupTimelineStickers } from "../../timeline-stickers.ts";
+import { groupTimelineLocations } from "../../timeline-locations.ts";
 import { TimelineStickers } from "../../components/timeline-stickers.tsx";
 import { TimelineGallery } from "../../components/timeline-gallery.tsx";
 import type { SidebarUser } from "../../sidebar-users.ts";
@@ -79,6 +80,7 @@ export function TimelineContent({
       <TimelineHeader timeline={timeline} userName={formatUserName(timeline.timelineUser)} />
       <TimelineStickers
         groups={groupTimelineStickers(timeline.stories, stickerKinds)}
+        locations={groupTimelineLocations(timeline.stories)}
         storyByMediaPk={storyByMediaPk}
         usernames={sidebarUsers.map((user) => user.username)}
       />

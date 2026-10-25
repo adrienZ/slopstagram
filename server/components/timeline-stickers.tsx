@@ -41,6 +41,8 @@ import {
   TableCell,
 } from "../shadcn/ui/table.tsx";
 import { StoryCard } from "./story-card.tsx";
+import { LocationHistory } from "./location-history.tsx";
+import type { TimelineLocations } from "../timeline-locations.ts";
 
 const STICKER_PAGE_SIZE = 3;
 
@@ -155,15 +157,20 @@ function StickerTable({
 
 function StickerKindCard({
   group,
+  locations,
   storyByMediaPk,
   usernames,
 }: {
   group: StickerKindGroup;
+  locations: TimelineLocations;
   storyByMediaPk: Map<string, StoryCardViewModel>;
   usernames: Array<string>;
 }) {
   const [page, setPage] = useState(1);
   const hasStories = group.stories.length > 0;
+  const canExpand =
+    hasStories ||
+    (group.kind === "location" && (locations.places.length > 0 || locations.unpositionedCount > 0));
   const pageCount = Math.max(1, Math.ceil(group.stories.length / STICKER_PAGE_SIZE));
   const occurrences = group.stories.reduce((count, story) => count + story.labels.length, 0);
   return (
@@ -184,7 +191,7 @@ function StickerKindCard({
                 ? `${occurrences} stickers · ${group.stories.length} stories`
                 : "Aucun sticker"}
             </CardDescription>
-            {hasStories && (
+            {canExpand && (
               <CardAction className="tw:flex tw:gap-0.5">
                 <DialogTrigger asChild>
                   <Button
@@ -195,15 +202,17 @@ function StickerKindCard({
                     <ExpandIcon />
                   </Button>
                 </DialogTrigger>
-                <CollapsibleTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label={`Afficher ou masquer : ${group.kind}`}
-                  >
-                    <ChevronDownIcon className="tw:transition-transform tw:group-data-[state=closed]/kind:-rotate-90" />
-                  </Button>
-                </CollapsibleTrigger>
+                {hasStories && (
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={`Afficher ou masquer : ${group.kind}`}
+                    >
+                      <ChevronDownIcon className="tw:transition-transform tw:group-data-[state=closed]/kind:-rotate-90" />
+                    </Button>
+                  </CollapsibleTrigger>
+                )}
               </CardAction>
             )}
           </CardHeader>
@@ -264,7 +273,7 @@ function StickerKindCard({
           </CollapsibleContent>
         </Card>
       </Collapsible>
-      {hasStories && (
+      {canExpand && (
         <DialogContent className="tw:max-h-[90svh] tw:overflow-y-auto tw:sm:max-w-5xl">
           <DialogHeader>
             <DialogTitle>Stickers · {group.kind}</DialogTitle>
@@ -272,6 +281,9 @@ function StickerKindCard({
               {occurrences} stickers dans {group.stories.length} stories · historique complet
             </DialogDescription>
           </DialogHeader>
+          {group.kind === "location" && (
+            <LocationHistory locations={locations} storyByMediaPk={storyByMediaPk} />
+          )}
           <StickerTable
             kind={group.kind}
             stories={group.stories}
@@ -287,10 +299,12 @@ function StickerKindCard({
 
 export function TimelineStickers({
   groups,
+  locations,
   storyByMediaPk,
   usernames,
 }: {
   groups: Array<StickerKindGroup>;
+  locations: TimelineLocations;
   storyByMediaPk: Map<string, StoryCardViewModel>;
   usernames: Array<string>;
 }) {
@@ -302,6 +316,7 @@ export function TimelineStickers({
           <StickerKindCard
             key={group.kind}
             group={group}
+            locations={locations}
             storyByMediaPk={storyByMediaPk}
             usernames={usernames}
           />
