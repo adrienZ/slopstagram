@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, asc, desc, eq, gt, gte, lt, lte, notInArray } from "drizzle-orm";
 import { useDrizzle, type DrizzleDatabase } from "../database/client.ts";
 import { instagramUsers } from "../entities/instagram-user.ts";
+import { enrichStoryLocations, readLocationObservations } from "./location-metadata-repository.ts";
 import {
   stories,
   type StoryRow,
@@ -81,9 +82,9 @@ function toStoryEntry(story: StoryItem, owner?: StoryOwner): typeof stories.$inf
   };
 }
 
-async function replaceStoryVersions(database: DrizzleDatabase, story: StoryItem): Promise<void> {
-  await database.delete(storyImageVersions).where(eq(storyImageVersions.mediaPk, story.pk));
-  await database.delete(storyVideoVersions).where(eq(storyVideoVersions.mediaPk, story.pk));
+function replaceStoryVersions(database: AnnotationDatabase, story: StoryItem): void {
+  database.delete(storyImageVersions).where(eq(storyImageVersions.mediaPk, story.pk)).run();
+  database.delete(storyVideoVersions).where(eq(storyVideoVersions.mediaPk, story.pk)).run();
 
   const imageVersionEntries = (story.image_versions2?.candidates ?? []).map(
     (version, sortOrder) => ({
@@ -95,7 +96,7 @@ async function replaceStoryVersions(database: DrizzleDatabase, story: StoryItem)
     }),
   );
   if (imageVersionEntries.length > 0) {
-    await database.insert(storyImageVersions).values(imageVersionEntries);
+    database.insert(storyImageVersions).values(imageVersionEntries).run();
   }
   const videoVersionEntries = (story.video_versions ?? []).map((version, sortOrder) => ({
     height: version.height ?? null,
@@ -106,11 +107,11 @@ async function replaceStoryVersions(database: DrizzleDatabase, story: StoryItem)
     width: version.width ?? null,
   }));
   if (videoVersionEntries.length > 0) {
-    await database.insert(storyVideoVersions).values(videoVersionEntries);
+    database.insert(storyVideoVersions).values(videoVersionEntries).run();
   }
 }
 
-type AnnotationDatabase = Pick<DrizzleDatabase, "select" | "insert" | "delete">;
+type AnnotationDatabase = Pick<DrizzleDatabase, "select" | "insert" | "update" | "delete">;
 
 function mergeAnnotationUpdates(
   previous: StoryAnnotations,
@@ -122,7 +123,9 @@ function mergeAnnotationUpdates(
       `Malformed story annotation source: media_pk=${story.pk} source=${source}; preserving saved contribution`,
     );
   });
-  const replaced = new Set<string>(updates.map((update) => update.source));
+  const replaced = new Set<string>(
+    updates.filter((update) => update.preservePrevious !== true).map((update) => update.source),
+  );
   const order: Array<string> = annotationSources.map(({ source }) => source);
   const completedKinds = new Set<string>(
     annotationSources
@@ -138,7 +141,18 @@ function mergeAnnotationUpdates(
     ...previous.stickers.filter(
       (sticker) =>
         !replaced.has(sticker.source ?? "unknown") &&
-        !((sticker.source ?? "unknown") === "unknown" && completedKinds.has(sticker.kind)),
+        !((sticker.source ?? "unknown") === "unknown" && completedKinds.has(sticker.kind)) &&
+        !updates.some(
+          (update) =>
+            update.preservePrevious === true &&
+            update.source === sticker.source &&
+            sticker.providerOccurrenceId !== undefined &&
+            update.stickers.some(
+              (incoming) =>
+                incoming.providerOccurrenceId === sticker.providerOccurrenceId &&
+                incoming.kind === sticker.kind,
+            ),
+        ),
     ),
     ...updates.flatMap((update) => update.stickers),
   ].toSorted(
@@ -150,9 +164,9 @@ function mergeAnnotationUpdates(
       .filter((sticker) => sticker.kind === "location")
       .map((sticker) => sticker.label),
     stickers,
-    sources: [...new Set([...(previous.sources ?? []), ...replaced])].toSorted((left, right) =>
-      left.localeCompare(right),
-    ),
+    sources: [
+      ...new Set([...(previous.sources ?? []), ...updates.map(({ source }) => source)]),
+    ].toSorted((left, right) => left.localeCompare(right)),
   };
 }
 
@@ -182,7 +196,12 @@ function readStoryAnnotations(database: AnnotationDatabase, mediaPk: string): St
   const locations = stickers
     .filter((sticker) => sticker.kind === "location")
     .map((sticker) => sticker.label);
-  return { locations, stickers, sources };
+  const locationObservations = readLocationObservations(database, mediaPk);
+  const annotations: StoryAnnotations = { locations, stickers, sources };
+  if (locationObservations.length > 0) {
+    annotations.locationObservations = locationObservations;
+  }
+  return annotations;
 }
 
 function replaceStoryAnnotations(
@@ -272,6 +291,7 @@ function replaceStoryAnnotations(
       .values(sources.map((source) => ({ source, mediaPk: story.pk })))
       .run();
   }
+  enrichStoryLocations(database, story, readStoryAnnotations(database, story.pk));
 }
 
 function readStoryItem(database: DrizzleDatabase, story: StoryRow): StoryItem {
@@ -349,16 +369,22 @@ export class StoryRepository {
   }
 
   async save(value: StoryItem, owner?: StoryOwner): Promise<void> {
-    const story = StoryItemSchema.parse(value);
-    const entry = toStoryEntry(story, owner);
+    await Promise.try(() => {
+      const story = StoryItemSchema.parse(value);
+      const entry = toStoryEntry(story, owner);
 
-    await this.database.insert(stories).values(entry).onConflictDoUpdate({
-      set: entry,
-      target: stories.mediaPk,
-    });
-    await replaceStoryVersions(this.database, story);
-    this.database.transaction((transaction) => {
-      replaceStoryAnnotations(transaction, story, this.logger);
+      this.database.transaction((transaction) => {
+        transaction
+          .insert(stories)
+          .values(entry)
+          .onConflictDoUpdate({
+            set: entry,
+            target: stories.mediaPk,
+          })
+          .run();
+        replaceStoryVersions(transaction, story);
+        replaceStoryAnnotations(transaction, story, this.logger);
+      });
     });
   }
 

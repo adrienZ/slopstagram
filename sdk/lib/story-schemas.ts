@@ -13,6 +13,25 @@ export const StoryVersionSchema = z.object({
 // based so identifiers remain suitable for map keys and database columns.
 const InstagramIdentifierSchema = z.union([z.string(), z.number()]).transform(String);
 
+const LocationFieldsSchema = z.object({
+  id: z.string(),
+  instagramPlaceId: z.string().nullable(),
+  name: z.string().nullable(),
+  address: z.string().nullable(),
+  latitude: z.number().min(-90).max(90).nullable(),
+  longitude: z.number().min(-180).max(180).nullable(),
+  facebookPlacesId: z.string().nullable(),
+  externalSource: z.string().nullable(),
+});
+const LocationMetadataSchema = z.discriminatedUnion("status", [
+  LocationFieldsSchema.extend({ status: z.literal("partial") }),
+  LocationFieldsSchema.extend({
+    status: z.literal("usable"),
+    latitude: z.number().min(-90).max(90),
+    longitude: z.number().min(-180).max(180),
+  }),
+]);
+
 export const StoryTrayEntrySchema = z.object({
   id: InstagramIdentifierSchema,
   full_name: z.string().optional(),
@@ -33,6 +52,17 @@ export const StoryItemSchema = z
     accessibility_caption: z.string().nullable().optional(),
     annotations: z
       .object({
+        locationObservations: z
+          .array(
+            z.object({
+              id: z.string(),
+              source: z.string(),
+              occurrenceId: z.string().nullable(),
+              providerOccurrenceId: z.string().nullable(),
+              metadata: LocationMetadataSchema,
+            }),
+          )
+          .optional(),
         locations: z.array(z.string()),
         stickers: z.array(
           z.object({

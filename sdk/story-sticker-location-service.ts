@@ -2,6 +2,10 @@ import { URL } from "node:url";
 import { z } from "zod";
 import { isJsonObject, type JsonObject, type JsonValue } from "./lib/json-value.ts";
 import type { StoryAnnotations, StoryItem } from "./lib/types.ts";
+import {
+  getLocationObservation,
+  getLocationSourceUpdates,
+} from "./location-observation-service.ts";
 
 function getNestedRecord(value: JsonValue, key: string): JsonObject | null {
   if (!isJsonObject(value)) {
@@ -222,7 +226,9 @@ function extractSourceSticker(
     const location = getLocationFromValue(value);
     if (
       (Object.hasOwn(data, "ig_mention") && mention === null) ||
-      (Object.hasOwn(data, "location") && location === null)
+      (Object.hasOwn(data, "location") &&
+        location === null &&
+        getLocationObservation(value) === null)
     ) {
       return null;
     }
@@ -242,6 +248,9 @@ function extractSourceSticker(
   if (source === "story_locations") {
     const location = getLocationFromValue(value);
     label = location ? [location.name, location.address].filter(Boolean).join(", ") : null;
+    if (label === null && getLocationObservation(value) !== null) {
+      return [];
+    }
   } else if (source === "story_music_stickers") {
     label = getMusicStickerLabel(value);
   } else if (source === "story_hashtags") {
@@ -252,11 +261,17 @@ function extractSourceSticker(
   return label === null ? null : [{ kind, label }];
 }
 
+interface AnnotationUpdate {
+  source: string;
+  stickers: Array<Sticker>;
+  preservePrevious?: boolean;
+}
+
 export function getStoryAnnotationUpdates(
   story: StoryItem,
   reportMalformed?: (source: string) => void,
-): Array<{ source: string; stickers: Array<Sticker> }> {
-  const updates: Array<{ source: string; stickers: Array<Sticker> }> = [];
+): Array<AnnotationUpdate> {
+  const updates: Array<AnnotationUpdate> = [];
   for (const { source, kinds } of annotationSources) {
     const value = story[source];
     if (value === undefined || value === null) {
@@ -288,6 +303,11 @@ export function getStoryAnnotationUpdates(
     }
     updates.push({
       source,
+      // An unlabelled place does not make a source a complete replacement of
+      // its previous display contribution. Keep known stickers alongside it.
+      preservePrevious: getLocationSourceUpdates(story)
+        .find((update) => update.source === source)
+        ?.observations.some(({ fields }) => fields.name === null && fields.address === null),
       stickers: entries.flatMap((entry) => entry ?? []).map((sticker) => ({ ...sticker, source })),
     });
   }

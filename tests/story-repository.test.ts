@@ -6,12 +6,13 @@ import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repo
 import type { StoryItem } from "../sdk/lib/types.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
 
-function withoutOccurrenceIds(story: StoryItem): StoryItem {
+function withLabelOnlyAnnotations(story: StoryItem): StoryItem {
   assert.ok(story.annotations);
+  const { locationObservations: _metadata, ...annotations } = story.annotations;
   return {
     ...story,
     annotations: {
-      ...story.annotations,
+      ...annotations,
       stickers: story.annotations.stickers.map(({ occurrenceId: _id, ...sticker }) => sticker),
     },
   };
@@ -80,7 +81,7 @@ describe("StoryRepository", () => {
 
     const stored = repository.findByMediaPk("story-1");
     assert.ok(stored);
-    assert.deepEqual(withoutOccurrenceIds(stored), {
+    assert.deepEqual(withLabelOnlyAnnotations(stored), {
       accessibility_caption: "Updated",
       annotations: {
         locations: ["Paris"],
@@ -182,7 +183,7 @@ describe("StoryRepository", () => {
     assert.deepEqual(
       repository.listByUsername("timeline-user").map((entry) => ({
         ...entry,
-        story: withoutOccurrenceIds(entry.story),
+        story: withLabelOnlyAnnotations(entry.story),
       })),
       [
         {
