@@ -1,4 +1,5 @@
-import { and, asc, desc, eq, gt, gte, lt, lte } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
+import { and, asc, desc, eq, gt, gte, lt, lte, notInArray } from "drizzle-orm";
 import { useDrizzle, type DrizzleDatabase } from "../database/client.ts";
 import { instagramUsers } from "../entities/instagram-user.ts";
 import {
@@ -157,11 +158,20 @@ function mergeAnnotationUpdates(
 
 function readStoryAnnotations(database: AnnotationDatabase, mediaPk: string): StoryAnnotations {
   const stickers = database
-    .select({ kind: storyStickers.kind, label: storyStickers.label, source: storyStickers.source })
+    .select({
+      occurrenceId: storyStickers.occurrenceId,
+      providerOccurrenceId: storyStickers.providerOccurrenceId,
+      kind: storyStickers.kind,
+      label: storyStickers.label,
+      source: storyStickers.source,
+    })
     .from(storyStickers)
     .where(eq(storyStickers.mediaPk, mediaPk))
     .orderBy(asc(storyStickers.sortOrder))
-    .all();
+    .all()
+    .map(({ providerOccurrenceId, ...sticker }) =>
+      providerOccurrenceId === null ? sticker : { ...sticker, providerOccurrenceId },
+    );
   const sources = database
     .select({ source: storyStickerSources.source })
     .from(storyStickerSources)
@@ -185,26 +195,75 @@ function replaceStoryAnnotations(
     story.annotations === undefined
       ? mergeAnnotationUpdates(previous, story, logger)
       : getStoryAnnotations(story);
-  database.delete(storyStickers).where(eq(storyStickers.mediaPk, story.pk)).run();
   database.delete(storyStickerSources).where(eq(storyStickerSources.mediaPk, story.pk)).run();
   const stickers = [...annotations.stickers];
   if (!stickers.some((sticker) => sticker.kind === "location")) {
     stickers.push(...annotations.locations.map((label) => ({ kind: "location", label })));
   }
-  const stickerEntries = stickers.map((sticker, sortOrder) => ({
-    ...sticker,
-    // Raw source extraction already produces content-only labels. Explicit
-    // annotations may come from older callers that still add the kind prefix.
-    label:
-      story.annotations !== undefined && sticker.label.startsWith(`${sticker.kind}:`)
-        ? sticker.label.slice(sticker.kind.length + 1)
-        : sticker.label,
-    source: sticker.source ?? "unknown",
-    mediaPk: story.pk,
-    sortOrder,
-  }));
-  if (stickerEntries.length > 0) {
-    database.insert(storyStickers).values(stickerEntries).run();
+  const used = new Set<string>();
+  const stickerEntries = stickers.map((sticker, sortOrder) => {
+    function sameProvider(candidate: StoryAnnotations["stickers"][number]): boolean {
+      return (
+        candidate.source === sticker.source &&
+        candidate.kind === sticker.kind &&
+        candidate.providerOccurrenceId === sticker.providerOccurrenceId
+      );
+    }
+    const uniqueInternalId =
+      stickers.filter((candidate) => candidate.occurrenceId === sticker.occurrenceId).length === 1;
+    const explicit = previous.stickers.find(
+      (candidate) =>
+        uniqueInternalId &&
+        candidate.occurrenceId === sticker.occurrenceId &&
+        candidate.kind === sticker.kind &&
+        candidate.source === (sticker.source ?? "unknown") &&
+        candidate.providerOccurrenceId === sticker.providerOccurrenceId,
+    );
+    const candidates =
+      sticker.providerOccurrenceId === undefined ? [] : previous.stickers.filter(sameProvider);
+    const identified =
+      candidates.length === 1 && stickers.filter(sameProvider).length === 1
+        ? candidates[0]
+        : undefined;
+    const retainedId = (explicit ?? identified)?.occurrenceId;
+    const occurrenceId =
+      retainedId !== undefined && !used.has(retainedId) ? retainedId : randomUUID();
+    used.add(occurrenceId);
+    return {
+      occurrenceId,
+      providerOccurrenceId: sticker.providerOccurrenceId ?? null,
+      kind: sticker.kind,
+      // Raw source extraction already produces content-only labels. Explicit
+      // annotations may come from older callers that still add the kind prefix.
+      label:
+        story.annotations !== undefined && sticker.label.startsWith(`${sticker.kind}:`)
+          ? sticker.label.slice(sticker.kind.length + 1)
+          : sticker.label,
+      source: sticker.source ?? "unknown",
+      mediaPk: story.pk,
+      sortOrder,
+    };
+  });
+  database
+    .delete(storyStickers)
+    .where(
+      stickerEntries.length === 0
+        ? eq(storyStickers.mediaPk, story.pk)
+        : and(
+            eq(storyStickers.mediaPk, story.pk),
+            notInArray(storyStickers.occurrenceId, [...used]),
+          ),
+    )
+    .run();
+  for (const entry of stickerEntries) {
+    database
+      .insert(storyStickers)
+      .values(entry)
+      .onConflictDoUpdate({
+        target: storyStickers.occurrenceId,
+        set: entry,
+      })
+      .run();
   }
   const sources = [...new Set(annotations.sources)];
   if (sources.length > 0) {

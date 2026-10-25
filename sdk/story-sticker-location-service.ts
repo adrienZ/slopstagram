@@ -200,6 +200,11 @@ export const annotationSources = [
 
 type Sticker = StoryAnnotations["stickers"][number];
 
+const ProviderOccurrenceIdSchema = z.union([
+  z.string().refine((value) => value.trim().length > 0),
+  z.number().int().transform(String),
+]);
+
 function extractSourceSticker(
   source: string,
   kind: string,
@@ -262,7 +267,21 @@ export function getStoryAnnotationUpdates(
       reportMalformed?.(source);
       continue;
     }
-    const entries = values.map((entry) => extractSourceSticker(source, kinds[0], entry));
+    const entries = values.map((entry) => {
+      const stickers = extractSourceSticker(source, kinds[0], entry);
+      // Only the outer sticker ID identifies the occurrence. Nested place,
+      // mention, hashtag and audio IDs identify shared entities instead.
+      const id = isJsonObject(entry) ? entry.id : undefined;
+      const providerOccurrenceId = ProviderOccurrenceIdSchema.safeParse(id);
+      return (
+        stickers?.map((sticker) => {
+          if (providerOccurrenceId.success) {
+            return { ...sticker, providerOccurrenceId: providerOccurrenceId.data };
+          }
+          return sticker;
+        }) ?? null
+      );
+    });
     if (entries.some((entry) => entry === null)) {
       reportMalformed?.(source);
       continue;

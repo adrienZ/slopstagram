@@ -3,7 +3,19 @@ import { describe, test } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
+import type { StoryItem } from "../sdk/lib/types.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
+
+function withoutOccurrenceIds(story: StoryItem): StoryItem {
+  assert.ok(story.annotations);
+  return {
+    ...story,
+    annotations: {
+      ...story.annotations,
+      stickers: story.annotations.stickers.map(({ occurrenceId: _id, ...sticker }) => sticker),
+    },
+  };
+}
 
 describe("StoryRepository", () => {
   test("lists only stories published in the last 24 hours without deleting the archive", async (context) => {
@@ -66,14 +78,24 @@ describe("StoryRepository", () => {
       ],
     });
 
-    assert.deepEqual(repository.findByMediaPk("story-1"), {
+    const stored = repository.findByMediaPk("story-1");
+    assert.ok(stored);
+    assert.deepEqual(withoutOccurrenceIds(stored), {
       accessibility_caption: "Updated",
       annotations: {
         locations: ["Paris"],
         sources: ["story_hashtags", "story_locations"],
         stickers: [
-          { kind: "hashtag", label: "#structured", source: "story_hashtags" },
-          { kind: "location", label: "Paris", source: "story_locations" },
+          {
+            kind: "hashtag",
+            label: "#structured",
+            source: "story_hashtags",
+          },
+          {
+            kind: "location",
+            label: "Paris",
+            source: "story_locations",
+          },
         ],
       },
       image_versions2: {
@@ -157,39 +179,51 @@ describe("StoryRepository", () => {
       },
     );
 
-    assert.deepEqual(repository.listByUsername("timeline-user"), [
-      {
-        full_name: "Timeline User",
-        locations: [],
-        owner_pk: "user-pk",
-        story: {
-          annotations: { locations: [], stickers: [], sources: [] },
-          media_type: 2,
-          pk: "newer-story",
-          taken_at: 1_767_312_000,
-        },
-        stickers: [],
-        taken_at: 1_767_312_000,
-        username: "timeline-user",
-      },
-      {
-        full_name: "Timeline User",
-        locations: [],
-        owner_pk: "user-pk",
-        story: {
-          annotations: {
-            locations: [],
-            sources: ["story_hashtags"],
-            stickers: [{ kind: "hashtag", label: "#weekend", source: "story_hashtags" }],
+    assert.deepEqual(
+      repository.listByUsername("timeline-user").map((entry) => ({
+        ...entry,
+        story: withoutOccurrenceIds(entry.story),
+      })),
+      [
+        {
+          full_name: "Timeline User",
+          locations: [],
+          owner_pk: "user-pk",
+          story: {
+            annotations: { locations: [], stickers: [], sources: [] },
+            media_type: 2,
+            pk: "newer-story",
+            taken_at: 1_767_312_000,
           },
-          media_type: 1,
-          pk: "older-story",
-          taken_at: 1_767_225_600,
+          stickers: [],
+          taken_at: 1_767_312_000,
+          username: "timeline-user",
         },
-        stickers: ["#weekend"],
-        taken_at: 1_767_225_600,
-        username: "timeline-user",
-      },
-    ]);
+        {
+          full_name: "Timeline User",
+          locations: [],
+          owner_pk: "user-pk",
+          story: {
+            annotations: {
+              locations: [],
+              sources: ["story_hashtags"],
+              stickers: [
+                {
+                  kind: "hashtag",
+                  label: "#weekend",
+                  source: "story_hashtags",
+                },
+              ],
+            },
+            media_type: 1,
+            pk: "older-story",
+            taken_at: 1_767_225_600,
+          },
+          stickers: ["#weekend"],
+          taken_at: 1_767_225_600,
+          username: "timeline-user",
+        },
+      ],
+    );
   });
 });
