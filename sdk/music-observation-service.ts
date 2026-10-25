@@ -2,18 +2,10 @@ import { z } from "zod";
 import type { MusicFields } from "./entities/music-metadata.ts";
 import { isJsonObject, type JsonValue } from "./lib/json-value.ts";
 import type { StoryItem } from "./lib/types.ts";
+import { getProviderIdentifier } from "./lib/provider-identifier.ts";
 
-const IdentifierSchema = z.union([
-  z.string().refine((value) => value.trim().length > 0),
-  z.number().int().transform(String),
-]);
 const TextSchema = z.string().refine((value) => value.trim().length > 0);
 const DurationSchema = z.number().int().positive();
-
-function identifier(value: JsonValue | undefined): string | null {
-  const parsed = IdentifierSchema.safeParse(value);
-  return parsed.success ? parsed.data : null;
-}
 
 export interface MusicObservationInput {
   providerOccurrenceId: string | null;
@@ -25,7 +17,7 @@ export function getMusicObservation(value: JsonValue): MusicObservationInput | n
     return null;
   }
   const info = value.music_asset_info ?? {};
-  const providerOccurrenceId = identifier(value.id);
+  const providerOccurrenceId = getProviderIdentifier(value.id);
   if (!isJsonObject(info)) {
     return null;
   }
@@ -33,7 +25,7 @@ export function getMusicObservation(value: JsonValue): MusicObservationInput | n
   const artist = TextSchema.safeParse(info.display_artist);
   const duration = DurationSchema.safeParse(info.duration_in_ms);
   const fields: MusicFields = {
-    instagramAudioAssetId: identifier(info.audio_asset_id),
+    instagramAudioAssetId: getProviderIdentifier(info.audio_asset_id),
     title: title.success ? title.data : null,
     artist: artist.success ? artist.data : null,
     durationMs: duration.success ? duration.data : null,

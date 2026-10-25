@@ -2,6 +2,7 @@ import { URL } from "node:url";
 import { z } from "zod";
 import { isJsonObject, type JsonObject, type JsonValue } from "./lib/json-value.ts";
 import type { StoryAnnotations, StoryItem } from "./lib/types.ts";
+import { ProviderIdentifierSchema } from "./lib/provider-identifier.ts";
 import { getMusicObservation, getMusicSourceUpdate } from "./music-observation-service.ts";
 import {
   getLocationObservation,
@@ -198,11 +199,6 @@ export const annotationSources = [
 
 type Sticker = StoryAnnotations["stickers"][number];
 
-const ProviderOccurrenceIdSchema = z.union([
-  z.string().refine((value) => value.trim().length > 0),
-  z.number().int().transform(String),
-]);
-
 function extractSourceSticker(
   source: string,
   kind: string,
@@ -281,7 +277,7 @@ export function getStoryAnnotationUpdates(
       // Only the outer sticker ID identifies the occurrence. Nested place,
       // mention, hashtag and audio IDs identify shared entities instead.
       const id = isJsonObject(entry) ? entry.id : undefined;
-      const providerOccurrenceId = ProviderOccurrenceIdSchema.safeParse(id);
+      const providerOccurrenceId = ProviderIdentifierSchema.safeParse(id);
       return (
         stickers?.map((sticker) => {
           if (providerOccurrenceId.success) {
