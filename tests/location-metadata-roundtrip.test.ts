@@ -30,6 +30,117 @@ function read(repository: StoryRepository, pk: string) {
   return story.annotations;
 }
 
+test("external-ID-only locations survive cold reads as separate partial observations without labels", async (context) => {
+  const { database } = setup(context);
+  const logger = createCapturingLogger();
+  const repository = new StoryRepository(database, logger);
+  await repository.save({
+    pk: "m1",
+    story_locations: [
+      {
+        id: "both",
+        location: { facebook_places_id: "000123", external_source: "facebook_places" },
+      },
+      { id: "id-only", location: { facebook_places_id: "000123" } },
+      { id: "source-only", location: { external_source: "facebook_places" } },
+    ],
+  });
+  const stored = read(new StoryRepository(database), "m1");
+  assert.deepEqual(stored.locations, []);
+  assert.deepEqual(stored.stickers, []);
+  const observations = present(stored.locationObservations);
+  assert.equal(observations.length, 3);
+  assert.equal(new Set(observations.map(({ metadata }) => metadata.id)).size, 3);
+  assert.deepEqual(
+    observations.map(({ providerOccurrenceId }) => providerOccurrenceId),
+    ["both", "id-only", "source-only"],
+  );
+  assert.deepEqual(
+    observations.map(({ metadata }) => [metadata.facebookPlacesId, metadata.externalSource]),
+    [
+      ["000123", "facebook_places"],
+      ["000123", null],
+      [null, "facebook_places"],
+    ],
+  );
+  for (const observation of observations) {
+    assert.equal(observation.source, "story_locations");
+    assert.equal(observation.occurrenceId, null);
+    assert.equal(observation.metadata.status, "partial");
+    assert.equal(observation.metadata.instagramPlaceId, null);
+    assert.equal(observation.metadata.name, null);
+    assert.equal(observation.metadata.address, null);
+    assert.equal(observation.metadata.latitude, null);
+    assert.equal(observation.metadata.longitude, null);
+  }
+  assert.deepEqual(logger.messages, []);
+});
+
+test("external-only observations do not block other location updates during live ingestion", async (context) => {
+  const { database } = setup(context);
+  const logger = createCapturingLogger();
+  const repository = new StoryRepository(database, logger);
+  const owner = { id: "u1", pk: "u1", username: "one", full_name: "One" };
+  await new InstagramUserRepository(database).save(owner);
+  await repository.save(
+    {
+      pk: "m1",
+      taken_at: 1_767_225_600,
+      story_locations: [
+        { id: "located", location: { pk: "place", name: "Before", lat: 48, lng: 2 } },
+      ],
+    },
+    owner,
+  );
+  const [before] = read(repository, "m1").stickers;
+  const item: StoryItem = {
+    pk: "m1",
+    taken_at: 1_767_225_600,
+    story_locations: [
+      { id: "located", location: { pk: "place", name: "Updated", lat: 49, lng: 3 } },
+      {
+        id: "external",
+        location: { facebook_places_id: "000123", external_source: "facebook_places" },
+      },
+      { facebook_places_id: "000456" },
+    ],
+  };
+  const report = await fetchStoriesManifest(
+    createClient(
+      [{ id: "r1", media_ids: ["m1"], user: owner }],
+      [response({ reels: { r1: { ...reel("r1", [item]), user: owner } } })],
+    ),
+    {
+      logger,
+      now: fixedNow,
+      storyRepository: repository,
+      storyStorage: createMemoryStorage<StoryItem>(),
+    },
+  );
+  assert.deepEqual(report.manifest.users[0].stories[0].locations, ["Updated"]);
+  const [history] = new StoryRepository(database).listByUsername("one");
+  const stored = present(history.story.annotations);
+  assert.deepEqual(stored.locations, ["Updated"]);
+  assert.equal(stored.stickers.length, 1);
+  assert.equal(stored.stickers[0].occurrenceId, before.occurrenceId);
+  const [located, external, direct] = present(stored.locationObservations);
+  assert.equal(located.metadata.status, "usable");
+  assert.equal(located.metadata.name, "Updated");
+  assert.equal(located.metadata.latitude, 49);
+  assert.equal(located.metadata.longitude, 3);
+  assert.equal(external.metadata.status, "partial");
+  assert.equal(external.metadata.facebookPlacesId, "000123");
+  assert.equal(external.metadata.externalSource, "facebook_places");
+  assert.equal(direct.metadata.status, "partial");
+  assert.equal(direct.metadata.facebookPlacesId, "000456");
+  assert.equal(direct.metadata.instagramPlaceId, null);
+  assert.equal(direct.providerOccurrenceId, null);
+  assert.equal(
+    logger.messages.some((message) => message.includes("Malformed story annotation source")),
+    false,
+  );
+});
+
 test("promotion remains shared when another source omits the already known place ID in the same save", async (context) => {
   const { database, repository } = setup(context);
   await repository.save({

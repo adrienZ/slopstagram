@@ -68,6 +68,8 @@ export function findLocationRecord(value: JsonValue | undefined): JsonObject | n
     "lng",
     "latitude",
     "longitude",
+    "facebook_places_id",
+    "external_source",
   ].some((key) => Object.hasOwn(value, key))
     ? value
     : null;
@@ -102,6 +104,8 @@ export function getLocationObservation(value: JsonValue): LocationObservationInp
     "lng",
     "latitude",
     "longitude",
+    "facebook_places_id",
+    "external_source",
   ].some((key) => Object.hasOwn(value, key));
   const record = findLocationRecord(container ?? (directPlace ? value : undefined));
   if (!record) {
