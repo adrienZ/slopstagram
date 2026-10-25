@@ -80,10 +80,4 @@ export type LocationMetadata =
   | ({ status: "usable" } & typeof metadataLocations.$inferSelect)
   | ({ status: "partial" } & typeof partialMetadataLocations.$inferSelect);
 
-export interface StoryLocationObservation {
-  id: string;
-  source: string;
-  providerOccurrenceId: string | null;
-  occurrenceId: string | null;
-  metadata: LocationMetadata;
-}
+export type StoryLocationObservation = z.infer<typeof StoryLocationObservationSchema>;

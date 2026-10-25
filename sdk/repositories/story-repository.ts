@@ -3,6 +3,7 @@ import { and, asc, desc, eq, gt, gte, lt, lte, notInArray } from "drizzle-orm";
 import { useDrizzle, type DrizzleDatabase } from "../database/client.ts";
 import { instagramUsers } from "../entities/instagram-user.ts";
 import { enrichStoryLocations, readLocationObservations } from "./location-metadata-repository.ts";
+import { enrichStoryMusic, readMusicObservations } from "./music-metadata-repository.ts";
 import {
   stories,
   type StoryRow,
@@ -143,6 +144,10 @@ function readStoryAnnotations(database: AnnotationDatabase, mediaPk: string): St
   if (locationObservations.length > 0) {
     annotations.locationObservations = locationObservations;
   }
+  const musicObservations = readMusicObservations(database, mediaPk);
+  if (musicObservations.length > 0) {
+    annotations.musicObservations = musicObservations;
+  }
   return annotations;
 }
 
@@ -193,7 +198,9 @@ function replaceStoryAnnotations(
       .values(sources.map((source) => ({ source, mediaPk: story.pk })))
       .run();
   }
-  enrichStoryLocations(database, story, readStoryAnnotations(database, story.pk));
+  const current = readStoryAnnotations(database, story.pk);
+  enrichStoryLocations(database, story, current);
+  enrichStoryMusic(database, story, current);
 }
 
 function readStoryItem(database: DrizzleDatabase, story: StoryRow): StoryItem {

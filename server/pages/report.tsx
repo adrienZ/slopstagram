@@ -37,10 +37,8 @@ export function ReportPage({
       title="Stories"
       users={sidebarUsers}
     >
-      <h1 className="tw:mb-2 tw:text-[28px] tw:font-bold">
-        {formatStoryViewTitle(selectedDate, today)}
-      </h1>
-      {selectedDate === today && <p className="tw:my-4">{`Fil chargé le ${date}`}</p>}
+      <h1 className="tw:text-[28px] tw:font-bold">{formatStoryViewTitle(selectedDate, today)}</h1>
+      {selectedDate === today && <p className="tw:mb-4">{`Fil chargé le ${date}`}</p>}
       {users.length === 0 && (
         <p className="tw:my-4">
           {selectedDate === today

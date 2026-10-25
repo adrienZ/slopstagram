@@ -79,6 +79,36 @@ function createReportWithStory(name: string): StoriesManifestReport {
 }
 
 describe("ReportRepository", () => {
+  for (const { field, sql } of [
+    { field: "mediaType", sql: "UPDATE report_stories SET mediaType = ? WHERE reportKey = ?" },
+    { field: "status", sql: "UPDATE report_stories SET status = ? WHERE reportKey = ?" },
+    { field: "reason", sql: "UPDATE report_failures SET reason = ? WHERE reportKey = ?" },
+  ]) {
+    test(`rejects an invalid persisted ${field} rather than trusting TypeScript enum types`, async (context) => {
+      const database = createDrizzle(":memory:");
+      migrateDatabase(database);
+      context.onTestFinished(() => {
+        database.$client.close();
+      });
+      const repository = new ReportRepository(database);
+      const report = createReportWithStory("invalid-enum");
+      report.failures.push({
+        attempt_count: 1,
+        http_status: null,
+        media_pk: null,
+        message: "Request failed",
+        reason: "request_failed",
+        reel_id: "reel-1",
+      });
+      await repository.save("invalid-enum", report);
+      // Simulate legacy/corrupt data: SQLite TEXT itself does not enforce enums.
+      database.$client.prepare(sql).run("unrecognized", "invalid-enum");
+      assert.throws(() => new ReportRepository(database).findByKey("invalid-enum"), {
+        name: "ZodError",
+      });
+    });
+  }
+
   test("reads the current story caption instead of a conflicting report caption", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);

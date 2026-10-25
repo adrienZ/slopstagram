@@ -1,18 +1,10 @@
 import { isJsonObject, type JsonObject, type JsonValue } from "./lib/json-value.ts";
 import type { LocationFields } from "./entities/location-metadata.ts";
 import type { StoryItem } from "./lib/types.ts";
+import { getProviderIdentifier } from "./lib/provider-identifier.ts";
 import { z } from "zod";
 
-const ProviderIdentifierSchema = z.union([
-  z.string().refine((value) => value.trim().length > 0),
-  z.number().int().transform(String),
-]);
 const ReceivedTextSchema = z.string().refine((value) => value.trim().length > 0);
-
-export function getProviderIdentifier(value: JsonValue | undefined): string | null {
-  const parsed = ProviderIdentifierSchema.safeParse(value);
-  return parsed.success ? parsed.data : null;
-}
 
 function receivedText(record: JsonObject, keys: Array<string>): string | null {
   for (const key of keys) {
