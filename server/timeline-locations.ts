@@ -10,22 +10,34 @@ export interface TimelinePlace {
 
 export interface TimelineLocations {
   places: Array<TimelinePlace>;
-  unpositionedCount: number;
+  unpositionedStickerCount: number;
+  unpositionedLocationCount: number;
 }
 
 export function groupTimelineLocations(stories: Array<UserTimelineStory>): TimelineLocations {
   const places = new Map<string, TimelinePlace>();
-  let unpositionedCount = 0;
+  let unpositionedStickerCount = 0;
+  let unpositionedLocationCount = 0;
   for (const entry of stories.toSorted((left, right) => right.taken_at - left.taken_at)) {
     const { annotations } = entry.story;
     const observations = annotations?.locationObservations ?? [];
     const stickers = annotations?.stickers.filter((sticker) => sticker.kind === "location") ?? [];
-    // Legacy labels can outnumber the observations. Count the missing evidence,
-    // without inventing occurrence links for ambiguous cache observations.
-    unpositionedCount += Math.max(0, stickers.length - observations.length);
+    const positionedOccurrences = new Set(
+      observations.flatMap((observation) =>
+        observation.metadata.status === "usable" && observation.occurrenceId !== null
+          ? [observation.occurrenceId]
+          : [],
+      ),
+    );
+    // Story-level provenance permits mapping an unlinked observation, but does
+    // not establish coordinates for any particular legacy sticker label.
+    unpositionedStickerCount += stickers.filter(
+      (sticker) =>
+        sticker.occurrenceId === undefined || !positionedOccurrences.has(sticker.occurrenceId),
+    ).length;
     for (const { metadata } of observations) {
       if (metadata.status !== "usable") {
-        unpositionedCount += 1;
+        unpositionedLocationCount += 1;
         continue;
       }
       const id =
@@ -48,5 +60,5 @@ export function groupTimelineLocations(stories: Array<UserTimelineStory>): Timel
       places.set(id, place);
     }
   }
-  return { places: [...places.values()], unpositionedCount };
+  return { places: [...places.values()], unpositionedStickerCount, unpositionedLocationCount };
 }

@@ -46,7 +46,7 @@ function observation(
     id,
     source: "story_locations",
     providerOccurrenceId: null,
-    occurrenceId: null,
+    occurrenceId: `sticker-${id}`,
     metadata:
       latitude === null
         ? {
@@ -95,7 +95,11 @@ function locationTimeline(
           annotations: {
             locations: [],
             stickers: [
-              { kind: "location", label: "Paris, Paris" },
+              {
+                kind: "location",
+                label: "Paris, Paris",
+                occurrenceId: locations[0]?.occurrenceId ?? `legacy-${index}`,
+              },
               { kind: "music", label: "Song" },
             ],
             locationObservations: locations,
@@ -126,7 +130,9 @@ test("location dialog maps the whole history by provider identity and preserves 
   const map = within(await modal.findByRole("region", { name: "Carte des lieux" }));
   expect(map.getAllByRole("button", { name: "Même nom" })).toHaveLength(2);
   expect(map.getAllByRole("button")[1]).toHaveAttribute("data-latitude", "0");
-  expect(modal.getByText("2 lieux sur la carte · 2 localisations sans coordonnées")).toBeVisible();
+  expect(modal.getByText("2 lieux sur la carte")).toBeVisible();
+  expect(modal.getByText("2 stickers sans position confirmée")).toBeVisible();
+  expect(modal.getByText("1 localisation sans coordonnées")).toBeVisible();
   const table = within(modal.getByRole("table", { name: "Stickers : location" }));
   expect(table.getAllByText("Paris, Paris")).toHaveLength(5);
   expect(table.getAllByRole("row")).toHaveLength(6);
@@ -153,7 +159,9 @@ test("a location history without coordinates keeps every label and preview avail
   );
   await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
-  expect(modal.getByText("0 lieux sur la carte · 2 localisations sans coordonnées")).toBeVisible();
+  expect(modal.getByText("0 lieux sur la carte")).toBeVisible();
+  expect(modal.getByText("2 stickers sans position confirmée")).toBeVisible();
+  expect(modal.getByText("1 localisation sans coordonnées")).toBeVisible();
   expect(
     modal.getByText(
       "Aucun lieu avec des coordonnées. Les stickers restent disponibles dans le tableau.",
@@ -166,7 +174,7 @@ test("a location history without coordinates keeps every label and preview avail
 });
 
 test("metadata without a displayable sticker remains mappable through its story provenance", async () => {
-  const props = locationTimeline([[observation("unlabelled", "place")]]);
+  const props = locationTimeline([[{ ...observation("unlabelled", "place"), occurrenceId: null }]]);
   const { annotations } = props.timeline.stories[0].story;
   if (annotations !== undefined) {
     annotations.stickers = [];
@@ -174,7 +182,9 @@ test("metadata without a displayable sticker remains mappable through its story 
   const { user } = await renderPage(TestTimelinePage, props, "/users/timeline-user");
   await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
-  expect(modal.getByText("1 lieux sur la carte · 0 localisations sans coordonnées")).toBeVisible();
+  expect(modal.getByText("1 lieu sur la carte")).toBeVisible();
+  expect(modal.getByText("0 stickers sans position confirmée")).toBeVisible();
+  expect(modal.getByText("0 localisations sans coordonnées")).toBeVisible();
   expect(modal.getByText("Aucun sticker de type location pour cet utilisateur.")).toBeVisible();
   await user.click(await modal.findByRole("button", { name: "Même nom" }));
   expect(
@@ -189,7 +199,7 @@ test("overlapping anonymous places stay distinct and can each be selected withou
   const second = observation("second", "anonymous-b");
   first.metadata.instagramPlaceId = null;
   second.metadata.instagramPlaceId = null;
-  const props = locationTimeline([[first, first], [second]]);
+  const props = locationTimeline([[first, { ...first, id: "repeat" }], [second]]);
   const { user } = await renderPage(TestTimelinePage, props, "/users/timeline-user");
   await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
@@ -207,5 +217,23 @@ test("overlapping anonymous places stay distinct and can each be selected withou
     "metadata:anonymous-a",
   );
   expect(selected.getAllByRole("button", { name: "Ouvrir aperçu location-0" })).toHaveLength(1);
-  expect(modal.getByText("2 lieux sur la carte · 0 localisations sans coordonnées")).toBeVisible();
+  expect(modal.getByText("2 lieux sur la carte")).toBeVisible();
+  expect(modal.getByText("0 stickers sans position confirmée")).toBeVisible();
+  expect(modal.getByText("0 localisations sans coordonnées")).toBeVisible();
+});
+
+test("unlinked observations never supply a position for a separate legacy sticker", async () => {
+  const props = locationTimeline([
+    [
+      { ...observation("unlinked", "mapped"), occurrenceId: null },
+      { ...observation("partial", "unknown", null), occurrenceId: null },
+    ],
+  ]);
+  const { user } = await renderPage(TestTimelinePage, props, "/users/timeline-user");
+  await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
+  const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
+  expect(modal.getByText("1 sticker sans position confirmée")).toBeVisible();
+  expect(modal.getByText("1 localisation sans coordonnées")).toBeVisible();
+  expect(await modal.findByRole("button", { name: "Même nom" })).toBeVisible();
+  expect(modal.getByText("Paris, Paris")).toBeVisible();
 });

@@ -24,8 +24,19 @@ export function LocationHistory({
   return (
     <section aria-label="Lieux de l’historique" className="tw:min-w-0 tw:space-y-3">
       <p className="tw:text-sm tw:text-muted-foreground">
-        {locations.places.length} lieux sur la carte · {locations.unpositionedCount} localisations
-        sans coordonnées
+        <span>
+          {locations.places.length} lieu{locations.places.length === 1 ? "" : "x"} sur la carte
+        </span>
+        {" · "}
+        <span>
+          {locations.unpositionedStickerCount} sticker
+          {locations.unpositionedStickerCount === 1 ? "" : "s"} sans position confirmée
+        </span>
+        {" · "}
+        <span>
+          {locations.unpositionedLocationCount} localisation
+          {locations.unpositionedLocationCount === 1 ? "" : "s"} sans coordonnées
+        </span>
       </p>
       {locations.places.length === 0 ? (
         <p>Aucun lieu avec des coordonnées. Les stickers restent disponibles dans le tableau.</p>

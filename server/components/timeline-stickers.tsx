@@ -170,7 +170,8 @@ function StickerKindCard({
   const hasStories = group.stories.length > 0;
   const canExpand =
     hasStories ||
-    (group.kind === "location" && (locations.places.length > 0 || locations.unpositionedCount > 0));
+    (group.kind === "location" &&
+      (locations.places.length > 0 || locations.unpositionedLocationCount > 0));
   const pageCount = Math.max(1, Math.ceil(group.stories.length / STICKER_PAGE_SIZE));
   const occurrences = group.stories.reduce((count, story) => count + story.labels.length, 0);
   return (
