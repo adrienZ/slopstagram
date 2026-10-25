@@ -1,13 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
-
-export interface StorySticker {
-  occurrenceId?: string;
-  providerOccurrenceId?: string;
-  kind: string;
-  label: string;
-  source?: string;
-}
+import { createSelectSchema } from "drizzle-orm/zod";
+import type { z } from "zod";
 
 export const stories = sqliteTable("stories", {
   accessibilityCaption: text(),
@@ -76,4 +70,18 @@ export const storyStickerSources = sqliteTable(
   (table) => [primaryKey({ columns: [table.mediaPk, table.source] })],
 );
 
+const StoredStoryStickerSchema = createSelectSchema(storyStickers, {
+  occurrenceId: (schema) => schema.min(1),
+  providerOccurrenceId: (schema) => schema.min(1),
+});
+
+// An annotation can precede persistence: IDs and source are optional, and
+// missing provider IDs are omitted rather than represented by database nulls.
+export const StoryStickerSchema = StoredStoryStickerSchema.omit({ mediaPk: true, sortOrder: true })
+  .partial({ occurrenceId: true, source: true })
+  .extend({
+    providerOccurrenceId: StoredStoryStickerSchema.shape.providerOccurrenceId.unwrap().optional(),
+  });
+
+export type StorySticker = z.infer<typeof StoryStickerSchema>;
 export type StoryRow = typeof stories.$inferSelect;

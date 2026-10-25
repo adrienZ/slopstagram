@@ -2,6 +2,7 @@ import type { Storage } from "unstorage";
 import type { StorySticker } from "../entities/story.ts";
 import type { StoryLocationObservation } from "../entities/location-metadata.ts";
 import type { StoryMusicObservation } from "../entities/music-metadata.ts";
+import type { reportStories, reportFailures } from "../entities/report.ts";
 import type { JsonValue } from "./json-value.ts";
 
 export const STORY_MEDIA_TYPES = {
@@ -134,9 +135,9 @@ export interface StoriesMediaReport {
   };
 }
 
-export type StoryFetchFailureReason = "request_failed" | "rate_limited" | "missing_from_response";
+export type StoryFetchFailureReason = typeof reportFailures.$inferSelect.reason;
 
-type StoryManifestItemStatus = "ok" | "failed";
+type StoryManifestItemStatus = typeof reportStories.$inferSelect.status;
 
 export interface StoryFetchFailure {
   attempt_count: number;
