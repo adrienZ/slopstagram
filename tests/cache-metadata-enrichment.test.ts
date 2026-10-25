@@ -448,3 +448,26 @@ test("cache enrichment rejects malformed Bloks structures rejected by live inges
     undefined,
   );
 });
+
+test("mention-only Bloks wrapper IDs never become place IDs in ingestion or cache enrichment", async (context) => {
+  const { database, repository, run, cache } = await setup(context);
+  const mention = {
+    id: "mention-occurrence",
+    bloks_sticker: {
+      id: "wrapper-definition",
+      sticker_data: { ig_mention: { username: "friend" } },
+    },
+  };
+  await repository.save({ pk: "live", story_bloks_stickers: [mention] });
+  assert.equal(repository.findByMediaPk("live")?.annotations?.locationObservations, undefined);
+  await repository.save({ pk: "cached" });
+  await cache("cached", { pk: "cached", story_bloks_stickers: [mention] });
+  const result = await run();
+  assert.equal(result.enriched, 0);
+  assert.equal(result.partial, 0);
+  assert.equal(result.invalid, 0);
+  assert.equal(
+    new StoryRepository(database).findByMediaPk("cached")?.annotations?.locationObservations,
+    undefined,
+  );
+});

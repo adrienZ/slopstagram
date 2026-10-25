@@ -76,13 +76,16 @@ export function getLocationObservation(value: JsonValue): LocationObservationInp
   if (!isJsonObject(value)) {
     return null;
   }
+  const bloksData = isJsonObject(value.bloks_sticker)
+    ? value.bloks_sticker.sticker_data
+    : undefined;
   const container =
     value.location ??
     value.venue ??
     value.place ??
     value.story_location ??
     value.location_sticker ??
-    value.bloks_sticker;
+    bloksData;
   const directPlace = [
     "pk",
     "name",
