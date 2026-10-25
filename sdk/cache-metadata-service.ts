@@ -3,6 +3,7 @@ import type { StorySticker } from "./entities/story.ts";
 import type { StoryItem } from "./lib/types.ts";
 import { getLocationSourceUpdates } from "./location-observation-service.ts";
 import { getMusicSourceUpdate } from "./music-observation-service.ts";
+import { getStoryAnnotationUpdates } from "./story-sticker-location-service.ts";
 
 interface CachedObservation {
   providerOccurrenceId: string | null;
@@ -72,7 +73,11 @@ export function planCachedObservations<
 }
 
 export function getCachedMetadataUpdates(story: StoryItem) {
-  const locations = getLocationSourceUpdates(story);
+  const malformed = new Set<string>();
+  getStoryAnnotationUpdates(story, (source) => {
+    malformed.add(source);
+  });
+  const locations = getLocationSourceUpdates(story).filter(({ source }) => !malformed.has(source));
   const music = getMusicSourceUpdate(story);
   let invalid = 0;
   for (const source of ["story_locations", "story_bloks_stickers"] as const) {

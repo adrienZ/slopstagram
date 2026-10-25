@@ -432,3 +432,19 @@ test("conflicting asset identities and malformed sources preserve newer observat
   );
   assert.deepEqual(new ReportRepository(database).findByKey("snapshot"), report);
 });
+
+test("cache enrichment rejects malformed Bloks structures rejected by live ingestion", async (context) => {
+  const { database, repository, run, cache } = await setup(context);
+  await repository.save({ pk: "one" });
+  await cache("one", {
+    pk: "one",
+    story_bloks_stickers: [{ id: "loc", location: { pk: "place", lat: 10, lng: 20 } }],
+  });
+  const result = await run();
+  assert.equal(result.invalid, 1);
+  assert.equal(result.enriched, 0);
+  assert.equal(
+    new StoryRepository(database).findByMediaPk("one")?.annotations?.locationObservations,
+    undefined,
+  );
+});
