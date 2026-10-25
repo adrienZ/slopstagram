@@ -36,6 +36,8 @@ Put Drizzle tables, entity types, and table-derived validation schemas in
 `sdk/entities/`. Keep `sdk/repositories/` focused on database access; put business
 logic in domain modules. Import repositories directly from their modules.
 
+Derive database-shaped validators from `drizzle-orm/zod` and reuse them.
+
 ## playwright
 
 @playwright/cli is not globally installed. Always use the local package with the command separator: `npm exec --no-install -p @playwright/cli -- [command]`, always use headed mode.
