@@ -1,7 +1,8 @@
-import { randomUUID } from "node:crypto";
+import { planStoryAnnotations } from "../story-annotation-service.ts";
 import { and, asc, desc, eq, gt, gte, lt, lte, notInArray } from "drizzle-orm";
 import { useDrizzle, type DrizzleDatabase } from "../database/client.ts";
 import { instagramUsers } from "../entities/instagram-user.ts";
+import { enrichStoryLocations, readLocationObservations } from "./location-metadata-repository.ts";
 import {
   stories,
   type StoryRow,
@@ -16,7 +17,6 @@ import type { StoryAnnotations, StoryItem, StoryOwner, UserTimelineStory } from 
 import {
   getStoryAnnotations,
   getStoryAnnotationUpdates,
-  annotationSources,
   getStoryLocations,
   getStoryStickers,
 } from "../story-sticker-location-service.ts";
@@ -81,9 +81,9 @@ function toStoryEntry(story: StoryItem, owner?: StoryOwner): typeof stories.$inf
   };
 }
 
-async function replaceStoryVersions(database: DrizzleDatabase, story: StoryItem): Promise<void> {
-  await database.delete(storyImageVersions).where(eq(storyImageVersions.mediaPk, story.pk));
-  await database.delete(storyVideoVersions).where(eq(storyVideoVersions.mediaPk, story.pk));
+function replaceStoryVersions(database: AnnotationDatabase, story: StoryItem): void {
+  database.delete(storyImageVersions).where(eq(storyImageVersions.mediaPk, story.pk)).run();
+  database.delete(storyVideoVersions).where(eq(storyVideoVersions.mediaPk, story.pk)).run();
 
   const imageVersionEntries = (story.image_versions2?.candidates ?? []).map(
     (version, sortOrder) => ({
@@ -95,7 +95,7 @@ async function replaceStoryVersions(database: DrizzleDatabase, story: StoryItem)
     }),
   );
   if (imageVersionEntries.length > 0) {
-    await database.insert(storyImageVersions).values(imageVersionEntries);
+    database.insert(storyImageVersions).values(imageVersionEntries).run();
   }
   const videoVersionEntries = (story.video_versions ?? []).map((version, sortOrder) => ({
     height: version.height ?? null,
@@ -106,55 +106,11 @@ async function replaceStoryVersions(database: DrizzleDatabase, story: StoryItem)
     width: version.width ?? null,
   }));
   if (videoVersionEntries.length > 0) {
-    await database.insert(storyVideoVersions).values(videoVersionEntries);
+    database.insert(storyVideoVersions).values(videoVersionEntries).run();
   }
 }
 
-type AnnotationDatabase = Pick<DrizzleDatabase, "select" | "insert" | "delete">;
-
-function mergeAnnotationUpdates(
-  previous: StoryAnnotations,
-  story: StoryItem,
-  logger: Pick<Logger, "warn">,
-): StoryAnnotations {
-  const updates = getStoryAnnotationUpdates(story, (source) => {
-    logger.warn(
-      `Malformed story annotation source: media_pk=${story.pk} source=${source}; preserving saved contribution`,
-    );
-  });
-  const replaced = new Set<string>(updates.map((update) => update.source));
-  const order: Array<string> = annotationSources.map(({ source }) => source);
-  const completedKinds = new Set<string>(
-    annotationSources
-      .flatMap(({ kinds }) => [...kinds])
-      .filter((kind) =>
-        annotationSources.every(
-          ({ source, kinds }) =>
-            !kinds.some((candidate) => candidate === kind) || replaced.has(source),
-        ),
-      ),
-  );
-  const stickers = [
-    ...previous.stickers.filter(
-      (sticker) =>
-        !replaced.has(sticker.source ?? "unknown") &&
-        !((sticker.source ?? "unknown") === "unknown" && completedKinds.has(sticker.kind)),
-    ),
-    ...updates.flatMap((update) => update.stickers),
-  ].toSorted(
-    (left, right) =>
-      order.indexOf(left.source ?? "unknown") - order.indexOf(right.source ?? "unknown"),
-  );
-  return {
-    locations: stickers
-      .filter((sticker) => sticker.kind === "location")
-      .map((sticker) => sticker.label),
-    stickers,
-    sources: [...new Set([...(previous.sources ?? []), ...replaced])].toSorted((left, right) =>
-      left.localeCompare(right),
-    ),
-  };
-}
+type AnnotationDatabase = Pick<DrizzleDatabase, "select" | "insert" | "update" | "delete">;
 
 function readStoryAnnotations(database: AnnotationDatabase, mediaPk: string): StoryAnnotations {
   const stickers = database
@@ -182,7 +138,12 @@ function readStoryAnnotations(database: AnnotationDatabase, mediaPk: string): St
   const locations = stickers
     .filter((sticker) => sticker.kind === "location")
     .map((sticker) => sticker.label);
-  return { locations, stickers, sources };
+  const locationObservations = readLocationObservations(database, mediaPk);
+  const annotations: StoryAnnotations = { locations, stickers, sources };
+  if (locationObservations.length > 0) {
+    annotations.locationObservations = locationObservations;
+  }
+  return annotations;
 }
 
 function replaceStoryAnnotations(
@@ -191,59 +152,16 @@ function replaceStoryAnnotations(
   logger: Pick<Logger, "warn">,
 ): void {
   const previous = readStoryAnnotations(database, story.pk);
-  const annotations =
+  const updates =
     story.annotations === undefined
-      ? mergeAnnotationUpdates(previous, story, logger)
-      : getStoryAnnotations(story);
+      ? getStoryAnnotationUpdates(story, (source) => {
+          logger.warn(
+            `Malformed story annotation source: media_pk=${story.pk} source=${source}; preserving saved contribution`,
+          );
+        })
+      : [];
+  const { annotations, stickerEntries } = planStoryAnnotations(previous, story, updates);
   database.delete(storyStickerSources).where(eq(storyStickerSources.mediaPk, story.pk)).run();
-  const stickers = [...annotations.stickers];
-  if (!stickers.some((sticker) => sticker.kind === "location")) {
-    stickers.push(...annotations.locations.map((label) => ({ kind: "location", label })));
-  }
-  const used = new Set<string>();
-  const stickerEntries = stickers.map((sticker, sortOrder) => {
-    function sameProvider(candidate: StoryAnnotations["stickers"][number]): boolean {
-      return (
-        candidate.source === sticker.source &&
-        candidate.kind === sticker.kind &&
-        candidate.providerOccurrenceId === sticker.providerOccurrenceId
-      );
-    }
-    const uniqueInternalId =
-      stickers.filter((candidate) => candidate.occurrenceId === sticker.occurrenceId).length === 1;
-    const explicit = previous.stickers.find(
-      (candidate) =>
-        uniqueInternalId &&
-        candidate.occurrenceId === sticker.occurrenceId &&
-        candidate.kind === sticker.kind &&
-        candidate.source === (sticker.source ?? "unknown") &&
-        candidate.providerOccurrenceId === sticker.providerOccurrenceId,
-    );
-    const candidates =
-      sticker.providerOccurrenceId === undefined ? [] : previous.stickers.filter(sameProvider);
-    const identified =
-      candidates.length === 1 && stickers.filter(sameProvider).length === 1
-        ? candidates[0]
-        : undefined;
-    const retainedId = (explicit ?? identified)?.occurrenceId;
-    const occurrenceId =
-      retainedId !== undefined && !used.has(retainedId) ? retainedId : randomUUID();
-    used.add(occurrenceId);
-    return {
-      occurrenceId,
-      providerOccurrenceId: sticker.providerOccurrenceId ?? null,
-      kind: sticker.kind,
-      // Raw source extraction already produces content-only labels. Explicit
-      // annotations may come from older callers that still add the kind prefix.
-      label:
-        story.annotations !== undefined && sticker.label.startsWith(`${sticker.kind}:`)
-          ? sticker.label.slice(sticker.kind.length + 1)
-          : sticker.label,
-      source: sticker.source ?? "unknown",
-      mediaPk: story.pk,
-      sortOrder,
-    };
-  });
   database
     .delete(storyStickers)
     .where(
@@ -251,7 +169,10 @@ function replaceStoryAnnotations(
         ? eq(storyStickers.mediaPk, story.pk)
         : and(
             eq(storyStickers.mediaPk, story.pk),
-            notInArray(storyStickers.occurrenceId, [...used]),
+            notInArray(
+              storyStickers.occurrenceId,
+              stickerEntries.map(({ occurrenceId }) => occurrenceId),
+            ),
           ),
     )
     .run();
@@ -272,6 +193,7 @@ function replaceStoryAnnotations(
       .values(sources.map((source) => ({ source, mediaPk: story.pk })))
       .run();
   }
+  enrichStoryLocations(database, story, readStoryAnnotations(database, story.pk));
 }
 
 function readStoryItem(database: DrizzleDatabase, story: StoryRow): StoryItem {
@@ -349,16 +271,22 @@ export class StoryRepository {
   }
 
   async save(value: StoryItem, owner?: StoryOwner): Promise<void> {
-    const story = StoryItemSchema.parse(value);
-    const entry = toStoryEntry(story, owner);
+    await Promise.try(() => {
+      const story = StoryItemSchema.parse(value);
+      const entry = toStoryEntry(story, owner);
 
-    await this.database.insert(stories).values(entry).onConflictDoUpdate({
-      set: entry,
-      target: stories.mediaPk,
-    });
-    await replaceStoryVersions(this.database, story);
-    this.database.transaction((transaction) => {
-      replaceStoryAnnotations(transaction, story, this.logger);
+      this.database.transaction((transaction) => {
+        transaction
+          .insert(stories)
+          .values(entry)
+          .onConflictDoUpdate({
+            set: entry,
+            target: stories.mediaPk,
+          })
+          .run();
+        replaceStoryVersions(transaction, story);
+        replaceStoryAnnotations(transaction, story, this.logger);
+      });
     });
   }
 

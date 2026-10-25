@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { StoryLocationObservationSchema } from "../entities/location-metadata.ts";
 import { JsonValueSchema } from "./json-value.ts";
 import { STORY_MEDIA_TYPES } from "./types.ts";
 
@@ -33,6 +34,7 @@ export const StoryItemSchema = z
     accessibility_caption: z.string().nullable().optional(),
     annotations: z
       .object({
+        locationObservations: z.array(StoryLocationObservationSchema).optional(),
         locations: z.array(z.string()),
         stickers: z.array(
           z.object({
