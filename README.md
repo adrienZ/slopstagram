@@ -81,6 +81,33 @@ npm run start
 
 Open <http://localhost:5173/>.
 
+### Recover sticker metadata from cache
+
+After starting the server once to initialize the current database schema, run:
+
+```bash
+npm run enrich:sticker-metadata
+```
+
+This reads raw location and music observations from `data/cache/stories/*.json`
+and fills missing metadata for existing stories. It never fetches Instagram,
+runs migrations, or changes story media, owners, labels, or report snapshots.
+`SLOPSTAGRAM_DATABASE_PATH` can select another already initialized database.
+
+The summary counts usable observations processed (`enriched`), incomplete
+observations processed (`partial`), absent stories or empty inputs (`skipped`),
+observations without a certain occurrence link or rejected conflicting evidence
+(`uncertain`), malformed files/sources (`invalid`), and rolled-back stories
+(`failed`). These counters overlap; a rerun can count previously processed data.
+Invalid or failed inputs give the command a nonzero exit status. Raw responses
+and error payloads are never printed.
+
+Reruns are safe: each story commits atomically, shared provider IDs reuse metadata,
+and deterministic cache evidence keys preserve distinct identical observations.
+Labels and array positions never establish historical occurrence identity. When
+existing observations cannot be distinguished safely, they are preserved and the
+cached input is reported as uncertain rather than creating duplicate evidence.
+
 ## Development
 
 Cached media, the SQLite databases, and the Playwright profile are stored in `./data`.

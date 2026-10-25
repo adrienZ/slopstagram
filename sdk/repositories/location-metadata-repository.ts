@@ -58,10 +58,11 @@ export function readLocationObservations(
   );
 }
 
-function saveMetadata(
+export function saveLocationMetadata(
   database: LocationDatabase,
   observation: LocationObservationInput,
   previous?: StoryLocationObservation,
+  fillMissing = false,
 ) {
   const instagramPlaceId =
     observation.fields.instagramPlaceId ?? previous?.metadata.instagramPlaceId ?? null;
@@ -81,7 +82,7 @@ function saveMetadata(
           .from(partialMetadataLocations)
           .where(eq(partialMetadataLocations.instagramPlaceId, instagramPlaceId))
           .get();
-  const plan = planLocationMetadataWrite(observation, { usable, partial }, previous);
+  const plan = planLocationMetadataWrite(observation, { usable, partial }, previous, fillMissing);
   const { entry } = plan;
   if (plan.status === "usable") {
     database
@@ -118,7 +119,7 @@ export function enrichStoryLocations(
   const previous = readLocationObservations(database, story.pk);
   const plan = planStoryLocationUpdates(story, annotations, previous);
   for (const write of plan.writes) {
-    const metadata = saveMetadata(database, write.observation, write.previous);
+    const metadata = saveLocationMetadata(database, write.observation, write.previous);
     const entry = { ...write.entry, ...metadata };
     database
       .insert(storyLocationObservations)

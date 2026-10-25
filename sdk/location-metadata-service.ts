@@ -28,6 +28,20 @@ function mergeFields(
   };
 }
 
+function getObservedFields(
+  incoming: LocationFields,
+  known: Array<LocationFields | undefined>,
+  fillMissing: boolean,
+): LocationFields {
+  let fields = incoming;
+  for (const existing of known) {
+    if (existing !== undefined) {
+      fields = mergeFields(fields, existing);
+    }
+  }
+  return fillMissing ? fields : mergeFields(fields, incoming);
+}
+
 export function planLocationMetadataWrite(
   observation: LocationObservationInput,
   knownPlaces: {
@@ -35,12 +49,14 @@ export function planLocationMetadataWrite(
     partial: typeof partialMetadataLocations.$inferSelect | undefined;
   },
   previous?: StoryLocationObservation,
+  fillMissing = false,
 ) {
   const { usable, partial } = knownPlaces;
   const known = usable ?? partial ?? previous?.metadata;
-  const fields = mergeFields(
-    mergeFields(previous?.metadata, known ?? observation.fields),
+  const fields = getObservedFields(
     observation.fields,
+    [previous?.metadata, partial, usable],
+    fillMissing,
   );
   const id = known?.id ?? randomUUID();
   if (fields.latitude !== null && fields.longitude !== null) {

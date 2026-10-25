@@ -17,8 +17,9 @@ export function createDrizzle(filename: string): DrizzleDatabase {
   return drizzle({ client: sqlite });
 }
 
-const database = createDrizzle(APP_DATABASE_PATH);
+let database: DrizzleDatabase | undefined;
 
 export function useDrizzle(): DrizzleDatabase {
+  database ??= createDrizzle(APP_DATABASE_PATH);
   return database;
 }

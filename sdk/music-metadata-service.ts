@@ -18,6 +18,20 @@ function mergeFields(previous: MusicFields | undefined, incoming: MusicFields): 
   };
 }
 
+function getObservedFields(
+  incoming: MusicFields,
+  known: Array<MusicFields | undefined>,
+  fillMissing: boolean,
+): MusicFields {
+  let fields = incoming;
+  for (const existing of known) {
+    if (existing !== undefined) {
+      fields = mergeFields(fields, existing);
+    }
+  }
+  return fillMissing ? fields : mergeFields(fields, incoming);
+}
+
 export function planMusicMetadataWrite(
   observation: MusicObservationInput,
   knownAssets: {
@@ -25,12 +39,14 @@ export function planMusicMetadataWrite(
     partial: typeof partialMetadataMusic.$inferSelect | undefined;
   },
   previous?: StoryMusicObservation,
+  fillMissing = false,
 ) {
   const { usable, partial } = knownAssets;
   const known = usable ?? partial ?? previous?.metadata;
-  const fields = mergeFields(
-    mergeFields(previous?.metadata, known ?? observation.fields),
+  const fields = getObservedFields(
     observation.fields,
+    [previous?.metadata, partial, usable],
+    fillMissing,
   );
   const entry = {
     ...fields,

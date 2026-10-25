@@ -55,10 +55,11 @@ export function readMusicObservations(
   );
 }
 
-function saveMetadata(
+export function saveMusicMetadata(
   database: MusicDatabase,
   observation: MusicObservationInput,
   previous?: StoryMusicObservation,
+  fillMissing = false,
 ) {
   const audioId =
     observation.fields.instagramAudioAssetId ?? previous?.metadata.instagramAudioAssetId ?? null;
@@ -78,7 +79,7 @@ function saveMetadata(
           .from(partialMetadataMusic)
           .where(eq(partialMetadataMusic.instagramAudioAssetId, audioId))
           .get();
-  const plan = planMusicMetadataWrite(observation, { usable, partial }, previous);
+  const plan = planMusicMetadataWrite(observation, { usable, partial }, previous, fillMissing);
   if (plan.status === "usable") {
     database
       .insert(metadataMusic)
@@ -110,7 +111,7 @@ export function enrichStoryMusic(
 ) {
   const plan = planStoryMusicUpdates(story, annotations, readMusicObservations(database, story.pk));
   for (const write of plan.writes) {
-    const metadata = saveMetadata(database, write.observation, write.previous);
+    const metadata = saveMusicMetadata(database, write.observation, write.previous);
     const entry = { ...write.entry, ...metadata };
     database
       .insert(storyMusicObservations)
