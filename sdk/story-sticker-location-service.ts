@@ -2,6 +2,7 @@ import { URL } from "node:url";
 import { z } from "zod";
 import { isJsonObject, type JsonObject, type JsonValue } from "./lib/json-value.ts";
 import type { StoryAnnotations, StoryItem } from "./lib/types.ts";
+import { getMusicObservation, getMusicSourceUpdate } from "./music-observation-service.ts";
 import {
   getLocationObservation,
   getLocationSourceUpdates,
@@ -51,21 +52,14 @@ function getMentionStickerLabel(value: JsonValue): string | null {
   return fullName !== null && fullName.length > 0 ? fullName : null;
 }
 
-function getMusicStickerLabel(value: JsonValue): string | null {
+function getMusicStickers(value: JsonValue): Array<Sticker> | null {
   const info = getNestedRecord(value, "music_asset_info");
-
-  if (info === null) {
-    return null;
-  }
-
   const title = getNestedString(info, ["title"]);
   const artist = getNestedString(info, ["display_artist"]);
-
-  if (title !== null && title.length > 0 && artist !== null && artist.length > 0) {
-    return `${title} - ${artist}`;
+  if (title !== null) {
+    return [{ kind: "music", label: artist === null ? title : `${title} - ${artist}` }];
   }
-
-  return title !== null && title.length > 0 ? title : null;
+  return getMusicObservation(value) === null ? null : [];
 }
 
 function getHashtagStickerLabel(value: JsonValue): string | null {
@@ -252,7 +246,7 @@ function extractSourceSticker(
       return [];
     }
   } else if (source === "story_music_stickers") {
-    label = getMusicStickerLabel(value);
+    return getMusicStickers(value);
   } else if (source === "story_hashtags") {
     label = getHashtagStickerLabel(value);
   } else {
@@ -303,11 +297,14 @@ export function getStoryAnnotationUpdates(
     }
     updates.push({
       source,
-      // An unlabelled place does not make a source a complete replacement of
+      // An unlabelled observation does not make a source a complete replacement of
       // its previous display contribution. Keep known stickers alongside it.
-      preservePrevious: getLocationSourceUpdates(story)
-        .find((update) => update.source === source)
-        ?.observations.some(({ fields }) => fields.name === null && fields.address === null),
+      preservePrevious:
+        source === "story_music_stickers"
+          ? getMusicSourceUpdate(story)?.some(({ fields }) => fields.title === null)
+          : getLocationSourceUpdates(story)
+              .find((update) => update.source === source)
+              ?.observations.some(({ fields }) => fields.name === null && fields.address === null),
       stickers: entries.flatMap((entry) => entry ?? []).map((sticker) => ({ ...sticker, source })),
     });
   }

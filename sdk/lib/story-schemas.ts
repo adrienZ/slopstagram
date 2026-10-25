@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { StoryLocationObservationSchema } from "../entities/location-metadata.ts";
+import { StoryMusicObservationSchema } from "../entities/music-metadata.ts";
 import { JsonValueSchema } from "./json-value.ts";
 import { STORY_MEDIA_TYPES } from "./types.ts";
 
@@ -35,6 +36,7 @@ export const StoryItemSchema = z
     annotations: z
       .object({
         locationObservations: z.array(StoryLocationObservationSchema).optional(),
+        musicObservations: z.array(StoryMusicObservationSchema).optional(),
         locations: z.array(z.string()),
         stickers: z.array(
           z.object({
