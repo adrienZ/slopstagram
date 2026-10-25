@@ -1,27 +1,21 @@
 import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
+import { createSelectSchema } from "drizzle-orm/zod";
+import { z } from "zod";
 import { check, index, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { stories, storyStickers } from "./story.ts";
-
-function locationFields() {
-  return {
-    id: text().primaryKey().notNull().$defaultFn(randomUUID),
-    instagramPlaceId: text().unique(),
-    name: text(),
-    address: text(),
-    latitude: real(),
-    longitude: real(),
-    facebookPlacesId: text(),
-    externalSource: text(),
-  };
-}
 
 export const metadataLocations = sqliteTable(
   "metadata_location",
   {
-    ...locationFields(),
+    id: text().primaryKey().notNull().$defaultFn(randomUUID),
+    instagramPlaceId: text().unique(),
+    name: text(),
+    address: text(),
     latitude: real().notNull(),
     longitude: real().notNull(),
+    facebookPlacesId: text(),
+    externalSource: text(),
   },
   (table) => [
     check("location_latitude_bounds", sql`${table.latitude} BETWEEN -90 AND 90`),
@@ -29,7 +23,16 @@ export const metadataLocations = sqliteTable(
   ],
 );
 
-export const partialMetadataLocations = sqliteTable("metadata_location_partial", locationFields());
+export const partialMetadataLocations = sqliteTable("metadata_location_partial", {
+  id: text().primaryKey().notNull().$defaultFn(randomUUID),
+  instagramPlaceId: text().unique(),
+  name: text(),
+  address: text(),
+  latitude: real(),
+  longitude: real(),
+  facebookPlacesId: text(),
+  externalSource: text(),
+});
 
 // Observations also exist without a displayable sticker (for example an ID-only
 // place). Their provenance survives independently until a certain link is possible.
@@ -56,6 +59,21 @@ export const storyLocationObservations = sqliteTable(
     ),
   ],
 );
+
+const LocationMetadataSchema = z.discriminatedUnion("status", [
+  createSelectSchema(partialMetadataLocations, {
+    latitude: (schema) => schema.min(-90).max(90),
+    longitude: (schema) => schema.min(-180).max(180),
+  }).extend({ status: z.literal("partial") }),
+  createSelectSchema(metadataLocations, {
+    latitude: (schema) => schema.min(-90).max(90),
+    longitude: (schema) => schema.min(-180).max(180),
+  }).extend({ status: z.literal("usable") }),
+]);
+
+export const StoryLocationObservationSchema = createSelectSchema(storyLocationObservations)
+  .omit({ mediaPk: true, sortOrder: true, locationId: true, partialLocationId: true })
+  .extend({ metadata: LocationMetadataSchema });
 
 export type LocationFields = Omit<typeof partialMetadataLocations.$inferSelect, "id">;
 export type LocationMetadata =

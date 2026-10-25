@@ -30,6 +30,37 @@ function read(repository: StoryRepository, pk: string) {
   return story.annotations;
 }
 
+test("promotion remains shared when another source omits the already known place ID in the same save", async (context) => {
+  const { database, repository } = setup(context);
+  await repository.save({
+    pk: "m1",
+    story_bloks_stickers: [
+      { id: "b", bloks_sticker: { sticker_data: { location: { pk: "place", name: "Before" } } } },
+    ],
+    story_locations: [{ id: "a", location: { pk: "place", name: "Before" } }],
+  });
+  await repository.save({
+    pk: "m1",
+    story_bloks_stickers: [
+      {
+        id: "b",
+        bloks_sticker: {
+          sticker_data: { location: { pk: "place", name: "Updated", lat: 48, lng: 2 } },
+        },
+      },
+    ],
+    story_locations: [{ id: "a", location: { address: "Received address" } }],
+  });
+  const observations = present(read(new StoryRepository(database), "m1").locationObservations);
+  assert.equal(observations.length, 2);
+  assert.deepEqual(observations[0].metadata, observations[1].metadata);
+  assert.equal(observations[0].metadata.status, "usable");
+  assert.equal(observations[0].metadata.name, "Updated");
+  assert.equal(observations[0].metadata.address, "Received address");
+  assert.equal(observations[0].metadata.latitude, 48);
+  assert.equal(observations[0].metadata.longitude, 2);
+});
+
 test("live ingestion shares tagged places and exposes exact metadata with occurrences in cold account history", async (context) => {
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
