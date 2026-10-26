@@ -238,3 +238,52 @@ test("unlinked story-level music keeps artwork and audio independent and preserv
   expect(modal.getByRole("img", { name: "Pochette : Cover only" })).toBeVisible();
   expect(modal.getByLabelText("Écouter : Audio only")).toBeVisible();
 });
+
+test("music observations without labels stay visible without increasing sticker-story counts", async () => {
+  const props = stickerTimeline(1);
+  props.timeline.stories[0].story.annotations = {
+    locations: [],
+    stickers: [{ kind: "music", label: "Original label" }],
+  };
+  props.timeline.stories.push({
+    ...timelineEntry,
+    story: {
+      pk: "without-label",
+      annotations: {
+        locations: [],
+        stickers: [],
+        musicObservations: [
+          {
+            id: "observation-only",
+            source: "story_music_stickers",
+            occurrenceId: null,
+            providerOccurrenceId: null,
+            metadata: {
+              status: "partial",
+              id: "partial-only",
+              instagramAudioAssetId: "audio-only",
+              title: null,
+              artist: null,
+              durationMs: null,
+              audioSourceUrl: null,
+              artworkSourceUrl: null,
+              audioCachePath: null,
+              artworkCachePath: null,
+              audioState: "unavailable",
+              artworkState: "unavailable",
+            },
+          },
+        ],
+      },
+    },
+  });
+  const { user } = await renderPage(UserTimelinePage, props, "/users/timeline-user");
+  const card = within(screen.getByRole("region", { name: "Type de sticker : music" }));
+  expect(card.getByText("1 stickers · 1 stories")).toBeVisible();
+  expect(card.getByLabelText("Musique reçue dans cette story")).toBeVisible();
+  await user.click(card.getByRole("button", { name: "Tout afficher : music" }));
+  const modal = within(await screen.findByRole("dialog", { name: "Stickers · music" }));
+  expect(modal.getByText("1 stickers dans 1 stories · historique complet")).toBeVisible();
+  expect(modal.getAllByRole("row")).toHaveLength(3);
+  expect(modal.getByLabelText("Musique reçue dans cette story")).toBeVisible();
+});

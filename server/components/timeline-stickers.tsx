@@ -204,6 +204,7 @@ function StickerKindCard({
     (group.kind === "location" &&
       (locations.places.length > 0 || locations.unpositionedLocationCount > 0));
   const pageCount = Math.max(1, Math.ceil(group.stories.length / STICKER_PAGE_SIZE));
+  const stickerStoryCount = group.stories.filter(({ labels }) => labels.length > 0).length;
   const occurrences = group.stories.reduce((count, story) => count + story.labels.length, 0);
   return (
     <Dialog>
@@ -220,7 +221,7 @@ function StickerKindCard({
             </CardTitle>
             <CardDescription>
               {hasStories
-                ? `${occurrences} stickers · ${group.stories.length} stories`
+                ? `${occurrences} stickers · ${stickerStoryCount} stories`
                 : "Aucun sticker"}
             </CardDescription>
             {canExpand && (
@@ -310,7 +311,7 @@ function StickerKindCard({
           <DialogHeader>
             <DialogTitle>Stickers · {group.kind}</DialogTitle>
             <DialogDescription>
-              {occurrences} stickers dans {group.stories.length} stories · historique complet
+              {occurrences} stickers dans {stickerStoryCount} stories · historique complet
             </DialogDescription>
           </DialogHeader>
           {group.kind === "location" && (
