@@ -4,6 +4,10 @@ import { ReportPage } from "../../server/pages/report.tsx";
 import { reportProps } from "../page-fixtures.ts";
 import { renderPage } from "./render.tsx";
 
+function getPreviousMonthButton() {
+  return screen.getByRole("button", { name: /mois précédent/iu });
+}
+
 test("the feed renders ranked users, separate handles, summaries, and local previews", async () => {
   await renderPage(ReportPage, reportProps);
   expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
@@ -59,6 +63,38 @@ test("saved users are linked with handles and can be collapsed and reopened", as
   expect(toggle).toHaveAttribute("aria-expanded", "false");
   await user.click(toggle);
   expect(navigation.getByRole("link", { name: /@outside-feed/u })).toBeVisible();
+});
+
+test("report calendar stops at the oldest available month across a year boundary", async () => {
+  const { user } = await renderPage(ReportPage, {
+    ...reportProps,
+    selectedDate: "2026-02-02",
+    availableDates: ["2026-01-15", "2025-12-20", "2026-02-02"],
+  });
+  expect(getPreviousMonthButton()).not.toHaveAttribute("aria-disabled", "true");
+  await user.click(getPreviousMonthButton());
+  expect(getPreviousMonthButton()).not.toHaveAttribute("aria-disabled", "true");
+  await user.click(getPreviousMonthButton());
+  expect(screen.getByRole("grid", { name: /décembre 2025/iu })).toBeVisible();
+  expect(screen.getByRole("button", { name: /20 décembre 2025/u })).toBeEnabled();
+  expect(getPreviousMonthButton()).toHaveAttribute("aria-disabled", "true");
+  await user.click(getPreviousMonthButton());
+  expect(screen.getByRole("grid", { name: /décembre 2025/iu })).toBeVisible();
+  await user.click(screen.getByRole("button", { name: /mois suivant/iu }));
+  expect(screen.getByRole("grid", { name: /janvier 2026/iu })).toBeVisible();
+  expect(getPreviousMonthButton()).not.toHaveAttribute("aria-disabled", "true");
+});
+
+test("report calendar with no available data cannot navigate before today’s month", async () => {
+  await renderPage(ReportPage, { ...reportProps, availableDates: [], users: [] });
+  expect(screen.getByRole("button", { name: /mois précédent/iu })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
+  expect(screen.getByRole("button", { name: /mois suivant/iu })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
 });
 
 test("opening a preview updates the real router and closing restores focus and search", async () => {

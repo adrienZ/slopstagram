@@ -80,6 +80,15 @@ test("calendar navigates between months to another available day", async () => {
     },
     "/users/timeline-user",
   );
+  expect(screen.getByRole("button", { name: /mois précédent/iu })).not.toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
+  await user.click(screen.getByRole("button", { name: /mois précédent/iu }));
+  expect(screen.getByRole("button", { name: /mois précédent/iu })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
   await user.click(screen.getByRole("button", { name: /mois précédent/iu }));
   await user.click(screen.getByRole("button", { name: /jeudi 1 janvier 2026/u }));
   await waitFor(() => {
@@ -116,6 +125,14 @@ test("an empty account keeps navigation and every sticker kind without expansion
     screen.queryByRole("button", { name: /Tout afficher|Afficher ou masquer :/u }),
   ).not.toBeInTheDocument();
   expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /mois précédent/iu })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
+  expect(screen.getByRole("button", { name: /mois suivant/iu })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
   const scroll = vi.spyOn(globalThis.Element.prototype, "scrollIntoView");
   await user.click(screen.getByRole("button", { name: /Aujourd’hui/u }));
   expect(scroll).not.toHaveBeenCalled();
