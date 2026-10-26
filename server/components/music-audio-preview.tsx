@@ -29,7 +29,7 @@ function AudioPlayer({ preview, onError }: MusicAudioPreviewProps) {
         ref={player.attachAudio}
         src={preview.audioUrl ?? undefined}
         aria-label={`Écouter : ${preview.description}`}
-        preload="none"
+        preload="metadata"
         hidden
         {...player.mediaEvents}
       />

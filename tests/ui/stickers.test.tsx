@@ -176,7 +176,7 @@ test("music shows explicit playback without artwork in both views, preserving la
   const audio = card.getByLabelText("Écouter : Song — Artist");
   expect(card.getByRole("button", { name: "Lire : Song — Artist" })).toBeVisible();
   expect(audio).not.toHaveAttribute("controls");
-  expect(audio).toHaveAttribute("preload", "none");
+  expect(audio).toHaveAttribute("preload", "metadata");
   expect(audio).not.toHaveAttribute("autoplay");
   expect(card.getAllByLabelText("Écouter : Song — Artist")).toHaveLength(1);
   expect(card.queryByLabelText("Écouter : Audio de la story")).not.toBeInTheDocument();
@@ -235,7 +235,7 @@ test("unlinked music silently ignores artwork and preserves sticker counts", asy
   expect(card.getByText("1 stickers · 1 stories")).toBeVisible();
   expect(card.queryByText("Cover only")).not.toBeInTheDocument();
   expect(card.getByRole("button", { name: "Lire : Audio only" })).toBeVisible();
-  expect(card.getByLabelText("Écouter : Audio only")).toHaveAttribute("preload", "none");
+  expect(card.getByLabelText("Écouter : Audio only")).toHaveAttribute("preload", "metadata");
   expect(card.queryByRole("link", { name: /Spotify/u })).not.toBeInTheDocument();
   fireEvent.error(card.getByLabelText("Écouter : Audio only"));
   expect(card.queryByText("Cover only")).not.toBeInTheDocument();
@@ -365,7 +365,7 @@ test("a DASH soundtrack has one explicitly labeled player per story in the card 
   expect(card.getAllByLabelText("Écouter : Exact original label")).toHaveLength(1);
   const audio = card.getByLabelText("Écouter : Exact original label");
   expect(audio).toHaveAttribute("src", `/media/music/${"f".repeat(64)}.m4a`);
-  expect(audio).toHaveAttribute("preload", "none");
+  expect(audio).toHaveAttribute("preload", "metadata");
   expect(audio).not.toHaveAttribute("autoplay");
   expect(card.queryByRole("img", { name: /Pochette/u })).not.toBeInTheDocument();
   fireEvent.error(audio);

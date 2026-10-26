@@ -34,22 +34,24 @@ function mockPlayback(context: TestContext) {
   return { play, pause };
 }
 
-test("the compact player loads only on request, plays, pauses, seeks and updates its time", async (context) => {
+test("the compact player displays duration before playback, then plays, pauses and seeks", async (context) => {
   const { play } = mockPlayback(context);
   const { user } = await renderContent(<MusicAudioPreview preview={preview} />);
   const audio = screen.getByLabelText("Écouter : Audio de la story");
-  expect(audio).toHaveAttribute("preload", "none");
+  expect(audio).toHaveAttribute("preload", "metadata");
   expect(audio).not.toHaveAttribute("autoplay");
   expect(play).not.toHaveBeenCalled();
   const seek = screen.getByRole("slider", { name: "Avancer dans l’audio : Audio de la story" });
   expect(seek).toBeDisabled();
+  Object.defineProperty(audio, "duration", { configurable: true, value: 20 });
+  fireEvent.loadedMetadata(audio);
+  expect(screen.getByText("0:20")).toBeVisible();
+  expect(play).not.toHaveBeenCalled();
+  expect(seek).not.toBeDisabled();
   await user.click(screen.getByRole("button", { name: "Lire : Audio de la story" }));
   expect(
     screen.getByRole("button", { name: "Mettre en pause : Audio de la story" }),
   ).toHaveAttribute("aria-pressed", "true");
-  Object.defineProperty(audio, "duration", { configurable: true, value: 20 });
-  fireEvent.loadedMetadata(audio);
-  expect(seek).not.toBeDisabled();
   fireEvent.change(seek, { target: { value: "10" } });
   expect(audio).toHaveProperty("currentTime", 10);
   expect(screen.getByText("0:10")).toBeVisible();
