@@ -5,6 +5,7 @@ import { getUserTimeline } from "../../query-service.ts";
 
 import { formatUserHandle, formatUserName } from "../../helper.ts";
 import type { StoryCardViewModel } from "../../story-card-view-model.ts";
+import { withStoryMusic } from "../../story-card-view-model.ts";
 import type { UserTimeline } from "../../user-timeline.ts";
 import { Lightbox } from "../../components/lightbox.tsx";
 import { StoryLayout } from "../../components/story-layout.tsx";
@@ -74,7 +75,8 @@ export function TimelineContent({
   stickerKinds,
   sidebarUsers,
 }: TimelineContentProps & { selectedStory?: string }) {
-  const storyByMediaPk = new Map(stories.map((story) => [story.mediaPk, story]));
+  const cards = withStoryMusic(stories, timeline.stories);
+  const storyByMediaPk = new Map(cards.map((story) => [story.mediaPk, story]));
   return (
     <>
       <TimelineHeader timeline={timeline} userName={formatUserName(timeline.timelineUser)} />
@@ -86,7 +88,7 @@ export function TimelineContent({
       />
       {timeline.stories.length === 0 && <p>Aucune story enregistrée pour cet utilisateur.</p>}
       <TimelineGallery years={timeline.years} storyByMediaPk={storyByMediaPk} />
-      <Lightbox stories={stories} selectedStory={selectedStory} />
+      <Lightbox stories={cards} selectedStory={selectedStory} />
     </>
   );
 }

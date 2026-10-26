@@ -1,4 +1,9 @@
-import { STORY_MEDIA_TYPES, type StoryOutputUser } from "../sdk/lib/types.ts";
+import {
+  STORY_MEDIA_TYPES,
+  type StoryOutputUser,
+  type UserTimelineStory,
+} from "../sdk/lib/types.ts";
+import { musicStickerItems, type MusicStickerItem } from "./music-preview.ts";
 import { formatUserName, getStoryUrl } from "./helper.ts";
 import type { ReportViewModel } from "./report-view-model.ts";
 
@@ -8,6 +13,7 @@ export type StoryCardSources = Pick<
 >;
 
 export interface StoryCardViewModel {
+  stickerDetails?: { text: string; music: Array<MusicStickerItem> };
   mediaPk: string;
   preview: string;
   alt: string;
@@ -23,6 +29,25 @@ export interface StoryCardViewModel {
   appleCaption: string;
   visionOcr: string;
   visionDescription: string;
+}
+
+export function withStoryMusic(
+  cards: Array<StoryCardViewModel>,
+  stories: Array<Pick<UserTimelineStory, "story">>,
+) {
+  const musicByMediaPk = new Map(
+    stories.map(({ story }) => [
+      story.pk,
+      {
+        text: (story.annotations?.stickers ?? [])
+          .filter(({ kind }) => kind !== "music")
+          .map(({ label }) => label)
+          .join(", "),
+        music: musicStickerItems(story.annotations),
+      },
+    ]),
+  );
+  return cards.map((card) => ({ ...card, stickerDetails: musicByMediaPk.get(card.mediaPk) }));
 }
 
 function textOrDash(value: string | undefined): string {

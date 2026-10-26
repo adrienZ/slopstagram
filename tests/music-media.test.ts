@@ -8,7 +8,7 @@ import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
 import { processMusicMedia } from "../sdk/music-media-service.ts";
 
-test("music processing publishes independent local copies and reuses them without provider requests", async (context) => {
+test("music processing publishes audio only and reuses it without provider requests", async (context) => {
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
   const root = await mkdtemp(path.join(tmpdir(), "music-media-"));
@@ -48,7 +48,7 @@ test("music processing publishes independent local copies and reuses them withou
     },
   );
   assert.equal(result?.audioState, "available");
-  assert.equal(result.artworkState, "failed");
+  assert.equal(result.artworkState, "pending");
   assert.ok(result.audioCachePath !== null);
   assert.equal(await readFile(path.join(root, result.audioCachePath), "utf-8"), "audio-bytes");
   const retry = await processMusicMedia(
@@ -57,7 +57,7 @@ test("music processing publishes independent local copies and reuses them withou
       database,
       directory: root,
       fetchMedia: async (url) => {
-        assert.ok(url.includes("cover"), "cached audio must not refetch");
+        assert.fail(`cached audio must not refetch: ${url}`);
         return new globalThis.Response("bad", { status: 404 });
       },
     },
@@ -68,7 +68,7 @@ test("music processing publishes independent local copies and reuses them withou
   assert.equal(cold.musicObservations?.[0].metadata.audioState, "available");
 });
 
-test("partial media stays separate, artwork works without supported audio, and promotion preserves local copies", async (context) => {
+test("partial audio stays separate and promotion preserves its source and processing state", async (context) => {
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
   const root = await mkdtemp(path.join(tmpdir(), "music-partial-"));
@@ -93,23 +93,19 @@ test("partial media stays separate, artwork works without supported audio, and p
   assert.ok(observations);
   assert.notEqual(observations[0].metadata.id, observations[1].metadata.id);
   const reference = observations[0].metadata;
-  const { default: sharp } = await import("sharp");
-  const png = await sharp({ create: { width: 2, height: 2, channels: 3, background: "red" } })
-    .png()
-    .toBuffer();
   const result = await processMusicMedia(reference, {
     database,
     directory: root,
     fetchMedia: async (url) =>
-      new globalThis.Response(url.endsWith("art") ? png : "html", {
+      new globalThis.Response("html", {
         headers: { "content-type": url.endsWith("art") ? "image/png" : "text/html" },
       }),
   });
   assert.ok(result);
   assert.equal(result.audioState, "unsupported");
   assert.equal(result.audioCachePath, null);
-  assert.equal(result.artworkState, "available");
-  assert.notEqual(result.artworkCachePath, null);
+  assert.equal(result.artworkState, "pending");
+  assert.equal(result.artworkCachePath, null);
   assert.equal(
     repository.findByMediaPk("story")?.annotations?.musicObservations?.[0].metadata.status,
     "partial",

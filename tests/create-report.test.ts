@@ -45,6 +45,7 @@ function createFixture(context: TestContext) {
     },
   };
   const dependencies = {
+    cacheReportAudio: async () => {},
     fetchRunRepository: runs,
     fetchStories: async () => report,
     saveReport: reports.save.bind(reports),
@@ -172,4 +173,25 @@ test("separate attempts at the same instant preserve separate runs and observati
   assert.notEqual(first.reportKey, second.reportKey);
   assert.equal(runs.list().length, 2);
   assert.equal(reports.listKeys().length, 2);
+});
+
+test("the shared script and server report path caches audio after saving ingestion and before image enrichment", async (context) => {
+  const { options, report, reports } = createFixture(context);
+  const stages: Array<string> = [];
+  await createReport({
+    ...options,
+    dependencies: {
+      ...options.dependencies,
+      cacheReportAudio: async (received) => {
+        assert.equal(received, report);
+        assert.equal(reports.listKeys().length, 1);
+        stages.push("audio");
+      },
+      cacheReportImages: async () => {
+        stages.push("images");
+        return { profilePicPathByUrl: new Map(), storyPreviewPathByUrl: new Map() };
+      },
+    },
+  });
+  assert.deepEqual(stages, ["audio", "images"]);
 });

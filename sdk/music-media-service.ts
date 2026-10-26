@@ -6,7 +6,6 @@ import type { DrizzleDatabase } from "./database/client.ts";
 import type { MusicMediaState, MusicMetadataReference } from "./entities/music-metadata.ts";
 import { BASE_CACHE_DIR, IMAGES_STORAGE_DIR } from "./lib/cache-service.ts";
 import { audioFileExtension } from "./lib/music-media-types.ts";
-import { convertImageToJpeg } from "./lib/image-conversion-service.ts";
 import { findMusicMetadata, saveMusicMedia } from "./repositories/music-metadata-repository.ts";
 
 const MAX_MEDIA_BYTES = 60 * 1024 * 1024;
@@ -16,15 +15,14 @@ interface CachedMusicMedia {
   state: MusicMediaState;
 }
 
-interface MusicMediaOptions {
+export interface MusicMediaOptions {
   database: DrizzleDatabase;
   directory?: string;
   fetchMedia?: (url: string) => Promise<Response>;
-  convertArtwork?: typeof convertImageToJpeg;
 }
 
 async function fileExists(directory: string, key: string | null) {
-  if (key === null || !/^music\/[a-f0-9]{64}\.(?:jpg|mp3|m4a|aac|ogg|webm|wav|flac)$/u.test(key)) {
+  if (key === null || !/^music\/[a-f0-9]{64}\.(?:mp3|m4a|aac|ogg|webm|wav|flac)$/u.test(key)) {
     return false;
   }
   try {
@@ -66,10 +64,10 @@ async function readBounded(response: Response) {
 
 async function downloadMedia(
   source: string,
-  kind: "audio" | "artwork",
   id: string,
   directory: string,
   options: MusicMediaOptions,
+  declaredAudioType?: "audio/mp4",
 ): Promise<CachedMusicMedia> {
   const url = new globalThis.URL(source);
   if (url.protocol !== "https:" || url.username || url.password) {
@@ -86,20 +84,23 @@ async function downloadMedia(
   }
   const contentType =
     response.headers.get("content-type")?.split(";")[0].trim().toLowerCase() ?? "";
-  const extension = kind === "artwork" ? "jpg" : audioFileExtension(contentType);
+  // Instagram labels its MPD-confirmed audio-only MP4 rendition as video/mp4.
+  const extension = audioFileExtension(
+    contentType === "video/mp4" && declaredAudioType === "audio/mp4"
+      ? declaredAudioType
+      : contentType,
+  );
   if (extension === undefined) {
     await response.body?.cancel();
     return { cachePath: null, state: "unsupported" };
   }
   const received = await readBounded(response);
-  const bytes =
-    kind === "artwork" ? await (options.convertArtwork ?? convertImageToJpeg)(received) : received;
-  const key = `music/${createHash("sha256").update(`${id}:${kind}`).digest("hex")}.${extension}`;
+  const key = `music/${createHash("sha256").update(`${id}:audio`).digest("hex")}.${extension}`;
   const destination = path.join(directory, key);
   const temporary = `${destination}.${randomUUID()}.tmp`;
   await mkdir(path.dirname(destination), { recursive: true });
   try {
-    await writeFile(temporary, bytes, { flag: "wx" });
+    await writeFile(temporary, received, { flag: "wx" });
     await rename(temporary, destination);
   } finally {
     await rm(temporary, { force: true });
@@ -107,32 +108,49 @@ async function downloadMedia(
   return { cachePath: key, state: "available" };
 }
 
-// Media-processing boundary for background workers; ingestion does not wait for downloads.
+export async function cacheReceivedAudio(
+  id: string,
+  source: string | null,
+  cached: string | null,
+  options: MusicMediaOptions,
+  declaredAudioType?: "audio/mp4",
+): Promise<CachedMusicMedia> {
+  const directory = options.directory ?? path.resolve(BASE_CACHE_DIR, IMAGES_STORAGE_DIR);
+  if (await fileExists(directory, cached)) {
+    return { cachePath: cached, state: "available" };
+  }
+  if (source === null) {
+    return { cachePath: null, state: "unavailable" };
+  }
+  try {
+    return await downloadMedia(source, id, directory, options, declaredAudioType);
+  } catch {
+    return { cachePath: null, state: "failed" };
+  }
+}
+
+// Shared by report enrichment and the later background queue. Artwork is out of scope.
 export async function processMusicMedia(
   reference: MusicMetadataReference,
   options: MusicMediaOptions,
 ) {
-  const directory = options.directory ?? path.resolve(BASE_CACHE_DIR, IMAGES_STORAGE_DIR);
-  for (const kind of ["audio", "artwork"] as const) {
-    const current = findMusicMetadata(options.database, reference);
-    if (!current) {
-      return null;
-    }
-    const source = kind === "audio" ? current.audioSourceUrl : current.artworkSourceUrl;
-    const cached = kind === "audio" ? current.audioCachePath : current.artworkCachePath;
-    let result: CachedMusicMedia = { cachePath: null, state: "unavailable" };
-    // oxlint-disable-next-line no-await-in-loop -- Limit media memory and network pressure per asset.
-    if (await fileExists(directory, cached)) {
-      result = { cachePath: cached, state: "available" };
-    } else if (source !== null) {
-      try {
-        // oxlint-disable-next-line no-await-in-loop -- Process audio and artwork independently with bounded memory.
-        result = await downloadMedia(source, kind, current.id, directory, options);
-      } catch {
-        result = { cachePath: null, state: "failed" };
-      }
-    }
-    saveMusicMedia(options.database, reference, kind, source, result.cachePath, result.state);
+  const current = findMusicMetadata(options.database, reference);
+  if (!current) {
+    return null;
   }
+  const result = await cacheReceivedAudio(
+    current.id,
+    current.audioSourceUrl,
+    current.audioCachePath,
+    options,
+  );
+  saveMusicMedia(
+    options.database,
+    reference,
+    "audio",
+    current.audioSourceUrl,
+    result.cachePath,
+    result.state,
+  );
   return findMusicMetadata(options.database, reference) ?? null;
 }

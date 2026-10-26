@@ -1,4 +1,4 @@
-import { musicPreview, type MusicPreview } from "./music-preview.ts";
+import { musicStickerItems, type MusicStickerItem } from "./music-preview.ts";
 import type { UserTimelineStory } from "../sdk/lib/types.ts";
 import { formatUserHandle, getUserTimelineUrl } from "./helper.ts";
 
@@ -13,8 +13,8 @@ const stickerKindOrder = new Map([
 export interface StoryStickerGroup {
   mediaPk: string;
   date: string;
-  labels: Array<{ key: string; label: string; music?: Array<MusicPreview> }>;
-  music?: Array<MusicPreview>;
+  labels: Array<{ key: string; label: string }>;
+  musicItems?: Array<MusicStickerItem>;
 }
 
 export interface StickerKindGroup {
@@ -76,36 +76,15 @@ export function groupTimelineStickers(
       date: new Date(entry.taken_at * 1000).toISOString(),
       labels: [],
     };
-    const music =
-      sticker.kind === "music" && sticker.occurrenceId !== undefined
-        ? (entry.story.annotations?.musicObservations ?? [])
-            .filter((observation) => observation.occurrenceId === sticker.occurrenceId)
-            .map(musicPreview)
-            .filter((preview) => preview !== null)
-        : [];
-    const label: StoryStickerGroup["labels"][number] = { key, label: sticker.label };
-    if (music.length > 0) {
-      label.music = music;
-    }
+    const label = { key, label: sticker.label };
     group.labels.push(label);
     byStory.set(entry.story.pk, group);
     kinds.set(sticker.kind, byStory);
   }
 
   for (const entry of stories.toSorted((left, right) => right.taken_at - left.taken_at)) {
-    const { annotations } = entry.story;
-    const unlinked = (annotations?.musicObservations ?? []).filter(
-      (observation) =>
-        observation.occurrenceId === null ||
-        !(
-          annotations?.stickers.some(
-            (sticker) =>
-              sticker.kind === "music" && sticker.occurrenceId === observation.occurrenceId,
-          ) ?? false
-        ),
-    );
-    const music = unlinked.map(musicPreview).filter((preview) => preview !== null);
-    if (music.length === 0) {
+    const items = musicStickerItems(entry.story.annotations);
+    if (items.length === 0) {
       continue;
     }
     const byStory = kinds.get("music") ?? new Map<string, StoryStickerGroup>();
@@ -114,7 +93,7 @@ export function groupTimelineStickers(
       date: new Date(entry.taken_at * 1000).toISOString(),
       labels: [],
     };
-    group.music = music;
+    group.musicItems = items;
     byStory.set(entry.story.pk, group);
     kinds.set("music", byStory);
   }

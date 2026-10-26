@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { StoryLocationObservationSchema } from "../entities/location-metadata.ts";
 import { StoryMusicObservationSchema } from "../entities/music-metadata.ts";
+import { StoryAudioSchema } from "../entities/story-audio.ts";
 import { ReportStorySchema, ReportFailureSchema } from "../entities/report.ts";
 import { StoryStickerSchema } from "../entities/story.ts";
 import { JsonValueSchema } from "./json-value.ts";
@@ -34,8 +35,10 @@ export const StoryTrayEntrySchema = z.object({
 export const StoryItemSchema = z
   .object({
     accessibility_caption: z.string().nullable().optional(),
+    video_dash_manifest: z.string().nullable().optional(),
     annotations: z
       .object({
+        storyAudio: StoryAudioSchema.optional(),
         locationObservations: z.array(StoryLocationObservationSchema).optional(),
         musicObservations: z.array(StoryMusicObservationSchema).optional(),
         locations: z.array(z.string()),

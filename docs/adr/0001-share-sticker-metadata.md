@@ -18,7 +18,7 @@ longitude pair; the address is optional. A location's existing sticker label rem
 available independently of whether the place can be plotted on the map.
 
 Usable music metadata requires the Instagram audio asset identifier, title, and
-artist; received audio and artwork remain optional and do not determine
+artist; received audio remains optional and does not determine
 metadata completeness. Preserve the Instagram sticker
 identifier separately: observed sticker identifiers differ across occurrences of
 the same audio asset and cannot substitute for its shared identity.

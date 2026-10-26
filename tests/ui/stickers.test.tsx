@@ -129,10 +129,18 @@ test("missing previews keep their sticker rows and full history available", asyn
   expect(screen.getByRole("button", { name: "Tout afficher : mention" })).toBeEnabled();
 });
 
-test("music shows local artwork and explicit playback in both views without changing labels or counts", async () => {
+test("music shows explicit playback without artwork in both views, preserving labels and counts", async () => {
   const props = stickerTimeline(1);
   props.timeline.stories[0].story.annotations = {
     locations: [],
+    storyAudio: {
+      mediaPk: "sticker-0",
+      sourceUrl: "https://example.com/story-audio",
+      mimeType: "audio/mp4",
+      codecs: "mp4a.40.5",
+      cachePath: `music/${"f".repeat(64)}.m4a`,
+      state: "available",
+    },
     stickers: [
       { kind: "music", label: "Exact, original label", occurrenceId: "linked" },
       { kind: "music", label: "Exact, original label", occurrenceId: "other" },
@@ -163,23 +171,22 @@ test("music shows local artwork and explicit playback in both views without chan
   const { user } = await renderPage(UserTimelinePage, props, "/users/timeline-user");
   const card = within(screen.getByRole("region", { name: "Type de sticker : music" }));
   expect(card.getByText("2 stickers · 1 stories")).toBeVisible();
-  expect(card.getAllByText("Exact, original label")).toHaveLength(2);
-  expect(card.getByRole("img", { name: "Pochette : Song — Artist" })).toHaveAttribute(
-    "src",
-    `/media/music/${"b".repeat(64)}.jpg`,
-  );
+  expect(card.getAllByText("Exact, original label")).toHaveLength(1);
+  expect(card.queryByRole("img", { name: /Pochette/u })).not.toBeInTheDocument();
   const audio = card.getByLabelText("Écouter : Song — Artist");
-  expect(audio).toHaveAttribute("controls");
+  expect(card.getByRole("button", { name: "Lire : Song — Artist" })).toBeVisible();
+  expect(audio).not.toHaveAttribute("controls");
   expect(audio).toHaveAttribute("preload", "none");
   expect(audio).not.toHaveAttribute("autoplay");
   expect(card.getAllByLabelText("Écouter : Song — Artist")).toHaveLength(1);
+  expect(card.queryByLabelText("Écouter : Audio de la story")).not.toBeInTheDocument();
   await user.click(card.getByRole("button", { name: "Tout afficher : music" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · music" }));
-  expect(modal.getByLabelText("Écouter : Song — Artist")).toHaveAttribute("controls");
-  expect(modal.getAllByText("Exact, original label")).toHaveLength(2);
+  expect(modal.getByRole("button", { name: "Lire : Song — Artist" })).toBeVisible();
+  expect(modal.getAllByText("Exact, original label")).toHaveLength(1);
 });
 
-test("unlinked story-level music keeps artwork and audio independent and preserves sticker counts", async () => {
+test("unlinked music silently ignores artwork and preserves sticker counts", async () => {
   const props = stickerTimeline(1);
   const metadata = {
     status: "partial" as const,
@@ -226,23 +233,20 @@ test("unlinked story-level music keeps artwork and audio independent and preserv
   const { user } = await renderPage(UserTimelinePage, props, "/users/timeline-user");
   const card = within(screen.getByRole("region", { name: "Type de sticker : music" }));
   expect(card.getByText("1 stickers · 1 stories")).toBeVisible();
-  expect(card.getByText("Legacy label").closest("li")).not.toContainElement(
-    card.getByRole("img", { name: "Pochette : Cover only" }),
-  );
-  expect(card.getByLabelText("Musique reçue dans cette story")).toHaveTextContent("Audio only");
+  expect(card.queryByText("Cover only")).not.toBeInTheDocument();
+  expect(card.getByRole("button", { name: "Lire : Audio only" })).toBeVisible();
   expect(card.getByLabelText("Écouter : Audio only")).toHaveAttribute("preload", "none");
   expect(card.queryByRole("link", { name: /Spotify/u })).not.toBeInTheDocument();
-  fireEvent.error(card.getByRole("img", { name: "Pochette : Cover only" }));
   fireEvent.error(card.getByLabelText("Écouter : Audio only"));
   expect(card.queryByText("Cover only")).not.toBeInTheDocument();
-  expect(card.queryByText("Audio only")).not.toBeInTheDocument();
+  expect(card.getByText("Audio only")).toBeVisible();
   expect(card.queryByText(/indisponible/u)).not.toBeInTheDocument();
   expect(card.getByText("Legacy label")).toBeVisible();
   await user.click(card.getByRole("button", { name: "Tout afficher : music" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · music" }));
   expect(modal.getAllByText("Legacy label")).toHaveLength(1);
-  expect(modal.getByRole("img", { name: "Pochette : Cover only" })).toBeVisible();
-  expect(modal.getByLabelText("Écouter : Audio only")).toBeVisible();
+  expect(modal.queryByRole("img", { name: /Pochette/u })).not.toBeInTheDocument();
+  expect(modal.getByRole("button", { name: "Lire : Audio only" })).toBeVisible();
 });
 
 test("music observations with media but without labels stay visible without increasing sticker-story counts", async () => {
@@ -286,12 +290,12 @@ test("music observations with media but without labels stay visible without incr
   const { user } = await renderPage(UserTimelinePage, props, "/users/timeline-user");
   const card = within(screen.getByRole("region", { name: "Type de sticker : music" }));
   expect(card.getByText("1 stickers · 1 stories")).toBeVisible();
-  expect(card.getByLabelText("Musique reçue dans cette story")).toBeVisible();
+  expect(card.getByRole("button", { name: "Lire : Musique reçue" })).toBeVisible();
   await user.click(card.getByRole("button", { name: "Tout afficher : music" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · music" }));
   expect(modal.getByText("1 stickers dans 1 stories · historique complet")).toBeVisible();
   expect(modal.getAllByRole("row")).toHaveLength(3);
-  expect(modal.getByLabelText("Musique reçue dans cette story")).toBeVisible();
+  expect(modal.getByRole("button", { name: "Lire : Musique reçue" })).toBeVisible();
 });
 
 test("sticker dates show days without times and unavailable music stays silent in both views", async () => {
@@ -335,4 +339,43 @@ test("sticker dates show days without times and unavailable music stays silent i
   expect(modal.queryByText(/indisponible/u)).not.toBeInTheDocument();
   expect(modal.getAllByText("Visions - Tample")).toHaveLength(1);
   expect(modal.queryByText("Visions — Tample")).not.toBeInTheDocument();
+});
+
+test("a DASH soundtrack has one explicitly labeled player per story in the card and modal", async () => {
+  const props = stickerTimeline(1);
+  props.timeline.stories[0].story.annotations = {
+    locations: [],
+    stickers: [
+      { kind: "music", label: "Exact original label" },
+      { kind: "music", label: "Exact original label" },
+    ],
+    storyAudio: {
+      mediaPk: "sticker-0",
+      sourceUrl: "https://example.com/private-story-audio",
+      mimeType: "audio/mp4",
+      codecs: "mp4a.40.5",
+      cachePath: `music/${"f".repeat(64)}.m4a`,
+      state: "available",
+    },
+  };
+  const { user } = await renderPage(UserTimelinePage, props, "/users/timeline-user");
+  const card = within(screen.getByRole("region", { name: "Type de sticker : music" }));
+  expect(card.getAllByText("Exact original label")).toHaveLength(2);
+  expect(card.getByText("2 stickers · 1 stories")).toBeVisible();
+  expect(card.getAllByLabelText("Écouter : Exact original label")).toHaveLength(1);
+  const audio = card.getByLabelText("Écouter : Exact original label");
+  expect(audio).toHaveAttribute("src", `/media/music/${"f".repeat(64)}.m4a`);
+  expect(audio).toHaveAttribute("preload", "none");
+  expect(audio).not.toHaveAttribute("autoplay");
+  expect(card.queryByRole("img", { name: /Pochette/u })).not.toBeInTheDocument();
+  fireEvent.error(audio);
+  expect(card.getAllByText("Exact original label")).toHaveLength(2);
+  await user.click(card.getByRole("button", { name: "Tout afficher : music" }));
+  const modal = within(await screen.findByRole("dialog", { name: "Stickers · music" }));
+  expect(modal.getAllByLabelText("Écouter : Exact original label")).toHaveLength(1);
+  expect(modal.getByRole("button", { name: "Lire : Exact original label" })).toBeVisible();
+  await user.click(modal.getByRole("button", { name: "Ouvrir aperçu sticker-0" }));
+  const details = within(await screen.findByRole("dialog", { name: "Aperçu de l’image" }));
+  expect(details.getByRole("button", { name: "Lire : Exact original label" })).toBeVisible();
+  expect(details.getByRole("slider")).toBeInTheDocument();
 });

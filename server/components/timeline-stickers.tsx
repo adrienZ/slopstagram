@@ -1,4 +1,4 @@
-import { MusicMedia } from "./music-media.tsx";
+import { MusicSticker } from "./music-sticker.tsx";
 import { useState } from "react";
 import { cn } from "cn";
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ExpandIcon } from "lucide-react";
@@ -115,54 +115,39 @@ function StickerTable({
               </TableCell>
               <TableCell className="tw:align-top tw:whitespace-normal">
                 <ul className="tw:flex tw:min-w-0 tw:flex-wrap tw:gap-1.5">
-                  {story.labels.map(({ key, label, music }) => {
-                    const profileUrl = getMentionProfileUrl(kind, label, usernames);
-                    const displayLabel =
-                      expanded && kind !== "mention" ? label : formatStickerLabel(kind, label);
-                    return (
-                      <li key={key} className="tw:min-w-0 tw:max-w-full">
-                        <Badge
-                          asChild
-                          variant="secondary"
-                          title={label}
-                          className="tw:h-auto tw:max-w-full tw:py-1 tw:whitespace-normal"
-                        >
-                          {profileUrl === undefined ? (
-                            <span className="tw:wrap-anywhere">{displayLabel}</span>
-                          ) : (
-                            <a
-                              href={profileUrl}
-                              className="tw:wrap-anywhere tw:underline tw:underline-offset-2"
+                  {kind === "music"
+                    ? story.musicItems?.map(({ key, label, preview }) => (
+                        <li key={key} className="tw:min-w-0 tw:max-w-full">
+                          <MusicSticker label={label} preview={preview} />
+                        </li>
+                      ))
+                    : story.labels.map(({ key, label }) => {
+                        const profileUrl = getMentionProfileUrl(kind, label, usernames);
+                        const displayLabel =
+                          expanded && kind !== "mention" ? label : formatStickerLabel(kind, label);
+                        return (
+                          <li key={key} className="tw:min-w-0 tw:max-w-full">
+                            <Badge
+                              asChild
+                              variant="secondary"
+                              title={label}
+                              className="tw:h-auto tw:max-w-full tw:py-1 tw:whitespace-normal"
                             >
-                              {displayLabel}
-                            </a>
-                          )}
-                        </Badge>
-                        {kind === "music" &&
-                          music?.map((preview) => (
-                            <MusicMedia
-                              key={`${preview.id}:${preview.audioUrl}:${preview.artworkUrl}`}
-                              preview={preview}
-                            />
-                          ))}
-                      </li>
-                    );
-                  })}
+                              {profileUrl === undefined ? (
+                                <span className="tw:wrap-anywhere">{displayLabel}</span>
+                              ) : (
+                                <a
+                                  href={profileUrl}
+                                  className="tw:wrap-anywhere tw:underline tw:underline-offset-2"
+                                >
+                                  {displayLabel}
+                                </a>
+                              )}
+                            </Badge>
+                          </li>
+                        );
+                      })}
                 </ul>
-                {story.music && (
-                  <div
-                    className="tw:mt-3 tw:flex tw:flex-col tw:gap-3 tw:empty:hidden"
-                    aria-label="Musique reçue dans cette story"
-                  >
-                    {story.music.map((preview) => (
-                      <MusicMedia
-                        key={`${preview.id}:${preview.audioUrl}:${preview.artworkUrl}`}
-                        preview={preview}
-                        showDetails
-                      />
-                    ))}
-                  </div>
-                )}
               </TableCell>
             </TableRow>
           );

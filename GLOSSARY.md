@@ -32,8 +32,16 @@ An Instagram audio item referenced by a music sticker. Multiple sticker
 occurrences can refer to the same music asset.
 
 **Received music media**:
-The audio and cover artwork supplied by Instagram for a music asset; either may
-be available independently of the other.
+Audio supplied by Instagram for a music asset. Its availability is independent
+of whether the asset's metadata is complete.
+
+**Music asset audio**:
+Audio received for an Instagram music asset, distinct from the soundtrack of an
+individual story. It is not necessarily a full original recording.
+
+**Story audio**:
+The soundtrack of one story. It may contain music, speech, ambient sound, or a
+mixture, even when a music sticker identifies an associated song.
 
 **Partial sticker metadata**:
 An observation that lacks information required to map a tagged place or identify
