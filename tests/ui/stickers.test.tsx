@@ -129,7 +129,7 @@ test("missing previews keep their sticker rows and full history available", asyn
   expect(screen.getByRole("button", { name: "Tout afficher : mention" })).toBeEnabled();
 });
 
-test("music shows explicit playback without artwork in both views, preserving labels and counts", async () => {
+test("music shows its cached cover in the card, expanded modal and story details, preserving labels and counts", async () => {
   const props = stickerTimeline(1);
   props.timeline.stories[0].story.annotations = {
     locations: [],
@@ -172,7 +172,10 @@ test("music shows explicit playback without artwork in both views, preserving la
   const card = within(screen.getByRole("region", { name: "Type de sticker : music" }));
   expect(card.getByText("2 stickers · 1 stories")).toBeVisible();
   expect(card.getAllByText("Exact, original label")).toHaveLength(1);
-  expect(card.queryByRole("img", { name: /Pochette/u })).not.toBeInTheDocument();
+  expect(card.getByRole("img", { name: "Pochette de Song — Artist" })).toHaveAttribute(
+    "src",
+    `/media/music/${"b".repeat(64)}.jpg`,
+  );
   const audio = card.getByLabelText("Écouter : Song — Artist");
   expect(card.getByRole("button", { name: "Lire : Song — Artist" })).toBeVisible();
   expect(audio).not.toHaveAttribute("controls");
@@ -184,9 +187,19 @@ test("music shows explicit playback without artwork in both views, preserving la
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · music" }));
   expect(modal.getByRole("button", { name: "Lire : Song — Artist" })).toBeVisible();
   expect(modal.getAllByText("Exact, original label")).toHaveLength(1);
+  expect(modal.getByRole("img", { name: "Pochette de Song — Artist" })).toHaveAttribute(
+    "src",
+    `/media/music/${"b".repeat(64)}.jpg`,
+  );
+  await user.click(modal.getByRole("button", { name: "Ouvrir aperçu sticker-0" }));
+  const details = within(await screen.findByRole("dialog", { name: "Aperçu de l’image" }));
+  expect(details.getByRole("img", { name: "Pochette de Song — Artist" })).toHaveAttribute(
+    "src",
+    `/media/music/${"b".repeat(64)}.jpg`,
+  );
 });
 
-test("unlinked music silently ignores artwork and preserves sticker counts", async () => {
+test("music without audio stays hidden and another asset does not borrow its cover", async () => {
   const props = stickerTimeline(1);
   const metadata = {
     status: "partial" as const,
@@ -234,6 +247,7 @@ test("unlinked music silently ignores artwork and preserves sticker counts", asy
   const card = within(screen.getByRole("region", { name: "Type de sticker : music" }));
   expect(card.getByText("1 stickers · 1 stories")).toBeVisible();
   expect(card.queryByText("Cover only")).not.toBeInTheDocument();
+  expect(card.queryByRole("img", { name: /Pochette/u })).not.toBeInTheDocument();
   expect(card.getByRole("button", { name: "Lire : Audio only" })).toBeVisible();
   expect(card.getByLabelText("Écouter : Audio only")).toHaveAttribute("preload", "metadata");
   expect(card.queryByRole("link", { name: /Spotify/u })).not.toBeInTheDocument();

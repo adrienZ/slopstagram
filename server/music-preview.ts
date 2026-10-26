@@ -5,6 +5,7 @@ export interface MusicPreview {
   id: string;
   description: string;
   audioUrl: string | null;
+  artworkUrl: string | null;
   sourceKind: "music_asset" | "story_audio";
 }
 
@@ -22,6 +23,14 @@ function localMediaPath(key: string | null, state: string): string | null {
     : null;
 }
 
+function localArtworkPath(key: string | null, state: string): string | null {
+  return state === "available" &&
+    key !== null &&
+    /^music\/[a-f0-9]{64}\.(?:jpg|png|webp)$/u.test(key)
+    ? `/media/${key}`
+    : null;
+}
+
 export function musicPreview(observation: StoryMusicObservation): MusicPreview | null {
   const { metadata } = observation;
   const audioUrl = localMediaPath(metadata.audioCachePath, metadata.audioState);
@@ -32,6 +41,7 @@ export function musicPreview(observation: StoryMusicObservation): MusicPreview |
     id: observation.id,
     description: [metadata.title, metadata.artist].filter(Boolean).join(" — ") || "Musique reçue",
     audioUrl,
+    artworkUrl: localArtworkPath(metadata.artworkCachePath, metadata.artworkState),
     sourceKind: "music_asset",
   };
 }
@@ -64,6 +74,7 @@ export function storyAudioPreview(annotations: StoryAnnotations | undefined): Mu
         description: storySongDescription(annotations),
         sourceKind: "story_audio",
         audioUrl,
+        artworkUrl: null,
       };
 }
 

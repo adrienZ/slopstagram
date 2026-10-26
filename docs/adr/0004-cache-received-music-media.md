@@ -1,7 +1,11 @@
 # Cache received Instagram audio with explicit provenance
 
 Instagram-provided audio meets the playback need without a Spotify catalog
-dependency. The 2026-10-26 decision drops artwork retrieval and display. Preserve
+dependency. The initial 2026-10-26 decision dropped artwork retrieval and display.
+The subsequent request restores display of artwork already cached for the same
+music asset, alongside its playable audio. Missing or broken artwork stays hidden;
+do not borrow another asset's cover or display remote source URLs. Automatic
+artwork retrieval remains outside this change. Preserve
 received URLs as expiring sources and serve successful local copies; availability
 does not establish metadata completeness or an occurrence association.
 

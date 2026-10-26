@@ -1,4 +1,5 @@
 import { PauseIcon, PlayIcon } from "lucide-react";
+import { useState } from "react";
 import { Button } from "../shadcn/ui/button.tsx";
 import type { MusicPreview } from "../music-preview.ts";
 import { useAudioPreview } from "../hooks/use-audio-preview.ts";
@@ -15,6 +16,7 @@ interface MusicAudioPreviewProps {
 
 function AudioPlayer({ preview, onError }: MusicAudioPreviewProps) {
   const player = useAudioPreview(onError);
+  const [failedArtworkUrl, setFailedArtworkUrl] = useState<string | null>(null);
   if (player.failed) {
     return null;
   }
@@ -33,6 +35,19 @@ function AudioPlayer({ preview, onError }: MusicAudioPreviewProps) {
         hidden
         {...player.mediaEvents}
       />
+      {preview.artworkUrl !== null && preview.artworkUrl !== failedArtworkUrl && (
+        <img
+          src={preview.artworkUrl}
+          alt={`Pochette de ${preview.description}`}
+          width={36}
+          height={36}
+          loading="lazy"
+          className="tw:size-9 tw:shrink-0 tw:rounded-md tw:object-cover"
+          onError={() => {
+            setFailedArtworkUrl(preview.artworkUrl);
+          }}
+        />
+      )}
       <Button
         type="button"
         size="icon-sm"

@@ -12,6 +12,7 @@ const preview: MusicPreview = {
   description: "Audio de la story",
   sourceKind: "story_audio",
   audioUrl: `/media/music/${"a".repeat(64)}.m4a`,
+  artworkUrl: null,
 };
 
 function mockPlayback(context: TestContext) {
@@ -63,6 +64,28 @@ test("the compact player displays duration before playback, then plays, pauses a
   );
   fireEvent.ended(audio);
   expect(screen.getByRole("button", { name: "Lire : Audio de la story" })).toBeVisible();
+});
+
+test("a broken cover disappears without interrupting audio playback", async (context) => {
+  mockPlayback(context);
+  const { user } = await renderContent(
+    <MusicSticker
+      label="Song - Artist"
+      preview={{
+        ...preview,
+        description: "Song — Artist",
+        artworkUrl: `/media/music/${"b".repeat(64)}.jpg`,
+      }}
+    />,
+  );
+  await user.click(screen.getByRole("button", { name: "Lire : Song — Artist" }));
+  fireEvent.error(screen.getByRole("img", { name: "Pochette de Song — Artist" }));
+  expect(screen.queryByRole("img")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Mettre en pause : Song — Artist" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  expect(screen.queryByText("Song - Artist")).not.toBeInTheDocument();
 });
 
 test("starting another preview pauses the currently playing preview", async (context) => {

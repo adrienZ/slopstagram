@@ -134,7 +134,9 @@ des sources fraîches. Elle ne change pas le contrat de l'ingestion courante : l
 rapport horaire ne consulte pas encore `clips/music/`. Une automatisation pourrait
 réutiliser ce job, avec déduplication par asset et traitement sûr des MP4 audio ;
 aucune queue supplémentaire n'est nécessaire. Aucun outil de reprise n'est
-conservé dans le dépôt et l'affichage des pochettes reste hors du correctif UI.
+conservé dans le dépôt. À la demande suivante, le lecteur affiche désormais les
+pochettes déjà présentes en cache pour le même asset ; une image absente ou cassée
+est masquée sans interrompre l'audio.
 
 Le lecteur utilise désormais `preload="metadata"` sur ses fichiers locaux pour
 obtenir la durée avant le clic, sans démarrer la lecture. Cette durée est celle
