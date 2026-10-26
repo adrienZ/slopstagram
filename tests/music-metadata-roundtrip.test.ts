@@ -99,6 +99,7 @@ test("live ingestion shares exact audio identities across occurrences in cold ac
     title: "  Same Song  ",
     artist: "Artist",
     durationMs: 246_652,
+    audioDurationMs: null,
     audioSourceUrl: null,
     artworkSourceUrl: null,
     audioCachePath: null,
@@ -361,6 +362,16 @@ test("failed promotion rolls back metadata, links, ownership and media and remov
   assert.deepEqual(first.metadata, second.metadata);
   assert.equal(first.occurrenceId, before?.annotations?.stickers[0].occurrenceId);
   assert.equal(cold.listByUsername("two").length, 1);
+  assert.equal(
+    database.$client.prepare("SELECT count(*) n FROM metadata_music_partial").get()?.n,
+    0,
+  );
+  assert.equal(
+    database.$client
+      .prepare("SELECT count(*) n FROM story_music_observations WHERE partialMusicId IS NOT NULL")
+      .get()?.n,
+    0,
+  );
 });
 
 test("changed audio identity cannot inherit the previous recording's missing fields", async (context) => {

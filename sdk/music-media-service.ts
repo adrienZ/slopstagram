@@ -4,6 +4,7 @@ import path from "node:path";
 import { Buffer } from "node:buffer";
 import type { DrizzleDatabase } from "./database/client.ts";
 import type { MusicMediaState, MusicMetadataReference } from "./entities/music-metadata.ts";
+import { audioFileDurationMs } from "./lib/audio-duration.ts";
 import { BASE_CACHE_DIR, IMAGES_STORAGE_DIR } from "./lib/cache-service.ts";
 import { audioFileExtension } from "./lib/music-media-types.ts";
 import { findMusicMetadata, saveMusicMedia } from "./repositories/music-metadata-repository.ts";
@@ -13,6 +14,7 @@ const MAX_MEDIA_BYTES = 60 * 1024 * 1024;
 interface CachedMusicMedia {
   cachePath: string | null;
   state: MusicMediaState;
+  durationMs: number | null;
 }
 
 export interface MusicMediaOptions {
@@ -71,7 +73,7 @@ async function downloadMedia(
 ): Promise<CachedMusicMedia> {
   const url = new globalThis.URL(source);
   if (url.protocol !== "https:" || url.username || url.password) {
-    return { cachePath: null, state: "unsupported" };
+    return { cachePath: null, state: "unsupported", durationMs: null };
   }
   const response = await (
     options.fetchMedia ??
@@ -80,7 +82,7 @@ async function downloadMedia(
   )(source);
   if (!response.ok) {
     await response.body?.cancel();
-    return { cachePath: null, state: "failed" };
+    return { cachePath: null, state: "failed", durationMs: null };
   }
   const contentType =
     response.headers.get("content-type")?.split(";")[0].trim().toLowerCase() ?? "";
@@ -92,7 +94,7 @@ async function downloadMedia(
   );
   if (extension === undefined) {
     await response.body?.cancel();
-    return { cachePath: null, state: "unsupported" };
+    return { cachePath: null, state: "unsupported", durationMs: null };
   }
   const received = await readBounded(response);
   const key = `music/${createHash("sha256").update(`${id}:audio`).digest("hex")}.${extension}`;
@@ -105,7 +107,7 @@ async function downloadMedia(
   } finally {
     await rm(temporary, { force: true });
   }
-  return { cachePath: key, state: "available" };
+  return { cachePath: key, state: "available", durationMs: await audioFileDurationMs(destination) };
 }
 
 export async function cacheReceivedAudio(
@@ -116,20 +118,24 @@ export async function cacheReceivedAudio(
   declaredAudioType?: "audio/mp4",
 ): Promise<CachedMusicMedia> {
   const directory = options.directory ?? path.resolve(BASE_CACHE_DIR, IMAGES_STORAGE_DIR);
-  if (await fileExists(directory, cached)) {
-    return { cachePath: cached, state: "available" };
+  if (cached !== null && (await fileExists(directory, cached))) {
+    return {
+      cachePath: cached,
+      state: "available",
+      durationMs: await audioFileDurationMs(path.join(directory, cached)),
+    };
   }
   if (source === null) {
-    return { cachePath: null, state: "unavailable" };
+    return { cachePath: null, state: "unavailable", durationMs: null };
   }
   try {
     return await downloadMedia(source, id, directory, options, declaredAudioType);
   } catch {
-    return { cachePath: null, state: "failed" };
+    return { cachePath: null, state: "failed", durationMs: null };
   }
 }
 
-// Shared by report enrichment and the later background queue. Artwork is out of scope.
+// Cache received audio during report enrichment; artwork downloads are separate.
 export async function processMusicMedia(
   reference: MusicMetadataReference,
   options: MusicMediaOptions,
@@ -151,6 +157,7 @@ export async function processMusicMedia(
     current.audioSourceUrl,
     result.cachePath,
     result.state,
+    result.durationMs,
   );
   return findMusicMetadata(options.database, reference) ?? null;
 }

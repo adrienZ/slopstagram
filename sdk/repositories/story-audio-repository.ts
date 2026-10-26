@@ -25,10 +25,11 @@ export function saveStoryAudioMedia(
   current: StoryAudio,
   cachePath: string | null,
   state: StoryAudio["state"],
+  durationMs: number | null = null,
 ) {
   database
     .update(storyAudio)
-    .set({ cachePath, state })
+    .set({ cachePath, state, durationMs })
     .where(
       and(eq(storyAudio.mediaPk, current.mediaPk), eq(storyAudio.sourceUrl, current.sourceUrl)),
     )

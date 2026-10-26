@@ -30,3 +30,19 @@ after story persistence, already invoked by the existing hourly bunqueue report
 job. The dedicated workload proposed in #42 was closed as not planned. No additional Instagram requests
 refresh expired sources. Historical backfill remains a temporary local one-time
 operation rather than retained feature code.
+
+Keep a compact music panel even when no playable audio is available, using an
+inert music icon rather than a disabled button. Cached artwork forms the play
+control's disc and rotates only while playing; overflowing titles scroll within
+the panel, respecting reduced-motion preferences.
+
+Persist the measured duration of each cached audio file separately from the
+provider's full-song duration. Render it immediately in profile cards and story
+details; the player still requests media metadata by default. Sparse updates and
+partial promotion preserve the cached file's measured duration.
+
+For legacy display only, a sticker and a unique same-story asset with exactly
+matching normalized title and artist may share one panel. This does not create an
+occurrence link or merge metadata identities; the identifier rules in ADRs 0001
+and 0002 still apply to persistence. Preserve genuine repeated occurrences and
+leave multiple matching assets ambiguous.

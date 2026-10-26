@@ -3,6 +3,8 @@ import {
   type StoryOutputUser,
   type UserTimelineStory,
 } from "../sdk/lib/types.ts";
+import { presentSticker, type StickerPresentation } from "./sticker-presentation.ts";
+import type { SidebarUser } from "./sidebar-users.ts";
 import { musicStickerItems, type MusicStickerItem } from "./music-preview.ts";
 import { formatUserName, getStoryUrl } from "./helper.ts";
 import type { ReportViewModel } from "./report-view-model.ts";
@@ -13,7 +15,11 @@ export type StoryCardSources = Pick<
 >;
 
 export interface StoryCardViewModel {
-  stickerDetails?: { text: string; music: Array<MusicStickerItem> };
+  stickerDetails?: {
+    text?: string;
+    stickers?: Array<StickerPresentation>;
+    music: Array<MusicStickerItem>;
+  };
   mediaPk: string;
   preview: string;
   alt: string;
@@ -31,23 +37,23 @@ export interface StoryCardViewModel {
   visionDescription: string;
 }
 
-export function withStoryMusic(
+export function withStoryStickers(
   cards: Array<StoryCardViewModel>,
   stories: Array<Pick<UserTimelineStory, "story">>,
+  users: Array<SidebarUser> = [],
 ) {
-  const musicByMediaPk = new Map(
+  const detailsByMediaPk = new Map(
     stories.map(({ story }) => [
       story.pk,
       {
-        text: (story.annotations?.stickers ?? [])
+        stickers: (story.annotations?.stickers ?? [])
           .filter(({ kind }) => kind !== "music")
-          .map(({ label }) => label)
-          .join(", "),
+          .map(({ kind, label }) => presentSticker(kind, label, users, true)),
         music: musicStickerItems(story.annotations),
       },
     ]),
   );
-  return cards.map((card) => ({ ...card, stickerDetails: musicByMediaPk.get(card.mediaPk) }));
+  return cards.map((card) => ({ ...card, stickerDetails: detailsByMediaPk.get(card.mediaPk) }));
 }
 
 function textOrDash(value: string | undefined): string {

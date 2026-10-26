@@ -137,6 +137,7 @@ export function saveMusicMedia(
   source: string | null,
   cachePath: string | null,
   state: MusicMediaState,
+  durationMs: number | null = null,
 ) {
   const table = reference.status === "usable" ? metadataMusic : partialMetadataMusic;
   const sourceColumn = kind === "audio" ? table.audioSourceUrl : table.artworkSourceUrl;
@@ -144,7 +145,7 @@ export function saveMusicMedia(
     .update(table)
     .set(
       kind === "audio"
-        ? { audioCachePath: cachePath, audioState: state }
+        ? { audioCachePath: cachePath, audioState: state, audioDurationMs: durationMs }
         : { artworkCachePath: cachePath, artworkState: state },
     )
     .where(

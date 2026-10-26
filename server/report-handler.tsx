@@ -2,7 +2,7 @@ import "@tanstack/react-start/server-only";
 import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
 import { formatReportDate } from "./helper.ts";
 import { createReportFeed } from "../sdk/story-feed.ts";
-import { createStoryCards, withStoryMusic } from "./story-card-view-model.ts";
+import { createStoryCards, withStoryStickers } from "./story-card-view-model.ts";
 import type { ReportPageProps } from "./pages/report.tsx";
 import { createReportViewModel } from "./report-view-model.ts";
 import { loadSidebarUsers } from "./sidebar-users.ts";
@@ -20,6 +20,7 @@ export function loadReport(
     users: feedUsers,
   } = createReportFeed(now, selectedDate, { selectedStory });
   const viewModel = createReportViewModel(feedUsers);
+  const sidebarUsers = loadSidebarUsers();
   const storedStories = feedUsers.flatMap((user) =>
     user.stories.flatMap(({ media_pk }) => {
       const story = storyRepository.findByMediaPk(media_pk);
@@ -30,14 +31,14 @@ export function loadReport(
     user,
     avatar: viewModel.cachedImages.profilePicPathByUrl.get(user.profile_pic_url?.trim() ?? ""),
     summary: viewModel.userSummaryByUserKey.get(getReportUserKey(user)),
-    stories: withStoryMusic(createStoryCards(user, viewModel), storedStories),
+    stories: withStoryStickers(createStoryCards(user, viewModel), storedStories, sidebarUsers),
   }));
   return {
     date: formatReportDate(now.toISOString()),
     selectedDate: day,
     today,
     availableDates,
-    sidebarUsers: loadSidebarUsers(),
+    sidebarUsers,
     users,
   };
 }

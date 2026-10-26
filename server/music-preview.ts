@@ -6,6 +6,7 @@ export interface MusicPreview {
   description: string;
   audioUrl: string | null;
   artworkUrl: string | null;
+  durationMs: number | null;
   sourceKind: "music_asset" | "story_audio";
 }
 
@@ -42,6 +43,7 @@ export function musicPreview(observation: StoryMusicObservation): MusicPreview |
     description: [metadata.title, metadata.artist].filter(Boolean).join(" — ") || "Musique reçue",
     audioUrl,
     artworkUrl: localArtworkPath(metadata.artworkCachePath, metadata.artworkState),
+    durationMs: metadata.audioDurationMs,
     sourceKind: "music_asset",
   };
 }
@@ -75,6 +77,7 @@ export function storyAudioPreview(annotations: StoryAnnotations | undefined): Mu
         sourceKind: "story_audio",
         audioUrl,
         artworkUrl: null,
+        durationMs: audio.durationMs,
       };
 }
 
@@ -90,6 +93,15 @@ export function storyMusicPreviews(annotations: StoryAnnotations | undefined): A
   return soundtrack === null ? [] : [soundtrack];
 }
 
+function normalizeMusicLabel(label: string) {
+  return label
+    .normalize("NFKC")
+    .replaceAll(/\s+[—–-]\s+/gu, " - ")
+    .replaceAll(/\s+/gu, " ")
+    .trim()
+    .toLowerCase();
+}
+
 export function musicStickerItems(
   annotations: StoryAnnotations | undefined,
 ): Array<MusicStickerItem> {
@@ -99,15 +111,30 @@ export function musicStickerItems(
   const items = (annotations?.stickers ?? [])
     .filter(({ kind }) => kind === "music")
     .map((sticker, index) => {
-      const observation =
+      const established =
         sticker.occurrenceId === undefined
           ? undefined
           : annotations?.musicObservations?.find(
               ({ occurrenceId }) => occurrenceId === sticker.occurrenceId,
             );
+      // Old cache observations have no occurrence link. Reconcile only an exact
+      // title/artist label with one distinct asset observed in this same story.
+      const candidates = new Map(
+        (annotations?.musicObservations ?? [])
+          .filter(
+            ({ metadata }) =>
+              metadata.title !== null &&
+              metadata.artist !== null &&
+              normalizeMusicLabel(`${metadata.title} - ${metadata.artist}`) ===
+                normalizeMusicLabel(sticker.label),
+          )
+          .map((observation) => [observation.metadata.id, observation]),
+      );
+      const observation =
+        established ?? (candidates.size === 1 ? [...candidates.values()][0] : undefined);
       const asset = observation === undefined ? null : musicPreview(observation);
       if (asset !== null) {
-        linked.add(asset.id);
+        linked.add(asset.audioUrl ?? "");
       }
       return {
         key: sticker.occurrenceId ?? `music:${index}`,
@@ -118,7 +145,8 @@ export function musicStickerItems(
   // A soundtrack is displayed once at story level; this creates no occurrence link.
   const unlinked = previews.filter(
     (preview) =>
-      !linked.has(preview.id) && (preview.sourceKind !== "story_audio" || items.length === 0),
+      !linked.has(preview.audioUrl ?? "") &&
+      (preview.sourceKind !== "story_audio" || items.length === 0),
   );
   return [
     ...items,

@@ -46,6 +46,7 @@ function retainedMedia(
   const prior = known ?? previous?.metadata;
   return {
     audioCachePath,
+    audioDurationMs: known?.audioDurationMs ?? previous?.metadata.audioDurationMs ?? null,
     artworkCachePath,
     audioState: mediaState(
       audioCachePath,

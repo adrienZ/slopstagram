@@ -63,16 +63,15 @@ test("pagination shows three story groups, keeps occurrences together, and has c
   expect(links.getByText("1 / 3")).toBeVisible();
 });
 
-test("a populated kind collapses and reopens without losing its current page", async () => {
+test("sticker cards stay expanded and have no collapse control", async () => {
   const { user } = await renderPage(UserTimelinePage, stickerTimeline(), "/users/timeline-user");
   const card = within(screen.getByRole("region", { name: "Type de sticker : mention" }));
   await user.click(card.getByRole("button", { name: "Page suivante : mention" }));
-  const toggle = card.getByRole("button", { name: "Afficher ou masquer : mention" });
-  await user.click(toggle);
-  expect(toggle).toHaveAttribute("aria-expanded", "false");
-  expect(card.queryByRole("table")).not.toBeInTheDocument();
-  await user.click(toggle);
   expect(card.getByText("2 / 3")).toBeVisible();
+  expect(card.getByRole("table")).toBeVisible();
+  expect(
+    card.queryByRole("button", { name: "Afficher ou masquer : mention" }),
+  ).not.toBeInTheDocument();
 });
 
 test("full history opens all results and a nested preview returns to the kind modal", async () => {
@@ -84,6 +83,13 @@ test("full history opens all results and a nested preview returns to the kind mo
   expect(within(modal).getAllByText("@person-7")).toHaveLength(2);
   await user.click(within(modal).getByRole("button", { name: "Ouvrir aperçu sticker-7" }));
   expect(await screen.findByRole("dialog", { name: "Aperçu de l’image" })).toBeVisible();
+  const details = within(screen.getByRole("dialog", { name: "Aperçu de l’image" }));
+  expect(details.getAllByText("@person-7")).toHaveLength(2);
+  expect(
+    details
+      .getAllByText("@person-7")
+      .every((label) => label.closest("[data-slot=badge]")?.querySelector("[data-slot=avatar]")),
+  ).toBe(true);
   await user.keyboard("{Escape}");
   expect(screen.getByRole("dialog", { name: "Stickers · mention" })).toBeVisible();
   expect(screen.queryByRole("dialog", { name: "Aperçu de l’image" })).not.toBeInTheDocument();
@@ -108,7 +114,7 @@ test("only saved mentions link to their canonical profile and unknown mentions r
 test("link badges are condensed in cards and show full URLs in the history modal", async () => {
   const { user } = await renderPage(UserTimelinePage, stickerTimeline(1), "/users/timeline-user");
   const table = within(screen.getByRole("table", { name: "Stickers : link" }));
-  expect(table.getByText("example.com/story/0")).toHaveAttribute(
+  expect(table.getByText("example.com/story/0").closest("[data-slot=badge]")).toHaveAttribute(
     "title",
     "https://example.com/story/0?tracking=1",
   );
@@ -138,6 +144,7 @@ test("music shows its cached cover in the card, expanded modal and story details
       sourceUrl: "https://example.com/story-audio",
       mimeType: "audio/mp4",
       codecs: "mp4a.40.5",
+      durationMs: null,
       cachePath: `music/${"f".repeat(64)}.m4a`,
       state: "available",
     },
@@ -158,6 +165,7 @@ test("music shows its cached cover in the card, expanded modal and story details
           title: "Song",
           artist: "Artist",
           durationMs: null,
+          audioDurationMs: null,
           audioSourceUrl: "https://example.com/private-source",
           artworkSourceUrl: null,
           audioCachePath: `music/${"a".repeat(64)}.m4a`,
@@ -208,6 +216,7 @@ test("music without audio stays hidden and another asset does not borrow its cov
     title: "Cover only",
     artist: null,
     durationMs: null,
+    audioDurationMs: null,
     audioSourceUrl: null,
     artworkSourceUrl: "https://example.com/signed-source",
     audioCachePath: null,
@@ -289,6 +298,7 @@ test("music observations with media but without labels stay visible without incr
               title: null,
               artist: null,
               durationMs: null,
+              audioDurationMs: null,
               audioSourceUrl: null,
               artworkSourceUrl: null,
               audioCachePath: `music/${"e".repeat(64)}.wav`,
@@ -330,6 +340,7 @@ test("sticker dates show days without times and unavailable music stays silent i
           title: "Visions",
           artist: "Tample",
           durationMs: null,
+          audioDurationMs: null,
           audioSourceUrl: "https://example.com/expired",
           artworkSourceUrl: null,
           audioCachePath: null,
@@ -368,6 +379,7 @@ test("a DASH soundtrack has one explicitly labeled player per story in the card 
       sourceUrl: "https://example.com/private-story-audio",
       mimeType: "audio/mp4",
       codecs: "mp4a.40.5",
+      durationMs: null,
       cachePath: `music/${"f".repeat(64)}.m4a`,
       state: "available",
     },
@@ -391,5 +403,6 @@ test("a DASH soundtrack has one explicitly labeled player per story in the card 
   await user.click(modal.getByRole("button", { name: "Ouvrir aperçu sticker-0" }));
   const details = within(await screen.findByRole("dialog", { name: "Aperçu de l’image" }));
   expect(details.getByRole("button", { name: "Lire : Exact original label" })).toBeVisible();
-  expect(details.getByRole("slider")).toBeInTheDocument();
+  expect(details.getAllByRole("slider")).toHaveLength(2);
+  expect(details.getAllByLabelText("Écouter : Exact original label")).toHaveLength(1);
 });

@@ -39,6 +39,7 @@ export function planStoryAudio(
     mediaPk: story.pk,
     ...source,
     cachePath: previous?.cachePath ?? null,
+    durationMs: previous?.durationMs ?? null,
     state,
   };
 }

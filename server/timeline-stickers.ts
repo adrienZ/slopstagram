@@ -1,6 +1,6 @@
 import { musicStickerItems, type MusicStickerItem } from "./music-preview.ts";
 import type { UserTimelineStory } from "../sdk/lib/types.ts";
-import { formatUserHandle, getUserTimelineUrl } from "./helper.ts";
+import { formatUserHandle } from "./helper.ts";
 
 const stickerKindOrder = new Map([
   ["location", 0],
@@ -20,19 +20,6 @@ export interface StoryStickerGroup {
 export interface StickerKindGroup {
   kind: string;
   stories: Array<StoryStickerGroup>;
-}
-
-export function getMentionProfileUrl(
-  kind: string,
-  label: string,
-  usernames: Array<string>,
-): string | undefined {
-  if (kind !== "mention") {
-    return undefined;
-  }
-  const mentionedUsername = label.trim().replace(/^@/u, "").toLowerCase();
-  const username = usernames.find((candidate) => candidate.toLowerCase() === mentionedUsername);
-  return username === undefined ? undefined : getUserTimelineUrl(username);
 }
 
 export function formatStickerStoryDate(date: string): string {

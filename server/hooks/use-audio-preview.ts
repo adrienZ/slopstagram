@@ -1,12 +1,14 @@
 import { useRef, useState, type SyntheticEvent } from "react";
 
-export function useAudioPreview(onError?: () => void) {
+export function useAudioPreview(durationMs: number | null) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const initialDuration = durationMs === null ? 0 : durationMs / 1000;
+  const [mediaDuration, setDuration] = useState(0);
+  const duration = mediaDuration > 0 ? mediaDuration : initialDuration;
 
   const [attachAudio] = useState(
     () =>
@@ -34,8 +36,8 @@ export function useAudioPreview(onError?: () => void) {
     try {
       await audio.play();
     } catch {
+      setPlaying(false);
       setFailed(true);
-      onError?.();
     } finally {
       setLoading(false);
     }
@@ -43,7 +45,9 @@ export function useAudioPreview(onError?: () => void) {
 
   function updateProgress(event: SyntheticEvent<HTMLAudioElement>) {
     const audio = event.currentTarget;
-    setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+    setDuration(
+      Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : initialDuration,
+    );
     setCurrentTime(Number.isFinite(audio.currentTime) ? audio.currentTime : 0);
   }
 
@@ -81,8 +85,8 @@ export function useAudioPreview(onError?: () => void) {
         setPlaying(false);
       },
       onError: () => {
+        setPlaying(false);
         setFailed(true);
-        onError?.();
       },
       onLoadedMetadata: updateProgress,
       onDurationChange: updateProgress,

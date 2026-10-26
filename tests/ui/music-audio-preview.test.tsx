@@ -13,6 +13,7 @@ const preview: MusicPreview = {
   sourceKind: "story_audio",
   audioUrl: `/media/music/${"a".repeat(64)}.m4a`,
   artworkUrl: null,
+  durationMs: null,
 };
 
 function mockPlayback(context: TestContext) {
@@ -79,6 +80,9 @@ test("a broken cover disappears without interrupting audio playback", async (con
     />,
   );
   await user.click(screen.getByRole("button", { name: "Lire : Song — Artist" }));
+  expect(screen.getByRole("img", { name: "Pochette de Song — Artist" })).toHaveStyle({
+    animationPlayState: "running",
+  });
   fireEvent.error(screen.getByRole("img", { name: "Pochette de Song — Artist" }));
   expect(screen.queryByRole("img")).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Mettre en pause : Song — Artist" })).toHaveAttribute(
@@ -102,10 +106,11 @@ test("starting another preview pauses the currently playing preview", async (con
   expect(screen.getByRole("button", { name: "Mettre en pause : Second" })).toBeVisible();
 });
 
-test("the music wrapper displays either the song badge or its player, and returns to the badge after a playback error", async () => {
+test("missing or failed audio keeps the player layout with a noninteractive icon", async () => {
   const { unmount } = await renderContent(<MusicSticker label="Song - Artist" />);
   expect(screen.getByText("Song - Artist")).toBeVisible();
-  expect(screen.queryByRole("slider")).not.toBeInTheDocument();
+  expect(screen.getByRole("slider")).toBeDisabled();
+  expect(screen.queryByRole("button")).not.toBeInTheDocument();
   unmount();
   await renderContent(
     <MusicSticker label="Song - Artist" preview={{ ...preview, description: "Song — Artist" }} />,
@@ -113,8 +118,10 @@ test("the music wrapper displays either the song badge or its player, and return
   expect(screen.queryByText("Song - Artist")).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Lire : Song — Artist" })).toBeVisible();
   fireEvent.error(screen.getByLabelText("Écouter : Song — Artist"));
-  expect(screen.getByText("Song - Artist")).toBeVisible();
-  expect(screen.queryByRole("slider")).not.toBeInTheDocument();
+  expect(screen.getByText("Song — Artist")).toBeVisible();
+  expect(screen.getByRole("slider")).toBeDisabled();
+  expect(screen.getByRole("img", { name: "Audio indisponible : Song — Artist" })).toBeVisible();
+  expect(screen.queryByRole("button")).not.toBeInTheDocument();
 });
 
 test("detail-modal audio seeking keeps the selected story and navigation stops playback", async (context) => {
@@ -147,4 +154,15 @@ test("detail-modal audio seeking keeps the selected story and navigation stops p
   expect(router.state.location.search.story).toBe("next");
   expect(screen.queryByRole("slider")).not.toBeInTheDocument();
   expect(pause).toHaveBeenCalled();
+});
+
+test("stored playback duration is visible before media metadata arrives and preload defaults to enabled", async (context) => {
+  const { play } = mockPlayback(context);
+  await renderContent(<MusicAudioPreview preview={{ ...preview, durationMs: 124_000 }} />);
+  expect(screen.getByText("2:04")).toBeVisible();
+  expect(screen.getByLabelText("Écouter : Audio de la story")).toHaveAttribute(
+    "preload",
+    "metadata",
+  );
+  expect(play).not.toHaveBeenCalled();
 });

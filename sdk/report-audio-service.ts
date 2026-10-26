@@ -20,11 +20,11 @@ export async function processStoryAudio(mediaPk: string, options: MusicMediaOpti
     options,
     current.mimeType,
   );
-  saveStoryAudioMedia(options.database, current, result.cachePath, result.state);
+  saveStoryAudioMedia(options.database, current, result.cachePath, result.state, result.durationMs);
   return findStoryAudio(options.database, mediaPk) ?? null;
 }
 
-// Enrich the current report only; historical retries and scheduling belong to #42.
+// Enrich the current report; historical cache recovery remains a local one-time operation.
 export async function cacheReportAudio(
   report: StoriesManifestReport,
   options: Omit<MusicMediaOptions, "database"> & { database?: MusicMediaOptions["database"] } = {},

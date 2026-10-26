@@ -141,3 +141,34 @@ est masquée sans interrompre l'audio.
 Le lecteur utilise désormais `preload="metadata"` sur ses fichiers locaux pour
 obtenir la durée avant le clic, sans démarrer la lecture. Cette durée est celle
 du fichier effectivement joué, distincte de la durée déclarée du morceau complet.
+
+## Affichage partagé et durée des fichiers
+
+Le panneau musical conserve sa taille avec ou sans audio. La pochette est le
+fond du contrôle de lecture et tourne pendant la lecture ; un titre trop long
+défile dans sa largeur disponible. Les préférences de réduction des animations
+sont respectées. Sans audio exploitable, une icône non interactive remplace le
+contrôle de lecture.
+
+Les anciens stickers de **bliss — iogi** et **Desert Rose — Sting** avaient une
+observation musicale distincte, sans lien d'occurrence, et s'affichaient deux fois.
+L'interface regroupe maintenant un libellé et l'unique asset de la même story dont
+le titre et l'artiste correspondent exactement après normalisation. Cette règle
+d'affichage ne crée aucun lien en base et ne fusionne pas d'identités.
+
+La durée réelle d'un fichier audio local est mesurée avec `music-metadata` lors de
+sa mise en cache et stockée séparément de la durée complète du morceau reçue
+d'Instagram. Elle est disponible dès le rendu, avec `preload` activé par défaut.
+Une reprise locale ponctuelle a renseigné 243 durées d'assets et 99 durées de
+pistes de stories, avec 19 pistes historiques supplémentaires récupérées.
+Les outils de reprise ne sont pas conservés dans le dépôt.
+
+**A Moment Apart — Hannah Stater**, story `4011588843195192586`, possède un titre,
+un artiste et un manifeste dans le cache, mais aucun identifiant d'asset musical.
+Le GET de la source audio reçue répond HTTP 403 lors de cette reprise. La fiche
+reste donc partielle et son panneau est non interactif.
+
+L'audit de la promotion ne trouve aucun identifiant partagé entre les tables
+complètes et partielles, aucune fiche partielle orpheline et aucune erreur de clé
+étrangère. Les tests vérifient le retrait des lignes partielles et la conservation
+de la durée mesurée lors d'une promotion réussie.

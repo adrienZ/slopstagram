@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { cn } from "cn";
 import type { StoryCardViewModel } from "../story-card-view-model.ts";
 import type { ReactNode } from "react";
+import { Sticker } from "./sticker.tsx";
 import { MusicSticker } from "./music-sticker.tsx";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "../shadcn/ui/dialog.tsx";
 
@@ -158,6 +159,9 @@ function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: Stor
                       <>
                         {props.story.stickerDetails.text}
                         <div className="tw:flex tw:flex-wrap tw:gap-1.5">
+                          {props.story.stickerDetails.stickers?.map((sticker, index) => (
+                            <Sticker key={`${sticker.kind}:${index}`} sticker={sticker} />
+                          ))}
                           {props.story.stickerDetails.music.map(({ key, label, preview }) => (
                             <MusicSticker key={key} label={label} preview={preview} />
                           ))}

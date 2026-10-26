@@ -190,3 +190,66 @@ test("missing sources do not fetch and failed transfers never publish partial fi
   const { readdir } = await import("node:fs/promises");
   assert.deepEqual(await readdir(root), []);
 });
+
+test("the cached file duration survives partial promotion and remains distinct from the full song duration", async (context) => {
+  const database = createDrizzle(":memory:");
+  migrateDatabase(database);
+  const root = await mkdtemp(path.join(tmpdir(), "music-duration-"));
+  context.onTestFinished(async () => {
+    database.$client.close();
+    await rm(root, { recursive: true, force: true });
+  });
+  const repository = new StoryRepository(database);
+  await repository.save({
+    pk: "clip",
+    story_music_stickers: [
+      {
+        id: "occurrence",
+        music_asset_info: {
+          title: "Song",
+          progressive_download_url: "https://example.com/clip.wav",
+          duration_in_ms: 999_999,
+        },
+      },
+    ],
+  });
+  const metadata = repository.findByMediaPk("clip")?.annotations?.musicObservations?.[0].metadata;
+  assert.ok(metadata);
+  const { Buffer } = await import("node:buffer");
+  const wav = Buffer.alloc(44 + 16_000);
+  wav.write("RIFF", 0);
+  wav.writeUInt32LE(16_036, 4);
+  wav.write("WAVEfmt ", 8);
+  wav.writeUInt32LE(16, 16);
+  wav.writeUInt16LE(1, 20);
+  wav.writeUInt16LE(1, 22);
+  wav.writeUInt32LE(8000, 24);
+  wav.writeUInt32LE(16_000, 28);
+  wav.writeUInt16LE(2, 32);
+  wav.writeUInt16LE(16, 34);
+  wav.write("data", 36);
+  wav.writeUInt32LE(16_000, 40);
+  const result = await processMusicMedia(metadata, {
+    database,
+    directory: root,
+    fetchMedia: async () =>
+      new globalThis.Response(wav, { headers: { "content-type": "audio/wav" } }),
+  });
+  assert.equal(result?.audioDurationMs, 1000);
+  assert.equal(result.durationMs, 999_999);
+  await repository.save({
+    pk: "clip",
+    story_music_stickers: [
+      { id: "occurrence", music_asset_info: { audio_asset_id: "asset", display_artist: "Artist" } },
+    ],
+  });
+  const promoted = new StoryRepository(database).findByMediaPk("clip")?.annotations
+    ?.musicObservations?.[0].metadata;
+  assert.equal(promoted?.status, "usable");
+  assert.equal(promoted.audioDurationMs, 1000);
+  assert.equal(promoted.durationMs, 999_999);
+  assert.equal(
+    database.$client.prepare("SELECT count(*) n FROM metadata_music_partial").get()?.n,
+    0,
+  );
+});

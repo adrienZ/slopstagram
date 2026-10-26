@@ -10,6 +10,7 @@ const mediaStates = ["pending", "available", "unavailable", "unsupported", "fail
 function mediaColumns() {
   return {
     audioSourceUrl: text(),
+    audioDurationMs: integer(),
     artworkSourceUrl: text(),
     audioCachePath: text(),
     artworkCachePath: text(),
@@ -74,12 +75,14 @@ function nonempty(schema: z.ZodString) {
 }
 const MusicMetadataSchema = z.discriminatedUnion("status", [
   createSelectSchema(partialMetadataMusic, {
+    audioDurationMs: z.number().int().positive().nullable().default(null),
     instagramAudioAssetId: nonempty,
     title: nonempty,
     artist: nonempty,
     durationMs: (schema) => schema.int().positive(),
   }).extend({ status: z.literal("partial") }),
   createSelectSchema(metadataMusic, {
+    audioDurationMs: z.number().int().positive().nullable().default(null),
     instagramAudioAssetId: nonempty,
     title: nonempty,
     artist: nonempty,
@@ -93,7 +96,7 @@ export const StoryMusicObservationSchema = createSelectSchema(storyMusicObservat
 
 export type MusicFields = Omit<
   typeof partialMetadataMusic.$inferSelect,
-  "id" | "audioCachePath" | "artworkCachePath" | "audioState" | "artworkState"
+  "id" | "audioCachePath" | "artworkCachePath" | "audioState" | "artworkState" | "audioDurationMs"
 >;
 export type MusicMetadata =
   | ({ status: "usable" } & typeof metadataMusic.$inferSelect)

@@ -16,3 +16,17 @@
     color: var(--foreground);
   }
 }
+
+@keyframes music-title-scroll {
+  0%,
+  15% {
+    transform: translateX(0);
+  }
+  70%,
+  85% {
+    transform: translateX(var(--music-title-distance));
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
