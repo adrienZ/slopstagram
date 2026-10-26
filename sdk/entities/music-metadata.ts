@@ -5,14 +5,18 @@ import { z } from "zod";
 import { check, index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { stories, storyStickers } from "./story.ts";
 
-const matchingStates = [
-  "pending",
-  "waiting_for_configuration",
-  "matched",
-  "ambiguous",
-  "not_found",
-  "failed",
-] as const;
+const mediaStates = ["pending", "available", "unavailable", "unsupported", "failed"] as const;
+
+function mediaColumns() {
+  return {
+    audioSourceUrl: text(),
+    artworkSourceUrl: text(),
+    audioCachePath: text(),
+    artworkCachePath: text(),
+    audioState: text({ enum: mediaStates }).notNull().default("unavailable"),
+    artworkState: text({ enum: mediaStates }).notNull().default("unavailable"),
+  };
+}
 
 export const metadataMusic = sqliteTable(
   "metadata_music",
@@ -22,8 +26,7 @@ export const metadataMusic = sqliteTable(
     title: text().notNull(),
     artist: text().notNull(),
     durationMs: integer(),
-    spotifyTrackId: text(),
-    matchingState: text({ enum: matchingStates }).notNull().default("pending"),
+    ...mediaColumns(),
   },
   (table) => [
     check("music_audio_identity_nonempty", sql`length(trim(${table.instagramAudioAssetId})) > 0`),
@@ -39,8 +42,7 @@ export const partialMetadataMusic = sqliteTable("metadata_music_partial", {
   title: text(),
   artist: text(),
   durationMs: integer(),
-  spotifyTrackId: text(),
-  matchingState: text({ enum: matchingStates }),
+  ...mediaColumns(),
 });
 
 export const storyMusicObservations = sqliteTable(
@@ -91,9 +93,12 @@ export const StoryMusicObservationSchema = createSelectSchema(storyMusicObservat
 
 export type MusicFields = Omit<
   typeof partialMetadataMusic.$inferSelect,
-  "id" | "spotifyTrackId" | "matchingState"
+  "id" | "audioCachePath" | "artworkCachePath" | "audioState" | "artworkState"
 >;
 export type MusicMetadata =
   | ({ status: "usable" } & typeof metadataMusic.$inferSelect)
   | ({ status: "partial" } & typeof partialMetadataMusic.$inferSelect);
 export type StoryMusicObservation = z.infer<typeof StoryMusicObservationSchema>;
+
+export type MusicMetadataReference = Pick<MusicMetadata, "id" | "status">;
+export type MusicMediaState = typeof metadataMusic.$inferSelect.audioState;

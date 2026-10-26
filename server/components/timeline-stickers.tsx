@@ -1,3 +1,4 @@
+import { MusicMedia } from "./music-media.tsx";
 import { useState } from "react";
 import { cn } from "cn";
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ExpandIcon } from "lucide-react";
@@ -119,7 +120,7 @@ function StickerTable({
               </TableCell>
               <TableCell className="tw:align-top tw:whitespace-normal">
                 <ul className="tw:flex tw:min-w-0 tw:flex-wrap tw:gap-1.5">
-                  {story.labels.map(({ key, label }) => {
+                  {story.labels.map(({ key, label, music }) => {
                     const profileUrl = getMentionProfileUrl(kind, label, usernames);
                     const displayLabel =
                       expanded && kind !== "mention" ? label : formatStickerLabel(kind, label);
@@ -142,10 +143,40 @@ function StickerTable({
                             </a>
                           )}
                         </Badge>
+                        {kind === "music" &&
+                          ((music?.length ?? 0) > 0 ? (
+                            music?.map((preview) => (
+                              <MusicMedia
+                                key={`${preview.id}:${preview.audioUrl}:${preview.artworkUrl}`}
+                                preview={preview}
+                              />
+                            ))
+                          ) : (
+                            <p className="tw:mt-1 tw:text-xs tw:text-muted-foreground">
+                              Audio indisponible
+                            </p>
+                          ))}
                       </li>
                     );
                   })}
                 </ul>
+                {story.music && (
+                  <div
+                    className="tw:mt-3 tw:flex tw:flex-col tw:gap-3"
+                    aria-label="Musique reçue dans cette story"
+                  >
+                    <p className="tw:text-xs tw:text-muted-foreground">
+                      Musique reçue dans cette story
+                    </p>
+                    {story.music.map((preview) => (
+                      <MusicMedia
+                        key={`${preview.id}:${preview.audioUrl}:${preview.artworkUrl}`}
+                        preview={preview}
+                        showDetails
+                      />
+                    ))}
+                  </div>
+                )}
               </TableCell>
             </TableRow>
           );

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type {
+  MusicMediaState,
   metadataMusic,
   partialMetadataMusic,
   MusicFields,
@@ -15,6 +16,49 @@ function mergeFields(previous: MusicFields | undefined, incoming: MusicFields): 
     title: incoming.title ?? known.title,
     artist: incoming.artist ?? known.artist,
     durationMs: incoming.durationMs ?? known.durationMs,
+    audioSourceUrl: incoming.audioSourceUrl ?? known.audioSourceUrl,
+    artworkSourceUrl: incoming.artworkSourceUrl ?? known.artworkSourceUrl,
+  };
+}
+
+function mediaState(
+  cachePath: string | null,
+  source: string | null,
+  knownSource: string | null | undefined,
+  knownState: MusicMediaState | undefined,
+): MusicMediaState {
+  if (cachePath !== null) {
+    return "available";
+  }
+  if (source === null) {
+    return "unavailable";
+  }
+  return source === knownSource ? (knownState ?? "pending") : "pending";
+}
+
+function retainedMedia(
+  known: typeof partialMetadataMusic.$inferSelect | undefined,
+  previous: StoryMusicObservation | undefined,
+  fields: MusicFields,
+) {
+  const audioCachePath = known?.audioCachePath ?? previous?.metadata.audioCachePath ?? null;
+  const artworkCachePath = known?.artworkCachePath ?? previous?.metadata.artworkCachePath ?? null;
+  const prior = known ?? previous?.metadata;
+  return {
+    audioCachePath,
+    artworkCachePath,
+    audioState: mediaState(
+      audioCachePath,
+      fields.audioSourceUrl,
+      prior?.audioSourceUrl,
+      prior?.audioState,
+    ),
+    artworkState: mediaState(
+      artworkCachePath,
+      fields.artworkSourceUrl,
+      prior?.artworkSourceUrl,
+      prior?.artworkState,
+    ),
   };
 }
 
@@ -35,8 +79,7 @@ export function planMusicMetadataWrite(
   const entry = {
     ...fields,
     id: known?.id ?? randomUUID(),
-    spotifyTrackId: known?.spotifyTrackId ?? null,
-    matchingState: known?.matchingState ?? null,
+    ...retainedMedia(known, previous, fields),
   };
   if (fields.instagramAudioAssetId !== null && fields.title !== null && fields.artist !== null) {
     const promotedPartialIds = new Set<string>();
@@ -53,7 +96,6 @@ export function planMusicMetadataWrite(
         instagramAudioAssetId: fields.instagramAudioAssetId,
         title: fields.title,
         artist: fields.artist,
-        matchingState: entry.matchingState ?? "pending",
       },
       promotedPartialIds: [...promotedPartialIds],
     };

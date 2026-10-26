@@ -128,3 +128,113 @@ test("missing previews keep their sticker rows and full history available", asyn
   expect(screen.getByRole("table", { name: "Stickers : mention" })).toHaveTextContent("@person-0");
   expect(screen.getByRole("button", { name: "Tout afficher : mention" })).toBeEnabled();
 });
+
+test("music shows local artwork and explicit playback in both views without changing labels or counts", async () => {
+  const props = stickerTimeline(1);
+  props.timeline.stories[0].story.annotations = {
+    locations: [],
+    stickers: [
+      { kind: "music", label: "Exact, original label", occurrenceId: "linked" },
+      { kind: "music", label: "Exact, original label", occurrenceId: "other" },
+    ],
+    musicObservations: [
+      {
+        id: "observation",
+        source: "story_music_stickers",
+        providerOccurrenceId: "provider",
+        occurrenceId: "linked",
+        metadata: {
+          status: "usable",
+          id: "metadata",
+          instagramAudioAssetId: "audio",
+          title: "Song",
+          artist: "Artist",
+          durationMs: null,
+          audioSourceUrl: "https://example.com/private-source",
+          artworkSourceUrl: null,
+          audioCachePath: `music/${"a".repeat(64)}.m4a`,
+          artworkCachePath: `music/${"b".repeat(64)}.jpg`,
+          audioState: "available",
+          artworkState: "available",
+        },
+      },
+    ],
+  };
+  const { user } = await renderPage(UserTimelinePage, props, "/users/timeline-user");
+  const card = within(screen.getByRole("region", { name: "Type de sticker : music" }));
+  expect(card.getByText("2 stickers · 1 stories")).toBeVisible();
+  expect(card.getAllByText("Exact, original label")).toHaveLength(2);
+  expect(card.getByRole("img", { name: "Pochette : Song — Artist" })).toHaveAttribute(
+    "src",
+    `/media/music/${"b".repeat(64)}.jpg`,
+  );
+  const audio = card.getByLabelText("Écouter : Song — Artist");
+  expect(audio).toHaveAttribute("controls");
+  expect(audio).toHaveAttribute("preload", "none");
+  expect(audio).not.toHaveAttribute("autoplay");
+  expect(card.getAllByLabelText("Écouter : Song — Artist")).toHaveLength(1);
+  await user.click(card.getByRole("button", { name: "Tout afficher : music" }));
+  const modal = within(await screen.findByRole("dialog", { name: "Stickers · music" }));
+  expect(modal.getByLabelText("Écouter : Song — Artist")).toHaveAttribute("controls");
+  expect(modal.getAllByText("Exact, original label")).toHaveLength(2);
+});
+
+test("unlinked story-level music keeps artwork and audio independent and preserves sticker counts", async () => {
+  const props = stickerTimeline(1);
+  const metadata = {
+    status: "partial" as const,
+    id: "partial",
+    instagramAudioAssetId: null,
+    title: "Cover only",
+    artist: null,
+    durationMs: null,
+    audioSourceUrl: null,
+    artworkSourceUrl: "https://example.com/signed-source",
+    audioCachePath: null,
+    artworkCachePath: `music/${"c".repeat(64)}.jpg`,
+    audioState: "unavailable" as const,
+    artworkState: "available" as const,
+  };
+  props.timeline.stories[0].story.annotations = {
+    locations: [],
+    stickers: [{ kind: "music", label: "Legacy label" }],
+    musicObservations: [
+      {
+        id: "cover",
+        source: "story_music_stickers",
+        providerOccurrenceId: null,
+        occurrenceId: null,
+        metadata,
+      },
+      {
+        id: "audio",
+        source: "story_music_stickers",
+        providerOccurrenceId: null,
+        occurrenceId: null,
+        metadata: {
+          ...metadata,
+          id: "another",
+          title: "Audio only",
+          artworkCachePath: null,
+          artworkState: "unavailable",
+          audioCachePath: `music/${"d".repeat(64)}.wav`,
+          audioState: "available",
+        },
+      },
+    ],
+  };
+  const { user } = await renderPage(UserTimelinePage, props, "/users/timeline-user");
+  const card = within(screen.getByRole("region", { name: "Type de sticker : music" }));
+  expect(card.getByText("1 stickers · 1 stories")).toBeVisible();
+  expect(card.getByText("Legacy label").closest("li")).not.toContainElement(
+    card.getByRole("img", { name: "Pochette : Cover only" }),
+  );
+  expect(card.getByLabelText("Musique reçue dans cette story")).toHaveTextContent("Audio only");
+  expect(card.getByLabelText("Écouter : Audio only")).toHaveAttribute("preload", "none");
+  expect(card.queryByRole("link", { name: /Spotify/u })).not.toBeInTheDocument();
+  await user.click(card.getByRole("button", { name: "Tout afficher : music" }));
+  const modal = within(await screen.findByRole("dialog", { name: "Stickers · music" }));
+  expect(modal.getAllByText("Legacy label")).toHaveLength(1);
+  expect(modal.getByRole("img", { name: "Pochette : Cover only" })).toBeVisible();
+  expect(modal.getByLabelText("Écouter : Audio only")).toBeVisible();
+});

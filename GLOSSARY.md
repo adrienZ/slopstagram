@@ -31,13 +31,13 @@ to the same tagged place.
 An Instagram audio item referenced by a music sticker. Multiple sticker
 occurrences can refer to the same music asset.
 
-**Spotify match**:
-An association between a music asset referenced on Instagram and a track in
-Spotify's catalog.
+**Received music media**:
+The audio and cover artwork supplied by Instagram for a music asset; either may
+be available independently of the other.
 
 **Partial sticker metadata**:
 An observation that lacks information required to map a tagged place or identify
-a music asset for Spotify matching.
+a music asset.
 
 **Story data**:
 The latest known information about a story, shared across reports.

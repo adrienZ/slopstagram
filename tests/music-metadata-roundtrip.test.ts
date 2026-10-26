@@ -99,8 +99,12 @@ test("live ingestion shares exact audio identities across occurrences in cold ac
     title: "  Same Song  ",
     artist: "Artist",
     durationMs: 246_652,
-    spotifyTrackId: null,
-    matchingState: "pending",
+    audioSourceUrl: null,
+    artworkSourceUrl: null,
+    audioCachePath: null,
+    artworkCachePath: null,
+    audioState: "unavailable",
+    artworkState: "unavailable",
   });
   assert.deepEqual(observations[0].metadata, observations[1].metadata);
   assert.deepEqual(present(shared.musicObservations)[0].metadata, observations[0].metadata);
@@ -470,4 +474,50 @@ test("numeric IDs are accepted only when exact and invalid durations remain unkn
     assert.equal(entry.metadata.durationMs, null);
     assert.equal(entry.metadata.status, "partial");
   }
+});
+
+test("received music media survives sparse observations and partial promotion in cold reads", async (context) => {
+  const { database, repository } = setup(context);
+  await repository.save({
+    pk: "media",
+    story_music_stickers: [
+      {
+        id: "s",
+        music_asset_info: {
+          audio_asset_id: "audio",
+          title: "Song",
+          progressive_download_url: "https://example.com/primary.m4a",
+          fast_start_progressive_download_url: "https://example.com/fallback.mp3",
+          cover_artwork_uri: "",
+          cover_artwork_thumbnail_uri: "https://example.com/art.jpg",
+        },
+      },
+    ],
+  });
+  const before = read(repository, "media");
+  const [partial] = present(before.musicObservations);
+  assert.equal(partial.metadata.status, "partial");
+  assert.equal(partial.metadata.audioSourceUrl, "https://example.com/primary.m4a");
+  assert.equal(partial.metadata.artworkSourceUrl, "https://example.com/art.jpg");
+  await repository.save({
+    pk: "media",
+    story_music_stickers: [
+      {
+        id: "s",
+        music_asset_info: {
+          audio_asset_id: "audio",
+          display_artist: "Artist",
+          progressive_download_url: "",
+        },
+      },
+    ],
+  });
+  const after = read(new StoryRepository(database), "media");
+  assert.deepEqual(after.stickers, before.stickers);
+  const [promoted] = present(after.musicObservations);
+  assert.equal(promoted.metadata.status, "usable");
+  assert.equal(promoted.metadata.audioSourceUrl, "https://example.com/primary.m4a");
+  assert.equal(promoted.metadata.artworkSourceUrl, "https://example.com/art.jpg");
+  assert.equal(promoted.metadata.audioState, "pending");
+  assert.equal(promoted.metadata.artworkState, "pending");
 });

@@ -1,3 +1,4 @@
+import { musicPreview, type MusicPreview } from "./music-preview.ts";
 import type { UserTimelineStory } from "../sdk/lib/types.ts";
 import { formatUserHandle, getUserTimelineUrl } from "./helper.ts";
 
@@ -12,7 +13,8 @@ const stickerKindOrder = new Map([
 export interface StoryStickerGroup {
   mediaPk: string;
   date: string;
-  labels: Array<{ key: string; label: string }>;
+  labels: Array<{ key: string; label: string; music?: Array<MusicPreview> }>;
+  music?: Array<MusicPreview>;
 }
 
 export interface StickerKindGroup {
@@ -76,9 +78,45 @@ export function groupTimelineStickers(
       date: new Date(entry.taken_at * 1000).toISOString(),
       labels: [],
     };
-    group.labels.push({ key, label: sticker.label });
+    const music =
+      sticker.kind === "music" && sticker.occurrenceId !== undefined
+        ? (entry.story.annotations?.musicObservations ?? [])
+            .filter((observation) => observation.occurrenceId === sticker.occurrenceId)
+            .map(musicPreview)
+        : [];
+    const label: StoryStickerGroup["labels"][number] = { key, label: sticker.label };
+    if (music.length > 0) {
+      label.music = music;
+    }
+    group.labels.push(label);
     byStory.set(entry.story.pk, group);
     kinds.set(sticker.kind, byStory);
+  }
+
+  for (const entry of stories.toSorted((left, right) => right.taken_at - left.taken_at)) {
+    const { annotations } = entry.story;
+    const unlinked = (annotations?.musicObservations ?? []).filter(
+      (observation) =>
+        observation.occurrenceId === null ||
+        !(
+          annotations?.stickers.some(
+            (sticker) =>
+              sticker.kind === "music" && sticker.occurrenceId === observation.occurrenceId,
+          ) ?? false
+        ),
+    );
+    if (unlinked.length === 0) {
+      continue;
+    }
+    const byStory = kinds.get("music") ?? new Map<string, StoryStickerGroup>();
+    const group = byStory.get(entry.story.pk) ?? {
+      mediaPk: entry.story.pk,
+      date: new Date(entry.taken_at * 1000).toISOString(),
+      labels: [],
+    };
+    group.music = unlinked.map(musicPreview);
+    byStory.set(entry.story.pk, group);
+    kinds.set("music", byStory);
   }
 
   return [...kinds]
@@ -87,5 +125,8 @@ export function groupTimelineStickers(
         (stickerKindOrder.get(left) ?? stickerKindOrder.size) -
           (stickerKindOrder.get(right) ?? stickerKindOrder.size) || left.localeCompare(right),
     )
-    .map(([kind, byStory]) => ({ kind, stories: [...byStory.values()] }));
+    .map(([kind, byStory]) => ({
+      kind,
+      stories: [...byStory.values()].toSorted((left, right) => right.date.localeCompare(left.date)),
+    }));
 }
