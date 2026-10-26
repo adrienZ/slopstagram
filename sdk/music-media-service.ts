@@ -107,7 +107,7 @@ async function downloadMedia(
   return { cachePath: key, state: "available" };
 }
 
-// Shared by the one-time operator and future queue workers; failures never escape into ingestion.
+// Media-processing boundary for background workers; ingestion does not wait for downloads.
 export async function processMusicMedia(
   reference: MusicMetadataReference,
   options: MusicMediaOptions,
