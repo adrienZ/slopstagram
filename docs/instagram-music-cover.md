@@ -102,5 +102,40 @@ la résolution de cette identité. Une recherche par titre/artiste pourrait prop
 plusieurs versions ; elle ne constitue pas une association certaine et n'a pas
 été mise en place. Le lecteur actuel reste utilisable sans pochette.
 
-Les tests n'ont modifié ni les métadonnées de la base ni les sources du cache.
+Les tests de cette investigation initiale n'ont modifié ni les métadonnées de la
+base ni les sources du cache.
 Aucun cookie, jeton ou URL CDN signée réelle n'est reproduit dans ce document.
+
+## Reprise locale autorisée le 26 octobre 2026
+
+Les 1 917 fichiers du cache contiennent 352 identifiants audio distincts, tous déjà
+représentés en base. Une opération temporaire, après sauvegarde de la base, a
+consulté ces identifiants sans rechercher de correspondance par titre/artiste :
+
+- 238 assets musicaux : audio et pochette téléchargés et conservés localement.
+- 5 sons d'origine : audio et durée récupérés via `metadata.original_sound_info` ;
+  les fiches restent partielles, sans inventer d'artiste ou de pochette.
+- 99 identifiants : aucune fiche musicale ou de son d'origine exploitable.
+- 10 identifiants : identité retournée différente, association refusée.
+
+Pour les deux variantes, l'identifiant de la réponse doit correspondre exactement
+à celui demandé. Un sticker dépourvu d'identifiant audio reste hors de portée de
+cette reprise. Les libellés et occurrences des stickers sont inchangés.
+
+Les URL audio fraîches peuvent répondre `video/mp4` malgré un contenu uniquement
+audio. L'opération locale a vérifié les pistes avec `ffprobe` avant de conserver
+ces fichiers comme M4A. Le navigateur lit effectivement la copie locale de
+**Glide**, dont la durée mesurée est de 184,52 secondes. La validation finale
+confirme 243 fichiers audio, 238 images décodables et une base intègre.
+
+Cette reprise ponctuelle, explicitement autorisée, élargit la règle de reprise
+depuis le cache de l'[ADR 0004](adr/0004-cache-received-music-media.md) pour obtenir
+des sources fraîches. Elle ne change pas le contrat de l'ingestion courante : le
+rapport horaire ne consulte pas encore `clips/music/`. Une automatisation pourrait
+réutiliser ce job, avec déduplication par asset et traitement sûr des MP4 audio ;
+aucune queue supplémentaire n'est nécessaire. Aucun outil de reprise n'est
+conservé dans le dépôt et l'affichage des pochettes reste hors du correctif UI.
+
+Le lecteur utilise désormais `preload="metadata"` sur ses fichiers locaux pour
+obtenir la durée avant le clic, sans démarrer la lecture. Cette durée est celle
+du fichier effectivement joué, distincte de la durée déclarée du morceau complet.
