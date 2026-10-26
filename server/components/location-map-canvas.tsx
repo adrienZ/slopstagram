@@ -1,3 +1,7 @@
+/**
+ * https://syntax.fm/videos/syntax-side-dish-explainers/free-maps-for-any-app-replace-google-maps-today
+ */
+
 import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 import Map, { Marker, NavigationControl, Popup } from "react-map-gl/maplibre";
