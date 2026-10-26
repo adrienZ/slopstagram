@@ -1,6 +1,6 @@
 import { useRef, useState, type SyntheticEvent } from "react";
 
-export function useAudioPreview(durationMs: number | null) {
+export function useAudioPreview(durationMs: number | null, onError?: () => void) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -38,6 +38,7 @@ export function useAudioPreview(durationMs: number | null) {
     } catch {
       setPlaying(false);
       setFailed(true);
+      onError?.();
     } finally {
       setLoading(false);
     }
@@ -87,6 +88,7 @@ export function useAudioPreview(durationMs: number | null) {
       onError: () => {
         setPlaying(false);
         setFailed(true);
+        onError?.();
       },
       onLoadedMetadata: updateProgress,
       onDurationChange: updateProgress,

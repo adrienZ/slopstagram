@@ -307,3 +307,26 @@ test("ordinary video soundtracks are not classified as music without received mu
   await repository.save({ pk: "ordinary", video_dash_manifest: manifest("ordinary") });
   assert.equal(repository.findByMediaPk("ordinary")?.annotations?.storyAudio, undefined);
 });
+
+test("reels shared into a story do not create or retain a downloadable soundtrack", async (context) => {
+  const database = createDrizzle(":memory:");
+  migrateDatabase(database);
+  context.onTestFinished(() => {
+    database.$client.close();
+  });
+  const repository = new StoryRepository(database);
+  const story = {
+    pk: "reel-share",
+    video_dash_manifest: manifest("reel"),
+    story_music_stickers: [{ music_asset_info: { title: "Song", display_artist: "Artist" } }],
+  };
+  await repository.save(story);
+  assert.ok(repository.findByMediaPk(story.pk)?.annotations?.storyAudio);
+  await repository.save({ ...story, story_feed_media: [{ id: "reel", product_type: "clips" }] });
+  const cold = new StoryRepository(database).findByMediaPk(story.pk);
+  assert.equal(cold?.annotations?.storyAudio, undefined);
+  assert.ok(cold?.annotations);
+  assert.equal(cold.annotations.stickers[0].kind, "music");
+  await repository.save({ ...story, pk: "direct-reel", product_type: "clips" });
+  assert.equal(repository.findByMediaPk("direct-reel")?.annotations?.storyAudio, undefined);
+});

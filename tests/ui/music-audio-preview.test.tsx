@@ -106,10 +106,13 @@ test("starting another preview pauses the currently playing preview", async (con
   expect(screen.getByRole("button", { name: "Mettre en pause : Second" })).toBeVisible();
 });
 
-test("missing or failed audio keeps the player layout with a noninteractive icon", async () => {
+test("missing or failed audio keeps its sticker label without a player", async () => {
+  const empty = await renderContent(<MusicAudioPreview preview={{ ...preview, audioUrl: null }} />);
+  expect(screen.queryByRole("group")).not.toBeInTheDocument();
+  empty.unmount();
   const { unmount } = await renderContent(<MusicSticker label="Song - Artist" />);
   expect(screen.getByText("Song - Artist")).toBeVisible();
-  expect(screen.getByRole("slider")).toBeDisabled();
+  expect(screen.queryByRole("slider")).not.toBeInTheDocument();
   expect(screen.queryByRole("button")).not.toBeInTheDocument();
   unmount();
   await renderContent(
@@ -118,9 +121,8 @@ test("missing or failed audio keeps the player layout with a noninteractive icon
   expect(screen.queryByText("Song - Artist")).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Lire : Song — Artist" })).toBeVisible();
   fireEvent.error(screen.getByLabelText("Écouter : Song — Artist"));
-  expect(screen.getByText("Song — Artist")).toBeVisible();
-  expect(screen.getByRole("slider")).toBeDisabled();
-  expect(screen.getByRole("img", { name: "Audio indisponible : Song — Artist" })).toBeVisible();
+  expect(screen.getByText("Song - Artist")).toBeVisible();
+  expect(screen.queryByRole("slider")).not.toBeInTheDocument();
   expect(screen.queryByRole("button")).not.toBeInTheDocument();
 });
 

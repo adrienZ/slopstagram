@@ -1,19 +1,34 @@
 import { MapPinIcon } from "lucide-react";
 import { Badge } from "../shadcn/ui/badge.tsx";
-import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/ui/avatar.tsx";
+import { useState } from "react";
 import type { StickerPresentation } from "../sticker-presentation.ts";
 
 const badgeClass = "tw:h-auto tw:max-w-full tw:gap-1 tw:py-1 tw:whitespace-normal";
 
+function MentionAvatar({ src }: { src: string }) {
+  const [failed, setFailed] = useState(false);
+  return failed ? null : (
+    <img
+      src={src}
+      alt=""
+      aria-hidden="true"
+      width={20}
+      height={20}
+      loading="lazy"
+      className="tw:size-5 tw:shrink-0 tw:rounded-full tw:object-cover"
+      onError={() => {
+        setFailed(true);
+      }}
+    />
+  );
+}
+
 export function MentionSticker({ sticker }: { sticker: StickerPresentation }) {
   const content = (
     <>
-      <Avatar className="tw:size-5 tw:shrink-0" aria-hidden="true">
-        <AvatarImage src={sticker.avatarUrl} alt="" />
-        <AvatarFallback>
-          {sticker.label.replace(/^@/u, "").slice(0, 2).toUpperCase()}
-        </AvatarFallback>
-      </Avatar>
+      {sticker.avatarUrl !== undefined && (
+        <MentionAvatar key={sticker.avatarUrl} src={sticker.avatarUrl} />
+      )}
       <span className="tw:wrap-anywhere">{sticker.label}</span>
     </>
   );

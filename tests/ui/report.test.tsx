@@ -1,5 +1,6 @@
-import { expect, test } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { expect, test, vi } from "vitest";
+import { screen, within, waitFor } from "@testing-library/react";
+import { withStoryStickers } from "../../server/story-card-view-model.ts";
 import { ReportPage } from "../../server/pages/report.tsx";
 import { reportProps } from "../page-fixtures.ts";
 import { renderPage } from "./render.tsx";
@@ -122,4 +123,48 @@ test("a story deep link opens after mount and an unknown story stays closed", as
   page.unmount();
   await renderPage(ReportPage, reportProps, "/report?story=missing");
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+});
+
+test("closing story details hides the dialog immediately while route navigation is pending", async (context) => {
+  const { user, router } = await renderPage(ReportPage, reportProps, "/report?story=story-pk-1");
+  const original = router.navigate.bind(router);
+  const { promise: pending, resolve: release } = Promise.withResolvers<null>();
+  context.onTestFinished(() => {
+    release(null);
+  });
+  vi.spyOn(router, "navigate").mockImplementation(async (options) => {
+    await pending;
+    await original(options);
+  });
+  await user.click(screen.getByRole("button", { name: "Fermer l’aperçu" }));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  release(null);
+  await waitFor(() => {
+    expect(router.state.location.search.story).toBeUndefined();
+  });
+});
+
+test("mentions in report details link to saved user pages without inventing an avatar", async () => {
+  const sidebarUsers = [{ username: "outside-feed", avatarPath: null }];
+  const users = reportProps.users.map((user) => ({
+    ...user,
+    stories: withStoryStickers(
+      user.stories,
+      [
+        {
+          story: {
+            pk: "story-pk-1",
+            annotations: { locations: [], stickers: [{ kind: "mention", label: "@outside-feed" }] },
+          },
+        },
+      ],
+      sidebarUsers,
+    ),
+  }));
+  await renderPage(ReportPage, { ...reportProps, users, sidebarUsers }, "/report?story=story-pk-1");
+  const details = within(await screen.findByRole("dialog", { name: "Aperçu de l’image" }));
+  const mention = details.getByRole("link", { name: "@outside-feed" });
+  expect(mention).toHaveAttribute("href", "/users/outside-feed");
+  expect(mention.querySelector("img")).toBeNull();
+  expect(details.queryByRole("rowheader", { name: /^Story$/u })).not.toBeInTheDocument();
 });

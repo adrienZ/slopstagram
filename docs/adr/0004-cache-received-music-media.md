@@ -31,10 +31,14 @@ job. The dedicated workload proposed in #42 was closed as not planned. No additi
 refresh expired sources. Historical backfill remains a temporary local one-time
 operation rather than retained feature code.
 
-Keep a compact music panel even when no playable audio is available, using an
-inert music icon rather than a disabled button. Cached artwork forms the play
-control's disc and rotates only while playing; overflowing titles scroll within
-the panel, respecting reduced-motion preferences.
+Show the player only when a local audio file is available; missing or failed audio
+keeps the sticker badge without a player. Cached artwork forms the play control's
+disc and rotates only while playing; overflowing titles scroll within the panel,
+respecting reduced-motion preferences.
+
+Exclude soundtracks of reels and stories that reshare reels, identified by the
+received `product_type: clips`. Do not recover `original_sound_info` audio from
+reel music pages. Preserve the story and sticker metadata independently.
 
 Persist the measured duration of each cached audio file separately from the
 provider's full-song duration. Render it immediately in profile cards and story

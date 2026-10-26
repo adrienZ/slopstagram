@@ -144,11 +144,10 @@ du fichier effectivement joué, distincte de la durée déclarée du morceau com
 
 ## Affichage partagé et durée des fichiers
 
-Le panneau musical conserve sa taille avec ou sans audio. La pochette est le
-fond du contrôle de lecture et tourne pendant la lecture ; un titre trop long
-défile dans sa largeur disponible. Les préférences de réduction des animations
-sont respectées. Sans audio exploitable, une icône non interactive remplace le
-contrôle de lecture.
+La pochette est le fond du contrôle de lecture et tourne pendant la lecture ; un
+titre trop long défile dans sa largeur disponible. Les préférences de réduction
+des animations sont respectées. À la demande suivante, le lecteur est masqué sans
+audio exploitable : seul le badge du sticker reste affiché.
 
 Les anciens stickers de **bliss — iogi** et **Desert Rose — Sting** avaient une
 observation musicale distincte, sans lien d'occurrence, et s'affichaient deux fois.
@@ -172,3 +171,19 @@ L'audit de la promotion ne trouve aucun identifiant partagé entre les tables
 complètes et partielles, aucune fiche partielle orpheline et aucune erreur de clé
 étrangère. Les tests vérifient le retrait des lignes partielles et la conservation
 de la durée mesurée lors d'une promotion réussie.
+
+## Exclusion des audios de reels et location incomplète
+
+La reprise des manifestes historiques a essayé des sources DASH que la reprise
+des assets musicaux ne traitait pas ; certaines étaient encore accessibles, ce
+qui explique les 19 pistes supplémentaires. Elle incluait aussi des stories qui
+repartageaient un reel. Ces bandes sonores sont désormais exclues à partir des
+champs `product_type` et `story_feed_media` reçus. Les cinq sources récupérées via
+`original_sound_info` ont été désactivées en base. Les fichiers n'ont pas été
+purgés et une sauvegarde précède la correction locale.
+
+La story `4016569967955848219` contient `story_locations[0].location.pk` égal à
+`106556130206942`, sans nom, adresse ni coordonnées. Le cache ne fournit aucune
+autre observation plus complète pour ce lieu. L'observation est conservée
+dans les métadonnées partielles ; « Toronto » vient de l'image et de l'OCR, pas
+d'un nom de lieu reçu dans les métadonnées.

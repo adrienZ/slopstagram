@@ -1,4 +1,4 @@
-import { Music2Icon, PauseIcon, PlayIcon } from "lucide-react";
+import { PauseIcon, PlayIcon } from "lucide-react";
 import { useState } from "react";
 import { cn } from "cn";
 import { Button } from "../shadcn/ui/button.tsx";
@@ -14,12 +14,15 @@ function audioTime(seconds: number) {
 interface MusicAudioPreviewProps {
   preview: MusicPreview;
   preload?: boolean;
+  onError?: () => void;
 }
 
-function AudioPlayer({ preview, preload = true }: MusicAudioPreviewProps) {
-  const player = useAudioPreview(preview.durationMs);
+function AudioPlayer({ preview, preload = true, onError }: MusicAudioPreviewProps) {
+  const player = useAudioPreview(preview.durationMs, onError);
   const [failedArtworkUrl, setFailedArtworkUrl] = useState<string | null>(null);
-  const playable = preview.audioUrl !== null && !player.failed;
+  if (preview.audioUrl === null || player.failed) {
+    return null;
+  }
   const hasArtwork = preview.artworkUrl !== null && preview.artworkUrl !== failedArtworkUrl;
   return (
     <div
@@ -28,16 +31,14 @@ function AudioPlayer({ preview, preload = true }: MusicAudioPreviewProps) {
       title={preview.sourceKind === "story_audio" ? "Audio de la story" : undefined}
       className="tw:flex tw:w-56 tw:min-w-0 tw:max-w-full tw:items-center tw:gap-2 tw:overflow-hidden tw:rounded-lg tw:border tw:border-border tw:bg-muted/40 tw:p-2"
     >
-      {playable && (
-        <audio
-          ref={player.attachAudio}
-          src={preview.audioUrl ?? undefined}
-          aria-label={`Écouter : ${preview.description}`}
-          preload={preload ? "metadata" : "none"}
-          hidden
-          {...player.mediaEvents}
-        />
-      )}
+      <audio
+        ref={player.attachAudio}
+        src={preview.audioUrl}
+        aria-label={`Écouter : ${preview.description}`}
+        preload={preload ? "metadata" : "none"}
+        hidden
+        {...player.mediaEvents}
+      />
       <span className="tw:relative tw:size-10 tw:shrink-0">
         {hasArtwork && (
           <img
@@ -53,32 +54,22 @@ function AudioPlayer({ preview, preload = true }: MusicAudioPreviewProps) {
             }}
           />
         )}
-        {playable ? (
-          <Button
-            type="button"
-            variant={hasArtwork ? "ghost" : "secondary"}
-            size="icon"
-            className="tw:relative tw:size-10 tw:rounded-full"
-            aria-label={`${player.playing ? "Mettre en pause" : "Lire"} : ${preview.description}`}
-            aria-pressed={player.playing}
-            disabled={player.loading}
-            onClick={() => {
-              void player.toggle();
-            }}
-          >
-            <span className={cn("tw:rounded-full tw:p-1", hasArtwork && "tw:bg-background/85")}>
-              {player.playing ? <PauseIcon /> : <PlayIcon />}
-            </span>
-          </Button>
-        ) : (
-          <span
-            role="img"
-            aria-label={`Audio indisponible : ${preview.description}`}
-            className="tw:relative tw:flex tw:size-10 tw:items-center tw:justify-center tw:rounded-full tw:bg-muted tw:text-muted-foreground"
-          >
-            <Music2Icon className="tw:size-4" aria-hidden="true" />
+        <Button
+          type="button"
+          variant={hasArtwork ? "ghost" : "secondary"}
+          size="icon"
+          className="tw:relative tw:size-10 tw:rounded-full"
+          aria-label={`${player.playing ? "Mettre en pause" : "Lire"} : ${preview.description}`}
+          aria-pressed={player.playing}
+          disabled={player.loading}
+          onClick={() => {
+            void player.toggle();
+          }}
+        >
+          <span className={cn("tw:rounded-full tw:p-1", hasArtwork && "tw:bg-background/85")}>
+            {player.playing ? <PauseIcon /> : <PlayIcon />}
           </span>
-        )}
+        </Button>
       </span>
       <div className="tw:flex tw:min-w-0 tw:flex-1 tw:flex-col tw:gap-1">
         <ScrollingTitle>{preview.description}</ScrollingTitle>
@@ -90,7 +81,7 @@ function AudioPlayer({ preview, preload = true }: MusicAudioPreviewProps) {
             max={player.duration}
             step={0.1}
             value={Math.min(player.currentTime, player.duration)}
-            disabled={!playable || player.duration === 0}
+            disabled={player.duration === 0}
             className="tw:h-1 tw:min-w-0 tw:flex-1 tw:cursor-pointer tw:accent-primary tw:disabled:cursor-default"
             onChange={(event) => {
               player.seek(event.currentTarget.valueAsNumber);
@@ -111,5 +102,8 @@ function AudioPlayer({ preview, preload = true }: MusicAudioPreviewProps) {
 }
 
 export function MusicAudioPreview(props: MusicAudioPreviewProps) {
+  if (props.preview.audioUrl === null) {
+    return null;
+  }
   return <AudioPlayer key={`${props.preview.id}:${props.preview.audioUrl}`} {...props} />;
 }

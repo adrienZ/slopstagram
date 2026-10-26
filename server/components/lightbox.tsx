@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { cn } from "cn";
 import type { StoryCardViewModel } from "../story-card-view-model.ts";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Sticker } from "./sticker.tsx";
 import { MusicSticker } from "./music-sticker.tsx";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "../shadcn/ui/dialog.tsx";
@@ -47,8 +47,10 @@ function LightboxNavButton(props: {
 
 function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: StoryCardViewModel }) {
   const navigateTo = useNavigate();
+  const [dismissedStory, setDismissedStory] = useState<string | null>(null);
 
   function close() {
+    setDismissedStory(props.story.mediaPk);
     void navigateTo({
       to: ".",
       search: (previous) => ({ ...previous, story: undefined }),
@@ -77,7 +79,7 @@ function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: Stor
 
   return (
     <Dialog
-      open
+      open={dismissedStory !== props.story.mediaPk}
       onOpenChange={(open) => {
         if (!open) {
           close();
@@ -149,7 +151,6 @@ function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: Stor
             <table className="tw:w-full tw:table-fixed tw:border-collapse tw:bg-card tw:text-card-foreground tw:max-[760px]:block tw:max-[760px]:w-auto">
               <tbody className="tw:max-[760px]:block">
                 <LightboxDetailsRow label="Type" value={props.story.mediaType} />
-                <LightboxDetailsRow label="Story" value={props.story.mediaPk} />
                 <LightboxDetailsRow
                   label="Stickers"
                   value={

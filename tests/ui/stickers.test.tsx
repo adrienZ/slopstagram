@@ -86,9 +86,7 @@ test("full history opens all results and a nested preview returns to the kind mo
   const details = within(screen.getByRole("dialog", { name: "Aperçu de l’image" }));
   expect(details.getAllByText("@person-7")).toHaveLength(2);
   expect(
-    details
-      .getAllByText("@person-7")
-      .every((label) => label.closest("[data-slot=badge]")?.querySelector("[data-slot=avatar]")),
+    details.getAllByText("@person-7").every((label) => label.closest("[data-slot=badge]")),
   ).toBe(true);
   await user.keyboard("{Escape}");
   expect(screen.getByRole("dialog", { name: "Stickers · mention" })).toBeVisible();
@@ -403,6 +401,6 @@ test("a DASH soundtrack has one explicitly labeled player per story in the card 
   await user.click(modal.getByRole("button", { name: "Ouvrir aperçu sticker-0" }));
   const details = within(await screen.findByRole("dialog", { name: "Aperçu de l’image" }));
   expect(details.getByRole("button", { name: "Lire : Exact original label" })).toBeVisible();
-  expect(details.getAllByRole("slider")).toHaveLength(2);
+  expect(details.getAllByRole("slider")).toHaveLength(1);
   expect(details.getAllByLabelText("Écouter : Exact original label")).toHaveLength(1);
 });
