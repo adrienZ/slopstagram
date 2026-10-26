@@ -10,12 +10,17 @@ export function MusicMedia({
 }) {
   const [audioFailed, setAudioFailed] = useState(false);
   const [artworkFailed, setArtworkFailed] = useState(false);
+  const audioUrl = audioFailed ? null : preview.audioUrl;
+  const artworkUrl = artworkFailed ? null : preview.artworkUrl;
+  if (audioUrl === null && artworkUrl === null) {
+    return null;
+  }
   return (
     <div className="tw:mt-2 tw:flex tw:w-60 tw:max-w-full tw:flex-col tw:gap-2">
       {showDetails && <p className="tw:text-sm tw:wrap-anywhere">{preview.description}</p>}
-      {preview.artworkUrl !== null && !artworkFailed ? (
+      {artworkUrl !== null && (
         <img
-          src={preview.artworkUrl}
+          src={artworkUrl}
           alt={`Pochette : ${preview.description}`}
           width={64}
           height={64}
@@ -25,24 +30,18 @@ export function MusicMedia({
             setArtworkFailed(true);
           }}
         />
-      ) : (
-        <p className="tw:text-xs tw:text-muted-foreground">Pochette indisponible</p>
       )}
-      {preview.audioUrl !== null && !audioFailed ? (
+      {audioUrl !== null && (
         <audio
           aria-label={`Écouter : ${preview.description}`}
-          src={preview.audioUrl}
+          src={audioUrl}
           controls
           preload="none"
           className="tw:h-10 tw:w-full tw:min-w-0"
           onError={() => {
             setAudioFailed(true);
           }}
-        >
-          Votre navigateur ne prend pas en charge cet audio.
-        </audio>
-      ) : (
-        <p className="tw:text-xs tw:text-muted-foreground">Audio indisponible</p>
+        />
       )}
     </div>
   );

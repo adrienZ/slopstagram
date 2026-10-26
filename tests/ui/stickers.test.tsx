@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import { UserTimelinePage } from "../../server/pages/users/$username.tsx";
 import type { TimelineContentProps } from "../../server/pages/users/$username.tsx";
 import { timelineEntry, timelineProps } from "../page-fixtures.ts";
@@ -232,6 +232,12 @@ test("unlinked story-level music keeps artwork and audio independent and preserv
   expect(card.getByLabelText("Musique reçue dans cette story")).toHaveTextContent("Audio only");
   expect(card.getByLabelText("Écouter : Audio only")).toHaveAttribute("preload", "none");
   expect(card.queryByRole("link", { name: /Spotify/u })).not.toBeInTheDocument();
+  fireEvent.error(card.getByRole("img", { name: "Pochette : Cover only" }));
+  fireEvent.error(card.getByLabelText("Écouter : Audio only"));
+  expect(card.queryByText("Cover only")).not.toBeInTheDocument();
+  expect(card.queryByText("Audio only")).not.toBeInTheDocument();
+  expect(card.queryByText(/indisponible/u)).not.toBeInTheDocument();
+  expect(card.getByText("Legacy label")).toBeVisible();
   await user.click(card.getByRole("button", { name: "Tout afficher : music" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · music" }));
   expect(modal.getAllByText("Legacy label")).toHaveLength(1);
@@ -239,7 +245,7 @@ test("unlinked story-level music keeps artwork and audio independent and preserv
   expect(modal.getByLabelText("Écouter : Audio only")).toBeVisible();
 });
 
-test("music observations without labels stay visible without increasing sticker-story counts", async () => {
+test("music observations with media but without labels stay visible without increasing sticker-story counts", async () => {
   const props = stickerTimeline(1);
   props.timeline.stories[0].story.annotations = {
     locations: [],
@@ -267,9 +273,9 @@ test("music observations without labels stay visible without increasing sticker-
               durationMs: null,
               audioSourceUrl: null,
               artworkSourceUrl: null,
-              audioCachePath: null,
+              audioCachePath: `music/${"e".repeat(64)}.wav`,
               artworkCachePath: null,
-              audioState: "unavailable",
+              audioState: "available",
               artworkState: "unavailable",
             },
           },
@@ -286,4 +292,47 @@ test("music observations without labels stay visible without increasing sticker-
   expect(modal.getByText("1 stickers dans 1 stories · historique complet")).toBeVisible();
   expect(modal.getAllByRole("row")).toHaveLength(3);
   expect(modal.getByLabelText("Musique reçue dans cette story")).toBeVisible();
+});
+
+test("sticker dates show days without times and unavailable music stays silent in both views", async () => {
+  const props = stickerTimeline(1);
+  props.timeline.stories[0].story.annotations = {
+    locations: [],
+    stickers: [{ kind: "music", label: "Visions - Tample" }],
+    musicObservations: [
+      {
+        id: "unlinked",
+        source: "story_music_stickers",
+        occurrenceId: null,
+        providerOccurrenceId: null,
+        metadata: {
+          status: "usable",
+          id: "music",
+          instagramAudioAssetId: "audio",
+          title: "Visions",
+          artist: "Tample",
+          durationMs: null,
+          audioSourceUrl: "https://example.com/expired",
+          artworkSourceUrl: null,
+          audioCachePath: null,
+          artworkCachePath: null,
+          audioState: "failed",
+          artworkState: "unavailable",
+        },
+      },
+    ],
+  };
+  const { user } = await renderPage(UserTimelinePage, props, "/users/timeline-user");
+  const card = within(screen.getByRole("region", { name: "Type de sticker : music" }));
+  expect(card.getByText("1 janv.")).toBeVisible();
+  expect(card.queryByText(/indisponible/u)).not.toBeInTheDocument();
+  expect(card.queryByLabelText("Musique reçue dans cette story")).not.toBeInTheDocument();
+  expect(card.getAllByText("Visions - Tample")).toHaveLength(1);
+  expect(card.queryByText("Visions — Tample")).not.toBeInTheDocument();
+  await user.click(card.getByRole("button", { name: "Tout afficher : music" }));
+  const modal = within(await screen.findByRole("dialog", { name: "Stickers · music" }));
+  expect(modal.getByText("1 janv.")).toBeVisible();
+  expect(modal.queryByText(/indisponible/u)).not.toBeInTheDocument();
+  expect(modal.getAllByText("Visions - Tample")).toHaveLength(1);
+  expect(modal.queryByText("Visions — Tample")).not.toBeInTheDocument();
 });

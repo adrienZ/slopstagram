@@ -39,8 +39,6 @@ export function formatStickerStoryDate(date: string): string {
   return new Intl.DateTimeFormat("fr-FR", {
     day: "numeric",
     month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
     timeZone: "Europe/Paris",
   }).format(new Date(date));
 }
@@ -83,6 +81,7 @@ export function groupTimelineStickers(
         ? (entry.story.annotations?.musicObservations ?? [])
             .filter((observation) => observation.occurrenceId === sticker.occurrenceId)
             .map(musicPreview)
+            .filter((preview) => preview !== null)
         : [];
     const label: StoryStickerGroup["labels"][number] = { key, label: sticker.label };
     if (music.length > 0) {
@@ -105,7 +104,8 @@ export function groupTimelineStickers(
           ) ?? false
         ),
     );
-    if (unlinked.length === 0) {
+    const music = unlinked.map(musicPreview).filter((preview) => preview !== null);
+    if (music.length === 0) {
       continue;
     }
     const byStory = kinds.get("music") ?? new Map<string, StoryStickerGroup>();
@@ -114,7 +114,7 @@ export function groupTimelineStickers(
       date: new Date(entry.taken_at * 1000).toISOString(),
       labels: [],
     };
-    group.music = unlinked.map(musicPreview);
+    group.music = music;
     byStory.set(entry.story.pk, group);
     kinds.set("music", byStory);
   }

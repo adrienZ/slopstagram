@@ -3,7 +3,6 @@ import { useState } from "react";
 import { cn } from "cn";
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ExpandIcon } from "lucide-react";
 import type { StoryCardViewModel } from "../story-card-view-model.ts";
-import { formatReportDate } from "../helper.ts";
 import {
   formatStickerLabel,
   formatStickerStoryDate,
@@ -103,11 +102,7 @@ function StickerTable({
                     <StoryCard story={card} size="sticker" />
                   )}
                   <div className="tw:flex tw:min-w-0 tw:flex-col tw:gap-1">
-                    <time
-                      className="tw:text-xs tw:text-muted-foreground"
-                      dateTime={story.date}
-                      title={formatReportDate(story.date)}
-                    >
+                    <time className="tw:text-xs tw:text-muted-foreground" dateTime={story.date}>
                       {formatStickerStoryDate(story.date)}
                     </time>
                     {expanded && (
@@ -144,17 +139,11 @@ function StickerTable({
                           )}
                         </Badge>
                         {kind === "music" &&
-                          ((music?.length ?? 0) > 0 ? (
-                            music?.map((preview) => (
-                              <MusicMedia
-                                key={`${preview.id}:${preview.audioUrl}:${preview.artworkUrl}`}
-                                preview={preview}
-                              />
-                            ))
-                          ) : (
-                            <p className="tw:mt-1 tw:text-xs tw:text-muted-foreground">
-                              Audio indisponible
-                            </p>
+                          music?.map((preview) => (
+                            <MusicMedia
+                              key={`${preview.id}:${preview.audioUrl}:${preview.artworkUrl}`}
+                              preview={preview}
+                            />
                           ))}
                       </li>
                     );
@@ -162,12 +151,9 @@ function StickerTable({
                 </ul>
                 {story.music && (
                   <div
-                    className="tw:mt-3 tw:flex tw:flex-col tw:gap-3"
+                    className="tw:mt-3 tw:flex tw:flex-col tw:gap-3 tw:empty:hidden"
                     aria-label="Musique reçue dans cette story"
                   >
-                    <p className="tw:text-xs tw:text-muted-foreground">
-                      Musique reçue dans cette story
-                    </p>
                     {story.music.map((preview) => (
                       <MusicMedia
                         key={`${preview.id}:${preview.audioUrl}:${preview.artworkUrl}`}

@@ -15,12 +15,17 @@ function localMediaPath(key: string | null, state: string): string | null {
     : null;
 }
 
-export function musicPreview(observation: StoryMusicObservation): MusicPreview {
+export function musicPreview(observation: StoryMusicObservation): MusicPreview | null {
   const { metadata } = observation;
+  const audioUrl = localMediaPath(metadata.audioCachePath, metadata.audioState);
+  const artworkUrl = localMediaPath(metadata.artworkCachePath, metadata.artworkState);
+  if (audioUrl === null && artworkUrl === null) {
+    return null;
+  }
   return {
     id: observation.id,
     description: [metadata.title, metadata.artist].filter(Boolean).join(" — ") || "Musique reçue",
-    audioUrl: localMediaPath(metadata.audioCachePath, metadata.audioState),
-    artworkUrl: localMediaPath(metadata.artworkCachePath, metadata.artworkState),
+    audioUrl,
+    artworkUrl,
   };
 }
