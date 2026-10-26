@@ -1,5 +1,7 @@
-import { useState } from "react";
-import Map, { Marker, NavigationControl } from "react-map-gl/maplibre";
+import { useRef, useState } from "react";
+import type { ReactNode } from "react";
+import Map, { Marker, NavigationControl, Popup } from "react-map-gl/maplibre";
+import type { MapRef } from "react-map-gl/maplibre";
 import { setWorkerUrl } from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -12,14 +14,20 @@ export interface LocationMapCanvasProps {
   places: Array<TimelinePlace>;
   selectedId?: string;
   onSelect: (id: string) => void;
+  onClose: () => void;
+  children?: ReactNode;
 }
 
 export default function LocationMapCanvas({
   places,
   selectedId,
   onSelect,
+  onClose,
+  children,
 }: LocationMapCanvasProps) {
   const [failed, setFailed] = useState(false);
+  const mapRef = useRef<MapRef>(null);
+  const selected = places.find((place) => place.id === selectedId);
   const longitudes = places.map((place) => place.longitude);
   const latitudes = places.map((place) => place.latitude);
   return (
@@ -29,6 +37,7 @@ export default function LocationMapCanvas({
       className="tw:relative tw:h-80 tw:overflow-hidden tw:rounded-lg tw:border tw:sm:h-96"
     >
       <Map
+        ref={mapRef}
         initialViewState={{
           bounds: [
             [Math.min(...longitudes), Math.min(...latitudes)],
@@ -65,6 +74,32 @@ export default function LocationMapCanvas({
             </button>
           </Marker>
         ))}
+        {selected !== undefined && (
+          <Popup
+            key={selected.id}
+            longitude={selected.longitude}
+            latitude={selected.latitude}
+            anchor="bottom"
+            offset={42}
+            maxWidth="280px"
+            closeButton={false}
+            closeOnClick={false}
+            className="tw:[&_.maplibregl-popup-content]:rounded-lg! tw:[&_.maplibregl-popup-content]:bg-background! tw:[&_.maplibregl-popup-tip]:border-t-background!"
+            onClose={onClose}
+            onOpen={() => {
+              const map = mapRef.current;
+              if (map !== null) {
+                map.easeTo({
+                  center: [selected.longitude, selected.latitude],
+                  offset: [0, map.getContainer().clientHeight / 2 - 24],
+                  duration: 250,
+                });
+              }
+            }}
+          >
+            {children}
+          </Popup>
+        )}
       </Map>
       {failed && (
         <p

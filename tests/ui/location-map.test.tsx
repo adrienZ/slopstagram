@@ -9,7 +9,7 @@ import { LocationMapContext } from "../../server/components/location-history.tsx
 import type { LocationMapCanvasProps } from "../../server/components/location-map-canvas.tsx";
 
 // Only the WebGL/tile boundary is replaced; the page and grouping run unchanged.
-function TestMapCanvas({ places, onSelect }: LocationMapCanvasProps) {
+function TestMapCanvas({ places, onSelect, children }: LocationMapCanvasProps) {
   return (
     <div role="region" aria-label="Carte des lieux">
       {places.map((place) => (
@@ -25,6 +25,7 @@ function TestMapCanvas({ places, onSelect }: LocationMapCanvasProps) {
           {place.name}
         </button>
       ))}
+      {children}
     </div>
   );
 }
@@ -138,12 +139,16 @@ test("location dialog maps the whole history by provider identity and preserves 
   expect(table.getAllByRole("row")).toHaveLength(6);
   expect(modal.getByText("5 stickers dans 5 stories · historique complet")).toBeVisible();
   await user.click(map.getAllByRole("button", { name: "Même nom" })[0]);
-  const selected = within(modal.getByRole("region", { name: "Stories du lieu : Même nom" }));
+  const selected = within(map.getByRole("region", { name: "Stories du lieu : Même nom" }));
   expect(selected.getAllByRole("button", { name: /Ouvrir aperçu/u })).toHaveLength(2);
   await user.click(selected.getByRole("button", { name: "Ouvrir aperçu location-1" }));
   expect(await screen.findByRole("dialog", { name: "Aperçu de l’image" })).toBeVisible();
   await user.keyboard("{Escape}");
   expect(screen.getByRole("dialog", { name: "Stickers · location" })).toBeVisible();
+  await user.click(map.getByRole("button", { name: "Fermer les aperçus du lieu" }));
+  expect(map.queryByRole("region", { name: "Stories du lieu : Même nom" })).not.toBeInTheDocument();
+  expect(modal.getByRole("combobox", { name: "Choisir un lieu" })).toHaveFocus();
+  expect(table.getAllByRole("row")).toHaveLength(6);
   await user.keyboard("{Escape}");
   expect(screen.queryByRole("region", { name: "Carte des lieux" })).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Tout afficher : location" })).toHaveFocus();

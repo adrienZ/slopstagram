@@ -1,5 +1,6 @@
-import { createContext, lazy, Suspense, useContext, useId, useState } from "react";
+import { createContext, lazy, Suspense, useContext, useId, useRef, useState } from "react";
 import type { ComponentType } from "react";
+import { XIcon } from "lucide-react";
 import type { LocationMapCanvasProps } from "./location-map-canvas.tsx";
 import type { TimelineLocations } from "../timeline-locations.ts";
 import type { StoryCardViewModel } from "../story-card-view-model.ts";
@@ -19,8 +20,13 @@ export function LocationHistory({
 }) {
   const [selectedId, setSelectedId] = useState<string>();
   const selectId = useId();
+  const selectRef = useRef<HTMLSelectElement>(null);
   const LocationMapCanvas = useContext(LocationMapContext);
   const selected = locations.places.find((place) => place.id === selectedId);
+  function closePreview() {
+    setSelectedId(undefined);
+    selectRef.current?.focus();
+  }
   return (
     <section aria-label="Lieux de l’historique" className="tw:min-w-0 tw:space-y-3">
       <p className="tw:text-sm tw:text-muted-foreground">
@@ -47,6 +53,7 @@ export function LocationHistory({
               Choisir un lieu
             </label>
             <select
+              ref={selectRef}
               id={selectId}
               value={selectedId ?? ""}
               className="tw:w-full tw:rounded-md tw:border tw:bg-background tw:p-2 tw:text-sm"
@@ -67,37 +74,53 @@ export function LocationHistory({
               places={locations.places}
               selectedId={selectedId}
               onSelect={setSelectedId}
-            />
+              onClose={closePreview}
+            >
+              {selected !== undefined && (
+                <section
+                  aria-label={`Stories du lieu : ${selected.name}`}
+                  className="tw:max-h-52 tw:w-56 tw:space-y-2 tw:overflow-y-auto tw:text-foreground"
+                >
+                  <div className="tw:flex tw:items-start tw:justify-between tw:gap-2">
+                    <h3 className="tw:min-w-0 tw:text-sm tw:font-semibold tw:wrap-anywhere">
+                      {selected.name}
+                    </h3>
+                    <button
+                      type="button"
+                      aria-label="Fermer les aperçus du lieu"
+                      className="tw:shrink-0 tw:cursor-pointer tw:rounded tw:p-1 tw:hover:bg-muted tw:focus-visible:outline-2 tw:focus-visible:outline-ring"
+                      onClick={closePreview}
+                    >
+                      <XIcon className="tw:size-4" />
+                    </button>
+                  </div>
+                  <p className="tw:text-xs tw:text-muted-foreground">
+                    {selected.stories.length} {selected.stories.length === 1 ? "story" : "stories"}
+                  </p>
+                  <ul className="tw:grid tw:grid-cols-3 tw:gap-2">
+                    {selected.stories.map((story) => {
+                      const card = storyByMediaPk.get(story.mediaPk);
+                      return (
+                        <li key={story.mediaPk} className="tw:min-w-0 tw:space-y-1">
+                          {card === undefined ? (
+                            <span>Preview unavailable</span>
+                          ) : (
+                            <StoryCard story={card} size="gallery" />
+                          )}
+                          <time
+                            className="tw:block tw:text-[10px] tw:text-muted-foreground"
+                            dateTime={story.date}
+                          >
+                            {formatStickerStoryDate(story.date)}
+                          </time>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              )}
+            </LocationMapCanvas>
           </Suspense>
-          {selected === undefined ? (
-            <p className="tw:text-sm tw:text-muted-foreground">
-              Sélectionnez un lieu pour retrouver ses stories.
-            </p>
-          ) : (
-            <section aria-label={`Stories du lieu : ${selected.name}`} className="tw:space-y-2">
-              <h3 className="tw:font-semibold">{selected.name}</h3>
-              <p className="tw:text-sm tw:text-muted-foreground">
-                {selected.stories.length} stories
-              </p>
-              <ul className="tw:flex tw:flex-wrap tw:gap-4">
-                {selected.stories.map((story) => {
-                  const card = storyByMediaPk.get(story.mediaPk);
-                  return (
-                    <li key={story.mediaPk} className="tw:flex tw:items-center tw:gap-2">
-                      {card === undefined ? (
-                        <span>Preview unavailable</span>
-                      ) : (
-                        <StoryCard story={card} size="sticker" />
-                      )}
-                      <time className="tw:text-xs" dateTime={story.date}>
-                        {formatStickerStoryDate(story.date)}
-                      </time>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          )}
         </>
       )}
     </section>
