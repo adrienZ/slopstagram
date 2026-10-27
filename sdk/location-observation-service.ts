@@ -107,6 +107,7 @@ export function getLocationObservation(value: JsonValue): LocationObservationInp
     instagramPlaceId: getProviderIdentifier(record.pk ?? record.id),
     name: receivedText(record, ["name", "location_name", "title"]),
     address: receivedText(record, ["address", "full_address", "street_address", "subtitle"]),
+    city: receivedText(record, ["city"]),
     latitude: coordinate(record, ["lat", "latitude"], 90),
     longitude: coordinate(record, ["lng", "longitude"], 180),
     facebookPlacesId: getProviderIdentifier(record.facebook_places_id),
