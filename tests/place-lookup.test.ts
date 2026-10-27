@@ -106,12 +106,16 @@ function createPlaceClient(
   });
 }
 
-async function ingest(repository: StoryRepository, client: ReturnType<typeof createPlaceClient>) {
+async function ingest(
+  repository: StoryRepository,
+  client: ReturnType<typeof createPlaceClient>,
+  now: () => Date = fixedNow,
+) {
   return await fetchStoriesManifest(client, {
     storyRepository: repository,
     storyStorage: createMemoryStorage(),
     logger: createCapturingLogger(),
-    now: fixedNow,
+    now,
     sleep: noSleep,
   });
 }
@@ -315,7 +319,7 @@ test("a place with a non-numeric id is skipped without a request or a failure", 
   );
 });
 
-test("an unusable lookup applies no values and the story is kept", async (context) => {
+test("each kind of unusable lookup applies no values, keeps the story and is recorded as failed", async (context) => {
   const repository = setup(context);
   const unusable = {
     "1": () =>
@@ -331,27 +335,54 @@ test("an unusable lookup applies no values and the story is kept", async (contex
       },
     }),
     "5": () => response(placeBody("5", { name: "Rejected" }), 500),
+    "6": () => response({ data: { unexpected: true } }),
   } satisfies Record<string, () => ReturnType<typeof response<JsonValue>>>;
   const stories = Object.keys(unusable).map((pk) => storyAt(`m${pk}`, { pk }));
   await ingest(repository, createPlaceClient(stories, unusable));
+  const failures: Record<string, string | null> = {};
   for (const pk of Object.keys(unusable)) {
     const place = storedPlace(repository, `m${pk}`);
     assert.equal(place.status, "partial");
     assert.equal(place.name, null);
-    assert.equal(place.lastLookupAttemptAt, null);
+    assert.equal(place.lastLookupAttemptAt, fixedNow().getTime());
+    failures[pk] = place.lastLookupFailure;
   }
+  assert.match(failures["1"] ?? "", /no place data/iu);
+  assert.match(failures["2"] ?? "", /field_exception/u);
+  assert.match(failures["3"] ?? "", /no place data/iu);
+  assert.equal(failures["4"], "Instagram returned text/html");
+  assert.match(failures["5"] ?? "", /500/u);
+  assert.match(failures["6"] ?? "", /invalid/iu);
 });
 
 test("a thrown lookup never blocks the story or the lookups after it", async (context) => {
   const repository = setup(context);
   const client = createPlaceClient([storyAt("m1", { pk: "1" }), storyAt("m2", { pk: "2" })], {
+    "1": () => {
+      throw new Error("socket hang up");
+    },
     "2": () => response(placeBody("2", { name: "Second", lat: 1, lng: 2 })),
   });
   const report = await ingest(repository, client);
   assert.equal(report.metadata.counts.fetched, 2);
   assert.notEqual(repository.findByMediaPk("m1"), null);
-  assert.equal(storedPlace(repository, "m1").lastLookupAttemptAt, null);
   assert.equal(storedPlace(repository, "m2").name, "Second");
+  assert.deepEqual(client.lookups, ["1", "2"]);
+});
+
+test("a thrown lookup is recorded with its attempt time and raw error", async (context) => {
+  const repository = setup(context);
+  const client = createPlaceClient([storyAt("m1", { pk: "1", name: "Known", lat: 1, lng: 2 })], {
+    "1": () => {
+      throw new Error("socket hang up");
+    },
+  });
+  await ingest(repository, client);
+  const place = storedPlace(repository, "m1");
+  assert.equal(place.lastLookupAttemptAt, fixedNow().getTime());
+  assert.equal(place.lastLookupFailure, "socket hang up");
+  assert.equal(place.name, "Known");
+  assert.equal(place.status, "usable");
 });
 
 test("a blocked session stops the remaining lookups and records nothing", async (context) => {
@@ -364,8 +395,96 @@ test("a blocked session stops the remaining lookups and records nothing", async 
     await ingest(repository, client);
     assert.deepEqual(client.lookups, ["1"]);
     assert.equal(storedPlace(repository, "m1").lastLookupAttemptAt, null);
+    assert.equal(storedPlace(repository, "m1").lastLookupFailure, null);
     assert.equal(storedPlace(repository, "m2").lastLookupAttemptAt, null);
   }
+});
+
+const HOUR = 60 * 60 * 1000;
+
+function laterBy(milliseconds: number) {
+  return () => new Date(fixedNow().getTime() + milliseconds);
+}
+
+test("a place whose last lookup failed is looked up again only after twelve hours", async (context) => {
+  const repository = setup(context);
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "111" })], {
+      "111": () => response(placeBody("111", { name: "Chez Paul" }), 500),
+    }),
+  );
+  const tooSoon = createPlaceClient([storyAt("m2", { pk: "111" })], {});
+  await ingest(repository, tooSoon, laterBy(12 * HOUR - 1));
+  assert.deepEqual(tooSoon.lookups, []);
+  assert.equal(storedPlace(repository, "m2").lastLookupAttemptAt, fixedNow().getTime());
+
+  const retried = createPlaceClient([storyAt("m3", { pk: "111" })], {
+    "111": () => response(placeBody("111", { name: "Chez Paul", lat: 1, lng: 2 })),
+  });
+  await ingest(repository, retried, laterBy(12 * HOUR));
+  assert.deepEqual(retried.lookups, ["111"]);
+  const place = storedPlace(repository, "m3");
+  assert.equal(place.name, "Chez Paul");
+  assert.equal(place.lastLookupAttemptAt, fixedNow().getTime() + 12 * HOUR);
+});
+
+test("a recorded failure is bounded and never holds request headers, cookies or tokens", async (context) => {
+  const repository = setup(context);
+  const leaking = Object.assign(new Error("x".repeat(5000)), {
+    headers: { cookie: "sessionid=secret-session" },
+    request: { headers: { "x-csrftoken": "secret-token" } },
+    cause: new Error("sessionid=secret-session"),
+  });
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "111" })], {
+      "111": () => {
+        throw leaking;
+      },
+    }),
+  );
+  const failure = storedPlace(repository, "m1").lastLookupFailure;
+  assert.equal(failure, "x".repeat(2000));
+  assert.doesNotMatch(failure, /secret/u);
+});
+
+test("a failure that cannot be recorded never blocks the story or the lookups after it", async (context) => {
+  const repository = setup(context);
+  repository.recordFailedPlaceLookup = () => {
+    throw new Error("database is locked");
+  };
+  const client = createPlaceClient([storyAt("m1", { pk: "1" }), storyAt("m2", { pk: "2" })], {
+    "1": () => {
+      throw new Error("socket hang up");
+    },
+    "2": () => response(placeBody("2", { name: "Second" })),
+  });
+  const report = await ingest(repository, client);
+  assert.equal(report.metadata.counts.fetched, 2);
+  assert.deepEqual(client.lookups, ["1", "2"]);
+  assert.equal(storedPlace(repository, "m2").name, "Second");
+});
+
+test("a later successful lookup clears the stored failure", async (context) => {
+  const repository = setup(context);
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "111" })], {
+      "111": () => {
+        throw new Error("socket hang up");
+      },
+    }),
+  );
+  assert.equal(storedPlace(repository, "m1").lastLookupFailure, "socket hang up");
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m2", { pk: "111" })], {
+      "111": () => response(placeBody("111", { name: "Chez Paul" })),
+    }),
+    laterBy(12 * HOUR),
+  );
+  assert.equal(storedPlace(repository, "m2").lastLookupFailure, null);
 });
 
 test("a later story observation keeps the recorded lookup", async (context) => {

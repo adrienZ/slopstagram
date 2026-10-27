@@ -12,6 +12,7 @@ import type { StoryAnnotations, StoryItem } from "../lib/types.ts";
 import type { LocationObservationInput } from "../location-observation-service.ts";
 import {
   planLocationMetadataWrite,
+  boundLookupFailure,
   planPlaceDetails,
   planPlaceFill,
   planStoryLocationUpdates,
@@ -111,6 +112,7 @@ export function fillTaggedPlace(
   const update: Partial<typeof metadataLocations.$inferInsert> = planPlaceFill(known, incoming);
   if (lookedUpAt !== undefined) {
     update.lastLookupAttemptAt = lookedUpAt;
+    update.lastLookupFailure = null;
   }
   database.update(metadataLocations).set(update).where(eq(metadataLocations.id, known.id)).run();
   return known.id;
@@ -132,6 +134,20 @@ export function recordPlaceLookup(
       .onConflictDoUpdate({ target: metadataLocationDetails.locationId, set: details })
       .run();
   }
+}
+
+// A failed lookup keeps every known value and only records when it happened and why.
+export function recordFailedPlaceLookup(
+  database: LocationDatabase,
+  instagramPlaceId: string,
+  error: string,
+  attemptedAt: number,
+): void {
+  database
+    .update(metadataLocations)
+    .set({ lastLookupAttemptAt: attemptedAt, lastLookupFailure: boundLookupFailure(error) })
+    .where(eq(metadataLocations.instagramPlaceId, instagramPlaceId))
+    .run();
 }
 
 export function readPlaceDetails(

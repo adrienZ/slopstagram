@@ -65,6 +65,7 @@ function observation(
             city: null,
             zip: null,
             lastLookupAttemptAt: null,
+            lastLookupFailure: null,
           }
         : {
             status: "usable",
@@ -80,6 +81,7 @@ function observation(
             city: null,
             zip: null,
             lastLookupAttemptAt: null,
+            lastLookupFailure: null,
           },
   };
 }

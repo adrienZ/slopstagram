@@ -20,6 +20,7 @@ export const metadataLocations = sqliteTable(
     city: text(),
     zip: text(),
     lastLookupAttemptAt: integer(),
+    lastLookupFailure: text(),
   },
   (table) => [
     check(
@@ -96,11 +97,12 @@ export const storyLocationObservations = sqliteTable(
 const StoredLocationSchema = createSelectSchema(metadataLocations, {
   latitude: (schema) => schema.min(-90).max(90),
   longitude: (schema) => schema.min(-180).max(180),
-  // Stories cached before lookups existed have no attempt time, category, city or zip code.
+  // Stories cached before lookups existed have no attempt time, failure, category, city or zip code.
   category: (schema) => schema.nullable().default(null),
   city: (schema) => schema.nullable().default(null),
   zip: (schema) => schema.nullable().default(null),
   lastLookupAttemptAt: (schema) => schema.nullable().default(null),
+  lastLookupFailure: (schema) => schema.nullable().default(null),
 });
 const LocationMetadataSchema = z.discriminatedUnion("status", [
   StoredLocationSchema.extend({ status: z.literal("partial") }),
@@ -120,7 +122,7 @@ export type PlaceDetails = z.infer<typeof PlaceDetailsSchema>;
 // Fields stories can write. Lookup results and bookkeeping are written only by place lookups.
 export type LocationFields = Omit<
   typeof metadataLocations.$inferSelect,
-  "id" | "category" | "zip" | "lastLookupAttemptAt"
+  "id" | "category" | "zip" | "lastLookupAttemptAt" | "lastLookupFailure"
 >;
 export type LocationMetadata = z.infer<typeof LocationMetadataSchema>;
 export type StoryLocationObservation = z.infer<typeof StoryLocationObservationSchema>;
