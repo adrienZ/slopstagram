@@ -401,6 +401,8 @@ test("a blocked session stops the remaining lookups and records nothing", async 
 });
 
 const HOUR = 60 * 60 * 1000;
+const DAY = 24 * HOUR;
+const REFRESH_AFTER = 90 * DAY;
 
 function laterBy(milliseconds: number) {
   return () => new Date(fixedNow().getTime() + milliseconds);
@@ -824,4 +826,127 @@ test("a story that tags two places gets one location sticker per place, in looku
     }),
   );
   assert.deepEqual(shownLocations(repository, "m1"), ["First place", "Second place"]);
+});
+
+test("a place whose last lookup succeeded three months ago is looked up again, a younger one is not", async (context) => {
+  const repository = setup(context);
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "111" })], {
+      "111": () => response(placeBody("111", { name: "Chez Paul" })),
+    }),
+  );
+  const tooSoon = createPlaceClient([storyAt("m2", { pk: "111" })], {});
+  await ingest(repository, tooSoon, laterBy(REFRESH_AFTER - 1));
+  assert.deepEqual(tooSoon.lookups, []);
+  assert.equal(storedPlace(repository, "m2").lastLookupAttemptAt, fixedNow().getTime());
+
+  const refreshed = createPlaceClient([storyAt("m3", { pk: "111" })], {
+    "111": () => response(placeBody("111", { name: "Chez Paul" })),
+  });
+  await ingest(repository, refreshed, laterBy(REFRESH_AFTER));
+  assert.deepEqual(refreshed.lookups, ["111"]);
+  assert.equal(
+    storedPlace(repository, "m3").lastLookupAttemptAt,
+    fixedNow().getTime() + REFRESH_AFTER,
+  );
+});
+
+test("a refresh replaces the stored category and place details with the latest ones", async (context) => {
+  const repository = setup(context);
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "111" })], {
+      "111": () =>
+        response(
+          placeBody("111", {
+            name: "Chez Paul",
+            category: "Bistro",
+            phone: "0102",
+            priceRange: 1,
+            slug: "old-slug",
+          }),
+        ),
+    }),
+  );
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m2", { pk: "111" })], {
+      "111": () =>
+        response(
+          placeBody("111", {
+            name: "Chez Paul",
+            category: "Restaurant",
+            phone: "0304",
+            priceRange: 3,
+            slug: "new-slug",
+          }),
+        ),
+    }),
+    laterBy(REFRESH_AFTER),
+  );
+  assert.equal(storedPlace(repository, "m2").category, "Restaurant");
+  assert.deepEqual(repository.findPlaceDetails("111"), {
+    phone: "0304",
+    priceRange: 3,
+    slug: "new-slug",
+    businessAccountId: null,
+    businessAccountUsername: null,
+    businessAccountPictureUrl: null,
+  });
+});
+
+test("a refresh fills only missing values and never replaces values from stories", async (context) => {
+  const repository = setup(context);
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "111", name: "Story name", lat: 10, lng: 20 })], {
+      "111": () => response(placeBody("111", { name: "Instagram name", address: "First address" })),
+    }),
+  );
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m2", { pk: "111" })], {
+      "111": () =>
+        response(
+          placeBody("111", {
+            name: "Newer name",
+            address: "Newer address",
+            city: "Amiens",
+            lat: 11,
+            lng: 21,
+          }),
+        ),
+    }),
+    laterBy(REFRESH_AFTER),
+  );
+  const place = storedPlace(repository, "m2");
+  assert.equal(place.name, "Story name");
+  assert.equal(place.address, "First address");
+  assert.equal(place.latitude, 10);
+  assert.equal(place.longitude, 20);
+  assert.equal(place.city, "Amiens");
+});
+
+test("a refresh without a usable result leaves the category and details untouched", async (context) => {
+  const repository = setup(context);
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "111" })], {
+      "111": () => response(placeBody("111", { category: "Bistro", phone: "0102", priceRange: 2 })),
+    }),
+  );
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m2", { pk: "111" })], {
+      "111": () => response(placeBody("111", { category: "Other" }), 500),
+    }),
+    laterBy(REFRESH_AFTER),
+  );
+  const place = storedPlace(repository, "m2");
+  assert.equal(place.category, "Bistro");
+  assert.equal(place.lastLookupAttemptAt, fixedNow().getTime() + REFRESH_AFTER);
+  assert.match(place.lastLookupFailure ?? "", /500/u);
+  assert.equal(repository.findPlaceDetails("111")?.phone, "0102");
+  assert.equal(repository.findPlaceDetails("111")?.priceRange, 2);
 });

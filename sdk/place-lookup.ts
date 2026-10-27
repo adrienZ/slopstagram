@@ -99,15 +99,16 @@ function parsePlaceResponse(body: JsonValue, placeId: string): PlaceResponseResu
 }
 
 const RETRY_FAILED_LOOKUP_AFTER_MS = 12 * 60 * 60 * 1000;
+// Three months are counted as 90 days, so a place is refreshed on a fixed schedule.
+const REFRESH_LOOKUP_AFTER_MS = 90 * 24 * 60 * 60 * 1000;
 
 function needsLookup(metadata: StoryLocationObservation["metadata"], now: Date) {
   if (metadata.lastLookupAttemptAt === null) {
     return true;
   }
-  return (
-    metadata.lastLookupFailure !== null &&
-    now.getTime() - metadata.lastLookupAttemptAt >= RETRY_FAILED_LOOKUP_AFTER_MS
-  );
+  const staleAfter =
+    metadata.lastLookupFailure === null ? REFRESH_LOOKUP_AFTER_MS : RETRY_FAILED_LOOKUP_AFTER_MS;
+  return now.getTime() - metadata.lastLookupAttemptAt >= staleAfter;
 }
 
 function listPlacesToLookUp(
