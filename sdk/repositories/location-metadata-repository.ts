@@ -123,18 +123,10 @@ export function fillTaggedPlace(
 // Stories saved with only a place id show a sticker whose label the payload never carried.
 // Once the place is named, give each such observation the location sticker it stands for.
 function labelObservedStickers(database: LocationDatabase, locationId: string): void {
-  const place = database
-    .select()
-    .from(metadataLocations)
-    .where(eq(metadataLocations.id, locationId))
-    .get();
-  const label = place === undefined ? null : locationStickerLabel(place);
-  if (label === null) {
-    return;
-  }
   const unlinked = database
-    .select()
+    .select({ observation: storyLocationObservations, place: metadataLocations })
     .from(storyLocationObservations)
+    .innerJoin(metadataLocations, eq(storyLocationObservations.locationId, metadataLocations.id))
     .where(
       and(
         eq(storyLocationObservations.locationId, locationId),
@@ -142,7 +134,11 @@ function labelObservedStickers(database: LocationDatabase, locationId: string): 
       ),
     )
     .all();
-  for (const observation of unlinked) {
+  for (const { observation, place } of unlinked) {
+    const label = locationStickerLabel(place);
+    if (label === null) {
+      continue;
+    }
     const shown = database
       .select({
         sortOrder: storyStickers.sortOrder,
@@ -184,10 +180,11 @@ export function recordPlaceLookup(
 ): void {
   const { details: incomingDetails, ...place } = incoming;
   const locationId = fillTaggedPlace(database, instagramPlaceId, place, lookedUpAt);
-  if (locationId !== null) {
-    labelObservedStickers(database, locationId);
+  if (locationId === null) {
+    return;
   }
-  if (locationId !== null && incomingDetails !== undefined) {
+  labelObservedStickers(database, locationId);
+  if (incomingDetails !== undefined) {
     const details = { locationId, ...planPlaceDetails(incomingDetails) };
     database
       .insert(metadataLocationDetails)

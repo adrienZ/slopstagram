@@ -774,3 +774,54 @@ test("a later lookup of the same place never adds a second location sticker", as
   assert.equal(locationStickers(repository, "m1").length, 1);
   assert.deepEqual(shownLocations(repository, "m1"), ["Chez Paul"]);
 });
+
+test("a story that tags the same place twice gets a single location sticker", async (context) => {
+  const repository = setup(context);
+  const story: StoryItem = {
+    ...storyAt("m1", { pk: "111" }),
+    story_locations: [
+      { id: "sticker-a", location: { pk: "111" } },
+      { id: "sticker-b", location: { pk: "111" } },
+    ],
+  };
+  await ingest(
+    repository,
+    createPlaceClient([story], {
+      "111": () => response(placeBody("111", { name: "Chez Paul" })),
+    }),
+  );
+  assert.equal(locationStickers(repository, "m1").length, 1);
+  assert.deepEqual(shownLocations(repository, "m1"), ["Chez Paul"]);
+});
+
+test("a lookup recorded for an unknown place changes nothing", async (context) => {
+  const repository = setup(context);
+  await repository.save(storyAt("m1", { pk: "111" }));
+  repository.recordPlaceLookup(
+    "999",
+    { name: "Nobody", details: { phone: "0102", priceRange: 1 } },
+    fixedNow(),
+  );
+  assert.deepEqual(locationStickers(repository, "m1"), []);
+  assert.equal(repository.findPlaceDetails("999"), null);
+  assert.equal(storedPlace(repository, "m1").name, null);
+});
+
+test("a story that tags two places gets one location sticker per place, in lookup order", async (context) => {
+  const repository = setup(context);
+  const story: StoryItem = {
+    ...storyAt("m1", { pk: "111" }),
+    story_locations: [
+      { id: "sticker-a", location: { pk: "111" } },
+      { id: "sticker-b", location: { pk: "222" } },
+    ],
+  };
+  await ingest(
+    repository,
+    createPlaceClient([story], {
+      "111": () => response(placeBody("111", { name: "First place" })),
+      "222": () => response(placeBody("222", { name: "Second place" })),
+    }),
+  );
+  assert.deepEqual(shownLocations(repository, "m1"), ["First place", "Second place"]);
+});
