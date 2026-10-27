@@ -2,6 +2,8 @@ import { randomUUID, createHash } from "node:crypto";
 import { mkdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Buffer } from "node:buffer";
+import sharp from "sharp";
+import { parseBuffer } from "music-metadata";
 import type { DrizzleDatabase } from "./database/client.ts";
 import type { MusicMediaState, MusicMetadataReference } from "./entities/music-metadata.ts";
 import { audioFileDurationMs } from "./lib/audio-duration.ts";
@@ -35,7 +37,7 @@ async function fileExists(directory: string, key: string | null) {
   }
 }
 
-async function readBounded(response: Response) {
+async function readBounded(response: Response, limit = MAX_MEDIA_BYTES) {
   const reader = response.body?.getReader();
   if (!reader) {
     throw new Error("Empty media");
@@ -50,7 +52,7 @@ async function readBounded(response: Response) {
         break;
       }
       size += chunk.value.length;
-      if (size > MAX_MEDIA_BYTES) {
+      if (size > limit) {
         throw new Error("Media too large");
       }
       chunks.push(chunk.value);
@@ -86,10 +88,11 @@ async function downloadMedia(
   }
   const contentType =
     response.headers.get("content-type")?.split(";")[0].trim().toLowerCase() ?? "";
+  const verifyMp4 = contentType === "video/mp4" && declaredAudioType === undefined;
   // Instagram labels its MPD-confirmed audio-only MP4 rendition as video/mp4.
   const extension = audioFileExtension(
-    contentType === "video/mp4" && declaredAudioType === "audio/mp4"
-      ? declaredAudioType
+    contentType === "video/mp4" && (declaredAudioType === "audio/mp4" || verifyMp4)
+      ? "audio/mp4"
       : contentType,
   );
   if (extension === undefined) {
@@ -97,6 +100,12 @@ async function downloadMedia(
     return { cachePath: null, state: "unsupported", durationMs: null };
   }
   const received = await readBounded(response);
+  if (verifyMp4) {
+    const { format } = await parseBuffer(received, { mimeType: "video/mp4" });
+    if (format.hasAudio !== true || format.hasVideo !== false) {
+      return { cachePath: null, state: "unsupported", durationMs: null };
+    }
+  }
   const key = `music/${createHash("sha256").update(`${id}:audio`).digest("hex")}.${extension}`;
   const destination = path.join(directory, key);
   const temporary = `${destination}.${randomUUID()}.tmp`;
@@ -158,6 +167,87 @@ export async function processMusicMedia(
     result.cachePath,
     result.state,
     result.durationMs,
+  );
+  return findMusicMetadata(options.database, reference) ?? null;
+}
+
+async function cachedArtworkExists(directory: string, key: string | null) {
+  if (key === null || !/^music\/[a-f0-9]{64}\.jpg$/u.test(key)) {
+    return false;
+  }
+  try {
+    const info = await stat(path.join(directory, key));
+    return info.isFile() && info.size > 0;
+  } catch {
+    return false;
+  }
+}
+
+async function downloadArtwork(
+  source: string,
+  id: string,
+  directory: string,
+  options: MusicMediaOptions,
+) {
+  try {
+    const url = new globalThis.URL(source);
+    if (url.protocol !== "https:" || url.username || url.password) {
+      return { cachePath: null, state: "unsupported" as const };
+    }
+    const response = await (
+      options.fetchMedia ??
+      (async (value) =>
+        await globalThis.fetch(value, { signal: globalThis.AbortSignal.timeout(20_000) }))
+    )(url.href);
+    if (!response.ok || response.headers.get("content-type")?.startsWith("image/") !== true) {
+      await response.body?.cancel();
+      return {
+        cachePath: null,
+        state: response.ok ? ("unsupported" as const) : ("failed" as const),
+      };
+    }
+    const bytes = await readBounded(response, 8 * 1024 * 1024);
+    const jpeg = await sharp(bytes, { limitInputPixels: 16_000_000 })
+      .rotate()
+      .resize({ width: 1024, height: 1024, fit: "inside", withoutEnlargement: true })
+      .jpeg()
+      .toBuffer();
+    const key = `music/${createHash("sha256").update(`${id}:artwork`).digest("hex")}.jpg`;
+    const destination = path.join(directory, key);
+    const temporary = `${destination}.${randomUUID()}.tmp`;
+    await mkdir(path.dirname(destination), { recursive: true });
+    try {
+      await writeFile(temporary, jpeg, { flag: "wx" });
+      await rename(temporary, destination);
+    } finally {
+      await rm(temporary, { force: true });
+    }
+    return { cachePath: key, state: "available" as const };
+  } catch {
+    return { cachePath: null, state: "failed" as const };
+  }
+}
+
+export async function processMusicArtwork(
+  reference: MusicMetadataReference,
+  options: MusicMediaOptions,
+) {
+  const current = findMusicMetadata(options.database, reference);
+  if (!current || current.artworkSourceUrl === null) {
+    return current ?? null;
+  }
+  const directory = options.directory ?? path.resolve(BASE_CACHE_DIR, IMAGES_STORAGE_DIR);
+  if (await cachedArtworkExists(directory, current.artworkCachePath)) {
+    return current;
+  }
+  const result = await downloadArtwork(current.artworkSourceUrl, current.id, directory, options);
+  saveMusicMedia(
+    options.database,
+    reference,
+    "artwork",
+    current.artworkSourceUrl,
+    result.cachePath,
+    result.state,
   );
   return findMusicMetadata(options.database, reference) ?? null;
 }

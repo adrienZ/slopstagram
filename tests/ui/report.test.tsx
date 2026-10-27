@@ -1,4 +1,4 @@
-import { expect, test, vi } from "vitest";
+import { expect, test } from "vitest";
 import { screen, within, waitFor } from "@testing-library/react";
 import { withStoryStickers } from "../../server/story-card-view-model.ts";
 import { ReportPage } from "../../server/pages/report.tsx";
@@ -126,18 +126,22 @@ test("a story deep link opens after mount and an unknown story stays closed", as
 });
 
 test("closing story details hides the dialog immediately while route navigation is pending", async (context) => {
-  const { user, router } = await renderPage(ReportPage, reportProps, "/report?story=story-pk-1");
-  const original = router.navigate.bind(router);
+  let delayNavigation = false;
   const { promise: pending, resolve: release } = Promise.withResolvers<null>();
+  const { user, router } = await renderPage(ReportPage, reportProps, "/report?story=story-pk-1", {
+    beforeLoad: async () => {
+      if (delayNavigation) {
+        await pending;
+      }
+    },
+  });
   context.onTestFinished(() => {
     release(null);
   });
-  vi.spyOn(router, "navigate").mockImplementation(async (options) => {
-    await pending;
-    await original(options);
-  });
+  delayNavigation = true;
   await user.click(screen.getByRole("button", { name: "Fermer l’aperçu" }));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(router.state.isLoading).toBe(true);
   release(null);
   await waitFor(() => {
     expect(router.state.location.search.story).toBeUndefined();

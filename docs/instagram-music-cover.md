@@ -145,8 +145,8 @@ du fichier effectivement joué, distincte de la durée déclarée du morceau com
 ## Affichage partagé et durée des fichiers
 
 La pochette est le fond du contrôle de lecture et tourne pendant la lecture ; un
-titre trop long défile dans sa largeur disponible. Les préférences de réduction
-des animations sont respectées. À la demande suivante, le lecteur est masqué sans
+titre trop long défile dans sa largeur disponible. La rotation de la pochette
+respecte la préférence de réduction des animations. À la demande suivante, le lecteur est masqué sans
 audio exploitable : seul le badge du sticker reste affiché.
 
 Les anciens stickers de **bliss — iogi** et **Desert Rose — Sting** avaient une
@@ -157,7 +157,9 @@ d'affichage ne crée aucun lien en base et ne fusionne pas d'identités.
 
 La durée réelle d'un fichier audio local est mesurée avec `music-metadata` lors de
 sa mise en cache et stockée séparément de la durée complète du morceau reçue
-d'Instagram. Elle est disponible dès le rendu, avec `preload` activé par défaut.
+d'Instagram. Elle est disponible dès le rendu. Quand cette durée est connue, le
+lecteur utilise `preload="none"` ; `preload="metadata"` reste le repli pour une
+durée locale manquante. Le titre utilise désormais un `<marquee>` natif.
 Une reprise locale ponctuelle a renseigné 243 durées d'assets et 99 durées de
 pistes de stories, avec 19 pistes historiques supplémentaires récupérées.
 Les outils de reprise ne sont pas conservés dans le dépôt.
@@ -187,3 +189,14 @@ La story `4016569967955848219` contient `story_locations[0].location.pk` égal �
 autre observation plus complète pour ce lieu. L'observation est conservée
 dans les métadonnées partielles ; « Toronto » vient de l'image et de l'OCR, pas
 d'un nom de lieu reçu dans les métadonnées.
+
+## Consultation pendant l’ingestion
+
+Le pipeline de collecte interroge maintenant `clips/music/` pendant que la
+session Instagram est ouverte, pour les identifiants audio connus des stories
+du rapport. Il refuse une identité différente et les données `original_sound_info`,
+déduplique les identifiants et interrompt les requêtes en cas de limitation ou
+d’échec d’authentification. Le traitement du rapport met ensuite en cache l’audio
+et la pochette reçus ; les réponses MP4 génériques sont vérifiées pour exclure
+les pistes vidéo. Les observations sans identifiant audio restent hors de portée
+de cette consultation et peuvent utiliser leur bande sonore DASH.

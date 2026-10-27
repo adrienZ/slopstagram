@@ -7,6 +7,7 @@ import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
 import { processMusicMedia } from "../sdk/music-media-service.ts";
+import { startMediaServer, wavAudio } from "./media-server.ts";
 
 test("music processing publishes audio only and reuses it without provider requests", async (context) => {
   const database = createDrizzle(":memory:");
@@ -35,34 +36,33 @@ test("music processing publishes audio only and reuses it without provider reque
   const before = repository.findByMediaPk("story")?.annotations;
   const metadata = before?.musicObservations?.[0].metadata;
   assert.ok(metadata);
+  const media = await startMediaServer(context, (_request, response) => {
+    response.writeHead(200, { "content-type": "audio/wav" });
+    response.end(wavAudio());
+  });
   const result = await processMusicMedia(
     { id: metadata.id, status: metadata.status },
     {
       database,
       directory: root,
-      fetchMedia: async (url) =>
-        new globalThis.Response(url.includes("cover") ? "broken" : "audio-bytes", {
-          status: url.includes("cover") ? 403 : 200,
-          headers: { "content-type": "audio/mp4" },
-        }),
+      fetchMedia: media.fetchMedia,
     },
   );
   assert.equal(result?.audioState, "available");
   assert.equal(result.artworkState, "pending");
   assert.ok(result.audioCachePath !== null);
-  assert.equal(await readFile(path.join(root, result.audioCachePath), "utf-8"), "audio-bytes");
+  assert.deepEqual(await readFile(path.join(root, result.audioCachePath)), wavAudio());
+  assert.equal(result.audioDurationMs, 1000);
   const retry = await processMusicMedia(
     { id: metadata.id, status: metadata.status },
     {
       database,
       directory: root,
-      fetchMedia: async (url) => {
-        assert.fail(`cached audio must not refetch: ${url}`);
-        return new globalThis.Response("bad", { status: 404 });
-      },
+      fetchMedia: media.fetchMedia,
     },
   );
   assert.equal(retry?.audioCachePath, result.audioCachePath);
+  assert.deepEqual(media.requests, ["/audio"]);
   const cold = new StoryRepository(database).findByMediaPk("story")?.annotations;
   assert.deepEqual(cold?.stickers, before.stickers);
   assert.equal(cold.musicObservations?.[0].metadata.audioState, "available");
@@ -93,13 +93,16 @@ test("partial audio stays separate and promotion preserves its source and proces
   assert.ok(observations);
   assert.notEqual(observations[0].metadata.id, observations[1].metadata.id);
   const reference = observations[0].metadata;
+  let status = 200;
+  let contentType = "text/html";
+  const media = await startMediaServer(context, (_request, response) => {
+    response.writeHead(status, { "content-type": contentType });
+    response.end(contentType === "audio/wav" ? wavAudio() : "not audio");
+  });
   const result = await processMusicMedia(reference, {
     database,
     directory: root,
-    fetchMedia: async (url) =>
-      new globalThis.Response("html", {
-        headers: { "content-type": url.endsWith("art") ? "image/png" : "text/html" },
-      }),
+    fetchMedia: media.fetchMedia,
   });
   assert.ok(result);
   assert.equal(result.audioState, "unsupported");
@@ -121,20 +124,21 @@ test("partial audio stays separate and promotion preserves its source and proces
   assert.equal(promoted.status, "usable");
   assert.equal(promoted.artworkCachePath, result.artworkCachePath);
   assert.equal(promoted.audioState, "unsupported");
+  contentType = "audio/wav";
   const recovered = await processMusicMedia(promoted, {
     database,
     directory: root,
-    fetchMedia: async () =>
-      new globalThis.Response("audio", { headers: { "content-type": "audio/ogg" } }),
+    fetchMedia: media.fetchMedia,
   });
   assert.ok(recovered);
   assert.notEqual(recovered.audioCachePath, null);
   assert.ok(recovered.audioCachePath !== null);
   await rm(path.join(root, recovered.audioCachePath));
+  status = 403;
   const missing = await processMusicMedia(promoted, {
     database,
     directory: root,
-    fetchMedia: async () => new globalThis.Response("gone", { status: 403 }),
+    fetchMedia: media.fetchMedia,
   });
   assert.equal(missing?.audioState, "failed");
   assert.equal(missing.audioCachePath, null);
@@ -156,15 +160,20 @@ test("missing sources do not fetch and failed transfers never publish partial fi
   });
   const metadata = repository.findByMediaPk("story")?.annotations?.musicObservations?.[0].metadata;
   assert.ok(metadata);
+  const media = await startMediaServer(context, (_request, response) => {
+    response.writeHead(200, { "content-type": "audio/mpeg", "content-length": 1000 });
+    response.flushHeaders();
+    response.write(new Uint8Array([1, 2]));
+    response.destroy();
+  });
   const empty = await processMusicMedia(metadata, {
     database,
     directory: root,
-    fetchMedia: async () => {
-      throw new Error("must not fetch");
-    },
+    fetchMedia: media.fetchMedia,
   });
   assert.equal(empty?.audioState, "unavailable");
   assert.equal(empty.artworkState, "unavailable");
+  assert.deepEqual(media.requests, []);
   await repository.save({
     pk: "story",
     story_music_stickers: [
@@ -174,16 +183,7 @@ test("missing sources do not fetch and failed transfers never publish partial fi
   const failed = await processMusicMedia(metadata, {
     database,
     directory: root,
-    fetchMedia: async () =>
-      new globalThis.Response(
-        new globalThis.ReadableStream({
-          start(controller) {
-            controller.enqueue(new Uint8Array([1, 2]));
-            controller.error(new Error("transfer interrupted"));
-          },
-        }),
-        { headers: { "content-type": "audio/mpeg" } },
-      ),
+    fetchMedia: media.fetchMedia,
   });
   assert.equal(failed?.audioState, "failed");
   assert.equal(failed.audioCachePath, null);
@@ -215,25 +215,15 @@ test("the cached file duration survives partial promotion and remains distinct f
   });
   const metadata = repository.findByMediaPk("clip")?.annotations?.musicObservations?.[0].metadata;
   assert.ok(metadata);
-  const { Buffer } = await import("node:buffer");
-  const wav = Buffer.alloc(44 + 16_000);
-  wav.write("RIFF", 0);
-  wav.writeUInt32LE(16_036, 4);
-  wav.write("WAVEfmt ", 8);
-  wav.writeUInt32LE(16, 16);
-  wav.writeUInt16LE(1, 20);
-  wav.writeUInt16LE(1, 22);
-  wav.writeUInt32LE(8000, 24);
-  wav.writeUInt32LE(16_000, 28);
-  wav.writeUInt16LE(2, 32);
-  wav.writeUInt16LE(16, 34);
-  wav.write("data", 36);
-  wav.writeUInt32LE(16_000, 40);
+  const wav = wavAudio();
+  const media = await startMediaServer(context, (_request, response) => {
+    response.writeHead(200, { "content-type": "audio/wav" });
+    response.end(wav);
+  });
   const result = await processMusicMedia(metadata, {
     database,
     directory: root,
-    fetchMedia: async () =>
-      new globalThis.Response(wav, { headers: { "content-type": "audio/wav" } }),
+    fetchMedia: media.fetchMedia,
   });
   assert.equal(result?.audioDurationMs, 1000);
   assert.equal(result.durationMs, 999_999);

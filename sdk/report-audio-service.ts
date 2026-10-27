@@ -3,6 +3,7 @@ import type { StoriesManifestReport } from "./lib/types.ts";
 import {
   cacheReceivedAudio,
   processMusicMedia,
+  processMusicArtwork,
   type MusicMediaOptions,
 } from "./music-media-service.ts";
 import { readMusicObservations } from "./repositories/music-metadata-repository.ts";
@@ -38,12 +39,14 @@ export async function cacheReportAudio(
   const assets = new Set<string>();
   for (const mediaPk of mediaPks) {
     for (const { metadata } of readMusicObservations(settings.database, mediaPk)) {
-      if (metadata.audioSourceUrl === null || assets.has(metadata.id)) {
+      if (assets.has(metadata.id)) {
         continue;
       }
       assets.add(metadata.id);
       // oxlint-disable-next-line no-await-in-loop -- Bound memory and network pressure per audio source.
       await processMusicMedia(metadata, settings);
+      // oxlint-disable-next-line no-await-in-loop -- Process each asset's cover with bounded memory.
+      await processMusicArtwork(metadata, settings);
     }
     // oxlint-disable-next-line no-await-in-loop -- Publish each story's independent soundtrack before the next download.
     await processStoryAudio(mediaPk, settings);

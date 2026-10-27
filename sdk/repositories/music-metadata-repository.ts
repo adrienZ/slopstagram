@@ -105,6 +105,17 @@ function saveMetadata(
   return { musicId: null, partialMusicId: plan.entry.id };
 }
 
+export function refreshMusicAsset(
+  database: MusicDatabase,
+  previous: StoryMusicObservation,
+  observation: MusicObservationInput,
+) {
+  if (previous.metadata.instagramAudioAssetId !== observation.fields.instagramAudioAssetId) {
+    return;
+  }
+  saveMetadata(database, observation, previous);
+}
+
 export function enrichStoryMusic(
   database: MusicDatabase,
   story: StoryItem,

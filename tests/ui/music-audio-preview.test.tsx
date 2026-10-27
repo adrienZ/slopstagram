@@ -158,13 +158,8 @@ test("detail-modal audio seeking keeps the selected story and navigation stops p
   expect(pause).toHaveBeenCalled();
 });
 
-test("stored playback duration is visible before media metadata arrives and preload defaults to enabled", async (context) => {
-  const { play } = mockPlayback(context);
+test("stored playback duration is visible without preloading the audio", async () => {
   await renderContent(<MusicAudioPreview preview={{ ...preview, durationMs: 124_000 }} />);
   expect(screen.getByText("2:04")).toBeVisible();
-  expect(screen.getByLabelText("Écouter : Audio de la story")).toHaveAttribute(
-    "preload",
-    "metadata",
-  );
-  expect(play).not.toHaveBeenCalled();
+  expect(screen.getByLabelText("Écouter : Audio de la story")).toHaveAttribute("preload", "none");
 });

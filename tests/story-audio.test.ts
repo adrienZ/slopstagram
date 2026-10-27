@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { Buffer } from "node:buffer";
+import { startMediaServer } from "./media-server.ts";
 import { test } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
@@ -186,19 +188,17 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
       ],
     },
   };
-  let requests = 0;
+  const audio = await readFile(new globalThis.URL("fixtures/audio-clip.m4a", import.meta.url));
+  const media = await startMediaServer(context, (_request, response) => {
+    response.writeHead(200, { "content-type": "video/mp4" });
+    response.end(audio);
+  });
   await cacheReportAudio(report, {
     database,
     directory,
-    fetchMedia: async (url) => {
-      requests += 1;
-      assert.equal(url, "https://example.com/story.mp4?a=1&b=2");
-      return new globalThis.Response("audio-mp4-bytes", {
-        headers: { "content-type": "video/mp4" },
-      });
-    },
+    fetchMedia: media.fetchMedia,
   });
-  assert.equal(requests, 1);
+  assert.deepEqual(media.requests, ["/story.mp4?a=1&b=2"]);
   const saved = new StoryRepository(database).findByMediaPk("story")?.annotations?.storyAudio;
   assert.ok(saved);
   assert.notEqual(saved.cachePath, null);
@@ -211,11 +211,12 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
   assert.equal(previews[0].description, "Song — Artist");
   assert.equal(previews[0].sourceKind, "story_audio");
   assert.equal(path.extname(saved.cachePath), ".m4a");
-  assert.equal(await readFile(path.join(directory, saved.cachePath), "utf-8"), "audio-mp4-bytes");
+  assert.deepEqual(await readFile(path.join(directory, saved.cachePath)), audio);
+  assert.equal(saved.durationMs, 1023);
   const ranged = await createMediaResponse(saved.cachePath, directory, { range: "bytes=0-4" });
   assert.equal(ranged.status, 206);
   assert.equal(ranged.headers.get("content-type"), "audio/mp4");
-  assert.equal(await ranged.text(), "audio");
+  assert.deepEqual(Buffer.from(await ranged.arrayBuffer()), audio.subarray(0, 5));
   await repository.save({
     pk: "story",
     video_dash_manifest: manifest("fresh"),
@@ -224,11 +225,10 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
   const reused = await processStoryAudio("story", {
     database,
     directory,
-    fetchMedia: async () => {
-      assert.fail("a valid local soundtrack must not be downloaded again");
-    },
+    fetchMedia: media.fetchMedia,
   });
   assert.equal(reused?.cachePath, saved.cachePath);
+  assert.deepEqual(media.requests, ["/story.mp4?a=1&b=2"]);
   await repository.save({
     pk: "story",
     video_dash_manifest: manifest("fresh"),
@@ -254,10 +254,22 @@ test("expired and interrupted DASH downloads fail silently without publishing in
     video_dash_manifest: manifest("story"),
     story_music_stickers: [{ music_asset_info: { title: "Song" } }],
   });
+  let interrupted = false;
+  const media = await startMediaServer(context, (_request, response) => {
+    if (interrupted) {
+      response.writeHead(200, { "content-type": "video/mp4", "content-length": 1000 });
+      response.flushHeaders();
+      response.write(new Uint8Array([1]));
+      response.destroy();
+    } else {
+      response.writeHead(403);
+      response.end("expired");
+    }
+  });
   const failed = await processStoryAudio("story", {
     database,
     directory,
-    fetchMedia: async () => new globalThis.Response("expired", { status: 403 }),
+    fetchMedia: media.fetchMedia,
   });
   assert.equal(failed?.state, "failed");
   assert.equal(failed.cachePath, null);
@@ -279,21 +291,13 @@ test("expired and interrupted DASH downloads fail silently without publishing in
   );
   assert.equal(groups[0].stories[0].musicItems?.[0].preview, null);
   assert.equal(groups[0].stories[0].labels[0].label, "Song");
-  const interrupted = await processStoryAudio("story", {
+  interrupted = true;
+  const interruptedResult = await processStoryAudio("story", {
     database,
     directory,
-    fetchMedia: async () =>
-      new globalThis.Response(
-        new globalThis.ReadableStream({
-          start(controller) {
-            controller.enqueue(new Uint8Array([1]));
-            controller.error(new Error("interrupted"));
-          },
-        }),
-        { headers: { "content-type": "video/mp4" } },
-      ),
+    fetchMedia: media.fetchMedia,
   });
-  assert.equal(interrupted?.state, "failed");
+  assert.equal(interruptedResult?.state, "failed");
   assert.deepEqual(await readdir(directory), []);
 });
 
