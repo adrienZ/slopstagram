@@ -7,7 +7,6 @@ import { reportRepository } from "./repositories/report-repository.ts";
 import type { FetchRunRepository } from "./repositories/fetch-run-repository.ts";
 import { createStoryFeed, readStoryFeedVision } from "./story-feed.ts";
 import { cacheReportImages } from "./lib/image-cache-service.ts";
-import { cacheReportAudio } from "./report-audio-service.ts";
 import { persistReportInstagramUsers } from "./lib/instagram-user-service.ts";
 import type { Logger } from "./lib/logging-service.ts";
 import type { StoriesManifestReport } from "./lib/types.ts";
@@ -17,7 +16,6 @@ import { fetchStories } from "./stories.ts";
 import pkg from "../package.json" with { type: "json" };
 
 interface CreateReportDependencies {
-  cacheReportAudio: typeof cacheReportAudio;
   cacheReportImages: typeof cacheReportImages;
   fetchStories: typeof fetchStories;
   persistReportInstagramUsers: typeof persistReportInstagramUsers;
@@ -44,7 +42,6 @@ export interface CreateReportResult {
 }
 
 const defaultDependencies: CreateReportDependencies = {
-  cacheReportAudio,
   cacheReportImages,
   fetchStories,
   persistReportInstagramUsers,
@@ -109,7 +106,6 @@ export async function createReport(options: CreateReportOptions): Promise<Create
         );
       }
       const cacheDirectory = BASE_CACHE_DIR;
-      await dependencies.cacheReportAudio(report);
       const cachedImages = await dependencies.cacheReportImages(report, {
         cacheDirectory,
         logger,

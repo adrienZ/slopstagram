@@ -2,12 +2,6 @@ import { URL } from "node:url";
 import { z } from "zod";
 import { isJsonObject, type JsonObject, type JsonValue } from "./lib/json-value.ts";
 import type { StoryAnnotations, StoryItem } from "./lib/types.ts";
-import { ProviderIdentifierSchema } from "./lib/provider-identifier.ts";
-import { getMusicObservation, getMusicSourceUpdate } from "./music-observation-service.ts";
-import {
-  getLocationObservation,
-  getLocationSourceUpdates,
-} from "./location-observation-service.ts";
 
 function getNestedRecord(value: JsonValue, key: string): JsonObject | null {
   if (!isJsonObject(value)) {
@@ -53,14 +47,21 @@ function getMentionStickerLabel(value: JsonValue): string | null {
   return fullName !== null && fullName.length > 0 ? fullName : null;
 }
 
-function getMusicStickers(value: JsonValue): Array<Sticker> | null {
+function getMusicStickerLabel(value: JsonValue): string | null {
   const info = getNestedRecord(value, "music_asset_info");
+
+  if (info === null) {
+    return null;
+  }
+
   const title = getNestedString(info, ["title"]);
   const artist = getNestedString(info, ["display_artist"]);
-  if (title !== null) {
-    return [{ kind: "music", label: artist === null ? title : `${title} - ${artist}` }];
+
+  if (title !== null && title.length > 0 && artist !== null && artist.length > 0) {
+    return `${title} - ${artist}`;
   }
-  return getMusicObservation(value) === null ? null : [];
+
+  return title !== null && title.length > 0 ? title : null;
 }
 
 function getHashtagStickerLabel(value: JsonValue): string | null {
@@ -216,9 +217,7 @@ function extractSourceSticker(
     const location = getLocationFromValue(value);
     if (
       (Object.hasOwn(data, "ig_mention") && mention === null) ||
-      (Object.hasOwn(data, "location") &&
-        location === null &&
-        getLocationObservation(value) === null)
+      (Object.hasOwn(data, "location") && location === null)
     ) {
       return null;
     }
@@ -238,11 +237,8 @@ function extractSourceSticker(
   if (source === "story_locations") {
     const location = getLocationFromValue(value);
     label = location ? [location.name, location.address].filter(Boolean).join(", ") : null;
-    if (label === null && getLocationObservation(value) !== null) {
-      return [];
-    }
   } else if (source === "story_music_stickers") {
-    return getMusicStickers(value);
+    label = getMusicStickerLabel(value);
   } else if (source === "story_hashtags") {
     label = getHashtagStickerLabel(value);
   } else {
@@ -251,17 +247,11 @@ function extractSourceSticker(
   return label === null ? null : [{ kind, label }];
 }
 
-interface AnnotationUpdate {
-  source: string;
-  stickers: Array<Sticker>;
-  preservePrevious?: boolean;
-}
-
 export function getStoryAnnotationUpdates(
   story: StoryItem,
   reportMalformed?: (source: string) => void,
-): Array<AnnotationUpdate> {
-  const updates: Array<AnnotationUpdate> = [];
+): Array<{ source: string; stickers: Array<Sticker> }> {
+  const updates: Array<{ source: string; stickers: Array<Sticker> }> = [];
   for (const { source, kinds } of annotationSources) {
     const value = story[source];
     if (value === undefined || value === null) {
@@ -272,35 +262,13 @@ export function getStoryAnnotationUpdates(
       reportMalformed?.(source);
       continue;
     }
-    const entries = values.map((entry) => {
-      const stickers = extractSourceSticker(source, kinds[0], entry);
-      // Only the outer sticker ID identifies the occurrence. Nested place,
-      // mention, hashtag and audio IDs identify shared entities instead.
-      const id = isJsonObject(entry) ? entry.id : undefined;
-      const providerOccurrenceId = ProviderIdentifierSchema.safeParse(id);
-      return (
-        stickers?.map((sticker) => {
-          if (providerOccurrenceId.success) {
-            return { ...sticker, providerOccurrenceId: providerOccurrenceId.data };
-          }
-          return sticker;
-        }) ?? null
-      );
-    });
+    const entries = values.map((entry) => extractSourceSticker(source, kinds[0], entry));
     if (entries.some((entry) => entry === null)) {
       reportMalformed?.(source);
       continue;
     }
     updates.push({
       source,
-      // An unlabelled observation does not make a source a complete replacement of
-      // its previous display contribution. Keep known stickers alongside it.
-      preservePrevious:
-        source === "story_music_stickers"
-          ? getMusicSourceUpdate(story)?.some(({ fields }) => fields.title === null)
-          : getLocationSourceUpdates(story)
-              .find((update) => update.source === source)
-              ?.observations.some(({ fields }) => fields.name === null && fields.address === null),
       stickers: entries.flatMap((entry) => entry ?? []).map((sticker) => ({ ...sticker, source })),
     });
   }
