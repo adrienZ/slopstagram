@@ -1,10 +1,12 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import type { DrizzleDatabase } from "../database/client.ts";
 import {
   metadataMusic,
   partialMetadataMusic,
   storyMusicObservations,
   type MusicMetadata,
+  type MusicMetadataReference,
+  type MusicMediaState,
   type StoryMusicObservation,
 } from "../entities/music-metadata.ts";
 import type { StoryAnnotations, StoryItem } from "../lib/types.ts";
@@ -103,6 +105,17 @@ function saveMetadata(
   return { musicId: null, partialMusicId: plan.entry.id };
 }
 
+export function refreshMusicAsset(
+  database: MusicDatabase,
+  previous: StoryMusicObservation,
+  observation: MusicObservationInput,
+) {
+  if (previous.metadata.instagramAudioAssetId !== observation.fields.instagramAudioAssetId) {
+    return;
+  }
+  saveMetadata(database, observation, previous);
+}
+
 export function enrichStoryMusic(
   database: MusicDatabase,
   story: StoryItem,
@@ -121,4 +134,36 @@ export function enrichStoryMusic(
   for (const id of plan.removedObservationIds) {
     database.delete(storyMusicObservations).where(eq(storyMusicObservations.id, id)).run();
   }
+}
+
+export function findMusicMetadata(database: MusicDatabase, reference: MusicMetadataReference) {
+  const table = reference.status === "usable" ? metadataMusic : partialMetadataMusic;
+  return database.select().from(table).where(eq(table.id, reference.id)).get();
+}
+
+export function saveMusicMedia(
+  database: MusicDatabase,
+  reference: MusicMetadataReference,
+  kind: "audio" | "artwork",
+  source: string | null,
+  cachePath: string | null,
+  state: MusicMediaState,
+  durationMs: number | null = null,
+) {
+  const table = reference.status === "usable" ? metadataMusic : partialMetadataMusic;
+  const sourceColumn = kind === "audio" ? table.audioSourceUrl : table.artworkSourceUrl;
+  database
+    .update(table)
+    .set(
+      kind === "audio"
+        ? { audioCachePath: cachePath, audioState: state, audioDurationMs: durationMs }
+        : { artworkCachePath: cachePath, artworkState: state },
+    )
+    .where(
+      and(
+        eq(table.id, reference.id),
+        source === null ? isNull(sourceColumn) : eq(sourceColumn, source),
+      ),
+    )
+    .run();
 }

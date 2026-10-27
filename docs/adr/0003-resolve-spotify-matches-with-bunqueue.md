@@ -1,3 +1,7 @@
+---
+status: superseded by ADR-0004
+---
+
 # Resolve Spotify matches asynchronously with bunqueue
 
 Usable music metadata, whether received during ingestion or recovered from cache,
@@ -10,3 +14,6 @@ Only reliable matches expose a Spotify button beside the unchanged music label i
 the account's music card and expanded dialog. Ambiguous and not-found outcomes
 remain without a Spotify link, with no manual selection interface in the first
 version; technical failures remain distinct from those outcomes and can be retried.
+
+Superseded on 2026-10-26: the owner chose Instagram-provided audio and artwork
+without Spotify credentials or catalog matching. See [ADR 0004](0004-cache-received-music-media.md).

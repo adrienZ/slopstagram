@@ -34,3 +34,32 @@ test("media paths reject traversal and non-JPEG files", () => {
     path.join(root, "story-previews", "story-1.jpg"),
   );
 });
+
+test("cached audio supports content types, seek ranges, HEAD, and missing or unsatisfiable files", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "slopstagram-audio-test-"));
+  try {
+    await mkdir(path.join(root, "audio"));
+    await writeFile(path.join(root, "audio", "recording.m4a"), "0123456789");
+    const response = await createMediaResponse("audio/recording.m4a", root, { range: "bytes=3-6" });
+    assert.equal(response.status, 206);
+    assert.equal(response.headers.get("content-type"), "audio/mp4");
+    assert.equal(response.headers.get("content-range"), "bytes 3-6/10");
+    assert.equal(response.headers.get("accept-ranges"), "bytes");
+    assert.equal(await response.text(), "3456");
+    const suffix = await createMediaResponse("audio/recording.m4a", root, { range: "bytes=-2" });
+    assert.equal(await suffix.text(), "89");
+    const tail = await createMediaResponse("audio/recording.m4a", root, { range: "bytes=7-" });
+    assert.equal(await tail.text(), "789");
+    const invalid = await createMediaResponse("audio/recording.m4a", root, { range: "bytes=10-" });
+    assert.equal(invalid.status, 416);
+    assert.equal(invalid.headers.get("content-range"), "bytes */10");
+    const head = await createMediaResponse("audio/recording.m4a", root, { method: "HEAD" });
+    assert.equal(head.headers.get("content-length"), "10");
+    assert.equal(await head.text(), "");
+    const missing = await createMediaResponse("audio/missing.mp3", root);
+    assert.equal(missing.status, 404);
+    assert.equal(resolveMediaPath("avatars/audio.mp3", root), null);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

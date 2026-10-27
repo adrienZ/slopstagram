@@ -3,7 +3,7 @@
 Location and music metadata will live in separate relational tables, with typed
 columns and no JSON blobs, and will be shared by sticker occurrences referring to
 the same tagged place or music asset. Sharing avoids duplicating place information
-and repeating Spotify matching for the same asset, while keeping each occurrence
+and repeatedly caching the same asset's media, while keeping each occurrence
 and its existing label formatting unchanged.
 
 Records are shared only when their Instagram place or audio identifiers match;
@@ -18,7 +18,8 @@ longitude pair; the address is optional. A location's existing sticker label rem
 available independently of whether the place can be plotted on the map.
 
 Usable music metadata requires the Instagram audio asset identifier, title, and
-artist; the Spotify track identifier is optional. Preserve the Instagram sticker
+artist; received audio remains optional and does not determine
+metadata completeness. Preserve the Instagram sticker
 identifier separately: observed sticker identifiers differ across occurrences of
 the same audio asset and cannot substitute for its shared identity.
 

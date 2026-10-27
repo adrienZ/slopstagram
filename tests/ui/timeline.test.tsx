@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import { UserTimelinePage } from "../../server/pages/users/$username.tsx";
 import { timelineProps, timelineEntry } from "../page-fixtures.ts";
 import { renderPage } from "./render.tsx";
@@ -39,11 +39,11 @@ test("timeline calendar scrolls to the selected day without changing the route",
   });
   expect(scroll.mock.instances[0]).toBe(screen.getByRole("region", { name: "2026-01-01" }));
   expect(router.state.location.href).toBe("/users/timeline-user");
-  vi.spyOn(
-    globalThis.matchMedia("(prefers-reduced-motion: reduce)"),
-    "matches",
-    "get",
-  ).mockReturnValue(true);
+  const preference = globalThis.matchMedia("(prefers-reduced-motion: reduce)");
+  vi.spyOn(preference, "matches", "get").mockReturnValue(true);
+  act(() => {
+    preference.dispatchEvent(new globalThis.Event("change"));
+  });
   await user.click(screen.getByRole("button", { name: /Aujourd’hui/u }));
   await waitFor(() => {
     expect(scroll).toHaveBeenLastCalledWith({ behavior: "instant", block: "start" });
@@ -79,6 +79,15 @@ test("calendar navigates between months to another available day", async () => {
       },
     },
     "/users/timeline-user",
+  );
+  expect(screen.getByRole("button", { name: /mois précédent/iu })).not.toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
+  await user.click(screen.getByRole("button", { name: /mois précédent/iu }));
+  expect(screen.getByRole("button", { name: /mois précédent/iu })).toHaveAttribute(
+    "aria-disabled",
+    "true",
   );
   await user.click(screen.getByRole("button", { name: /mois précédent/iu }));
   await user.click(screen.getByRole("button", { name: /jeudi 1 janvier 2026/u }));
@@ -116,6 +125,14 @@ test("an empty account keeps navigation and every sticker kind without expansion
     screen.queryByRole("button", { name: /Tout afficher|Afficher ou masquer :/u }),
   ).not.toBeInTheDocument();
   expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /mois précédent/iu })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
+  expect(screen.getByRole("button", { name: /mois suivant/iu })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
   const scroll = vi.spyOn(globalThis.Element.prototype, "scrollIntoView");
   await user.click(screen.getByRole("button", { name: /Aujourd’hui/u }));
   expect(scroll).not.toHaveBeenCalled();

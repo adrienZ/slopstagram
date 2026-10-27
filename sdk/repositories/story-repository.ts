@@ -1,9 +1,16 @@
 import { planStoryAnnotations } from "../story-annotation-service.ts";
+import { planStoryAudio } from "../story-audio-service.ts";
+import { findStoryAudio, saveStoryAudio } from "./story-audio-repository.ts";
 import { and, asc, desc, eq, gt, gte, lt, lte, notInArray } from "drizzle-orm";
 import { useDrizzle, type DrizzleDatabase } from "../database/client.ts";
 import { instagramUsers } from "../entities/instagram-user.ts";
 import { enrichStoryLocations, readLocationObservations } from "./location-metadata-repository.ts";
-import { enrichStoryMusic, readMusicObservations } from "./music-metadata-repository.ts";
+import {
+  enrichStoryMusic,
+  readMusicObservations,
+  refreshMusicAsset,
+} from "./music-metadata-repository.ts";
+import type { MusicObservationInput } from "../music-observation-service.ts";
 import {
   stories,
   type StoryRow,
@@ -141,6 +148,10 @@ function readStoryAnnotations(database: AnnotationDatabase, mediaPk: string): St
     .map((sticker) => sticker.label);
   const locationObservations = readLocationObservations(database, mediaPk);
   const annotations: StoryAnnotations = { locations, stickers, sources };
+  const audio = findStoryAudio(database, mediaPk);
+  if (audio) {
+    annotations.storyAudio = audio;
+  }
   if (locationObservations.length > 0) {
     annotations.locationObservations = locationObservations;
   }
@@ -201,6 +212,11 @@ function replaceStoryAnnotations(
   const current = readStoryAnnotations(database, story.pk);
   enrichStoryLocations(database, story, current);
   enrichStoryMusic(database, story, current);
+  saveStoryAudio(
+    database,
+    story.pk,
+    planStoryAudio(story, readStoryAnnotations(database, story.pk), previous.storyAudio),
+  );
 }
 
 function readStoryItem(database: DrizzleDatabase, story: StoryRow): StoryItem {
@@ -266,6 +282,17 @@ export class StoryRepository {
     }
 
     return readStoryItem(this.database, story);
+  }
+
+  refreshMusicAsset(mediaPk: string, observationId: string, observation: MusicObservationInput) {
+    this.database.transaction((database) => {
+      const previous = readMusicObservations(database, mediaPk).find(
+        ({ id }) => id === observationId,
+      );
+      if (previous !== undefined && previous.metadata.instagramAudioAssetId !== null) {
+        refreshMusicAsset(database, previous, observation);
+      }
+    });
   }
 
   listStickerKinds(): Array<string> {

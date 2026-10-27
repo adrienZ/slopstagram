@@ -2,6 +2,7 @@ import { z } from "zod";
 import { StoryReelSchema, StoryTrayEntrySchema } from "./lib/story-schemas.ts";
 import type { StoryReel } from "./lib/types.ts";
 import type { InstagramClient } from "./stories.ts";
+import { JsonValueSchema } from "./lib/json-value.ts";
 
 const ReelTrayResponseSchema = z.object({
   broadcasts: z.array(z.unknown()),
@@ -19,6 +20,7 @@ export interface ReelsMediaResponse {
 const IG_APP_ID = "936619743392459";
 const REELS_TRAY_URL = "https://www.instagram.com/api/v1/feed/reels_tray/";
 const REELS_MEDIA_URL = "https://www.instagram.com/graphql/query";
+const MUSIC_ASSET_URL = "https://www.instagram.com/api/v1/clips/music/";
 // PolarisStoriesV3ReelPageStandaloneQuery, verified against the web story viewer.
 const REELS_MEDIA_DOCUMENT_ID = "28449850404637481";
 
@@ -54,7 +56,7 @@ function quoteNumericIdentifiers(body: string): string {
   // before the schema gets a chance to normalize them.
   return body
     .replaceAll(
-      /(?<identifier>"(?:id|pk|media_pk|reel_id)"\s*:\s*)(?<numericIdentifier>\d+)/gu,
+      /(?<identifier>"(?:id|pk|media_pk|reel_id|audio_asset_id|audio_cluster_id)"\s*:\s*)(?<numericIdentifier>\d+)/gu,
       '$<identifier>"$<numericIdentifier>"',
     )
     .replaceAll(
@@ -100,6 +102,7 @@ interface BrowserFetchInput {
   appId: string;
   requestUrl: string;
   mediaQuery?: { documentId: string; reelIds: Array<string> };
+  musicAssetId?: string;
 }
 
 interface InstagramClientPage {
@@ -117,44 +120,58 @@ async function fetchFromInstagramPage(
   session: InstagramClientSession,
   url: string,
   mediaQuery?: BrowserFetchInput["mediaQuery"],
+  musicAssetId?: string,
 ): Promise<BrowserFetchResponse> {
   const input: BrowserFetchInput = { appId: IG_APP_ID, requestUrl: url };
   if (mediaQuery) {
     input.mediaQuery = mediaQuery;
   }
-  return await session.page.evaluate(async ({ appId, requestUrl, mediaQuery: query }) => {
-    const headers = new globalThis.Headers({ "x-ig-app-id": appId });
-    let body: string | undefined;
-    if (query) {
-      headers.set("content-type", "application/x-www-form-urlencoded");
-      headers.set(
-        "x-csrftoken",
-        /(?:^|;\s*)csrftoken=(?<token>[^;]+)/u.exec(globalThis.document.cookie)?.groups?.token ??
-          "",
-      );
-      body = new globalThis.URLSearchParams({
-        doc_id: query.documentId,
-        variables: JSON.stringify({
-          reel_ids_arr: query.reelIds,
-          media_id: null,
-          is_highlight: false,
-          __relay_internal__pv__PolarisCommunityNoteStoriesLabelEnabledrelayprovider: false,
-        }),
-      }).toString();
-    }
-    const response = await globalThis.fetch(requestUrl, {
-      body,
-      headers,
-      method: query ? "POST" : "GET",
-    });
+  if (musicAssetId !== undefined) {
+    input.musicAssetId = musicAssetId;
+  }
+  return await session.page.evaluate(
+    async ({ appId, requestUrl, mediaQuery: query, musicAssetId: audioId }) => {
+      const headers = new globalThis.Headers({ "x-ig-app-id": appId });
+      let body: string | undefined;
+      if (query || audioId !== undefined) {
+        headers.set("content-type", "application/x-www-form-urlencoded");
+        headers.set(
+          "x-csrftoken",
+          /(?:^|;\s*)csrftoken=(?<token>[^;]+)/u.exec(globalThis.document.cookie)?.groups?.token ??
+            "",
+        );
+        body = query
+          ? new globalThis.URLSearchParams({
+              doc_id: query.documentId,
+              variables: JSON.stringify({
+                reel_ids_arr: query.reelIds,
+                media_id: null,
+                is_highlight: false,
+                __relay_internal__pv__PolarisCommunityNoteStoriesLabelEnabledrelayprovider: false,
+              }),
+            }).toString()
+          : new globalThis.URLSearchParams({
+              audio_cluster_id: audioId ?? "",
+              original_sound_audio_asset_id: audioId ?? "",
+              max_id: "",
+            }).toString();
+      }
+      const response = await globalThis.fetch(requestUrl, {
+        body,
+        headers,
+        method: query || audioId !== undefined ? "POST" : "GET",
+        signal: audioId === undefined ? undefined : globalThis.AbortSignal.timeout(20_000),
+      });
 
-    return {
-      body: await response.text(),
-      headers: Object.fromEntries(response.headers.entries()),
-      ok: response.ok,
-      status: response.status,
-    };
-  }, input);
+      return {
+        body: await response.text(),
+        headers: Object.fromEntries(response.headers.entries()),
+        ok: response.ok,
+        status: response.status,
+      };
+    },
+    input,
+  );
 }
 
 function toClientResponse<T>(response: BrowserFetchResponse, schema: z.ZodType<T>) {
@@ -168,6 +185,13 @@ function toClientResponse<T>(response: BrowserFetchResponse, schema: z.ZodType<T
 
 export function createInstagramClient(session: InstagramClientSession): InstagramClient {
   return {
+    async getMusicAsset(audioId) {
+      return toClientResponse(
+        await fetchFromInstagramPage(session, MUSIC_ASSET_URL, undefined, audioId),
+        JsonValueSchema,
+      );
+    },
+
     async getReelsMedia(reelIds) {
       return toClientResponse(
         await fetchFromInstagramPage(session, REELS_MEDIA_URL, {

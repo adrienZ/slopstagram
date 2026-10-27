@@ -12,6 +12,18 @@ export interface MusicObservationInput {
   fields: MusicFields;
 }
 
+// Prefer progressive audio and full artwork; fall back only when absent or invalid.
+const SourceUrlSchema = z.url({ protocol: /^https$/u }).pipe(
+  z.string().refine((value) => {
+    const url = new globalThis.URL(value);
+    return url.username === "" && url.password === "";
+  }),
+);
+function sourceUrl(value: JsonValue | undefined): string | null {
+  const parsed = SourceUrlSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
+}
+
 export function getMusicObservation(value: JsonValue): MusicObservationInput | null {
   if (!isJsonObject(value)) {
     return null;
@@ -29,6 +41,11 @@ export function getMusicObservation(value: JsonValue): MusicObservationInput | n
     title: title.success ? title.data : null,
     artist: artist.success ? artist.data : null,
     durationMs: duration.success ? duration.data : null,
+    audioSourceUrl:
+      sourceUrl(info.progressive_download_url) ??
+      sourceUrl(info.fast_start_progressive_download_url),
+    artworkSourceUrl:
+      sourceUrl(info.cover_artwork_uri) ?? sourceUrl(info.cover_artwork_thumbnail_uri),
   };
   // An outer ID is useful provenance even when every audio field is missing.
   return providerOccurrenceId !== null || Object.values(fields).some((field) => field !== null)
