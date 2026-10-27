@@ -18,6 +18,7 @@ const responseSchema = z.object({
             location_address: z.string().nullish(),
             lat: z.number().nullish(),
             lng: z.number().nullish(),
+            category: z.string().nullish(),
           })
           .nullable(),
       }),
@@ -38,6 +39,7 @@ function parsePlaceResponse(body: JsonValue, placeId: string): PlaceFillInput | 
     address: info.location_address,
     latitude: info.lat,
     longitude: info.lng,
+    category: info.category,
   };
 }
 

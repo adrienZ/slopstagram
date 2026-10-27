@@ -64,7 +64,9 @@ export function LocationHistory({
               <option value="">Sélectionnez un lieu…</option>
               {locations.places.map((place) => (
                 <option key={place.id} value={place.id}>
-                  {place.name} · {place.stories.length} stories
+                  {[place.name, place.category, `${place.stories.length} stories`]
+                    .filter((part) => part !== null)
+                    .join(" · ")}
                 </option>
               ))}
             </select>
@@ -94,6 +96,9 @@ export function LocationHistory({
                       <XIcon className="tw:size-4" />
                     </button>
                   </div>
+                  {selected.category !== null && (
+                    <p className="tw:text-xs tw:text-muted-foreground">{selected.category}</p>
+                  )}
                   <p className="tw:text-xs tw:text-muted-foreground">
                     {selected.stories.length} {selected.stories.length === 1 ? "story" : "stories"}
                   </p>
