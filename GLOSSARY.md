@@ -27,6 +27,18 @@ their @, hashtags retain their #, and links retain their full URL.
 A place referenced by a location sticker. Multiple sticker occurrences can refer
 to the same tagged place.
 
+**Place lookup**:
+Fetching a tagged place's current information from Instagram by its place
+identifier, independently of any story that references it.
+
+**Category**:
+The type Instagram assigns to a tagged place, such as a bistro or a bridge, kept in
+the wording and language Instagram returned.
+
+**Place details**:
+Instagram's descriptive information about a tagged place that the map does not
+need: its phone number, price range, slug, and linked business account.
+
 **Music asset**:
 An Instagram audio item referenced by a music sticker. Multiple sticker
 occurrences can refer to the same music asset.
