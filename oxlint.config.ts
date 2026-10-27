@@ -32,6 +32,7 @@ export default defineConfig({
   ignorePatterns: [
     ...(ultracite.ignorePatterns ?? []),
     ".agents/**",
+    ".claude/**",
     "server/routeTree.gen.ts",
     "server/shadcn/**",
   ],
