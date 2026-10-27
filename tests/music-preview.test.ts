@@ -75,3 +75,38 @@ test("legacy cached annotations without playback duration remain readable", () =
     StoryMusicObservationSchema.parse({ ...observation, metadata }).metadata.audioDurationMs,
   ).toBeNull();
 });
+
+test("the story soundtrack takes priority over long music assets and is played only once", () => {
+  const story = legacyStory();
+  story.stickers[0].label = "bliss - iogi";
+  story.stickers.push({ ...story.stickers[0], occurrenceId: "second" });
+  story.storyAudio = {
+    mediaPk: "story",
+    sourceUrl: "https://example.com/story",
+    mimeType: "audio/mp4",
+    codecs: "mp4a.40.5",
+    cachePath: `audio/${"c".repeat(64)}.m4a`,
+    durationMs: 15_000,
+    state: "available",
+  };
+  const items = musicStickerItems(story);
+  expect(items).toHaveLength(2);
+  expect(items[0].preview?.sourceKind).toBe("story_audio");
+  expect(items[0].preview?.audioUrl).toBe(`/media/audio/${"c".repeat(64)}.m4a`);
+  expect(items[0].preview?.durationMs).toBe(15_000);
+  expect(items[1].preview).toBeNull();
+});
+
+test("music asset remains available when the story soundtrack is missing", () => {
+  const story = legacyStory();
+  story.storyAudio = {
+    mediaPk: "story",
+    sourceUrl: "https://example.com/story",
+    mimeType: "audio/mp4",
+    codecs: "mp4a.40.5",
+    cachePath: null,
+    durationMs: null,
+    state: "failed",
+  };
+  expect(musicStickerItems(story)[0].preview?.sourceKind).toBe("music_asset");
+});
