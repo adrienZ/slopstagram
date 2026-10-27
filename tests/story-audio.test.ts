@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
-import { startMediaServer } from "./media-server.ts";
+import { startMediaServer, wavAudio } from "./media-server.ts";
 import { test } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
@@ -12,8 +12,17 @@ import path from "node:path";
 import { processStoryAudio, cacheReportAudio } from "../sdk/report-audio-service.ts";
 import { createMediaResponse } from "../server/routes/media/[...path].ts";
 import { groupTimelineStickers } from "../server/timeline-stickers.ts";
-import { storyMusicPreviews } from "../server/music-preview.ts";
-import type { StoriesManifestReport } from "../sdk/lib/types.ts";
+import { musicStickerItems, storyMusicPreviews } from "../server/music-preview.ts";
+import type { StoriesManifestReport, StoryItem } from "../sdk/lib/types.ts";
+import { fetchStoriesManifest } from "../sdk/stories.ts";
+import { createMemoryStorage } from "./memory-storage.ts";
+import {
+  createCapturingLogger,
+  createClient,
+  fixedNow,
+  reel,
+  response as mockResponse,
+} from "./mock-helpers.ts";
 
 function manifest(name: string) {
   return `<MPD xmlns="urn:mpeg:dash:schema:mpd:2011" type="static">
@@ -333,4 +342,73 @@ test("reels shared into a story do not create or retain a downloadable soundtrac
   assert.equal(cold.annotations.stickers[0].kind, "music");
   await repository.save({ ...story, pk: "direct-reel", product_type: "clips" });
   assert.equal(repository.findByMediaPk("direct-reel")?.annotations?.storyAudio, undefined);
+});
+
+test("fresh story ingestion caches the story excerpt and prefers it over the longer music asset", async (context) => {
+  const database = createDrizzle(":memory:");
+  migrateDatabase(database);
+  const directory = await mkdtemp(path.join(tmpdir(), "future-story-audio-"));
+  context.onTestFinished(async () => {
+    database.$client.close();
+    await rm(directory, { recursive: true, force: true });
+  });
+  const story: StoryItem = {
+    pk: "fresh",
+    video_dash_manifest: manifest("fresh"),
+    story_music_stickers: [
+      {
+        id: "sticker",
+        music_asset_info: {
+          audio_asset_id: "asset",
+          title: "Song",
+          display_artist: "Artist",
+          progressive_download_url: "https://example.com/song.wav",
+          duration_in_ms: 180_000,
+        },
+      },
+    ],
+  };
+  const owner = { id: "user", pk: "user", username: "one" };
+  const client = createClient(
+    [{ id: "reel", media_ids: [story.pk], user: owner }],
+    [mockResponse({ reels: { reel: { ...reel("reel", [story]), user: owner } } })],
+  );
+  const repository = new StoryRepository(database);
+  const report = await fetchStoriesManifest(client, {
+    storyRepository: repository,
+    storyStorage: createMemoryStorage<StoryItem>(),
+    logger: createCapturingLogger(),
+    now: fixedNow,
+  });
+  const storyBytes = await readFile(new globalThis.URL("fixtures/audio-clip.m4a", import.meta.url));
+  const musicBytes = wavAudio(70);
+  const media = await startMediaServer(context, (request, response) => {
+    if (request.url?.startsWith("/fresh.mp4") === true) {
+      response.writeHead(200, { "content-type": "video/mp4" });
+      response.end(storyBytes);
+    } else {
+      response.writeHead(200, { "content-type": "audio/wav" });
+      response.end(musicBytes);
+    }
+  });
+  await cacheReportAudio(report, { database, directory, fetchMedia: media.fetchMedia });
+  const annotations = new StoryRepository(database).findByMediaPk(story.pk)?.annotations;
+  assert.ok(annotations?.storyAudio);
+  assert.ok(annotations.storyAudio.cachePath !== null);
+  const music = annotations.musicObservations?.[0].metadata;
+  assert.ok(music);
+  assert.ok(music.audioCachePath !== null);
+  assert.equal(music.audioDurationMs, 70_000);
+  assert.equal(annotations.storyAudio.durationMs, 1023);
+  const previews = musicStickerItems(annotations);
+  assert.equal(previews.length, 1);
+  assert.ok(previews[0].preview);
+  assert.equal(previews[0].preview.sourceKind, "story_audio");
+  assert.equal(previews[0].preview.audioUrl, `/media/${annotations.storyAudio.cachePath}`);
+  assert.equal(previews[0].preview.durationMs, 1023);
+  assert.deepEqual(
+    await readFile(path.join(directory, annotations.storyAudio.cachePath)),
+    storyBytes,
+  );
+  assert.deepEqual(media.requests, ["/song.wav", "/fresh.mp4?a=1&b=2"]);
 });

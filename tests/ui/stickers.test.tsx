@@ -183,6 +183,7 @@ test("music shows its cached cover in the card, expanded modal and story details
     `/media/music/${"b".repeat(64)}.jpg`,
   );
   const audio = card.getByLabelText("Écouter : Song — Artist");
+  expect(audio).toHaveAttribute("src", `/media/audio/${"f".repeat(64)}.m4a`);
   expect(card.getByRole("button", { name: "Lire : Song — Artist" })).toBeVisible();
   expect(audio).not.toHaveAttribute("controls");
   expect(audio).toHaveAttribute("preload", "metadata");

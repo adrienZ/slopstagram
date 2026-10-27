@@ -57,3 +57,9 @@ matching normalized title and artist may share one panel. This does not create a
 occurrence link or merge metadata identities; the identifier rules in ADRs 0001
 and 0002 still apply to persistence. Preserve genuine repeated occurrences and
 leave multiple matching assets ambiguous.
+
+On 2026-10-27, playback preference changed: use the available story-owned
+soundtrack first to play the excerpt heard in the story. When it is unavailable,
+retain the existing music-asset audio fallback, which can be longer than the story.
+The two sources retain their distinct provenance; a story soundtrack is presented
+only once even when several music stickers are present.
