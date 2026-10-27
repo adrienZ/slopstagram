@@ -19,6 +19,20 @@ const responseSchema = z.object({
             lat: z.number().nullish(),
             lng: z.number().nullish(),
             category: z.string().nullish(),
+            phone: z.string().nullish(),
+            price_range: z.number().int().nullish(),
+            slug: z.string().nullish(),
+            ig_business: z
+              .object({
+                profile: z
+                  .object({
+                    id: z.string().nullish(),
+                    username: z.string().nullish(),
+                    profile_pic_url: z.string().nullish(),
+                  })
+                  .nullish(),
+              })
+              .nullish(),
           })
           .nullable(),
       }),
@@ -40,6 +54,16 @@ function parsePlaceResponse(body: JsonValue, placeId: string): PlaceFillInput | 
     latitude: info.lat,
     longitude: info.lng,
     category: info.category,
+    details: {
+      phone: info.phone,
+      priceRange: info.price_range,
+      slug: info.slug,
+      business: {
+        id: info.ig_business?.profile?.id,
+        username: info.ig_business?.profile?.username,
+        pictureUrl: info.ig_business?.profile?.profile_pic_url,
+      },
+    },
   };
 }
 

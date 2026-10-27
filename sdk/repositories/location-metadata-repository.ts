@@ -1,15 +1,18 @@
 import { asc, eq } from "drizzle-orm";
 import type { DrizzleDatabase } from "../database/client.ts";
 import {
+  metadataLocationDetails,
   metadataLocations,
   storyLocationObservations,
   classifyLocation,
+  type PlaceDetails,
   type StoryLocationObservation,
 } from "../entities/location-metadata.ts";
 import type { StoryAnnotations, StoryItem } from "../lib/types.ts";
 import type { LocationObservationInput } from "../location-observation-service.ts";
 import {
   planLocationMetadataWrite,
+  planPlaceDetails,
   planPlaceFill,
   planStoryLocationUpdates,
   type PlaceFillInput,
@@ -109,4 +112,29 @@ export function fillTaggedPlace(
     update.lastLookupAttemptAt = lookedUpAt;
   }
   database.update(metadataLocations).set(update).where(eq(metadataLocations.id, known.id)).run();
+  if (incoming.details !== undefined) {
+    const details = { locationId: known.id, ...planPlaceDetails(incoming.details) };
+    database
+      .insert(metadataLocationDetails)
+      .values(details)
+      .onConflictDoUpdate({ target: metadataLocationDetails.locationId, set: details })
+      .run();
+  }
+}
+
+export function readPlaceDetails(
+  database: LocationDatabase,
+  instagramPlaceId: string,
+): PlaceDetails | null {
+  const row = database
+    .select()
+    .from(metadataLocationDetails)
+    .innerJoin(metadataLocations, eq(metadataLocationDetails.locationId, metadataLocations.id))
+    .where(eq(metadataLocations.instagramPlaceId, instagramPlaceId))
+    .get();
+  if (row === undefined) {
+    return null;
+  }
+  const { locationId: _locationId, ...details } = row.metadata_location_details;
+  return details;
 }

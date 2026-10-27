@@ -43,6 +43,36 @@ export const metadataLocations = sqliteTable(
   ],
 );
 
+// Instagram's descriptive information about a place; written only by place lookups.
+export const metadataLocationDetails = sqliteTable(
+  "metadata_location_details",
+  {
+    locationId: text()
+      .primaryKey()
+      .notNull()
+      .references(() => metadataLocations.id, { onDelete: "cascade" }),
+    phone: text(),
+    priceRange: integer(),
+    slug: text(),
+    businessAccountId: text(),
+    businessAccountUsername: text(),
+    businessAccountPictureUrl: text(),
+  },
+  (table) =>
+    [
+      table.phone,
+      table.slug,
+      table.businessAccountId,
+      table.businessAccountUsername,
+      table.businessAccountPictureUrl,
+    ].map((column, position) =>
+      check(
+        `location_details_text_nonempty_${position}`,
+        sql`${column} IS NULL OR length(trim(${column}, char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) > 0`,
+      ),
+    ),
+);
+
 export const storyLocationObservations = sqliteTable(
   "story_location_observations",
   {
@@ -79,6 +109,10 @@ const LocationMetadataSchema = z.discriminatedUnion("status", [
 export const StoryLocationObservationSchema = createSelectSchema(storyLocationObservations)
   .omit({ mediaPk: true, sortOrder: true, locationId: true })
   .extend({ metadata: LocationMetadataSchema });
+export const PlaceDetailsSchema = createSelectSchema(metadataLocationDetails, {
+  priceRange: (schema) => schema.int(),
+}).omit({ locationId: true });
+export type PlaceDetails = z.infer<typeof PlaceDetailsSchema>;
 // Lookup results and bookkeeping are written only by place lookups, never by story observations.
 export type LocationFields = Omit<
   typeof metadataLocations.$inferSelect,

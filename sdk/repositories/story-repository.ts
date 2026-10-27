@@ -8,6 +8,7 @@ import {
   enrichStoryLocations,
   fillTaggedPlace,
   readLocationObservations,
+  readPlaceDetails,
 } from "./location-metadata-repository.ts";
 import type { PlaceFillInput } from "../location-metadata-service.ts";
 import {
@@ -285,11 +286,19 @@ export class StoryRepository {
   }
 
   fillTaggedPlace(instagramPlaceId: string, incoming: PlaceFillInput) {
-    fillTaggedPlace(this.database, instagramPlaceId, incoming);
+    this.database.transaction((transaction) => {
+      fillTaggedPlace(transaction, instagramPlaceId, incoming);
+    });
+  }
+
+  findPlaceDetails(instagramPlaceId: string) {
+    return readPlaceDetails(this.database, instagramPlaceId);
   }
 
   recordPlaceLookup(instagramPlaceId: string, incoming: PlaceFillInput, lookedUpAt: Date) {
-    fillTaggedPlace(this.database, instagramPlaceId, incoming, lookedUpAt.getTime());
+    this.database.transaction((transaction) => {
+      fillTaggedPlace(transaction, instagramPlaceId, incoming, lookedUpAt.getTime());
+    });
   }
 
   listStickerKinds(): Array<string> {
