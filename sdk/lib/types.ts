@@ -246,6 +246,7 @@ export interface StoriesManifestReport {
 }
 
 export type ImageCacheStorage = Storage<Record<string, never>>;
+export type AudioCacheStorage = Storage<Record<string, never>>;
 export type StoryStorage = Storage<StoryItem>;
 
 export interface ParsedStory {

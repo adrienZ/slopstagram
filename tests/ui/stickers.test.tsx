@@ -143,7 +143,7 @@ test("music shows its cached cover in the card, expanded modal and story details
       mimeType: "audio/mp4",
       codecs: "mp4a.40.5",
       durationMs: null,
-      cachePath: `music/${"f".repeat(64)}.m4a`,
+      cachePath: `audio/${"f".repeat(64)}.m4a`,
       state: "available",
     },
     stickers: [
@@ -166,7 +166,7 @@ test("music shows its cached cover in the card, expanded modal and story details
           audioDurationMs: null,
           audioSourceUrl: "https://example.com/private-source",
           artworkSourceUrl: null,
-          audioCachePath: `music/${"a".repeat(64)}.m4a`,
+          audioCachePath: `audio/${"a".repeat(64)}.m4a`,
           artworkCachePath: `music/${"b".repeat(64)}.jpg`,
           audioState: "available",
           artworkState: "available",
@@ -244,7 +244,7 @@ test("music without audio stays hidden and another asset does not borrow its cov
           title: "Audio only",
           artworkCachePath: null,
           artworkState: "unavailable",
-          audioCachePath: `music/${"d".repeat(64)}.wav`,
+          audioCachePath: `audio/${"d".repeat(64)}.wav`,
           audioState: "available",
         },
       },
@@ -299,7 +299,7 @@ test("music observations with media but without labels stay visible without incr
               audioDurationMs: null,
               audioSourceUrl: null,
               artworkSourceUrl: null,
-              audioCachePath: `music/${"e".repeat(64)}.wav`,
+              audioCachePath: `audio/${"e".repeat(64)}.wav`,
               artworkCachePath: null,
               audioState: "available",
               artworkState: "unavailable",
@@ -378,7 +378,7 @@ test("a DASH soundtrack has one explicitly labeled player per story in the card 
       mimeType: "audio/mp4",
       codecs: "mp4a.40.5",
       durationMs: null,
-      cachePath: `music/${"f".repeat(64)}.m4a`,
+      cachePath: `audio/${"f".repeat(64)}.m4a`,
       state: "available",
     },
   };
@@ -388,7 +388,7 @@ test("a DASH soundtrack has one explicitly labeled player per story in the card 
   expect(card.getByText("2 stickers · 1 stories")).toBeVisible();
   expect(card.getAllByLabelText("Écouter : Exact original label")).toHaveLength(1);
   const audio = card.getByLabelText("Écouter : Exact original label");
-  expect(audio).toHaveAttribute("src", `/media/music/${"f".repeat(64)}.m4a`);
+  expect(audio).toHaveAttribute("src", `/media/audio/${"f".repeat(64)}.m4a`);
   expect(audio).toHaveAttribute("preload", "metadata");
   expect(audio).not.toHaveAttribute("autoplay");
   expect(card.queryByRole("img", { name: /Pochette/u })).not.toBeInTheDocument();

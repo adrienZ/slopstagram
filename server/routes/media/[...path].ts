@@ -3,9 +3,14 @@ import path from "node:path";
 import { defineEventHandler } from "nitro/h3";
 import { cachedMediaContentType } from "../../../sdk/lib/music-media-types.ts";
 import { z } from "zod";
-import { BASE_CACHE_DIR, IMAGES_STORAGE_DIR } from "../../../sdk/lib/cache-service.ts";
+import {
+  AUDIO_STORAGE_DIR,
+  BASE_CACHE_DIR,
+  IMAGES_STORAGE_DIR,
+} from "../../../sdk/lib/cache-service.ts";
 
 export const mediaDirectory = path.resolve(BASE_CACHE_DIR, IMAGES_STORAGE_DIR);
+export const audioDirectory = path.resolve(BASE_CACHE_DIR, AUDIO_STORAGE_DIR);
 function notFound(): Response {
   return new globalThis.Response("media not found", { status: 404 });
 }
@@ -19,28 +24,38 @@ function isInside(root: string, target: string) {
   );
 }
 
-export function resolveMediaPath(
-  requestPath: string,
-  root: string = mediaDirectory,
-): string | null {
+function resolveMediaTarget(requestPath: string, root: string) {
   let decoded: string;
   try {
     decoded = decodeURIComponent(requestPath);
   } catch {
     return null;
   }
-  const resolvedRoot = path.resolve(root);
-  const resolved = path.resolve(resolvedRoot, decoded);
-  const relative = path.relative(resolvedRoot, resolved);
+  const isAudio = decoded.startsWith(`${AUDIO_STORAGE_DIR}/`);
+  let resolvedRoot = path.resolve(root);
+  if (isAudio) {
+    resolvedRoot = root === mediaDirectory ? audioDirectory : path.resolve(root, AUDIO_STORAGE_DIR);
+  }
+  const resolved = path.resolve(
+    resolvedRoot,
+    isAudio ? decoded.slice(AUDIO_STORAGE_DIR.length + 1) : decoded,
+  );
   const extension = path.extname(resolved).toLowerCase();
   if (
     !isInside(resolvedRoot, resolved) ||
     cachedMediaContentType(extension) === undefined ||
-    (extension !== ".jpg" && !relative.startsWith(`music${path.sep}`))
+    (isAudio ? extension === ".jpg" : extension !== ".jpg")
   ) {
     return null;
   }
-  return resolved;
+  return { path: resolved, root: resolvedRoot };
+}
+
+export function resolveMediaPath(
+  requestPath: string,
+  root: string = mediaDirectory,
+): string | null {
+  return resolveMediaTarget(requestPath, root)?.path ?? null;
 }
 
 function byteRange(range: string, size: number): { start: number; end: number } | null {
@@ -103,12 +118,13 @@ export async function createMediaResponse(
   root: string = mediaDirectory,
   options: { range?: string | null; method?: string } = {},
 ): Promise<Response> {
-  const mediaPath = resolveMediaPath(requestPath, root);
-  if (mediaPath === null) {
+  const target = resolveMediaTarget(requestPath, root);
+  if (target === null) {
     return notFound();
   }
+  const mediaPath = target.path;
   try {
-    if (!isInside(await realpath(root), await realpath(mediaPath))) {
+    if (!isInside(await realpath(target.root), await realpath(mediaPath))) {
       return notFound();
     }
     const file = await open(mediaPath, "r");

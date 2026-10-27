@@ -19,7 +19,7 @@ export interface MusicStickerItem {
 function localMediaPath(key: string | null, state: string): string | null {
   return state === "available" &&
     key !== null &&
-    /^music\/[a-f0-9]{64}\.(?:mp3|m4a|aac|ogg|webm|wav|flac)$/u.test(key)
+    /^audio\/[a-f0-9]{64}\.(?:mp3|m4a|aac|ogg|webm|wav|flac)$/u.test(key)
     ? `/media/${key}`
     : null;
 }

@@ -4,7 +4,6 @@ import { cn } from "cn";
 import { Button } from "../shadcn/ui/button.tsx";
 import type { MusicPreview } from "../music-preview.ts";
 import { useAudioPreview } from "../hooks/use-audio-preview.ts";
-import { ScrollingTitle } from "./scrolling-title.tsx";
 
 function audioTime(seconds: number) {
   const whole = Math.floor(Math.max(0, seconds));
@@ -65,7 +64,9 @@ function AudioPlayer({ preview, preload = true, onError }: MusicAudioPreviewProp
         </Button>
       </span>
       <div className="tw:flex tw:min-w-0 tw:flex-1 tw:flex-col tw:gap-1">
-        <ScrollingTitle>{preview.description}</ScrollingTitle>
+        <p className="tw:min-w-0 tw:truncate tw:text-xs tw:font-medium" title={preview.description}>
+          {preview.description}
+        </p>
         <div className="tw:flex tw:min-w-0 tw:items-center tw:gap-2">
           <input
             type="range"

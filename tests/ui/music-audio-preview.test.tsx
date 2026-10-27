@@ -11,7 +11,7 @@ const preview: MusicPreview = {
   id: "first",
   description: "Audio de la story",
   sourceKind: "story_audio",
-  audioUrl: `/media/music/${"a".repeat(64)}.m4a`,
+  audioUrl: `/media/audio/${"a".repeat(64)}.m4a`,
   artworkUrl: null,
   durationMs: null,
 };

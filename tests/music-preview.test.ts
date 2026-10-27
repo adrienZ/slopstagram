@@ -23,7 +23,7 @@ function legacyStory(): StoryAnnotations {
           audioDurationMs: null,
           audioSourceUrl: null,
           artworkSourceUrl: null,
-          audioCachePath: `music/${"a".repeat(64)}.m4a`,
+          audioCachePath: `audio/${"a".repeat(64)}.m4a`,
           artworkCachePath: null,
           audioState: "available",
           artworkState: "unavailable",
@@ -37,7 +37,7 @@ test("legacy music renders once when its exact title and artist identify one obs
   const items = musicStickerItems(legacyStory());
   expect(items).toHaveLength(1);
   expect(items[0].label).toBe("bliss - iogi");
-  expect(items[0].preview?.audioUrl).toBe(`/media/music/${"a".repeat(64)}.m4a`);
+  expect(items[0].preview?.audioUrl).toBe(`/media/audio/${"a".repeat(64)}.m4a`);
 });
 
 test("matching legacy labels preserve real repeated occurrences without adding an unlinked third row", () => {
@@ -46,7 +46,7 @@ test("matching legacy labels preserve real repeated occurrences without adding a
   const items = musicStickerItems(story);
   expect(items).toHaveLength(2);
   expect(
-    items.every((item) => item.preview?.audioUrl === `/media/music/${"a".repeat(64)}.m4a`),
+    items.every((item) => item.preview?.audioUrl === `/media/audio/${"a".repeat(64)}.m4a`),
   ).toBe(true);
 });
 
@@ -61,7 +61,7 @@ test("two different assets with identical labels remain ambiguous", () => {
       ...first.metadata,
       id: "other-asset",
       instagramAudioAssetId: "different",
-      audioCachePath: `music/${"b".repeat(64)}.m4a`,
+      audioCachePath: `audio/${"b".repeat(64)}.m4a`,
     },
   });
   expect(musicStickerItems(story)[0].preview).toBeNull();

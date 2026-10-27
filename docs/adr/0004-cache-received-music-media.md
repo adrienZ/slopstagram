@@ -25,8 +25,10 @@ music-only acoustic content. Keep that distinction unknown without a separately
 defined analysis, and respect explicit received mute flags.
 
 Live observations can refresh URLs; historical cache enrichment fills missing
-sources only. Reuse successful files and publish downloads atomically inside the
-existing media cache. Current report enrichment invokes the shared processor
+sources only. Reuse successful files and publish downloads atomically in a
+dedicated audio cache at `data/cache/audio`; artwork remains in
+`data/cache/images/music`. Existing audio was moved as a one-time operation;
+the database migration updates its paths. Current report enrichment invokes the shared processor
 after story persistence, already invoked by the existing hourly bunqueue report
 job. The dedicated workload proposed in #42 was closed as not planned. Lookup
 uses the already-open session, deduplicates IDs per fetch, and stops on rate
@@ -37,8 +39,8 @@ operation rather than retained feature code.
 
 Show the player only when a local audio file is available; missing or failed audio
 keeps the sticker badge without a player. Cached artwork forms the play control's
-disc and rotates only while playing; overflowing titles scroll within the panel
-using a native marquee.
+disc and rotates only while playing; overflowing titles are truncated within the
+panel, with the full title available in a tooltip.
 
 Exclude soundtracks of reels and stories that reshare reels, identified by the
 received `product_type: clips`. Do not recover `original_sound_info` audio from

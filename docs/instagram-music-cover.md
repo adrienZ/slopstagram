@@ -145,7 +145,7 @@ du fichier effectivement joué, distincte de la durée déclarée du morceau com
 ## Affichage partagé et durée des fichiers
 
 La pochette est le fond du contrôle de lecture et tourne pendant la lecture ; un
-titre trop long défile dans sa largeur disponible. La rotation de la pochette
+titre trop long est tronqué dans sa largeur disponible. La rotation de la pochette
 respecte la préférence de réduction des animations. À la demande suivante, le lecteur est masqué sans
 audio exploitable : seul le badge du sticker reste affiché.
 
@@ -159,7 +159,7 @@ La durée réelle d'un fichier audio local est mesurée avec `music-metadata` lo
 sa mise en cache et stockée séparément de la durée complète du morceau reçue
 d'Instagram. Elle est disponible dès le rendu. Quand cette durée est connue, le
 lecteur utilise `preload="none"` ; `preload="metadata"` reste le repli pour une
-durée locale manquante. Le titre utilise désormais un `<marquee>` natif.
+durée locale manquante. Le titre complet reste disponible au survol.
 Une reprise locale ponctuelle a renseigné 243 durées d'assets et 99 durées de
 pistes de stories, avec 19 pistes historiques supplémentaires récupérées.
 Les outils de reprise ne sont pas conservés dans le dépôt.

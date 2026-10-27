@@ -3,11 +3,19 @@ import { mkdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Buffer } from "node:buffer";
 import sharp from "sharp";
+import { z } from "zod";
 import { parseBuffer } from "music-metadata";
 import type { DrizzleDatabase } from "./database/client.ts";
 import type { MusicMediaState, MusicMetadataReference } from "./entities/music-metadata.ts";
 import { audioFileDurationMs } from "./lib/audio-duration.ts";
-import { BASE_CACHE_DIR, IMAGES_STORAGE_DIR } from "./lib/cache-service.ts";
+import {
+  AUDIO_STORAGE_DIR,
+  BASE_CACHE_DIR,
+  IMAGES_STORAGE_DIR,
+  audioCacheStorage,
+  createAudioCacheStorage,
+} from "./lib/cache-service.ts";
+import type { AudioCacheStorage } from "./lib/types.ts";
 import { audioFileExtension } from "./lib/music-media-types.ts";
 import { findMusicMetadata, saveMusicMedia } from "./repositories/music-metadata-repository.ts";
 
@@ -23,15 +31,16 @@ export interface MusicMediaOptions {
   database: DrizzleDatabase;
   directory?: string;
   fetchMedia?: (url: string) => Promise<Response>;
+  audioStorage?: AudioCacheStorage;
 }
 
-async function fileExists(directory: string, key: string | null) {
-  if (key === null || !/^music\/[a-f0-9]{64}\.(?:mp3|m4a|aac|ogg|webm|wav|flac)$/u.test(key)) {
+async function fileExists(storage: AudioCacheStorage, key: string | null) {
+  if (key === null || !/^audio\/[a-f0-9]{64}\.(?:mp3|m4a|aac|ogg|webm|wav|flac)$/u.test(key)) {
     return false;
   }
   try {
-    const info = await stat(path.join(directory, key));
-    return info.isFile() && info.size > 0;
+    const info = await storage.getMeta(key.slice("audio/".length));
+    return z.number().positive().safeParse(info.size).success;
   } catch {
     return false;
   }
@@ -70,6 +79,7 @@ async function downloadMedia(
   source: string,
   id: string,
   directory: string,
+  storage: AudioCacheStorage,
   options: MusicMediaOptions,
   declaredAudioType?: "audio/mp4",
 ): Promise<CachedMusicMedia> {
@@ -106,16 +116,10 @@ async function downloadMedia(
       return { cachePath: null, state: "unsupported", durationMs: null };
     }
   }
-  const key = `music/${createHash("sha256").update(`${id}:audio`).digest("hex")}.${extension}`;
+  const filename = `${createHash("sha256").update(`${id}:audio`).digest("hex")}.${extension}`;
+  const key = `${AUDIO_STORAGE_DIR}/${filename}`;
   const destination = path.join(directory, key);
-  const temporary = `${destination}.${randomUUID()}.tmp`;
-  await mkdir(path.dirname(destination), { recursive: true });
-  try {
-    await writeFile(temporary, received, { flag: "wx" });
-    await rename(temporary, destination);
-  } finally {
-    await rm(temporary, { force: true });
-  }
+  await storage.setItemRaw(filename, received);
   return { cachePath: key, state: "available", durationMs: await audioFileDurationMs(destination) };
 }
 
@@ -126,8 +130,13 @@ export async function cacheReceivedAudio(
   options: MusicMediaOptions,
   declaredAudioType?: "audio/mp4",
 ): Promise<CachedMusicMedia> {
-  const directory = options.directory ?? path.resolve(BASE_CACHE_DIR, IMAGES_STORAGE_DIR);
-  if (cached !== null && (await fileExists(directory, cached))) {
+  const directory = options.directory ?? BASE_CACHE_DIR;
+  const storage =
+    options.audioStorage ??
+    (options.directory === undefined
+      ? audioCacheStorage
+      : createAudioCacheStorage(path.join(directory, AUDIO_STORAGE_DIR)));
+  if (cached !== null && (await fileExists(storage, cached))) {
     return {
       cachePath: cached,
       state: "available",
@@ -138,7 +147,7 @@ export async function cacheReceivedAudio(
     return { cachePath: null, state: "unavailable", durationMs: null };
   }
   try {
-    return await downloadMedia(source, id, directory, options, declaredAudioType);
+    return await downloadMedia(source, id, directory, storage, options, declaredAudioType);
   } catch {
     return { cachePath: null, state: "failed", durationMs: null };
   }
