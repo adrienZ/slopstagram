@@ -16,6 +16,7 @@ import {
   planPlaceFill,
   planStoryLocationUpdates,
   type PlaceFillInput,
+  type PlaceLookupInput,
 } from "../location-metadata-service.ts";
 
 type LocationDatabase = Pick<DrizzleDatabase, "select" | "insert" | "update" | "delete">;
@@ -98,22 +99,33 @@ export function fillTaggedPlace(
   instagramPlaceId: string,
   incoming: PlaceFillInput,
   lookedUpAt?: number,
-): void {
+): string | null {
   const known = database
     .select()
     .from(metadataLocations)
     .where(eq(metadataLocations.instagramPlaceId, instagramPlaceId))
     .get();
   if (known === undefined) {
-    return;
+    return null;
   }
   const update: Partial<typeof metadataLocations.$inferInsert> = planPlaceFill(known, incoming);
   if (lookedUpAt !== undefined) {
     update.lastLookupAttemptAt = lookedUpAt;
   }
   database.update(metadataLocations).set(update).where(eq(metadataLocations.id, known.id)).run();
-  if (incoming.details !== undefined) {
-    const details = { locationId: known.id, ...planPlaceDetails(incoming.details) };
+  return known.id;
+}
+
+export function recordPlaceLookup(
+  database: LocationDatabase,
+  instagramPlaceId: string,
+  incoming: PlaceLookupInput,
+  lookedUpAt: number,
+): void {
+  const { details: incomingDetails, ...place } = incoming;
+  const locationId = fillTaggedPlace(database, instagramPlaceId, place, lookedUpAt);
+  if (locationId !== null && incomingDetails !== undefined) {
+    const details = { locationId, ...planPlaceDetails(incomingDetails) };
     database
       .insert(metadataLocationDetails)
       .values(details)

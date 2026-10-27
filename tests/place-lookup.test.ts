@@ -445,3 +445,23 @@ test("the details of a place are deleted with the place", async (context) => {
   database.delete(metadataLocations).where(eq(metadataLocations.instagramPlaceId, "111")).run();
   assert.equal(database.select().from(metadataLocationDetails).all().length, 0);
 });
+
+test("a malformed detail never blocks the place fill and keeps the earlier details", async (context) => {
+  const repository = setup(context);
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "111" })], {
+      "111": () => response(placeBody("111", { phone: "0102", priceRange: 2 })),
+    }),
+  );
+  const malformed = createPlaceClient([storyAt("m2", { pk: "222" })], {
+    "222": () => response(placeBody("222", { name: "Chez Paul", lat: 1, lng: 2, priceRange: 2.5 })),
+  });
+  await ingest(repository, malformed);
+  const place = storedPlace(repository, "m2");
+  assert.equal(place.name, "Chez Paul");
+  assert.equal(place.status, "usable");
+  assert.equal(place.lastLookupAttemptAt, fixedNow().getTime());
+  assert.equal(repository.findPlaceDetails("222"), null);
+  assert.equal(repository.findPlaceDetails("111")?.phone, "0102");
+});

@@ -9,8 +9,9 @@ import {
   fillTaggedPlace,
   readLocationObservations,
   readPlaceDetails,
+  recordPlaceLookup,
 } from "./location-metadata-repository.ts";
-import type { PlaceFillInput } from "../location-metadata-service.ts";
+import type { PlaceFillInput, PlaceLookupInput } from "../location-metadata-service.ts";
 import {
   enrichStoryMusic,
   readMusicObservations,
@@ -295,9 +296,9 @@ export class StoryRepository {
     return readPlaceDetails(this.database, instagramPlaceId);
   }
 
-  recordPlaceLookup(instagramPlaceId: string, incoming: PlaceFillInput, lookedUpAt: Date) {
+  recordPlaceLookup(instagramPlaceId: string, incoming: PlaceLookupInput, lookedUpAt: Date) {
     this.database.transaction((transaction) => {
-      fillTaggedPlace(transaction, instagramPlaceId, incoming, lookedUpAt.getTime());
+      recordPlaceLookup(transaction, instagramPlaceId, incoming, lookedUpAt.getTime());
     });
   }
 

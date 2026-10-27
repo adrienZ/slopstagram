@@ -46,6 +46,10 @@ export interface PlaceFillInput {
   latitude?: number | null;
   longitude?: number | null;
   category?: string | null;
+}
+
+// Place details are written only by lookups; a lookup without details leaves the stored ones.
+export interface PlaceLookupInput extends PlaceFillInput {
   details?: PlaceDetailsInput;
 }
 
