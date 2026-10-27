@@ -540,3 +540,68 @@ test("current extraction links repeated unidentifiable occurrences without guess
     assert.ok(located.every((old) => old.metadata.id !== entry.metadata.id));
   }
 });
+
+function mentionBloksSticker(id: string) {
+  return {
+    id,
+    bloks_sticker: { id: "bloks_sticker_id", sticker_data: { ig_mention: { username: "friend" } } },
+  };
+}
+
+test("a mention-only bloks sticker never becomes a tagged place with the generic sticker identifier", async (context) => {
+  const { database, repository } = setup(context);
+  await repository.save({ pk: "m1", story_bloks_stickers: [mentionBloksSticker("a")] });
+  const stored = read(new StoryRepository(database), "m1");
+  assert.equal(stored.locationObservations, undefined);
+  assert.deepEqual(stored.locations, []);
+  assert.deepEqual(
+    stored.stickers.map(({ kind, label }) => [kind, label]),
+    [["mention", "@friend"]],
+  );
+  assert.equal(
+    database.$client.prepare("SELECT count(*) AS n FROM metadata_location_partial").get()?.n,
+    0,
+  );
+  assert.equal(database.$client.prepare("SELECT count(*) AS n FROM metadata_location").get()?.n, 0);
+});
+
+test("a mention bloks sticker next to a real nested bloks location yields only the real place", async (context) => {
+  const { database, repository } = setup(context);
+  await repository.save({
+    pk: "m1",
+    story_bloks_stickers: [
+      mentionBloksSticker("a"),
+      {
+        id: "b",
+        bloks_sticker: {
+          id: "bloks_sticker_id",
+          sticker_data: { location: { pk: "place", name: "Paris", lat: 48, lng: 2 } },
+        },
+      },
+    ],
+  });
+  const observations = present(read(new StoryRepository(database), "m1").locationObservations);
+  assert.equal(observations.length, 1);
+  assert.equal(observations[0].providerOccurrenceId, "b");
+  assert.equal(observations[0].metadata.instagramPlaceId, "place");
+  assert.equal(observations[0].metadata.name, "Paris");
+});
+
+test("re-saving a story whose bloks source became mention-only clears that source's location observations", async (context) => {
+  const { database, repository } = setup(context);
+  await repository.save({
+    pk: "m1",
+    story_bloks_stickers: [
+      {
+        id: "b",
+        bloks_sticker: {
+          id: "bloks_sticker_id",
+          sticker_data: { location: { pk: "place", name: "Paris", lat: 48, lng: 2 } },
+        },
+      },
+    ],
+  });
+  assert.equal(present(read(repository, "m1").locationObservations).length, 1);
+  await repository.save({ pk: "m1", story_bloks_stickers: [mentionBloksSticker("b")] });
+  assert.equal(read(new StoryRepository(database), "m1").locationObservations, undefined);
+});
