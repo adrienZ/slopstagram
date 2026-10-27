@@ -27,6 +27,40 @@ function mergeFields(
   };
 }
 
+export interface PlaceFillInput {
+  name?: string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
+function fillText(known: string | null, incoming: string | null | undefined) {
+  if (known !== null || incoming === null || incoming === undefined) {
+    return known;
+  }
+  return incoming.trim().length > 0 ? incoming : null;
+}
+
+function fillCoordinate(known: number | null, incoming: number | null | undefined, bound: number) {
+  if (known !== null || incoming === null || incoming === undefined) {
+    return known;
+  }
+  return Math.abs(incoming) <= bound ? incoming : null;
+}
+
+// Fill-only: a known value always wins, and the place's identifiers never change.
+export function planPlaceFill(
+  known: typeof metadataLocations.$inferSelect,
+  incoming: PlaceFillInput,
+) {
+  return {
+    name: fillText(known.name, incoming.name),
+    address: fillText(known.address, incoming.address),
+    latitude: fillCoordinate(known.latitude, incoming.latitude, 90),
+    longitude: fillCoordinate(known.longitude, incoming.longitude, 180),
+  };
+}
+
 export function planLocationMetadataWrite(
   observation: LocationObservationInput,
   known: typeof metadataLocations.$inferSelect | undefined,

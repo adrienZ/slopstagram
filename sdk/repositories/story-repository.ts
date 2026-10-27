@@ -4,7 +4,12 @@ import { findStoryAudio, saveStoryAudio } from "./story-audio-repository.ts";
 import { and, asc, desc, eq, gt, gte, lt, lte, notInArray } from "drizzle-orm";
 import { useDrizzle, type DrizzleDatabase } from "../database/client.ts";
 import { instagramUsers } from "../entities/instagram-user.ts";
-import { enrichStoryLocations, readLocationObservations } from "./location-metadata-repository.ts";
+import {
+  enrichStoryLocations,
+  fillTaggedPlace,
+  readLocationObservations,
+} from "./location-metadata-repository.ts";
+import type { PlaceFillInput } from "../location-metadata-service.ts";
 import {
   enrichStoryMusic,
   readMusicObservations,
@@ -277,6 +282,10 @@ export class StoryRepository {
         refreshMusicAsset(database, previous, observation);
       }
     });
+  }
+
+  fillTaggedPlace(instagramPlaceId: string, incoming: PlaceFillInput) {
+    fillTaggedPlace(this.database, instagramPlaceId, incoming);
   }
 
   listStickerKinds(): Array<string> {
