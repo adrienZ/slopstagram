@@ -1,34 +1,16 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
-import { groupTimelineStickers, formatStickerLabel } from "../server/timeline-stickers.ts";
-import { presentSticker } from "../server/sticker-presentation.ts";
+import {
+  groupTimelineStickers,
+  getMentionProfileUrl,
+  formatStickerLabel,
+} from "../server/timeline-stickers.ts";
 import type { UserTimelineStory } from "../sdk/lib/types.ts";
 
 test("links mentions only to saved accounts and preserves the canonical username in URLs", () => {
-  assert.equal(
-    presentSticker("mention", " @ALICE ", [
-      { username: "alice", avatarPath: "/media/avatars/alice.jpg" },
-      { username: "bob", avatarPath: null },
-    ]).profileUrl,
-    "/users/alice",
-  );
-  assert.equal(
-    presentSticker("mention", "@charlie", [
-      { username: "alice", avatarPath: null },
-      { username: "bob", avatarPath: null },
-    ]).profileUrl,
-    undefined,
-  );
-  assert.equal(
-    presentSticker("music", "@alice", [{ username: "alice", avatarPath: null }]).profileUrl,
-    undefined,
-  );
-  assert.equal(
-    presentSticker("mention", "@ALICE", [
-      { username: "alice", avatarPath: "/media/avatars/alice.jpg" },
-    ]).avatarUrl,
-    "/media/avatars/alice.jpg",
-  );
+  assert.equal(getMentionProfileUrl("mention", " @ALICE ", ["alice", "bob"]), "/users/alice");
+  assert.equal(getMentionProfileUrl("mention", "@charlie", ["alice", "bob"]), undefined);
+  assert.equal(getMentionProfileUrl("music", "@alice", ["alice"]), undefined);
   assert.equal(formatStickerLabel("mention", "alice"), "@alice");
   assert.equal(formatStickerLabel("mention", "@alice"), "@alice");
 });

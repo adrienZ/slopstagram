@@ -1,6 +1,5 @@
 import { integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-orm/zod";
-import { STORY_MEDIA_TYPES } from "../lib/types.ts";
+import { createInsertSchema } from "drizzle-orm/zod";
 
 export const reports = sqliteTable("reports", {
   broadcastsCount: integer().notNull(),
@@ -38,14 +37,14 @@ export const reportStories = sqliteTable(
     failureIndex: integer(),
     locations: text().notNull(),
     mediaPk: text().notNull(),
-    mediaType: text({ enum: [STORY_MEDIA_TYPES.IMAGE, STORY_MEDIA_TYPES.VIDEO] }),
+    mediaType: text(),
     previewImageUrl: text(),
     reelId: text().notNull(),
     reportKey: text()
       .notNull()
       .references(() => reports.key, { onDelete: "cascade" }),
     sortOrder: integer().notNull(),
-    status: text({ enum: ["ok", "failed"] }).notNull(),
+    status: text().notNull(),
     stickers: text().notNull(),
   },
   (table) => [primaryKey({ columns: [table.reportKey, table.reelId, table.mediaPk] })],
@@ -58,7 +57,7 @@ export const reportFailures = sqliteTable(
     httpStatus: integer(),
     mediaPk: text(),
     message: text().notNull(),
-    reason: text({ enum: ["request_failed", "rate_limited", "missing_from_response"] }).notNull(),
+    reason: text().notNull(),
     reelId: text().notNull(),
     reportKey: text()
       .notNull()
@@ -67,5 +66,3 @@ export const reportFailures = sqliteTable(
   (table) => [primaryKey({ columns: [table.reportKey, table.failureIndex] })],
 );
 export const NewReportSchema = createInsertSchema(reports);
-export const ReportStorySchema = createSelectSchema(reportStories);
-export const ReportFailureSchema = createSelectSchema(reportFailures);

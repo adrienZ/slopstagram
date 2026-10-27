@@ -1,6 +1,5 @@
-import { musicStickerItems, type MusicStickerItem } from "./music-preview.ts";
 import type { UserTimelineStory } from "../sdk/lib/types.ts";
-import { formatUserHandle } from "./helper.ts";
+import { formatUserHandle, getUserTimelineUrl } from "./helper.ts";
 
 const stickerKindOrder = new Map([
   ["location", 0],
@@ -14,7 +13,6 @@ export interface StoryStickerGroup {
   mediaPk: string;
   date: string;
   labels: Array<{ key: string; label: string }>;
-  musicItems?: Array<MusicStickerItem>;
 }
 
 export interface StickerKindGroup {
@@ -22,10 +20,25 @@ export interface StickerKindGroup {
   stories: Array<StoryStickerGroup>;
 }
 
+export function getMentionProfileUrl(
+  kind: string,
+  label: string,
+  usernames: Array<string>,
+): string | undefined {
+  if (kind !== "mention") {
+    return undefined;
+  }
+  const mentionedUsername = label.trim().replace(/^@/u, "").toLowerCase();
+  const username = usernames.find((candidate) => candidate.toLowerCase() === mentionedUsername);
+  return username === undefined ? undefined : getUserTimelineUrl(username);
+}
+
 export function formatStickerStoryDate(date: string): string {
   return new Intl.DateTimeFormat("fr-FR", {
     day: "numeric",
     month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
     timeZone: "Europe/Paris",
   }).format(new Date(date));
 }
@@ -63,26 +76,9 @@ export function groupTimelineStickers(
       date: new Date(entry.taken_at * 1000).toISOString(),
       labels: [],
     };
-    const label = { key, label: sticker.label };
-    group.labels.push(label);
+    group.labels.push({ key, label: sticker.label });
     byStory.set(entry.story.pk, group);
     kinds.set(sticker.kind, byStory);
-  }
-
-  for (const entry of stories.toSorted((left, right) => right.taken_at - left.taken_at)) {
-    const items = musicStickerItems(entry.story.annotations);
-    if (items.length === 0) {
-      continue;
-    }
-    const byStory = kinds.get("music") ?? new Map<string, StoryStickerGroup>();
-    const group = byStory.get(entry.story.pk) ?? {
-      mediaPk: entry.story.pk,
-      date: new Date(entry.taken_at * 1000).toISOString(),
-      labels: [],
-    };
-    group.musicItems = items;
-    byStory.set(entry.story.pk, group);
-    kinds.set("music", byStory);
   }
 
   return [...kinds]
@@ -91,8 +87,5 @@ export function groupTimelineStickers(
         (stickerKindOrder.get(left) ?? stickerKindOrder.size) -
           (stickerKindOrder.get(right) ?? stickerKindOrder.size) || left.localeCompare(right),
     )
-    .map(([kind, byStory]) => ({
-      kind,
-      stories: [...byStory.values()].toSorted((left, right) => right.date.localeCompare(left.date)),
-    }));
+    .map(([kind, byStory]) => ({ kind, stories: [...byStory.values()] }));
 }

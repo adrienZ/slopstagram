@@ -1,6 +1,6 @@
 ## General rules
 
-Even if I talk to you in french always use english when writing a issue, commit or a PR on Github.
+Even if I talk to you in french always use english when writing something on Github.
 
 ## Bunqueue
 
@@ -32,11 +32,11 @@ generated files. Keep generated files excluded from linting and formatting.
 
 ### Persistence layout
 
-Put Drizzle tables, entity types, and table-derived validation schemas in
-`sdk/entities/`. Keep `sdk/repositories/` focused on database access; put business
-logic in domain modules. Import repositories directly from their modules.
-
-Derive database-shaped validators from `drizzle-orm/zod` and reuse them.
+Put Drizzle table definitions and entity types in `sdk/entities/`. Keep repository
+classes, database queries, transactions, row mappings, and persistence helpers
+(including annotation merging) in `sdk/repositories/`. Import repositories directly
+from their repository modules. Apply this boundary to persistence code you add or
+refactor.
 
 ## playwright
 
