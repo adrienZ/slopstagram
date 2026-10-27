@@ -280,7 +280,6 @@ test("music links survive reordered live input and cold resaves, with source cle
     cleared.stickers,
     before.stickers.filter(({ kind }) => kind === "location"),
   );
-  assert.equal(cleared.sources?.includes("story_music_stickers"), true);
 });
 
 test("malformed or omitted music sources preserve rich metadata and all saved contributions", async (context) => {

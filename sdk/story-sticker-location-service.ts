@@ -318,7 +318,6 @@ export function getStoryAnnotations(story: StoryItem): StoryAnnotations {
   const updates = getStoryAnnotationUpdates(story);
   const stickers = updates.flatMap((update) => update.stickers);
   return {
-    sources: updates.map((update) => update.source),
     locations: stickers
       .filter((sticker) => sticker.kind === "location")
       .map((sticker) => sticker.label),

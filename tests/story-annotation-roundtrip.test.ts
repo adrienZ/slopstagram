@@ -31,7 +31,7 @@ function readStoredStory(repository: StoryRepository, mediaPk = "m1") {
   return { ...stored, annotations: stored.annotations };
 }
 
-test("upgrading existing occurrences preserves duplicates, order, provenance and known empty sources", async (context) => {
+test("upgrading existing occurrences preserves duplicates, order and provenance", async (context) => {
   const database = createDrizzle(":memory:");
   const staging = mkdtempSync(path.join(tmpdir(), "sticker-occurrences-"));
   context.onTestFinished(() => {
@@ -68,7 +68,6 @@ test("upgrading existing occurrences preserves duplicates, order, provenance and
   );
   assert.ok(stickers.every((sticker) => (sticker.occurrenceId ?? "").length > 0));
   assert.equal(new Set(stickers.map((sticker) => sticker.occurrenceId)).size, 3);
-  assert.deepEqual(stored.annotations.sources, ["story_locations", "story_music_stickers"]);
   migrateDatabase(database);
   await repository.save(stored);
   await repository.save(readStoredStory(repository, "old"));
@@ -201,7 +200,6 @@ test("uncertain replacements never inherit identities from labels or shared asse
     annotations: {
       locations: [],
       stickers: [location, { ...location }],
-      sources: ["story_locations"],
     },
   });
   const clones = readStoredStory(repository).annotations.stickers;
@@ -422,7 +420,6 @@ test("partial ingestion merges sources for fresh reports, cold reads, and resave
   const cold = new StoryRepository(database);
   const stored = cold.findByMediaPk("m1");
   assert.ok(stored);
-  assert.equal(stored.annotations?.sources?.includes("story_locations"), true);
   assert.deepEqual(
     createManifestUsers(tray, new Map([["m1", stored]]), new Map()),
     updated.manifest.users,
@@ -484,8 +481,6 @@ test("malformed sources preserve saved contributions and report the affected fie
     cleared.annotations.stickers.map((sticker) => sticker.label),
     ["@friend", "https://example.com"],
   );
-  assert.equal(cleared.annotations.sources?.includes("story_locations"), true);
-  assert.equal(cleared.annotations.sources.includes("story_hashtags"), true);
 });
 
 test("legacy provenance survives partial observations until one complete observation supersedes its kind", async (context) => {
@@ -558,7 +553,7 @@ test("legacy provenance survives partial observations until one complete observa
   assert.deepEqual(repository.findByMediaPk("legacy"), complete);
 });
 
-test("a failed annotation replacement rolls back occurrences and known empty sources", async (context) => {
+test("a failed annotation replacement rolls back occurrences", async (context) => {
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
   context.onTestFinished(() => {

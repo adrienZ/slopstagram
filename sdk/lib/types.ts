@@ -68,7 +68,6 @@ export interface StoryAnnotations {
   musicObservations?: Array<StoryMusicObservation>;
   locations: Array<string>;
   stickers: Array<StorySticker>;
-  sources?: Array<string>;
 }
 
 export interface StoryItem {
