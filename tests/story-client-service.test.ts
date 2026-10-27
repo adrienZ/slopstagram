@@ -8,7 +8,6 @@ interface BrowserFetchCall {
   appId: string;
   requestUrl: string;
   mediaQuery?: { documentId: string; reelIds: Array<string> };
-  musicAssetId?: string;
 }
 
 function createSession(
@@ -67,32 +66,6 @@ test("createInstagramClient fetches tray through the authenticated browser page"
     {
       appId: "936619743392459",
       requestUrl: "https://www.instagram.com/api/v1/feed/reels_tray/",
-    },
-  ]);
-});
-
-test("music lookup uses the authenticated session and preserves large numeric audio IDs", async () => {
-  const calls: Array<BrowserFetchCall> = [];
-  const client = createInstagramClient(
-    createSession(
-      '{"metadata":{"music_info":{"music_asset_info":{"audio_asset_id":10882110464472591}}}}',
-      calls,
-    ),
-  );
-  const { getMusicAsset } = client;
-  assert.notEqual(getMusicAsset, undefined);
-  if (getMusicAsset === undefined) {
-    throw new Error("Music asset lookup unavailable");
-  }
-  const result = await getMusicAsset("10882110464472591");
-  assert.deepEqual(result.json(), {
-    metadata: { music_info: { music_asset_info: { audio_asset_id: "10882110464472591" } } },
-  });
-  assert.deepEqual(calls, [
-    {
-      appId: "936619743392459",
-      requestUrl: "https://www.instagram.com/api/v1/clips/music/",
-      musicAssetId: "10882110464472591",
     },
   ]);
 });

@@ -3,8 +3,6 @@ import { z } from "zod";
 import { useDrizzle, type DrizzleDatabase } from "../database/client.ts";
 import {
   NewReportSchema,
-  ReportStorySchema,
-  ReportFailureSchema,
   reports,
   reportStoryGroups,
   reportStories,
@@ -69,10 +67,10 @@ function toManifestStory(row: ReportStoryRow): StoryManifestItem {
         ? row.accessibilityCaption
         : NO_ACCESSIBILITY_CAPTION,
     locations: parseStringArray(row.locations),
-    media_type: ReportStorySchema.shape.mediaType.parse(row.mediaType),
+    media_type: z.enum(["image", "video"]).nullable().parse(row.mediaType),
     media_pk: row.mediaPk,
     preview_image_url: row.previewImageUrl,
-    status: ReportStorySchema.shape.status.parse(row.status),
+    status: z.enum(["ok", "failed"]).parse(row.status),
     stickers: parseStringArray(row.stickers),
   };
   if (row.failureIndex !== null) {
@@ -86,7 +84,7 @@ function toFailure(row: typeof reportFailures.$inferSelect): StoryFetchFailure {
     http_status: row.httpStatus,
     media_pk: row.mediaPk,
     message: row.message,
-    reason: ReportFailureSchema.shape.reason.parse(row.reason),
+    reason: z.enum(["request_failed", "rate_limited", "missing_from_response"]).parse(row.reason),
     reel_id: row.reelId,
   };
 }

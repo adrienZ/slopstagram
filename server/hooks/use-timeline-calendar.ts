@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { useMedia } from "react-use";
 import { getStoryDate } from "../../sdk/lib/story-date-service.ts";
-import { getOldestStoryDate, getTimelineDayId } from "../story-navigation.ts";
+import { getTimelineDayId } from "../story-navigation.ts";
 
 export function useTimelineCalendar(days: Array<string>, today: string) {
   const [selectedDate, setSelectedDate] = useState(days[0] ?? today);
-  const reduceMotion = useMedia("(prefers-reduced-motion: reduce)", false);
 
   function selectDate(date: Date): void {
     const requestedDay = getStoryDate(date);
@@ -16,7 +14,9 @@ export function useTimelineCalendar(days: Array<string>, today: string) {
     setSelectedDate(day);
     globalThis.requestAnimationFrame(() => {
       globalThis.document.querySelector(`#${getTimelineDayId(day)}`)?.scrollIntoView({
-        behavior: reduceMotion ? "instant" : "smooth",
+        behavior: globalThis.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "instant"
+          : "smooth",
         block: "start",
       });
     });
@@ -24,7 +24,6 @@ export function useTimelineCalendar(days: Array<string>, today: string) {
 
   return {
     selectedDate,
-    oldestDate: getOldestStoryDate(days, today),
     onSelectDate: selectDate,
     disabledDates: [(date: Date) => !days.includes(getStoryDate(date))],
   };

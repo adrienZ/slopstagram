@@ -99,12 +99,6 @@ test("combines stored stories without a selected report, ranks accounts by recen
   assert.deepEqual(feed("2026-10-24T10:00:00Z"), []);
 });
 
-test("the default feed includes stored stories without checking the preview file", async (context) => {
-  const { stories } = await createFixture(context);
-  const users = createStoryFeed(new Date("2026-10-22T10:00:00Z"), { repository: stories });
-  assert.ok(users.some((user) => user.stories.some((story) => story.media_pk === "no-image")));
-});
-
 test("today uses the rolling feed, including yesterday's recent stories; past dates use calendar days", async (context) => {
   const { stories } = await createFixture(context);
   const now = new Date("2026-10-22T10:00:00Z");

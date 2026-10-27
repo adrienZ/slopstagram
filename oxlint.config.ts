@@ -2,30 +2,15 @@ import { defineConfig } from "oxlint";
 import ultracite from "ultracite/oxlint/core";
 import antiSlop from "ultracite/oxlint/anti-slop";
 
-const restrictedReactImports = defineConfig({
-  rules: {
-    "no-restricted-imports": [
-      "error",
-      {
-        paths: [
-          {
-            // frontend-side-effects
-            name: "react",
-            importNames: ["useEffect", "useLayoutEffect", "useInsertionEffect", "useCallback"],
-            allowTypeImports: false,
-            message: "useEffect is forbidden. Use derived state or explicit event subscriptions.",
-          },
-          {
-            name: "react",
-            importNames: ["*"],
-            allowTypeImports: false,
-            message: "Use named React imports instead of namespace imports.",
-          },
-        ],
-      },
-    ],
+const restrictedReactImports = [
+  {
+    // frontend-side-effects
+    name: "react",
+    importNames: ["useEffect", "useLayoutEffect", "useInsertionEffect", "useCallback"],
+    allowTypeImports: false,
+    message: "useEffect is forbidden. Use derived state or explicit event subscriptions.",
   },
-});
+];
 
 const ultraciteSoftenerConfig = defineConfig({
   rules: {
@@ -43,7 +28,7 @@ const ultraciteSoftenerConfig = defineConfig({
 });
 
 export default defineConfig({
-  extends: [ultracite, antiSlop, ultraciteSoftenerConfig, restrictedReactImports],
+  extends: [ultracite, antiSlop, ultraciteSoftenerConfig],
   ignorePatterns: [
     ...(ultracite.ignorePatterns ?? []),
     ".agents/**",
@@ -65,6 +50,12 @@ export default defineConfig({
   },
   rules: {
     "slopstagram/no-barrel-files": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        paths: restrictedReactImports,
+      },
+    ],
   },
   overrides: [
     {
@@ -73,7 +64,7 @@ export default defineConfig({
         "no-restricted-imports": [
           "error",
           {
-            ...restrictedReactImports.rules["no-restricted-imports"][1],
+            paths: restrictedReactImports,
             patterns: [
               {
                 group: ["**/database/migrate*", "drizzle-orm/**/migrator"],

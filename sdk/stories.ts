@@ -11,7 +11,6 @@ import type {
   StoryTrayEntry,
 } from "./lib/types.ts";
 import { createInstagramClient } from "./story-client-service.ts";
-import { enrichCurrentMusicAssets } from "./music-asset-enrichment.ts";
 import { createFetchState } from "./story-failure-service.ts";
 import { fetchMissingStories } from "./story-live-fetch-service.ts";
 import { createManifestUsers, createOutputUsers } from "./story-output-service.ts";
@@ -176,13 +175,6 @@ export async function fetchStoriesManifest(
     storyStorage: storage,
     tray: trayJson.tray,
   });
-
-  await enrichCurrentMusicAssets(
-    client,
-    state.cachedItems.values(),
-    options.storyRepository ?? storyRepository,
-    logger,
-  );
 
   const manifestUsers = createManifestUsers(
     trayJson.tray,

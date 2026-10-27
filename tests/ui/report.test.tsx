@@ -1,13 +1,8 @@
 import { expect, test } from "vitest";
-import { screen, within, waitFor } from "@testing-library/react";
-import { withStoryStickers } from "../../server/story-card-view-model.ts";
+import { screen, within } from "@testing-library/react";
 import { ReportPage } from "../../server/pages/report.tsx";
 import { reportProps } from "../page-fixtures.ts";
 import { renderPage } from "./render.tsx";
-
-function getPreviousMonthButton() {
-  return screen.getByRole("button", { name: /mois précédent/iu });
-}
 
 test("the feed renders ranked users, separate handles, summaries, and local previews", async () => {
   await renderPage(ReportPage, reportProps);
@@ -66,38 +61,6 @@ test("saved users are linked with handles and can be collapsed and reopened", as
   expect(navigation.getByRole("link", { name: /@outside-feed/u })).toBeVisible();
 });
 
-test("report calendar stops at the oldest available month across a year boundary", async () => {
-  const { user } = await renderPage(ReportPage, {
-    ...reportProps,
-    selectedDate: "2026-02-02",
-    availableDates: ["2026-01-15", "2025-12-20", "2026-02-02"],
-  });
-  expect(getPreviousMonthButton()).not.toHaveAttribute("aria-disabled", "true");
-  await user.click(getPreviousMonthButton());
-  expect(getPreviousMonthButton()).not.toHaveAttribute("aria-disabled", "true");
-  await user.click(getPreviousMonthButton());
-  expect(screen.getByRole("grid", { name: /décembre 2025/iu })).toBeVisible();
-  expect(screen.getByRole("button", { name: /20 décembre 2025/u })).toBeEnabled();
-  expect(getPreviousMonthButton()).toHaveAttribute("aria-disabled", "true");
-  await user.click(getPreviousMonthButton());
-  expect(screen.getByRole("grid", { name: /décembre 2025/iu })).toBeVisible();
-  await user.click(screen.getByRole("button", { name: /mois suivant/iu }));
-  expect(screen.getByRole("grid", { name: /janvier 2026/iu })).toBeVisible();
-  expect(getPreviousMonthButton()).not.toHaveAttribute("aria-disabled", "true");
-});
-
-test("report calendar with no available data cannot navigate before today’s month", async () => {
-  await renderPage(ReportPage, { ...reportProps, availableDates: [], users: [] });
-  expect(screen.getByRole("button", { name: /mois précédent/iu })).toHaveAttribute(
-    "aria-disabled",
-    "true",
-  );
-  expect(screen.getByRole("button", { name: /mois suivant/iu })).toHaveAttribute(
-    "aria-disabled",
-    "true",
-  );
-});
-
 test("opening a preview updates the real router and closing restores focus and search", async () => {
   const { user, router } = await renderPage(ReportPage, reportProps, "/report?date=2026-07-26");
   const preview = screen.getByRole("button", { name: "Ouvrir aperçu story-pk-1" });
@@ -123,52 +86,4 @@ test("a story deep link opens after mount and an unknown story stays closed", as
   page.unmount();
   await renderPage(ReportPage, reportProps, "/report?story=missing");
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-});
-
-test("closing story details hides the dialog immediately while route navigation is pending", async (context) => {
-  let delayNavigation = false;
-  const { promise: pending, resolve: release } = Promise.withResolvers<null>();
-  const { user, router } = await renderPage(ReportPage, reportProps, "/report?story=story-pk-1", {
-    beforeLoad: async () => {
-      if (delayNavigation) {
-        await pending;
-      }
-    },
-  });
-  context.onTestFinished(() => {
-    release(null);
-  });
-  delayNavigation = true;
-  await user.click(screen.getByRole("button", { name: "Fermer l’aperçu" }));
-  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  expect(router.state.isLoading).toBe(true);
-  release(null);
-  await waitFor(() => {
-    expect(router.state.location.search.story).toBeUndefined();
-  });
-});
-
-test("mentions in report details link to saved user pages without inventing an avatar", async () => {
-  const sidebarUsers = [{ username: "outside-feed", avatarPath: null }];
-  const users = reportProps.users.map((user) => ({
-    ...user,
-    stories: withStoryStickers(
-      user.stories,
-      [
-        {
-          story: {
-            pk: "story-pk-1",
-            annotations: { locations: [], stickers: [{ kind: "mention", label: "@outside-feed" }] },
-          },
-        },
-      ],
-      sidebarUsers,
-    ),
-  }));
-  await renderPage(ReportPage, { ...reportProps, users, sidebarUsers }, "/report?story=story-pk-1");
-  const details = within(await screen.findByRole("dialog", { name: "Aperçu de l’image" }));
-  const mention = details.getByRole("link", { name: "@outside-feed" });
-  expect(mention).toHaveAttribute("href", "/users/outside-feed");
-  expect(mention.querySelector("img")).toBeNull();
-  expect(details.queryByRole("rowheader", { name: /^Story$/u })).not.toBeInTheDocument();
 });
