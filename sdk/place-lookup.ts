@@ -1,32 +1,68 @@
 import { z } from "zod";
 import type { JsonValue } from "./lib/json-value.ts";
 import type { Logger } from "./lib/logging-service.ts";
-import type { PlaceFillInput } from "./location-metadata-service.ts";
+import type { PlaceLookupInput } from "./location-metadata-service.ts";
 import type { InstagramClient, FetchStoriesManifestOptions } from "./story-types.ts";
 
 // Story payloads also carry non-place identifiers, such as the generic bloks sticker one.
 const NUMERIC_PLACE_ID = /^\d+$/u;
 
+const locationInfoSchema = z.looseObject({
+  location_id: z.string(),
+  name: z.string().nullish(),
+  location_address: z.string().nullish(),
+  lat: z.number().nullish(),
+  lng: z.number().nullish(),
+  category: z.string().nullish(),
+});
+
 const responseSchema = z.object({
   data: z.object({
     xdt_location_get_web_info: z.object({
       native_location_data: z.object({
-        location_info: z
-          .object({
-            location_id: z.string(),
-            name: z.string().nullish(),
-            location_address: z.string().nullish(),
-            lat: z.number().nullish(),
-            lng: z.number().nullish(),
-            category: z.string().nullish(),
-          })
-          .nullable(),
+        location_info: locationInfoSchema.nullable(),
       }),
     }),
   }),
 });
 
-function parsePlaceResponse(body: JsonValue, placeId: string): PlaceFillInput | null {
+// Parsed apart from the place itself so a malformed detail never blocks filling the place.
+const detailsSchema = z.object({
+  phone: z.string().nullish(),
+  price_range: z.number().int().nullish(),
+  slug: z.string().nullish(),
+  ig_business: z
+    .object({
+      profile: z
+        .object({
+          id: z.string().nullish(),
+          username: z.string().nullish(),
+          profile_pic_url: z.string().nullish(),
+        })
+        .nullish(),
+    })
+    .nullish(),
+});
+
+function parseDetails(info: z.infer<typeof locationInfoSchema>): PlaceLookupInput["details"] {
+  const parsed = detailsSchema.safeParse(info);
+  if (!parsed.success) {
+    return undefined;
+  }
+  const { phone, price_range: priceRange, slug, ig_business: business } = parsed.data;
+  return {
+    phone,
+    priceRange,
+    slug,
+    business: {
+      id: business?.profile?.id,
+      username: business?.profile?.username,
+      pictureUrl: business?.profile?.profile_pic_url,
+    },
+  };
+}
+
+function parsePlaceResponse(body: JsonValue, placeId: string): PlaceLookupInput | null {
   const parsed = responseSchema.safeParse(body);
   const info = parsed.success
     ? parsed.data.data.xdt_location_get_web_info.native_location_data.location_info
@@ -40,6 +76,7 @@ function parsePlaceResponse(body: JsonValue, placeId: string): PlaceFillInput | 
     latitude: info.lat,
     longitude: info.lng,
     category: info.category,
+    details: parseDetails(info),
   };
 }
 

@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
+import { eq } from "drizzle-orm";
 import { createDrizzle } from "../sdk/database/client.ts";
+import {
+  metadataLocationDetails,
+  metadataLocations,
+  storyLocationObservations,
+} from "../sdk/entities/location-metadata.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import type { JsonObject, JsonValue } from "../sdk/lib/json-value.ts";
 import type { StoryItem } from "../sdk/lib/types.ts";
@@ -18,40 +24,50 @@ import {
 
 const owner = { username: "one", pk: "owner" };
 
-function setup(context: { onTestFinished: (callback: () => void) => void }) {
+function setupDatabase(context: { onTestFinished: (callback: () => void) => void }) {
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
   context.onTestFinished(() => {
     database.$client.close();
   });
-  return new StoryRepository(database);
+  return database;
 }
 
-function placeBody(
-  id: string,
-  info: { name?: string; address?: string; lat?: number; lng?: number; category?: string },
-): JsonValue {
+function setup(context: { onTestFinished: (callback: () => void) => void }) {
+  return new StoryRepository(setupDatabase(context));
+}
+
+interface PlaceBodyInfo {
+  name?: string;
+  address?: string;
+  lat?: number;
+  lng?: number;
+  category?: string;
+  phone?: string;
+  priceRange?: number;
+  slug?: string;
+  business?: JsonValue;
+}
+
+function placeBody(id: string, info: PlaceBodyInfo): JsonValue {
+  const locationInfo = {
+    name: info.name ?? "",
+    phone: info.phone ?? "",
+    category: info.category ?? "Bistro",
+    media_count: 12,
+    price_range: info.priceRange ?? 0,
+    lat: info.lat ?? null,
+    lng: info.lng ?? null,
+    slug: info.slug ?? "place",
+    location_id: id,
+    location_address: info.address ?? "",
+    location_city: "",
+    location_zip: "",
+  } satisfies JsonObject;
+  const withBusiness =
+    info.business === undefined ? locationInfo : { ...locationInfo, ig_business: info.business };
   return {
-    data: {
-      xdt_location_get_web_info: {
-        native_location_data: {
-          location_info: {
-            name: info.name ?? "",
-            phone: "",
-            category: info.category ?? "Bistro",
-            media_count: 12,
-            price_range: 0,
-            lat: info.lat ?? null,
-            lng: info.lng ?? null,
-            slug: "place",
-            location_id: id,
-            location_address: info.address ?? "",
-            location_city: "",
-            location_zip: "",
-          },
-        },
-      },
-    },
+    data: { xdt_location_get_web_info: { native_location_data: { location_info: withBusiness } } },
   };
 }
 
@@ -294,4 +310,158 @@ test("a later story observation keeps the recorded lookup", async (context) => {
   assert.equal(place.lastLookupAttemptAt, fixedNow().getTime());
   assert.equal(place.category, "Bistro");
   assert.equal(place.name, "From story");
+});
+
+test("the phone, price range, slug and business account of a place are stored", async (context) => {
+  const repository = setup(context);
+  const client = createPlaceClient([storyAt("m1", { pk: "111" })], {
+    "111": () =>
+      response(
+        placeBody("111", {
+          name: "Chez Paul",
+          phone: "+33 1 23 45 67 89",
+          priceRange: 2,
+          slug: "chez-paul",
+          business: {
+            profile: {
+              id: "17841400000000001",
+              username: "chezpaul",
+              profile_pic_url: "https://example.com/chezpaul.jpg",
+            },
+          },
+        }),
+      ),
+  });
+  await ingest(repository, client);
+  assert.deepEqual(repository.findPlaceDetails("111"), {
+    phone: "+33 1 23 45 67 89",
+    priceRange: 2,
+    slug: "chez-paul",
+    businessAccountId: "17841400000000001",
+    businessAccountUsername: "chezpaul",
+    businessAccountPictureUrl: "https://example.com/chezpaul.jpg",
+  });
+});
+
+test("a place without a linked business account has no business information", async (context) => {
+  const repository = setup(context);
+  const client = createPlaceClient(
+    [storyAt("m1", { pk: "111" }), storyAt("m2", { pk: "222" }), storyAt("m3", { pk: "333" })],
+    {
+      "111": () =>
+        response(placeBody("111", { phone: "0102", priceRange: 1, business: { profile: null } })),
+      "222": () => response(placeBody("222", { phone: "0304" })),
+      "333": () => response(placeBody("333", { phone: "0506", business: null })),
+    },
+  );
+  await ingest(repository, client);
+  for (const [id, phone] of [
+    ["111", "0102"],
+    ["222", "0304"],
+    ["333", "0506"],
+  ]) {
+    const details = repository.findPlaceDetails(id);
+    assert.ok(details);
+    assert.equal(details.phone, phone);
+    assert.equal(details.businessAccountId, null);
+    assert.equal(details.businessAccountUsername, null);
+    assert.equal(details.businessAccountPictureUrl, null);
+  }
+});
+
+test("empty strings from Instagram are stored as missing details", async (context) => {
+  const repository = setup(context);
+  const client = createPlaceClient([storyAt("m1", { pk: "111" })], {
+    "111": () =>
+      response(
+        placeBody("111", {
+          phone: "",
+          slug: "  ",
+          business: { profile: { id: "17841", username: "", profile_pic_url: "" } },
+        }),
+      ),
+  });
+  await ingest(repository, client);
+  assert.deepEqual(repository.findPlaceDetails("111"), {
+    phone: null,
+    priceRange: 0,
+    slug: null,
+    businessAccountId: "17841",
+    businessAccountUsername: null,
+    businessAccountPictureUrl: null,
+  });
+});
+
+test("an unusable lookup stores no details", async (context) => {
+  const repository = setup(context);
+  const client = createPlaceClient([storyAt("m1", { pk: "5" })], {
+    "5": () => response(placeBody("5", { phone: "0102" }), 500),
+  });
+  await ingest(repository, client);
+  assert.equal(repository.findPlaceDetails("5"), null);
+});
+
+test("a later lookup replaces the stored details and clears a business account that is gone", async (context) => {
+  const repository = setup(context);
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "111" })], {
+      "111": () =>
+        response(
+          placeBody("111", {
+            phone: "0102",
+            priceRange: 3,
+            business: { profile: { id: "1", username: "old", profile_pic_url: "https://x/a.jpg" } },
+          }),
+        ),
+    }),
+  );
+  repository.recordPlaceLookup(
+    "111",
+    { details: { phone: "", priceRange: 1, slug: "new-slug", business: null } },
+    fixedNow(),
+  );
+  assert.deepEqual(repository.findPlaceDetails("111"), {
+    phone: null,
+    priceRange: 1,
+    slug: "new-slug",
+    businessAccountId: null,
+    businessAccountUsername: null,
+    businessAccountPictureUrl: null,
+  });
+});
+
+test("the details of a place are deleted with the place", async (context) => {
+  const database = setupDatabase(context);
+  const repository = new StoryRepository(database);
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "111" })], {
+      "111": () => response(placeBody("111", { phone: "0102" })),
+    }),
+  );
+  assert.equal(database.select().from(metadataLocationDetails).all().length, 1);
+  database.delete(storyLocationObservations).run();
+  database.delete(metadataLocations).where(eq(metadataLocations.instagramPlaceId, "111")).run();
+  assert.equal(database.select().from(metadataLocationDetails).all().length, 0);
+});
+
+test("a malformed detail never blocks the place fill and keeps the earlier details", async (context) => {
+  const repository = setup(context);
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "111" })], {
+      "111": () => response(placeBody("111", { phone: "0102", priceRange: 2 })),
+    }),
+  );
+  const malformed = createPlaceClient([storyAt("m2", { pk: "222" })], {
+    "222": () => response(placeBody("222", { name: "Chez Paul", lat: 1, lng: 2, priceRange: 2.5 })),
+  });
+  await ingest(repository, malformed);
+  const place = storedPlace(repository, "m2");
+  assert.equal(place.name, "Chez Paul");
+  assert.equal(place.status, "usable");
+  assert.equal(place.lastLookupAttemptAt, fixedNow().getTime());
+  assert.equal(repository.findPlaceDetails("222"), null);
+  assert.equal(repository.findPlaceDetails("111")?.phone, "0102");
 });

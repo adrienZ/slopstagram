@@ -1,8 +1,10 @@
 import { randomUUID } from "node:crypto";
-import type {
-  metadataLocations,
-  LocationFields,
-  StoryLocationObservation,
+import {
+  PlaceDetailsSchema,
+  type metadataLocations,
+  type LocationFields,
+  type PlaceDetails,
+  type StoryLocationObservation,
 } from "./entities/location-metadata.ts";
 import type { StoryAnnotations, StoryItem } from "./lib/types.ts";
 import {
@@ -27,12 +29,28 @@ function mergeFields(
   };
 }
 
+export interface PlaceDetailsInput {
+  phone?: string | null;
+  priceRange?: number | null;
+  slug?: string | null;
+  business?: {
+    id?: string | null;
+    username?: string | null;
+    pictureUrl?: string | null;
+  } | null;
+}
+
 export interface PlaceFillInput {
   name?: string | null;
   address?: string | null;
   latitude?: number | null;
   longitude?: number | null;
   category?: string | null;
+}
+
+// Place details are written only by lookups; a lookup without details leaves the stored ones.
+export interface PlaceLookupInput extends PlaceFillInput {
+  details?: PlaceDetailsInput;
 }
 
 function fillText(known: string | null, incoming: string | null | undefined) {
@@ -55,6 +73,22 @@ function lookedUpCategory(known: string | null, incoming: string | null | undefi
     return known;
   }
   return incoming !== null && incoming.trim().length > 0 ? incoming : null;
+}
+
+function presentText(value: string | null | undefined) {
+  return value !== null && value !== undefined && value.trim().length > 0 ? value : null;
+}
+
+// Empty strings from Instagram are missing values; a place without a business account has none.
+export function planPlaceDetails(incoming: PlaceDetailsInput): PlaceDetails {
+  return PlaceDetailsSchema.parse({
+    phone: presentText(incoming.phone),
+    priceRange: incoming.priceRange ?? null,
+    slug: presentText(incoming.slug),
+    businessAccountId: presentText(incoming.business?.id),
+    businessAccountUsername: presentText(incoming.business?.username),
+    businessAccountPictureUrl: presentText(incoming.business?.pictureUrl),
+  });
 }
 
 // Fill-only: a known value always wins, and the place's identifiers never change.
