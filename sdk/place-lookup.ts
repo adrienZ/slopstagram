@@ -11,6 +11,8 @@ const locationInfoSchema = z.looseObject({
   location_id: z.string(),
   name: z.string().nullish(),
   location_address: z.string().nullish(),
+  location_city: z.string().nullish(),
+  location_zip: z.string().nullish(),
   lat: z.number().nullish(),
   lng: z.number().nullish(),
   category: z.string().nullish(),
@@ -73,6 +75,8 @@ function parsePlaceResponse(body: JsonValue, placeId: string): PlaceLookupInput 
   return {
     name: info.name,
     address: info.location_address,
+    city: info.location_city,
+    zip: info.location_zip,
     latitude: info.lat,
     longitude: info.lng,
     category: info.category,

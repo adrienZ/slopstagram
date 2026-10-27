@@ -89,7 +89,6 @@ If the command reports that the file contains a secret, **do not read the file**
 
 ## Local cache
 
-You can `data/cache/**`: cached Instagram payloads. These payloads are
-large, so extract only the keys you need with `jq` and print nothing else.
+However, you can bypass `data/cache/**`: cached Instagram payloads. These payloads are large, so extract only the keys you need with `jq` and print nothing else.
 
 <!-- sonar:end:codex-secrets-on-read -->

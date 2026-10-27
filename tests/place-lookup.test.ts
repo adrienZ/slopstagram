@@ -40,6 +40,8 @@ function setup(context: { onTestFinished: (callback: () => void) => void }) {
 interface PlaceBodyInfo {
   name?: string;
   address?: string;
+  city?: string;
+  zip?: string;
   lat?: number;
   lng?: number;
   category?: string;
@@ -61,8 +63,8 @@ function placeBody(id: string, info: PlaceBodyInfo): JsonValue {
     slug: info.slug ?? "place",
     location_id: id,
     location_address: info.address ?? "",
-    location_city: "",
-    location_zip: "",
+    location_city: info.city ?? "",
+    location_zip: info.zip ?? "",
   } satisfies JsonObject;
   const withBusiness =
     info.business === undefined ? locationInfo : { ...locationInfo, ig_business: info.business };
@@ -174,6 +176,75 @@ test("a category never decides whether a place is usable", async (context) => {
   await ingest(repository, client);
   assert.equal(storedPlace(repository, "m1").status, "partial");
   assert.equal(storedPlace(repository, "m1").category, "Pont");
+  assert.equal(storedPlace(repository, "m2").status, "usable");
+});
+
+test("a lookup supplies the zip code and fills a missing city", async (context) => {
+  const repository = setup(context);
+  const client = createPlaceClient([storyAt("m1", { pk: "111" })], {
+    "111": () => response(placeBody("111", { name: "Chez Paul", city: "Amiens", zip: "80000" })),
+  });
+  await ingest(repository, client);
+  const place = storedPlace(repository, "m1");
+  assert.equal(place.city, "Amiens");
+  assert.equal(place.zip, "80000");
+});
+
+test("a city from a story is stored and never overwritten by a lookup", async (context) => {
+  const repository = setup(context);
+  const client = createPlaceClient([storyAt("m1", { pk: "111", city: "Story City" })], {
+    "111": () =>
+      response(placeBody("111", { name: "Chez Paul", city: "Instagram City", zip: "75001" })),
+  });
+  await ingest(repository, client);
+  const place = storedPlace(repository, "m1");
+  assert.equal(place.city, "Story City");
+  assert.equal(place.zip, "75001");
+});
+
+test("empty strings are stored as a missing city and a missing zip code", async (context) => {
+  const repository = setup(context);
+  const client = createPlaceClient(
+    [storyAt("m1", { pk: "111", city: "" }), storyAt("m2", { pk: "222", city: "   " })],
+    {
+      "111": () => response(placeBody("111", { name: "Empty", city: "", zip: "" })),
+      "222": () => response(placeBody("222", { name: "Blank", city: "  ", zip: "  " })),
+    },
+  );
+  await ingest(repository, client);
+  for (const pk of ["m1", "m2"]) {
+    assert.equal(storedPlace(repository, pk).city, null);
+    assert.equal(storedPlace(repository, pk).zip, null);
+  }
+});
+
+test("a blank city from a story leaves the gap for the lookup to fill", async (context) => {
+  const repository = setup(context);
+  const client = createPlaceClient([storyAt("m1", { pk: "111", city: "" })], {
+    "111": () => response(placeBody("111", { name: "Chez Paul", city: "Amiens" })),
+  });
+  await ingest(repository, client);
+  assert.equal(storedPlace(repository, "m1").city, "Amiens");
+});
+
+test("a story never supplies the zip code", async (context) => {
+  const repository = setup(context);
+  const client = createPlaceClient([storyAt("m1", { pk: "111", zip: "99999" })], {
+    "111": () => response(placeBody("111", { name: "Chez Paul", zip: "" })),
+  });
+  await ingest(repository, client);
+  assert.equal(storedPlace(repository, "m1").zip, null);
+});
+
+test("a city and a zip code never decide whether a place is usable", async (context) => {
+  const repository = setup(context);
+  const client = createPlaceClient([storyAt("m1", { pk: "111" }), storyAt("m2", { pk: "222" })], {
+    "111": () =>
+      response(placeBody("111", { name: "No coordinates", city: "Amiens", zip: "80000" })),
+    "222": () => response(placeBody("222", { name: "No city", lat: 1, lng: 2 })),
+  });
+  await ingest(repository, client);
+  assert.equal(storedPlace(repository, "m1").status, "partial");
   assert.equal(storedPlace(repository, "m2").status, "usable");
 });
 
@@ -310,6 +381,21 @@ test("a later story observation keeps the recorded lookup", async (context) => {
   assert.equal(place.lastLookupAttemptAt, fixedNow().getTime());
   assert.equal(place.category, "Bistro");
   assert.equal(place.name, "From story");
+});
+
+test("a later story observation keeps the looked-up zip code and a story city replaces a looked-up one", async (context) => {
+  const repository = setup(context);
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "111" })], {
+      "111": () => response(placeBody("111", { name: "Looked up", city: "Amiens", zip: "80000" })),
+    }),
+  );
+  assert.equal(storedPlace(repository, "m1").city, "Amiens");
+  await repository.save(storyAt("m1", { pk: "111", city: "Story City" }));
+  const place = storedPlace(repository, "m1");
+  assert.equal(place.city, "Story City");
+  assert.equal(place.zip, "80000");
 });
 
 test("the phone, price range, slug and business account of a place are stored", async (context) => {

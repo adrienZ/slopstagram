@@ -62,6 +62,8 @@ function observation(
             facebookPlacesId: null,
             externalSource: null,
             category,
+            city: null,
+            zip: null,
             lastLookupAttemptAt: null,
           }
         : {
@@ -75,6 +77,8 @@ function observation(
             facebookPlacesId: null,
             externalSource: null,
             category,
+            city: null,
+            zip: null,
             lastLookupAttemptAt: null,
           },
   };

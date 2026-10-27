@@ -22,6 +22,7 @@ function mergeFields(
     instagramPlaceId: incoming.instagramPlaceId ?? known.instagramPlaceId,
     name: incoming.name ?? known.name,
     address: incoming.address ?? known.address,
+    city: incoming.city ?? known.city,
     latitude: incoming.latitude ?? known.latitude,
     longitude: incoming.longitude ?? known.longitude,
     facebookPlacesId: incoming.facebookPlacesId ?? known.facebookPlacesId,
@@ -43,6 +44,8 @@ export interface PlaceDetailsInput {
 export interface PlaceFillInput {
   name?: string | null;
   address?: string | null;
+  city?: string | null;
+  zip?: string | null;
   latitude?: number | null;
   longitude?: number | null;
   category?: string | null;
@@ -67,16 +70,14 @@ function fillCoordinate(known: number | null, incoming: number | null | undefine
   return Math.abs(incoming) <= bound ? incoming : null;
 }
 
-// Instagram's wording is kept as received; only an empty value counts as missing.
-function lookedUpCategory(known: string | null, incoming: string | null | undefined) {
-  if (incoming === undefined) {
-    return known;
-  }
-  return incoming !== null && incoming.trim().length > 0 ? incoming : null;
-}
-
 function presentText(value: string | null | undefined) {
   return value !== null && value !== undefined && value.trim().length > 0 ? value : null;
+}
+
+// Lookup-only values keep Instagram's wording as received: no lookup response keeps the known
+// value, otherwise the lookup replaces it and an empty value clears it.
+function replacedByLookup(known: string | null, incoming: string | null | undefined) {
+  return incoming === undefined ? known : presentText(incoming);
 }
 
 // Empty strings from Instagram are missing values; a place without a business account has none.
@@ -92,7 +93,7 @@ export function planPlaceDetails(incoming: PlaceDetailsInput): PlaceDetails {
 }
 
 // Fill-only: a known value always wins, and the place's identifiers never change.
-// The category is the exception: it comes only from lookups, so the latest one replaces it.
+// The category and zip code are the exception: they come only from lookups, so the latest one replaces them.
 export function planPlaceFill(
   known: typeof metadataLocations.$inferSelect,
   incoming: PlaceFillInput,
@@ -100,9 +101,11 @@ export function planPlaceFill(
   return {
     name: fillText(known.name, incoming.name),
     address: fillText(known.address, incoming.address),
+    city: fillText(known.city, incoming.city),
+    zip: replacedByLookup(known.zip, incoming.zip),
     latitude: fillCoordinate(known.latitude, incoming.latitude, 90),
     longitude: fillCoordinate(known.longitude, incoming.longitude, 180),
-    category: lookedUpCategory(known.category, incoming.category),
+    category: replacedByLookup(known.category, incoming.category),
   };
 }
 
