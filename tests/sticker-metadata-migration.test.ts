@@ -22,16 +22,19 @@ test("migration merges matching partial metadata, preserves links, and clears in
     rmSync(directory, { recursive: true, force: true });
   });
   migrate(db, { migrationsFolder: directory });
+  db.$client.exec("PRAGMA foreign_keys = ON");
   db.$client.exec(`
     INSERT INTO stories (mediaPk) VALUES ('s');
     INSERT INTO metadata_location (id, instagramPlaceId, name, latitude, longitude) VALUES ('l1', 'place', 'Known', 1, 2);
     INSERT INTO metadata_location_partial (id, instagramPlaceId, name, address, latitude) VALUES ('l2', 'place', 'Old', 'Address', 999);
     INSERT INTO metadata_location_partial (id, latitude, longitude, name) VALUES ('l3', 999, 3, '   ');
     INSERT INTO story_location_observations (id, mediaPk, source, sortOrder, partialLocationId) VALUES ('ol', 's', 'source', 0, 'l2'), ('ol2', 's', 'source', 1, 'l3');
+    INSERT INTO story_location_observations (id, mediaPk, source, sortOrder, locationId) VALUES ('ol3', 's', 'source', 2, 'l1');
     INSERT INTO metadata_music (id, instagramAudioAssetId, title, artist) VALUES ('m1', 'audio', 'Known', 'Artist');
     INSERT INTO metadata_music_partial (id, instagramAudioAssetId, title, durationMs, audioSourceUrl, audioState) VALUES ('m2', 'audio', 'Old', 123, 'https://example.com/audio', 'failed');
     INSERT INTO metadata_music_partial (id, instagramAudioAssetId, title, durationMs) VALUES ('m3', '  ', '  ', -1);
     INSERT INTO story_music_observations (id, mediaPk, source, sortOrder, partialMusicId) VALUES ('om', 's', 'source', 0, 'm2'), ('om2', 's', 'source', 1, 'm3');
+    INSERT INTO story_music_observations (id, mediaPk, source, sortOrder, musicId) VALUES ('om3', 's', 'source', 2, 'm1');
   `);
   migrateDatabase(db);
   assert.deepEqual(
@@ -79,5 +82,17 @@ test("migration merges matching partial metadata, preserves links, and clears in
   assert.throws(() => {
     db.$client.exec("UPDATE metadata_music SET title='  ' WHERE id='m1'");
   });
+  assert.equal(
+    db.$client.prepare("SELECT locationId FROM story_location_observations WHERE id='ol3'").get()
+      ?.locationId,
+    "l1",
+  );
+  assert.equal(
+    db.$client.prepare("SELECT musicId FROM story_music_observations WHERE id='om3'").get()
+      ?.musicId,
+    "m1",
+  );
+  assert.equal(db.$client.prepare("PRAGMA foreign_keys").get()?.foreign_keys, 1);
   assert.deepEqual(db.$client.prepare("PRAGMA foreign_key_check").all(), []);
+  migrateDatabase(db);
 });

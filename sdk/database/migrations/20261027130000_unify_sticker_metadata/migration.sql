@@ -1,6 +1,4 @@
 -- Preserve observations while consolidating partial and usable metadata.
-PRAGMA foreign_keys=OFF;
---> statement-breakpoint
 CREATE TABLE `__new_metadata_location` (
 	`id` text PRIMARY KEY,
 	`instagramPlaceId` text UNIQUE,
@@ -38,6 +36,13 @@ UPDATE `__new_metadata_location` SET `facebookPlacesId` = COALESCE(`facebookPlac
 UPDATE `__new_metadata_location` SET `externalSource` = COALESCE(`externalSource`, (SELECT CASE WHEN length(trim(p.`externalSource`, char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) = 0 THEN NULL ELSE p.`externalSource` END FROM `metadata_location_partial` p JOIN `migration_location_ids` m ON m.old_id=p.id WHERE m.new_id=`__new_metadata_location`.id)) WHERE EXISTS (SELECT 1 FROM `migration_location_ids` m WHERE m.new_id=`__new_metadata_location`.id);
 --> statement-breakpoint
 INSERT INTO `__new_metadata_location` (`id`, `instagramPlaceId`, `name`, `address`, `latitude`, `longitude`, `facebookPlacesId`, `externalSource`) SELECT `id`, CASE WHEN length(trim(`instagramPlaceId`, char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) = 0 THEN NULL ELSE `instagramPlaceId` END, CASE WHEN length(trim(`name`, char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) = 0 THEN NULL ELSE `name` END, CASE WHEN length(trim(`address`, char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) = 0 THEN NULL ELSE `address` END, CASE WHEN `latitude` BETWEEN -90 AND 90 THEN `latitude` ELSE NULL END, CASE WHEN `longitude` BETWEEN -180 AND 180 THEN `longitude` ELSE NULL END, CASE WHEN length(trim(`facebookPlacesId`, char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) = 0 THEN NULL ELSE `facebookPlacesId` END, CASE WHEN length(trim(`externalSource`, char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) = 0 THEN NULL ELSE `externalSource` END FROM `metadata_location_partial` p WHERE NOT EXISTS (SELECT 1 FROM `migration_location_ids` m WHERE m.old_id=p.id AND m.new_id != p.id);
+--> statement-breakpoint
+CREATE TEMP TABLE `migration_location_observations` AS
+SELECT o.id, o.mediaPk, o.source, o.sortOrder, o.providerOccurrenceId, o.occurrenceId,
+       COALESCE(o.`locationId`, m.new_id) AS `locationId`
+FROM `story_location_observations` o LEFT JOIN `migration_location_ids` m ON m.old_id=o.`partialLocationId`;
+--> statement-breakpoint
+DROP TABLE `story_location_observations`;
 --> statement-breakpoint
 DROP TABLE `metadata_location`;
 --> statement-breakpoint
@@ -95,6 +100,13 @@ UPDATE `__new_metadata_music` SET `artworkState` = 'available' WHERE `artworkCac
 --> statement-breakpoint
 INSERT INTO `__new_metadata_music` (`id`, `instagramAudioAssetId`, `title`, `artist`, `durationMs`, `audioSourceUrl`, `audioDurationMs`, `artworkSourceUrl`, `audioCachePath`, `artworkCachePath`, `audioState`, `artworkState`) SELECT `id`, CASE WHEN length(trim(`instagramAudioAssetId`, char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) = 0 THEN NULL ELSE `instagramAudioAssetId` END, CASE WHEN length(trim(`title`, char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) = 0 THEN NULL ELSE `title` END, CASE WHEN length(trim(`artist`, char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) = 0 THEN NULL ELSE `artist` END, CASE WHEN `durationMs` > 0 THEN `durationMs` ELSE NULL END, `audioSourceUrl`, CASE WHEN `audioDurationMs` > 0 THEN `audioDurationMs` ELSE NULL END, `artworkSourceUrl`, `audioCachePath`, `artworkCachePath`, `audioState`, `artworkState` FROM `metadata_music_partial` p WHERE NOT EXISTS (SELECT 1 FROM `migration_music_ids` m WHERE m.old_id=p.id AND m.new_id != p.id);
 --> statement-breakpoint
+CREATE TEMP TABLE `migration_music_observations` AS
+SELECT o.id, o.mediaPk, o.source, o.sortOrder, o.providerOccurrenceId, o.occurrenceId,
+       COALESCE(o.`musicId`, m.new_id) AS `musicId`
+FROM `story_music_observations` o LEFT JOIN `migration_music_ids` m ON m.old_id=o.`partialMusicId`;
+--> statement-breakpoint
+DROP TABLE `story_music_observations`;
+--> statement-breakpoint
 DROP TABLE `metadata_music`;
 --> statement-breakpoint
 ALTER TABLE `__new_metadata_music` RENAME TO `metadata_music`;
@@ -112,9 +124,9 @@ CREATE TABLE `__new_story_location_observations` (
 	CONSTRAINT `fk_story_location_observations_locationId_metadata_location_id_fk` FOREIGN KEY (`locationId`) REFERENCES `metadata_location`(`id`)
 );
 --> statement-breakpoint
-INSERT INTO `__new_story_location_observations` (`id`,`mediaPk`,`source`,`sortOrder`,`providerOccurrenceId`,`occurrenceId`,`locationId`) SELECT o.id,o.mediaPk,o.source,o.sortOrder,o.providerOccurrenceId,o.occurrenceId,COALESCE(o.`locationId`, m.new_id) FROM `story_location_observations` o LEFT JOIN `migration_location_ids` m ON m.old_id=o.`partialLocationId`;
+INSERT INTO `__new_story_location_observations` (`id`,`mediaPk`,`source`,`sortOrder`,`providerOccurrenceId`,`occurrenceId`,`locationId`) SELECT `id`,`mediaPk`,`source`,`sortOrder`,`providerOccurrenceId`,`occurrenceId`,`locationId` FROM `migration_location_observations`;
 --> statement-breakpoint
-DROP TABLE `story_location_observations`;
+DROP TABLE `migration_location_observations`;
 --> statement-breakpoint
 ALTER TABLE `__new_story_location_observations` RENAME TO `story_location_observations`;
 --> statement-breakpoint
@@ -137,9 +149,9 @@ CREATE TABLE `__new_story_music_observations` (
 	CONSTRAINT `fk_story_music_observations_musicId_metadata_music_id_fk` FOREIGN KEY (`musicId`) REFERENCES `metadata_music`(`id`)
 );
 --> statement-breakpoint
-INSERT INTO `__new_story_music_observations` (`id`,`mediaPk`,`source`,`sortOrder`,`providerOccurrenceId`,`occurrenceId`,`musicId`) SELECT o.id,o.mediaPk,o.source,o.sortOrder,o.providerOccurrenceId,o.occurrenceId,COALESCE(o.`musicId`, m.new_id) FROM `story_music_observations` o LEFT JOIN `migration_music_ids` m ON m.old_id=o.`partialMusicId`;
+INSERT INTO `__new_story_music_observations` (`id`,`mediaPk`,`source`,`sortOrder`,`providerOccurrenceId`,`occurrenceId`,`musicId`) SELECT `id`,`mediaPk`,`source`,`sortOrder`,`providerOccurrenceId`,`occurrenceId`,`musicId` FROM `migration_music_observations`;
 --> statement-breakpoint
-DROP TABLE `story_music_observations`;
+DROP TABLE `migration_music_observations`;
 --> statement-breakpoint
 ALTER TABLE `__new_story_music_observations` RENAME TO `story_music_observations`;
 --> statement-breakpoint
@@ -148,5 +160,3 @@ CREATE INDEX `music_observations_story_source` ON `story_music_observations` (`m
 DROP TABLE `metadata_music_partial`;
 --> statement-breakpoint
 DROP TABLE `migration_music_ids`;
---> statement-breakpoint
-PRAGMA foreign_keys=ON;
