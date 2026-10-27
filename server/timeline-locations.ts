@@ -3,6 +3,7 @@ import type { UserTimelineStory } from "../sdk/lib/types.ts";
 export interface TimelinePlace {
   id: string;
   name: string;
+  category: string | null;
   latitude: number;
   longitude: number;
   stories: Array<{ mediaPk: string; date: string }>;
@@ -47,6 +48,7 @@ export function groupTimelineLocations(stories: Array<UserTimelineStory>): Timel
       const place = places.get(id) ?? {
         id,
         name: metadata.name ?? metadata.address ?? "Lieu sans nom",
+        category: metadata.category,
         latitude: metadata.latitude,
         longitude: metadata.longitude,
         stories: [],

@@ -32,6 +32,7 @@ export interface PlaceFillInput {
   address?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  category?: string | null;
 }
 
 function fillText(known: string | null, incoming: string | null | undefined) {
@@ -48,7 +49,16 @@ function fillCoordinate(known: number | null, incoming: number | null | undefine
   return Math.abs(incoming) <= bound ? incoming : null;
 }
 
+// Instagram's wording is kept as received; only an empty value counts as missing.
+function lookedUpCategory(known: string | null, incoming: string | null | undefined) {
+  if (incoming === undefined) {
+    return known;
+  }
+  return incoming !== null && incoming.trim().length > 0 ? incoming : null;
+}
+
 // Fill-only: a known value always wins, and the place's identifiers never change.
+// The category is the exception: it comes only from lookups, so the latest one replaces it.
 export function planPlaceFill(
   known: typeof metadataLocations.$inferSelect,
   incoming: PlaceFillInput,
@@ -58,6 +68,7 @@ export function planPlaceFill(
     address: fillText(known.address, incoming.address),
     latitude: fillCoordinate(known.latitude, incoming.latitude, 90),
     longitude: fillCoordinate(known.longitude, incoming.longitude, 180),
+    category: lookedUpCategory(known.category, incoming.category),
   };
 }
 

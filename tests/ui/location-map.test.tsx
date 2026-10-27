@@ -42,6 +42,7 @@ function observation(
   id: string,
   placeId: string,
   latitude: number | null = 48,
+  category: string | null = null,
 ): StoryLocationObservation {
   return {
     id,
@@ -60,6 +61,7 @@ function observation(
             longitude: null,
             facebookPlacesId: null,
             externalSource: null,
+            category,
             lastLookupAttemptAt: null,
           }
         : {
@@ -72,6 +74,7 @@ function observation(
             longitude: 2,
             facebookPlacesId: null,
             externalSource: null,
+            category,
             lastLookupAttemptAt: null,
           },
   };
@@ -243,4 +246,25 @@ test("unlinked observations never supply a position for a separate legacy sticke
   expect(modal.getByText("1 localisation sans coordonnées")).toBeVisible();
   expect(await modal.findByRole("button", { name: "Même nom" })).toBeVisible();
   expect(modal.getByText("Paris, Paris")).toBeVisible();
+});
+
+test("a place category appears in the place list and the map popup only when present", async () => {
+  const plain = observation("b", "place-b", 49);
+  plain.metadata.name = "Sans catégorie";
+  const props = locationTimeline([[observation("a", "place-a", 48, "Pont")], [plain]]);
+  const { user } = await renderPage(TestTimelinePage, props, "/users/timeline-user");
+  await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
+  const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
+  expect(modal.getByRole("option", { name: "Même nom · Pont · 1 stories" })).toBeVisible();
+  expect(modal.getByRole("option", { name: "Sans catégorie · 1 stories" })).toBeVisible();
+  const map = within(await modal.findByRole("region", { name: "Carte des lieux" }));
+  await user.click(map.getByRole("button", { name: "Même nom" }));
+  const withCategory = within(map.getByRole("region", { name: "Stories du lieu : Même nom" }));
+  expect(withCategory.getByText("Pont")).toBeVisible();
+  await user.click(map.getByRole("button", { name: "Sans catégorie" }));
+  const withoutCategory = within(
+    map.getByRole("region", { name: "Stories du lieu : Sans catégorie" }),
+  );
+  expect(withoutCategory.queryByText("Pont")).not.toBeInTheDocument();
+  expect(withoutCategory.getByText("1 story")).toBeVisible();
 });

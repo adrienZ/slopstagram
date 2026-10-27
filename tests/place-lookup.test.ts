@@ -29,7 +29,7 @@ function setup(context: { onTestFinished: (callback: () => void) => void }) {
 
 function placeBody(
   id: string,
-  info: { name?: string; address?: string; lat?: number; lng?: number },
+  info: { name?: string; address?: string; lat?: number; lng?: number; category?: string },
 ): JsonValue {
   return {
     data: {
@@ -38,7 +38,7 @@ function placeBody(
           location_info: {
             name: info.name ?? "",
             phone: "",
-            category: "Bistro",
+            category: info.category ?? "Bistro",
             media_count: 12,
             price_range: 0,
             lat: info.lat ?? null,
@@ -127,6 +127,38 @@ test("a place that stories only identify by its id becomes usable after a lookup
   assert.equal(place.instagramPlaceId, "633725939834688");
   assert.equal(place.lastLookupAttemptAt, fixedNow().getTime());
   assert.deepEqual(client.lookups, ["633725939834688"]);
+});
+
+test("the category Instagram returns is stored exactly as received", async (context) => {
+  const repository = setup(context);
+  const client = createPlaceClient([storyAt("m1", { pk: "111" })], {
+    "111": () => response(placeBody("111", { name: "Chez Paul", category: "Bistrot de quartier" })),
+  });
+  await ingest(repository, client);
+  assert.equal(storedPlace(repository, "m1").category, "Bistrot de quartier");
+});
+
+test("an empty category from Instagram is stored as a missing category", async (context) => {
+  const repository = setup(context);
+  const client = createPlaceClient([storyAt("m1", { pk: "111" }), storyAt("m2", { pk: "222" })], {
+    "111": () => response(placeBody("111", { name: "Empty", category: "" })),
+    "222": () => response(placeBody("222", { name: "Blank", category: "   " })),
+  });
+  await ingest(repository, client);
+  assert.equal(storedPlace(repository, "m1").category, null);
+  assert.equal(storedPlace(repository, "m2").category, null);
+});
+
+test("a category never decides whether a place is usable", async (context) => {
+  const repository = setup(context);
+  const client = createPlaceClient([storyAt("m1", { pk: "111" }), storyAt("m2", { pk: "222" })], {
+    "111": () => response(placeBody("111", { name: "No coordinates", category: "Pont" })),
+    "222": () => response(placeBody("222", { name: "No category", category: "", lat: 1, lng: 2 })),
+  });
+  await ingest(repository, client);
+  assert.equal(storedPlace(repository, "m1").status, "partial");
+  assert.equal(storedPlace(repository, "m1").category, "Pont");
+  assert.equal(storedPlace(repository, "m2").status, "usable");
 });
 
 test("story values are never overwritten and only gaps are filled", async (context) => {
@@ -260,5 +292,6 @@ test("a later story observation keeps the recorded lookup", async (context) => {
   await repository.save(storyAt("m1", { pk: "111", name: "From story" }));
   const place = storedPlace(repository, "m1");
   assert.equal(place.lastLookupAttemptAt, fixedNow().getTime());
+  assert.equal(place.category, "Bistro");
   assert.equal(place.name, "From story");
 });
