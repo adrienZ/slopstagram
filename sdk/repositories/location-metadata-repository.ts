@@ -10,7 +10,9 @@ import type { StoryAnnotations, StoryItem } from "../lib/types.ts";
 import type { LocationObservationInput } from "../location-observation-service.ts";
 import {
   planLocationMetadataWrite,
+  planPlaceFill,
   planStoryLocationUpdates,
+  type PlaceFillInput,
 } from "../location-metadata-service.ts";
 
 type LocationDatabase = Pick<DrizzleDatabase, "select" | "insert" | "update" | "delete">;
@@ -86,4 +88,24 @@ export function enrichStoryLocations(
   for (const id of plan.removedObservationIds) {
     database.delete(storyLocationObservations).where(eq(storyLocationObservations.id, id)).run();
   }
+}
+
+export function fillTaggedPlace(
+  database: LocationDatabase,
+  instagramPlaceId: string,
+  incoming: PlaceFillInput,
+): void {
+  const known = database
+    .select()
+    .from(metadataLocations)
+    .where(eq(metadataLocations.instagramPlaceId, instagramPlaceId))
+    .get();
+  if (known === undefined) {
+    return;
+  }
+  database
+    .update(metadataLocations)
+    .set(planPlaceFill(known, incoming))
+    .where(eq(metadataLocations.id, known.id))
+    .run();
 }
