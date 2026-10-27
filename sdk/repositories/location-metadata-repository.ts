@@ -94,6 +94,7 @@ export function fillTaggedPlace(
   database: LocationDatabase,
   instagramPlaceId: string,
   incoming: PlaceFillInput,
+  lookedUpAt?: number,
 ): void {
   const known = database
     .select()
@@ -103,9 +104,9 @@ export function fillTaggedPlace(
   if (known === undefined) {
     return;
   }
-  database
-    .update(metadataLocations)
-    .set(planPlaceFill(known, incoming))
-    .where(eq(metadataLocations.id, known.id))
-    .run();
+  const update: Partial<typeof metadataLocations.$inferInsert> = planPlaceFill(known, incoming);
+  if (lookedUpAt !== undefined) {
+    update.lastLookupAttemptAt = lookedUpAt;
+  }
+  database.update(metadataLocations).set(update).where(eq(metadataLocations.id, known.id)).run();
 }

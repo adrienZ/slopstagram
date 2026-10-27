@@ -288,6 +288,10 @@ export class StoryRepository {
     fillTaggedPlace(this.database, instagramPlaceId, incoming);
   }
 
+  recordPlaceLookup(instagramPlaceId: string, incoming: PlaceFillInput, lookedUpAt: Date) {
+    fillTaggedPlace(this.database, instagramPlaceId, incoming, lookedUpAt.getTime());
+  }
+
   listStickerKinds(): Array<string> {
     return this.database
       .selectDistinct({ kind: storyStickers.kind })

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "vitest";
+import { test, vi } from "vitest";
 import { z } from "zod";
 import type { JsonValue } from "../sdk/lib/json-value.ts";
 import { createInstagramClient } from "../sdk/story-client-service.ts";
@@ -9,6 +9,7 @@ interface BrowserFetchCall {
   requestUrl: string;
   mediaQuery?: { documentId: string; reelIds: Array<string>; after?: string };
   musicAssetId?: string;
+  placeQuery?: { documentId: string; placeId: string };
 }
 
 function createSession(
@@ -95,6 +96,101 @@ test("music lookup uses the authenticated session and preserves large numeric au
       musicAssetId: "10882110464472591",
     },
   ]);
+});
+
+test("looks up a place with the location container query from the authenticated page", async () => {
+  const calls: Array<BrowserFetchCall> = [];
+  const body = { data: { xdt_location_get_web_info: { native_location_data: null } } };
+  const { getPlace } = createInstagramClient(
+    createSession(body, calls, "text/javascript; charset=utf-8"),
+  );
+  assert.notEqual(getPlace, undefined);
+  if (getPlace === undefined) {
+    throw new Error("Place lookup unavailable");
+  }
+  const result = await getPlace("633725939834688");
+  assert.deepEqual(result.json(), body);
+  assert.deepEqual(calls, [
+    {
+      appId: "936619743392459",
+      requestUrl: "https://www.instagram.com/api/graphql",
+      placeQuery: { documentId: "28572807415659320", placeId: "633725939834688" },
+    },
+  ]);
+});
+
+test("sends the place query from the page with the page's own tokens", async (context) => {
+  const requests: Array<{ url: string; body: string; headers: Headers; method: string }> = [];
+  const pageModules = new Map([
+    ["LSD", { token: "lsd-token" }],
+    ["DTSGInitialData", { token: "dtsg-token" }],
+    ["CurrentUserInitialData", { NON_FACEBOOK_USER_ID: "user-1" }],
+  ]);
+  vi.stubGlobal("require", (name: string) => pageModules.get(name));
+  vi.stubGlobal(
+    "fetch",
+    async (url: string, init: { body: string; headers: Headers; method: string }) => {
+      requests.push({ url, ...init });
+      return await Promise.resolve(
+        new globalThis.Response('{"ok":true}', {
+          headers: { "content-type": "text/javascript" },
+        }),
+      );
+    },
+  );
+  context.onTestFinished(() => {
+    vi.unstubAllGlobals();
+  });
+  const { getPlace } = createInstagramClient({
+    page: { evaluate: async (pageFunction, input) => await pageFunction(input) },
+  });
+  if (getPlace === undefined) {
+    throw new Error("Place lookup unavailable");
+  }
+  const result = await getPlace("633725939834688");
+  assert.deepEqual(result.json(), { ok: true });
+  assert.equal(requests.length, 1);
+  const [request] = requests;
+  assert.equal(request.url, "https://www.instagram.com/api/graphql");
+  assert.equal(request.method, "POST");
+  assert.equal(request.headers.get("x-fb-lsd"), "lsd-token");
+  assert.equal(request.headers.get("x-ig-app-id"), "936619743392459");
+  assert.deepEqual(Object.fromEntries(new globalThis.URLSearchParams(request.body)), {
+    doc_id: "28572807415659320",
+    variables: JSON.stringify({ location_id_str: "633725939834688", show_nearby: false }),
+    fb_dtsg: "dtsg-token",
+    lsd: "lsd-token",
+    av: "user-1",
+  });
+});
+
+test("sends empty place query tokens when the page has none", async (context) => {
+  const bodies: Array<string> = [];
+  vi.stubGlobal("require", () => null);
+  vi.stubGlobal("fetch", async (_url: string, init: { body: string }) => {
+    bodies.push(init.body);
+    return await Promise.resolve(new globalThis.Response("{}"));
+  });
+  context.onTestFinished(() => {
+    vi.unstubAllGlobals();
+  });
+  const { getPlace } = createInstagramClient({
+    page: { evaluate: async (pageFunction, input) => await pageFunction(input) },
+  });
+  await getPlace?.("1");
+  const params = Object.fromEntries(new globalThis.URLSearchParams(bodies[0]));
+  assert.deepEqual([params.fb_dtsg, params.lsd, params.av], ["", "", ""]);
+});
+
+test("rejects an HTML place lookup response", async () => {
+  const { getPlace } = createInstagramClient(
+    createSession("<!DOCTYPE html><html></html>", [], "text/html; charset=utf-8"),
+  );
+  if (getPlace === undefined) {
+    throw new Error("Place lookup unavailable");
+  }
+  const result = await getPlace("633725939834688");
+  assert.throws(() => result.json(), /text\/html/u);
 });
 
 test("normalizes numeric Instagram tray identifiers to strings", async () => {

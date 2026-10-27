@@ -23,6 +23,7 @@ export interface InstagramClient {
   getReelsMedia: (reelIds: Array<string>) => Promise<InstagramClientResponse<ReelsMediaResponse>>;
   getTray: () => Promise<InstagramClientResponse<ReelTrayResponse>>;
   getMusicAsset?: (audioId: string) => Promise<InstagramClientResponse<JsonValue>>;
+  getPlace?: (placeId: string) => Promise<InstagramClientResponse<JsonValue>>;
 }
 
 export interface FetchStoriesManifestOptions {
@@ -36,7 +37,7 @@ export interface FetchStoriesManifestOptions {
   logger?: Logger;
   sleep?: (durationMs: number) => Promise<void>;
   storyRepository?: Pick<StoryRepository, "findByMediaPk" | "save"> &
-    Partial<Pick<StoryRepository, "refreshMusicAsset">>;
+    Partial<Pick<StoryRepository, "recordPlaceLookup" | "refreshMusicAsset">>;
   storyStorage?: StoryStorage;
 }
 
