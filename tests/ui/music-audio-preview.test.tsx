@@ -46,6 +46,7 @@ test("the compact player displays duration before playback, then plays, pauses a
   const seek = screen.getByRole("slider", { name: "Avancer dans l’audio : Audio de la story" });
   expect(seek).toBeDisabled();
   Object.defineProperty(audio, "duration", { configurable: true, value: 20 });
+  fireEvent.durationChange(audio);
   fireEvent.loadedMetadata(audio);
   expect(screen.getByText("0:20")).toBeVisible();
   expect(play).not.toHaveBeenCalled();
@@ -55,6 +56,7 @@ test("the compact player displays duration before playback, then plays, pauses a
     screen.getByRole("button", { name: "Mettre en pause : Audio de la story" }),
   ).toHaveAttribute("aria-pressed", "true");
   fireEvent.change(seek, { target: { value: "10" } });
+  fireEvent.timeUpdate(audio);
   expect(audio).toHaveProperty("currentTime", 10);
   expect(screen.getByText("0:10")).toBeVisible();
   expect(screen.getByText("0:20")).toBeVisible();
@@ -63,6 +65,7 @@ test("the compact player displays duration before playback, then plays, pauses a
     "aria-pressed",
     "false",
   );
+  await user.click(screen.getByRole("button", { name: "Lire : Audio de la story" }));
   fireEvent.ended(audio);
   expect(screen.getByRole("button", { name: "Lire : Audio de la story" })).toBeVisible();
 });
@@ -144,6 +147,7 @@ test("detail-modal audio seeking keeps the selected story and navigation stops p
   const { user, router } = await renderPage(Details, {}, "/report?story=story-pk");
   const audio = screen.getByLabelText("Écouter : Audio de la story");
   Object.defineProperty(audio, "duration", { configurable: true, value: 20 });
+  fireEvent.durationChange(audio);
   fireEvent.loadedMetadata(audio);
   await user.click(screen.getByRole("button", { name: "Lire : Audio de la story" }));
   const seek = screen.getByRole("slider");
@@ -161,5 +165,23 @@ test("detail-modal audio seeking keeps the selected story and navigation stops p
 test("stored playback duration is visible without preloading the audio", async () => {
   await renderContent(<MusicAudioPreview preview={{ ...preview, durationMs: 124_000 }} />);
   expect(screen.getByText("2:04")).toBeVisible();
-  expect(screen.getByLabelText("Écouter : Audio de la story")).toHaveAttribute("preload", "none");
+  const audio = screen.getByLabelText("Écouter : Audio de la story");
+  expect(audio).toHaveAttribute("preload", "none");
+  fireEvent.change(screen.getByRole("slider"), { target: { value: "30" } });
+  expect(audio).toHaveProperty("currentTime", 30);
+  fireEvent.timeUpdate(audio);
+  expect(screen.getByText("0:30")).toBeVisible();
+});
+
+test("a rejected play request falls back to the sticker label", async (context) => {
+  const play = vi
+    .spyOn(globalThis.HTMLMediaElement.prototype, "play")
+    .mockRejectedValue(new Error("unavailable"));
+  context.onTestFinished(() => {
+    play.mockRestore();
+  });
+  const { user } = await renderContent(<MusicSticker label="Song" preview={preview} />);
+  await user.click(screen.getByRole("button", { name: "Lire : Audio de la story" }));
+  expect(screen.getByText("Song")).toBeVisible();
+  expect(screen.queryByRole("slider")).not.toBeInTheDocument();
 });

@@ -18,7 +18,7 @@ interface MusicAudioPreviewProps {
 }
 
 function AudioPlayer({ preview, preload = true, onError }: MusicAudioPreviewProps) {
-  const player = useAudioPreview(preview.durationMs, onError);
+  const player = useAudioPreview(preview, preload, onError);
   const [failedArtworkUrl, setFailedArtworkUrl] = useState<string | null>(null);
   if (preview.audioUrl === null || player.failed) {
     return null;
@@ -31,14 +31,7 @@ function AudioPlayer({ preview, preload = true, onError }: MusicAudioPreviewProp
       title={preview.sourceKind === "story_audio" ? "Audio de la story" : undefined}
       className="tw:flex tw:w-56 tw:min-w-0 tw:max-w-full tw:items-center tw:gap-2 tw:overflow-hidden tw:rounded-lg tw:border tw:border-border tw:bg-muted/40 tw:p-2"
     >
-      <audio
-        ref={player.attachAudio}
-        src={preview.audioUrl}
-        aria-label={`Écouter : ${preview.description}`}
-        preload={preload && preview.durationMs === null ? "metadata" : "none"}
-        hidden
-        {...player.mediaEvents}
-      />
+      {player.audio}
       <span className="tw:relative tw:size-10 tw:shrink-0">
         {hasArtwork && (
           <img

@@ -1,42 +1,53 @@
 import { useRef, useState, type SyntheticEvent } from "react";
+import { useAudio, useUnmount } from "react-use";
+import type { MusicPreview } from "../music-preview.ts";
 
-export function useAudioPreview(durationMs: number | null, onError?: () => void) {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [playing, setPlaying] = useState(false);
+export function useAudioPreview(preview: MusicPreview, preload: boolean, onError?: () => void) {
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const initialDuration = durationMs === null ? 0 : durationMs / 1000;
-  const [mediaDuration, setDuration] = useState(0);
-  const duration = mediaDuration > 0 ? mediaDuration : initialDuration;
+  const lastPlaying = useRef<HTMLAudioElement>(null);
+  const [audio, state, controls, audioRef] = useAudio({
+    src: preview.audioUrl ?? "",
+    "aria-label": `Écouter : ${preview.description}`,
+    preload: preload && preview.durationMs === null ? "metadata" : "none",
+    hidden: true,
+    onPlay(event: SyntheticEvent<HTMLAudioElement>) {
+      lastPlaying.current = event.currentTarget;
+      for (const other of event.currentTarget.ownerDocument.querySelectorAll("audio")) {
+        if (other !== event.currentTarget && !other.paused) {
+          other.pause();
+        }
+      }
+    },
+    onEnded(event: SyntheticEvent<HTMLAudioElement>) {
+      event.currentTarget.pause();
+    },
+    onError() {
+      setFailed(true);
+      onError?.();
+    },
+  });
+  useUnmount(() => {
+    if (lastPlaying.current !== null && !lastPlaying.current.paused) {
+      lastPlaying.current.pause();
+    }
+  });
 
-  const [attachAudio] = useState(
-    () =>
-      function bindAudio(audio: HTMLAudioElement | null) {
-        audioRef.current = audio;
-        return () => {
-          if (audio !== null && !audio.paused) {
-            audio.pause();
-          }
-          audioRef.current = null;
-        };
-      },
-  );
+  const duration =
+    Number.isFinite(state.duration) && state.duration > 0
+      ? state.duration
+      : (preview.durationMs ?? 0) / 1000;
+  const currentTime = Number.isFinite(state.time) ? state.time : 0;
 
   async function toggle() {
-    const audio = audioRef.current;
-    if (audio === null) {
-      return;
-    }
-    if (playing) {
-      audio.pause();
+    if (!state.paused) {
+      controls.pause();
       return;
     }
     setLoading(true);
     try {
-      await audio.play();
+      await controls.play();
     } catch {
-      setPlaying(false);
       setFailed(true);
       onError?.();
     } finally {
@@ -44,55 +55,19 @@ export function useAudioPreview(durationMs: number | null, onError?: () => void)
     }
   }
 
-  function updateProgress(event: SyntheticEvent<HTMLAudioElement>) {
-    const audio = event.currentTarget;
-    setDuration(
-      Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : initialDuration,
-    );
-    setCurrentTime(Number.isFinite(audio.currentTime) ? audio.currentTime : 0);
-  }
-
-  function onPlay(event: SyntheticEvent<HTMLAudioElement>) {
-    for (const audio of event.currentTarget.ownerDocument.querySelectorAll("audio")) {
-      if (audio !== event.currentTarget && !audio.paused) {
-        audio.pause();
-      }
-    }
-    setPlaying(true);
-  }
-
   function seek(value: number) {
-    if (audioRef.current !== null && duration > 0) {
-      audioRef.current.currentTime = Math.max(0, Math.min(duration, value));
-      setCurrentTime(audioRef.current.currentTime);
+    if (duration <= 0 || audioRef.current === null) {
+      return;
+    }
+    const time = Math.max(0, Math.min(duration, value));
+    if (Number.isFinite(state.duration) && state.duration > 0) {
+      controls.seek(time);
+    } else {
+      // The library cannot seek before browser metadata arrives; the stored duration
+      // still makes seeking possible without preloading the file.
+      audioRef.current.currentTime = time;
     }
   }
 
-  return {
-    attachAudio,
-    playing,
-    loading,
-    failed,
-    currentTime,
-    duration,
-    toggle,
-    seek,
-    mediaEvents: {
-      onPlay,
-      onPause: () => {
-        setPlaying(false);
-      },
-      onEnded: () => {
-        setPlaying(false);
-      },
-      onError: () => {
-        setPlaying(false);
-        setFailed(true);
-        onError?.();
-      },
-      onLoadedMetadata: updateProgress,
-      onDurationChange: updateProgress,
-      onTimeUpdate: updateProgress,
-    },
-  };
+  return { audio, playing: !state.paused, loading, failed, currentTime, duration, toggle, seek };
 }
