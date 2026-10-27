@@ -5,7 +5,11 @@ import { getReport } from "../query-service.ts";
 import type { UserSectionProps } from "../components/user-section.tsx";
 import { Lightbox } from "../components/lightbox.tsx";
 import { StoryLayout } from "../components/story-layout.tsx";
-import { getDisabledStoryDates, navigateToReportDate } from "../story-navigation.ts";
+import {
+  getDisabledStoryDates,
+  getOldestStoryDate,
+  navigateToReportDate,
+} from "../story-navigation.ts";
 import { formatStoryViewTitle, storyDateSchema } from "../../sdk/lib/story-date-service.ts";
 import { UserSection } from "../components/user-section.tsx";
 import type { SidebarUser } from "../sidebar-users.ts";
@@ -31,16 +35,15 @@ export function ReportPage({
   return (
     <StoryLayout
       selectedDate={selectedDate}
+      oldestDate={getOldestStoryDate(availableDates, today)}
       today={today}
       onSelectDate={navigateToReportDate}
       disabledDates={getDisabledStoryDates(availableDates)}
       title="Stories"
       users={sidebarUsers}
     >
-      <h1 className="tw:mb-2 tw:text-[28px] tw:font-bold">
-        {formatStoryViewTitle(selectedDate, today)}
-      </h1>
-      {selectedDate === today && <p className="tw:my-4">{`Fil chargé le ${date}`}</p>}
+      <h1 className="tw:text-[28px] tw:font-bold">{formatStoryViewTitle(selectedDate, today)}</h1>
+      {selectedDate === today && <p className="tw:mb-4">{`Fil chargé le ${date}`}</p>}
       {users.length === 0 && (
         <p className="tw:my-4">
           {selectedDate === today

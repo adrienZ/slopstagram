@@ -29,6 +29,7 @@ import { ThemeToggle } from "./theme-toggle.tsx";
 
 export interface StorySidebarProps {
   selectedDate: string;
+  oldestDate: string;
   today: string;
   onSelectDate: (date: Date) => void;
   disabledDates?: Array<Matcher>;
@@ -38,6 +39,7 @@ export interface StorySidebarProps {
 
 export function StorySidebar({
   selectedDate,
+  oldestDate,
   today,
   onSelectDate,
   disabledDates = [],
@@ -81,6 +83,7 @@ export function StorySidebar({
               onMonthChange={setMonth}
               today={todayDate}
               disabled={[{ after: todayDate }, ...disabledDates]}
+              startMonth={new Date(`${oldestDate}T12:00:00Z`)}
               endMonth={todayDate}
               onSelect={selectDate}
               className="tw:w-full tw:bg-transparent tw:[--cell-size:1.9rem]"

@@ -9,6 +9,9 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
+  ssr: {
+    noExternal: ["react-use"],
+  },
   plugins: [
     tailwindcss(),
     tanstackStart({
