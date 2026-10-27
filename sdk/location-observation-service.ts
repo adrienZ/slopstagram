@@ -72,6 +72,16 @@ export interface LocationObservationInput {
   fields: LocationFields;
 }
 
+// A bloks sticker's own `id` (for example the literal "bloks_sticker_id") identifies
+// the sticker, never a place, so it must not reach the generic place-record check.
+function bloksLocationContainer(value: JsonValue | undefined): JsonValue | undefined {
+  if (value === undefined || !isJsonObject(value)) {
+    return value;
+  }
+  const { id: _stickerId, ...container } = value;
+  return container;
+}
+
 export function getLocationObservation(value: JsonValue): LocationObservationInput | null {
   if (!isJsonObject(value)) {
     return null;
@@ -82,7 +92,7 @@ export function getLocationObservation(value: JsonValue): LocationObservationInp
     value.place ??
     value.story_location ??
     value.location_sticker ??
-    value.bloks_sticker;
+    bloksLocationContainer(value.bloks_sticker);
   const directPlace = [
     "pk",
     "name",
