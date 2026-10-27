@@ -1,7 +1,4 @@
-import { existsSync } from "node:fs";
-import path from "node:path";
 import { createHash } from "node:crypto";
-import { BASE_CACHE_DIR } from "./lib/cache-service.ts";
 import { storyRepository } from "./repositories/story-repository.ts";
 import { visionRepository } from "./repositories/vision-repository.ts";
 import type { StoryRepository } from "./repositories/story-repository.ts";
@@ -44,17 +41,12 @@ interface StoryFeedOptions {
   hasPreview?: (mediaPk: string) => boolean;
 }
 
-function hasStoryPreview(mediaPk: string): boolean {
-  return existsSync(path.join(BASE_CACHE_DIR, "images", "story-previews", `${mediaPk}.jpg`));
-}
-
 function groupStoryFeed(
   publishedStories: Array<UserTimelineStory>,
   previewExists?: (mediaPk: string) => boolean,
 ): Array<StoryOutputUser> {
-  const hasPreview = previewExists ?? hasStoryPreview;
   const entries = publishedStories
-    .filter((entry) => hasPreview(entry.story.pk))
+    .filter((entry) => previewExists?.(entry.story.pk) ?? true)
     .toSorted(
       (left, right) =>
         right.taken_at - left.taken_at ||
@@ -120,7 +112,7 @@ export function createReportFeed(
       : createStoryDayFeed(selectedDate, options);
   const publications = (options.repository ?? storyRepository)
     .listPublicationTimes(now)
-    .filter(({ mediaPk }) => (options.hasPreview ?? hasStoryPreview)(mediaPk));
+    .filter(({ mediaPk }) => options.hasPreview?.(mediaPk) ?? true);
   const availableDates = new Set(
     publications.map(({ takenAt }) => getStoryDate(new Date(takenAt * 1000))),
   );

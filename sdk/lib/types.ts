@@ -1,4 +1,9 @@
 import type { Storage } from "unstorage";
+import type { StorySticker } from "../entities/story.ts";
+import type { StoryLocationObservation } from "../entities/location-metadata.ts";
+import type { StoryMusicObservation } from "../entities/music-metadata.ts";
+import type { StoryAudio } from "../entities/story-audio.ts";
+import type { reportStories, reportFailures } from "../entities/report.ts";
 import type { JsonValue } from "./json-value.ts";
 
 export const STORY_MEDIA_TYPES = {
@@ -58,8 +63,11 @@ type StoryVideoVersion = StoryVersion & {
 };
 
 export interface StoryAnnotations {
+  storyAudio?: StoryAudio;
+  locationObservations?: Array<StoryLocationObservation>;
+  musicObservations?: Array<StoryMusicObservation>;
   locations: Array<string>;
-  stickers: Array<{ kind: string; label: string; source?: string }>;
+  stickers: Array<StorySticker>;
   sources?: Array<string>;
 }
 
@@ -84,6 +92,7 @@ export interface StoryItem {
   taken_at?: number;
   text_post_share_to_ig_story_stickers?: JsonValue;
   video_versions?: Array<StoryVideoVersion> | null;
+  video_dash_manifest?: string | null;
   [key: string]:
     | Array<StoryVideoVersion>
     | JsonValue
@@ -129,9 +138,9 @@ export interface StoriesMediaReport {
   };
 }
 
-export type StoryFetchFailureReason = "request_failed" | "rate_limited" | "missing_from_response";
+export type StoryFetchFailureReason = typeof reportFailures.$inferSelect.reason;
 
-type StoryManifestItemStatus = "ok" | "failed";
+type StoryManifestItemStatus = typeof reportStories.$inferSelect.status;
 
 export interface StoryFetchFailure {
   attempt_count: number;
@@ -237,6 +246,7 @@ export interface StoriesManifestReport {
 }
 
 export type ImageCacheStorage = Storage<Record<string, never>>;
+export type AudioCacheStorage = Storage<Record<string, never>>;
 export type StoryStorage = Storage<StoryItem>;
 
 export interface ParsedStory {

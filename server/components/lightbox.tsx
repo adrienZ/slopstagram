@@ -1,12 +1,15 @@
 import { useNavigate } from "@tanstack/react-router";
 import { cn } from "cn";
 import type { StoryCardViewModel } from "../story-card-view-model.ts";
+import { useState, type ReactNode } from "react";
+import { Sticker } from "./sticker.tsx";
+import { MusicSticker } from "./music-sticker.tsx";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "../shadcn/ui/dialog.tsx";
 
 const detailsCellClassName =
   "tw:border tw:border-border tw:px-3 tw:py-2.75 tw:text-left tw:align-top tw:wrap-anywhere tw:whitespace-pre-wrap tw:max-[760px]:block tw:max-[760px]:w-auto tw:max-[760px]:border-0 tw:max-[760px]:px-2.5 tw:max-[760px]:py-2";
 
-function LightboxDetailsRow(props: { label: string; value: string | undefined }) {
+function LightboxDetailsRow(props: { label: string; value: ReactNode }) {
   return (
     <tr className="tw:max-[760px]:block">
       <th className={cn(detailsCellClassName, "tw:w-32 tw:bg-muted")} scope="row">
@@ -44,8 +47,10 @@ function LightboxNavButton(props: {
 
 function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: StoryCardViewModel }) {
   const navigateTo = useNavigate();
+  const [dismissedStory, setDismissedStory] = useState<string | null>(null);
 
   function close() {
+    setDismissedStory(props.story.mediaPk);
     void navigateTo({
       to: ".",
       search: (previous) => ({ ...previous, story: undefined }),
@@ -74,7 +79,7 @@ function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: Stor
 
   return (
     <Dialog
-      open
+      open={dismissedStory !== props.story.mediaPk}
       onOpenChange={(open) => {
         if (!open) {
           close();
@@ -146,8 +151,26 @@ function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: Stor
             <table className="tw:w-full tw:table-fixed tw:border-collapse tw:bg-card tw:text-card-foreground tw:max-[760px]:block tw:max-[760px]:w-auto">
               <tbody className="tw:max-[760px]:block">
                 <LightboxDetailsRow label="Type" value={props.story.mediaType} />
-                <LightboxDetailsRow label="Story" value={props.story.mediaPk} />
-                <LightboxDetailsRow label="Stickers" value={props.story.stickers} />
+                <LightboxDetailsRow
+                  label="Stickers"
+                  value={
+                    props.story.stickerDetails === undefined ? (
+                      props.story.stickers
+                    ) : (
+                      <>
+                        {props.story.stickerDetails.text}
+                        <div className="tw:flex tw:flex-wrap tw:gap-1.5">
+                          {props.story.stickerDetails.stickers?.map((sticker, index) => (
+                            <Sticker key={`${sticker.kind}:${index}`} sticker={sticker} />
+                          ))}
+                          {props.story.stickerDetails.music.map(({ key, label, preview }) => (
+                            <MusicSticker key={key} label={label} preview={preview} />
+                          ))}
+                        </div>
+                      </>
+                    )
+                  }
+                />
                 <LightboxDetailsRow label="Lieux" value={props.story.locations} />
                 <LightboxDetailsRow label="Instagram" value={props.story.igCaption} />
                 <LightboxDetailsRow label="Apple OCR" value={props.story.appleCaption} />

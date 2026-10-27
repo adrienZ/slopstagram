@@ -12,6 +12,8 @@ import { persistReportInstagramUsers } from "../sdk/lib/instagram-user-service.t
 import type { Logger } from "../sdk/lib/logging-service.ts";
 import type { StoriesManifestReport } from "../sdk/lib/types.ts";
 import { createStoryFeed } from "../sdk/story-feed.ts";
+import { cacheReportAudio } from "../sdk/report-audio-service.ts";
+import { startMediaServer, wavAudio } from "./media-server.ts";
 
 function log(): void {}
 log.raw = log;
@@ -45,6 +47,9 @@ function createFixture(context: TestContext) {
     },
   };
   const dependencies = {
+    cacheReportAudio: async (value: StoriesManifestReport) => {
+      await cacheReportAudio(value, { database });
+    },
     fetchRunRepository: runs,
     fetchStories: async () => report,
     saveReport: reports.save.bind(reports),
@@ -58,8 +63,7 @@ function createFixture(context: TestContext) {
     resolveAppleCaptionsForReport: async () => {},
     resolveVisionForReport: async () => new Map(),
     resolveUserSummariesForReport: async () => new Map(),
-    createStoryFeed: (now: Date) =>
-      createStoryFeed(now, { repository: stories, hasPreview: () => true }),
+    createStoryFeed: (now: Date) => createStoryFeed(now, { repository: stories }),
     readStoryFeedVision: () => new Map(),
   };
   const options = {
@@ -67,7 +71,7 @@ function createFixture(context: TestContext) {
     logger: createMockLogger(),
     now: () => new Date("2026-10-22T10:00:00Z"),
   };
-  return { runs, reports, stories, users, report, options };
+  return { database, runs, reports, stories, users, report, options };
 }
 
 test("records a failed fetch attempt even when Instagram returns no tray", async (context) => {
@@ -172,4 +176,68 @@ test("separate attempts at the same instant preserve separate runs and observati
   assert.notEqual(first.reportKey, second.reportKey);
   assert.equal(runs.list().length, 2);
   assert.equal(reports.listKeys().length, 2);
+});
+
+test("the shared report path persists and caches received audio before image enrichment", async (context) => {
+  const { database, options, report, reports, stories } = createFixture(context);
+  const { mkdtemp, rm, readFile } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { default: path } = await import("node:path");
+  const directory = await mkdtemp(path.join(tmpdir(), "report-audio-"));
+  context.onTestFinished(async () => {
+    await rm(directory, { recursive: true, force: true });
+  });
+  const audio = wavAudio();
+  const media = await startMediaServer(context, (_request, response) => {
+    response.writeHead(200, { "content-type": "audio/wav" });
+    response.end(audio);
+  });
+  await stories.save({
+    pk: "audio-story",
+    story_music_stickers: [
+      {
+        id: "sticker",
+        music_asset_info: {
+          audio_asset_id: "asset",
+          title: "Song",
+          display_artist: "Artist",
+          progressive_download_url: "https://example.com/song.wav",
+        },
+      },
+    ],
+  });
+  report.output.users.push({
+    username: "one",
+    reel_ids: [],
+    stories: [
+      {
+        media_pk: "audio-story",
+        status: "ok",
+        ig_caption: "",
+        locations: [],
+        stickers: ["Song - Artist"],
+        preview_image_url: null,
+      },
+    ],
+  });
+  await createReport({
+    ...options,
+    dependencies: {
+      ...options.dependencies,
+      cacheReportAudio: async (received) => {
+        await cacheReportAudio(received, { database, directory, fetchMedia: media.fetchMedia });
+      },
+      cacheReportImages: async () => {
+        assert.equal(reports.listKeys().length, 1);
+        const metadata =
+          stories.findByMediaPk("audio-story")?.annotations?.musicObservations?.[0].metadata;
+        assert.equal(metadata?.audioState, "available");
+        assert.equal(metadata.audioDurationMs, 1000);
+        assert.ok(metadata.audioCachePath !== null);
+        assert.deepEqual(await readFile(path.join(directory, metadata.audioCachePath)), audio);
+        return { profilePicPathByUrl: new Map(), storyPreviewPathByUrl: new Map() };
+      },
+    },
+  });
+  assert.deepEqual(media.requests, ["/song.wav"]);
 });
