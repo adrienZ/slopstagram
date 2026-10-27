@@ -37,7 +37,9 @@ export interface FetchStoriesManifestOptions {
   logger?: Logger;
   sleep?: (durationMs: number) => Promise<void>;
   storyRepository?: Pick<StoryRepository, "findByMediaPk" | "save"> &
-    Partial<Pick<StoryRepository, "recordPlaceLookup" | "refreshMusicAsset">>;
+    Partial<
+      Pick<StoryRepository, "recordFailedPlaceLookup" | "recordPlaceLookup" | "refreshMusicAsset">
+    >;
   storyStorage?: StoryStorage;
 }
 

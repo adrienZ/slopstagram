@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { JsonValue } from "./lib/json-value.ts";
+import type { StoryLocationObservation } from "./entities/location-metadata.ts";
 import type { Logger } from "./lib/logging-service.ts";
 import type { PlaceLookupInput } from "./location-metadata-service.ts";
 import type { InstagramClient, FetchStoriesManifestOptions } from "./story-types.ts";
@@ -17,6 +18,8 @@ const locationInfoSchema = z.looseObject({
   lng: z.number().nullish(),
   category: z.string().nullish(),
 });
+
+const graphQlErrorsSchema = z.object({ errors: z.array(z.unknown()).min(1) });
 
 const responseSchema = z.object({
   data: z.object({
@@ -64,29 +67,53 @@ function parseDetails(info: z.infer<typeof locationInfoSchema>): PlaceLookupInpu
   };
 }
 
-function parsePlaceResponse(body: JsonValue, placeId: string): PlaceLookupInput | null {
+type PlaceResponseResult = { place: PlaceLookupInput } | { failure: string };
+
+function parsePlaceResponse(body: JsonValue, placeId: string): PlaceResponseResult {
+  const graphQlErrors = graphQlErrorsSchema.safeParse(body);
+  if (graphQlErrors.success) {
+    return {
+      failure: `Instagram returned GraphQL errors: ${JSON.stringify(graphQlErrors.data.errors)}`,
+    };
+  }
   const parsed = responseSchema.safeParse(body);
-  const info = parsed.success
-    ? parsed.data.data.xdt_location_get_web_info.native_location_data.location_info
-    : null;
+  if (!parsed.success) {
+    return { failure: `Instagram returned an invalid place response: ${parsed.error.message}` };
+  }
+  const info = parsed.data.data.xdt_location_get_web_info.native_location_data.location_info;
   if (info === null || info.location_id !== placeId) {
-    return null;
+    return { failure: `Instagram returned no place data for ${placeId}` };
   }
   return {
-    name: info.name,
-    address: info.location_address,
-    city: info.location_city,
-    zip: info.location_zip,
-    latitude: info.lat,
-    longitude: info.lng,
-    category: info.category,
-    details: parseDetails(info),
+    place: {
+      name: info.name,
+      address: info.location_address,
+      city: info.location_city,
+      zip: info.location_zip,
+      latitude: info.lat,
+      longitude: info.lng,
+      category: info.category,
+      details: parseDetails(info),
+    },
   };
+}
+
+const RETRY_FAILED_LOOKUP_AFTER_MS = 12 * 60 * 60 * 1000;
+
+function needsLookup(metadata: StoryLocationObservation["metadata"], now: Date) {
+  if (metadata.lastLookupAttemptAt === null) {
+    return true;
+  }
+  return (
+    metadata.lastLookupFailure !== null &&
+    now.getTime() - metadata.lastLookupAttemptAt >= RETRY_FAILED_LOOKUP_AFTER_MS
+  );
 }
 
 function listPlacesToLookUp(
   mediaPks: Iterable<string>,
   repository: NonNullable<FetchStoriesManifestOptions["storyRepository"]>,
+  now: Date,
 ) {
   const placeIds = new Set<string>();
   for (const mediaPk of mediaPks) {
@@ -95,7 +122,7 @@ function listPlacesToLookUp(
       if (
         metadata.instagramPlaceId !== null &&
         NUMERIC_PLACE_ID.test(metadata.instagramPlaceId) &&
-        metadata.lastLookupAttemptAt === null
+        needsLookup(metadata, now)
       ) {
         placeIds.add(metadata.instagramPlaceId);
       }
@@ -111,10 +138,15 @@ export async function lookUpTaggedPlaces(
   logger: Pick<Logger, "warn">,
   now: () => Date,
 ) {
-  if (client.getPlace === undefined || repository?.recordPlaceLookup === undefined) {
+  if (
+    client.getPlace === undefined ||
+    repository?.recordPlaceLookup === undefined ||
+    repository.recordFailedPlaceLookup === undefined
+  ) {
     return;
   }
-  for (const placeId of listPlacesToLookUp(savedMediaPks, repository)) {
+  for (const placeId of listPlacesToLookUp(savedMediaPks, repository, now())) {
+    let outcome: PlaceResponseResult;
     try {
       // oxlint-disable-next-line no-await-in-loop -- Keep requests sequential and stop on rate limits.
       const response = await client.getPlace(placeId);
@@ -122,12 +154,22 @@ export async function lookUpTaggedPlaces(
         logger.warn(`place lookup stopped after Instagram HTTP ${response.status}`);
         return;
       }
-      const place = response.ok ? parsePlaceResponse(response.json(), placeId) : null;
-      if (place !== null) {
-        repository.recordPlaceLookup(placeId, place, now());
+      outcome = response.ok
+        ? parsePlaceResponse(response.json(), placeId)
+        : { failure: `Instagram answered HTTP ${response.status}` };
+    } catch (error) {
+      logger.warn("place lookup failed; continuing story ingestion");
+      // Only the message is kept: an error object can carry request headers or cookies.
+      outcome = { failure: error instanceof Error ? error.message : String(error) };
+    }
+    try {
+      if ("place" in outcome) {
+        repository.recordPlaceLookup(placeId, outcome.place, now());
+      } else {
+        repository.recordFailedPlaceLookup(placeId, outcome.failure, now());
       }
     } catch {
-      logger.warn("place lookup failed; continuing story ingestion");
+      logger.warn("place lookup could not be recorded; continuing story ingestion");
     }
   }
 }

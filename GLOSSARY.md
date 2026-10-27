@@ -31,6 +31,11 @@ to the same tagged place.
 Fetching a tagged place's current information from Instagram by its place
 identifier, independently of any story that references it.
 
+**Failed place lookup**:
+A place lookup that returned no usable place: no place data, an invalid response, a
+GraphQL error, or a thrown error. The place keeps its known values and records the
+attempt time and the raw error until a later lookup succeeds.
+
 **Category**:
 The type Instagram assigns to a tagged place, such as a bistro or a bridge, kept in
 the wording and language Instagram returned.

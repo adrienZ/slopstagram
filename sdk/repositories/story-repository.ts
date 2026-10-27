@@ -9,6 +9,7 @@ import {
   fillTaggedPlace,
   readLocationObservations,
   readPlaceDetails,
+  recordFailedPlaceLookup,
   recordPlaceLookup,
 } from "./location-metadata-repository.ts";
 import type { PlaceFillInput, PlaceLookupInput } from "../location-metadata-service.ts";
@@ -299,6 +300,12 @@ export class StoryRepository {
   recordPlaceLookup(instagramPlaceId: string, incoming: PlaceLookupInput, lookedUpAt: Date) {
     this.database.transaction((transaction) => {
       recordPlaceLookup(transaction, instagramPlaceId, incoming, lookedUpAt.getTime());
+    });
+  }
+
+  recordFailedPlaceLookup(instagramPlaceId: string, error: string, attemptedAt: Date) {
+    this.database.transaction((transaction) => {
+      recordFailedPlaceLookup(transaction, instagramPlaceId, error, attemptedAt.getTime());
     });
   }
 

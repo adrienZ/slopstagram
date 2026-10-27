@@ -56,6 +56,13 @@ export interface PlaceLookupInput extends PlaceFillInput {
   details?: PlaceDetailsInput;
 }
 
+const MAX_LOOKUP_FAILURE_LENGTH = 2000;
+
+// The raw error text is kept, only bounded in length.
+export function boundLookupFailure(error: string) {
+  return error.slice(0, MAX_LOOKUP_FAILURE_LENGTH);
+}
+
 function fillText(known: string | null, incoming: string | null | undefined) {
   if (known !== null || incoming === null || incoming === undefined) {
     return known;

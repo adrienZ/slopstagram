@@ -249,6 +249,7 @@ test("live ingestion shares tagged places and exposes exact metadata with occurr
     city: null,
     zip: null,
     lastLookupAttemptAt: null,
+    lastLookupFailure: null,
   });
   assert.equal(present(shared.locationObservations)[0].metadata.id, places[0].metadata.id);
   assert.notEqual(present(homonym.locationObservations)[0].metadata.id, places[0].metadata.id);
