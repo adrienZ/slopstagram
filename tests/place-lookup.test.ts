@@ -670,3 +670,107 @@ test("a malformed detail never blocks the place fill and keeps the earlier detai
   assert.equal(repository.findPlaceDetails("222"), null);
   assert.equal(repository.findPlaceDetails("111")?.phone, "0102");
 });
+
+function locationStickers(repository: StoryRepository, pk: string) {
+  return (
+    repository.findByMediaPk(pk)?.annotations?.stickers.filter(({ kind }) => kind === "location") ??
+    []
+  );
+}
+
+function shownLocations(repository: StoryRepository, pk: string) {
+  return repository.findByMediaPk(pk)?.annotations?.locations;
+}
+
+test("a place named by a lookup becomes the location sticker of a story that only had its id", async (context) => {
+  const repository = setup(context);
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "111" })], {
+      "111": () =>
+        response(
+          placeBody("111", { name: "Chez Paul", address: "1 Rue des Halles", lat: 1, lng: 2 }),
+        ),
+    }),
+  );
+  assert.deepEqual(shownLocations(repository, "m1"), ["Chez Paul, 1 Rue des Halles"]);
+  const [sticker] = locationStickers(repository, "m1");
+  assert.equal(sticker.source, "story_locations");
+  assert.equal(storedPlace(repository, "m1").name, "Chez Paul");
+  const observation = repository.findByMediaPk("m1")?.annotations?.locationObservations?.[0];
+  assert.equal(observation?.occurrenceId, sticker.occurrenceId);
+});
+
+test("a name without an address is the whole label", async (context) => {
+  const repository = setup(context);
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "111" })], {
+      "111": () => response(placeBody("111", { name: "Chez Paul" })),
+    }),
+  );
+  assert.deepEqual(shownLocations(repository, "m1"), ["Chez Paul"]);
+});
+
+test("every story of the run that references the place gets the location sticker", async (context) => {
+  const repository = setup(context);
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "111" }), storyAt("m2", { pk: "111" })], {
+      "111": () => response(placeBody("111", { name: "Chez Paul" })),
+    }),
+  );
+  assert.deepEqual(shownLocations(repository, "m1"), ["Chez Paul"]);
+  assert.deepEqual(shownLocations(repository, "m2"), ["Chez Paul"]);
+});
+
+test("a story that already shows the place keeps its single location sticker", async (context) => {
+  const repository = setup(context);
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "111", name: "Story name" })], {
+      "111": () => response(placeBody("111", { name: "Instagram name", address: "Filled" })),
+    }),
+  );
+  assert.deepEqual(shownLocations(repository, "m1"), ["Story name"]);
+  assert.equal(locationStickers(repository, "m1").length, 1);
+});
+
+test("a lookup that names nothing or fails adds no location sticker", async (context) => {
+  const repository = setup(context);
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "1" }), storyAt("m2", { pk: "2" })], {
+      "1": () => response(placeBody("1", { lat: 1, lng: 2 })),
+      "2": () => response(placeBody("2", { name: "Rejected" }), 500),
+    }),
+  );
+  assert.deepEqual(locationStickers(repository, "m1"), []);
+  assert.deepEqual(locationStickers(repository, "m2"), []);
+});
+
+test("a later save of the story keeps the location sticker made by a lookup", async (context) => {
+  const repository = setup(context);
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "111" })], {
+      "111": () => response(placeBody("111", { name: "Chez Paul" })),
+    }),
+  );
+  await repository.save(storyAt("m1", { pk: "111" }));
+  assert.deepEqual(shownLocations(repository, "m1"), ["Chez Paul"]);
+  assert.equal(locationStickers(repository, "m1").length, 1);
+});
+
+test("a later lookup of the same place never adds a second location sticker", async (context) => {
+  const repository = setup(context);
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "111" })], {
+      "111": () => response(placeBody("111", { name: "Chez Paul" })),
+    }),
+  );
+  repository.recordPlaceLookup("111", { name: "Chez Paul", address: "Later address" }, fixedNow());
+  assert.equal(locationStickers(repository, "m1").length, 1);
+  assert.deepEqual(shownLocations(repository, "m1"), ["Chez Paul"]);
+});

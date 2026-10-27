@@ -20,3 +20,9 @@ A failed lookup, including a response without place data, records the raw error 
 place together with the attempt time and leaves known values untouched. Existing places
 are looked up by a one-time, throttled, local backfill rather than by the first
 ingestion, so ingestion only looks up places referenced by the stories it just saved.
+
+A story saved with only a place id has no location sticker, because the payload carries no
+label, although the image shows one. When a lookup names the place, each story observation
+of it that has no sticker gets a location sticker labelled with the place's name and
+address, like the stickers observed in stories, and the observation is linked to it. A
+story that already shows a location sticker with that label is left alone.

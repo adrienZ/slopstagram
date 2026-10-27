@@ -56,6 +56,12 @@ export interface PlaceLookupInput extends PlaceFillInput {
   details?: PlaceDetailsInput;
 }
 
+// A location sticker found by a lookup reads like the ones observed in stories: name, then address.
+export function locationStickerLabel(place: { name: string | null; address: string | null }) {
+  const label = [place.name, place.address].filter((part) => part !== null).join(", ");
+  return label.length > 0 ? label : null;
+}
+
 const MAX_LOOKUP_FAILURE_LENGTH = 2000;
 
 // The raw error text is kept, only bounded in length.
