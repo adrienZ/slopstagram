@@ -9,6 +9,7 @@ interface BrowserFetchCall {
   requestUrl: string;
   mediaQuery?: { documentId: string; reelIds: Array<string> };
   musicAssetId?: string;
+  placeQuery?: { documentId: string; placeId: string };
 }
 
 function createSession(
@@ -95,6 +96,38 @@ test("music lookup uses the authenticated session and preserves large numeric au
       musicAssetId: "10882110464472591",
     },
   ]);
+});
+
+test("looks up a place with the location container query from the authenticated page", async () => {
+  const calls: Array<BrowserFetchCall> = [];
+  const body = { data: { xdt_location_get_web_info: { native_location_data: null } } };
+  const { getPlace } = createInstagramClient(
+    createSession(body, calls, "text/javascript; charset=utf-8"),
+  );
+  assert.notEqual(getPlace, undefined);
+  if (getPlace === undefined) {
+    throw new Error("Place lookup unavailable");
+  }
+  const result = await getPlace("633725939834688");
+  assert.deepEqual(result.json(), body);
+  assert.deepEqual(calls, [
+    {
+      appId: "936619743392459",
+      requestUrl: "https://www.instagram.com/api/graphql",
+      placeQuery: { documentId: "28572807415659320", placeId: "633725939834688" },
+    },
+  ]);
+});
+
+test("rejects an HTML place lookup response", async () => {
+  const { getPlace } = createInstagramClient(
+    createSession("<!DOCTYPE html><html></html>", [], "text/html; charset=utf-8"),
+  );
+  if (getPlace === undefined) {
+    throw new Error("Place lookup unavailable");
+  }
+  const result = await getPlace("633725939834688");
+  assert.throws(() => result.json(), /text\/html/u);
 });
 
 test("normalizes numeric Instagram tray identifiers to strings", async () => {

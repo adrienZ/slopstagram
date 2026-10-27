@@ -12,6 +12,7 @@ import type {
 } from "./lib/types.ts";
 import { createInstagramClient } from "./story-client-service.ts";
 import { enrichCurrentMusicAssets } from "./music-asset-enrichment.ts";
+import { lookUpTaggedPlaces } from "./place-lookup.ts";
 import { createFetchState } from "./story-failure-service.ts";
 import { fetchMissingStories } from "./story-live-fetch-service.ts";
 import { createManifestUsers, createOutputUsers } from "./story-output-service.ts";
@@ -166,23 +167,20 @@ export async function fetchStoriesManifest(
   logger.info(
     `tray fetched: reels=${trayJson.tray.length} stories=${state.expectedMediaPks.length} status=${trayJson.status}`,
   );
+  const repository = options.storyRepository ?? storyRepository;
   await fetchMissingStoriesForReport({
     client,
     logger,
     manifestOptions: options,
     now,
     state,
-    storyRepository: options.storyRepository ?? storyRepository,
+    storyRepository: repository,
     storyStorage: storage,
     tray: trayJson.tray,
   });
 
-  await enrichCurrentMusicAssets(
-    client,
-    state.cachedItems.values(),
-    options.storyRepository ?? storyRepository,
-    logger,
-  );
+  await enrichCurrentMusicAssets(client, state.cachedItems.values(), repository, logger);
+  await lookUpTaggedPlaces(client, state.fetchedMediaPks, repository, logger, now);
 
   const manifestUsers = createManifestUsers(
     trayJson.tray,

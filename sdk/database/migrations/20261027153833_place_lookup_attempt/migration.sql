@@ -1,0 +1,1 @@
+ALTER TABLE `metadata_location` ADD `lastLookupAttemptAt` integer;

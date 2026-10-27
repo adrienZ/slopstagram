@@ -21,6 +21,9 @@ const IG_APP_ID = "936619743392459";
 const REELS_TRAY_URL = "https://www.instagram.com/api/v1/feed/reels_tray/";
 const REELS_MEDIA_URL = "https://www.instagram.com/graphql/query";
 const MUSIC_ASSET_URL = "https://www.instagram.com/api/v1/clips/music/";
+const PLACE_URL = "https://www.instagram.com/api/graphql";
+// PolarisExploreLocationsContainerQuery, verified against the web location page.
+const PLACE_DOCUMENT_ID = "28572807415659320";
 // PolarisStoriesV3ReelPageStandaloneQuery, verified against the web story viewer.
 const REELS_MEDIA_DOCUMENT_ID = "28449850404637481";
 
@@ -103,6 +106,7 @@ interface BrowserFetchInput {
   requestUrl: string;
   mediaQuery?: { documentId: string; reelIds: Array<string> };
   musicAssetId?: string;
+  placeQuery?: { documentId: string; placeId: string };
 }
 
 interface InstagramClientPage {
@@ -174,6 +178,50 @@ async function fetchFromInstagramPage(
   );
 }
 
+async function fetchPlaceFromInstagramPage(
+  session: InstagramClientSession,
+  placeId: string,
+): Promise<BrowserFetchResponse> {
+  return await session.page.evaluate(
+    async ({ appId, requestUrl, placeQuery }) => {
+      // The location query is only answered with the page's own anti-forgery tokens.
+      // Avoid inner named functions here: tsx injects a __name helper the browser lacks.
+      const pageRequire: (name: string) => Record<string, string | undefined> | undefined =
+        globalThis.require;
+      const lsd = pageRequire("LSD")?.token ?? "";
+      const user = pageRequire("CurrentUserInitialData");
+      const response = await globalThis.fetch(requestUrl, {
+        body: new globalThis.URLSearchParams({
+          doc_id: placeQuery?.documentId ?? "",
+          variables: JSON.stringify({ location_id_str: placeQuery?.placeId, show_nearby: false }),
+          fb_dtsg: pageRequire("DTSGInitialData")?.token ?? "",
+          lsd,
+          av: user?.NON_FACEBOOK_USER_ID ?? user?.ACCOUNT_ID ?? "",
+        }).toString(),
+        headers: new globalThis.Headers({
+          "content-type": "application/x-www-form-urlencoded",
+          "x-fb-lsd": lsd,
+          "x-ig-app-id": appId,
+        }),
+        method: "POST",
+        signal: globalThis.AbortSignal.timeout(20_000),
+      });
+
+      return {
+        body: await response.text(),
+        headers: Object.fromEntries(response.headers.entries()),
+        ok: response.ok,
+        status: response.status,
+      };
+    },
+    {
+      appId: IG_APP_ID,
+      requestUrl: PLACE_URL,
+      placeQuery: { documentId: PLACE_DOCUMENT_ID, placeId },
+    },
+  );
+}
+
 function toClientResponse<T>(response: BrowserFetchResponse, schema: z.ZodType<T>) {
   return {
     headers: response.headers,
@@ -190,6 +238,10 @@ export function createInstagramClient(session: InstagramClientSession): Instagra
         await fetchFromInstagramPage(session, MUSIC_ASSET_URL, undefined, audioId),
         JsonValueSchema,
       );
+    },
+
+    async getPlace(placeId) {
+      return toClientResponse(await fetchPlaceFromInstagramPage(session, placeId), JsonValueSchema);
     },
 
     async getReelsMedia(reelIds) {

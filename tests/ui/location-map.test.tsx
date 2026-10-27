@@ -60,6 +60,7 @@ function observation(
             longitude: null,
             facebookPlacesId: null,
             externalSource: null,
+            lastLookupAttemptAt: null,
           }
         : {
             status: "usable",
@@ -71,6 +72,7 @@ function observation(
             longitude: 2,
             facebookPlacesId: null,
             externalSource: null,
+            lastLookupAttemptAt: null,
           },
   };
 }

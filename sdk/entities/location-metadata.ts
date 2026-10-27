@@ -16,6 +16,7 @@ export const metadataLocations = sqliteTable(
     longitude: real(),
     facebookPlacesId: text(),
     externalSource: text(),
+    lastLookupAttemptAt: integer(),
   },
   (table) => [
     check(
@@ -62,6 +63,8 @@ export const storyLocationObservations = sqliteTable(
 const StoredLocationSchema = createSelectSchema(metadataLocations, {
   latitude: (schema) => schema.min(-90).max(90),
   longitude: (schema) => schema.min(-180).max(180),
+  // Stories cached before lookups existed have no attempt time.
+  lastLookupAttemptAt: (schema) => schema.nullable().default(null),
 });
 const LocationMetadataSchema = z.discriminatedUnion("status", [
   StoredLocationSchema.extend({ status: z.literal("partial") }),
@@ -74,7 +77,11 @@ const LocationMetadataSchema = z.discriminatedUnion("status", [
 export const StoryLocationObservationSchema = createSelectSchema(storyLocationObservations)
   .omit({ mediaPk: true, sortOrder: true, locationId: true })
   .extend({ metadata: LocationMetadataSchema });
-export type LocationFields = Omit<typeof metadataLocations.$inferSelect, "id">;
+// Lookup bookkeeping is written only by place lookups, never by story observations.
+export type LocationFields = Omit<
+  typeof metadataLocations.$inferSelect,
+  "id" | "lastLookupAttemptAt"
+>;
 export type LocationMetadata = z.infer<typeof LocationMetadataSchema>;
 export type StoryLocationObservation = z.infer<typeof StoryLocationObservationSchema>;
 export function classifyLocation(row: typeof metadataLocations.$inferSelect): LocationMetadata {

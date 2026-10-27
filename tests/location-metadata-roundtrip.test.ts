@@ -245,6 +245,7 @@ test("live ingestion shares tagged places and exposes exact metadata with occurr
     longitude: 2.3522,
     facebookPlacesId: "00042",
     externalSource: "facebook_places",
+    lastLookupAttemptAt: null,
   });
   assert.equal(present(shared.locationObservations)[0].metadata.id, places[0].metadata.id);
   assert.notEqual(present(homonym.locationObservations)[0].metadata.id, places[0].metadata.id);
