@@ -238,8 +238,5 @@ test("the cached file duration survives partial promotion and remains distinct f
   assert.equal(promoted?.status, "usable");
   assert.equal(promoted.audioDurationMs, 1000);
   assert.equal(promoted.durationMs, 999_999);
-  assert.equal(
-    database.$client.prepare("SELECT count(*) n FROM metadata_music_partial").get()?.n,
-    0,
-  );
+  assert.equal(database.$client.prepare("SELECT count(*) n FROM metadata_music").get()?.n, 1);
 });

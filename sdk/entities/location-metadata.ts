@@ -12,30 +12,35 @@ export const metadataLocations = sqliteTable(
     instagramPlaceId: text().unique(),
     name: text(),
     address: text(),
-    latitude: real().notNull(),
-    longitude: real().notNull(),
+    latitude: real(),
+    longitude: real(),
     facebookPlacesId: text(),
     externalSource: text(),
   },
   (table) => [
-    check("location_latitude_bounds", sql`${table.latitude} BETWEEN -90 AND 90`),
-    check("location_longitude_bounds", sql`${table.longitude} BETWEEN -180 AND 180`),
+    check(
+      "location_latitude_bounds",
+      sql`${table.latitude} IS NULL OR ${table.latitude} BETWEEN -90 AND 90`,
+    ),
+    check(
+      "location_longitude_bounds",
+      sql`${table.longitude} IS NULL OR ${table.longitude} BETWEEN -180 AND 180`,
+    ),
+    ...[
+      table.instagramPlaceId,
+      table.name,
+      table.address,
+      table.facebookPlacesId,
+      table.externalSource,
+    ].map((column, position) =>
+      check(
+        `location_text_nonempty_${position}`,
+        sql`${column} IS NULL OR length(trim(${column}, char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) > 0`,
+      ),
+    ),
   ],
 );
 
-export const partialMetadataLocations = sqliteTable("metadata_location_partial", {
-  id: text().primaryKey().notNull().$defaultFn(randomUUID),
-  instagramPlaceId: text().unique(),
-  name: text(),
-  address: text(),
-  latitude: real(),
-  longitude: real(),
-  facebookPlacesId: text(),
-  externalSource: text(),
-});
-
-// Observations also exist without a displayable sticker (for example an ID-only
-// place). Their provenance survives independently until a certain link is possible.
 export const storyLocationObservations = sqliteTable(
   "story_location_observations",
   {
@@ -47,37 +52,33 @@ export const storyLocationObservations = sqliteTable(
     sortOrder: integer().notNull(),
     providerOccurrenceId: text(),
     occurrenceId: text().references(() => storyStickers.occurrenceId, { onDelete: "set null" }),
-    locationId: text().references(() => metadataLocations.id),
-    partialLocationId: text().references(() => partialMetadataLocations.id),
+    locationId: text()
+      .notNull()
+      .references(() => metadataLocations.id),
   },
-  (table) => [
-    index("location_observations_story_source").on(table.mediaPk, table.source),
-    index("location_observations_partial").on(table.partialLocationId),
-    check(
-      "location_observation_single_metadata",
-      sql`(${table.locationId} IS NOT NULL) != (${table.partialLocationId} IS NOT NULL)`,
-    ),
-  ],
+  (table) => [index("location_observations_story_source").on(table.mediaPk, table.source)],
 );
 
+const StoredLocationSchema = createSelectSchema(metadataLocations, {
+  latitude: (schema) => schema.min(-90).max(90),
+  longitude: (schema) => schema.min(-180).max(180),
+});
 const LocationMetadataSchema = z.discriminatedUnion("status", [
-  createSelectSchema(partialMetadataLocations, {
-    latitude: (schema) => schema.min(-90).max(90),
-    longitude: (schema) => schema.min(-180).max(180),
-  }).extend({ status: z.literal("partial") }),
-  createSelectSchema(metadataLocations, {
-    latitude: (schema) => schema.min(-90).max(90),
-    longitude: (schema) => schema.min(-180).max(180),
-  }).extend({ status: z.literal("usable") }),
+  StoredLocationSchema.extend({ status: z.literal("partial") }),
+  StoredLocationSchema.extend({
+    status: z.literal("usable"),
+    latitude: z.number().min(-90).max(90),
+    longitude: z.number().min(-180).max(180),
+  }),
 ]);
-
 export const StoryLocationObservationSchema = createSelectSchema(storyLocationObservations)
-  .omit({ mediaPk: true, sortOrder: true, locationId: true, partialLocationId: true })
+  .omit({ mediaPk: true, sortOrder: true, locationId: true })
   .extend({ metadata: LocationMetadataSchema });
-
-export type LocationFields = Omit<typeof partialMetadataLocations.$inferSelect, "id">;
-export type LocationMetadata =
-  | ({ status: "usable" } & typeof metadataLocations.$inferSelect)
-  | ({ status: "partial" } & typeof partialMetadataLocations.$inferSelect);
-
+export type LocationFields = Omit<typeof metadataLocations.$inferSelect, "id">;
+export type LocationMetadata = z.infer<typeof LocationMetadataSchema>;
 export type StoryLocationObservation = z.infer<typeof StoryLocationObservationSchema>;
+export function classifyLocation(row: typeof metadataLocations.$inferSelect): LocationMetadata {
+  return row.latitude !== null && row.longitude !== null
+    ? { ...row, latitude: row.latitude, longitude: row.longitude, status: "usable" }
+    : { ...row, status: "partial" };
+}

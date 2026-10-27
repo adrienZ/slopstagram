@@ -8,10 +8,10 @@ and its existing label formatting unchanged.
 
 Records are shared only when their Instagram place or audio identifiers match;
 matching names or matching music titles and artists are insufficient evidence of
-identity. Incomplete observations are retained in separate typed partial metadata
-tables, with optional metadata fields, rather than admitted to the usable metadata
-tables; when the shared provider identifier is unavailable, keep observations
-separate rather than risk merging distinct places or recordings.
+identity. Incomplete and usable metadata share one typed table per kind, with
+nullable fields; usability is derived from the fields. Present values must satisfy
+database checks. When the shared provider identifier is unavailable, keep
+observations separate rather than risk merging distinct places or recordings.
 
 Location metadata serves the account's map and requires a valid latitude and
 longitude pair; the address is optional. A location's existing sticker label remains
@@ -28,7 +28,12 @@ empty fields never erase known values. Backfill from older cache entries only fi
 missing fields, so replaying historical observations cannot replace newer metadata.
 
 When a normal ingestion or backfill provides the missing required information and
-the association is certain, automatically promote the partial observation into
-usable metadata, preserving its established occurrence links and removing the
-superseded partial entry. Promotion does not trigger additional Instagram requests
+the association is certain, automatically make the existing metadata usable,
+preserving its established occurrence links. If an identified record already exists, reconcile the records
+and retain their links. Completion does not trigger additional Instagram requests
 and does not change sticker labels.
+
+The original decision used separate partial and usable tables. On 2026-10-27,
+they were consolidated to avoid duplicate schemas and relinking during ordinary
+completion. During migration, a matching usable record takes precedence, partial
+values fill gaps, and invalid present values become missing.

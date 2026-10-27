@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type {
   metadataLocations,
-  partialMetadataLocations,
   LocationFields,
   StoryLocationObservation,
 } from "./entities/location-metadata.ts";
@@ -30,34 +29,14 @@ function mergeFields(
 
 export function planLocationMetadataWrite(
   observation: LocationObservationInput,
-  knownPlaces: {
-    usable: typeof metadataLocations.$inferSelect | undefined;
-    partial: typeof partialMetadataLocations.$inferSelect | undefined;
-  },
+  known: typeof metadataLocations.$inferSelect | undefined,
   previous?: StoryLocationObservation,
 ) {
-  const { usable, partial } = knownPlaces;
-  const known = usable ?? partial ?? previous?.metadata;
   const fields = mergeFields(
     mergeFields(previous?.metadata, known ?? observation.fields),
     observation.fields,
   );
-  const id = known?.id ?? randomUUID();
-  if (fields.latitude !== null && fields.longitude !== null) {
-    const partialIds = new Set<string>();
-    if (partial !== undefined) {
-      partialIds.add(partial.id);
-    }
-    if (previous?.metadata.status === "partial") {
-      partialIds.add(previous.metadata.id);
-    }
-    return {
-      status: "usable" as const,
-      entry: { ...fields, latitude: fields.latitude, longitude: fields.longitude, id },
-      promotedPartialIds: [...partialIds],
-    };
-  }
-  return { status: "partial" as const, entry: { ...fields, id }, promotedPartialIds: [] };
+  return { ...fields, id: known?.id ?? previous?.metadata.id ?? randomUUID() };
 }
 
 function findPreviousObservation(
