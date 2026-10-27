@@ -17,7 +17,6 @@ import {
   storyImageVersions,
   storyVideoVersions,
   storyStickers,
-  storyStickerSources,
 } from "../entities/story.ts";
 import { createLogger, type Logger } from "../lib/logging-service.ts";
 import { StoryItemSchema } from "../lib/story-schemas.ts";
@@ -136,18 +135,11 @@ function readStoryAnnotations(database: AnnotationDatabase, mediaPk: string): St
     .map(({ providerOccurrenceId, ...sticker }) =>
       providerOccurrenceId === null ? sticker : { ...sticker, providerOccurrenceId },
     );
-  const sources = database
-    .select({ source: storyStickerSources.source })
-    .from(storyStickerSources)
-    .where(eq(storyStickerSources.mediaPk, mediaPk))
-    .orderBy(asc(storyStickerSources.source))
-    .all()
-    .map((entry) => entry.source);
   const locations = stickers
     .filter((sticker) => sticker.kind === "location")
     .map((sticker) => sticker.label);
   const locationObservations = readLocationObservations(database, mediaPk);
-  const annotations: StoryAnnotations = { locations, stickers, sources };
+  const annotations: StoryAnnotations = { locations, stickers };
   const audio = findStoryAudio(database, mediaPk);
   if (audio) {
     annotations.storyAudio = audio;
@@ -176,8 +168,7 @@ function replaceStoryAnnotations(
           );
         })
       : [];
-  const { annotations, stickerEntries } = planStoryAnnotations(previous, story, updates);
-  database.delete(storyStickerSources).where(eq(storyStickerSources.mediaPk, story.pk)).run();
+  const { stickerEntries } = planStoryAnnotations(previous, story, updates);
   database
     .delete(storyStickers)
     .where(
@@ -200,13 +191,6 @@ function replaceStoryAnnotations(
         target: storyStickers.occurrenceId,
         set: entry,
       })
-      .run();
-  }
-  const sources = [...new Set(annotations.sources)];
-  if (sources.length > 0) {
-    database
-      .insert(storyStickerSources)
-      .values(sources.map((source) => ({ source, mediaPk: story.pk })))
       .run();
   }
   const current = readStoryAnnotations(database, story.pk);

@@ -85,7 +85,6 @@ describe("StoryRepository", () => {
       accessibility_caption: "Updated",
       annotations: {
         locations: ["Paris"],
-        sources: ["story_hashtags", "story_locations"],
         stickers: [
           {
             kind: "hashtag",
@@ -191,7 +190,7 @@ describe("StoryRepository", () => {
           locations: [],
           owner_pk: "user-pk",
           story: {
-            annotations: { locations: [], stickers: [], sources: [] },
+            annotations: { locations: [], stickers: [] },
             media_type: 2,
             pk: "newer-story",
             taken_at: 1_767_312_000,
@@ -207,7 +206,6 @@ describe("StoryRepository", () => {
           story: {
             annotations: {
               locations: [],
-              sources: ["story_hashtags"],
               stickers: [
                 {
                   kind: "hashtag",

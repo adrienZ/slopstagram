@@ -59,17 +59,6 @@ export const storyStickers = sqliteTable(
   (table) => [index("story_stickers_media_order").on(table.mediaPk, table.sortOrder)],
 );
 
-export const storyStickerSources = sqliteTable(
-  "story_sticker_sources",
-  {
-    mediaPk: text()
-      .notNull()
-      .references(() => stories.mediaPk, { onDelete: "cascade" }),
-    source: text().notNull(),
-  },
-  (table) => [primaryKey({ columns: [table.mediaPk, table.source] })],
-);
-
 const StoredStoryStickerSchema = createSelectSchema(storyStickers, {
   occurrenceId: (schema) => schema.min(1),
   providerOccurrenceId: (schema) => schema.min(1),

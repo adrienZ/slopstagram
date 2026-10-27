@@ -280,7 +280,6 @@ test("music links survive reordered live input and cold resaves, with source cle
     cleared.stickers,
     before.stickers.filter(({ kind }) => kind === "location"),
   );
-  assert.equal(cleared.sources?.includes("story_music_stickers"), true);
 });
 
 test("malformed or omitted music sources preserve rich metadata and all saved contributions", async (context) => {
@@ -309,7 +308,7 @@ test("malformed or omitted music sources preserve rich metadata and all saved co
   }
 });
 
-test("failed promotion rolls back metadata, links, ownership and media and removes superseded partials only on success", async (context) => {
+test("failed metadata update rolls back metadata, links, ownership and media", async (context) => {
   const { database, repository } = setup(context);
   const users = new InstagramUserRepository(database);
   const owner = { id: "u1", pk: "u1", username: "one", full_name: "One" };
@@ -334,8 +333,7 @@ test("failed promotion rolls back metadata, links, ownership and media and remov
   });
   const before = repository.findByMediaPk("m1");
   const partial = repository.findByMediaPk("m2");
-  database.$client
-    .exec(`CREATE TEMP TRIGGER reject_partial_removal BEFORE DELETE ON metadata_music_partial
+  database.$client.exec(`CREATE TEMP TRIGGER reject_partial_removal BEFORE UPDATE ON metadata_music
     BEGIN SELECT RAISE(ABORT, 'fixture promotion failure'); END`);
   const promoted: StoryItem = {
     pk: "m1",
@@ -362,16 +360,7 @@ test("failed promotion rolls back metadata, links, ownership and media and remov
   assert.deepEqual(first.metadata, second.metadata);
   assert.equal(first.occurrenceId, before?.annotations?.stickers[0].occurrenceId);
   assert.equal(cold.listByUsername("two").length, 1);
-  assert.equal(
-    database.$client.prepare("SELECT count(*) n FROM metadata_music_partial").get()?.n,
-    0,
-  );
-  assert.equal(
-    database.$client
-      .prepare("SELECT count(*) n FROM story_music_observations WHERE partialMusicId IS NOT NULL")
-      .get()?.n,
-    0,
-  );
+  assert.equal(database.$client.prepare("SELECT count(*) n FROM metadata_music").get()?.n, 1);
 });
 
 test("changed audio identity cannot inherit the previous recording's missing fields", async (context) => {

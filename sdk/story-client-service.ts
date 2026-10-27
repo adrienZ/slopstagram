@@ -21,20 +21,21 @@ const IG_APP_ID = "936619743392459";
 const REELS_TRAY_URL = "https://www.instagram.com/api/v1/feed/reels_tray/";
 const REELS_MEDIA_URL = "https://www.instagram.com/graphql/query";
 const MUSIC_ASSET_URL = "https://www.instagram.com/api/v1/clips/music/";
-// PolarisStoriesV3ReelPageStandaloneQuery, verified against the web story viewer.
-const REELS_MEDIA_DOCUMENT_ID = "28449850404637481";
+// PolarisStoriesV3ReelPageGalleryQuery, verified against the web story viewer.
+const REELS_MEDIA_DOCUMENT_ID = "29306733562261201";
 
 export class InstagramApiResponseError extends Error {
   override readonly name = "InstagramApiResponseError";
   readonly nonRetryable = true;
 }
 
-const GraphqlReelsMediaResponseSchema = z
+const GalleryResponseSchema = z
   .object({
     data: z
       .object({
-        xdt_api__v1__feed__reels_media: z.object({
-          reels_media: z.array(StoryReelSchema),
+        xdt_api__v1__feed__reels_media__connection: z.object({
+          edges: z.array(z.object({ node: StoryReelSchema })),
+          page_info: z.object({ has_next_page: z.boolean(), end_cursor: z.string().nullish() }),
         }),
       })
       .nullish(),
@@ -46,8 +47,7 @@ const GraphqlReelsMediaResponseSchema = z
         `Instagram story media query failed: ${response.errors?.[0]?.message ?? "missing media data"}`,
       );
     }
-
-    return response.data.xdt_api__v1__feed__reels_media;
+    return response.data.xdt_api__v1__feed__reels_media__connection;
   });
 
 function quoteNumericIdentifiers(body: string): string {
@@ -101,7 +101,7 @@ interface BrowserFetchResponse {
 interface BrowserFetchInput {
   appId: string;
   requestUrl: string;
-  mediaQuery?: { documentId: string; reelIds: Array<string> };
+  mediaQuery?: { documentId: string; reelIds: Array<string>; after?: string };
   musicAssetId?: string;
 }
 
@@ -144,9 +144,11 @@ async function fetchFromInstagramPage(
           ? new globalThis.URLSearchParams({
               doc_id: query.documentId,
               variables: JSON.stringify({
-                reel_ids_arr: query.reelIds,
-                media_id: null,
-                is_highlight: false,
+                initial_reel_id: query.reelIds[0],
+                reel_ids: query.reelIds,
+                first: Math.min(10, query.reelIds.length),
+                last: 0,
+                after: query.after ?? null,
                 __relay_internal__pv__PolarisCommunityNoteStoriesLabelEnabledrelayprovider: false,
               }),
             }).toString()
@@ -193,13 +195,54 @@ export function createInstagramClient(session: InstagramClientSession): Instagra
     },
 
     async getReelsMedia(reelIds) {
-      return toClientResponse(
-        await fetchFromInstagramPage(session, REELS_MEDIA_URL, {
+      if (reelIds.length === 0) {
+        return { ok: true, status: 200, headers: {}, json: () => ({ reels_media: [] }) };
+      }
+      const reels: Array<StoryReel> = [];
+      const cursors = new Set<string>();
+      let after: string | undefined;
+      for (;;) {
+        // The gallery query limits each page to ten reels, even for a larger request.
+        const query: NonNullable<BrowserFetchInput["mediaQuery"]> = {
           documentId: REELS_MEDIA_DOCUMENT_ID,
           reelIds,
-        }),
-        GraphqlReelsMediaResponseSchema,
-      );
+        };
+        if (after !== undefined) {
+          query.after = after;
+        }
+        // oxlint-disable-next-line no-await-in-loop -- Each cursor depends on the previous page.
+        const response = await fetchFromInstagramPage(session, REELS_MEDIA_URL, query);
+        if (!response.ok) {
+          return toClientResponse(
+            response,
+            GalleryResponseSchema.transform((page) => ({
+              reels_media: page.edges.map(({ node }) => node),
+            })),
+          );
+        }
+        const page = parseInstagramResponse(response.body, response.headers, GalleryResponseSchema);
+        reels.push(...page.edges.map(({ node }) => node));
+        if (!page.page_info.has_next_page) {
+          return {
+            ok: true,
+            status: response.status,
+            headers: response.headers,
+            json: () => ({ reels_media: reels }),
+          };
+        }
+        const cursor = page.page_info.end_cursor;
+        if (
+          cursor === null ||
+          cursor === undefined ||
+          cursor.length === 0 ||
+          cursors.has(cursor) ||
+          cursors.size >= reelIds.length
+        ) {
+          throw new InstagramApiResponseError("Instagram story media pagination did not advance");
+        }
+        cursors.add(cursor);
+        after = cursor;
+      }
     },
 
     async getTray() {

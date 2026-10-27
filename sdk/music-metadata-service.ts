@@ -2,7 +2,6 @@ import { randomUUID } from "node:crypto";
 import type {
   MusicMediaState,
   metadataMusic,
-  partialMetadataMusic,
   MusicFields,
   StoryMusicObservation,
 } from "./entities/music-metadata.ts";
@@ -37,7 +36,7 @@ function mediaState(
 }
 
 function retainedMedia(
-  known: typeof partialMetadataMusic.$inferSelect | undefined,
+  known: typeof metadataMusic.$inferSelect | undefined,
   previous: StoryMusicObservation | undefined,
   fields: MusicFields,
 ) {
@@ -65,43 +64,18 @@ function retainedMedia(
 
 export function planMusicMetadataWrite(
   observation: MusicObservationInput,
-  knownAssets: {
-    usable: typeof metadataMusic.$inferSelect | undefined;
-    partial: typeof partialMetadataMusic.$inferSelect | undefined;
-  },
+  known: typeof metadataMusic.$inferSelect | undefined,
   previous?: StoryMusicObservation,
 ) {
-  const { usable, partial } = knownAssets;
-  const known = usable ?? partial ?? previous?.metadata;
   const fields = mergeFields(
     mergeFields(previous?.metadata, known ?? observation.fields),
     observation.fields,
   );
-  const entry = {
+  return {
     ...fields,
-    id: known?.id ?? randomUUID(),
+    id: known?.id ?? previous?.metadata.id ?? randomUUID(),
     ...retainedMedia(known, previous, fields),
   };
-  if (fields.instagramAudioAssetId !== null && fields.title !== null && fields.artist !== null) {
-    const promotedPartialIds = new Set<string>();
-    if (partial !== undefined) {
-      promotedPartialIds.add(partial.id);
-    }
-    if (previous?.metadata.status === "partial") {
-      promotedPartialIds.add(previous.metadata.id);
-    }
-    return {
-      status: "usable" as const,
-      entry: {
-        ...entry,
-        instagramAudioAssetId: fields.instagramAudioAssetId,
-        title: fields.title,
-        artist: fields.artist,
-      },
-      promotedPartialIds: [...promotedPartialIds],
-    };
-  }
-  return { status: "partial" as const, entry, promotedPartialIds: [] };
 }
 
 function compatibleAsset(previous: StoryMusicObservation | undefined, fields: MusicFields) {

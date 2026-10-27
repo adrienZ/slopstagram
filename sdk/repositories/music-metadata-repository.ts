@@ -2,9 +2,8 @@ import { and, asc, eq, isNull } from "drizzle-orm";
 import type { DrizzleDatabase } from "../database/client.ts";
 import {
   metadataMusic,
-  partialMetadataMusic,
   storyMusicObservations,
-  type MusicMetadata,
+  classifyMusic,
   type MusicMetadataReference,
   type MusicMediaState,
   type StoryMusicObservation,
@@ -22,39 +21,17 @@ export function readMusicObservations(
   const rows = database
     .select()
     .from(storyMusicObservations)
-    .leftJoin(metadataMusic, eq(storyMusicObservations.musicId, metadataMusic.id))
-    .leftJoin(
-      partialMetadataMusic,
-      eq(storyMusicObservations.partialMusicId, partialMetadataMusic.id),
-    )
+    .innerJoin(metadataMusic, eq(storyMusicObservations.musicId, metadataMusic.id))
     .where(eq(storyMusicObservations.mediaPk, mediaPk))
     .orderBy(asc(storyMusicObservations.sortOrder))
     .all();
-  return rows.flatMap(
-    ({
-      story_music_observations: observation,
-      metadata_music: music,
-      metadata_music_partial: partial,
-    }) => {
-      let metadata: MusicMetadata | null = null;
-      if (music !== null) {
-        metadata = { ...music, status: "usable" };
-      } else if (partial !== null) {
-        metadata = { ...partial, status: "partial" };
-      }
-      return metadata
-        ? [
-            {
-              id: observation.id,
-              source: observation.source,
-              providerOccurrenceId: observation.providerOccurrenceId,
-              occurrenceId: observation.occurrenceId,
-              metadata,
-            },
-          ]
-        : [];
-    },
-  );
+  return rows.map(({ story_music_observations: observation, metadata_music: music }) => ({
+    id: observation.id,
+    source: observation.source,
+    providerOccurrenceId: observation.providerOccurrenceId,
+    occurrenceId: observation.occurrenceId,
+    metadata: classifyMusic(music),
+  }));
 }
 
 function saveMetadata(
@@ -62,47 +39,31 @@ function saveMetadata(
   observation: MusicObservationInput,
   previous?: StoryMusicObservation,
 ) {
-  const audioId =
+  const identifier =
     observation.fields.instagramAudioAssetId ?? previous?.metadata.instagramAudioAssetId ?? null;
-  const usable =
-    audioId === null
+  const known =
+    identifier === null
       ? undefined
       : database
           .select()
           .from(metadataMusic)
-          .where(eq(metadataMusic.instagramAudioAssetId, audioId))
+          .where(eq(metadataMusic.instagramAudioAssetId, identifier))
           .get();
-  const partial =
-    audioId === null
-      ? undefined
-      : database
-          .select()
-          .from(partialMetadataMusic)
-          .where(eq(partialMetadataMusic.instagramAudioAssetId, audioId))
-          .get();
-  const plan = planMusicMetadataWrite(observation, { usable, partial }, previous);
-  if (plan.status === "usable") {
-    database
-      .insert(metadataMusic)
-      .values(plan.entry)
-      .onConflictDoUpdate({ target: metadataMusic.id, set: plan.entry })
-      .run();
-    for (const partialId of plan.promotedPartialIds) {
-      database
-        .update(storyMusicObservations)
-        .set({ musicId: plan.entry.id, partialMusicId: null })
-        .where(eq(storyMusicObservations.partialMusicId, partialId))
-        .run();
-      database.delete(partialMetadataMusic).where(eq(partialMetadataMusic.id, partialId)).run();
-    }
-    return { musicId: plan.entry.id, partialMusicId: null };
-  }
+  const entry = planMusicMetadataWrite(observation, known, previous);
   database
-    .insert(partialMetadataMusic)
-    .values(plan.entry)
-    .onConflictDoUpdate({ target: partialMetadataMusic.id, set: plan.entry })
+    .insert(metadataMusic)
+    .values(entry)
+    .onConflictDoUpdate({ target: metadataMusic.id, set: entry })
     .run();
-  return { musicId: null, partialMusicId: plan.entry.id };
+  if (previous && previous.metadata.id !== entry.id) {
+    database
+      .update(storyMusicObservations)
+      .set({ musicId: entry.id })
+      .where(eq(storyMusicObservations.musicId, previous.metadata.id))
+      .run();
+    database.delete(metadataMusic).where(eq(metadataMusic.id, previous.metadata.id)).run();
+  }
+  return { musicId: entry.id };
 }
 
 export function refreshMusicAsset(
@@ -137,7 +98,7 @@ export function enrichStoryMusic(
 }
 
 export function findMusicMetadata(database: MusicDatabase, reference: MusicMetadataReference) {
-  const table = reference.status === "usable" ? metadataMusic : partialMetadataMusic;
+  const table = metadataMusic;
   return database.select().from(table).where(eq(table.id, reference.id)).get();
 }
 
@@ -150,7 +111,7 @@ export function saveMusicMedia(
   state: MusicMediaState,
   durationMs: number | null = null,
 ) {
-  const table = reference.status === "usable" ? metadataMusic : partialMetadataMusic;
+  const table = metadataMusic;
   const sourceColumn = kind === "audio" ? table.audioSourceUrl : table.artworkSourceUrl;
   database
     .update(table)

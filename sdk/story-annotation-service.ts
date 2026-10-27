@@ -51,9 +51,6 @@ function mergeAnnotationUpdates(
       .filter((sticker) => sticker.kind === "location")
       .map((sticker) => sticker.label),
     stickers,
-    sources: [
-      ...new Set([...(previous.sources ?? []), ...updates.map(({ source }) => source)]),
-    ].toSorted((left, right) => left.localeCompare(right)),
   };
 }
 
@@ -86,7 +83,9 @@ export function planStoryAnnotations(
         uniqueInternalId &&
         candidate.occurrenceId === sticker.occurrenceId &&
         candidate.kind === sticker.kind &&
-        candidate.source === (sticker.source ?? "unknown") &&
+        (candidate.source === (sticker.source ?? "unknown") ||
+          (story.annotations !== undefined &&
+            (sticker.source === undefined || sticker.source === "unknown"))) &&
         candidate.providerOccurrenceId === sticker.providerOccurrenceId,
     );
     const candidates =
@@ -109,7 +108,10 @@ export function planStoryAnnotations(
         story.annotations !== undefined && sticker.label.startsWith(`${sticker.kind}:`)
           ? sticker.label.slice(sticker.kind.length + 1)
           : sticker.label,
-      source: sticker.source ?? "unknown",
+      source:
+        (sticker.source === undefined || sticker.source === "unknown") && explicit !== undefined
+          ? (explicit.source ?? "unknown")
+          : (sticker.source ?? "unknown"),
       mediaPk: story.pk,
       sortOrder,
     };

@@ -43,7 +43,6 @@ export const StoryItemSchema = z
         musicObservations: z.array(StoryMusicObservationSchema).optional(),
         locations: z.array(z.string()),
         stickers: z.array(StoryStickerSchema),
-        sources: z.array(z.string()).optional(),
       })
       .optional(),
     image_versions2: z

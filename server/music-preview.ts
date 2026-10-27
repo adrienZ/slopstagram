@@ -82,15 +82,14 @@ export function storyAudioPreview(annotations: StoryAnnotations | undefined): Mu
 }
 
 export function storyMusicPreviews(annotations: StoryAnnotations | undefined): Array<MusicPreview> {
+  const soundtrack = storyAudioPreview(annotations);
+  if (soundtrack !== null) {
+    return [soundtrack];
+  }
   const assets = (annotations?.musicObservations ?? [])
     .map(musicPreview)
     .filter((preview) => preview !== null);
-  const unique = [...new Map(assets.map((preview) => [preview.audioUrl, preview])).values()];
-  if (unique.length > 0) {
-    return unique;
-  }
-  const soundtrack = storyAudioPreview(annotations);
-  return soundtrack === null ? [] : [soundtrack];
+  return [...new Map(assets.map((preview) => [preview.audioUrl, preview])).values()];
 }
 
 function normalizeMusicLabel(label: string) {
@@ -136,11 +135,22 @@ export function musicStickerItems(
       if (asset !== null) {
         linked.add(asset.audioUrl ?? "");
       }
-      return {
-        key: sticker.occurrenceId ?? `music:${index}`,
-        label: sticker.label,
-        preview: asset ?? (index === 0 ? (soundtrack ?? null) : null),
-      };
+      let preview = asset;
+      if (soundtrack) {
+        preview =
+          index === 0
+            ? {
+                ...soundtrack,
+                artworkUrl: observation
+                  ? localArtworkPath(
+                      observation.metadata.artworkCachePath,
+                      observation.metadata.artworkState,
+                    )
+                  : null,
+              }
+            : null;
+      }
+      return { key: sticker.occurrenceId ?? `music:${index}`, label: sticker.label, preview };
     });
   // A soundtrack is displayed once at story level; this creates no occurrence link.
   const unlinked = previews.filter(

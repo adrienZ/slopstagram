@@ -2,9 +2,8 @@ import { asc, eq } from "drizzle-orm";
 import type { DrizzleDatabase } from "../database/client.ts";
 import {
   metadataLocations,
-  partialMetadataLocations,
   storyLocationObservations,
-  type LocationMetadata,
+  classifyLocation,
   type StoryLocationObservation,
 } from "../entities/location-metadata.ts";
 import type { StoryAnnotations, StoryItem } from "../lib/types.ts";
@@ -23,39 +22,17 @@ export function readLocationObservations(
   const rows = database
     .select()
     .from(storyLocationObservations)
-    .leftJoin(metadataLocations, eq(storyLocationObservations.locationId, metadataLocations.id))
-    .leftJoin(
-      partialMetadataLocations,
-      eq(storyLocationObservations.partialLocationId, partialMetadataLocations.id),
-    )
+    .innerJoin(metadataLocations, eq(storyLocationObservations.locationId, metadataLocations.id))
     .where(eq(storyLocationObservations.mediaPk, mediaPk))
     .orderBy(asc(storyLocationObservations.source), asc(storyLocationObservations.sortOrder))
     .all();
-  return rows.flatMap(
-    ({
-      story_location_observations: observation,
-      metadata_location: location,
-      metadata_location_partial: partial,
-    }) => {
-      let metadata: LocationMetadata | null = null;
-      if (location !== null) {
-        metadata = { ...location, status: "usable" };
-      } else if (partial !== null) {
-        metadata = { ...partial, status: "partial" };
-      }
-      return metadata
-        ? [
-            {
-              id: observation.id,
-              source: observation.source,
-              occurrenceId: observation.occurrenceId,
-              providerOccurrenceId: observation.providerOccurrenceId,
-              metadata,
-            },
-          ]
-        : [];
-    },
-  );
+  return rows.map(({ story_location_observations: observation, metadata_location: location }) => ({
+    id: observation.id,
+    source: observation.source,
+    occurrenceId: observation.occurrenceId,
+    providerOccurrenceId: observation.providerOccurrenceId,
+    metadata: classifyLocation(location),
+  }));
 }
 
 function saveMetadata(
@@ -63,51 +40,31 @@ function saveMetadata(
   observation: LocationObservationInput,
   previous?: StoryLocationObservation,
 ) {
-  const instagramPlaceId =
+  const identifier =
     observation.fields.instagramPlaceId ?? previous?.metadata.instagramPlaceId ?? null;
-  const usable =
-    instagramPlaceId === null
+  const known =
+    identifier === null
       ? undefined
       : database
           .select()
           .from(metadataLocations)
-          .where(eq(metadataLocations.instagramPlaceId, instagramPlaceId))
+          .where(eq(metadataLocations.instagramPlaceId, identifier))
           .get();
-  const partial =
-    instagramPlaceId === null
-      ? undefined
-      : database
-          .select()
-          .from(partialMetadataLocations)
-          .where(eq(partialMetadataLocations.instagramPlaceId, instagramPlaceId))
-          .get();
-  const plan = planLocationMetadataWrite(observation, { usable, partial }, previous);
-  const { entry } = plan;
-  if (plan.status === "usable") {
-    database
-      .insert(metadataLocations)
-      .values(plan.entry)
-      .onConflictDoUpdate({ target: metadataLocations.id, set: plan.entry })
-      .run();
-    for (const partialId of plan.promotedPartialIds) {
-      database
-        .update(storyLocationObservations)
-        .set({ locationId: entry.id, partialLocationId: null })
-        .where(eq(storyLocationObservations.partialLocationId, partialId))
-        .run();
-      database
-        .delete(partialMetadataLocations)
-        .where(eq(partialMetadataLocations.id, partialId))
-        .run();
-    }
-    return { locationId: entry.id, partialLocationId: null };
-  }
+  const entry = planLocationMetadataWrite(observation, known, previous);
   database
-    .insert(partialMetadataLocations)
+    .insert(metadataLocations)
     .values(entry)
-    .onConflictDoUpdate({ target: partialMetadataLocations.id, set: entry })
+    .onConflictDoUpdate({ target: metadataLocations.id, set: entry })
     .run();
-  return { locationId: null, partialLocationId: entry.id };
+  if (previous && previous.metadata.id !== entry.id) {
+    database
+      .update(storyLocationObservations)
+      .set({ locationId: entry.id })
+      .where(eq(storyLocationObservations.locationId, previous.metadata.id))
+      .run();
+    database.delete(metadataLocations).where(eq(metadataLocations.id, previous.metadata.id)).run();
+  }
+  return { locationId: entry.id };
 }
 
 export function enrichStoryLocations(
