@@ -10,6 +10,7 @@
     "postinstall": "npm audit --json > audit.json || true",
     "auth": "tsx scripts/auth.ts",
     "fetch:stories": "tsx scripts/fetch-stories.ts",
+    "backfill:places": "tsx scripts/backfill-place-lookups.ts",
     "create:report": "tsx scripts/create-report.ts",
     "bunqueue:server": "bunqueue start",
     "start": "vite dev --port 5173",

@@ -7,8 +7,10 @@ import { instagramUsers } from "../entities/instagram-user.ts";
 import {
   enrichStoryLocations,
   fillTaggedPlace,
+  forgetPlaceLookupAttempts,
   readLocationObservations,
   readPlaceDetails,
+  readPlaceLookupHistory,
   recordFailedPlaceLookup,
   recordPlaceLookup,
 } from "./location-metadata-repository.ts";
@@ -295,6 +297,16 @@ export class StoryRepository {
 
   findPlaceDetails(instagramPlaceId: string) {
     return readPlaceDetails(this.database, instagramPlaceId);
+  }
+
+  findPlaceLookupHistory() {
+    return readPlaceLookupHistory(this.database);
+  }
+
+  forgetPlaceLookupAttempts(instagramPlaceIds: Array<string>) {
+    this.database.transaction((transaction) => {
+      forgetPlaceLookupAttempts(transaction, instagramPlaceIds);
+    });
   }
 
   recordPlaceLookup(instagramPlaceId: string, incoming: PlaceLookupInput, lookedUpAt: Date) {

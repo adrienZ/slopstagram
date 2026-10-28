@@ -8,6 +8,10 @@ import type { InstagramClient, FetchStoriesManifestOptions } from "./story-types
 // Story payloads also carry non-place identifiers, such as the generic bloks sticker one.
 const NUMERIC_PLACE_ID = /^\d+$/u;
 
+export function isLookupPlaceId(placeId: string) {
+  return NUMERIC_PLACE_ID.test(placeId);
+}
+
 const locationInfoSchema = z.looseObject({
   location_id: z.string(),
   name: z.string().nullish(),
@@ -121,7 +125,7 @@ function listPlacesToLookUp(
       ?.locationObservations ?? []) {
       if (
         metadata.instagramPlaceId !== null &&
-        NUMERIC_PLACE_ID.test(metadata.instagramPlaceId) &&
+        isLookupPlaceId(metadata.instagramPlaceId) &&
         needsLookup(metadata, now)
       ) {
         placeIds.add(metadata.instagramPlaceId);

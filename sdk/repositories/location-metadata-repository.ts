@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { DrizzleDatabase } from "../database/client.ts";
 import {
   metadataLocationDetails,
@@ -8,7 +8,7 @@ import {
   type PlaceDetails,
   type StoryLocationObservation,
 } from "../entities/location-metadata.ts";
-import { storyStickers } from "../entities/story.ts";
+import { stories, storyStickers } from "../entities/story.ts";
 import type { StoryAnnotations, StoryItem } from "../lib/types.ts";
 import type { LocationObservationInput } from "../location-observation-service.ts";
 import {
@@ -223,4 +223,43 @@ export function readPlaceDetails(
   }
   const { locationId: _locationId, ...details } = row.metadata_location_details;
   return details;
+}
+
+// Every story observation of each place with a successful or never-failed attempt time.
+export function readPlaceLookupHistory(database: LocationDatabase) {
+  return database
+    .select({
+      instagramPlaceId: metadataLocations.instagramPlaceId,
+      lastLookupAttemptAt: metadataLocations.lastLookupAttemptAt,
+      mediaPk: storyLocationObservations.mediaPk,
+      takenAt: stories.takenAt,
+    })
+    .from(metadataLocations)
+    .innerJoin(
+      storyLocationObservations,
+      eq(storyLocationObservations.locationId, metadataLocations.id),
+    )
+    .innerJoin(stories, eq(stories.mediaPk, storyLocationObservations.mediaPk))
+    .where(
+      and(
+        isNotNull(metadataLocations.instagramPlaceId),
+        isNotNull(metadataLocations.lastLookupAttemptAt),
+        isNull(metadataLocations.lastLookupFailure),
+      ),
+    )
+    .all();
+}
+
+export function forgetPlaceLookupAttempts(
+  database: LocationDatabase,
+  instagramPlaceIds: Array<string>,
+): void {
+  if (instagramPlaceIds.length === 0) {
+    return;
+  }
+  database
+    .update(metadataLocations)
+    .set({ lastLookupAttemptAt: null })
+    .where(inArray(metadataLocations.instagramPlaceId, instagramPlaceIds))
+    .run();
 }
