@@ -36,6 +36,10 @@ export function getUserTimelineUrl(username: string): string {
   return `/users/${encodeURIComponent(username.trim())}`;
 }
 
+export function getInstagramProfileUrl(username: string): string {
+  return `https://www.instagram.com/${encodeURIComponent(username.trim().replace(/^@/u, ""))}/`;
+}
+
 export function getRankedUsers(report: StoriesManifestReport): Array<StoryOutputUser> {
   const orderByReel = new Map<string, number>();
   for (const user of report.manifest.users) {

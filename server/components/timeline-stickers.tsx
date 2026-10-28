@@ -115,16 +115,16 @@ function StickerTable({
                 </div>
               </TableCell>
               <TableCell className="tw:min-w-0 tw:align-top tw:whitespace-normal">
-                <ul className="tw:flex tw:min-w-0 tw:flex-wrap tw:gap-1.5">
+                <ul className="tw:flex tw:min-w-0 tw:flex-wrap tw:items-start tw:gap-1.5">
                   {kind === "music"
                     ? story.musicItems?.map(({ key, label, preview }) => (
                         <li key={key} className="tw:min-w-0 tw:max-w-full">
                           <MusicSticker label={label} preview={preview} />
                         </li>
                       ))
-                    : story.labels.map(({ key, label }) => (
+                    : story.labels.map(({ key, label, place }) => (
                         <li key={key} className="tw:min-w-0 tw:max-w-full">
-                          <Sticker sticker={presentSticker(kind, label, users, expanded)} />
+                          <Sticker sticker={presentSticker(kind, label, users, expanded, place)} />
                         </li>
                       ))}
                 </ul>

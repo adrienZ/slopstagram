@@ -165,3 +165,11 @@ test("mobile calendar opens in a sheet and closes after choosing a day", async (
   });
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
+
+test("the profile header handle opens the Instagram profile in a new tab", async () => {
+  await renderPage(UserTimelinePage, timelineProps, "/users/timeline-user");
+  const link = screen.getByRole("link", { name: "@timeline-user" });
+  expect(link).toHaveAttribute("href", "https://www.instagram.com/timeline-user/");
+  expect(link).toHaveAttribute("target", "_blank");
+  expect(link).toHaveAttribute("rel", "noreferrer");
+});

@@ -26,6 +26,10 @@ function Gallery({ selectedStory }: { selectedStory?: string }) {
   );
 }
 
+function LinkedGallery({ selectedStory }: { selectedStory?: string }) {
+  return <Lightbox stories={stories} selectedStory={selectedStory} linkToProfile />;
+}
+
 test("buttons and arrow keys wrap through the gallery while preserving other search parameters", async () => {
   const { user, router } = await renderPage(
     Gallery,
@@ -47,4 +51,17 @@ test("buttons and arrow keys wrap through the gallery while preserving other sea
   await user.keyboard("{Escape}");
   expect(router.state.location.search).toEqual({ date: "2026-07-25" });
   expect(screen.getByRole("button", { name: "Ouvrir aperçu 12345678901234567890" })).toHaveFocus();
+});
+
+test("the header username links to the profile only when asked to", async () => {
+  const linked = await renderPage(LinkedGallery, {}, "/report?story=second");
+  expect(
+    within(await screen.findByRole("dialog")).getByRole("link", { name: /Timeline User/u }),
+  ).toHaveAttribute("href", "/users/timeline-user");
+  linked.unmount();
+
+  await renderPage(Gallery, {}, "/users/timeline-user?story=second");
+  const dialog = within(await screen.findByRole("dialog"));
+  expect(dialog.getByText(/Timeline User/u)).toBeVisible();
+  expect(dialog.queryByRole("link", { name: /Timeline User/u })).not.toBeInTheDocument();
 });

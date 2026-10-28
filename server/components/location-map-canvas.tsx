@@ -69,6 +69,7 @@ export default function LocationMapCanvas({
               aria-label={`Voir le lieu : ${place.name}`}
               aria-pressed={selectedId === place.id}
               title={place.name}
+              data-place-id={place.id}
               className="tw:cursor-pointer tw:rounded-full tw:border tw:border-white tw:bg-primary tw:p-2 tw:text-primary-foreground tw:shadow-md tw:focus-visible:outline-2 tw:focus-visible:outline-offset-2 tw:focus-visible:outline-ring tw:aria-pressed:ring-4 tw:aria-pressed:ring-ring"
               onClick={() => {
                 onSelect(place.id);
