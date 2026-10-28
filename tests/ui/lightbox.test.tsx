@@ -65,3 +65,14 @@ test("the header username links to the profile only when asked to", async () => 
   expect(dialog.getByText(/Timeline User/u)).toBeVisible();
   expect(dialog.queryByRole("link", { name: /Timeline User/u })).not.toBeInTheDocument();
 });
+
+test("the preview is repeated as a blurred backdrop behind the image", async () => {
+  await renderPage(Gallery, {}, "/report?story=second");
+  const dialog = within(await screen.findByRole("dialog"));
+  expect(dialog.getByRole("img", { name: "Preview second" })).toHaveAttribute(
+    "src",
+    "/media/second.jpg",
+  );
+  expect(dialog.getByTestId("lightbox-backdrop")).toHaveAttribute("src", "/media/second.jpg");
+  expect(dialog.getByTestId("lightbox-backdrop")).toHaveAttribute("aria-hidden", "true");
+});
