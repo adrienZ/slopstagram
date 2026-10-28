@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import type { DrizzleDatabase } from "../database/client.ts";
 import {
   metadataLocationDetails,
@@ -8,12 +8,14 @@ import {
   type PlaceDetails,
   type StoryLocationObservation,
 } from "../entities/location-metadata.ts";
+import { storyStickers } from "../entities/story.ts";
 import type { StoryAnnotations, StoryItem } from "../lib/types.ts";
 import type { LocationObservationInput } from "../location-observation-service.ts";
 import {
   planLocationMetadataWrite,
   boundLookupFailure,
   planPlaceDetails,
+  locationStickerLabel,
   planPlaceFill,
   planStoryLocationUpdates,
   type PlaceFillInput,
@@ -118,6 +120,58 @@ export function fillTaggedPlace(
   return known.id;
 }
 
+// Stories saved with only a place id show a sticker whose label the payload never carried.
+// Once the place is named, give each such observation the location sticker it stands for.
+function labelObservedStickers(database: LocationDatabase, locationId: string): void {
+  const unlinked = database
+    .select({ observation: storyLocationObservations, place: metadataLocations })
+    .from(storyLocationObservations)
+    .innerJoin(metadataLocations, eq(storyLocationObservations.locationId, metadataLocations.id))
+    .where(
+      and(
+        eq(storyLocationObservations.locationId, locationId),
+        isNull(storyLocationObservations.occurrenceId),
+      ),
+    )
+    .all();
+  for (const { observation, place } of unlinked) {
+    const label = locationStickerLabel(place);
+    if (label === null) {
+      continue;
+    }
+    const shown = database
+      .select({
+        sortOrder: storyStickers.sortOrder,
+        kind: storyStickers.kind,
+        label: storyStickers.label,
+      })
+      .from(storyStickers)
+      .where(eq(storyStickers.mediaPk, observation.mediaPk))
+      .all();
+    if (shown.some((sticker) => sticker.kind === "location" && sticker.label === label)) {
+      continue;
+    }
+    const sticker = {
+      kind: "location",
+      label,
+      mediaPk: observation.mediaPk,
+      sortOrder: Math.max(-1, ...shown.map(({ sortOrder }) => sortOrder)) + 1,
+      source: observation.source,
+      providerOccurrenceId: observation.providerOccurrenceId,
+    };
+    const { occurrenceId } = database
+      .insert(storyStickers)
+      .values(sticker)
+      .returning({ occurrenceId: storyStickers.occurrenceId })
+      .get();
+    database
+      .update(storyLocationObservations)
+      .set({ occurrenceId })
+      .where(eq(storyLocationObservations.id, observation.id))
+      .run();
+  }
+}
+
 export function recordPlaceLookup(
   database: LocationDatabase,
   instagramPlaceId: string,
@@ -126,7 +180,11 @@ export function recordPlaceLookup(
 ): void {
   const { details: incomingDetails, ...place } = incoming;
   const locationId = fillTaggedPlace(database, instagramPlaceId, place, lookedUpAt);
-  if (locationId !== null && incomingDetails !== undefined) {
+  if (locationId === null) {
+    return;
+  }
+  labelObservedStickers(database, locationId);
+  if (incomingDetails !== undefined) {
     const details = { locationId, ...planPlaceDetails(incomingDetails) };
     database
       .insert(metadataLocationDetails)
