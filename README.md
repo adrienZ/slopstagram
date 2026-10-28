@@ -84,8 +84,8 @@ Open <http://localhost:5173/>.
 ## Development
 
 Cached media, the SQLite databases, and the Playwright profile are stored in `./data`.
-Database migrations are applied automatically when the Nitro server starts and before report
-creation. After changing an entity schema, generate a migration with:
+Database migrations are applied automatically when the Nitro server starts; scripts expect
+an initialized database. After changing an entity schema, generate a migration with:
 
 ```bash
 npm run db:generate
