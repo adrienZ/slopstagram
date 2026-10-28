@@ -147,7 +147,7 @@ function LightboxDialog(props: {
               className="tw:absolute tw:inset-0 tw:-z-10 tw:bg-foreground/50"
               aria-hidden="true"
             />
-            <div className="tw:mb-1 tw:flex tw:items-center tw:gap-2.5 tw:bg-foreground/30 tw:px-3 tw:py-2.5 tw:text-background tw:backdrop-blur-3xl">
+            <div className="tw:flex tw:items-center tw:gap-2.5 tw:bg-foreground/30 tw:px-3 tw:py-2.5 tw:text-background tw:backdrop-blur-3xl">
               <img
                 className="tw:size-10.5 tw:rounded-lg tw:object-cover"
                 alt=""
