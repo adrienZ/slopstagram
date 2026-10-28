@@ -1,11 +1,14 @@
 import { createContext, lazy, Suspense, useContext, useId, useRef, useState } from "react";
 import type { ComponentType, KeyboardEvent } from "react";
-import { XIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
 import type { LocationMapCanvasProps } from "./location-map-canvas.tsx";
 import { adjacentPlaceId, type TimelineLocations } from "../timeline-locations.ts";
 import type { StoryCardViewModel } from "../story-card-view-model.ts";
 import { formatStickerStoryDate } from "../timeline-stickers.ts";
 import { StoryCard } from "./story-card.tsx";
+
+const footerButtonClassName =
+  "tw:cursor-pointer tw:rounded tw:p-1 tw:hover:bg-muted tw:focus-visible:outline-2 tw:focus-visible:outline-ring";
 
 export const LocationMapContext = createContext<ComponentType<LocationMapCanvasProps>>(
   lazy(async () => await import("./location-map-canvas.tsx")),
@@ -21,25 +24,30 @@ export function LocationHistory({
   const [selectedId, setSelectedId] = useState<string>();
   const selectId = useId();
   const selectRef = useRef<HTMLSelectElement>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
   const LocationMapCanvas = useContext(LocationMapContext);
   const selected = locations.places.find((place) => place.id === selectedId);
   function closePreview() {
     setSelectedId(undefined);
     selectRef.current?.focus();
   }
+  function selectAdjacent(step: 1 | -1) {
+    const next =
+      selectedId === undefined ? undefined : adjacentPlaceId(locations.places, selectedId, step);
+    if (next === undefined) {
+      return false;
+    }
+    setSelectedId(next);
+    // The popup is replaced by the next one: keep keyboard focus on the marker.
+    mapRef.current
+      ?.querySelector<HTMLButtonElement>(`[data-place-id="${globalThis.CSS.escape(next)}"]`)
+      ?.focus({ preventScroll: true });
+    return true;
+  }
   function navigateMarkers(event: KeyboardEvent<HTMLDivElement>) {
     const step: 1 | -1 | undefined = { ArrowRight: 1 as const, ArrowLeft: -1 as const }[event.key];
-    if (step === undefined || selectedId === undefined) {
-      return;
-    }
-    const next = adjacentPlaceId(locations.places, selectedId, step);
-    if (next !== undefined) {
+    if (step !== undefined && selectAdjacent(step)) {
       event.preventDefault();
-      setSelectedId(next);
-      // The popup is replaced by the next one: keep keyboard focus on the marker.
-      event.currentTarget
-        .querySelector<HTMLButtonElement>(`[data-place-id="${globalThis.CSS.escape(next)}"]`)
-        ?.focus({ preventScroll: true });
     }
   }
   return (
@@ -87,7 +95,7 @@ export function LocationHistory({
             </select>
           </div>
           {/* Arrow keys step through markers from the map and its popup, not the place select. */}
-          <div onKeyDown={navigateMarkers}>
+          <div ref={mapRef} onKeyDown={navigateMarkers}>
             <Suspense fallback={<p role="status">Chargement de la carte…</p>}>
               <LocationMapCanvas
                 places={locations.places}
@@ -133,6 +141,30 @@ export function LocationHistory({
                         );
                       })}
                     </ul>
+                    {locations.places.length > 1 && (
+                      <div className="tw:flex tw:justify-between">
+                        <button
+                          type="button"
+                          aria-label="Lieu précédent"
+                          className={footerButtonClassName}
+                          onClick={() => {
+                            selectAdjacent(-1);
+                          }}
+                        >
+                          <ChevronLeftIcon className="tw:size-4" />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Lieu suivant"
+                          className={footerButtonClassName}
+                          onClick={() => {
+                            selectAdjacent(1);
+                          }}
+                        >
+                          <ChevronRightIcon className="tw:size-4" />
+                        </button>
+                      </div>
+                    )}
                   </section>
                 )}
               </LocationMapCanvas>

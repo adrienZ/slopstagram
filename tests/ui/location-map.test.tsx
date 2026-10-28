@@ -289,6 +289,19 @@ test("arrow keys step through the markers of an open popup and wrap around", asy
   expect(map.getByRole("region", { name: "Stories du lieu : Même nom" })).toBeVisible();
   await user.keyboard("{ArrowLeft}");
   expect(map.getByRole("region", { name: "Stories du lieu : Troisième" })).toBeVisible();
+  await user.click(map.getByRole("button", { name: "Lieu suivant" }));
+  expect(map.getByRole("region", { name: "Stories du lieu : Même nom" })).toBeVisible();
+  await user.click(map.getByRole("button", { name: "Lieu précédent" }));
+  expect(map.getByRole("region", { name: "Stories du lieu : Troisième" })).toBeVisible();
+});
+
+test("a single place has no previous or next buttons", async () => {
+  const props = locationTimeline([[observation("a", "place-a")]]);
+  const { user } = await renderPage(TestTimelinePage, props, "/users/timeline-user");
+  await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
+  const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
+  await user.click(await modal.findByRole("button", { name: "Même nom" }));
+  expect(modal.queryByRole("button", { name: "Lieu suivant" })).not.toBeInTheDocument();
 });
 
 test("location stickers show a crossed-out pin when the place has no coordinates", async () => {
