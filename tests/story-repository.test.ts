@@ -3,7 +3,7 @@ import { describe, test } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
-import type { StoryItem } from "../sdk/lib/types.ts";
+import type { StoryItem } from "../sdk/instagram-types.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
 
 function withLabelOnlyAnnotations(story: StoryItem): StoryItem {

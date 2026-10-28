@@ -1,6 +1,6 @@
 import process from "node:process";
 import { pathToFileURL } from "node:url";
-import { fetchStories } from "../sdk/index.ts";
+import { fetchStories } from "../sdk/stories.ts";
 import { createLogger } from "../sdk/lib/logging-service.ts";
 import { recordFetchRun } from "../sdk/fetch-run.ts";
 import { reportRepository } from "../sdk/repositories/report-repository.ts";

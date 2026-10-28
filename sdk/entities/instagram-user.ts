@@ -9,3 +9,10 @@ export const instagramUsers = sqliteTable("instagram_users", {
 });
 
 export const NewInstagramUserSchema = createInsertSchema(instagramUsers);
+
+export interface InstagramUserEntry {
+  full_name: string | null;
+  id: string;
+  pk: string;
+  username: string;
+}

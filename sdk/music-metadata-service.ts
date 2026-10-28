@@ -5,7 +5,8 @@ import type {
   MusicFields,
   StoryMusicObservation,
 } from "./entities/music-metadata.ts";
-import type { StoryAnnotations, StoryItem } from "./lib/types.ts";
+import type { StoryAnnotations } from "./story-types.ts";
+import type { StoryItem } from "./instagram-types.ts";
 import { getMusicSourceUpdate, type MusicObservationInput } from "./music-observation-service.ts";
 
 function mergeFields(previous: MusicFields | undefined, incoming: MusicFields): MusicFields {

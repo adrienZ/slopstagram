@@ -1,6 +1,6 @@
 import { setTimeout as delay } from "node:timers/promises";
 import type { Logger } from "./lib/logging-service.ts";
-import type { InstagramClientResponse } from "./stories.ts";
+import type { InstagramClientResponse } from "./instagram-types.ts";
 
 export interface RequestFailure {
   attemptCount: number;

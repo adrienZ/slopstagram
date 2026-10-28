@@ -1,8 +1,6 @@
-import {
-  STORY_MEDIA_TYPES,
-  type StoryOutputUser,
-  type UserTimelineStory,
-} from "../sdk/lib/types.ts";
+import { STORY_MEDIA_TYPES } from "../sdk/story-types.ts";
+import type { StoryOutputUser } from "../sdk/report-types.ts";
+import type { UserTimelineStory } from "../sdk/repositories/story-repository.ts";
 import { presentSticker, type StickerPresentation } from "./sticker-presentation.ts";
 import type { SidebarUser } from "./sidebar-users.ts";
 import { stickerPlace, stickerPlaces } from "./timeline-stickers.ts";

@@ -1,6 +1,6 @@
 import { isJsonObject, type JsonObject, type JsonValue } from "./lib/json-value.ts";
 import type { LocationFields } from "./entities/location-metadata.ts";
-import type { StoryItem } from "./lib/types.ts";
+import type { StoryItem } from "./instagram-types.ts";
 import { getProviderIdentifier } from "./lib/provider-identifier.ts";
 import { z } from "zod";
 
@@ -26,7 +26,7 @@ function coordinate(record: JsonObject, keys: Array<string>, bound: number): num
   return null;
 }
 
-export function findLocationRecord(value: JsonValue | undefined): JsonObject | null {
+function findLocationRecord(value: JsonValue | undefined): JsonObject | null {
   if (value === undefined || !isJsonObject(value)) {
     return null;
   }

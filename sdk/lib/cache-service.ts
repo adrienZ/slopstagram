@@ -2,7 +2,11 @@ import { createStorage, prefixStorage, type Storage } from "unstorage";
 import fsDriver from "unstorage/drivers/fs-lite";
 import path from "node:path";
 import { APP_CACHE_DIR } from "./app-data-paths.ts";
-import type { AudioCacheStorage, ImageCacheStorage, StoryItem, StoryStorage } from "./types.ts";
+import type { StoryItem } from "../instagram-types.ts";
+
+export type ImageCacheStorage = Storage<Record<string, never>>;
+export type AudioCacheStorage = Storage<Record<string, never>>;
+export type StoryStorage = Storage<StoryItem>;
 
 export const BASE_CACHE_DIR = APP_CACHE_DIR;
 export const IMAGES_STORAGE_DIR = "images";
@@ -29,7 +33,7 @@ export function createAudioCacheStorage(
   });
 }
 
-export function createStoryStorage(storage: Storage = baseStorage): StoryStorage {
+function createStoryStorage(storage: Storage = baseStorage): StoryStorage {
   return prefixStorage<StoryItem>(storage, STORIES_STORAGE_DIR);
 }
 

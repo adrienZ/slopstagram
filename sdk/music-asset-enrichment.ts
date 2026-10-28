@@ -1,9 +1,12 @@
 import { z } from "zod";
 import { isJsonObject, JsonValueSchema } from "./lib/json-value.ts";
-import type { StoryItem } from "./lib/types.ts";
+import type { StoryItem, InstagramClient } from "./instagram-types.ts";
 import type { Logger } from "./lib/logging-service.ts";
-import type { InstagramClient, FetchStoriesManifestOptions } from "./story-types.ts";
+import type { StoryRepository } from "./repositories/story-repository.ts";
 import { getMusicObservation } from "./music-observation-service.ts";
+
+type MusicAssetRepository = Pick<StoryRepository, "findByMediaPk"> &
+  Partial<Pick<StoryRepository, "refreshMusicAsset">>;
 
 const metadataSchema = z.object({
   music_info: z.object({ music_asset_info: JsonValueSchema.optional() }).nullish(),
@@ -63,7 +66,7 @@ async function lookupAsset(
 export async function enrichCurrentMusicAssets(
   client: Pick<InstagramClient, "getMusicAsset">,
   stories: Iterable<StoryItem>,
-  repository: FetchStoriesManifestOptions["storyRepository"],
+  repository: MusicAssetRepository | undefined,
   logger: Pick<Logger, "warn">,
 ) {
   if (client.getMusicAsset === undefined || repository?.refreshMusicAsset === undefined) {

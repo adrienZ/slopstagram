@@ -1,7 +1,7 @@
 import { StoryMusicObservationSchema } from "../sdk/entities/music-metadata.ts";
 import { expect, test } from "vitest";
 import { musicStickerItems } from "../server/music-preview.ts";
-import type { StoryAnnotations } from "../sdk/lib/types.ts";
+import type { StoryAnnotations } from "../sdk/story-types.ts";
 
 function legacyStory(): StoryAnnotations {
   return {

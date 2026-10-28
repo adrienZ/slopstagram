@@ -23,3 +23,10 @@ export const userSummaries = sqliteTable(
 );
 
 export const NewUserSummarySchema = createInsertSchema(userSummaries);
+
+export interface UserSummaryEntry {
+  prompt_hash: string;
+  result: string;
+  source_hash: string;
+  user_key: string;
+}

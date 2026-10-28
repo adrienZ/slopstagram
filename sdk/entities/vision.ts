@@ -10,3 +10,14 @@ export const vision = sqliteTable("vision", {
 });
 
 export const NewVisionSchema = createInsertSchema(vision);
+
+export interface VisionResult {
+  text: string;
+  visual: string;
+}
+
+export interface VisionEntry {
+  model: string;
+  prompt_hash: string;
+  result: VisionResult;
+}

@@ -28,13 +28,31 @@ import {
 } from "../entities/story.ts";
 import { createLogger, type Logger } from "../lib/logging-service.ts";
 import { StoryItemSchema } from "../lib/story-schemas.ts";
-import type { StoryAnnotations, StoryItem, StoryOwner, UserTimelineStory } from "../lib/types.ts";
+import type { StoryAnnotations } from "../story-types.ts";
+import type { StoryItem } from "../instagram-types.ts";
 import {
   getStoryAnnotations,
   getStoryAnnotationUpdates,
   getStoryLocations,
   getStoryStickers,
 } from "../story-sticker-location-service.ts";
+
+export interface StoryOwner {
+  full_name?: string;
+  pk?: string;
+  profile_pic_url?: string;
+  username: string;
+}
+
+export interface UserTimelineStory {
+  full_name: string | null;
+  locations: Array<string>;
+  owner_pk: string | null;
+  story: StoryItem;
+  stickers: Array<string>;
+  taken_at: number;
+  username: string;
+}
 
 function toStoryItem(
   story: StoryRow,

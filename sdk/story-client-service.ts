@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { StoryReelSchema, StoryTrayEntrySchema } from "./lib/story-schemas.ts";
-import type { StoryReel } from "./lib/types.ts";
-import type { InstagramClient } from "./stories.ts";
+import type { InstagramClient, ReelsMediaResponse, StoryReel } from "./instagram-types.ts";
 import { JsonValueSchema } from "./lib/json-value.ts";
 
 const ReelTrayResponseSchema = z.object({
@@ -10,12 +9,6 @@ const ReelTrayResponseSchema = z.object({
   status: z.string(),
   tray: z.array(StoryTrayEntrySchema),
 });
-
-export interface ReelsMediaResponse {
-  reels?: Record<string, StoryReel>;
-  reels_media?: Record<string, StoryReel> | Array<StoryReel>;
-  status?: string | null;
-}
 
 const IG_APP_ID = "936619743392459";
 const REELS_TRAY_URL = "https://www.instagram.com/api/v1/feed/reels_tray/";
@@ -27,7 +20,7 @@ const PLACE_DOCUMENT_ID = "28572807415659320";
 // PolarisStoriesV3ReelPageGalleryQuery, verified against the web story viewer.
 const REELS_MEDIA_DOCUMENT_ID = "29306733562261201";
 
-export class InstagramApiResponseError extends Error {
+class InstagramApiResponseError extends Error {
   override readonly name = "InstagramApiResponseError";
   readonly nonRetryable = true;
 }

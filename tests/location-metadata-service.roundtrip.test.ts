@@ -5,7 +5,7 @@ import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
 import { fetchStoriesManifest } from "../sdk/stories.ts";
-import type { StoryItem } from "../sdk/lib/types.ts";
+import type { StoryItem } from "../sdk/instagram-types.ts";
 import type { JsonObject } from "../sdk/lib/json-value.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 import { createCapturingLogger, createClient, fixedNow, reel, response } from "./mock-helpers.ts";

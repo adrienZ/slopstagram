@@ -1,6 +1,6 @@
 import { integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-orm/zod";
-import { STORY_MEDIA_TYPES } from "../lib/types.ts";
+import { STORY_MEDIA_TYPES } from "../story-types.ts";
 
 export const reports = sqliteTable("reports", {
   broadcastsCount: integer().notNull(),

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, test } from "vitest";
 import { getStoryTrayUiSortPosition, parseStoriesTrayReport } from "../sdk/lib/parser-service.ts";
-import type { StoriesReport } from "../sdk/lib/types.ts";
+import type { StoriesReport } from "../sdk/instagram-types.ts";
 import reelsTrayFixture from "./fixtures/xdt_api__v1__feed__reels_tray.json" with { type: "json" };
 
 // SAFETY: This checked-in JSON fixture is maintained as a StoriesReport test input.

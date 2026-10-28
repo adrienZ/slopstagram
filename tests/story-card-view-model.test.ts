@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
-import type { StoryOutputUser } from "../sdk/lib/types.ts";
-import { createStoryCards } from "../server/story-card-view-model.ts";
-import type { StoryCardSources } from "../server/story-card-view-model.ts";
+import type { StoryOutputUser } from "../sdk/report-types.ts";
+import { createStoryCards, type StoryCardSources } from "../server/story-card-view-model.ts";
 
 function createUser(): StoryOutputUser {
   return {
