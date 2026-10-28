@@ -3,7 +3,8 @@ import { z } from "zod";
 import { Card, CardHeader, CardTitle, CardDescription } from "../../shadcn/ui/card.tsx";
 import { getUserTimeline } from "../../query-service.ts";
 
-import { formatUserHandle, formatUserName } from "../../helper.ts";
+import { ExternalLinkIcon } from "lucide-react";
+import { formatUserHandle, formatUserName, getInstagramProfileUrl } from "../../helper.ts";
 import type { StoryCardViewModel } from "../../story-card-view-model.ts";
 import { withStoryStickers } from "../../story-card-view-model.ts";
 import type { UserTimeline } from "../../user-timeline.ts";
@@ -49,7 +50,15 @@ function TimelineHeader({
                 {displayName !== undefined && displayName.length > 0 ? displayName : handle}
               </h1>
             </CardTitle>
-            <span className="tw:mt-1 tw:block tw:text-base tw:text-muted-foreground">{handle}</span>
+            <a
+              className="tw:mt-1 tw:flex tw:items-center tw:gap-1 tw:text-base tw:text-muted-foreground tw:hover:underline"
+              href={getInstagramProfileUrl(timeline.timelineUser.username)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {handle}
+              <ExternalLinkIcon className="tw:size-3.5" aria-hidden="true" />
+            </a>
             <CardDescription className="tw:mt-1">
               <p>{`${timeline.stories.length} story${timeline.stories.length > 1 ? "s" : ""} · dates de publication`}</p>
             </CardDescription>
