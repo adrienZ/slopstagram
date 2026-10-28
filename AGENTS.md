@@ -1,6 +1,6 @@
 ## General rules
 
-Even if I talk to you in french always use english when writing something on Github.
+Even if I talk to you in french always use english when writing a issue, commit or a PR on Github.
 
 ## Bunqueue
 
@@ -32,11 +32,11 @@ generated files. Keep generated files excluded from linting and formatting.
 
 ### Persistence layout
 
-Put Drizzle table definitions and entity types in `sdk/entities/`. Keep repository
-classes, database queries, transactions, row mappings, and persistence helpers
-(including annotation merging) in `sdk/repositories/`. Import repositories directly
-from their repository modules. Apply this boundary to persistence code you add or
-refactor.
+Put Drizzle tables, entity types, and table-derived validation schemas in
+`sdk/entities/`. Keep `sdk/repositories/` focused on database access; put business
+logic in domain modules. Import repositories directly from their modules.
+
+Derive database-shaped validators from `drizzle-orm/zod` and reuse them.
 
 ## playwright
 
@@ -86,4 +86,9 @@ If the command reports that the file contains a secret, **do not read the file**
 1. Inform the user that the file appears to contain a secret or credential and that reading it would expose the value in chat history, logs, and any downstream telemetry.
 2. Advise them to rotate the leaked credential at its source of truth and remove it from the file.
 3. Do not proceed with the original request until the secret has been removed.
+
+## Local cache
+
+However, you can bypass `data/cache/**`: cached Instagram payloads. These payloads are large, so extract only the keys you need with `jq` and print nothing else.
+
 <!-- sonar:end:codex-secrets-on-read -->

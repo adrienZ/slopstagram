@@ -26,6 +26,7 @@ export async function renderPage<Props extends object>(
   Page: ComponentType<Props & { selectedStory?: string }>,
   props: Props,
   url = "/report",
+  options: { beforeLoad?: () => Promise<void> } = {},
 ) {
   const user = userEvent.setup();
   function PageWithSearch() {
@@ -37,6 +38,7 @@ export async function renderPage<Props extends object>(
     getParentRoute: () => root,
     path: url.split("?")[0],
     validateSearch: (search) => search,
+    beforeLoad: options.beforeLoad,
     component: PageWithSearch,
   });
   const router = createRouter({

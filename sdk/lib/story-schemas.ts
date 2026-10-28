@@ -1,6 +1,10 @@
 import { z } from "zod";
+import { StoryLocationObservationSchema } from "../entities/location-metadata.ts";
+import { StoryMusicObservationSchema } from "../entities/music-metadata.ts";
+import { StoryAudioSchema } from "../entities/story-audio.ts";
+import { ReportStorySchema, ReportFailureSchema } from "../entities/report.ts";
+import { StoryStickerSchema } from "../entities/story.ts";
 import { JsonValueSchema } from "./json-value.ts";
-import { STORY_MEDIA_TYPES } from "./types.ts";
 
 export const StoryVersionSchema = z.object({
   height: z.number().optional(),
@@ -31,13 +35,14 @@ export const StoryTrayEntrySchema = z.object({
 export const StoryItemSchema = z
   .object({
     accessibility_caption: z.string().nullable().optional(),
+    video_dash_manifest: z.string().nullable().optional(),
     annotations: z
       .object({
+        storyAudio: StoryAudioSchema.optional(),
+        locationObservations: z.array(StoryLocationObservationSchema).optional(),
+        musicObservations: z.array(StoryMusicObservationSchema).optional(),
         locations: z.array(z.string()),
-        stickers: z.array(
-          z.object({ kind: z.string(), label: z.string(), source: z.string().optional() }),
-        ),
-        sources: z.array(z.string()).optional(),
+        stickers: z.array(StoryStickerSchema),
       })
       .optional(),
     image_versions2: z
@@ -83,17 +88,15 @@ export const StoryReelSchema = z
   })
   .catchall(JsonValueSchema);
 
-const StoryManifestItemStatusSchema = z.enum(["ok", "failed"]);
-const StoryMediaTypeSchema = z.enum([STORY_MEDIA_TYPES.IMAGE, STORY_MEDIA_TYPES.VIDEO]);
 const StoryManifestItemSchema = z.object({
   failure_index: z.number().optional(),
   ig_caption: z.string(),
   locations: z.array(z.string()),
-  media_type: StoryMediaTypeSchema.nullable().optional(),
+  media_type: ReportStorySchema.shape.mediaType.optional(),
   media_pk: z.string(),
   preview_image_url: z.string().nullable(),
   stickers: z.array(z.string()),
-  status: StoryManifestItemStatusSchema,
+  status: ReportStorySchema.shape.status,
 });
 const StoryManifestReelSchema = z.object({
   full_name: z.string().nullable().optional(),
@@ -119,7 +122,7 @@ const StoryFetchFailureSchema = z.object({
   http_status: z.number().nullable(),
   media_pk: z.string().nullable(),
   message: z.string(),
-  reason: z.enum(["request_failed", "rate_limited", "missing_from_response"]),
+  reason: ReportFailureSchema.shape.reason,
   reel_id: z.string(),
 });
 const StoryFetchCountsSchema = z.object({

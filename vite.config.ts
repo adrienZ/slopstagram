@@ -9,6 +9,14 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
+  ssr: {
+    noExternal: ["react-use"],
+  },
+  optimizeDeps: {
+    // The map is behind a lazy import, so Vite would only find it after startup
+    // and re-optimize, leaving a second copy of React inside the map bundle.
+    include: ["react-map-gl/maplibre", "maplibre-gl"],
+  },
   plugins: [
     tailwindcss(),
     tanstackStart({
