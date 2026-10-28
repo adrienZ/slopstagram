@@ -13,7 +13,7 @@ const stickerKindOrder = new Map([
 export interface StoryStickerGroup {
   mediaPk: string;
   date: string;
-  labels: Array<{ key: string; label: string; category?: string }>;
+  labels: Array<{ key: string; label: string; place?: StickerPlace }>;
   musicItems?: Array<MusicStickerItem>;
 }
 
@@ -41,17 +41,40 @@ export function formatStickerLabel(kind: string, label: string): string {
   return `${url.hostname}${url.pathname === "/" ? "" : url.pathname}`;
 }
 
-// Location stickers do not carry their place's category: it comes from the
-// place lookup linked to the sticker occurrence.
-export function locationCategories(annotations: StoryAnnotations | undefined) {
-  const categories = new Map<string, string>();
+export interface StickerPlace {
+  category?: string;
+  hasCoordinates: boolean;
+}
+
+// Location stickers do not carry their place: it comes from the observation
+// linked to the sticker occurrence. A sticker without one has no coordinates.
+export function stickerPlaces(annotations: StoryAnnotations | undefined) {
+  const places = new Map<string, StickerPlace>();
   for (const { occurrenceId, metadata } of annotations?.locationObservations ?? []) {
-    const category = metadata.category?.trim();
-    if (occurrenceId !== null && category !== undefined && category.length > 0) {
-      categories.set(occurrenceId, category);
+    if (occurrenceId === null) {
+      continue;
     }
+    const category = metadata.category?.trim();
+    places.set(occurrenceId, {
+      category: category === undefined || category.length === 0 ? undefined : category,
+      hasCoordinates: metadata.status === "usable",
+    });
   }
-  return categories;
+  return places;
+}
+
+export function stickerPlace(
+  places: Map<string, StickerPlace>,
+  sticker: { kind: string; occurrenceId?: string },
+): StickerPlace | undefined {
+  if (sticker.kind !== "location") {
+    return undefined;
+  }
+  return (
+    (sticker.occurrenceId === undefined ? undefined : places.get(sticker.occurrenceId)) ?? {
+      hasCoordinates: false,
+    }
+  );
 }
 
 export function groupTimelineStickers(
@@ -62,26 +85,23 @@ export function groupTimelineStickers(
   const occurrences = stories
     .toSorted((left, right) => right.taken_at - left.taken_at)
     .flatMap((entry) => {
-      const categories = locationCategories(entry.story.annotations);
+      const places = stickerPlaces(entry.story.annotations);
       return (entry.story.annotations?.stickers ?? []).map((sticker, position) => ({
         entry,
         sticker,
         key: `${entry.story.pk}:${position}`,
-        category:
-          sticker.kind === "location" && sticker.occurrenceId !== undefined
-            ? categories.get(sticker.occurrenceId)
-            : undefined,
+        place: stickerPlace(places, sticker),
       }));
     });
 
-  for (const { entry, sticker, key, category } of occurrences) {
+  for (const { entry, sticker, key, place } of occurrences) {
     const byStory = kinds.get(sticker.kind) ?? new Map<string, StoryStickerGroup>();
     const group = byStory.get(entry.story.pk) ?? {
       mediaPk: entry.story.pk,
       date: new Date(entry.taken_at * 1000).toISOString(),
       labels: [],
     };
-    const label = { key, label: sticker.label, category };
+    const label = { key, label: sticker.label, place };
     group.labels.push(label);
     byStory.set(entry.story.pk, group);
     kinds.set(sticker.kind, byStory);

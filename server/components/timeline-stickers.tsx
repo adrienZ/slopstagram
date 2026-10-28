@@ -122,11 +122,9 @@ function StickerTable({
                           <MusicSticker label={label} preview={preview} />
                         </li>
                       ))
-                    : story.labels.map(({ key, label, category }) => (
+                    : story.labels.map(({ key, label, place }) => (
                         <li key={key} className="tw:min-w-0 tw:max-w-full">
-                          <Sticker
-                            sticker={presentSticker(kind, label, users, expanded, category)}
-                          />
+                          <Sticker sticker={presentSticker(kind, label, users, expanded, place)} />
                         </li>
                       ))}
                 </ul>

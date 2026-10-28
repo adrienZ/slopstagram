@@ -1,7 +1,8 @@
-import { MapPinIcon } from "lucide-react";
+import { MapPinIcon, MapPinOffIcon } from "lucide-react";
 import { Badge } from "../shadcn/ui/badge.tsx";
 import { useState } from "react";
 import type { StickerPresentation } from "../sticker-presentation.ts";
+import type { StickerPlace } from "../timeline-stickers.ts";
 
 const badgeClass = "tw:h-auto tw:max-w-full tw:gap-1 tw:py-1 tw:whitespace-normal";
 
@@ -45,10 +46,12 @@ export function MentionSticker({ sticker }: { sticker: StickerPresentation }) {
   );
 }
 
-export function LocationSticker({ label, category }: { label: string; category?: string }) {
+export function LocationSticker({ label, place }: { label: string; place?: StickerPlace }) {
+  const category = place?.category;
+  const Icon = place?.hasCoordinates === false ? MapPinOffIcon : MapPinIcon;
   return (
     <Badge variant="secondary" title={label} className={badgeClass}>
-      <MapPinIcon aria-hidden="true" />
+      <Icon aria-hidden="true" />
       <span className="tw:flex tw:flex-col">
         <span className="tw:wrap-anywhere">{label}</span>
         {category !== undefined && (
@@ -74,7 +77,7 @@ export function Sticker({ sticker }: { sticker: StickerPresentation }) {
     return <MentionSticker sticker={sticker} />;
   }
   if (sticker.kind === "location") {
-    return <LocationSticker label={sticker.label} category={sticker.category} />;
+    return <LocationSticker label={sticker.label} place={sticker.place} />;
   }
   if (sticker.kind === "hashtag") {
     return <HashtagSticker label={sticker.label} />;

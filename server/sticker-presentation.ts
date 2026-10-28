@@ -1,11 +1,11 @@
 import type { SidebarUser } from "./sidebar-users.ts";
-import { formatStickerLabel } from "./timeline-stickers.ts";
+import { formatStickerLabel, type StickerPlace } from "./timeline-stickers.ts";
 import { getUserTimelineUrl } from "./helper.ts";
 
 export interface StickerPresentation {
   kind: string;
   label: string;
-  category?: string;
+  place?: StickerPlace;
   title: string;
   profileUrl?: string;
   avatarUrl?: string;
@@ -16,7 +16,7 @@ export function presentSticker(
   label: string,
   users: Array<SidebarUser>,
   expanded = false,
-  category?: string,
+  place?: StickerPlace,
 ): StickerPresentation {
   const username = label.trim().replace(/^@/u, "").toLowerCase();
   const user =
@@ -26,7 +26,7 @@ export function presentSticker(
   return {
     kind,
     title: label,
-    category,
+    place,
     label: expanded && kind !== "mention" ? label : formatStickerLabel(kind, label),
     profileUrl: user === undefined ? undefined : getUserTimelineUrl(user.username),
     avatarUrl: user?.avatarPath ?? undefined,

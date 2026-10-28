@@ -254,7 +254,7 @@ test("unlinked observations never supply a position for a separate legacy sticke
   expect(modal.getByText("Paris, Paris")).toBeVisible();
 });
 
-test("a place category appears in the place list and the map popup only when present", async () => {
+test("a place category appears in the place list but not in the map popup", async () => {
   const plain = observation("b", "place-b", 49);
   plain.metadata.name = "Sans catégorie";
   const props = locationTimeline([[observation("a", "place-a", 48, "Pont")], [plain]]);
@@ -265,14 +265,49 @@ test("a place category appears in the place list and the map popup only when pre
   expect(modal.getByRole("option", { name: "Sans catégorie · 1 stories" })).toBeVisible();
   const map = within(await modal.findByRole("region", { name: "Carte des lieux" }));
   await user.click(map.getByRole("button", { name: "Même nom" }));
-  const withCategory = within(map.getByRole("region", { name: "Stories du lieu : Même nom" }));
-  expect(withCategory.getByText("Pont")).toBeVisible();
-  await user.click(map.getByRole("button", { name: "Sans catégorie" }));
-  const withoutCategory = within(
-    map.getByRole("region", { name: "Stories du lieu : Sans catégorie" }),
-  );
-  expect(withoutCategory.queryByText("Pont")).not.toBeInTheDocument();
-  expect(withoutCategory.getByText("1 story")).toBeVisible();
+  const popup = within(map.getByRole("region", { name: "Stories du lieu : Même nom" }));
+  expect(popup.queryByText("Pont")).not.toBeInTheDocument();
+  expect(popup.queryByText("1 story")).not.toBeInTheDocument();
+});
+
+test("arrow keys step through the markers of an open popup and wrap around", async () => {
+  const second = observation("b", "place-b", 49);
+  second.metadata.name = "Deuxième";
+  const third = observation("c", "place-c", 50);
+  third.metadata.name = "Troisième";
+  const props = locationTimeline([[observation("a", "place-a")], [second], [third]]);
+  const { user } = await renderPage(TestTimelinePage, props, "/users/timeline-user");
+  await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
+  const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
+  const map = within(await modal.findByRole("region", { name: "Carte des lieux" }));
+  await user.keyboard("{ArrowRight}");
+  expect(modal.queryByRole("region", { name: /Stories du lieu/u })).not.toBeInTheDocument();
+  await user.click(map.getByRole("button", { name: "Même nom" }));
+  await user.keyboard("{ArrowRight}");
+  expect(map.getByRole("region", { name: "Stories du lieu : Deuxième" })).toBeVisible();
+  await user.keyboard("{ArrowRight}{ArrowRight}");
+  expect(map.getByRole("region", { name: "Stories du lieu : Même nom" })).toBeVisible();
+  await user.keyboard("{ArrowLeft}");
+  expect(map.getByRole("region", { name: "Stories du lieu : Troisième" })).toBeVisible();
+});
+
+test("location stickers show a crossed-out pin when the place has no coordinates", async () => {
+  const props = locationTimeline([
+    [observation("a", "place-a")],
+    [observation("b", "partial", null)],
+  ]);
+  props.timeline.stories.push({
+    ...props.timeline.stories[0],
+    story: {
+      ...props.timeline.stories[0].story,
+      pk: "location-legacy",
+      annotations: { locations: [], stickers: [{ kind: "location", label: "Legacy" }] },
+    },
+  });
+  await renderPage(TestTimelinePage, props, "/users/timeline-user");
+  const card = screen.getByRole("region", { name: "Type de sticker : location" });
+  expect(card.querySelectorAll(".lucide-map-pin")).toHaveLength(1);
+  expect(card.querySelectorAll(".lucide-map-pin-off")).toHaveLength(2);
 });
 
 test("location stickers show the place category on a separate line when known", async () => {

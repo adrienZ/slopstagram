@@ -5,7 +5,7 @@ import {
 } from "../sdk/lib/types.ts";
 import { presentSticker, type StickerPresentation } from "./sticker-presentation.ts";
 import type { SidebarUser } from "./sidebar-users.ts";
-import { locationCategories } from "./timeline-stickers.ts";
+import { stickerPlace, stickerPlaces } from "./timeline-stickers.ts";
 import { musicStickerItems, type MusicStickerItem } from "./music-preview.ts";
 import { formatUserName, getStoryUrl } from "./helper.ts";
 import type { ReportViewModel } from "./report-view-model.ts";
@@ -46,21 +46,19 @@ export function withStoryStickers(
 ) {
   const detailsByMediaPk = new Map(
     stories.map(({ story }) => {
-      const categories = locationCategories(story.annotations);
+      const places = stickerPlaces(story.annotations);
       return [
         story.pk,
         {
           stickers: (story.annotations?.stickers ?? [])
             .filter(({ kind }) => kind !== "music")
-            .map(({ kind, label, occurrenceId }) =>
+            .map((sticker) =>
               presentSticker(
-                kind,
-                label,
+                sticker.kind,
+                sticker.label,
                 users,
                 true,
-                kind === "location" && occurrenceId !== undefined
-                  ? categories.get(occurrenceId)
-                  : undefined,
+                stickerPlace(places, sticker),
               ),
             ),
           music: musicStickerItems(story.annotations),
