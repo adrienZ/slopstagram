@@ -6,7 +6,7 @@ import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { metadataLocations } from "../sdk/entities/location-metadata.ts";
 import type { JsonObject, JsonValue } from "../sdk/lib/json-value.ts";
 import type { StoryItem } from "../sdk/lib/types.ts";
-import { backfillPlaceLookups, listPlacesToBackfill } from "../sdk/place-backfill.ts";
+import { backfillPlaceLookups, listPlacesToBackfill } from "../scripts/backfill-place-lookups.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
 import { createCapturingLogger, fixedNow, response } from "./mock-helpers.ts";
 
