@@ -137,7 +137,7 @@ function LightboxDialog(props: {
         <div className="tw:mx-auto tw:flex tw:h-[min(900px,calc(100dvh-56px))] tw:w-full tw:overflow-hidden tw:rounded-lg tw:bg-foreground tw:max-[760px]:h-[calc(100dvh-24px)] tw:max-[760px]:flex-col">
           <div className="tw:relative tw:isolate tw:flex tw:max-w-[calc(100%-320px)] tw:flex-[0_1_auto] tw:flex-col tw:overflow-hidden tw:max-[760px]:min-h-0 tw:max-[760px]:max-w-none tw:max-[760px]:flex-[1_1_66%]">
             <img
-              className="tw:absolute tw:inset-0 tw:-z-10 tw:size-full tw:scale-110 tw:object-cover tw:blur-md"
+              className="tw:invert tw:absolute tw:inset-0 tw:-z-10 tw:size-full tw:scale-110 tw:object-cover tw:blur-sm"
               data-testid="lightbox-backdrop"
               alt=""
               aria-hidden="true"
@@ -147,7 +147,7 @@ function LightboxDialog(props: {
               className="tw:absolute tw:inset-0 tw:-z-10 tw:bg-foreground/50"
               aria-hidden="true"
             />
-            <div className="tw:flex tw:items-center tw:gap-2.5 tw:px-3 tw:py-2.5 tw:text-background">
+            <div className="tw:mb-1 tw:flex tw:items-center tw:gap-2.5 tw:bg-foreground/30 tw:px-3 tw:py-2.5 tw:text-background tw:backdrop-blur-3xl">
               <img
                 className="tw:size-10.5 tw:rounded-lg tw:object-cover"
                 alt=""
