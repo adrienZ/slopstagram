@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { test, vi } from "vitest";
 import {
   createUserTimeline,
@@ -7,6 +8,7 @@ import {
 } from "../server/user-timeline.ts";
 import { appleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
 import { visionRepository } from "../sdk/repositories/vision-repository.ts";
+import { VISION_MODEL, VISION_PROMPT } from "../sdk/lib/vision-analysis-service.ts";
 import type { UserTimelineStory } from "../sdk/repositories/story-repository.ts";
 
 function timelineStory(pk: string, takenAt: number): UserTimelineStory {
@@ -115,7 +117,13 @@ test("assembles timeline media, captions, cached vision and local paths", () => 
     pk === "image" ? "Apple caption" : null,
   );
   vi.spyOn(visionRepository, "findByMediaPk").mockImplementation((pk: string) =>
-    pk === "video" ? { model: "test-model", prompt_hash: "test-hash", result: vision } : null,
+    pk === "video"
+      ? {
+          model: VISION_MODEL,
+          prompt_hash: createHash("sha256").update(VISION_PROMPT).digest("hex"),
+          result: vision,
+        }
+      : null,
   );
 
   const timeline = createUserTimeline("timeline-user", {
