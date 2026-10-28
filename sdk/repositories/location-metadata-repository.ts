@@ -15,6 +15,7 @@ import {
   planLocationMetadataWrite,
   boundLookupFailure,
   planPlaceDetails,
+  isSameLabel,
   locationStickerLabel,
   planPlaceFill,
   planStoryLocationUpdates,
@@ -121,7 +122,8 @@ export function fillTaggedPlace(
 }
 
 // Stories saved with only a place id show a sticker whose label the payload never carried.
-// Once the place is named, give each such observation the location sticker it stands for.
+// Once the place is named, give each such observation the location sticker it stands for:
+// one the story already shows under the place's name, or else a new one.
 function labelObservedStickers(database: LocationDatabase, locationId: string): void {
   const unlinked = database
     .select({ observation: storyLocationObservations, place: metadataLocations })
@@ -141,6 +143,7 @@ function labelObservedStickers(database: LocationDatabase, locationId: string): 
     }
     const shown = database
       .select({
+        occurrenceId: storyStickers.occurrenceId,
         sortOrder: storyStickers.sortOrder,
         kind: storyStickers.kind,
         label: storyStickers.label,
@@ -148,7 +151,28 @@ function labelObservedStickers(database: LocationDatabase, locationId: string): 
       .from(storyStickers)
       .where(eq(storyStickers.mediaPk, observation.mediaPk))
       .all();
-    if (shown.some((sticker) => sticker.kind === "location" && sticker.label === label)) {
+    const claimed = new Set(
+      database
+        .select({ occurrenceId: storyLocationObservations.occurrenceId })
+        .from(storyLocationObservations)
+        .where(eq(storyLocationObservations.mediaPk, observation.mediaPk))
+        .all()
+        .map((entry) => entry.occurrenceId),
+    );
+    const names = [label, place.name].filter((name) => name !== null);
+    const matching = shown.filter(
+      (sticker) =>
+        sticker.kind === "location" && names.some((name) => isSameLabel(sticker.label, name)),
+    );
+    if (matching.length > 0) {
+      const unclaimed = matching.find((sticker) => !claimed.has(sticker.occurrenceId));
+      if (unclaimed !== undefined) {
+        database
+          .update(storyLocationObservations)
+          .set({ occurrenceId: unclaimed.occurrenceId })
+          .where(eq(storyLocationObservations.id, observation.id))
+          .run();
+      }
       continue;
     }
     const sticker = {

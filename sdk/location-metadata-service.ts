@@ -56,9 +56,22 @@ export interface PlaceLookupInput extends PlaceFillInput {
   details?: PlaceDetailsInput;
 }
 
+function normalizedLabel(label: string) {
+  return label.trim().toLowerCase();
+}
+
+export function isSameLabel(left: string, right: string) {
+  return normalizedLabel(left) === normalizedLabel(right);
+}
+
 // A location sticker found by a lookup reads like the ones observed in stories: name, then address.
+// An address that only repeats the name adds nothing.
 export function locationStickerLabel(place: { name: string | null; address: string | null }) {
-  const label = [place.name, place.address].filter((part) => part !== null).join(", ");
+  const address =
+    place.name !== null && place.address !== null && isSameLabel(place.name, place.address)
+      ? null
+      : place.address;
+  const label = [place.name, address].filter((part) => part !== null).join(", ");
   return label.length > 0 ? label : null;
 }
 

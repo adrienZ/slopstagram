@@ -8,6 +8,7 @@ import {
   storyLocationObservations,
 } from "../sdk/entities/location-metadata.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
+import { storyStickers } from "../sdk/entities/story.ts";
 import type { JsonObject, JsonValue } from "../sdk/lib/json-value.ts";
 import type { StoryItem } from "../sdk/lib/types.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
@@ -775,6 +776,43 @@ test("a later lookup of the same place never adds a second location sticker", as
   repository.recordPlaceLookup("111", { name: "Chez Paul", address: "Later address" }, fixedNow());
   assert.equal(locationStickers(repository, "m1").length, 1);
   assert.deepEqual(shownLocations(repository, "m1"), ["Chez Paul"]);
+});
+
+test("an older sticker showing the place by its name is linked instead of getting a second sticker", async (context) => {
+  const database = setupDatabase(context);
+  const repository = new StoryRepository(database);
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "111" })], {
+      "111": () => response(placeBody("111", { lat: 1, lng: 2 })),
+    }),
+  );
+  database
+    .insert(storyStickers)
+    .values({ kind: "location", label: " chez paul", mediaPk: "m1", sortOrder: 0 })
+    .run();
+  repository.recordPlaceLookup(
+    "111",
+    { name: "Chez Paul", address: "1 Rue des Halles" },
+    fixedNow(),
+  );
+  const [sticker] = locationStickers(repository, "m1");
+  assert.deepEqual(shownLocations(repository, "m1"), [" chez paul"]);
+  assert.equal(locationStickers(repository, "m1").length, 1);
+  const observation = repository.findByMediaPk("m1")?.annotations?.locationObservations?.[0];
+  assert.equal(observation?.occurrenceId, sticker.occurrenceId);
+});
+
+test("an address that repeats the name is not added to the sticker label", async (context) => {
+  const repository = setup(context);
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "111" })], {
+      "111": () =>
+        response(placeBody("111", { name: "Anse De Maldormé", address: "anse de maldormé" })),
+    }),
+  );
+  assert.deepEqual(shownLocations(repository, "m1"), ["Anse De Maldormé"]);
 });
 
 test("a story that tags the same place twice gets a single location sticker", async (context) => {
