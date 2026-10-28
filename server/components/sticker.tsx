@@ -45,11 +45,18 @@ export function MentionSticker({ sticker }: { sticker: StickerPresentation }) {
   );
 }
 
-export function LocationSticker({ label }: { label: string }) {
+export function LocationSticker({ label, category }: { label: string; category?: string }) {
   return (
     <Badge variant="secondary" title={label} className={badgeClass}>
       <MapPinIcon aria-hidden="true" />
-      <span className="tw:wrap-anywhere">{label}</span>
+      <span className="tw:flex tw:flex-col">
+        <span className="tw:wrap-anywhere">{label}</span>
+        {category !== undefined && (
+          <span className="tw:text-[0.8em] tw:font-normal tw:text-muted-foreground tw:wrap-anywhere">
+            {category}
+          </span>
+        )}
+      </span>
     </Badge>
   );
 }
@@ -67,7 +74,7 @@ export function Sticker({ sticker }: { sticker: StickerPresentation }) {
     return <MentionSticker sticker={sticker} />;
   }
   if (sticker.kind === "location") {
-    return <LocationSticker label={sticker.label} />;
+    return <LocationSticker label={sticker.label} category={sticker.category} />;
   }
   if (sticker.kind === "hashtag") {
     return <HashtagSticker label={sticker.label} />;

@@ -4,6 +4,7 @@ import type { StoryCardViewModel } from "../story-card-view-model.ts";
 import { useState, type ReactNode } from "react";
 import { Sticker } from "./sticker.tsx";
 import { MusicSticker } from "./music-sticker.tsx";
+import { getUserTimelineUrl } from "../helper.ts";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "../shadcn/ui/dialog.tsx";
 
 const detailsCellClassName =
@@ -45,7 +46,17 @@ function LightboxNavButton(props: {
   );
 }
 
-function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: StoryCardViewModel }) {
+interface LightboxProps {
+  stories: Array<StoryCardViewModel>;
+  selectedStory?: string;
+  linkToProfile?: boolean;
+}
+
+function LightboxDialog(props: {
+  stories: Array<StoryCardViewModel>;
+  story: StoryCardViewModel;
+  linkToProfile: boolean;
+}) {
   const navigateTo = useNavigate();
   const [dismissedStory, setDismissedStory] = useState<string | null>(null);
 
@@ -133,7 +144,16 @@ function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: Stor
                 hidden={props.story.avatar === undefined}
               />
               <div>
-                <strong>{props.story.userName}</strong>
+                {props.linkToProfile ? (
+                  <a
+                    className="tw:font-bold tw:text-inherit tw:underline-offset-2 tw:hover:underline"
+                    href={getUserTimelineUrl(props.story.username)}
+                  >
+                    {props.story.userName}
+                  </a>
+                ) : (
+                  <strong>{props.story.userName}</strong>
+                )}
                 <span>{selectedCount()}</span>
               </div>
             </div>
@@ -159,7 +179,7 @@ function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: Stor
                     ) : (
                       <>
                         {props.story.stickerDetails.text}
-                        <div className="tw:flex tw:flex-wrap tw:gap-1.5">
+                        <div className="tw:flex tw:flex-wrap tw:items-start tw:gap-1.5">
                           {props.story.stickerDetails.stickers?.map((sticker, index) => (
                             <Sticker key={`${sticker.kind}:${index}`} sticker={sticker} />
                           ))}
@@ -203,7 +223,13 @@ function LightboxDialog(props: { stories: Array<StoryCardViewModel>; story: Stor
   );
 }
 
-export function Lightbox(props: { stories: Array<StoryCardViewModel>; selectedStory?: string }) {
+export function Lightbox(props: LightboxProps) {
   const story = props.stories.find((entry) => entry.mediaPk === props.selectedStory);
-  return story === undefined ? null : <LightboxDialog stories={props.stories} story={story} />;
+  return story === undefined ? null : (
+    <LightboxDialog
+      stories={props.stories}
+      story={story}
+      linkToProfile={props.linkToProfile ?? false}
+    />
+  );
 }

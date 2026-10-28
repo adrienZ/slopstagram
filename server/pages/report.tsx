@@ -54,7 +54,11 @@ export function ReportPage({
       {users.map((props) => (
         <UserSection key={props.user.username} {...props} />
       ))}
-      <Lightbox stories={users.flatMap((user) => user.stories)} selectedStory={selectedStory} />
+      <Lightbox
+        stories={users.flatMap((user) => user.stories)}
+        selectedStory={selectedStory}
+        linkToProfile
+      />
     </StoryLayout>
   );
 }

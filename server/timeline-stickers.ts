@@ -1,5 +1,5 @@
 import { musicStickerItems, type MusicStickerItem } from "./music-preview.ts";
-import type { UserTimelineStory } from "../sdk/lib/types.ts";
+import type { StoryAnnotations, UserTimelineStory } from "../sdk/lib/types.ts";
 import { formatUserHandle } from "./helper.ts";
 
 const stickerKindOrder = new Map([
@@ -13,7 +13,7 @@ const stickerKindOrder = new Map([
 export interface StoryStickerGroup {
   mediaPk: string;
   date: string;
-  labels: Array<{ key: string; label: string }>;
+  labels: Array<{ key: string; label: string; category?: string }>;
   musicItems?: Array<MusicStickerItem>;
 }
 
@@ -41,6 +41,19 @@ export function formatStickerLabel(kind: string, label: string): string {
   return `${url.hostname}${url.pathname === "/" ? "" : url.pathname}`;
 }
 
+// Location stickers do not carry their place's category: it comes from the
+// place lookup linked to the sticker occurrence.
+export function locationCategories(annotations: StoryAnnotations | undefined) {
+  const categories = new Map<string, string>();
+  for (const { occurrenceId, metadata } of annotations?.locationObservations ?? []) {
+    const category = metadata.category?.trim();
+    if (occurrenceId !== null && category !== undefined && category.length > 0) {
+      categories.set(occurrenceId, category);
+    }
+  }
+  return categories;
+}
+
 export function groupTimelineStickers(
   stories: Array<UserTimelineStory>,
   availableKinds: Array<string>,
@@ -48,22 +61,27 @@ export function groupTimelineStickers(
   const kinds = new Map(availableKinds.map((kind) => [kind, new Map<string, StoryStickerGroup>()]));
   const occurrences = stories
     .toSorted((left, right) => right.taken_at - left.taken_at)
-    .flatMap((entry) =>
-      (entry.story.annotations?.stickers ?? []).map((sticker, position) => ({
+    .flatMap((entry) => {
+      const categories = locationCategories(entry.story.annotations);
+      return (entry.story.annotations?.stickers ?? []).map((sticker, position) => ({
         entry,
         sticker,
         key: `${entry.story.pk}:${position}`,
-      })),
-    );
+        category:
+          sticker.kind === "location" && sticker.occurrenceId !== undefined
+            ? categories.get(sticker.occurrenceId)
+            : undefined,
+      }));
+    });
 
-  for (const { entry, sticker, key } of occurrences) {
+  for (const { entry, sticker, key, category } of occurrences) {
     const byStory = kinds.get(sticker.kind) ?? new Map<string, StoryStickerGroup>();
     const group = byStory.get(entry.story.pk) ?? {
       mediaPk: entry.story.pk,
       date: new Date(entry.taken_at * 1000).toISOString(),
       labels: [],
     };
-    const label = { key, label: sticker.label };
+    const label = { key, label: sticker.label, category };
     group.labels.push(label);
     byStory.set(entry.story.pk, group);
     kinds.set(sticker.kind, byStory);

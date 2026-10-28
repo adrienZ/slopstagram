@@ -274,3 +274,15 @@ test("a place category appears in the place list and the map popup only when pre
   expect(withoutCategory.queryByText("Pont")).not.toBeInTheDocument();
   expect(withoutCategory.getByText("1 story")).toBeVisible();
 });
+
+test("location stickers show the place category on a separate line when known", async () => {
+  const props = locationTimeline([
+    [observation("a", "place-a", 48, "Parc")],
+    [observation("b", "place-b")],
+  ]);
+  await renderPage(TestTimelinePage, props, "/users/timeline-user");
+  const card = within(screen.getByRole("region", { name: "Type de sticker : location" }));
+  expect(card.getByText("Parc")).toBeVisible();
+  expect(card.getAllByText("Paris, Paris")).toHaveLength(2);
+  expect(card.getAllByText(/Parc/u)).toHaveLength(1);
+});

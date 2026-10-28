@@ -5,6 +5,7 @@ import {
 } from "../sdk/lib/types.ts";
 import { presentSticker, type StickerPresentation } from "./sticker-presentation.ts";
 import type { SidebarUser } from "./sidebar-users.ts";
+import { locationCategories } from "./timeline-stickers.ts";
 import { musicStickerItems, type MusicStickerItem } from "./music-preview.ts";
 import { formatUserName, getStoryUrl } from "./helper.ts";
 import type { ReportViewModel } from "./report-view-model.ts";
@@ -21,6 +22,7 @@ export interface StoryCardViewModel {
     music: Array<MusicStickerItem>;
   };
   mediaPk: string;
+  username: string;
   preview: string;
   alt: string;
   url: string;
@@ -43,15 +45,28 @@ export function withStoryStickers(
   users: Array<SidebarUser> = [],
 ) {
   const detailsByMediaPk = new Map(
-    stories.map(({ story }) => [
-      story.pk,
-      {
-        stickers: (story.annotations?.stickers ?? [])
-          .filter(({ kind }) => kind !== "music")
-          .map(({ kind, label }) => presentSticker(kind, label, users, true)),
-        music: musicStickerItems(story.annotations),
-      },
-    ]),
+    stories.map(({ story }) => {
+      const categories = locationCategories(story.annotations);
+      return [
+        story.pk,
+        {
+          stickers: (story.annotations?.stickers ?? [])
+            .filter(({ kind }) => kind !== "music")
+            .map(({ kind, label, occurrenceId }) =>
+              presentSticker(
+                kind,
+                label,
+                users,
+                true,
+                kind === "location" && occurrenceId !== undefined
+                  ? categories.get(occurrenceId)
+                  : undefined,
+              ),
+            ),
+          music: musicStickerItems(story.annotations),
+        },
+      ];
+    }),
   );
   return cards.map((card) => ({ ...card, stickerDetails: detailsByMediaPk.get(card.mediaPk) }));
 }
@@ -92,6 +107,7 @@ export function createStoryCards(
     return [
       {
         mediaPk: story.media_pk,
+        username: user.username,
         preview,
         alt: `aperçu ${story.media_pk}`,
         url: getStoryUrl(user.username, story.media_pk),
