@@ -12,6 +12,7 @@ import type {
   StoryTrayEntry,
   InstagramClient,
   InstagramClientResponse,
+  ReelsMediaResponse,
 } from "../sdk/instagram-types.ts";
 import type { StoriesManifestReport } from "../sdk/report-types.ts";
 import type { StoryStorage } from "../sdk/lib/cache-service.ts";
@@ -233,9 +234,22 @@ export function response<T>(
   };
 }
 
+/** Builds a reels response in the shape Instagram's GraphQL gallery returns: one reel per entry, keyed by id. */
+export function reelsResponse(
+  reels: Record<string, StoryReel>,
+  status = 200,
+  headers: Record<string, string> = {},
+): InstagramClientResponse<ReelsMediaResponse> {
+  return response(
+    { reels_media: Object.entries(reels).map(([id, value]) => ({ id, ...value })) },
+    status,
+    headers,
+  );
+}
+
 export function createClient(
   tray: Array<StoryTrayEntry>,
-  reelsResponses: Array<InstagramClientResponse<{ reels?: Record<string, StoryReel> }>>,
+  reelsResponses: Array<InstagramClientResponse<ReelsMediaResponse>>,
 ): InstagramClient & { reelsCalls: Array<Array<string>> } {
   const reelsCalls: Array<Array<string>> = [];
 

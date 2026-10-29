@@ -6,7 +6,13 @@ import { StoryRepository } from "../sdk/repositories/story-repository.ts";
 import { fetchStoriesManifest } from "../sdk/stories.ts";
 import type { StoryItem } from "../sdk/instagram-types.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
-import { createCapturingLogger, createClient, fixedNow, reel, response } from "./mock-helpers.ts";
+import {
+  createCapturingLogger,
+  createClient,
+  fixedNow,
+  reel,
+  reelsResponse,
+} from "./mock-helpers.ts";
 
 function present<T>(value: T | null | undefined): T {
   assert.ok(value !== null && value !== undefined);
@@ -61,7 +67,7 @@ test("live ingestion shares exact audio identities across occurrences in cold ac
   const report = await fetchStoriesManifest(
     createClient(
       [{ id: "r1", media_ids: items.map(({ pk }) => pk), user: owner }],
-      [response({ reels: { r1: { ...reel("r1", items), user: owner } } })],
+      [reelsResponse({ r1: { ...reel("r1", items), user: owner } })],
     ),
     {
       logger: createCapturingLogger(),
