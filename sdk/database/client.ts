@@ -6,6 +6,10 @@ import { APP_DATABASE_PATH } from "../lib/app-data-paths.ts";
 
 export type DrizzleDatabase = ReturnType<typeof drizzle>;
 
+/**
+ * Tests open isolated in-memory databases.
+ * @public
+ */
 export function createDrizzle(filename: string): DrizzleDatabase {
   if (filename !== ":memory:") {
     mkdirSync(path.dirname(filename), { recursive: true });

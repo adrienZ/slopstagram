@@ -9,6 +9,10 @@ import {
 import { readMusicObservations } from "./repositories/music-metadata-repository.ts";
 import { findStoryAudio, saveStoryAudioMedia } from "./repositories/story-audio-repository.ts";
 
+/**
+ * Tests drive one story through every audio outcome; cacheReportAudio runs them all together.
+ * @public
+ */
 export async function processStoryAudio(mediaPk: string, options: MusicMediaOptions) {
   const current = findStoryAudio(options.database, mediaPk);
   if (!current) {

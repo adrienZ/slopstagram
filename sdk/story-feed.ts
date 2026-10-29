@@ -79,6 +79,10 @@ export function createStoryFeed(now: Date, options: StoryFeedOptions = {}): Arra
   );
 }
 
+/**
+ * Tests read a calendar day without the rolling window.
+ * @public
+ */
 export function createStoryDayFeed(
   day: string,
   options: {

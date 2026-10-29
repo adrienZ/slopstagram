@@ -4,7 +4,7 @@ import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
-import { fetchStoriesManifest } from "../sdk/stories.ts";
+import { fetchStories } from "../sdk/stories.ts";
 import type { StoryItem } from "../sdk/instagram-types.ts";
 import type { JsonObject } from "../sdk/lib/json-value.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
@@ -111,18 +111,16 @@ test("external-only observations do not block other location updates during live
       { facebook_places_id: "000456" },
     ],
   };
-  const report = await fetchStoriesManifest(
-    createClient(
+  const report = await fetchStories([], {
+    client: createClient(
       [{ id: "r1", media_ids: ["m1"], user: owner }],
       [reelsResponse({ r1: { ...reel("r1", [item]), user: owner } })],
     ),
-    {
-      logger,
-      now: fixedNow,
-      storyRepository: repository,
-      storyStorage: createMemoryStorage<StoryItem>(),
-    },
-  );
+    logger,
+    now: fixedNow,
+    storyRepository: repository,
+    storyStorage: createMemoryStorage<StoryItem>(),
+  });
   assert.deepEqual(report.manifest.users[0].stories[0].locations, ["Updated"]);
   const [history] = new StoryRepository(database).listByUsername("one");
   const stored = present(history.story.annotations);
@@ -215,18 +213,16 @@ test("live ingestion shares tagged places and exposes exact metadata with occurr
       story_locations: [{ id: "d", location: { ...location, pk: "different" } }],
     },
   ];
-  const report = await fetchStoriesManifest(
-    createClient(
+  const report = await fetchStories([], {
+    client: createClient(
       [{ id: "r1", media_ids: items.map(({ pk }) => pk), user: owner }],
       [reelsResponse({ r1: { ...reel("r1", items), user: owner } })],
     ),
-    {
-      logger: createCapturingLogger(),
-      now: fixedNow,
-      storyRepository: new StoryRepository(database),
-      storyStorage: createMemoryStorage<StoryItem>(),
-    },
-  );
+    logger: createCapturingLogger(),
+    now: fixedNow,
+    storyRepository: new StoryRepository(database),
+    storyStorage: createMemoryStorage<StoryItem>(),
+  });
   assert.deepEqual(report.manifest.users[0].stories[0].locations, ["Paris, Paris", "Paris, Paris"]);
   const history = new StoryRepository(database).listByUsername("one");
   const first = present(present(history.find(({ story }) => story.pk === "m1")).story.annotations);

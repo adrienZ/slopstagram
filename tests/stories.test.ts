@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, test } from "vitest";
 import { getMediaCacheKey } from "../sdk/lib/cache-service.ts";
-import { fetchStoriesManifest } from "../sdk/stories.ts";
+import { fetchStories } from "../sdk/stories.ts";
 import {
   createCapturingLogger,
   createClient,
@@ -42,7 +42,8 @@ describe("fetchStoriesManifest", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(client, {
+    const report = await fetchStories([], {
+      client,
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
@@ -156,7 +157,8 @@ describe("fetchStoriesManifest", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(client, {
+    const report = await fetchStories([], {
+      client,
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
@@ -240,7 +242,8 @@ describe("fetchStoriesManifest", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(client, {
+    const report = await fetchStories([], {
+      client,
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,

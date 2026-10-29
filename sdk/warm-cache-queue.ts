@@ -5,7 +5,7 @@ import { runWarmCacheJob, type WarmCacheJobResult, type WarmCachePayload } from 
 export const WARM_CACHE_QUEUE_NAME = "warm-cache";
 const EVERY_HOUR = "0 * * * *";
 const SERVER_READY_TIMEOUT_MS = 15_000;
-export const WARM_CACHE_CRON_PATTERN = EVERY_HOUR;
+const WARM_CACHE_CRON_PATTERN = EVERY_HOUR;
 
 interface WarmCacheQueue {
   close: () => void;
@@ -40,6 +40,10 @@ interface WorkerOptions {
   concurrency: number;
 }
 
+/**
+ * Tests replace bunqueue, an external server.
+ * @public
+ */
 export interface WarmCacheQueueDependencies {
   createQueue: (name: string) => WarmCacheQueue;
   createWorker: (

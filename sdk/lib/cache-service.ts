@@ -20,6 +20,10 @@ const baseStorage = createStorage({
   }),
 });
 
+/**
+ * Tests back the image cache with memory storage.
+ * @public
+ */
 export function createImageCacheStorage(storage: Storage = baseStorage): ImageCacheStorage {
   return prefixStorage<Record<string, never>>(storage, IMAGES_STORAGE_DIR);
 }

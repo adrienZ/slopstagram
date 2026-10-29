@@ -4,7 +4,7 @@ import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
-import { fetchStoriesManifest } from "../sdk/stories.ts";
+import { fetchStories } from "../sdk/stories.ts";
 import type { StoryItem } from "../sdk/instagram-types.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 import {
@@ -65,18 +65,16 @@ test("live ingestion shares exact audio identities across occurrences in cold ac
       ],
     },
   ];
-  const report = await fetchStoriesManifest(
-    createClient(
+  const report = await fetchStories([], {
+    client: createClient(
       [{ id: "r1", media_ids: items.map(({ pk }) => pk), user: owner }],
       [reelsResponse({ r1: { ...reel("r1", items), user: owner } })],
     ),
-    {
-      logger: createCapturingLogger(),
-      now: fixedNow,
-      storyRepository: repository,
-      storyStorage: createMemoryStorage<StoryItem>(),
-    },
-  );
+    logger: createCapturingLogger(),
+    now: fixedNow,
+    storyRepository: repository,
+    storyStorage: createMemoryStorage<StoryItem>(),
+  });
   assert.deepEqual(report.manifest.users[0].stories[0].stickers, [
     "Same Song - Artist",
     "Same Song - Artist",

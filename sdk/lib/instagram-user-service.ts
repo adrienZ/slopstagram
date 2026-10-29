@@ -73,32 +73,3 @@ export async function persistReportInstagramUsers(
     removeEmbeddedUser(user);
   }
 }
-
-export function hydrateReportInstagramUsers(
-  report: StoriesManifestReport,
-  repository: InstagramUserStore = instagramUserRepository,
-): void {
-  const usersByUsername = new Map<string, InstagramUserEntry | null>();
-
-  const users = [...report.manifest.users, ...report.output.users];
-  const missingUsernames = new Set(
-    users.filter((user) => !hasEmbeddedUser(user)).map((user) => user.username),
-  );
-  const entries = [...missingUsernames].map(
-    (username) => [username, repository.findByUsername(username)] as const,
-  );
-  for (const [username, entity] of entries) {
-    usersByUsername.set(username, entity);
-  }
-
-  for (const user of users) {
-    if (hasEmbeddedUser(user)) {
-      continue;
-    }
-    const entity = usersByUsername.get(user.username);
-    if (entity !== null && entity !== undefined) {
-      user.full_name = entity.full_name;
-      user.profile_pic_url = `images/avatars/${entity.pk}.jpg`;
-    }
-  }
-}

@@ -1,9 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, test } from "vitest";
-import {
-  hydrateReportInstagramUsers,
-  persistReportInstagramUsers,
-} from "../sdk/lib/instagram-user-service.ts";
+import { persistReportInstagramUsers } from "../sdk/lib/instagram-user-service.ts";
 import type { InstagramUserEntry } from "../sdk/entities/instagram-user.ts";
 import type { StoriesManifestReport } from "../sdk/report-types.ts";
 
@@ -64,7 +61,7 @@ function createRepository() {
 }
 
 describe("Instagram user report persistence", () => {
-  test("persists user data outside a report and hydrates it when read", async () => {
+  test("persists user data outside a report", async () => {
     const report = createReportWithInstagramUser();
     const repository = createRepository();
 
@@ -83,25 +80,6 @@ describe("Instagram user report persistence", () => {
     assert.equal("pk" in report.manifest.users[0], false);
     assert.equal("profile_pic_url" in report.manifest.users[0], false);
 
-    hydrateReportInstagramUsers(report, repository);
-
-    assert.equal(report.output.users[0]?.full_name, "Fixture User");
-    assert.equal(report.output.users[0]?.profile_pic_url, "images/avatars/instagram-pk-1.jpg");
-  });
-
-  test("hydrates reports whose nullable user columns were read as null", async () => {
-    const report = createReportWithInstagramUser();
-    const repository = createRepository();
-
-    await persistReportInstagramUsers(report, repository);
-    report.manifest.users[0].full_name = null;
-    report.manifest.users[0].profile_pic_url = null;
-    report.output.users[0].full_name = null;
-    report.output.users[0].profile_pic_url = null;
-
-    hydrateReportInstagramUsers(report, repository);
-
-    assert.equal(report.output.users[0]?.full_name, "Fixture User");
-    assert.equal(report.output.users[0]?.profile_pic_url, "images/avatars/instagram-pk-1.jpg");
+    assert.equal(repository.findByUsername("fixture-user")?.full_name, "Fixture User");
   });
 });

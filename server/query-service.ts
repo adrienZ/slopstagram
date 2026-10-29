@@ -4,6 +4,10 @@ import { z } from "zod";
 import { storyDateSchema } from "../sdk/lib/story-date-service.ts";
 
 /** Turns the loaders' 404 errors into TanStack's not-found, so the router renders its not-found page. */
+/**
+ * Tests run the not-found mapping over real loaders.
+ * @public
+ */
 export function loadOrNotFound<Result>(load: () => Result): Result {
   try {
     return load();
@@ -15,11 +19,19 @@ export function loadOrNotFound<Result>(load: () => Result): Result {
   }
 }
 
+/**
+ * In-process stand-in for the getReport server function.
+ * @public
+ */
 export async function fetchReport(data: { date?: string; story?: string }) {
   const { loadReport } = await import("./report-handler.tsx");
   return loadOrNotFound(() => loadReport(new Date(), data.date, data.story));
 }
 
+/**
+ * In-process stand-in for the getUserTimeline server function.
+ * @public
+ */
 export async function fetchUserTimeline(username: string) {
   const { loadUserTimeline } = await import("./user-timeline-handler.tsx");
   return loadOrNotFound(() => loadUserTimeline(username));

@@ -81,6 +81,10 @@ function storyAudioPreview(annotations: StoryAnnotations | undefined): MusicPrev
       };
 }
 
+/**
+ * Tests check the previews of one story annotation set.
+ * @public
+ */
 export function storyMusicPreviews(annotations: StoryAnnotations | undefined): Array<MusicPreview> {
   const soundtrack = storyAudioPreview(annotations);
   if (soundtrack !== null) {

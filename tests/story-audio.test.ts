@@ -15,7 +15,7 @@ import { groupTimelineStickers } from "../server/timeline-stickers.ts";
 import { musicStickerItems, storyMusicPreviews } from "../server/music-preview.ts";
 import type { StoriesManifestReport } from "../sdk/report-types.ts";
 import type { StoryItem } from "../sdk/instagram-types.ts";
-import { fetchStoriesManifest } from "../sdk/stories.ts";
+import { fetchStories } from "../sdk/stories.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 import {
   createCapturingLogger,
@@ -375,7 +375,8 @@ test("fresh story ingestion caches the story excerpt and prefers it over the lon
     [reelsResponse({ reel: { ...reel("reel", [story]), user: owner } })],
   );
   const repository = new StoryRepository(database);
-  const report = await fetchStoriesManifest(client, {
+  const report = await fetchStories([], {
+    client,
     storyRepository: repository,
     storyStorage: createMemoryStorage<StoryItem>(),
     logger: createCapturingLogger(),

@@ -3,7 +3,7 @@ import path from "node:path";
 import { test } from "vitest";
 import { resolveAppleCaptionsForReport } from "../sdk/apple-caption-report-service.ts";
 import { AppleOcrUnavailableError } from "../sdk/lib/apple-ocr-service.ts";
-import { fetchStoriesManifest } from "../sdk/stories.ts";
+import { fetchStories } from "../sdk/stories.ts";
 import {
   createCapturingLogger,
   createClient,
@@ -22,7 +22,8 @@ test("reads cached local previews and stops after the first unavailable result",
     [{ id: "r1", media_ids: ["m1", "m2"], user: { username: "one" } }],
     [reelsResponse({ r1: reel("r1", [storyItem("m1"), storyItem("m2")]) })],
   );
-  const report = await fetchStoriesManifest(client, {
+  const report = await fetchStories([], {
+    client,
     logger,
     now: fixedNow,
     sleep: noSleep,
@@ -67,7 +68,8 @@ test("resolves local OCR without embedding it in the report", async () => {
     [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
     [reelsResponse({ r1: reel("r1", [storyItem("m1")]) })],
   );
-  const report = await fetchStoriesManifest(client, {
+  const report = await fetchStories([], {
+    client,
     logger,
     now: fixedNow,
     sleep: noSleep,

@@ -27,7 +27,11 @@ const config: KnipConfig = {
   ignoreDependencies: [
     // Used by agents.
     "@playwright/cli",
+    // Started by `npm run bunqueue:server`, which no entry point references.
+    "bunqueue",
   ],
+  // Vite is a dependency of the Start and Vitest plugins; the scripts run its binary.
+  ignoreBinaries: ["vite"],
 };
 
 export default config;
