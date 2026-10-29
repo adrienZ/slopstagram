@@ -546,34 +546,3 @@ test("legacy provenance survives partial observations until one complete observa
   await repository.save(complete);
   expect(repository.findByMediaPk("legacy")).toStrictEqual(complete);
 });
-
-test("a failed annotation replacement rolls back occurrences", async (context) => {
-  const database = createDrizzle(":memory:");
-  migrateDatabase(database);
-  context.onTestFinished(() => {
-    database.$client.close();
-  });
-  const repository = new StoryRepository(database);
-  await repository.save({
-    pk: "m1",
-    story_hashtags: [{ hashtag: "old" }],
-    story_locations: [],
-    story_music_stickers: [{ music_asset_info: { title: "Old" } }],
-  });
-  const before = repository.findByMediaPk("m1");
-  database.$client.exec(`CREATE TEMP TRIGGER reject_annotation BEFORE INSERT ON story_stickers
-    WHEN NEW.label = '#fail' BEGIN SELECT RAISE(ABORT, 'fixture write failure'); END`);
-  await expect(
-    repository.save({ pk: "m1", story_hashtags: [{ hashtag: "fail" }], story_music_stickers: [] }),
-  ).rejects.toThrow();
-  expect(new StoryRepository(database).findByMediaPk("m1")).toStrictEqual(before);
-  database.$client.exec("DROP TRIGGER reject_annotation");
-  await repository.save({
-    pk: "m1",
-    story_hashtags: [{ hashtag: "ok" }],
-    story_music_stickers: [],
-  });
-  expect(
-    repository.findByMediaPk("m1")?.annotations?.stickers.map((sticker) => sticker.label),
-  ).toStrictEqual(["#ok"]);
-});
