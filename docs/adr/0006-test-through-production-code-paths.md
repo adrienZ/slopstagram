@@ -7,36 +7,45 @@ filled `reel_ids` and a null sidebar avatar. The mock Instagram client returned 
 legacy `reels` map, so every fetch test skipped the `reels_media` branch production
 takes. SSR tests replaced the route loader. Nothing tested the database → loader →
 page props seam, and coverage looked like 90% only because v8 ignores files no test
-loads; counted over `sdk/` and `server/`, it was 88%.
+loads; counted over `sdk/` and `server/`, it was 88%. The spec is issue #90.
 
-Most tests are in-process integration tests. A test migrates an isolated `:memory:`
-database, fills it through production code, and asserts on what production code
-returns: repositories, loaders, and the rendered route with its real loader. Data is
-seeded by running the report pipeline (`createReport` → `fetchStories`) over the
-recorded Instagram payloads in `tests/fixtures/`, with a recorded client that returns
-the real `reels_media` shape. Only the steps that need the network, macOS services or
-local models (media caching, Apple captions, vision, summaries) are skipped. Tests
-that need a case the recordings lack insert it through the repositories, not by typing
-view models. Doubles stay at true process boundaries: Instagram, Ollama, the file
-system cache, and the clock. The server function transport is one too: route loaders
-read their queries from the router context, production passes the server functions, and
-tests pass in-process calls to the functions they wrap, so SSR tests run the real
-loaders. jsdom tests cannot open SQLite, so a Vitest `globalSetup` computes the page
-props once in Node, from the same seed, and provides them to the UI project.
+Tests run against a seeded database and go through the real loaders and real pages.
+There is no end-to-end layer: seeded integration tests cover what it would, without
+building the app, starting a server or installing a browser. A Playwright smoke test
+measured about 9 s locally; revisit it only if a broken production build or route
+wiring reaches production.
 
-There is no end-to-end layer for now. A Playwright smoke test (build the app, seed a
-database file, start the built server without the warm-cache job, check both pages,
-navigation and the `?story=` redirect) measured at about 9 s locally, plus a Chromium
-install in CI. It would catch broken production builds and route wiring, which
-in-process tests cannot. Revisit it if such a break reaches production.
+Tests do not mock our own code. Fakes are allowed only at external boundaries: the
+Instagram session (it serves recorded response bodies), Ollama, Apple OCR, the
+Playwright session, bunqueue, and browser visual and media APIs that jsdom lacks (the
+map canvas, canvas, audio). No `dependencies` overrides of our modules and no swapped
+loaders. Where production reaches a boundary through a framework, the seam is injection:
+route loaders read their queries from the router context, production passes the server
+functions, and tests pass in-process calls to the functions they wrap, because server
+functions only run inside the Start server.
 
-Recordings must not drift either. A test parses every recorded payload with the
-production Zod schemas, and a script refreshes the recordings from `data/cache` with
-personal data replaced. Types reject shapes Instagram no longer returns, for example
-`ReelsMediaResponse` accepts only `reels_media`. `knip --production` lists exports only
-tests keep alive; each one is either deleted with its tests or kept as a deliberate
-test seam.
+A test seeds the database by running real ingestion over recorded payloads. The fake
+browser session answers with recorded bodies, the real `createInstagramClient` parses
+them, and the real fetch and user persistence store them in a migrated `:memory:`
+database. Recordings therefore pass through the production Zod schemas, and a stale
+recording fails loudly; no separate validation test is needed. A case the recordings
+lack is inserted through the real repositories. jsdom cannot open SQLite, so a Vitest
+`globalSetup` computes the page props once in Node, from the same seed, and provides
+them to the UI project.
+
+Recordings live in `tests/fixtures/` and are never copied from `data/cache`, which holds
+unredacted data. `npm run fixtures:capture` records the tray, reels media, place and music
+asset responses from a live authenticated session, keeps only the first reels, and
+replaces everything that could identify someone with stable synthetic values (default
+deny: a string survives only under a structural key). It runs on demand, never in CI.
+`tests/fixtures/README.md` says when each file was captured and what it covers.
+
+The legacy `reels` response shape is gone: `ReelsMediaResponse` is `reels_media` as an
+array, as `createInstagramClient` returns it, and `extractReels` and the story parsers
+that read the old shape are removed. `knip --production` runs in `check` and `check:ci`,
+so code only tests keep alive fails the build. A test seam production does not need is
+tagged `@public` with the reason, which keeps the list of seams explicit.
 
 Coverage counts every file in `sdk/` and `server/` except generated shadcn code, the
-route tree and migrations. Thresholds sit just under the measured figures, so coverage
+route tree and migrations. Thresholds raise themselves with `autoUpdate`, so coverage
 can only rise.
