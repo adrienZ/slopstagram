@@ -300,17 +300,9 @@ export function createInstagramClient(session: InstagramClientSession): Instagra
 }
 
 export function extractReels(response: ReelsMediaResponse): Record<string, StoryReel> {
-  if (response.reels !== undefined) {
-    return response.reels;
-  }
-
-  if (Array.isArray(response.reels_media)) {
-    return Object.fromEntries(
-      response.reels_media
-        .filter((reel): reel is StoryReel & { id: string } => reel.id !== undefined)
-        .map((reel) => [reel.id, reel]),
-    );
-  }
-
-  return response.reels_media ?? {};
+  return Object.fromEntries(
+    response.reels_media
+      .filter((reel): reel is StoryReel & { id: string } => reel.id !== undefined)
+      .map((reel) => [reel.id, reel]),
+  );
 }

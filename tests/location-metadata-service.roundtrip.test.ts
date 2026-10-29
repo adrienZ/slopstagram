@@ -8,7 +8,13 @@ import { fetchStoriesManifest } from "../sdk/stories.ts";
 import type { StoryItem } from "../sdk/instagram-types.ts";
 import type { JsonObject } from "../sdk/lib/json-value.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
-import { createCapturingLogger, createClient, fixedNow, reel, response } from "./mock-helpers.ts";
+import {
+  createCapturingLogger,
+  createClient,
+  fixedNow,
+  reel,
+  reelsResponse,
+} from "./mock-helpers.ts";
 
 function present<T>(value: T | null | undefined): T {
   assert.ok(value !== null && value !== undefined);
@@ -108,7 +114,7 @@ test("external-only observations do not block other location updates during live
   const report = await fetchStoriesManifest(
     createClient(
       [{ id: "r1", media_ids: ["m1"], user: owner }],
-      [response({ reels: { r1: { ...reel("r1", [item]), user: owner } } })],
+      [reelsResponse({ r1: { ...reel("r1", [item]), user: owner } })],
     ),
     {
       logger,
@@ -212,7 +218,7 @@ test("live ingestion shares tagged places and exposes exact metadata with occurr
   const report = await fetchStoriesManifest(
     createClient(
       [{ id: "r1", media_ids: items.map(({ pk }) => pk), user: owner }],
-      [response({ reels: { r1: { ...reel("r1", items), user: owner } } })],
+      [reelsResponse({ r1: { ...reel("r1", items), user: owner } })],
     ),
     {
       logger: createCapturingLogger(),

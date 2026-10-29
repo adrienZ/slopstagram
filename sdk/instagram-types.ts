@@ -101,9 +101,7 @@ export interface ReelTrayResponse {
 }
 
 export interface ReelsMediaResponse {
-  reels?: Record<string, StoryReel>;
-  reels_media?: Record<string, StoryReel> | Array<StoryReel>;
-  status?: string | null;
+  reels_media: Array<StoryReel>;
 }
 
 export interface InstagramClientResponse<T> {

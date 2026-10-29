@@ -21,7 +21,7 @@ import {
   fixedNow,
   noSleep,
   reel,
-  response,
+  reelsResponse,
 } from "./mock-helpers.ts";
 
 test("ingestion looks up one shared audio ID and caches validated audio and artwork", async (context) => {
@@ -80,11 +80,7 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
         user: { username: "one", pk: "owner" },
       },
     ],
-    [
-      response({
-        reels: { reel: { ...reel("reel", stories), user: { username: "one", pk: "owner" } } },
-      }),
-    ],
+    [reelsResponse({ reel: { ...reel("reel", stories), user: { username: "one", pk: "owner" } } })],
   );
   client.getMusicAsset = async (id) => {
     const result = await server.fetchMedia(`https://example.com/lookup/${id}`);

@@ -22,7 +22,7 @@ import {
   createClient,
   fixedNow,
   reel,
-  response as mockResponse,
+  reelsResponse,
 } from "./mock-helpers.ts";
 
 function manifest(name: string) {
@@ -372,7 +372,7 @@ test("fresh story ingestion caches the story excerpt and prefers it over the lon
   const owner = { id: "user", pk: "user", username: "one" };
   const client = createClient(
     [{ id: "reel", media_ids: [story.pk], user: owner }],
-    [mockResponse({ reels: { reel: { ...reel("reel", [story]), user: owner } } })],
+    [reelsResponse({ reel: { ...reel("reel", [story]), user: owner } })],
   );
   const repository = new StoryRepository(database);
   const report = await fetchStoriesManifest(client, {

@@ -20,6 +20,7 @@ import {
   noSleep,
   reel,
   response,
+  reelsResponse,
 } from "./mock-helpers.ts";
 
 const owner = { username: "one", pk: "owner" };
@@ -90,7 +91,7 @@ function createPlaceClient(
 ) {
   const client = createClient(
     [{ id: "reel", media_ids: stories.map(({ pk }) => pk), user: owner }],
-    [response({ reels: { reel: { ...reel("reel", stories), user: owner } } })],
+    [reelsResponse({ reel: { ...reel("reel", stories), user: owner } })],
   );
   const lookups: Array<string> = [];
   return Object.assign(client, {

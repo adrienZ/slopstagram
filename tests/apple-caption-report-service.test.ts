@@ -11,8 +11,8 @@ import {
   fixedNow,
   noSleep,
   reel,
-  response,
   storyItem,
+  reelsResponse,
 } from "./mock-helpers.ts";
 
 test("reads cached local previews and stops after the first unavailable result", async () => {
@@ -20,7 +20,7 @@ test("reads cached local previews and stops after the first unavailable result",
   const logger = createCapturingLogger();
   const client = createClient(
     [{ id: "r1", media_ids: ["m1", "m2"], user: { username: "one" } }],
-    [response({ reels: { r1: reel("r1", [storyItem("m1"), storyItem("m2")]) } })],
+    [reelsResponse({ r1: reel("r1", [storyItem("m1"), storyItem("m2")]) })],
   );
   const report = await fetchStoriesManifest(client, {
     logger,
@@ -65,7 +65,7 @@ test("resolves local OCR without embedding it in the report", async () => {
   const logger = createCapturingLogger();
   const client = createClient(
     [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
-    [response({ reels: { r1: reel("r1", [storyItem("m1")]) } })],
+    [reelsResponse({ r1: reel("r1", [storyItem("m1")]) })],
   );
   const report = await fetchStoriesManifest(client, {
     logger,
