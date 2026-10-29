@@ -28,7 +28,7 @@ interface UserTimelineMonth {
   days: Array<UserTimelineDay>;
 }
 
-export interface UserTimelineYear {
+interface UserTimelineYear {
   label: string;
   months: Array<UserTimelineMonth>;
 }
@@ -83,6 +83,10 @@ function getTimelineDate(story: UserTimelineStory): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+/**
+ * Test seam: tests group stories without a database.
+ * @public
+ */
 export function groupStoriesByPublishedDate(
   stories: Array<UserTimelineStory>,
 ): Array<UserTimelineYear> {

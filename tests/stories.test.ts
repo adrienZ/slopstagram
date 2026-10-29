@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { getMediaCacheKey } from "../sdk/lib/cache-service.ts";
-import { fetchStoriesManifest } from "../sdk/stories.ts";
+import { fetchStories } from "../sdk/stories.ts";
 import {
   createCapturingLogger,
   createClient,
@@ -18,7 +18,7 @@ function storedStory(pk: string) {
   return { ...storyItem(pk), annotations: { locations: [], stickers: [] } };
 }
 
-describe("fetchStoriesManifest", () => {
+describe("fetchStories", () => {
   test("fetches API media even when story storage has existing entries", async (context) => {
     const { storyRepository, storyStorage } = createStoryFixtures(context);
     await storyRepository.save(storyItem("m1"));
@@ -46,7 +46,8 @@ describe("fetchStoriesManifest", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(client, {
+    const report = await fetchStories([], {
+      client,
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
@@ -156,7 +157,8 @@ describe("fetchStoriesManifest", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(client, {
+    const report = await fetchStories([], {
+      client,
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
@@ -236,7 +238,8 @@ describe("fetchStoriesManifest", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(client, {
+    const report = await fetchStories([], {
+      client,
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,

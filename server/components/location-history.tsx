@@ -10,6 +10,10 @@ import { StoryCard } from "./story-card.tsx";
 const footerButtonClassName =
   "tw:cursor-pointer tw:rounded tw:p-1 tw:hover:bg-muted tw:focus-visible:outline-2 tw:focus-visible:outline-ring";
 
+/**
+ * Test seam: tests replace the WebGL map canvas, which jsdom lacks.
+ * @public
+ */
 export const LocationMapContext = createContext<ComponentType<LocationMapCanvasProps>>(
   lazy(async () => await import("./location-map-canvas.tsx")),
 );
