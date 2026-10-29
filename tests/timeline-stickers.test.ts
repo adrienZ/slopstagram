@@ -1,38 +1,33 @@
-import assert from "node:assert/strict";
-import { test } from "vitest";
+import { test, expect } from "vitest";
 import { groupTimelineStickers, formatStickerLabel } from "../server/timeline-stickers.ts";
 import { presentSticker } from "../server/sticker-presentation.ts";
 import type { UserTimelineStory } from "../sdk/repositories/story-repository.ts";
 
 test("links mentions only to saved accounts and preserves the canonical username in URLs", () => {
-  assert.equal(
+  expect(
     presentSticker("mention", " @ALICE ", [
       { username: "alice", avatarPath: "/media/avatars/alice.jpg" },
       { username: "bob", avatarPath: "/media/avatars/saved.jpg" },
     ]).profileUrl,
-    "/users/alice",
-  );
-  assert.equal(
+  ).toBe("/users/alice");
+  expect(
     presentSticker("mention", "@charlie", [
       { username: "alice", avatarPath: "/media/avatars/saved.jpg" },
       { username: "bob", avatarPath: "/media/avatars/saved.jpg" },
     ]).profileUrl,
-    undefined,
-  );
-  assert.equal(
+  ).toBe(undefined);
+  expect(
     presentSticker("music", "@alice", [
       { username: "alice", avatarPath: "/media/avatars/saved.jpg" },
     ]).profileUrl,
-    undefined,
-  );
-  assert.equal(
+  ).toBe(undefined);
+  expect(
     presentSticker("mention", "@ALICE", [
       { username: "alice", avatarPath: "/media/avatars/alice.jpg" },
     ]).avatarUrl,
-    "/media/avatars/alice.jpg",
-  );
-  assert.equal(formatStickerLabel("mention", "alice"), "@alice");
-  assert.equal(formatStickerLabel("mention", "@alice"), "@alice");
+  ).toBe("/media/avatars/alice.jpg");
+  expect(formatStickerLabel("mention", "alice")).toBe("@alice");
+  expect(formatStickerLabel("mention", "@alice")).toBe("@alice");
 });
 
 test("orders sticker kinds as location, mention, link, music, hashtag", () => {
@@ -40,10 +35,14 @@ test("orders sticker kinds as location, mention, link, music, hashtag", () => {
     [],
     ["hashtag", "poll", "music", "link", "mention", "location"],
   );
-  assert.deepEqual(
-    groups.map((group) => group.kind),
-    ["location", "mention", "link", "music", "hashtag", "poll"],
-  );
+  expect(groups.map((group) => group.kind)).toStrictEqual([
+    "location",
+    "mention",
+    "link",
+    "music",
+    "hashtag",
+    "poll",
+  ]);
 });
 
 test("groups the full sticker history by kind and story while retaining empty database kinds", () => {
@@ -66,14 +65,11 @@ test("groups the full sticker history by kind and story while retaining empty da
     },
   }));
   const groups = groupTimelineStickers(stories, ["mention", "music", "poll"]);
-  assert.deepEqual(
-    groups.map((group) => group.kind),
-    ["mention", "music", "poll"],
-  );
-  assert.equal(groups[0]?.stories.length, 60);
-  assert.equal(groups[0]?.stories[0]?.mediaPk, "story-59");
-  assert.equal(groups[0]?.stories.at(-1)?.mediaPk, "story-0");
-  assert.equal(groups[0]?.stories[0]?.labels.length, 2);
-  assert.deepEqual(groups[1]?.stories, []);
-  assert.deepEqual(groups[2]?.stories, []);
+  expect(groups.map((group) => group.kind)).toStrictEqual(["mention", "music", "poll"]);
+  expect(groups[0]?.stories.length).toBe(60);
+  expect(groups[0]?.stories[0]?.mediaPk).toBe("story-59");
+  expect(groups[0]?.stories.at(-1)?.mediaPk).toBe("story-0");
+  expect(groups[0]?.stories[0]?.labels.length).toBe(2);
+  expect(groups[1]?.stories).toStrictEqual([]);
+  expect(groups[2]?.stories).toStrictEqual([]);
 });

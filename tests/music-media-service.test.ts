@@ -1,8 +1,7 @@
-import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { test } from "vitest";
+import { assert, test, expect } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
@@ -48,11 +47,12 @@ test("music processing publishes audio only and reuses it without provider reque
       fetchMedia: media.fetchMedia,
     },
   );
-  assert.equal(result?.audioState, "available");
-  assert.equal(result.artworkState, "pending");
+  expect(result?.audioState).toBe("available");
+  assert.ok(result);
+  expect(result.artworkState).toBe("pending");
   assert.ok(result.audioCachePath !== null);
-  assert.deepEqual(await readFile(path.join(root, result.audioCachePath)), wavAudio());
-  assert.equal(result.audioDurationMs, 1000);
+  expect(await readFile(path.join(root, result.audioCachePath))).toStrictEqual(wavAudio());
+  expect(result.audioDurationMs).toBe(1000);
   const retry = await processMusicMedia(
     { id: metadata.id, status: metadata.status },
     {
@@ -61,11 +61,12 @@ test("music processing publishes audio only and reuses it without provider reque
       fetchMedia: media.fetchMedia,
     },
   );
-  assert.equal(retry?.audioCachePath, result.audioCachePath);
-  assert.deepEqual(media.requests, ["/audio"]);
+  expect(retry?.audioCachePath).toBe(result.audioCachePath);
+  expect(media.requests).toStrictEqual(["/audio"]);
   const cold = new StoryRepository(database).findByMediaPk("story")?.annotations;
-  assert.deepEqual(cold?.stickers, before.stickers);
-  assert.equal(cold.musicObservations?.[0].metadata.audioState, "available");
+  expect(cold?.stickers).toStrictEqual(before.stickers);
+  assert.ok(cold);
+  expect(cold.musicObservations?.[0].metadata.audioState).toBe("available");
 });
 
 test("partial audio stays separate and promotion preserves its source and processing state", async (context) => {
@@ -91,7 +92,7 @@ test("partial audio stays separate and promotion preserves its source and proces
   });
   const observations = repository.findByMediaPk("story")?.annotations?.musicObservations;
   assert.ok(observations);
-  assert.notEqual(observations[0].metadata.id, observations[1].metadata.id);
+  expect(observations[0].metadata.id).not.toBe(observations[1].metadata.id);
   const reference = observations[0].metadata;
   let status = 200;
   let contentType = "text/html";
@@ -105,14 +106,13 @@ test("partial audio stays separate and promotion preserves its source and proces
     fetchMedia: media.fetchMedia,
   });
   assert.ok(result);
-  assert.equal(result.audioState, "unsupported");
-  assert.equal(result.audioCachePath, null);
-  assert.equal(result.artworkState, "pending");
-  assert.equal(result.artworkCachePath, null);
-  assert.equal(
+  expect(result.audioState).toBe("unsupported");
+  expect(result.audioCachePath).toBe(null);
+  expect(result.artworkState).toBe("pending");
+  expect(result.artworkCachePath).toBe(null);
+  expect(
     repository.findByMediaPk("story")?.annotations?.musicObservations?.[0].metadata.status,
-    "partial",
-  );
+  ).toBe("partial");
   await repository.save({
     pk: "story",
     story_music_stickers: [
@@ -121,9 +121,9 @@ test("partial audio stays separate and promotion preserves its source and proces
   });
   const promoted = repository.findByMediaPk("story")?.annotations?.musicObservations?.[0].metadata;
   assert.ok(promoted);
-  assert.equal(promoted.status, "usable");
-  assert.equal(promoted.artworkCachePath, result.artworkCachePath);
-  assert.equal(promoted.audioState, "unsupported");
+  expect(promoted.status).toBe("usable");
+  expect(promoted.artworkCachePath).toBe(result.artworkCachePath);
+  expect(promoted.audioState).toBe("unsupported");
   contentType = "audio/wav";
   const recovered = await processMusicMedia(promoted, {
     database,
@@ -131,7 +131,7 @@ test("partial audio stays separate and promotion preserves its source and proces
     fetchMedia: media.fetchMedia,
   });
   assert.ok(recovered);
-  assert.notEqual(recovered.audioCachePath, null);
+  expect(recovered.audioCachePath).not.toBe(null);
   assert.ok(recovered.audioCachePath !== null);
   await rm(path.join(root, recovered.audioCachePath));
   status = 403;
@@ -140,9 +140,10 @@ test("partial audio stays separate and promotion preserves its source and proces
     directory: root,
     fetchMedia: media.fetchMedia,
   });
-  assert.equal(missing?.audioState, "failed");
-  assert.equal(missing.audioCachePath, null);
-  assert.equal(missing.artworkCachePath, result.artworkCachePath);
+  expect(missing?.audioState).toBe("failed");
+  assert.ok(missing);
+  expect(missing.audioCachePath).toBe(null);
+  expect(missing.artworkCachePath).toBe(result.artworkCachePath);
 });
 
 test("missing sources do not fetch and failed transfers never publish partial files", async (context) => {
@@ -171,9 +172,10 @@ test("missing sources do not fetch and failed transfers never publish partial fi
     directory: root,
     fetchMedia: media.fetchMedia,
   });
-  assert.equal(empty?.audioState, "unavailable");
-  assert.equal(empty.artworkState, "unavailable");
-  assert.deepEqual(media.requests, []);
+  expect(empty?.audioState).toBe("unavailable");
+  assert.ok(empty);
+  expect(empty.artworkState).toBe("unavailable");
+  expect(media.requests).toStrictEqual([]);
   await repository.save({
     pk: "story",
     story_music_stickers: [
@@ -185,10 +187,11 @@ test("missing sources do not fetch and failed transfers never publish partial fi
     directory: root,
     fetchMedia: media.fetchMedia,
   });
-  assert.equal(failed?.audioState, "failed");
-  assert.equal(failed.audioCachePath, null);
+  expect(failed?.audioState).toBe("failed");
+  assert.ok(failed);
+  expect(failed.audioCachePath).toBe(null);
   const { readdir } = await import("node:fs/promises");
-  assert.deepEqual(await readdir(root), []);
+  expect(await readdir(root)).toStrictEqual([]);
 });
 
 test("the cached file duration survives partial promotion and remains distinct from the full song duration", async (context) => {
@@ -225,8 +228,9 @@ test("the cached file duration survives partial promotion and remains distinct f
     directory: root,
     fetchMedia: media.fetchMedia,
   });
-  assert.equal(result?.audioDurationMs, 1000);
-  assert.equal(result.durationMs, 999_999);
+  expect(result?.audioDurationMs).toBe(1000);
+  assert.ok(result);
+  expect(result.durationMs).toBe(999_999);
   await repository.save({
     pk: "clip",
     story_music_stickers: [
@@ -235,8 +239,9 @@ test("the cached file duration survives partial promotion and remains distinct f
   });
   const promoted = new StoryRepository(database).findByMediaPk("clip")?.annotations
     ?.musicObservations?.[0].metadata;
-  assert.equal(promoted?.status, "usable");
-  assert.equal(promoted.audioDurationMs, 1000);
-  assert.equal(promoted.durationMs, 999_999);
-  assert.equal(database.$client.prepare("SELECT count(*) n FROM metadata_music").get()?.n, 1);
+  expect(promoted?.status).toBe("usable");
+  assert.ok(promoted);
+  expect(promoted.audioDurationMs).toBe(1000);
+  expect(promoted.durationMs).toBe(999_999);
+  expect(database.$client.prepare("SELECT count(*) n FROM metadata_music").get()?.n).toBe(1);
 });

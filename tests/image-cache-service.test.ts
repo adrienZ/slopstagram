@@ -1,6 +1,5 @@
 import { Buffer } from "node:buffer";
-import assert from "node:assert/strict";
-import { describe, test } from "vitest";
+import { describe, test, expect } from "vitest";
 import { TextEncoder } from "node:util";
 import { BASE_CACHE_DIR, createImageCacheStorage } from "../sdk/lib/cache-service.ts";
 import { cacheReportImages } from "../sdk/lib/image-cache-service.ts";
@@ -103,28 +102,24 @@ describe("cacheReportImages", () => {
       storage: imageCacheStorage,
     });
 
-    assert.equal(fetchCount, 2);
-    assert.equal(convertCount, 2);
-    assert.equal(cachedImages.profilePicPathByUrl.get(source), `images/avatars/${PROFILE_PK}.jpg`);
-    assert.equal(
-      cachedImages.storyPreviewPathByUrl.get(previewSource),
+    expect(fetchCount).toBe(2);
+    expect(convertCount).toBe(2);
+    expect(cachedImages.profilePicPathByUrl.get(source)).toBe(`images/avatars/${PROFILE_PK}.jpg`);
+    expect(cachedImages.storyPreviewPathByUrl.get(previewSource)).toBe(
       `images/story-previews/${previewKey}.jpg`,
     );
-    assert.equal(report.output.users[0]?.profile_pic_url, `images/avatars/${PROFILE_PK}.jpg`);
-    assert.equal(
-      report.output.users[0]?.stories[0]?.preview_image_url,
+    expect(report.output.users[0]?.profile_pic_url).toBe(`images/avatars/${PROFILE_PK}.jpg`);
+    expect(report.output.users[0]?.stories[0]?.preview_image_url).toBe(
       `images/story-previews/${previewKey}.jpg`,
     );
-    assert.deepEqual(
-      await imageCacheStorage.getItemRaw(`avatars/${PROFILE_PK}.jpg`),
+    expect(await imageCacheStorage.getItemRaw(`avatars/${PROFILE_PK}.jpg`)).toStrictEqual(
       Buffer.from("jpeg:image-bytes"),
     );
-    assert.deepEqual(
-      await imageCacheStorage.getItemRaw(`story-previews/${previewKey}.jpg`),
+    expect(await imageCacheStorage.getItemRaw(`story-previews/${previewKey}.jpg`)).toStrictEqual(
       Buffer.from("jpeg:image-bytes"),
     );
-    assert.equal(await imageCacheStorage.getItemRaw(`avatars/${PROFILE_PK}.json`), null);
-    assert.equal(await imageCacheStorage.getItemRaw(`story-previews/${previewKey}.json`), null);
+    expect(await imageCacheStorage.getItemRaw(`avatars/${PROFILE_PK}.json`)).toBe(null);
+    expect(await imageCacheStorage.getItemRaw(`story-previews/${previewKey}.json`)).toBe(null);
   });
 
   test("refreshes cached profile pictures from the latest API response", async () => {
@@ -151,9 +146,8 @@ describe("cacheReportImages", () => {
       storage: imageCacheStorage,
     });
 
-    assert.equal(cachedImages.profilePicPathByUrl.get(source), `images/avatars/${PROFILE_PK}.jpg`);
-    assert.deepEqual(
-      await imageCacheStorage.getItemRaw(`avatars/${PROFILE_PK}.jpg`),
+    expect(cachedImages.profilePicPathByUrl.get(source)).toBe(`images/avatars/${PROFILE_PK}.jpg`);
+    expect(await imageCacheStorage.getItemRaw(`avatars/${PROFILE_PK}.jpg`)).toStrictEqual(
       Buffer.from("jpeg:updated-avatar"),
     );
   });
@@ -178,12 +172,10 @@ describe("cacheReportImages", () => {
       storage: imageCacheStorage,
     });
 
-    assert.equal(
-      cachedImages.storyPreviewPathByUrl.get(previewSource),
+    expect(cachedImages.storyPreviewPathByUrl.get(previewSource)).toBe(
       `images/story-previews/${previewKey}.jpg`,
     );
-    assert.deepEqual(
-      await imageCacheStorage.getItemRaw(`story-previews/${previewKey}.jpg`),
+    expect(await imageCacheStorage.getItemRaw(`story-previews/${previewKey}.jpg`)).toStrictEqual(
       Buffer.from("jpeg-story"),
     );
   });
@@ -221,17 +213,14 @@ describe("cacheReportImages", () => {
     const first = await cacheReportImages(createReport(source, firstPreviewSource), options);
     const second = await cacheReportImages(createReport(source, secondPreviewSource), options);
 
-    assert.equal(fetchCount, 3);
-    assert.equal(
-      first.storyPreviewPathByUrl.get(firstPreviewSource),
+    expect(fetchCount).toBe(3);
+    expect(first.storyPreviewPathByUrl.get(firstPreviewSource)).toBe(
       `images/story-previews/${previewKey}.jpg`,
     );
-    assert.equal(
-      second.storyPreviewPathByUrl.get(secondPreviewSource),
+    expect(second.storyPreviewPathByUrl.get(secondPreviewSource)).toBe(
       `images/story-previews/${previewKey}.jpg`,
     );
-    assert.deepEqual(
-      await imageCacheStorage.getItemRaw(`story-previews/${previewKey}.jpg`),
+    expect(await imageCacheStorage.getItemRaw(`story-previews/${previewKey}.jpg`)).toStrictEqual(
       Buffer.from("jpeg:story"),
     );
   });

@@ -1,6 +1,5 @@
-import assert from "node:assert/strict";
 import path from "node:path";
-import { test } from "vitest";
+import { test, expect } from "vitest";
 import { resolveAppleCaptionsForReport } from "../sdk/apple-caption-report-service.ts";
 import { AppleOcrUnavailableError } from "../sdk/lib/apple-ocr-service.ts";
 import { fetchStories } from "../sdk/stories.ts";
@@ -51,14 +50,14 @@ test("reads cached local previews and stops after the first unavailable result",
     },
   );
 
-  assert.deepEqual(resolvedPaths, [path.resolve("/cache/images/story-previews/m1.jpg")]);
-  assert.ok(
+  expect(resolvedPaths).toStrictEqual([path.resolve("/cache/images/story-previews/m1.jpg")]);
+  expect(
     logger.messages.some((message) =>
       message.includes(
         "warn: apple ocr unavailable; skipping remaining captions: Vision is unavailable",
       ),
     ),
-  );
+  ).toBeTruthy();
 });
 
 test("resolves local OCR without embedding it in the report", async () => {
@@ -89,11 +88,11 @@ test("resolves local OCR without embedding it in the report", async () => {
       logger,
       cacheDirectory: "/cache",
       resolver: async (mediaPk, imagePath) => {
-        assert.equal(mediaPk, "m1");
-        assert.equal(imagePath, path.resolve("/cache/images/story-previews/m1.jpg"));
+        expect(mediaPk).toBe("m1");
+        expect(imagePath).toBe(path.resolve("/cache/images/story-previews/m1.jpg"));
         return "local OCR text";
       },
     },
   );
-  assert.equal("apple_caption" in report.output.users[0].stories[0], false);
+  expect("apple_caption" in report.output.users[0].stories[0]).toBe(false);
 });

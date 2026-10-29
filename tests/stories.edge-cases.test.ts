@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { describe, test } from "vitest";
+import { describe, test, expect } from "vitest";
 import { fetchStories } from "../sdk/stories.ts";
 import {
   createCapturingLogger,
@@ -39,16 +38,15 @@ describe("fetchStoriesManifest edge cases", () => {
       storyStorage: storyRepository.storyStorage,
     });
 
-    assert.deepEqual(
+    expect(
       report.manifest.users.map((user) => ({
         media_ids: user.media_ids,
         reel_id: user.reel_id,
       })),
-      [
-        { media_ids: ["m2", "m3"], reel_id: "r2" },
-        { media_ids: ["m1"], reel_id: "r1" },
-      ],
-    );
+    ).toStrictEqual([
+      { media_ids: ["m2", "m3"], reel_id: "r2" },
+      { media_ids: ["m1"], reel_id: "r1" },
+    ]);
   });
 
   test("extracts sticker summaries from story payload", async () => {
@@ -119,13 +117,13 @@ describe("fetchStoriesManifest edge cases", () => {
       storyStorage: storyRepository.storyStorage,
     });
 
-    assert.deepEqual(report.manifest.users[0]?.stories[0]?.stickers, [
+    expect(report.manifest.users[0]?.stories[0]?.stickers).toStrictEqual([
       "@friend",
       "Track - Artist",
       "#summer",
       "https://example.com/a",
     ]);
-    assert.deepEqual(report.output.users[0]?.stories[0]?.locations, [
+    expect(report.output.users[0]?.stories[0]?.locations).toStrictEqual([
       "Cafe Example, 1 Rue Example, Paris",
       "Cafe Example, 1 Rue Example, Paris",
     ]);
@@ -162,7 +160,7 @@ describe("fetchStoriesManifest edge cases", () => {
       storyStorage: storyRepository.storyStorage,
     });
 
-    assert.deepEqual(report.output.users[0]?.stories[0]?.stickers, [
+    expect(report.output.users[0]?.stories[0]?.stickers).toStrictEqual([
       "Visit Link (https://installclaw.io/fr?fbclid=PAcGRvZgRleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAwyNTYyODEwNDA1NTgAAaees2JVYiKznrVRdrE8jUP0t055Ywo5c27Qe7zZvMdkJw4mRFLCM-_N39601g_aem_zcP2VBsrm0eIv1jimc94uQ)",
     ]);
   });
@@ -176,7 +174,7 @@ describe("fetchStoriesManifest edge cases", () => {
         response({ broadcasts: [], story_ranking_token: "", status: "fail", tray: [] }, 429),
       );
 
-    await assert.rejects(
+    await expect(
       fetchStories([], {
         client,
         logger,
@@ -186,14 +184,13 @@ describe("fetchStoriesManifest edge cases", () => {
         storyRepository,
         storyStorage: storyRepository.storyStorage,
       }),
-      /Instagram request failed with HTTP 429/u,
-    );
-    assert.deepEqual(client.reelsCalls, []);
-    assert.ok(
+    ).rejects.toThrow(/Instagram request failed with HTTP 429/u);
+    expect(client.reelsCalls).toStrictEqual([]);
+    expect(
       logger.messages.some((message) =>
         message.includes("error: tray fetch failed: Instagram request failed with HTTP 429"),
       ),
-    );
+    ).toBe(true);
   });
 
   test("falls back after chunk failure and records failed stories", async () => {
@@ -214,9 +211,9 @@ describe("fetchStoriesManifest edge cases", () => {
       storyStorage: storyRepository.storyStorage,
     });
 
-    assert.deepEqual(client.reelsCalls, [["r1"], ["r1"]]);
-    assert.equal(report.manifest.users[0]?.stories[0]?.status, "failed");
-    assert.deepEqual(report.failures, [
+    expect(client.reelsCalls).toStrictEqual([["r1"], ["r1"]]);
+    expect(report.manifest.users[0]?.stories[0]?.status).toBe("failed");
+    expect(report.failures).toStrictEqual([
       {
         attempt_count: 1,
         http_status: 500,
@@ -226,13 +223,13 @@ describe("fetchStoriesManifest edge cases", () => {
         reel_id: "r1",
       },
     ]);
-    assert.ok(
+    expect(
       logger.messages.some((message) =>
         message.includes(
           "error: story failed: reel_id=r1 media_pk=m1 reason=request_failed status=500 attempts=1",
         ),
       ),
-    );
+    ).toBeTruthy();
   });
 
   test("records missing stories when Instagram omits expected media", async () => {
@@ -255,12 +252,12 @@ describe("fetchStoriesManifest edge cases", () => {
       storyStorage: storyRepository.storyStorage,
     });
 
-    assert.deepEqual(
-      report.manifest.users[0]?.stories.map((story) => story.status),
-      ["ok", "failed"],
-    );
-    assert.equal(report.failures[0]?.reason, "missing_from_response");
-    assert.equal(report.failures[0]?.media_pk, "m2");
+    expect(report.manifest.users[0]?.stories.map((story) => story.status)).toStrictEqual([
+      "ok",
+      "failed",
+    ]);
+    expect(report.failures[0]?.reason).toBe("missing_from_response");
+    expect(report.failures[0]?.media_pk).toBe("m2");
   });
 
   test("stops further live fetches after rate limiting", async () => {
@@ -284,20 +281,18 @@ describe("fetchStoriesManifest edge cases", () => {
       storyStorage: storyRepository.storyStorage,
     });
 
-    assert.deepEqual(client.reelsCalls, [["r1"]]);
-    assert.deepEqual(
+    expect(client.reelsCalls).toStrictEqual([["r1"]]);
+    expect(
       report.manifest.users.flatMap((user) => user.stories.map((story) => story.status)),
-      ["failed", "failed"],
-    );
-    assert.deepEqual(
+    ).toStrictEqual(["failed", "failed"]);
+    expect(
       report.failures.map((failure) => ({
         media_pk: failure.media_pk,
         reason: failure.reason,
       })),
-      [
-        { media_pk: "m1", reason: "rate_limited" },
-        { media_pk: "m2", reason: "rate_limited" },
-      ],
-    );
+    ).toStrictEqual([
+      { media_pk: "m1", reason: "rate_limited" },
+      { media_pk: "m2", reason: "rate_limited" },
+    ]);
   });
 });

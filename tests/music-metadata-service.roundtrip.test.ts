@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { test } from "vitest";
+import { assert, test, expect } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
@@ -75,7 +74,7 @@ test("live ingestion shares exact audio identities across occurrences in cold ac
     storyRepository: repository,
     storyStorage: createMemoryStorage<StoryItem>(),
   });
-  assert.deepEqual(report.manifest.users[0].stories[0].stickers, [
+  expect(report.manifest.users[0].stories[0].stickers).toStrictEqual([
     "Same Song - Artist",
     "Same Song - Artist",
   ]);
@@ -86,17 +85,16 @@ test("live ingestion shares exact audio identities across occurrences in cold ac
     present(history.find(({ story }) => story.pk === "m3")).story.annotations,
   );
   const observations = present(first.musicObservations);
-  assert.equal(observations.length, 2);
-  assert.deepEqual(
-    observations.map(({ occurrenceId }) => occurrenceId),
+  expect(observations.length).toBe(2);
+  expect(observations.map(({ occurrenceId }) => occurrenceId)).toStrictEqual(
     first.stickers.map(({ occurrenceId }) => occurrenceId),
   );
-  assert.notEqual(observations[0].occurrenceId, observations[1].occurrenceId);
-  assert.deepEqual(
-    observations.map(({ providerOccurrenceId }) => providerOccurrenceId),
-    ["a", "b"],
-  );
-  assert.deepEqual(observations[0].metadata, {
+  expect(observations[0].occurrenceId).not.toBe(observations[1].occurrenceId);
+  expect(observations.map(({ providerOccurrenceId }) => providerOccurrenceId)).toStrictEqual([
+    "a",
+    "b",
+  ]);
+  expect(observations[0].metadata).toStrictEqual({
     status: "usable",
     id: observations[0].metadata.id,
     instagramAudioAssetId: asset.audio_asset_id,
@@ -111,10 +109,10 @@ test("live ingestion shares exact audio identities across occurrences in cold ac
     audioState: "unavailable",
     artworkState: "unavailable",
   });
-  assert.deepEqual(observations[0].metadata, observations[1].metadata);
-  assert.deepEqual(present(shared.musicObservations)[0].metadata, observations[0].metadata);
-  assert.notEqual(present(homonym.musicObservations)[0].metadata.id, observations[0].metadata.id);
-  assert.equal(history[0].owner_pk, "u1");
+  expect(observations[0].metadata).toStrictEqual(observations[1].metadata);
+  expect(present(shared.musicObservations)[0].metadata).toStrictEqual(observations[0].metadata);
+  expect(present(homonym.musicObservations)[0].metadata.id).not.toBe(observations[0].metadata.id);
+  expect(history[0].owner_pk).toBe("u1");
 });
 
 test("incomplete music keeps provenance without invented labels and never infers an audio ID", async (context) => {
@@ -144,45 +142,56 @@ test("incomplete music keeps provenance without invented labels and never infers
     ],
   });
   const stored = read(new StoryRepository(database), "m1");
-  assert.deepEqual(
-    stored.stickers.map(({ label }) => label),
-    ["Song", "Song - Artist", "Song - Artist"],
-  );
+  expect(stored.stickers.map(({ label }) => label)).toStrictEqual([
+    "Song",
+    "Song - Artist",
+    "Song - Artist",
+  ]);
   const observations = present(stored.musicObservations);
-  assert.equal(observations.length, 5);
-  assert.equal(new Set(observations.map(({ metadata }) => metadata.id)).size, 5);
-  assert.deepEqual(
-    observations.map(({ occurrenceId }) => occurrenceId),
-    [null, null, ...stored.stickers.map(({ occurrenceId }) => occurrenceId)],
-  );
-  assert.deepEqual(
-    observations.map(({ metadata }) => metadata.instagramAudioAssetId),
-    [null, "known", "other", null, null],
-  );
-  assert.deepEqual(
-    observations.map(({ metadata }) => metadata.status),
-    ["partial", "partial", "partial", "partial", "partial"],
-  );
-  assert.deepEqual(
-    observations.map(({ metadata }) => metadata.durationMs),
-    [null, null, null, null, null],
-  );
-  assert.equal(observations[0].providerOccurrenceId, "sticker-only");
-  assert.equal(observations[0].metadata.title, null);
-  assert.equal(observations[0].metadata.artist, null);
-  assert.deepEqual(logger.messages, []);
+  expect(observations.length).toBe(5);
+  expect(new Set(observations.map(({ metadata }) => metadata.id)).size).toBe(5);
+  expect(observations.map(({ occurrenceId }) => occurrenceId)).toStrictEqual([
+    null,
+    null,
+    ...stored.stickers.map(({ occurrenceId }) => occurrenceId),
+  ]);
+  expect(observations.map(({ metadata }) => metadata.instagramAudioAssetId)).toStrictEqual([
+    null,
+    "known",
+    "other",
+    null,
+    null,
+  ]);
+  expect(observations.map(({ metadata }) => metadata.status)).toStrictEqual([
+    "partial",
+    "partial",
+    "partial",
+    "partial",
+    "partial",
+  ]);
+  expect(observations.map(({ metadata }) => metadata.durationMs)).toStrictEqual([
+    null,
+    null,
+    null,
+    null,
+    null,
+  ]);
+  expect(observations[0].providerOccurrenceId).toBe("sticker-only");
+  expect(observations[0].metadata.title).toBe(null);
+  expect(observations[0].metadata.artist).toBe(null);
+  expect(logger.messages).toStrictEqual([]);
 });
 
 test("an outer music sticker ID alone is retained as an anonymous partial observation", async (context) => {
   const { database, repository } = setup(context);
   await repository.save({ pk: "m1", story_music_stickers: [{ id: "outer-only" }] });
   const stored = read(new StoryRepository(database), "m1");
-  assert.deepEqual(stored.stickers, []);
+  expect(stored.stickers).toStrictEqual([]);
   const [observation] = present(stored.musicObservations);
-  assert.equal(observation.providerOccurrenceId, "outer-only");
-  assert.equal(observation.occurrenceId, null);
-  assert.equal(observation.metadata.status, "partial");
-  assert.equal(observation.metadata.instagramAudioAssetId, null);
+  expect(observation.providerOccurrenceId).toBe("outer-only");
+  expect(observation.occurrenceId).toBe(null);
+  expect(observation.metadata.status).toBe("partial");
+  expect(observation.metadata.instagramAudioAssetId).toBe(null);
 });
 
 test("certain partial music promotes every established link and sparse live updates never demote it", async (context) => {
@@ -204,18 +213,17 @@ test("certain partial music promotes every established link and sparse live upda
     story_music_stickers: [{ id: "a", music_asset_info: { audio_asset_id: "audio" } }],
   });
   const promoted = read(new StoryRepository(database), "m1");
-  assert.deepEqual(promoted.stickers, before.stickers);
+  expect(promoted.stickers).toStrictEqual(before.stickers);
   const [observation] = present(promoted.musicObservations);
-  assert.equal(observation.metadata.status, "usable");
-  assert.equal(observation.metadata.id, shared.metadata.id);
-  assert.equal(observation.metadata.title, "Song");
-  assert.equal(observation.metadata.artist, "Artist");
-  assert.equal(observation.metadata.durationMs, null);
-  assert.equal(observation.occurrenceId, before.stickers[0].occurrenceId);
-  assert.deepEqual(
+  expect(observation.metadata.status).toBe("usable");
+  expect(observation.metadata.id).toBe(shared.metadata.id);
+  expect(observation.metadata.title).toBe("Song");
+  expect(observation.metadata.artist).toBe("Artist");
+  expect(observation.metadata.durationMs).toBe(null);
+  expect(observation.occurrenceId).toBe(before.stickers[0].occurrenceId);
+  expect(
     present(read(new StoryRepository(database), "m2").musicObservations)[0].metadata,
-    observation.metadata,
-  );
+  ).toStrictEqual(observation.metadata);
   await repository.save({
     pk: "m2",
     story_music_stickers: [
@@ -232,18 +240,17 @@ test("certain partial music promotes every established link and sparse live upda
     ],
   });
   const sparse = read(new StoryRepository(database), "m1");
-  assert.deepEqual(sparse.stickers, before.stickers);
+  expect(sparse.stickers).toStrictEqual(before.stickers);
   const [{ metadata }] = present(sparse.musicObservations);
-  assert.equal(metadata.id, shared.metadata.id);
-  assert.equal(metadata.status, "usable");
-  assert.equal(metadata.instagramAudioAssetId, "audio");
-  assert.equal(metadata.title, "Updated");
-  assert.equal(metadata.artist, "Artist");
-  assert.equal(metadata.durationMs, 123_456);
-  assert.deepEqual(
+  expect(metadata.id).toBe(shared.metadata.id);
+  expect(metadata.status).toBe("usable");
+  expect(metadata.instagramAudioAssetId).toBe("audio");
+  expect(metadata.title).toBe("Updated");
+  expect(metadata.artist).toBe("Artist");
+  expect(metadata.durationMs).toBe(123_456);
+  expect(
     present(read(new StoryRepository(database), "m2").musicObservations)[0].metadata,
-    metadata,
-  );
+  ).toStrictEqual(metadata);
 });
 
 test("music links survive reordered live input and cold resaves, with source clearing kept independent", async (context) => {
@@ -267,23 +274,19 @@ test("music links survive reordered live input and cold resaves, with source cle
   );
   await repository.save({ pk: "m1", story_music_stickers: [b, a] });
   const reordered = read(new StoryRepository(database), "m1");
-  assert.deepEqual(
+  expect(
     present(reordered.musicObservations).map(({ providerOccurrenceId }) => providerOccurrenceId),
-    ["b", "a"],
-  );
+  ).toStrictEqual(["b", "a"]);
   for (const entry of present(reordered.musicObservations)) {
-    assert.deepEqual(entry, byProvider.get(entry.providerOccurrenceId));
+    expect(entry).toStrictEqual(byProvider.get(entry.providerOccurrenceId));
   }
   await repository.save(present(new StoryRepository(database).findByMediaPk("m1")));
-  assert.deepEqual(read(new StoryRepository(database), "m1"), reordered);
+  expect(read(new StoryRepository(database), "m1")).toStrictEqual(reordered);
   await repository.save({ pk: "m1", story_music_stickers: [] });
   const cleared = read(new StoryRepository(database), "m1");
-  assert.equal(cleared.musicObservations, undefined);
-  assert.deepEqual(cleared.locationObservations, before.locationObservations);
-  assert.deepEqual(
-    cleared.stickers,
-    before.stickers.filter(({ kind }) => kind === "location"),
-  );
+  expect(cleared.musicObservations).toBe(undefined);
+  expect(cleared.locationObservations).toStrictEqual(before.locationObservations);
+  expect(cleared.stickers).toStrictEqual(before.stickers.filter(({ kind }) => kind === "location"));
 });
 
 test("malformed or omitted music sources preserve rich metadata and all saved contributions", async (context) => {
@@ -308,7 +311,7 @@ test("malformed or omitted music sources preserve rich metadata and all saved co
   ]) {
     // oxlint-disable-next-line no-await-in-loop -- Persist and cold-read each source contract independently.
     await repository.save(story);
-    assert.deepEqual(read(new StoryRepository(database), "m1"), before);
+    expect(read(new StoryRepository(database), "m1")).toStrictEqual(before);
   }
 });
 
@@ -336,12 +339,12 @@ test("changed audio identity cannot inherit the previous recording's missing fie
     ],
   });
   const [after] = present(read(new StoryRepository(database), "m1").musicObservations);
-  assert.equal(after.occurrenceId, before.occurrenceId);
-  assert.notEqual(after.metadata.id, before.metadata.id);
-  assert.equal(after.metadata.instagramAudioAssetId, "new");
-  assert.equal(after.metadata.status, "partial");
-  assert.equal(after.metadata.artist, null);
-  assert.equal(after.metadata.durationMs, null);
+  expect(after.occurrenceId).toBe(before.occurrenceId);
+  expect(after.metadata.id).not.toBe(before.metadata.id);
+  expect(after.metadata.instagramAudioAssetId).toBe("new");
+  expect(after.metadata.status).toBe("partial");
+  expect(after.metadata.artist).toBe(null);
+  expect(after.metadata.durationMs).toBe(null);
 });
 
 test("uncertain repeated music stays separate while current raw occurrences receive their own links", async (context) => {
@@ -361,21 +364,23 @@ test("uncertain repeated music stays separate while current raw occurrences rece
   });
   const before = read(new StoryRepository(database), "m1");
   const observations = present(before.musicObservations);
-  assert.equal(before.stickers.length, 3);
-  assert.deepEqual(
-    observations.map(({ occurrenceId }) => occurrenceId),
-    [...before.stickers.map(({ occurrenceId }) => occurrenceId), null],
-  );
-  assert.notEqual(observations[0].metadata.id, observations[1].metadata.id);
+  expect(before.stickers.length).toBe(3);
+  expect(observations.map(({ occurrenceId }) => occurrenceId)).toStrictEqual([
+    ...before.stickers.map(({ occurrenceId }) => occurrenceId),
+    null,
+  ]);
+  expect(observations[0].metadata.id).not.toBe(observations[1].metadata.id);
   await repository.save({
     pk: "m1",
     story_music_stickers: [{ music_asset_info: anonymous }, { music_asset_info: anonymous }],
   });
   const after = read(new StoryRepository(database), "m1");
-  assert.equal(after.stickers.length, 2);
+  expect(after.stickers.length).toBe(2);
   for (const entry of present(after.musicObservations)) {
-    assert.ok(after.stickers.some(({ occurrenceId }) => occurrenceId === entry.occurrenceId));
-    assert.ok(observations.every((old) => old.metadata.id !== entry.metadata.id));
+    expect(
+      after.stickers.some(({ occurrenceId }) => occurrenceId === entry.occurrenceId),
+    ).toBeTruthy();
+    expect(observations.every((old) => old.metadata.id !== entry.metadata.id)).toBeTruthy();
   }
 });
 
@@ -414,14 +419,14 @@ test("numeric IDs are accepted only when exact and invalid durations remain unkn
     ],
   });
   const observations = present(read(new StoryRepository(database), "m1").musicObservations);
-  assert.equal(observations[0].providerOccurrenceId, "42");
-  assert.equal(observations[0].metadata.instagramAudioAssetId, "123");
-  assert.equal(observations[0].metadata.durationMs, 1000);
-  assert.equal(observations[0].metadata.status, "usable");
+  expect(observations[0].providerOccurrenceId).toBe("42");
+  expect(observations[0].metadata.instagramAudioAssetId).toBe("123");
+  expect(observations[0].metadata.durationMs).toBe(1000);
+  expect(observations[0].metadata.status).toBe("usable");
   for (const entry of observations.slice(1)) {
-    assert.equal(entry.metadata.instagramAudioAssetId, null);
-    assert.equal(entry.metadata.durationMs, null);
-    assert.equal(entry.metadata.status, "partial");
+    expect(entry.metadata.instagramAudioAssetId).toBe(null);
+    expect(entry.metadata.durationMs).toBe(null);
+    expect(entry.metadata.status).toBe("partial");
   }
 });
 
@@ -445,9 +450,9 @@ test("received music media survives sparse observations and partial promotion in
   });
   const before = read(repository, "media");
   const [partial] = present(before.musicObservations);
-  assert.equal(partial.metadata.status, "partial");
-  assert.equal(partial.metadata.audioSourceUrl, "https://example.com/primary.m4a");
-  assert.equal(partial.metadata.artworkSourceUrl, "https://example.com/art.jpg");
+  expect(partial.metadata.status).toBe("partial");
+  expect(partial.metadata.audioSourceUrl).toBe("https://example.com/primary.m4a");
+  expect(partial.metadata.artworkSourceUrl).toBe("https://example.com/art.jpg");
   await repository.save({
     pk: "media",
     story_music_stickers: [
@@ -462,11 +467,11 @@ test("received music media survives sparse observations and partial promotion in
     ],
   });
   const after = read(new StoryRepository(database), "media");
-  assert.deepEqual(after.stickers, before.stickers);
+  expect(after.stickers).toStrictEqual(before.stickers);
   const [promoted] = present(after.musicObservations);
-  assert.equal(promoted.metadata.status, "usable");
-  assert.equal(promoted.metadata.audioSourceUrl, "https://example.com/primary.m4a");
-  assert.equal(promoted.metadata.artworkSourceUrl, "https://example.com/art.jpg");
-  assert.equal(promoted.metadata.audioState, "pending");
-  assert.equal(promoted.metadata.artworkState, "pending");
+  expect(promoted.metadata.status).toBe("usable");
+  expect(promoted.metadata.audioSourceUrl).toBe("https://example.com/primary.m4a");
+  expect(promoted.metadata.artworkSourceUrl).toBe("https://example.com/art.jpg");
+  expect(promoted.metadata.audioState).toBe("pending");
+  expect(promoted.metadata.artworkState).toBe("pending");
 });

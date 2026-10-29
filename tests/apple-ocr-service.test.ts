@@ -1,6 +1,5 @@
 import { Buffer } from "node:buffer";
-import assert from "node:assert/strict";
-import { describe, test } from "vitest";
+import { describe, test, expect } from "vitest";
 import { recognizeAppleCaption } from "../sdk/lib/apple-ocr-service.ts";
 import { createAppleVisionRepositoryAdapter } from "./repository-adapters.ts";
 
@@ -21,8 +20,8 @@ describe("recognizeAppleCaption", () => {
       repository,
     });
 
-    assert.equal(caption, "stored caption");
-    assert.equal(runCount, 0);
+    expect(caption).toBe("stored caption");
+    expect(runCount).toBe(0);
   });
 
   test("stores OCR result when the repository has no entry", async () => {
@@ -38,9 +37,9 @@ describe("recognizeAppleCaption", () => {
       repository,
     });
 
-    assert.equal(caption, "fresh caption");
-    assert.deepEqual(receivedImage, Buffer.from("local-image"));
-    assert.equal(repository.entries.get("story-2"), "fresh caption");
+    expect(caption).toBe("fresh caption");
+    expect(receivedImage).toStrictEqual(Buffer.from("local-image"));
+    expect(repository.entries.get("story-2")).toBe("fresh caption");
   });
 
   test("normalizes OCR text before storing it", async () => {
@@ -52,24 +51,19 @@ describe("recognizeAppleCaption", () => {
       repository,
     });
 
-    assert.equal(caption, "fresh caption");
-    assert.equal(repository.entries.get("story-3"), "fresh caption");
+    expect(caption).toBe("fresh caption");
+    expect(repository.entries.get("story-3")).toBe("fresh caption");
   });
 
   test("reports OCR as unavailable without loading it on Windows", async () => {
     const repository = createAppleVisionRepositoryAdapter();
 
-    await assert.rejects(
+    await expect(
       recognizeAppleCaption("story-4", "/cache/story-4.jpg", {
         platform: "win32",
         readImage: async () => Buffer.from("local-image"),
         repository,
       }),
-      (error) =>
-        error instanceof Error &&
-        "kind" in error &&
-        error.kind === "unavailable" &&
-        error.message === "unsupported platform win32",
-    );
+    ).rejects.toMatchObject({ kind: "unavailable", message: "unsupported platform win32" });
   });
 });

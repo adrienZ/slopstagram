@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { describe, test } from "vitest";
+import { assert, describe, test, expect } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { VisionRepository } from "../sdk/repositories/vision-repository.ts";
@@ -20,12 +19,12 @@ describe("VisionRepository", () => {
 
     await repository.save("story-2", entry);
 
-    assert.deepEqual(repository.findByMediaPk("story-2"), entry);
+    expect(repository.findByMediaPk("story-2")).toStrictEqual(entry);
     const storedResult = database.$client
       .prepare("SELECT text, visual FROM vision WHERE mediaPk = ?")
       .get("story-2");
     assert.ok(storedResult);
-    assert.equal(storedResult.text, "readable text");
-    assert.equal(storedResult.visual, "a market");
+    expect(storedResult.text).toBe("readable text");
+    expect(storedResult.visual).toBe("a market");
   });
 });

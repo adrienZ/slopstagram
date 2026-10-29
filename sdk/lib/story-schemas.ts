@@ -2,7 +2,12 @@ import { z } from "zod";
 import { StoryLocationObservationSchema } from "../entities/location-metadata.ts";
 import { StoryMusicObservationSchema } from "../entities/music-metadata.ts";
 import { StoryAudioSchema } from "../entities/story-audio.ts";
-import { ReportStorySchema, ReportFailureSchema } from "../entities/report.ts";
+import {
+  ReportFailureSchema,
+  ReportSchema,
+  ReportStoryGroupSchema,
+  ReportStorySchema,
+} from "../entities/report.ts";
 import { StoryStickerSchema } from "../entities/story.ts";
 import { JsonValueSchema } from "./json-value.ts";
 
@@ -88,48 +93,50 @@ export const StoryReelSchema = z
   })
   .catchall(JsonValueSchema);
 
-const StoryManifestItemSchema = z.object({
-  failure_index: z.number().optional(),
+// Wire keys are snake_case, so the drizzle schemas supply each field's type
+// rather than being picked wholesale. List columns stay string arrays: the
+// report tables store them as JSON text.
+export const StoryManifestItemSchema = z.object({
+  failure_index: ReportStorySchema.shape.failureIndex.unwrap().optional(),
   ig_caption: z.string(),
   locations: z.array(z.string()),
   media_type: ReportStorySchema.shape.mediaType.optional(),
-  media_pk: z.string(),
-  preview_image_url: z.string().nullable(),
+  media_pk: ReportStorySchema.shape.mediaPk,
+  preview_image_url: ReportStorySchema.shape.previewImageUrl,
   stickers: z.array(z.string()),
   status: ReportStorySchema.shape.status,
 });
-const StoryManifestReelSchema = z.object({
-  full_name: z.string().nullable().optional(),
-  id: z.string().optional(),
+export const StoryManifestReelSchema = z.object({
+  full_name: ReportStoryGroupSchema.shape.fullName.optional(),
+  id: ReportStoryGroupSchema.shape.instagramId.unwrap().optional(),
   media_ids: z.array(z.string()),
-  order: z.number(),
-  pk: z.string().optional(),
-  profile_pic_url: z.string().nullable().optional(),
-  reel_id: z.string(),
+  order: ReportStoryGroupSchema.shape.sortOrder,
+  pk: ReportStoryGroupSchema.shape.instagramPk.unwrap().optional(),
+  profile_pic_url: ReportStoryGroupSchema.shape.profilePicUrl.optional(),
+  reel_id: ReportStoryGroupSchema.shape.reelId,
   stories: z.array(StoryManifestItemSchema),
-  username: z.string(),
+  username: ReportStoryGroupSchema.shape.username,
 });
-const StoryOutputItemSchema = StoryManifestItemSchema;
-const StoryOutputUserSchema = z.object({
-  full_name: z.string().nullable().optional(),
-  profile_pic_url: z.string().nullable().optional(),
+export const StoryOutputUserSchema = z.object({
+  full_name: StoryManifestReelSchema.shape.full_name,
+  profile_pic_url: StoryManifestReelSchema.shape.profile_pic_url,
   reel_ids: z.array(z.string()),
-  stories: z.array(StoryOutputItemSchema),
-  username: z.string(),
+  stories: z.array(StoryManifestItemSchema),
+  username: StoryManifestReelSchema.shape.username,
 });
-const StoryFetchFailureSchema = z.object({
-  attempt_count: z.number(),
-  http_status: z.number().nullable(),
-  media_pk: z.string().nullable(),
-  message: z.string(),
+export const StoryFetchFailureSchema = z.object({
+  attempt_count: ReportFailureSchema.shape.attemptCount,
+  http_status: ReportFailureSchema.shape.httpStatus,
+  media_pk: ReportFailureSchema.shape.mediaPk,
+  message: ReportFailureSchema.shape.message,
   reason: ReportFailureSchema.shape.reason,
-  reel_id: z.string(),
+  reel_id: ReportFailureSchema.shape.reelId,
 });
 const StoryFetchCountsSchema = z.object({
-  failed: z.number(),
-  fetched: z.number(),
-  reels: z.number(),
-  stories: z.number(),
+  failed: ReportSchema.shape.failedCount,
+  fetched: ReportSchema.shape.fetchedCount,
+  reels: ReportSchema.shape.reelsCount,
+  stories: ReportSchema.shape.storiesCount,
 });
 
 export const StoriesManifestReportSchema = z.object({
@@ -138,12 +145,12 @@ export const StoriesManifestReportSchema = z.object({
     users: z.array(StoryManifestReelSchema),
   }),
   metadata: z.object({
-    broadcasts_count: z.number(),
+    broadcasts_count: ReportSchema.shape.broadcastsCount,
     counts: StoryFetchCountsSchema,
-    created_at: z.string(),
-    report_name: z.string(),
-    status: z.string().nullable(),
-    story_ranking_token: z.string().nullable(),
+    created_at: ReportSchema.shape.createdAt,
+    report_name: ReportSchema.shape.reportName,
+    status: ReportSchema.shape.status,
+    story_ranking_token: ReportSchema.shape.storyRankingToken,
   }),
   output: z.object({
     users: z.array(StoryOutputUserSchema),

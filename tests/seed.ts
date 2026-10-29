@@ -31,7 +31,7 @@ function shiftedReels(options: SeedOptions) {
 
 /**
  * Ingests the recorded Instagram payloads into the application database the way
- * scripts/fetch-stories.ts does: the real Instagram client over a session that serves
+ * createReport does: the real Instagram client over a session that serves
  * the recordings, then the real fetch and user persistence. Only the browser is replaced.
  */
 export async function seedRecordedStories(options: SeedOptions = {}) {

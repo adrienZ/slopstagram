@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { describe, test } from "vitest";
+import { describe, test, expect } from "vitest";
 import { persistReportInstagramUsers } from "../sdk/lib/instagram-user-service.ts";
 import type { InstagramUserEntry } from "../sdk/entities/instagram-user.ts";
 import type { StoriesManifestReport } from "../sdk/report-types.ts";
@@ -67,19 +66,19 @@ describe("Instagram user report persistence", () => {
 
     await persistReportInstagramUsers(report, repository);
 
-    assert.deepEqual(repository.entries.get("fixture-user"), {
+    expect(repository.entries.get("fixture-user")).toStrictEqual({
       full_name: "Fixture User",
       id: "instagram-id-1",
       pk: "instagram-pk-1",
       username: "fixture-user",
     });
-    assert.equal("full_name" in report.output.users[0], false);
-    assert.equal("profile_pic_url" in report.output.users[0], false);
-    assert.equal("full_name" in report.manifest.users[0], false);
-    assert.equal("id" in report.manifest.users[0], false);
-    assert.equal("pk" in report.manifest.users[0], false);
-    assert.equal("profile_pic_url" in report.manifest.users[0], false);
+    expect("full_name" in report.output.users[0]).toBe(false);
+    expect("profile_pic_url" in report.output.users[0]).toBe(false);
+    expect("full_name" in report.manifest.users[0]).toBe(false);
+    expect("id" in report.manifest.users[0]).toBe(false);
+    expect("pk" in report.manifest.users[0]).toBe(false);
+    expect("profile_pic_url" in report.manifest.users[0]).toBe(false);
 
-    assert.equal(repository.findByUsername("fixture-user")?.full_name, "Fixture User");
+    expect(repository.findByUsername("fixture-user")?.full_name).toBe("Fixture User");
   });
 });

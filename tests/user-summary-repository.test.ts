@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { describe, test } from "vitest";
+import { describe, test, expect } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
@@ -33,8 +32,8 @@ describe("UserSummaryRepository", () => {
 
     await repository.save(entry);
 
-    assert.deepEqual(repository.findBySourceHash(entry.source_hash), entry);
-    assert.deepEqual(database.select().from(userSummaries).get(), {
+    expect(repository.findBySourceHash(entry.source_hash)).toStrictEqual(entry);
+    expect(database.select().from(userSummaries).get()).toStrictEqual({
       instagramUserPk: owner.pk,
       legacyUsername: null,
       promptHash: entry.prompt_hash,
@@ -42,7 +41,7 @@ describe("UserSummaryRepository", () => {
       sourceHash: entry.source_hash,
     });
     await users.save({ ...owner, username: "renamed-user" });
-    assert.equal(repository.findBySourceHash(entry.source_hash)?.user_key, "renamed-user");
+    expect(repository.findBySourceHash(entry.source_hash)?.user_key).toBe("renamed-user");
   });
 
   test("rejects new summaries with missing or ambiguous owners", async (context) => {
@@ -52,12 +51,12 @@ describe("UserSummaryRepository", () => {
     });
     migrateDatabase(database);
     const repository = new UserSummaryRepository(database);
-    await assert.rejects(repository.save(entry), /Expected one Instagram user/u);
+    await expect(repository.save(entry)).rejects.toThrow(/Expected one Instagram user/u);
     await database.insert(instagramUsers).values([
       { id: "first-id", pk: "first-pk", username: entry.user_key },
       { id: "second-id", pk: "second-pk", username: entry.user_key },
     ]);
-    await assert.rejects(repository.save(entry), /Expected one Instagram user/u);
-    assert.equal(database.select().from(userSummaries).all().length, 0);
+    await expect(repository.save(entry)).rejects.toThrow(/Expected one Instagram user/u);
+    expect(database.select().from(userSummaries).all().length).toBe(0);
   });
 });

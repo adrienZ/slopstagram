@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { describe, test } from "vitest";
+import { describe, test, expect } from "vitest";
 import { getMediaCacheKey } from "../sdk/lib/cache-service.ts";
 import { fetchStories } from "../sdk/stories.ts";
 import {
@@ -51,14 +50,14 @@ describe("fetchStoriesManifest", () => {
       storyStorage: storyRepository.storyStorage,
     });
 
-    assert.deepEqual(client.reelsCalls, [["r1", "r2"]]);
-    assert.deepEqual(report.metadata.counts, {
+    expect(client.reelsCalls).toStrictEqual([["r1", "r2"]]);
+    expect(report.metadata.counts).toStrictEqual({
       failed: 0,
       fetched: 2,
       reels: 2,
       stories: 2,
     });
-    assert.deepEqual(
+    expect(
       report.manifest.users.map((user) => ({
         id: user.id,
         ig_caption: user.stories[0]?.ig_caption,
@@ -71,34 +70,33 @@ describe("fetchStoriesManifest", () => {
         stickers: user.stories[0]?.stickers,
         username: user.username,
       })),
-      [
-        {
-          id: "instagram-id-1",
-          ig_caption: "N/A",
-          locations: [],
-          media_type: "image",
-          pk: "instagram-pk-1",
-          profile_pic_url: "https://example.com/one.jpg",
-          reel_id: "r1",
-          status: "ok",
-          stickers: [],
-          username: "one",
-        },
-        {
-          id: "r2",
-          ig_caption: "N/A",
-          locations: [],
-          media_type: "image",
-          pk: "r2",
-          profile_pic_url: null,
-          reel_id: "r2",
-          status: "ok",
-          stickers: [],
-          username: "two",
-        },
-      ],
-    );
-    assert.deepEqual(report.output.users, [
+    ).toStrictEqual([
+      {
+        id: "instagram-id-1",
+        ig_caption: "N/A",
+        locations: [],
+        media_type: "image",
+        pk: "instagram-pk-1",
+        profile_pic_url: "https://example.com/one.jpg",
+        reel_id: "r1",
+        status: "ok",
+        stickers: [],
+        username: "one",
+      },
+      {
+        id: "r2",
+        ig_caption: "N/A",
+        locations: [],
+        media_type: "image",
+        pk: "r2",
+        profile_pic_url: null,
+        reel_id: "r2",
+        status: "ok",
+        stickers: [],
+        username: "two",
+      },
+    ]);
+    expect(report.output.users).toStrictEqual([
       {
         full_name: null,
         profile_pic_url: "https://example.com/one.jpg",
@@ -134,8 +132,7 @@ describe("fetchStoriesManifest", () => {
         username: "two",
       },
     ]);
-    assert.deepEqual(
-      await storyRepository.storyStorage.getItem(getMediaCacheKey("m1")),
+    expect(await storyRepository.storyStorage.getItem(getMediaCacheKey("m1"))).toStrictEqual(
       globalThis.structuredClone(storyItem("m1")),
     );
   });
@@ -166,35 +163,33 @@ describe("fetchStoriesManifest", () => {
       storyStorage: storyRepository.storyStorage,
     });
 
-    assert.deepEqual(client.reelsCalls, [["r1", "r2"]]);
-    assert.deepEqual(storyRepository.findByMediaPk("m2"), storyItem("m2"));
-    assert.deepEqual(
-      await storyRepository.storyStorage.getItem(getMediaCacheKey("m2")),
+    expect(client.reelsCalls).toStrictEqual([["r1", "r2"]]);
+    expect(storyRepository.findByMediaPk("m2")).toStrictEqual(storyItem("m2"));
+    expect(await storyRepository.storyStorage.getItem(getMediaCacheKey("m2"))).toStrictEqual(
       globalThis.structuredClone(storyItem("m2")),
     );
-    assert.deepEqual(
+    expect(
       report.manifest.users.map((user) => ({
         ig_caption: user.stories[0]?.ig_caption,
         locations: user.stories[0]?.locations,
         status: user.stories[0]?.status,
         stickers: user.stories[0]?.stickers,
       })),
-      [
-        {
-          ig_caption: "Latest image caption",
-          locations: [],
-          status: "ok",
-          stickers: [],
-        },
-        {
-          ig_caption: "N/A",
-          locations: [],
-          status: "ok",
-          stickers: [],
-        },
-      ],
-    );
-    assert.equal(report.metadata.counts.fetched, 2);
+    ).toStrictEqual([
+      {
+        ig_caption: "Latest image caption",
+        locations: [],
+        status: "ok",
+        stickers: [],
+      },
+      {
+        ig_caption: "N/A",
+        locations: [],
+        status: "ok",
+        stickers: [],
+      },
+    ]);
+    expect(report.metadata.counts.fetched).toBe(2);
   });
 
   test("groups final output by user with story accessibility captions", async () => {
@@ -251,7 +246,7 @@ describe("fetchStoriesManifest", () => {
       storyStorage: storyRepository.storyStorage,
     });
 
-    assert.deepEqual(report.output.users, [
+    expect(report.output.users).toStrictEqual([
       {
         full_name: "Same User",
         profile_pic_url: "https://example.com/same.jpg",
