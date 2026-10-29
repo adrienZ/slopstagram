@@ -95,8 +95,8 @@ export function storyMusicPreviews(annotations: StoryAnnotations | undefined): A
 function normalizeMusicLabel(label: string) {
   return label
     .normalize("NFKC")
-    .replaceAll(/\s+[—–-]\s+/gu, " - ")
     .replaceAll(/\s+/gu, " ")
+    .replaceAll(/ [—–-] /gu, " - ")
     .trim()
     .toLowerCase();
 }
