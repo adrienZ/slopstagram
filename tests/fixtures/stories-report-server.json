@@ -3,40 +3,40 @@
   "manifest": {
     "users": [
       {
-        "full_name": "Html \"User\"",
+        "full_name": "Fixture user 2",
         "media_ids": [
-          "story-pk-1"
+          "fixture-pk-1"
         ],
         "order": 1,
-        "profile_pic_url": "images/avatars/avatar.jpg",
-        "reel_id": "r1",
+        "profile_pic_url": "images/avatars/fixture-avatar-1.jpg",
+        "reel_id": "fixture-reel-1",
         "stories": [
           {
-            "ig_caption": "Instagram caption",
+            "ig_caption": "Fixture caption 1",
             "locations": [
-              "Cafe Example, Paris"
+              "Fixture place 1"
             ],
             "media_type": "image",
-            "media_pk": "story-pk-1",
-            "preview_image_url": "images/story-previews/story-pk-1.jpg",
+            "media_pk": "fixture-pk-1",
+            "preview_image_url": "images/story-previews/fixture-pk-1.jpg",
             "stickers": [
-              "link:A & B"
+              "link:Fixture link 1"
             ],
             "status": "ok"
           }
         ],
-        "username": "ranked-second"
+        "username": "fixture_user_2"
       },
       {
-        "full_name": "Ranked First",
+        "full_name": "Fixture user 1",
         "media_ids": [
-          "story-pk-2"
+          "fixture-pk-2"
         ],
         "order": 0,
         "profile_pic_url": null,
-        "reel_id": "r2",
+        "reel_id": "fixture-reel-2",
         "stories": [],
-        "username": "ranked-first"
+        "username": "fixture_user_1"
       }
     ]
   },
@@ -58,36 +58,36 @@
   "output": {
     "users": [
       {
-        "full_name": "Html \"User\"",
-        "profile_pic_url": "images/avatars/avatar.jpg",
+        "full_name": "Fixture user 2",
+        "profile_pic_url": "images/avatars/fixture-avatar-1.jpg",
         "reel_ids": [
-          "r1"
+          "fixture-reel-1"
         ],
         "stories": [
           {
-            "ig_caption": "Instagram caption",
+            "ig_caption": "Fixture caption 1",
             "locations": [
-              "Cafe Example, Paris"
+              "Fixture place 1"
             ],
             "media_type": "image",
-            "media_pk": "story-pk-1",
-            "preview_image_url": "images/story-previews/story-pk-1.jpg",
+            "media_pk": "fixture-pk-1",
+            "preview_image_url": "images/story-previews/fixture-pk-1.jpg",
             "stickers": [
-              "link:A & B"
+              "link:Fixture link 1"
             ],
             "status": "ok"
           }
         ],
-        "username": "ranked-second"
+        "username": "fixture_user_2"
       },
       {
-        "full_name": "Ranked First",
+        "full_name": "Fixture user 1",
         "profile_pic_url": null,
         "reel_ids": [
-          "r2"
+          "fixture-reel-2"
         ],
         "stories": [],
-        "username": "ranked-first"
+        "username": "fixture_user_1"
       }
     ]
   }

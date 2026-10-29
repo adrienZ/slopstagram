@@ -24,9 +24,14 @@ const SLUG_KEY_PATTERN = /(?:^|_)slug$/u;
 // Keys whose string values are structural (enums, fixed labels), so they carry no personal data.
 const STRUCTURAL_KEYS = new Set([
   "__typename",
+  "created_at",
+  "gen_ai_detection_method",
   "logging_mechanism",
   "logging_surface",
+  "media_type",
   "product_type",
+  "reel_type",
+  "report_name",
   "status",
   "sticker_type",
   "type",
@@ -68,6 +73,20 @@ const CAPTURED_REEL_COUNT = 3;
 const METADATA_FILE_NAME = "capture-metadata.json";
 const LATITUDE_STEPS = 600;
 const LONGITUDE_STEPS = 1600;
+// What the redactor writes. The fixture privacy guard accepts these shapes and nothing else, so
+// the redaction rules above stay the single source of truth for what counts as synthetic.
+const SYNTHETIC_ID_PATTERN = /^7000000\d{8}$/u;
+const SYNTHETIC_USERNAME_PATTERN = /^user_\d{3,}$/u;
+const SYNTHETIC_AUDIO_TEXT_PATTERN = /^Fixture audio (?:title|artist) \d+$/u;
+// Hand-written fixtures: "fixture" followed by words and a number, e.g. `Fixture caption 1`,
+// `fixture_user_1` or `images/avatars/fixture-avatar-1.jpg`, optionally after a `kind:` prefix.
+const SYNTHETIC_MARKER_PATTERN =
+  /^(?:[a-z-]+\/)*(?:[a-z]+:)?fixture[\s_-](?:[a-z]+[\s_-])*\d+(?:\.[a-z0-9]+)?$/iu;
+// Hosts that can never serve real data: IANA reserved example domains.
+const RESERVED_HOST_PATTERN = /(?:^|\.)example\.(?:com|org|net|test)$|\.test$/u;
+const MAX_COORDINATE_DECIMALS = 1;
+const LATITUDE_RANGE = { max: 70, min: 10 };
+const LONGITUDE_RANGE = { max: 170, min: 10 };
 
 function anonymizedUrl(index: number): string {
   return `https://example.com/anonymized/instagram-media-${String(index).padStart(4, "0")}.jpg`;
@@ -254,6 +273,136 @@ export function createRedactor() {
   return (payload: JsonValue) => redact(payload, "", collectAccountNames(payload));
 }
 
+export interface UnsafeFixtureValue {
+  /** Where the value sits, e.g. `data.items[0].username`. Never the value itself. */
+  path: string;
+  reason: string;
+}
+
+function isSyntheticUrl(text: string): boolean {
+  const url = globalThis.URL.parse(text);
+  return url !== null && RESERVED_HOST_PATTERN.test(url.hostname);
+}
+
+function isSyntheticText(text: string): boolean {
+  return SYNTHETIC_MARKER_PATTERN.test(text) || isSyntheticUrl(text);
+}
+
+function isSyntheticCoordinate(value: number, range: { max: number; min: number }): boolean {
+  const decimals = (String(value).split(".")[1] ?? "").length;
+  return value >= range.min && value < range.max && decimals <= MAX_COORDINATE_DECIMALS;
+}
+
+function numberProblem(value: number, key: string): string | null {
+  if (LATITUDE_KEY_PATTERN.test(key) && !isSyntheticCoordinate(value, LATITUDE_RANGE)) {
+    return "latitude is not a synthetic coordinate";
+  }
+  if (LONGITUDE_KEY_PATTERN.test(key) && !isSyntheticCoordinate(value, LONGITUDE_RANGE)) {
+    return "longitude is not a synthetic coordinate";
+  }
+  return isIdentifierKey(key) && !SYNTHETIC_ID_PATTERN.test(String(value))
+    ? "identifier is not synthetic"
+    : null;
+}
+
+// Why a string at `key` is not safe to commit, or null when it is structural, synthetic or public.
+function textProblem(text: string, key: string): string | null {
+  if (text.length === 0 || STRUCTURAL_KEYS.has(key)) {
+    return null;
+  }
+  if (OMITTED_KEYS.has(key)) {
+    return "free text that fixtures must omit";
+  }
+  if (isIdentifierKey(key)) {
+    return SYNTHETIC_ID_PATTERN.test(text) || isSyntheticText(text)
+      ? null
+      : "identifier is not synthetic";
+  }
+  if (key === "username") {
+    return SYNTHETIC_USERNAME_PATTERN.test(text) || isSyntheticText(text)
+      ? null
+      : "username is not synthetic";
+  }
+  return isSyntheticText(text) ? null : "text is not synthetic";
+}
+
+// Object keys can carry ids too (maps keyed by reel or user id).
+function keyProblem(entryKey: string): string | null {
+  return /^\d{6,}$/u.test(entryKey) && !SYNTHETIC_ID_PATTERN.test(entryKey)
+    ? "object key is an identifier that is not synthetic"
+    : null;
+}
+
+/**
+ * Lists every value of a fixture payload that is neither structural (known enum-like keys,
+ * numbers, booleans), synthetic (what `createRedactor` writes, or an explicit `fixture` marker),
+ * nor public audio metadata of a licensed catalog track. It applies the redactor's own rules in
+ * reverse and never reports the offending value, only where it is.
+ */
+export function findUnsafeFixtureValues(payload: JsonValue): Array<UnsafeFixtureValue> {
+  const names = collectAccountNames(payload);
+  const unsafe: Array<UnsafeFixtureValue> = [];
+
+  function audioProblem(info: JsonObject, entryKey: string, entry: string): string | null {
+    if (AUDIO_TEXT_KEYS.has(entryKey)) {
+      return SYNTHETIC_AUDIO_TEXT_PATTERN.test(entry) || isLicensedCatalogTrack(info, names)
+        ? null
+        : "audio text of a track that is not a licensed catalog track";
+    }
+    return /^\d+$/u.test(entry) ? null : "audio metadata is not an identifier or a number";
+  }
+
+  function problemOf(value: JsonValue, key: string, parent: JsonObject | null): string | null {
+    const text = z.string().safeParse(value);
+    const number = z.number().safeParse(value);
+    if (parent !== null) {
+      // Public audio metadata: numbers and booleans are kept as recorded.
+      return text.success ? audioProblem(parent, key, text.data) : null;
+    }
+    if (text.success) {
+      return textProblem(text.data, key);
+    }
+    return number.success ? numberProblem(number.data, key) : null;
+  }
+
+  function visit(
+    value: JsonValue,
+    key: string,
+    at: string,
+    publicAudioOf: JsonObject | null,
+  ): void {
+    if (Array.isArray(value)) {
+      for (const [index, entry] of value.entries()) {
+        visit(entry, key, `${at}[${index}]`, publicAudioOf);
+      }
+      return;
+    }
+    if (isJsonObject(value)) {
+      for (const [entryKey, entry] of Object.entries(value)) {
+        const entryAt = `${at}.${entryKey}`;
+        const problem = keyProblem(entryKey);
+        if (problem !== null) {
+          unsafe.push({ path: entryAt, reason: problem });
+        }
+        // Only direct scalar fields of music asset info are public, like in `redact`.
+        const isPublicAudio =
+          key === MUSIC_ASSET_INFO_KEY &&
+          PUBLIC_AUDIO_KEYS.has(entryKey) &&
+          isPublicAudioValue(entry);
+        visit(entry, entryKey, entryAt, isPublicAudio ? value : null);
+      }
+      return;
+    }
+    const problem = problemOf(value, key, publicAudioOf);
+    if (problem !== null) {
+      unsafe.push({ path: at, reason: problem });
+    }
+  }
+
+  visit(payload, "", "$", null);
+  return unsafe;
+}
+
 type Session = Parameters<typeof createInstagramClient>[0];
 type Evaluate = Session["page"]["evaluate"];
 
@@ -392,6 +541,12 @@ async function main(): Promise<void> {
   try {
     const captured = redactPayloads(await captureInstagramPayloads(session));
     const { metadata, files } = buildFixtureMetadata(captured, new Date());
+    const refused = files.flatMap(([name, body]) =>
+      findUnsafeFixtureValues(body).map(({ path: at, reason }) => `${name} ${at}: ${reason}`),
+    );
+    if (refused.length > 0) {
+      throw new Error(`Refusing to write fixtures with unsafe values:\n${refused.join("\n")}`);
+    }
     await mkdir(outputDirectory, { recursive: true });
     for (const [name, body] of [...files, [METADATA_FILE_NAME, metadata]] as const) {
       // oxlint-disable-next-line no-await-in-loop -- A handful of small files.

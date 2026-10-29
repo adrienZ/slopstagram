@@ -12,12 +12,12 @@ function readDocument(html: string) {
 }
 
 test("report SSR includes the feed and safely serializes hydration data", async () => {
-  const html = await renderer.renderRoute("/report?story=story-pk-1");
+  const html = await renderer.renderRoute("/report?story=fixture-pk-1");
   const document = readDocument(html);
   const page = within(document.body);
   expect(page.getAllByRole("main")).toHaveLength(1);
   expect(page.getByRole("heading", { name: "Stories des dernières 24 heures" })).toBeDefined();
-  expect(page.getByRole("button", { name: "Ouvrir aperçu story-pk-1" })).toBeDefined();
+  expect(page.getByRole("button", { name: "Ouvrir aperçu fixture-pk-1" })).toBeDefined();
   expect(page.queryByRole("dialog")).toBeNull();
   expect(document.querySelector('link[href^="/css/"]')).toBeNull();
   expect(html).toContain("$_TSR");
