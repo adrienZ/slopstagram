@@ -45,9 +45,16 @@ repositories.
 Recorded payloads are captured on demand from a live authenticated session by a dedicated
 command, never copied from the local story cache, which holds unredacted data. The
 command anonymizes deterministically: the same real value always maps to the same
-synthetic value, so links between payloads survive, and usernames, account ids, names,
-captions and CDN URLs never reach the repository. Each fixture states when it was
+synthetic value, so links between payloads survive. Each fixture states when it was
 captured and what it covers. The command never runs in CI, so CI never touches Instagram.
+
+No personal data ever lands in source code, fixtures, tests, docs, commits, or PR and
+issue text. Anonymization is default-deny: usernames, account ids, names, captions,
+places and CDN URLs become stable synthetic values, and anything not known to be
+structural is replaced. The only exception is public music asset metadata (audio titles
+and artists), which may stay as recorded. A guard test scans every committed fixture and
+fails on any value that is neither structural, synthetic nor public audio metadata, so a
+refreshed capture or a hand edit cannot leak data past review.
 
 There is no end-to-end browser layer. Seeded integration tests cover the same ground
 without building the app, starting a server or installing a browser, and keep the suite
