@@ -55,6 +55,16 @@ function getPromptHash(prompt: string): string {
   return createHash("sha256").update(prompt).digest("hex");
 }
 
+/** Returns a saved vision result only when the current model and prompt produced it. */
+export function readCurrentVisionResult(entry: VisionEntry | null): VisionResult | null {
+  return isUsableVisionEntry(entry, {
+    model: VISION_MODEL,
+    promptHash: getPromptHash(VISION_PROMPT),
+  })
+    ? entry.result
+    : null;
+}
+
 function normalizeVisionText(value: string): string {
   return value.normalize("NFC").trim();
 }
