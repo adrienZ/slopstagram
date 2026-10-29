@@ -18,8 +18,8 @@ import {
   createClient,
   fixedNow,
   reel,
-  response,
   storyItemWithStickers,
+  reelsResponse,
 } from "./mock-helpers.ts";
 import type { StoryItem } from "../sdk/instagram-types.ts";
 
@@ -84,25 +84,23 @@ test("provider-identified occurrences keep their identities through reordering a
       createClient(
         [{ id: "r1", media_ids: ["m1"], user: owner }],
         [
-          response({
-            reels: {
-              r1: {
-                ...reel("r1", [
-                  storyItemWithStickers("m1", {
-                    taken_at: 1_767_225_600,
-                    story_music_stickers: ids.map((id) => ({
-                      id,
-                      music_asset_info: {
-                        audio_asset_id: "shared-audio",
-                        title: "Song",
-                        display_artist: "Artist",
-                      },
-                    })),
-                    ...extra,
-                  }),
-                ]),
-                user: owner,
-              },
+          reelsResponse({
+            r1: {
+              ...reel("r1", [
+                storyItemWithStickers("m1", {
+                  taken_at: 1_767_225_600,
+                  story_music_stickers: ids.map((id) => ({
+                    id,
+                    music_asset_info: {
+                      audio_asset_id: "shared-audio",
+                      title: "Song",
+                      display_artist: "Artist",
+                    },
+                  })),
+                  ...extra,
+                }),
+              ]),
+              user: owner,
             },
           }),
         ],
@@ -230,7 +228,7 @@ test("story annotations survive ingestion, cold reports, and repeated saves", as
     taken_at: 1_767_225_600,
   });
   const report = await fetchStoriesManifest(
-    createClient(tray, [response({ reels: { r1: { ...reel("r1", [item]), user: owner } } })]),
+    createClient(tray, [reelsResponse({ r1: { ...reel("r1", [item]), user: owner } })]),
     {
       logger: createCapturingLogger(),
       now: fixedNow,
@@ -292,17 +290,15 @@ for (const unifiedLocations of [false, true]) {
     const tray = [{ id: "r1", media_ids: ["m1"], user: owner }];
     const original = await fetchStoriesManifest(
       createClient(tray, [
-        response({
-          reels: {
-            r1: {
-              ...reel("r1", [
-                storyItemWithStickers("m1", {
-                  story_locations: [{ location: { name: "Historical place" } }],
-                  taken_at: 1_767_225_600,
-                }),
-              ]),
-              user: owner,
-            },
+        reelsResponse({
+          r1: {
+            ...reel("r1", [
+              storyItemWithStickers("m1", {
+                story_locations: [{ location: { name: "Historical place" } }],
+                taken_at: 1_767_225_600,
+              }),
+            ]),
+            user: owner,
           },
         }),
       ]),
@@ -371,7 +367,7 @@ test("partial ingestion merges sources for fresh reports, cold reads, and resave
   const storage = createMemoryStorage<StoryItem>();
   async function ingest(item: StoryItem) {
     return await fetchStoriesManifest(
-      createClient(tray, [response({ reels: { r1: { ...reel("r1", [item]), user: owner } } })]),
+      createClient(tray, [reelsResponse({ r1: { ...reel("r1", [item]), user: owner } })]),
       {
         logger: createCapturingLogger(),
         now: fixedNow,

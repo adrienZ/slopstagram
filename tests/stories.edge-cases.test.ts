@@ -1,4 +1,4 @@
-import { describe, test, expect } from "vitest";
+import { assert, describe, test, expect } from "vitest";
 import { fetchStoriesManifest } from "../sdk/stories.ts";
 import {
   createCapturingLogger,
@@ -7,9 +7,10 @@ import {
   fixedNow,
   noSleep,
   reel,
-  response,
   storyItem,
   storyItemWithStickers,
+  reelsResponse,
+  response,
 } from "./mock-helpers.ts";
 
 describe("fetchStoriesManifest edge cases", () => {
@@ -21,11 +22,9 @@ describe("fetchStoriesManifest edge cases", () => {
         { id: "r1", media_ids: ["m1"], user: { username: "one" } },
       ],
       [
-        response({
-          reels: {
-            r1: reel("r1", [storyItem("m1")]),
-            r2: reel("r2", [storyItem("m3"), storyItem("m2")]),
-          },
+        reelsResponse({
+          r1: reel("r1", [storyItem("m1")]),
+          r2: reel("r2", [storyItem("m3"), storyItem("m2")]),
         }),
       ],
     );
@@ -54,58 +53,56 @@ describe("fetchStoriesManifest edge cases", () => {
     const client = createClient(
       [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
       [
-        response({
-          reels: {
-            r1: reel("r1", [
-              storyItemWithStickers(
-                "m1",
-                {
-                  link: {
-                    url: "https://example.com/a",
-                  },
-                  story_bloks_stickers: [
-                    {
-                      bloks_sticker: {
-                        sticker_data: {
-                          ig_mention: {
-                            username: "friend",
-                          },
-                        },
-                      },
-                    },
-                    {
-                      bloks_sticker: {
-                        sticker_data: {
-                          location: {
-                            address: "1 Rue Example, Paris",
-                            name: "Cafe Example",
-                          },
-                        },
-                      },
-                    },
-                  ],
-                  story_hashtags: [{ hashtag: "summer" }],
-                  story_locations: [
-                    {
-                      location: {
-                        address: "1 Rue Example, Paris",
-                        name: "Cafe Example",
-                      },
-                    },
-                  ],
-                  story_music_stickers: [
-                    {
-                      music_asset_info: {
-                        display_artist: "Artist",
-                        title: "Track",
-                      },
-                    },
-                  ],
+        reelsResponse({
+          r1: reel("r1", [
+            storyItemWithStickers(
+              "m1",
+              {
+                link: {
+                  url: "https://example.com/a",
                 },
-                "caption",
-              ),
-            ]),
-          },
+                story_bloks_stickers: [
+                  {
+                    bloks_sticker: {
+                      sticker_data: {
+                        ig_mention: {
+                          username: "friend",
+                        },
+                      },
+                    },
+                  },
+                  {
+                    bloks_sticker: {
+                      sticker_data: {
+                        location: {
+                          address: "1 Rue Example, Paris",
+                          name: "Cafe Example",
+                        },
+                      },
+                    },
+                  },
+                ],
+                story_hashtags: [{ hashtag: "summer" }],
+                story_locations: [
+                  {
+                    location: {
+                      address: "1 Rue Example, Paris",
+                      name: "Cafe Example",
+                    },
+                  },
+                ],
+                story_music_stickers: [
+                  {
+                    music_asset_info: {
+                      display_artist: "Artist",
+                      title: "Track",
+                    },
+                  },
+                ],
+              },
+              "caption",
+            ),
+          ]),
         }),
       ],
     );
@@ -135,21 +132,19 @@ describe("fetchStoriesManifest edge cases", () => {
     const client = createClient(
       [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
       [
-        response({
-          reels: {
-            r1: reel("r1", [
-              storyItemWithStickers(
-                "m1",
-                {
-                  link: {
-                    title: "Visit Link",
-                    url: "https://l.instagram.com/?u=https%3A%2F%2Finstallclaw.io%2Ffr%3Ffbclid%3DPAcGRvZgRleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAwyNTYyODEwNDA1NTgAAaees2JVYiKznrVRdrE8jUP0t055Ywo5c27Qe7zZvMdkJw4mRFLCM-_N39601g_aem_zcP2VBsrm0eIv1jimc94uQ&e=AUCmysVsYFdNrKGJp7Q0gcfWAbjsWt8JpZDcBDd_-NHBcUmft9eEQIoVQXv-HKNBFJtz4zRPoRllkQBozb6cDjlBocBjgrb3rEYJr2zjkEG3ODw9GwudH1HSKA",
-                  },
+        reelsResponse({
+          r1: reel("r1", [
+            storyItemWithStickers(
+              "m1",
+              {
+                link: {
+                  title: "Visit Link",
+                  url: "https://l.instagram.com/?u=https%3A%2F%2Finstallclaw.io%2Ffr%3Ffbclid%3DPAcGRvZgRleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAwyNTYyODEwNDA1NTgAAaees2JVYiKznrVRdrE8jUP0t055Ywo5c27Qe7zZvMdkJw4mRFLCM-_N39601g_aem_zcP2VBsrm0eIv1jimc94uQ&e=AUCmysVsYFdNrKGJp7Q0gcfWAbjsWt8JpZDcBDd_-NHBcUmft9eEQIoVQXv-HKNBFJtz4zRPoRllkQBozb6cDjlBocBjgrb3rEYJr2zjkEG3ODw9GwudH1HSKA",
                 },
-                "caption",
-              ),
-            ]),
-          },
+              },
+              "caption",
+            ),
+          ]),
         }),
       ],
     );
@@ -167,12 +162,39 @@ describe("fetchStoriesManifest edge cases", () => {
     ]);
   });
 
+  test("stops when the tray cannot be fetched, without requesting any reel", async () => {
+    const storyRepository = createMemoryStoryRepository();
+    const logger = createCapturingLogger();
+    const client = createClient([], []);
+    client.getTray = async () =>
+      await Promise.resolve(
+        response({ broadcasts: [], story_ranking_token: "", status: "fail", tray: [] }, 429),
+      );
+
+    await expect(
+      fetchStoriesManifest(client, {
+        logger,
+        maxAttempts: 1,
+        now: fixedNow,
+        sleep: noSleep,
+        storyRepository,
+        storyStorage: storyRepository.storyStorage,
+      }),
+    ).rejects.toThrow(/Instagram request failed with HTTP 429/u);
+    assert.deepEqual(client.reelsCalls, []);
+    assert.ok(
+      logger.messages.some((message) =>
+        message.includes("error: tray fetch failed: Instagram request failed with HTTP 429"),
+      ),
+    );
+  });
+
   test("falls back after chunk failure and records failed stories", async () => {
     const storyRepository = createMemoryStoryRepository();
     const logger = createCapturingLogger();
     const client = createClient(
       [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
-      [response({}, 500), response({}, 500)],
+      [reelsResponse({}, 500), reelsResponse({}, 500)],
     );
 
     const report = await fetchStoriesManifest(client, {
@@ -210,10 +232,8 @@ describe("fetchStoriesManifest edge cases", () => {
     const client = createClient(
       [{ id: "r1", media_ids: ["m1", "m2"], user: { username: "one" } }],
       [
-        response({
-          reels: {
-            r1: reel("r1", [storyItem("m1")]),
-          },
+        reelsResponse({
+          r1: reel("r1", [storyItem("m1")]),
         }),
       ],
     );
@@ -241,7 +261,7 @@ describe("fetchStoriesManifest edge cases", () => {
         { id: "r1", media_ids: ["m1"], user: { username: "one" } },
         { id: "r2", media_ids: ["m2"], user: { username: "two" } },
       ],
-      [response({}, 429, { "retry-after": "1" })],
+      [reelsResponse({}, 429, { "retry-after": "1" })],
     );
 
     const report = await fetchStoriesManifest(client, {

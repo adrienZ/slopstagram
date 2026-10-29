@@ -8,9 +8,9 @@ import {
   fixedNow,
   noSleep,
   reel,
-  response,
   storyItem,
   storyItemWithStickers,
+  reelsResponse,
 } from "./mock-helpers.ts";
 
 describe("fetchStoriesManifest", () => {
@@ -34,11 +34,9 @@ describe("fetchStoriesManifest", () => {
         { id: "r2", media_ids: ["m2"], user: { username: "two" } },
       ],
       [
-        response({
-          reels: {
-            r1: reel("r1", [storyItem("m1")]),
-            r2: reel("r2", [storyItem("m2")]),
-          },
+        reelsResponse({
+          r1: reel("r1", [storyItem("m1")]),
+          r2: reel("r2", [storyItem("m2")]),
         }),
       ],
     );
@@ -150,11 +148,9 @@ describe("fetchStoriesManifest", () => {
         { id: "r2", media_ids: ["m2"], user: { username: "two" } },
       ],
       [
-        response({
-          reels: {
-            r1: reel("r1", [storyItem("m1", "Latest image caption")]),
-            r2: reel("r2", [storyItem("m2")]),
-          },
+        reelsResponse({
+          r1: reel("r1", [storyItem("m1", "Latest image caption")]),
+          r2: reel("r2", [storyItem("m2")]),
         }),
       ],
     );
@@ -217,29 +213,27 @@ describe("fetchStoriesManifest", () => {
         },
       ],
       [
-        response({
-          reels: {
-            r1: reel("r1", [
-              storyItemWithStickers(
-                "m1",
-                {
-                  story_bloks_stickers: [
-                    {
-                      bloks_sticker: {
-                        sticker_data: {
-                          ig_mention: {
-                            username: "same",
-                          },
+        reelsResponse({
+          r1: reel("r1", [
+            storyItemWithStickers(
+              "m1",
+              {
+                story_bloks_stickers: [
+                  {
+                    bloks_sticker: {
+                      sticker_data: {
+                        ig_mention: {
+                          username: "same",
                         },
                       },
                     },
-                  ],
-                },
-                "First story caption",
-              ),
-            ]),
-            r2: reel("r2", [storyItem("m2", "Second story caption")]),
-          },
+                  },
+                ],
+              },
+              "First story caption",
+            ),
+          ]),
+          r2: reel("r2", [storyItem("m2", "Second story caption")]),
         }),
       ],
     );
