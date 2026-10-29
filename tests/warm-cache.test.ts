@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { test } from "vitest";
+import { assert, test, expect } from "vitest";
 import type { CreateReportResult } from "../sdk/report.ts";
 import {
   startWarmCacheQueue,
@@ -45,16 +44,16 @@ test("runWarmCacheJob creates a report using reportArgs from the payload", async
     dependencies: {
       createReport: async (options) => {
         calls.push(options.args ?? []);
-        assert.doesNotThrow(() => {
+        expect(() => {
           options.logger.progress(0, 1);
-        });
+        }).not.toThrow();
         return createReportResult();
       },
     },
   });
 
-  assert.deepEqual(calls, [["--limit", "10"]]);
-  assert.deepEqual(result, {
+  expect(calls).toStrictEqual([["--limit", "10"]]);
+  expect(result).toStrictEqual({
     outputFileName: "stories-report-test.json",
     reportKey: "stories-report-test.json",
     counts: {
@@ -81,7 +80,7 @@ test("runWarmCacheJob accepts an empty payload", async () => {
     },
   });
 
-  assert.deepEqual(calls, [[]]);
+  expect(calls).toStrictEqual([[]]);
 });
 
 test("startWarmCacheQueue schedules and processes warm-cache jobs", async () => {
@@ -145,18 +144,18 @@ test("startWarmCacheQueue schedules and processes warm-cache jobs", async () => 
 
   await runtime.ready;
   assert.ok(processor);
-  assert.deepEqual(await processor({ data: { reportArgs: ["--limit", "5"] } }), {
+  expect(await processor({ data: { reportArgs: ["--limit", "5"] } })).toStrictEqual({
     counts: createReportResult().report.metadata.counts,
     outputFileName: "stories-report-test.json",
     reportKey: "stories-report-test.json",
   });
-  assert.deepEqual(processedPayload, { reportArgs: ["--limit", "5"] });
+  expect(processedPayload).toStrictEqual({ reportArgs: ["--limit", "5"] });
 
   workerErrorListener?.(workerError);
-  assert.deepEqual(capturedErrors, [workerError]);
+  expect(capturedErrors).toStrictEqual([workerError]);
 
   await runtime.close();
-  assert.deepEqual(calls, [
+  expect(calls).toStrictEqual([
     {
       arguments: [],
       name: `queue:${WARM_CACHE_QUEUE_NAME}`,
@@ -226,8 +225,8 @@ test("startWarmCacheQueue retries while the standalone server starts", async () 
   });
 
   await runtime.ready;
-  assert.equal(readyAttempts, 2);
-  assert.deepEqual(calls, ["schedule", "worker:run", "worker:ready"]);
+  expect(readyAttempts).toBe(2);
+  expect(calls).toStrictEqual(["schedule", "worker:run", "worker:ready"]);
   await runtime.close();
 });
 
@@ -263,6 +262,6 @@ test("startWarmCacheQueue cleans up when its worker fails to close", async () =>
   });
 
   await runtime.ready;
-  await assert.rejects(runtime.close(), closeFailure);
-  assert.deepEqual(calls, ["worker:close", "queue:close"]);
+  await expect(runtime.close()).rejects.toThrow(closeFailure);
+  expect(calls).toStrictEqual(["worker:close", "queue:close"]);
 });

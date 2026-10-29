@@ -1,6 +1,5 @@
 import { Buffer } from "node:buffer";
-import assert from "node:assert/strict";
-import { describe, test } from "vitest";
+import { describe, test, expect } from "vitest";
 import sharp from "sharp";
 import { convertImageToJpeg } from "../sdk/lib/image-conversion-service.ts";
 
@@ -20,10 +19,12 @@ describe("convertImageToJpeg", () => {
     const jpeg = await convertImageToJpeg(png);
     const metadata = await sharp(jpeg).metadata();
 
-    assert.equal(metadata.format, "jpeg");
+    expect(metadata.format).toBe("jpeg");
   });
 
   test("rejects invalid image bytes", async () => {
-    await assert.rejects(async () => await convertImageToJpeg(Buffer.from("not an image")));
+    await expect(
+      async () => await convertImageToJpeg(Buffer.from("not an image")),
+    ).rejects.toThrow();
   });
 });

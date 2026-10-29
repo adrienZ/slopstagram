@@ -1,8 +1,7 @@
-import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import path from "node:path";
 import { tmpdir } from "node:os";
-import { test } from "vitest";
+import { assert, test, expect } from "vitest";
 import sharp from "sharp";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
@@ -99,31 +98,29 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
     now: fixedNow,
     sleep: noSleep,
   });
-  assert.deepEqual(server.requests, [`/lookup/${audioId}`]);
+  expect(server.requests).toStrictEqual([`/lookup/${audioId}`]);
   const before = repository.findByMediaPk("first")?.annotations;
   assert.ok(before);
-  assert.deepEqual(
-    before.stickers.map(({ label }) => label),
-    ["Original"],
-  );
-  assert.equal(before.musicObservations?.[0].metadata.status, "usable");
-  assert.notEqual(before.musicObservations[0].occurrenceId, null);
+  expect(before.stickers.map(({ label }) => label)).toStrictEqual(["Original"]);
+  expect(before.musicObservations?.[0].metadata.status).toBe("usable");
+  assert.ok(before.musicObservations);
+  expect(before.musicObservations[0].occurrenceId).not.toBe(null);
   await cacheReportAudio(report, { database, directory, fetchMedia: server.fetchMedia });
   const first = repository.findByMediaPk("first")?.annotations?.musicObservations?.[0].metadata;
   const second = repository.findByMediaPk("second")?.annotations?.musicObservations?.[0].metadata;
   assert.ok(first);
-  assert.equal(first.id, second?.id);
-  assert.equal(first.audioState, "available");
-  assert.equal(first.artworkState, "available");
-  assert.equal(first.audioDurationMs, 1023);
+  expect(first.id).toBe(second?.id);
+  expect(first.audioState).toBe("available");
+  expect(first.artworkState).toBe("available");
+  expect(first.audioDurationMs).toBe(1023);
   assert.ok(first.audioCachePath !== null);
   assert.ok(first.artworkCachePath !== null);
-  assert.deepEqual(await readFile(path.join(directory, first.audioCachePath)), audio);
+  expect(await readFile(path.join(directory, first.audioCachePath))).toStrictEqual(audio);
   const artwork = await createMediaResponse(first.artworkCachePath, directory);
-  assert.equal(artwork.status, 200);
-  assert.equal(artwork.headers.get("content-type"), "image/jpeg");
+  expect(artwork.status).toBe(200);
+  expect(artwork.headers.get("content-type")).toBe("image/jpeg");
   await cacheReportAudio(report, { database, directory, fetchMedia: server.fetchMedia });
-  assert.deepEqual(server.requests, [`/lookup/${audioId}`, "/audio.m4a", "/cover.png"]);
+  expect(server.requests).toStrictEqual([`/lookup/${audioId}`, "/audio.m4a", "/cover.png"]);
 });
 
 test("lookup rejects mismatched and original-sound results and stops on rate limiting", async (context) => {
@@ -185,15 +182,14 @@ test("lookup rejects mismatched and original-sound results and stops on rate lim
     repository,
     logger,
   );
-  assert.deepEqual(server.requests, ["/mismatch", "/original", "/limited"]);
+  expect(server.requests).toStrictEqual(["/mismatch", "/original", "/limited"]);
   for (const story of stories) {
-    assert.equal(
+    expect(
       repository.findByMediaPk(story.pk)?.annotations?.musicObservations?.[0].metadata
         .audioSourceUrl,
-      null,
-    );
+    ).toBe(null);
   }
-  assert.ok(logger.messages.some((message) => message.includes("429")));
+  expect(logger.messages.some((message) => message.includes("429"))).toBeTruthy();
 });
 
 test("generic video/mp4 responses with a video track are never cached as music", async (context) => {
@@ -214,8 +210,8 @@ test("generic video/mp4 responses with a video track are never cached as music",
     directory,
     fetchMedia: server.fetchMedia,
   });
-  assert.equal(cached.state, "unsupported");
-  assert.equal(cached.cachePath, null);
+  expect(cached.state).toBe("unsupported");
+  expect(cached.cachePath).toBe(null);
 });
 
 test("lookup skips stories without an audio ID, muted stories, and shared reels", async (context) => {
@@ -264,5 +260,5 @@ test("lookup skips stories without an audio ID, muted stories, and shared reels"
     repository,
     createCapturingLogger(),
   );
-  assert.deepEqual(server.requests, []);
+  expect(server.requests).toStrictEqual([]);
 });

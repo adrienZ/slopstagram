@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { test, type TestContext } from "vitest";
+import { assert, test, type TestContext, expect } from "vitest";
 import { createConsola } from "consola";
 import { createReport } from "../sdk/report.ts";
 import { createDrizzle } from "../sdk/database/client.ts";
@@ -77,28 +76,27 @@ function createFixture(context: TestContext) {
 test("records a failed fetch attempt even when Instagram returns no tray", async (context) => {
   const { runs, options } = createFixture(context);
   let time = new Date("2026-10-22T10:00:00Z");
-  await assert.rejects(
+  await expect(
     createReport({
       ...options,
       now: () => time,
       dependencies: {
         ...options.dependencies,
         fetchStories: async () => {
-          assert.equal(runs.list()[0].status, "running");
-          assert.equal(runs.list()[0].startedAt, "2026-10-22T10:00:00.000Z");
+          expect(runs.list()[0].status).toBe("running");
+          expect(runs.list()[0].startedAt).toBe("2026-10-22T10:00:00.000Z");
           time = new Date("2026-10-22T10:00:03Z");
           throw new Error("Instagram unavailable");
         },
       },
     }),
-    /Instagram unavailable/u,
-  );
+  ).rejects.toThrow(/Instagram unavailable/u);
   const [run] = runs.list();
-  assert.equal(run.status, "failed");
-  assert.equal(run.finishedAt, "2026-10-22T10:00:03.000Z");
-  assert.equal(run.error, "Instagram unavailable");
-  assert.equal(run.storiesCount, null);
-  assert.equal(run.reportKey, null);
+  expect(run.status).toBe("failed");
+  expect(run.finishedAt).toBe("2026-10-22T10:00:03.000Z");
+  expect(run.error).toBe("Instagram unavailable");
+  expect(run.storiesCount).toBe(null);
+  expect(run.reportKey).toBe(null);
 });
 
 test("preserves a totally failed observation and its errors before rejecting the fetch", async (context) => {
@@ -112,13 +110,13 @@ test("preserves a totally failed observation and its errors before rejecting the
     reason: "request_failed",
     reel_id: "456",
   });
-  await assert.rejects(createReport(options), /No story media could be fetched.*HTTP 500/u);
+  await expect(createReport(options)).rejects.toThrow(/No story media could be fetched.*HTTP 500/u);
   const [run] = runs.list();
-  assert.equal(run.status, "failed");
-  assert.equal(run.failedCount, 1);
-  assert.equal(run.storiesCount, 1);
+  expect(run.status).toBe("failed");
+  expect(run.failedCount).toBe(1);
+  expect(run.storiesCount).toBe(1);
   assert.ok(run.reportKey !== null);
-  assert.deepEqual(reports.findByKey(run.reportKey)?.failures, report.failures);
+  expect(reports.findByKey(run.reportKey)?.failures).toStrictEqual(report.failures);
 });
 
 for (const scenario of [
@@ -136,20 +134,20 @@ for (const scenario of [
     });
     const result = await createReport(options);
     const [run] = runs.list();
-    assert.equal(run.status, scenario.status);
-    assert.equal(run.reportKey, result.reportKey);
-    assert.equal(run.storiesCount, scenario.stories);
-    assert.equal(run.fetchedCount, scenario.fetched);
-    assert.equal(run.cacheHits, scenario.cacheHits);
-    assert.equal(run.failedCount, scenario.failed);
-    assert.equal(run.error, null);
-    assert.ok(reports.findByKey(result.reportKey));
+    expect(run.status).toBe(scenario.status);
+    expect(run.reportKey).toBe(result.reportKey);
+    expect(run.storiesCount).toBe(scenario.stories);
+    expect(run.fetchedCount).toBe(scenario.fetched);
+    expect(run.cacheHits).toBe(scenario.cacheHits);
+    expect(run.failedCount).toBe(scenario.failed);
+    expect(run.error).toBe(null);
+    expect(reports.findByKey(result.reportKey)).toBeTruthy();
   });
 }
 
 test("keeps the observation and marks the run failed when enrichment fails", async (context) => {
   const { runs, reports, options } = createFixture(context);
-  await assert.rejects(
+  await expect(
     createReport({
       ...options,
       dependencies: {
@@ -159,23 +157,22 @@ test("keeps the observation and marks the run failed when enrichment fails", asy
         },
       },
     }),
-    /Image cache unavailable/u,
-  );
+  ).rejects.toThrow(/Image cache unavailable/u);
   const [run] = runs.list();
-  assert.equal(run.status, "failed");
-  assert.equal(run.error, "Image cache unavailable");
-  assert.equal(run.fetchedCount, 1);
+  expect(run.status).toBe("failed");
+  expect(run.error).toBe("Image cache unavailable");
+  expect(run.fetchedCount).toBe(1);
   assert.ok(run.reportKey !== null);
-  assert.ok(reports.findByKey(run.reportKey));
+  expect(reports.findByKey(run.reportKey)).toBeTruthy();
 });
 
 test("separate attempts at the same instant preserve separate runs and observations", async (context) => {
   const { runs, reports, options } = createFixture(context);
   const first = await createReport(options);
   const second = await createReport(options);
-  assert.notEqual(first.reportKey, second.reportKey);
-  assert.equal(runs.list().length, 2);
-  assert.equal(reports.listKeys().length, 2);
+  expect(first.reportKey).not.toBe(second.reportKey);
+  expect(runs.list().length).toBe(2);
+  expect(reports.listKeys().length).toBe(2);
 });
 
 test("the shared report path persists and caches received audio before image enrichment", async (context) => {
@@ -228,16 +225,17 @@ test("the shared report path persists and caches received audio before image enr
         await cacheReportAudio(received, { database, directory, fetchMedia: media.fetchMedia });
       },
       cacheReportImages: async () => {
-        assert.equal(reports.listKeys().length, 1);
+        expect(reports.listKeys().length).toBe(1);
         const metadata =
           stories.findByMediaPk("audio-story")?.annotations?.musicObservations?.[0].metadata;
-        assert.equal(metadata?.audioState, "available");
-        assert.equal(metadata.audioDurationMs, 1000);
+        expect(metadata?.audioState).toBe("available");
+        assert.ok(metadata);
+        expect(metadata.audioDurationMs).toBe(1000);
         assert.ok(metadata.audioCachePath !== null);
-        assert.deepEqual(await readFile(path.join(directory, metadata.audioCachePath)), audio);
+        expect(await readFile(path.join(directory, metadata.audioCachePath))).toStrictEqual(audio);
         return { profilePicPathByUrl: new Map(), storyPreviewPathByUrl: new Map() };
       },
     },
   });
-  assert.deepEqual(media.requests, ["/song.wav"]);
+  expect(media.requests).toStrictEqual(["/song.wav"]);
 });

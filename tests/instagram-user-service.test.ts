@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { describe, test } from "vitest";
+import { describe, test, expect } from "vitest";
 import {
   hydrateReportInstagramUsers,
   persistReportInstagramUsers,
@@ -72,23 +71,23 @@ describe("Instagram user report persistence", () => {
 
     await persistReportInstagramUsers(report, repository);
 
-    assert.deepEqual(repository.entries.get("fixture-user"), {
+    expect(repository.entries.get("fixture-user")).toStrictEqual({
       full_name: "Fixture User",
       id: "instagram-id-1",
       pk: "instagram-pk-1",
       username: "fixture-user",
     });
-    assert.equal("full_name" in report.output.users[0], false);
-    assert.equal("profile_pic_url" in report.output.users[0], false);
-    assert.equal("full_name" in report.manifest.users[0], false);
-    assert.equal("id" in report.manifest.users[0], false);
-    assert.equal("pk" in report.manifest.users[0], false);
-    assert.equal("profile_pic_url" in report.manifest.users[0], false);
+    expect("full_name" in report.output.users[0]).toBe(false);
+    expect("profile_pic_url" in report.output.users[0]).toBe(false);
+    expect("full_name" in report.manifest.users[0]).toBe(false);
+    expect("id" in report.manifest.users[0]).toBe(false);
+    expect("pk" in report.manifest.users[0]).toBe(false);
+    expect("profile_pic_url" in report.manifest.users[0]).toBe(false);
 
     hydrateReportInstagramUsers(report, repository);
 
-    assert.equal(report.output.users[0]?.full_name, "Fixture User");
-    assert.equal(report.output.users[0]?.profile_pic_url, "images/avatars/instagram-pk-1.jpg");
+    expect(report.output.users[0]?.full_name).toBe("Fixture User");
+    expect(report.output.users[0]?.profile_pic_url).toBe("images/avatars/instagram-pk-1.jpg");
   });
 
   test("hydrates reports whose nullable user columns were read as null", async () => {
@@ -103,7 +102,7 @@ describe("Instagram user report persistence", () => {
 
     hydrateReportInstagramUsers(report, repository);
 
-    assert.equal(report.output.users[0]?.full_name, "Fixture User");
-    assert.equal(report.output.users[0]?.profile_pic_url, "images/avatars/instagram-pk-1.jpg");
+    expect(report.output.users[0]?.full_name).toBe("Fixture User");
+    expect(report.output.users[0]?.profile_pic_url).toBe("images/avatars/instagram-pk-1.jpg");
   });
 });

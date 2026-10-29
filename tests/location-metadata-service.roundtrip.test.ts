@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { test } from "vitest";
+import { assert, test, expect } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
@@ -46,34 +45,34 @@ test("external-ID-only locations survive cold reads as separate partial observat
     ],
   });
   const stored = read(new StoryRepository(database), "m1");
-  assert.deepEqual(stored.locations, []);
-  assert.deepEqual(stored.stickers, []);
+  expect(stored.locations).toStrictEqual([]);
+  expect(stored.stickers).toStrictEqual([]);
   const observations = present(stored.locationObservations);
-  assert.equal(observations.length, 3);
-  assert.equal(new Set(observations.map(({ metadata }) => metadata.id)).size, 3);
-  assert.deepEqual(
-    observations.map(({ providerOccurrenceId }) => providerOccurrenceId),
-    ["both", "id-only", "source-only"],
-  );
-  assert.deepEqual(
+  expect(observations.length).toBe(3);
+  expect(new Set(observations.map(({ metadata }) => metadata.id)).size).toBe(3);
+  expect(observations.map(({ providerOccurrenceId }) => providerOccurrenceId)).toStrictEqual([
+    "both",
+    "id-only",
+    "source-only",
+  ]);
+  expect(
     observations.map(({ metadata }) => [metadata.facebookPlacesId, metadata.externalSource]),
-    [
-      ["000123", "facebook_places"],
-      ["000123", null],
-      [null, "facebook_places"],
-    ],
-  );
+  ).toStrictEqual([
+    ["000123", "facebook_places"],
+    ["000123", null],
+    [null, "facebook_places"],
+  ]);
   for (const observation of observations) {
-    assert.equal(observation.source, "story_locations");
-    assert.equal(observation.occurrenceId, null);
-    assert.equal(observation.metadata.status, "partial");
-    assert.equal(observation.metadata.instagramPlaceId, null);
-    assert.equal(observation.metadata.name, null);
-    assert.equal(observation.metadata.address, null);
-    assert.equal(observation.metadata.latitude, null);
-    assert.equal(observation.metadata.longitude, null);
+    expect(observation.source).toBe("story_locations");
+    expect(observation.occurrenceId).toBe(null);
+    expect(observation.metadata.status).toBe("partial");
+    expect(observation.metadata.instagramPlaceId).toBe(null);
+    expect(observation.metadata.name).toBe(null);
+    expect(observation.metadata.address).toBe(null);
+    expect(observation.metadata.latitude).toBe(null);
+    expect(observation.metadata.longitude).toBe(null);
   }
-  assert.deepEqual(logger.messages, []);
+  expect(logger.messages).toStrictEqual([]);
 });
 
 test("external-only observations do not block other location updates during live ingestion", async (context) => {
@@ -117,28 +116,27 @@ test("external-only observations do not block other location updates during live
       storyStorage: createMemoryStorage<StoryItem>(),
     },
   );
-  assert.deepEqual(report.manifest.users[0].stories[0].locations, ["Updated"]);
+  expect(report.manifest.users[0].stories[0].locations).toStrictEqual(["Updated"]);
   const [history] = new StoryRepository(database).listByUsername("one");
   const stored = present(history.story.annotations);
-  assert.deepEqual(stored.locations, ["Updated"]);
-  assert.equal(stored.stickers.length, 1);
-  assert.equal(stored.stickers[0].occurrenceId, before.occurrenceId);
+  expect(stored.locations).toStrictEqual(["Updated"]);
+  expect(stored.stickers.length).toBe(1);
+  expect(stored.stickers[0].occurrenceId).toBe(before.occurrenceId);
   const [located, external, direct] = present(stored.locationObservations);
-  assert.equal(located.metadata.status, "usable");
-  assert.equal(located.metadata.name, "Updated");
-  assert.equal(located.metadata.latitude, 49);
-  assert.equal(located.metadata.longitude, 3);
-  assert.equal(external.metadata.status, "partial");
-  assert.equal(external.metadata.facebookPlacesId, "000123");
-  assert.equal(external.metadata.externalSource, "facebook_places");
-  assert.equal(direct.metadata.status, "partial");
-  assert.equal(direct.metadata.facebookPlacesId, "000456");
-  assert.equal(direct.metadata.instagramPlaceId, null);
-  assert.equal(direct.providerOccurrenceId, null);
-  assert.equal(
+  expect(located.metadata.status).toBe("usable");
+  expect(located.metadata.name).toBe("Updated");
+  expect(located.metadata.latitude).toBe(49);
+  expect(located.metadata.longitude).toBe(3);
+  expect(external.metadata.status).toBe("partial");
+  expect(external.metadata.facebookPlacesId).toBe("000123");
+  expect(external.metadata.externalSource).toBe("facebook_places");
+  expect(direct.metadata.status).toBe("partial");
+  expect(direct.metadata.facebookPlacesId).toBe("000456");
+  expect(direct.metadata.instagramPlaceId).toBe(null);
+  expect(direct.providerOccurrenceId).toBe(null);
+  expect(
     logger.messages.some((message) => message.includes("Malformed story annotation source")),
-    false,
-  );
+  ).toBe(false);
 });
 
 test("promotion remains shared when another source omits the already known place ID in the same save", async (context) => {
@@ -163,13 +161,13 @@ test("promotion remains shared when another source omits the already known place
     story_locations: [{ id: "a", location: { address: "Received address" } }],
   });
   const observations = present(read(new StoryRepository(database), "m1").locationObservations);
-  assert.equal(observations.length, 2);
-  assert.deepEqual(observations[0].metadata, observations[1].metadata);
-  assert.equal(observations[0].metadata.status, "usable");
-  assert.equal(observations[0].metadata.name, "Updated");
-  assert.equal(observations[0].metadata.address, "Received address");
-  assert.equal(observations[0].metadata.latitude, 48);
-  assert.equal(observations[0].metadata.longitude, 2);
+  expect(observations.length).toBe(2);
+  expect(observations[0].metadata).toStrictEqual(observations[1].metadata);
+  expect(observations[0].metadata.status).toBe("usable");
+  expect(observations[0].metadata.name).toBe("Updated");
+  expect(observations[0].metadata.address).toBe("Received address");
+  expect(observations[0].metadata.latitude).toBe(48);
+  expect(observations[0].metadata.longitude).toBe(2);
 });
 
 test("live ingestion shares tagged places and exposes exact metadata with occurrences in cold account history", async (context) => {
@@ -221,7 +219,10 @@ test("live ingestion shares tagged places and exposes exact metadata with occurr
       storyStorage: createMemoryStorage<StoryItem>(),
     },
   );
-  assert.deepEqual(report.manifest.users[0].stories[0].locations, ["Paris, Paris", "Paris, Paris"]);
+  expect(report.manifest.users[0].stories[0].locations).toStrictEqual([
+    "Paris, Paris",
+    "Paris, Paris",
+  ]);
   const history = new StoryRepository(database).listByUsername("one");
   const first = present(present(history.find(({ story }) => story.pk === "m1")).story.annotations);
   const shared = present(present(history.find(({ story }) => story.pk === "m2")).story.annotations);
@@ -229,13 +230,12 @@ test("live ingestion shares tagged places and exposes exact metadata with occurr
     present(history.find(({ story }) => story.pk === "m3")).story.annotations,
   );
   const places = present(first.locationObservations);
-  assert.equal(places.length, 2);
-  assert.deepEqual(
-    places.map(({ occurrenceId }) => occurrenceId),
+  expect(places.length).toBe(2);
+  expect(places.map(({ occurrenceId }) => occurrenceId)).toStrictEqual(
     first.stickers.map(({ occurrenceId }) => occurrenceId),
   );
-  assert.notEqual(places[0].occurrenceId, places[1].occurrenceId);
-  assert.deepEqual(places[0].metadata, {
+  expect(places[0].occurrenceId).not.toBe(places[1].occurrenceId);
+  expect(places[0].metadata).toStrictEqual({
     status: "usable",
     id: places[0].metadata.id,
     instagramPlaceId: location.pk,
@@ -251,9 +251,9 @@ test("live ingestion shares tagged places and exposes exact metadata with occurr
     lastLookupAttemptAt: null,
     lastLookupFailure: null,
   });
-  assert.equal(present(shared.locationObservations)[0].metadata.id, places[0].metadata.id);
-  assert.notEqual(present(homonym.locationObservations)[0].metadata.id, places[0].metadata.id);
-  assert.equal(history[0].owner_pk, "u1");
+  expect(present(shared.locationObservations)[0].metadata.id).toBe(places[0].metadata.id);
+  expect(present(homonym.locationObservations)[0].metadata.id).not.toBe(places[0].metadata.id);
+  expect(history[0].owner_pk).toBe("u1");
 });
 
 test("ID-only observations preserve known contributions and promote every certain link without another fetch", async (context) => {
@@ -267,40 +267,38 @@ test("ID-only observations preserve known contributions and promote every certai
   await repository.save({ pk: "m2", story_locations: [{ id: "b", location: { pk: "place" } }] });
   const original = read(new StoryRepository(database), "m1");
   const partial = read(new StoryRepository(database), "m2");
-  assert.deepEqual(partial.stickers, []);
-  assert.equal(present(partial.locationObservations)[0].metadata.status, "partial");
-  assert.equal(
-    present(partial.locationObservations)[0].metadata.id,
+  expect(partial.stickers).toStrictEqual([]);
+  expect(present(partial.locationObservations)[0].metadata.status).toBe("partial");
+  expect(present(partial.locationObservations)[0].metadata.id).toBe(
     original.locationObservations?.[0].metadata.id,
   );
-  assert.equal(present(partial.locationObservations)[0].providerOccurrenceId, "b");
-  assert.equal(present(partial.locationObservations)[0].occurrenceId, null);
+  expect(present(partial.locationObservations)[0].providerOccurrenceId).toBe("b");
+  expect(present(partial.locationObservations)[0].occurrenceId).toBe(null);
   await repository.save({ pk: "m1", story_locations: [{ id: "a", location: { pk: "place" } }] });
-  assert.deepEqual(read(repository, "m1").stickers, original.stickers);
+  expect(read(repository, "m1").stickers).toStrictEqual(original.stickers);
   await repository.save({
     pk: "m3",
     story_locations: [{ id: "c", location: { pk: "place", lat: 0, lng: 0 } }],
   });
   const promoted = read(new StoryRepository(database), "m1");
   const shared = read(new StoryRepository(database), "m2");
-  assert.deepEqual(promoted.stickers, original.stickers);
+  expect(promoted.stickers).toStrictEqual(original.stickers);
   for (const annotations of [promoted, shared]) {
-    assert.equal(present(annotations.locationObservations)[0].metadata.status, "usable");
-    assert.equal(
-      present(annotations.locationObservations)[0].metadata.id,
+    expect(present(annotations.locationObservations)[0].metadata.status).toBe("usable");
+    expect(present(annotations.locationObservations)[0].metadata.id).toBe(
       present(original.locationObservations)[0].metadata.id,
     );
-    assert.equal(present(annotations.locationObservations)[0].metadata.latitude, 0);
-    assert.equal(present(annotations.locationObservations)[0].metadata.longitude, 0);
-    assert.equal(present(annotations.locationObservations)[0].metadata.address, null);
+    expect(present(annotations.locationObservations)[0].metadata.latitude).toBe(0);
+    expect(present(annotations.locationObservations)[0].metadata.longitude).toBe(0);
+    expect(present(annotations.locationObservations)[0].metadata.address).toBe(null);
   }
   // A later sparse live response cannot erase the name, coordinates or links.
   await repository.save({
     pk: "m2",
     story_locations: [{ id: "b", location: { pk: "place", name: "", address: "" } }],
   });
-  assert.deepEqual(read(new StoryRepository(database), "m2"), shared);
-  assert.deepEqual(logger.messages, []);
+  expect(read(new StoryRepository(database), "m2")).toStrictEqual(shared);
+  expect(logger.messages).toStrictEqual([]);
 });
 
 test("coordinates are validated and partial places without provider identity never merge by text", async (context) => {
@@ -320,17 +318,23 @@ test("coordinates are validated and partial places without provider identity nev
     story_locations: observations.map((location, index) => ({ id: `sticker-${index}`, location })),
   });
   const stored = read(new StoryRepository(database), "m1");
-  assert.equal(stored.stickers.length, 8);
+  expect(stored.stickers.length).toBe(8);
   const metadata = present(stored.locationObservations).map(({ metadata: entry }) => entry);
-  assert.deepEqual(
-    metadata.map(({ status }) => status),
-    ["usable", "usable", "partial", "partial", "partial", "partial", "partial", "partial"],
-  );
-  assert.equal(metadata[2].latitude, null);
-  assert.equal(metadata[3].longitude, null);
-  assert.equal(metadata[5].latitude, null);
-  assert.equal(metadata[5].longitude, null);
-  assert.notEqual(metadata[6].id, metadata[7].id);
+  expect(metadata.map(({ status }) => status)).toStrictEqual([
+    "usable",
+    "usable",
+    "partial",
+    "partial",
+    "partial",
+    "partial",
+    "partial",
+    "partial",
+  ]);
+  expect(metadata[2].latitude).toBe(null);
+  expect(metadata[3].longitude).toBe(null);
+  expect(metadata[5].latitude).toBe(null);
+  expect(metadata[5].longitude).toBe(null);
+  expect(metadata[6].id).not.toBe(metadata[7].id);
   await repository.save({
     pk: "m1",
     story_locations: [
@@ -339,10 +343,10 @@ test("coordinates are validated and partial places without provider identity nev
     ],
   });
   const promoted = present(read(new StoryRepository(database), "m1").locationObservations);
-  assert.equal(promoted[0].metadata.status, "usable");
-  assert.equal(promoted[0].metadata.id, metadata[6].id);
-  assert.equal(promoted[1].metadata.status, "partial");
-  assert.equal(promoted[1].metadata.id, metadata[7].id);
+  expect(promoted[0].metadata.status).toBe("usable");
+  expect(promoted[0].metadata.id).toBe(metadata[6].id);
+  expect(promoted[1].metadata.status).toBe("partial");
+  expect(promoted[1].metadata.id).toBe(metadata[7].id);
 });
 
 test("place links survive reordering and cold saves while explicit source clearing removes only that source", async (context) => {
@@ -371,18 +375,18 @@ test("place links survive reordering and cold saves while explicit source cleari
   await repository.save({ pk: "m1", story_locations: [b, a] });
   const reordered = read(new StoryRepository(database), "m1");
   for (const entry of present(reordered.locationObservations)) {
-    assert.deepEqual(entry, byProvider.get(entry.providerOccurrenceId));
+    expect(entry).toStrictEqual(byProvider.get(entry.providerOccurrenceId));
   }
   await repository.save(present(repository.findByMediaPk("m1")));
-  assert.deepEqual(read(new StoryRepository(database), "m1"), reordered);
+  expect(read(new StoryRepository(database), "m1")).toStrictEqual(reordered);
   await repository.save({ pk: "m1", story_locations: [] });
   const cleared = read(new StoryRepository(database), "m1");
-  assert.deepEqual(cleared.locations, ["Three"]);
-  assert.equal(present(cleared.locationObservations).length, 1);
-  assert.deepEqual(present(cleared.locationObservations)[0], byProvider.get("c"));
+  expect(cleared.locations).toStrictEqual(["Three"]);
+  expect(present(cleared.locationObservations).length).toBe(1);
+  expect(present(cleared.locationObservations)[0]).toStrictEqual(byProvider.get("c"));
   await repository.save({ pk: "m1", story_bloks_stickers: [] });
-  assert.deepEqual(read(new StoryRepository(database), "m1").stickers, []);
-  assert.equal(read(repository, "m1").locationObservations, undefined);
+  expect(read(new StoryRepository(database), "m1").stickers).toStrictEqual([]);
+  expect(read(repository, "m1").locationObservations).toBe(undefined);
 });
 
 test("failed promotion rolls back metadata, occurrence links, ownership and media together", async (context) => {
@@ -408,7 +412,7 @@ test("failed promotion rolls back metadata, occurrence links, ownership and medi
   database.$client
     .exec(`CREATE TEMP TRIGGER reject_promotion BEFORE UPDATE ON story_location_observations
     WHEN NEW.locationId IS NOT NULL BEGIN SELECT RAISE(ABORT, 'fixture promotion failure'); END`);
-  await assert.rejects(
+  await expect(
     repository.save(
       {
         pk: "m1",
@@ -419,19 +423,19 @@ test("failed promotion rolls back metadata, occurrence links, ownership and medi
       },
       other,
     ),
-  );
+  ).rejects.toThrow();
   const cold = new StoryRepository(database);
-  assert.deepEqual(cold.findByMediaPk("m1"), before);
-  assert.deepEqual(cold.findByMediaPk("m2"), partial);
-  assert.equal(cold.listByUsername("one").length, 1);
-  assert.equal(cold.listByUsername("two").length, 0);
+  expect(cold.findByMediaPk("m1")).toStrictEqual(before);
+  expect(cold.findByMediaPk("m2")).toStrictEqual(partial);
+  expect(cold.listByUsername("one").length).toBe(1);
+  expect(cold.listByUsername("two").length).toBe(0);
   database.$client.exec("DROP TRIGGER reject_promotion");
   await repository.save({
     pk: "m2",
     story_locations: [{ id: "b", location: { pk: "place", lat: 48, lng: 2 } }],
   });
-  assert.equal(present(read(cold, "m1").locationObservations)[0].metadata.status, "usable");
-  assert.equal(present(read(cold, "m1").locationObservations)[0].metadata.name, "Old");
+  expect(present(read(cold, "m1").locationObservations)[0].metadata.status).toBe("usable");
+  expect(present(read(cold, "m1").locationObservations)[0].metadata.name).toBe("Old");
 });
 
 test("mixed labelled and ID-only locations keep valid labels and preserve earlier contributions", async (context) => {
@@ -440,28 +444,26 @@ test("mixed labelled and ID-only locations keep valid labels and preserve earlie
   const partial = { id: "b", location: { pk: "two" } };
   await repository.save({ pk: "m1", story_locations: [first, partial] });
   const stored = read(new StoryRepository(database), "m1");
-  assert.deepEqual(stored.locations, ["One"]);
-  assert.equal(present(stored.locationObservations).length, 2);
-  assert.equal(
-    present(stored.locationObservations)[0].occurrenceId,
+  expect(stored.locations).toStrictEqual(["One"]);
+  expect(present(stored.locationObservations).length).toBe(2);
+  expect(present(stored.locationObservations)[0].occurrenceId).toBe(
     stored.stickers[0].occurrenceId,
   );
-  assert.equal(present(stored.locationObservations)[1].occurrenceId, null);
+  expect(present(stored.locationObservations)[1].occurrenceId).toBe(null);
   await repository.save({ pk: "m1", story_locations: [partial] });
-  assert.deepEqual(read(repository, "m1").stickers, stored.stickers);
+  expect(read(repository, "m1").stickers).toStrictEqual(stored.stickers);
   // Incompleteness in one occurrence must not drop the new labelled occurrence.
   await repository.save({
     pk: "m1",
     story_locations: [{ id: "c", location: { pk: "three", name: "Three" } }, partial],
   });
   const updated = read(new StoryRepository(database), "m1");
-  assert.deepEqual(updated.locations, ["One", "Three"]);
-  assert.equal(
+  expect(updated.locations).toStrictEqual(["One", "Three"]);
+  expect(
     present(updated.locationObservations).find(
       ({ providerOccurrenceId }) => providerOccurrenceId === "a",
     )?.occurrenceId,
-    stored.stickers[0].occurrenceId,
-  );
+  ).toBe(stored.stickers[0].occurrenceId);
 });
 
 test("malformed and omitted sources preserve metadata while live nonempty values update shared places", async (context) => {
@@ -490,10 +492,10 @@ test("malformed and omitted sources preserve metadata while live nonempty values
   ]) {
     // oxlint-disable-next-line no-await-in-loop -- Each observation must be independently persisted and cold-read.
     await repository.save({ pk: "m1", story_locations: value });
-    assert.deepEqual(read(new StoryRepository(database), "m1"), before);
+    expect(read(new StoryRepository(database), "m1")).toStrictEqual(before);
   }
   await repository.save({ pk: "m1", story_hashtags: [{ hashtag: "other-source" }] });
-  assert.deepEqual(read(repository, "m1").locationObservations, before.locationObservations);
+  expect(read(repository, "m1").locationObservations).toStrictEqual(before.locationObservations);
   await repository.save({
     pk: "m2",
     story_locations: [
@@ -510,14 +512,13 @@ test("malformed and omitted sources preserve metadata while live nonempty values
     ],
   });
   const [{ metadata }] = present(read(new StoryRepository(database), "m1").locationObservations);
-  assert.equal(metadata.status, "usable");
-  assert.equal(metadata.name, "Updated");
-  assert.equal(metadata.address, "Address");
-  assert.equal(metadata.latitude, 48);
-  assert.equal(metadata.longitude, 2);
-  assert.equal(metadata.facebookPlacesId, "0001");
-  assert.deepEqual(
-    read(repository, "m1").stickers.filter(({ kind }) => kind === "location"),
+  expect(metadata.status).toBe("usable");
+  expect(metadata.name).toBe("Updated");
+  expect(metadata.address).toBe("Address");
+  expect(metadata.latitude).toBe(48);
+  expect(metadata.longitude).toBe(2);
+  expect(metadata.facebookPlacesId).toBe("0001");
+  expect(read(repository, "m1").stickers.filter(({ kind }) => kind === "location")).toStrictEqual(
     before.stickers,
   );
 });
@@ -531,18 +532,19 @@ test("current extraction links repeated unidentifiable occurrences without guess
   const located = present(before.locationObservations).filter(
     ({ metadata }) => metadata.status === "usable",
   );
-  assert.equal(located.length, 2);
-  assert.notEqual(located[0].metadata.id, located[1].metadata.id);
-  assert.deepEqual(
-    located.map(({ occurrenceId }) => occurrenceId),
+  expect(located.length).toBe(2);
+  expect(located[0].metadata.id).not.toBe(located[1].metadata.id);
+  expect(located.map(({ occurrenceId }) => occurrenceId)).toStrictEqual(
     before.stickers.map(({ occurrenceId }) => occurrenceId),
   );
   await repository.save({ pk: "m1", story_locations: [{ location }, { location }] });
   const after = read(new StoryRepository(database), "m1");
-  assert.equal(after.stickers.length, 2);
+  expect(after.stickers.length).toBe(2);
   for (const entry of present(after.locationObservations)) {
-    assert.ok(after.stickers.some(({ occurrenceId }) => occurrenceId === entry.occurrenceId));
-    assert.ok(located.every((old) => old.metadata.id !== entry.metadata.id));
+    expect(
+      after.stickers.some(({ occurrenceId }) => occurrenceId === entry.occurrenceId),
+    ).toBeTruthy();
+    expect(located.every((old) => old.metadata.id !== entry.metadata.id)).toBeTruthy();
   }
 });
 
@@ -557,7 +559,7 @@ test("fill-only updates complete a partial tagged place by its Instagram place I
     story_locations: [{ id: "a", location: { pk: "place" } }],
   });
   const [before] = readPlaces(repository, "m1");
-  assert.equal(before.status, "partial");
+  expect(before.status).toBe("partial");
 
   repository.fillTaggedPlace("place", {
     name: "Louvre",
@@ -567,13 +569,13 @@ test("fill-only updates complete a partial tagged place by its Instagram place I
   });
 
   const [after] = readPlaces(repository, "m1");
-  assert.equal(after.status, "usable");
-  assert.equal(after.id, before.id);
-  assert.equal(after.instagramPlaceId, "place");
-  assert.equal(after.name, "Louvre");
-  assert.equal(after.address, "Rue de Rivoli");
-  assert.equal(after.latitude, 48.8606);
-  assert.equal(after.longitude, 2.3376);
+  expect(after.status).toBe("usable");
+  expect(after.id).toBe(before.id);
+  expect(after.instagramPlaceId).toBe("place");
+  expect(after.name).toBe("Louvre");
+  expect(after.address).toBe("Rue de Rivoli");
+  expect(after.latitude).toBe(48.8606);
+  expect(after.longitude).toBe(2.3376);
 });
 
 test("fill-only updates never replace values the tagged place already has", async (context) => {
@@ -602,7 +604,7 @@ test("fill-only updates never replace values the tagged place already has", asyn
     longitude: 20,
   });
 
-  assert.deepEqual(readPlaces(repository, "m1"), [before]);
+  expect(readPlaces(repository, "m1")).toStrictEqual([before]);
 });
 
 test("fill-only updates fill only the missing fields of a partly known place", async (context) => {
@@ -620,11 +622,11 @@ test("fill-only updates fill only the missing fields of a partly known place", a
   });
 
   const [after] = readPlaces(repository, "m1");
-  assert.equal(after.name, "Story name");
-  assert.equal(after.address, "Filled address");
-  assert.equal(after.latitude, 48);
-  assert.equal(after.longitude, 2);
-  assert.equal(after.status, "usable");
+  expect(after.name).toBe("Story name");
+  expect(after.address).toBe("Filled address");
+  expect(after.latitude).toBe(48);
+  expect(after.longitude).toBe(2);
+  expect(after.status).toBe("usable");
 });
 
 test("fill-only updates ignore absent, empty, and invalid incoming values", async (context) => {
@@ -652,7 +654,7 @@ test("fill-only updates ignore absent, empty, and invalid incoming values", asyn
     longitude: Number.POSITIVE_INFINITY,
   });
 
-  assert.deepEqual(readPlaces(repository, "m1"), [before]);
+  expect(readPlaces(repository, "m1")).toStrictEqual([before]);
 });
 
 test("a tagged place with only one coordinate filled stays partial", async (context) => {
@@ -665,9 +667,9 @@ test("a tagged place with only one coordinate filled stays partial", async (cont
   repository.fillTaggedPlace("place", { latitude: 48 });
 
   const [after] = readPlaces(repository, "m1");
-  assert.equal(after.status, "partial");
-  assert.equal(after.latitude, 48);
-  assert.equal(after.longitude, null);
+  expect(after.status).toBe("partial");
+  expect(after.latitude).toBe(48);
+  expect(after.longitude).toBe(null);
 });
 
 test("fill-only updates leave other places alone and create nothing for unknown IDs", async (context) => {
@@ -690,13 +692,14 @@ test("fill-only updates leave other places alone and create nothing for unknown 
   repository.fillTaggedPlace("place", { name: "Filled" });
 
   const after = readPlaces(repository, "m1");
-  assert.equal(after.length, 3);
-  assert.equal(after[0].name, "Filled");
-  assert.deepEqual(after.slice(1), before.slice(1));
-  assert.deepEqual(
-    after.map(({ instagramPlaceId }) => instagramPlaceId),
-    ["place", "neighbour", null],
-  );
+  expect(after.length).toBe(3);
+  expect(after[0].name).toBe("Filled");
+  expect(after.slice(1)).toStrictEqual(before.slice(1));
+  expect(after.map(({ instagramPlaceId }) => instagramPlaceId)).toStrictEqual([
+    "place",
+    "neighbour",
+    null,
+  ]);
 });
 
 test("story-driven merging still updates known values after a fill-only update", async (context) => {
@@ -728,10 +731,10 @@ test("story-driven merging still updates known values after a fill-only update",
   });
 
   const [after] = readPlaces(repository, "m1");
-  assert.equal(after.name, "Newer name");
-  assert.equal(after.address, "Newer address");
-  assert.equal(after.latitude, 2);
-  assert.equal(after.longitude, 3);
+  expect(after.name).toBe("Newer name");
+  expect(after.address).toBe("Newer address");
+  expect(after.latitude).toBe(2);
+  expect(after.longitude).toBe(3);
 });
 
 test("fill-only updates reach every story that references the tagged place", async (context) => {
@@ -749,8 +752,8 @@ test("fill-only updates reach every story that references the tagged place", asy
 
   const [first] = readPlaces(repository, "m1");
   const [second] = readPlaces(repository, "m2");
-  assert.deepEqual(second, first);
-  assert.equal(first.status, "usable");
-  assert.equal(first.name, "Louvre");
-  assert.equal(first.instagramPlaceId, "place");
+  expect(second).toStrictEqual(first);
+  expect(first.status).toBe("usable");
+  expect(first.name).toBe("Louvre");
+  expect(first.instagramPlaceId).toBe("place");
 });

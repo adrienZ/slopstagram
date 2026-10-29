@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { test, vi } from "vitest";
+import { test, vi, expect } from "vitest";
 import { z } from "zod";
 import type { JsonValue } from "../sdk/lib/json-value.ts";
 import { createInstagramClient } from "../sdk/story-client-service.ts";
@@ -56,15 +55,15 @@ test("createInstagramClient fetches tray through the authenticated browser page"
 
   const response = await createInstagramClient(session).getTray();
 
-  assert.equal(response.ok, true);
-  assert.equal(response.status, 200);
-  assert.deepEqual(response.json(), {
+  expect(response.ok).toBe(true);
+  expect(response.status).toBe(200);
+  expect(response.json()).toStrictEqual({
     broadcasts: [],
     status: "ok",
     story_ranking_token: "ranking-token",
     tray: [],
   });
-  assert.deepEqual(calls, [
+  expect(calls).toStrictEqual([
     {
       appId: "936619743392459",
       requestUrl: "https://www.instagram.com/api/v1/feed/reels_tray/",
@@ -81,15 +80,15 @@ test("music lookup uses the authenticated session and preserves large numeric au
     ),
   );
   const { getMusicAsset } = client;
-  assert.notEqual(getMusicAsset, undefined);
+  expect(getMusicAsset).not.toBe(undefined);
   if (getMusicAsset === undefined) {
     throw new Error("Music asset lookup unavailable");
   }
   const result = await getMusicAsset("10882110464472591");
-  assert.deepEqual(result.json(), {
+  expect(result.json()).toStrictEqual({
     metadata: { music_info: { music_asset_info: { audio_asset_id: "10882110464472591" } } },
   });
-  assert.deepEqual(calls, [
+  expect(calls).toStrictEqual([
     {
       appId: "936619743392459",
       requestUrl: "https://www.instagram.com/api/v1/clips/music/",
@@ -104,13 +103,13 @@ test("looks up a place with the location container query from the authenticated 
   const { getPlace } = createInstagramClient(
     createSession(body, calls, "text/javascript; charset=utf-8"),
   );
-  assert.notEqual(getPlace, undefined);
+  expect(getPlace).not.toBe(undefined);
   if (getPlace === undefined) {
     throw new Error("Place lookup unavailable");
   }
   const result = await getPlace("633725939834688");
-  assert.deepEqual(result.json(), body);
-  assert.deepEqual(calls, [
+  expect(result.json()).toStrictEqual(body);
+  expect(calls).toStrictEqual([
     {
       appId: "936619743392459",
       requestUrl: "https://www.instagram.com/api/graphql",
@@ -148,14 +147,14 @@ test("sends the place query from the page with the page's own tokens", async (co
     throw new Error("Place lookup unavailable");
   }
   const result = await getPlace("633725939834688");
-  assert.deepEqual(result.json(), { ok: true });
-  assert.equal(requests.length, 1);
+  expect(result.json()).toStrictEqual({ ok: true });
+  expect(requests.length).toBe(1);
   const [request] = requests;
-  assert.equal(request.url, "https://www.instagram.com/api/graphql");
-  assert.equal(request.method, "POST");
-  assert.equal(request.headers.get("x-fb-lsd"), "lsd-token");
-  assert.equal(request.headers.get("x-ig-app-id"), "936619743392459");
-  assert.deepEqual(Object.fromEntries(new globalThis.URLSearchParams(request.body)), {
+  expect(request.url).toBe("https://www.instagram.com/api/graphql");
+  expect(request.method).toBe("POST");
+  expect(request.headers.get("x-fb-lsd")).toBe("lsd-token");
+  expect(request.headers.get("x-ig-app-id")).toBe("936619743392459");
+  expect(Object.fromEntries(new globalThis.URLSearchParams(request.body))).toStrictEqual({
     doc_id: "28572807415659320",
     variables: JSON.stringify({ location_id_str: "633725939834688", show_nearby: false }),
     fb_dtsg: "dtsg-token",
@@ -179,7 +178,7 @@ test("sends empty place query tokens when the page has none", async (context) =>
   });
   await getPlace?.("1");
   const params = Object.fromEntries(new globalThis.URLSearchParams(bodies[0]));
-  assert.deepEqual([params.fb_dtsg, params.lsd, params.av], ["", "", ""]);
+  expect([params.fb_dtsg, params.lsd, params.av]).toStrictEqual(["", "", ""]);
 });
 
 test("rejects an HTML place lookup response", async () => {
@@ -190,7 +189,7 @@ test("rejects an HTML place lookup response", async () => {
     throw new Error("Place lookup unavailable");
   }
   const result = await getPlace("633725939834688");
-  assert.throws(() => result.json(), /text\/html/u);
+  expect(() => result.json()).toThrow(/text\/html/u);
 });
 
 test("normalizes numeric Instagram tray identifiers to strings", async () => {
@@ -210,7 +209,7 @@ test("normalizes numeric Instagram tray identifiers to strings", async () => {
   const response = await createInstagramClient(session).getTray();
   const body = response.json();
 
-  assert.deepEqual(body.tray, [
+  expect(body.tray).toStrictEqual([
     {
       id: "123",
       media_ids: ["456", "789"],
@@ -234,7 +233,7 @@ test("preserves large numeric Instagram identifiers exactly", async () => {
   const response = await createInstagramClient(session).getTray();
   const body = response.json();
 
-  assert.deepEqual(body.tray, [
+  expect(body.tray).toStrictEqual([
     {
       id: "1767198846",
       media_ids: ["3967029617634386001"],
@@ -250,12 +249,11 @@ test("reports an expired browser session when Instagram returns HTML", async () 
     "text/html; charset=utf-8",
   );
 
-  await assert.rejects(
+  await expect(
     createInstagramClient(session)
       .getTray()
       .then((response) => response.json()),
-    /run npm run auth/u,
-  );
+  ).rejects.toThrow(/run npm run auth/u);
 });
 
 test("createInstagramClient fetches reels media with the web viewer GraphQL query", async () => {
@@ -274,10 +272,10 @@ test("createInstagramClient fetches reels media with the web viewer GraphQL quer
 
   const response = await createInstagramClient(session).getReelsMedia(["reel 1", "reel/2"]);
 
-  assert.equal(response.ok, true);
-  assert.equal(response.status, 200);
-  assert.deepEqual(response.json(), { reels_media: [{ id: "reel 1", items: [] }] });
-  assert.deepEqual(calls, [
+  expect(response.ok).toBe(true);
+  expect(response.status).toBe(200);
+  expect(response.json()).toStrictEqual({ reels_media: [{ id: "reel 1", items: [] }] });
+  expect(calls).toStrictEqual([
     {
       appId: "936619743392459",
       requestUrl: "https://www.instagram.com/graphql/query",
@@ -295,7 +293,7 @@ test("preserves large numeric media identifiers in GraphQL responses", async () 
   }`);
 
   const response = await createInstagramClient(session).getReelsMedia(["123"]);
-  assert.deepEqual(response.json(), {
+  expect(response.json()).toStrictEqual({
     reels_media: [{ id: "123", items: [{ pk: "3967029617634386001", taken_at: 1_790_000_000 }] }],
   });
 });
@@ -317,8 +315,7 @@ test("rejects GraphQL errors returned with HTTP 200 instead of accepting empty m
   for (const body of failureBodies) {
     const session = createSession(body);
     // oxlint-disable-next-line no-await-in-loop -- Verify each distinct HTTP-success failure payload.
-    await assert.rejects(
-      createInstagramClient(session).getReelsMedia(["123"]),
+    await expect(createInstagramClient(session).getReelsMedia(["123"])).rejects.toThrow(
       /Instagram story media query failed/u,
     );
   }
@@ -358,15 +355,15 @@ test("reads all gallery pages without dropping reels", async () => {
     },
   };
   const response = await createInstagramClient(session).getReelsMedia(["r1", "r2"]);
-  assert.deepEqual(response.json(), {
+  expect(response.json()).toStrictEqual({
     reels_media: [
       { id: "r1", items: [{ pk: "story1" }] },
       { id: "r2", items: [{ pk: "story2" }] },
     ],
   });
-  assert.equal(calls.length, 2);
-  assert.equal(calls[0].mediaQuery?.after, undefined);
-  assert.equal(calls[1].mediaQuery?.after, "cursor-1");
+  expect(calls.length).toBe(2);
+  expect(calls[0].mediaQuery?.after).toBe(undefined);
+  expect(calls[1].mediaQuery?.after).toBe("cursor-1");
 });
 
 test("rejects a gallery response whose pagination cannot advance", async () => {
@@ -378,8 +375,7 @@ test("rejects a gallery response whose pagination cannot advance", async () => {
       },
     },
   };
-  await assert.rejects(
-    createInstagramClient(createSession(body)).getReelsMedia(["r1"]),
+  await expect(createInstagramClient(createSession(body)).getReelsMedia(["r1"])).rejects.toThrow(
     /pagination/u,
   );
 });

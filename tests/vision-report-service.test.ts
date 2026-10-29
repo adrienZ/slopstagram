@@ -1,6 +1,5 @@
 import { Buffer } from "node:buffer";
-import assert from "node:assert/strict";
-import { describe, test, vi } from "vitest";
+import { describe, test, vi, expect } from "vitest";
 import { z } from "zod";
 import { VISION_SERVER_NOT_RUNNING } from "../sdk/lib/vision-analysis-service.ts";
 import { resolveVisionForReport } from "../sdk/lib/vision-report-service.ts";
@@ -61,12 +60,12 @@ describe("resolveVisionForReport", () => {
         },
       );
 
-      assert.deepEqual(result.get(previewSource), {
+      expect(result.get(previewSource)).toStrictEqual({
         text: "",
         visual: `vision failed: ${entry.warning}`,
       });
-      assert.equal(fetchCount, 0);
-      assert.equal(repository.entries.size, 0);
+      expect(fetchCount).toBe(0);
+      expect(repository.entries.size).toBe(0);
     });
   }
 
@@ -77,27 +76,26 @@ describe("resolveVisionForReport", () => {
 
     await withReportImage(async (cacheDirectory, cachedImages) => {
       async function fetchVision(url: string | URL | Request, init?: RequestInit) {
-        assert.equal(url, "http://vision.example:11434/api/generate");
+        expect(url).toBe("http://vision.example:11434/api/generate");
         fetchCount += 1;
         const body = VisionRequestBodySchema.parse(JSON.parse(requestBodyToString(init?.body)));
         const { images } = body;
 
-        assert.equal(images.length, 1);
-        assert.equal(Buffer.from(images[0] ?? "", "base64").toString(), "jpeg-bytes");
-        assert.match(
-          String(body.prompt),
+        expect(images.length).toBe(1);
+        expect(Buffer.from(images[0] ?? "", "base64").toString()).toBe("jpeg-bytes");
+        expect(String(body.prompt)).toMatch(
           /Provide a list of all visible text\. Only if there is text\./u,
         );
-        assert.match(String(body.prompt), /ignore all texts/iu);
+        expect(String(body.prompt)).toMatch(/ignore all texts/iu);
         const { format: schema } = body;
         const { ocrText, description } = schema.properties;
-        assert.equal(schema.type, "object");
-        assert.equal(schema.additionalProperties, false);
-        assert.deepEqual(schema.required?.toSorted(), ["description", "ocrText"]);
-        assert.equal(ocrText.type, "array");
-        assert.match(ocrText.description ?? "", /Exact all OCR texts/u);
-        assert.equal(description.type, "string");
-        assert.match(description.description ?? "", /image description/u);
+        expect(schema.type).toBe("object");
+        expect(schema.additionalProperties).toBe(false);
+        expect(schema.required?.toSorted()).toStrictEqual(["description", "ocrText"]);
+        expect(ocrText.type).toBe("array");
+        expect(ocrText.description ?? "").toMatch(/Exact all OCR texts/u);
+        expect(description.type).toBe("string");
+        expect(description.description ?? "").toMatch(/image description/u);
 
         return new globalThis.Response(
           JSON.stringify({
@@ -125,19 +123,19 @@ describe("resolveVisionForReport", () => {
         repository,
       });
 
-      assert.deepEqual(first.get(previewSource), {
+      expect(first.get(previewSource)).toStrictEqual({
         text: "readable text",
         visual: "cat on a counter\nwith a cup",
       });
-      assert.deepEqual(second.get(previewSource), {
+      expect(second.get(previewSource)).toStrictEqual({
         text: "readable text",
         visual: "cat on a counter\nwith a cup",
       });
-      assert.equal(repository.entries.size, 1);
+      expect(repository.entries.size).toBe(1);
       const entry = repository.entries.get("story-pk");
-      assert.equal("prompt" in (entry ?? {}), false);
-      assert.equal(entry?.prompt_hash.length, 64);
-      assert.equal(fetchCount, 1);
+      expect("prompt" in (entry ?? {})).toBe(false);
+      expect(entry?.prompt_hash.length).toBe(64);
+      expect(fetchCount).toBe(1);
     });
   });
 
@@ -186,15 +184,15 @@ describe("resolveVisionForReport", () => {
           },
         );
 
-        assert.deepEqual(first.get(firstPreviewSource), {
+        expect(first.get(firstPreviewSource)).toStrictEqual({
           text: "same text",
           visual: "same story",
         });
-        assert.deepEqual(second.get(secondPreviewSource), {
+        expect(second.get(secondPreviewSource)).toStrictEqual({
           text: "same text",
           visual: "same story",
         });
-        assert.equal(fetchCount, 1);
+        expect(fetchCount).toBe(1);
       },
       new Map([
         [firstPreviewSource, "story.jpg"],
@@ -216,7 +214,7 @@ describe("resolveVisionForReport", () => {
         repository,
       });
 
-      assert.deepEqual(result.get(previewSource), {
+      expect(result.get(previewSource)).toStrictEqual({
         text: "",
         visual: VISION_SERVER_NOT_RUNNING,
       });
@@ -245,7 +243,7 @@ describe("resolveVisionForReport", () => {
         repository,
       });
 
-      assert.deepEqual(result.get(previewSource), {
+      expect(result.get(previewSource)).toStrictEqual({
         text: "",
         visual: "A street gathering with bunting and people talking.",
       });
@@ -274,7 +272,7 @@ describe("resolveVisionForReport", () => {
         repository,
       });
 
-      assert.deepEqual(result.get(previewSource), {
+      expect(result.get(previewSource)).toStrictEqual({
         text: "Oui\nÉvêque de nier",
         visual: "A stylized fantasy illustration on an old map background.",
       });
@@ -292,7 +290,7 @@ describe("resolveVisionForReport", () => {
         repository,
       });
 
-      assert.deepEqual(result.get(previewSource), { text: "", visual: "" });
+      expect(result.get(previewSource)).toStrictEqual({ text: "", visual: "" });
     });
   });
 
@@ -311,7 +309,7 @@ describe("resolveVisionForReport", () => {
         repository,
       });
 
-      assert.deepEqual(result.get(previewSource), {
+      expect(result.get(previewSource)).toStrictEqual({
         text: "",
         visual: "vision failed: HTTP 400",
       });

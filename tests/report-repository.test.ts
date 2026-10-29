@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { describe, test } from "vitest";
+import { assert, describe, test, expect } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { ReportRepository } from "../sdk/repositories/report-repository.ts";
@@ -103,9 +102,11 @@ describe("ReportRepository", () => {
       await repository.save("invalid-enum", report);
       // Simulate legacy/corrupt data: SQLite TEXT itself does not enforce enums.
       database.$client.prepare(sql).run("unrecognized", "invalid-enum");
-      assert.throws(() => new ReportRepository(database).findByKey("invalid-enum"), {
-        name: "ZodError",
-      });
+      expect(() => new ReportRepository(database).findByKey("invalid-enum")).toThrow(
+        expect.objectContaining({
+          name: "ZodError",
+        }),
+      );
     });
   }
 
@@ -122,15 +123,15 @@ describe("ReportRepository", () => {
     await repository.save("conflicting-caption", report);
 
     const stored = repository.findByKey("conflicting-caption");
-    assert.equal(stored?.manifest.users[0]?.stories[0]?.ig_caption, "Canonical caption");
-    assert.equal(stored.output.users[0]?.stories[0]?.ig_caption, "Canonical caption");
+    expect(stored?.manifest.users[0]?.stories[0]?.ig_caption).toBe("Canonical caption");
+    assert.ok(stored);
+    expect(stored.output.users[0]?.stories[0]?.ig_caption).toBe("Canonical caption");
 
     await stories.save({ pk: "shared-story", accessibility_caption: "Updated caption" });
-    assert.equal(
+    expect(
       repository.findByKey("conflicting-caption")?.output.users[0]?.stories[0]?.ig_caption,
-      "Updated caption",
-    );
-    assert.equal(stories.findByMediaPk("shared-story")?.accessibility_caption, "Updated caption");
+    ).toBe("Updated caption");
+    expect(stories.findByMediaPk("shared-story")?.accessibility_caption).toBe("Updated caption");
   });
 
   test("stores report snapshots and lists their keys in creation order", async (context) => {
@@ -146,11 +147,11 @@ describe("ReportRepository", () => {
     await repository.save(older.metadata.report_name, older);
     await repository.save(newer.metadata.report_name, newer);
 
-    assert.deepEqual(repository.listKeys(), [
+    expect(repository.listKeys()).toStrictEqual([
       older.metadata.report_name,
       newer.metadata.report_name,
     ]);
-    assert.deepEqual(repository.findByKey(older.metadata.report_name), older);
+    expect(repository.findByKey(older.metadata.report_name)).toStrictEqual(older);
   });
 
   test("links a story to each report while keeping report metadata as columns", async (context) => {
@@ -174,16 +175,16 @@ describe("ReportRepository", () => {
       .prepare("SELECT reportKey, mediaPk FROM report_stories ORDER BY reportKey")
       .all()
       .map((row) => Object.fromEntries(Object.entries(row)));
-    assert.deepEqual(reportStoryLinks, [
+    expect(reportStoryLinks).toStrictEqual([
       { mediaPk: "shared-story", reportKey: first.metadata.report_name },
       { mediaPk: "shared-story", reportKey: second.metadata.report_name },
     ]);
-    assert.deepEqual(repository.findByKey(second.metadata.report_name), second);
+    expect(repository.findByKey(second.metadata.report_name)).toStrictEqual(second);
     const [storedReport] = database.$client
       .prepare("SELECT createdAt, reportName, storiesCount FROM reports WHERE key = ?")
       .all(second.metadata.report_name)
       .map((row) => Object.fromEntries(Object.entries(row)));
-    assert.deepEqual(storedReport, {
+    expect(storedReport).toStrictEqual({
       createdAt: second.metadata.created_at,
       reportName: second.metadata.report_name,
       storiesCount: 1,
@@ -204,13 +205,13 @@ describe("ReportRepository", () => {
       await repository.save("absent-caption", report);
 
       const stored = repository.findByKey("absent-caption");
-      assert.equal(stored?.manifest.users[0]?.stories[0]?.ig_caption, "N/A");
-      assert.deepEqual(stored.output.users[0]?.stories[0], {
+      expect(stored?.manifest.users[0]?.stories[0]?.ig_caption).toBe("N/A");
+      assert.ok(stored);
+      expect(stored.output.users[0]?.stories[0]).toStrictEqual({
         ...report.output.users[0].stories[0],
         ig_caption: "N/A",
       });
-      assert.equal(
-        stories.findByMediaPk("shared-story")?.accessibility_caption,
+      expect(stories.findByMediaPk("shared-story")?.accessibility_caption).toBe(
         caption ?? undefined,
       );
     });
@@ -237,11 +238,12 @@ describe("ReportRepository", () => {
     await repository.save("missing-story", report);
 
     const stored = repository.findByKey("missing-story");
-    assert.deepEqual(stored?.manifest.users[0].stories[0], {
+    expect(stored?.manifest.users[0].stories[0]).toStrictEqual({
       ...report.manifest.users[0].stories[0],
       ig_caption: "N/A",
     });
-    assert.deepEqual(stored.failures, report.failures);
-    assert.equal(new StoryRepository(database).findByMediaPk("shared-story"), null);
+    assert.ok(stored);
+    expect(stored.failures).toStrictEqual(report.failures);
+    expect(new StoryRepository(database).findByMediaPk("shared-story")).toBe(null);
   });
 });

@@ -1,7 +1,6 @@
-import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
-import { test } from "vitest";
+import { test, expect } from "vitest";
 
 test("audio cache migration updates all audio paths and preserves artwork", () => {
   const db = new DatabaseSync(":memory:");
@@ -20,20 +19,16 @@ test("audio cache migration updates all audio paths and preserves artwork", () =
       "utf-8",
     );
     db.exec(migration);
-    assert.equal(
-      db.prepare("SELECT audioCachePath FROM metadata_music").get()?.audioCachePath,
+    expect(db.prepare("SELECT audioCachePath FROM metadata_music").get()?.audioCachePath).toBe(
       "audio/track.m4a",
     );
-    assert.equal(
-      db.prepare("SELECT artworkCachePath FROM metadata_music").get()?.artworkCachePath,
+    expect(db.prepare("SELECT artworkCachePath FROM metadata_music").get()?.artworkCachePath).toBe(
       "music/cover.jpg",
     );
-    assert.equal(
+    expect(
       db.prepare("SELECT audioCachePath FROM metadata_music_partial").get()?.audioCachePath,
-      "audio/partial.m4a",
-    );
-    assert.equal(
-      db.prepare("SELECT cachePath FROM story_audio").get()?.cachePath,
+    ).toBe("audio/partial.m4a");
+    expect(db.prepare("SELECT cachePath FROM story_audio").get()?.cachePath).toBe(
       "audio/story.m4a",
     );
   } finally {

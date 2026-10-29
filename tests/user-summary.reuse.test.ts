@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { test } from "vitest";
+import { assert, test, expect } from "vitest";
 import { createReportViewModel } from "../server/report-view-model.ts";
 import type { StoriesManifestReport } from "../sdk/report-types.ts";
 import type { UserSummaryEntry } from "../sdk/entities/user-summary.ts";
@@ -40,13 +39,13 @@ test("feed and collection normalize stored summaries identically without rewriti
     logger: createMockLogger(),
     repository,
     runUserSummary: async () => {
-      assert.fail("a usable stored summary must not be regenerated");
+      expect.unreachable("a usable stored summary must not be regenerated");
     },
   });
 
-  assert.equal(feedSummaries.get(entry.user_key), "Café et marché.");
-  assert.deepEqual(collectionSummaries, feedSummaries);
-  assert.equal(repository.entries.get(entry.source_hash)?.result, storedResult);
+  expect(feedSummaries.get(entry.user_key)).toBe("Café et marché.");
+  expect(collectionSummaries).toStrictEqual(feedSummaries);
+  expect(repository.entries.get(entry.source_hash)?.result).toBe(storedResult);
 });
 
 for (const [name, result] of [
@@ -58,7 +57,7 @@ for (const [name, result] of [
   test(`feed hides and collection regenerates a matching ${name} summary`, async () => {
     const { entry, report, repository } = await createStoredSummary();
     entry.result = result;
-    assert.equal(readFeedSummaries(report, repository).size, 0);
+    expect(readFeedSummaries(report, repository).size).toBe(0);
     let generations = 0;
     const summaries = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
@@ -69,9 +68,9 @@ for (const [name, result] of [
       },
     });
 
-    assert.equal(generations, 1);
-    assert.equal(summaries.get(entry.user_key), "Résumé régénéré.");
-    assert.deepEqual(readFeedSummaries(report, repository), summaries);
+    expect(generations).toBe(1);
+    expect(summaries.get(entry.user_key)).toBe("Résumé régénéré.");
+    expect(readFeedSummaries(report, repository)).toStrictEqual(summaries);
   });
 }
 
@@ -80,7 +79,7 @@ for (const field of ["source_hash", "prompt_hash", "user_key"] as const) {
     const { entry, report, repository } = await createStoredSummary();
     const invalidEntry: UserSummaryEntry = { ...entry, [field]: "mismatched" };
     repository.entries.set(entry.source_hash, invalidEntry);
-    assert.equal(readFeedSummaries(report, repository).size, 0);
+    expect(readFeedSummaries(report, repository).size).toBe(0);
     let generations = 0;
     const summaries = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
@@ -91,39 +90,39 @@ for (const field of ["source_hash", "prompt_hash", "user_key"] as const) {
       },
     });
 
-    assert.equal(generations, 1);
-    assert.equal(summaries.get(entry.user_key), "Résumé corrigé.");
-    assert.deepEqual(readFeedSummaries(report, repository), summaries);
+    expect(generations).toBe(1);
+    expect(summaries.get(entry.user_key)).toBe("Résumé corrigé.");
+    expect(readFeedSummaries(report, repository)).toStrictEqual(summaries);
   });
 }
 
 test("changed story content hides the old summary until collection regenerates it", async () => {
   const { entry, report, repository } = await createStoredSummary();
   report.output.users[0].stories[0].stickers.push("#food");
-  assert.equal(readFeedSummaries(report, repository).size, 0);
+  expect(readFeedSummaries(report, repository).size).toBe(0);
   const summaries = await resolveUserSummariesForReport(report, {
     logger: createMockLogger(),
     repository,
     runUserSummary: async () => JSON.stringify({ summary: "Une story de cuisine." }),
   });
 
-  assert.equal(summaries.get(entry.user_key), "Une story de cuisine.");
-  assert.deepEqual(readFeedSummaries(report, repository), summaries);
+  expect(summaries.get(entry.user_key)).toBe("Une story de cuisine.");
+  expect(readFeedSummaries(report, repository)).toStrictEqual(summaries);
 });
 
 test("a changed model requires its own summary for both reading and generation", async () => {
   const { entry, report, repository } = await createStoredSummary();
   const options = { repository, model: "new-model" };
-  assert.equal(readUserSummaries(report.output.users, options).size, 0);
+  expect(readUserSummaries(report.output.users, options).size).toBe(0);
   const summaries = await resolveUserSummariesForReport(report, {
     ...options,
     logger: createMockLogger(),
     runUserSummary: async () => JSON.stringify({ summary: "Résumé du nouveau modèle." }),
   });
 
-  assert.equal(summaries.get(entry.user_key), "Résumé du nouveau modèle.");
-  assert.deepEqual(readUserSummaries(report.output.users, options), summaries);
-  assert.equal(readFeedSummaries(report, repository).get(entry.user_key), "Résumé initial.");
+  expect(summaries.get(entry.user_key)).toBe("Résumé du nouveau modèle.");
+  expect(readUserSummaries(report.output.users, options)).toStrictEqual(summaries);
+  expect(readFeedSummaries(report, repository).get(entry.user_key)).toBe("Résumé initial.");
 });
 
 for (const outcome of ["empty", "error"] as const) {
@@ -141,8 +140,8 @@ for (const outcome of ["empty", "error"] as const) {
       },
     });
 
-    assert.equal(summaries.size, 1);
-    assert.equal(repository.entries.size, 0);
-    assert.equal(readFeedSummaries(report, repository).size, 0);
+    expect(summaries.size).toBe(1);
+    expect(repository.entries.size).toBe(0);
+    expect(readFeedSummaries(report, repository).size).toBe(0);
   });
 }
