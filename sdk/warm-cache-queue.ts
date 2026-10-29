@@ -1,5 +1,6 @@
 import { setTimeout as sleep } from "node:timers/promises";
 import { createLogger, type Logger } from "./lib/logging-service.ts";
+import type { CreateReportBoundaries } from "./report.ts";
 import { runWarmCacheJob, type WarmCacheJobResult, type WarmCachePayload } from "./warm-cache.ts";
 
 export const WARM_CACHE_QUEUE_NAME = "warm-cache";
@@ -50,10 +51,11 @@ export interface WarmCacheQueueDependencies {
 }
 
 export interface StartWarmCacheQueueOptions {
+  /** The external systems each job's report talks to; see {@link CreateReportBoundaries}. */
+  boundaries?: CreateReportBoundaries;
   dependencies: WarmCacheQueueDependencies;
   logger?: Logger;
   onError?: (error: Error) => void;
-  runJob?: typeof runWarmCacheJob;
 }
 
 export interface WarmCacheQueueRuntime {
@@ -82,16 +84,16 @@ async function waitForServer(queue: WarmCacheQueue): Promise<void> {
 }
 
 export function startWarmCacheQueue({
+  boundaries,
   dependencies,
   logger = createLogger(WARM_CACHE_QUEUE_NAME),
   onError,
-  runJob = runWarmCacheJob,
 }: StartWarmCacheQueueOptions): WarmCacheQueueRuntime {
   const queue = dependencies.createQueue(WARM_CACHE_QUEUE_NAME);
 
   const worker = dependencies.createWorker(
     WARM_CACHE_QUEUE_NAME,
-    async (job) => await runJob({ payload: job.data, logger }),
+    async (job) => await runWarmCacheJob({ boundaries, logger, payload: job.data }),
     { autorun: false, concurrency: 1 },
   );
 
