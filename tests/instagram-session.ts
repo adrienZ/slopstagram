@@ -59,3 +59,18 @@ export function createRecordedSession(recorded: RecordedInstagram): Session {
     },
   };
 }
+
+/**
+ * A browser session that answers every request with `status`, after calling `onRequest`.
+ * A non-transient status such as 401 fails at once, without the client's retry delays.
+ */
+export function createFailingSession(status: number, onRequest?: () => void): Session {
+  return {
+    page: {
+      evaluate: async () => {
+        onRequest?.();
+        return await Promise.resolve(jsonResponse({ status: "fail" }, status));
+      },
+    },
+  };
+}
