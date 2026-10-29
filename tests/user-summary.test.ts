@@ -5,7 +5,7 @@ import { z } from "zod";
 import { readUserSummaries, resolveUserSummariesForReport } from "../sdk/user-summary.ts";
 import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
 import { createMockLogger, createSummaryReport } from "./mock-helpers.ts";
-import { createUserSummaryRepositoryAdapter } from "./repository-adapters.ts";
+import { createSummaryFixtures } from "./test-database.ts";
 
 const UserSummaryRequestSchema = z.object({
   format: z
@@ -39,9 +39,9 @@ describe("resolveUserSummariesForReport", () => {
     ["win32", "x64", "qwen3.5:0.8b"],
     ["win32", "arm64", "qwen3.5:0.8b"],
   ] as const) {
-    test(`generates and reuses summaries with ${expectedModel} on ${platform}/${architecture}`, async () => {
+    test(`generates and reuses summaries with ${expectedModel} on ${platform}/${architecture}`, async (context) => {
       const report = createSummaryReport();
-      const repository = createUserSummaryRepositoryAdapter();
+      const { repository } = await createSummaryFixtures(context);
       const logger = createMockLogger();
       vi.spyOn(process, "platform", "get").mockImplementation(() => platform);
       vi.spyOn(process, "arch", "get").mockImplementation(() => architecture);
@@ -63,8 +63,8 @@ describe("resolveUserSummariesForReport", () => {
     });
   }
 
-  test("reuses successful user summaries from the repository", async () => {
-    const repository = createUserSummaryRepositoryAdapter();
+  test("reuses successful user summaries from the repository", async (context) => {
+    const { repository } = await createSummaryFixtures(context);
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
     expect(userKey).toBe("summaryuser");
@@ -120,8 +120,8 @@ describe("resolveUserSummariesForReport", () => {
     expect(runCount).toBe(1);
   });
 
-  test("uses the Ollama model in the repository identity", async () => {
-    const repository = createUserSummaryRepositoryAdapter();
+  test("uses the Ollama model in the repository identity", async (context) => {
+    const { repository } = await createSummaryFixtures(context);
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
     let runCount = 0;
@@ -149,9 +149,9 @@ describe("resolveUserSummariesForReport", () => {
     expect(runCount).toBe(2);
   });
 
-  test("runs the default Ollama client with qwen3.5 and OLLAMA_HOST", async () => {
+  test("runs the default Ollama client with qwen3.5 and OLLAMA_HOST", async (context) => {
     vi.stubEnv("OLLAMA_HOST", "http://summary.example:11434/api/generate");
-    const repository = createUserSummaryRepositoryAdapter();
+    const { repository } = await createSummaryFixtures(context);
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
 
@@ -187,30 +187,34 @@ describe("resolveUserSummariesForReport", () => {
     expect(summaries.get(userKey)).toBe("sdk summary");
   });
 
-  test("honors a custom timeout for a blocked summary request", { timeout: 1000 }, async () => {
-    const repository = createUserSummaryRepositoryAdapter();
-    let requestSignal: AbortSignal | null | undefined;
-    const result = resolveUserSummariesForReport(createSummaryReport(), {
-      logger: createMockLogger(),
-      repository,
-      timeoutMs: 5,
-      fetchOllama: async (_url, init) => {
-        requestSignal = init?.signal;
-        assert.ok(requestSignal);
-        await delay(10_000, undefined, { signal: requestSignal });
-        return globalThis.Response.json({ response: "too late" });
-      },
-    });
+  test(
+    "honors a custom timeout for a blocked summary request",
+    { timeout: 1000 },
+    async (context) => {
+      const { countSummaries, repository } = await createSummaryFixtures(context);
+      let requestSignal: AbortSignal | null | undefined;
+      const result = resolveUserSummariesForReport(createSummaryReport(), {
+        logger: createMockLogger(),
+        repository,
+        timeoutMs: 5,
+        fetchOllama: async (_url, init) => {
+          requestSignal = init?.signal;
+          assert.ok(requestSignal);
+          await delay(10_000, undefined, { signal: requestSignal });
+          return globalThis.Response.json({ response: "too late" });
+        },
+      });
 
-    const summaries = await result;
-    expect(summaries.get("summaryuser")).toBe("résumé indisponible");
-    assert.ok(requestSignal);
-    expect(requestSignal.aborted).toBe(true);
-    expect(repository.entries.size).toBe(0);
-  });
+      const summaries = await result;
+      expect(summaries.get("summaryuser")).toBe("résumé indisponible");
+      assert.ok(requestSignal);
+      expect(requestSignal.aborted).toBe(true);
+      expect(countSummaries()).toBe(0);
+    },
+  );
 
-  test("returns fallback text when user summary fails", async () => {
-    const repository = createUserSummaryRepositoryAdapter();
+  test("returns fallback text when user summary fails", async (context) => {
+    const { repository } = await createSummaryFixtures(context);
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
 
@@ -225,8 +229,8 @@ describe("resolveUserSummariesForReport", () => {
     expect(summaries.get(userKey)).toBe("résumé indisponible");
   });
 
-  test("uses report fallback and does not store a missing Ollama response", async () => {
-    const repository = createUserSummaryRepositoryAdapter();
+  test("uses report fallback and does not store a missing Ollama response", async (context) => {
+    const { countSummaries, repository } = await createSummaryFixtures(context);
     const summaries = await resolveUserSummariesForReport(createSummaryReport(), {
       logger: createMockLogger(),
       fetchOllama: async () => globalThis.Response.json({ done: true }),
@@ -236,11 +240,11 @@ describe("resolveUserSummariesForReport", () => {
     expect(summaries.get("summaryuser")).toBe(
       "Summary User a partagé 1 story. Éléments visibles: location:Paris; Paris Market, 10 Rue Food, Paris.",
     );
-    expect(repository.entries.size).toBe(0);
+    expect(countSummaries()).toBe(0);
   });
 
-  test("uses report fallback and does not store empty user summary responses", async () => {
-    const repository = createUserSummaryRepositoryAdapter();
+  test("uses report fallback and does not store empty user summary responses", async (context) => {
+    const { countSummaries, repository } = await createSummaryFixtures(context);
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
 
@@ -252,6 +256,6 @@ describe("resolveUserSummariesForReport", () => {
     expect(summaries.get(userKey)).toBe(
       "Summary User a partagé 1 story. Éléments visibles: location:Paris; Paris Market, 10 Rue Food, Paris.",
     );
-    expect(repository.entries.size).toBe(0);
+    expect(countSummaries()).toBe(0);
   });
 });

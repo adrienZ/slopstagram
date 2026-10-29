@@ -9,7 +9,8 @@ import {
   previewSource,
   withReportImage,
 } from "./mock-helpers.ts";
-import { createVisionRepositoryAdapter } from "./repository-adapters.ts";
+import { VisionRepository } from "../sdk/repositories/vision-repository.ts";
+import { createTestDatabase } from "./test-database.ts";
 
 const VisionJsonSchemaPropertySchema = z.object({
   description: z.string().optional(),
@@ -39,8 +40,8 @@ describe("resolveVisionForReport", () => {
     { name: "empty", cachedPath: "", warning: "no cached preview" },
     { name: "non-JPEG", cachedPath: "story.webp", warning: "preview is not JPEG" },
   ]) {
-    test(`skips ${entry.name} cached previews without contacting vision`, async () => {
-      const repository = createVisionRepositoryAdapter();
+    test(`skips ${entry.name} cached previews without contacting vision`, async (context) => {
+      const repository = new VisionRepository(createTestDatabase(context));
       let fetchCount = 0;
       const paths = new Map<string, string>();
       if (entry.cachedPath !== undefined) {
@@ -65,13 +66,13 @@ describe("resolveVisionForReport", () => {
         visual: `vision failed: ${entry.warning}`,
       });
       expect(fetchCount).toBe(0);
-      expect(repository.entries.size).toBe(0);
+      expect(repository.findByMediaPk("story-pk")).toBeNull();
     });
   }
 
-  test("uses OLLAMA_HOST and reuses successful vision responses from the repository", async () => {
+  test("uses OLLAMA_HOST and reuses successful vision responses from the repository", async (context) => {
     vi.stubEnv("OLLAMA_HOST", "http://vision.example:11434/api/generate/");
-    const repository = createVisionRepositoryAdapter();
+    const repository = new VisionRepository(createTestDatabase(context));
     let fetchCount = 0;
 
     await withReportImage(async (cacheDirectory, cachedImages) => {
@@ -131,16 +132,16 @@ describe("resolveVisionForReport", () => {
         text: "readable text",
         visual: "cat on a counter\nwith a cup",
       });
-      expect(repository.entries.size).toBe(1);
-      const entry = repository.entries.get("story-pk");
+      const entry = repository.findByMediaPk("story-pk");
+      expect(entry).not.toBeNull();
       expect("prompt" in (entry ?? {})).toBe(false);
       expect(entry?.prompt_hash.length).toBe(64);
       expect(fetchCount).toBe(1);
     });
   });
 
-  test("reuses stored responses for the same story when the signed CDN URL changes", async () => {
-    const repository = createVisionRepositoryAdapter();
+  test("reuses stored responses for the same story when the signed CDN URL changes", async (context) => {
+    const repository = new VisionRepository(createTestDatabase(context));
     const firstPreviewSource = "https://example.com/story-preview.webp?signature=old";
     const secondPreviewSource = "https://example.com/story-preview.webp?signature=new";
     let fetchCount = 0;
@@ -201,8 +202,8 @@ describe("resolveVisionForReport", () => {
     );
   });
 
-  test("returns server-down text when vision is unavailable", async () => {
-    const repository = createVisionRepositoryAdapter();
+  test("returns server-down text when vision is unavailable", async (context) => {
+    const repository = new VisionRepository(createTestDatabase(context));
 
     await withReportImage(async (cacheDirectory, cachedImages) => {
       const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
@@ -221,8 +222,8 @@ describe("resolveVisionForReport", () => {
     });
   });
 
-  test("normalizes missing OCR text to an empty string", async () => {
-    const repository = createVisionRepositoryAdapter();
+  test("normalizes missing OCR text to an empty string", async (context) => {
+    const repository = new VisionRepository(createTestDatabase(context));
 
     await withReportImage(async (cacheDirectory, cachedImages) => {
       const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
@@ -250,8 +251,8 @@ describe("resolveVisionForReport", () => {
     });
   });
 
-  test("joins multiple OCR text entries", async () => {
-    const repository = createVisionRepositoryAdapter();
+  test("joins multiple OCR text entries", async (context) => {
+    const repository = new VisionRepository(createTestDatabase(context));
 
     await withReportImage(async (cacheDirectory, cachedImages) => {
       const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
@@ -279,8 +280,8 @@ describe("resolveVisionForReport", () => {
     });
   });
 
-  test("treats a missing Ollama response as an empty vision result", async () => {
-    const repository = createVisionRepositoryAdapter();
+  test("treats a missing Ollama response as an empty vision result", async (context) => {
+    const repository = new VisionRepository(createTestDatabase(context));
 
     await withReportImage(async (cacheDirectory, cachedImages) => {
       const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
@@ -294,8 +295,8 @@ describe("resolveVisionForReport", () => {
     });
   });
 
-  test("returns short per-image text for non-server failures", async () => {
-    const repository = createVisionRepositoryAdapter();
+  test("returns short per-image text for non-server failures", async (context) => {
+    const repository = new VisionRepository(createTestDatabase(context));
 
     await withReportImage(async (cacheDirectory, cachedImages) => {
       const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
