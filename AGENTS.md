@@ -55,6 +55,20 @@ or explicitly with Drizzle Kit's `migrate` command.
 Scripts in `scripts/` require an initialized database and must not trigger migrations,
 directly or through SDK calls. Tests may migrate their isolated databases.
 
+## Testing
+
+- Do not mock project modules. Fakes belong only at external boundaries: the Instagram
+  session, Ollama, Apple OCR, the Playwright session, bunqueue, and browser visual or
+  media APIs that jsdom lacks (the map canvas, canvas, audio). No `dependencies`
+  overrides of our modules and no swapped loaders.
+- Seed the database through real ingestion of recorded payloads (`tests/seed.ts`), or
+  through the real repositories for a case the recordings lack.
+- Recorded payloads live in `tests/fixtures/` and come from `npm run fixtures:capture`.
+  Never use `data/cache` as a fixture source.
+- A test seam that production does not use is tagged `@public` with its reason, so
+  `npm run knip:production` stays clean.
+- Name tests `tests/<module>[.<aspect>].test.ts`.
+
 ## Agent skills
 
 ### Issue tracker
