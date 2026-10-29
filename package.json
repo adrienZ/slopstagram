@@ -10,7 +10,7 @@
     "postinstall": "npm audit --json > audit.json || true",
     "auth": "tsx scripts/auth.ts",
     "create:report": "tsx scripts/create-report.ts",
-    "fixtures:refresh": "tsx scripts/refresh-fixtures.ts",
+    "fixtures:capture": "tsx scripts/capture-fixtures.ts",
     "bunqueue:server": "bunqueue start",
     "start": "vite dev --port 5173",
     "build": "vite build",
