@@ -41,3 +41,22 @@ test("the account timeline shows only vision results from the current model and 
     },
   ]);
 });
+
+test("the account timeline lists the account's stories newest first for the sidebar and gallery", () => {
+  const timeline = loadUserTimeline("user_019", new Date("2026-07-26T12:00:00.000Z"));
+
+  expect(timeline.today).toBe("2026-07-26");
+  expect(timeline.stories.map(({ mediaPk }) => mediaPk)).toEqual([
+    "700000000000314",
+    "700000000000292",
+  ]);
+  expect(timeline.timeline.avatarPath).toBe("/media/avatars/700000000000193.jpg");
+  expect(timeline.sidebarUsers.map(({ username }) => username)).toEqual(["user_019", "user_041"]);
+  expect(timeline.stickerKinds).toContain("mention");
+});
+
+test("an unknown account is a 404", () => {
+  expect(() => loadUserTimeline("nobody")).toThrow(
+    expect.objectContaining({ status: 404, message: "no published stories found for nobody" }),
+  );
+});
