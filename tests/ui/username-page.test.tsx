@@ -1,44 +1,62 @@
 import { expect, test, vi } from "vitest";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import { UserTimelinePage } from "../../server/pages/users/$username.tsx";
-import { timelineProps, timelineEntry } from "../page-fixtures.ts";
+import { timelineProps, timelineEntry } from "../page-props.ts";
 import { renderPage } from "./render.tsx";
 
-test("timeline shows separate display name and handle, dated gallery and active account", async () => {
-  await renderPage(UserTimelinePage, timelineProps, "/users/timeline-user");
-  expect(screen.getByRole("heading", { level: 1, name: "Timeline User" })).toBeVisible();
+test("timeline shows the handle, the dated gallery and the active account", async () => {
+  await renderPage(UserTimelinePage, timelineProps, "/users/user_019");
+  expect(screen.getByRole("heading", { level: 1, name: "@user_019" })).toBeVisible();
   expect(screen.getByRole("heading", { level: 2, name: "2026" })).toBeVisible();
-  expect(screen.getByRole("heading", { level: 3, name: "janvier" })).toBeVisible();
+  expect(screen.getByRole("heading", { level: 3, name: "juillet" })).toBeVisible();
   const accounts = within(screen.getByRole("navigation", { name: "Utilisateurs" }));
-  expect(accounts.getByRole("link", { name: /@timeline-user/u })).toHaveAttribute(
+  expect(accounts.getByRole("link", { name: /@user_019/u })).toHaveAttribute(
     "aria-current",
     "page",
   );
-  expect(accounts.getByRole("link", { name: /@other-user/u })).toHaveAttribute(
+  expect(accounts.getByRole("link", { name: /@user_041/u })).toHaveAttribute(
     "href",
-    "/users/other-user",
+    "/users/user_041",
   );
   const gallery = within(screen.getByRole("region", { name: "Galerie des stories" }));
-  const day = gallery.getByRole("region", { name: "2026-01-01" });
-  expect(day).toHaveAttribute("id", "story-day-2026-01-01");
-  expect(within(day).getByRole("img")).toHaveAttribute("src", "/media/story-previews/story-pk.jpg");
-  expect(within(day).getByRole("img")).toHaveAttribute("loading", "lazy");
+  const day = gallery.getByRole("region", { name: "2026-07-26" });
+  expect(day).toHaveAttribute("id", "story-day-2026-07-26");
+  const previews = within(day).getAllByRole("img");
+  expect(previews.map((preview) => preview.getAttribute("src"))).toEqual([
+    "/media/story-previews/700000000000314.jpg",
+    "/media/story-previews/700000000000292.jpg",
+  ]);
+  for (const preview of previews) {
+    expect(preview).toHaveAttribute("loading", "lazy");
+  }
+});
+
+test("a saved display name is shown above the separate handle", async () => {
+  await renderPage(
+    UserTimelinePage,
+    {
+      ...timelineProps,
+      timeline: {
+        ...timelineProps.timeline,
+        timelineUser: { ...timelineProps.timeline.timelineUser, full_name: "Nom Affiché" },
+      },
+    },
+    "/users/user_019",
+  );
+  expect(screen.getByRole("heading", { level: 1, name: "Nom Affiché" })).toBeVisible();
+  expect(screen.getByRole("link", { name: "@user_019" })).toBeVisible();
 });
 
 test("timeline calendar scrolls to the selected day without changing the route", async () => {
   const scroll = vi.spyOn(globalThis.Element.prototype, "scrollIntoView");
-  const { user, router } = await renderPage(
-    UserTimelinePage,
-    timelineProps,
-    "/users/timeline-user",
-  );
-  expect(screen.getByRole("button", { name: /vendredi 2 janvier 2026/u })).toBeDisabled();
-  await user.click(screen.getByRole("button", { name: /jeudi 1 janvier 2026/u }));
+  const { user, router } = await renderPage(UserTimelinePage, timelineProps, "/users/user_019");
+  expect(screen.getByRole("button", { name: /lundi 27 juillet 2026/u })).toBeDisabled();
+  await user.click(screen.getByRole("button", { name: /dimanche 26 juillet 2026/u }));
   await waitFor(() => {
     expect(scroll).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
   });
-  expect(scroll.mock.instances[0]).toBe(screen.getByRole("region", { name: "2026-01-01" }));
-  expect(router.state.location.href).toBe("/users/timeline-user");
+  expect(scroll.mock.instances[0]).toBe(screen.getByRole("region", { name: "2026-07-26" }));
+  expect(router.state.location.href).toBe("/users/user_019");
   const preference = globalThis.matchMedia("(prefers-reduced-motion: reduce)");
   vi.spyOn(preference, "matches", "get").mockReturnValue(true);
   act(() => {
@@ -78,7 +96,7 @@ test("calendar navigates between months to another available day", async () => {
         ],
       },
     },
-    "/users/timeline-user",
+    "/users/user_019",
   );
   expect(screen.getByRole("button", { name: /mois précédent/iu })).not.toHaveAttribute(
     "aria-disabled",
@@ -105,22 +123,21 @@ test("an empty account keeps navigation and every sticker kind without expansion
       stories: [],
       timeline: {
         ...timelineProps.timeline,
-        avatarPath: null,
         stories: [],
         years: [],
         timelineUser: { ...timelineProps.timeline.timelineUser, full_name: null },
       },
     },
-    "/users/timeline-user",
+    "/users/user_019",
   );
-  expect(screen.getByRole("heading", { name: "@timeline-user", level: 1 })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "@user_019", level: 1 })).toBeVisible();
   expect(screen.getByText("Aucune story enregistrée pour cet utilisateur.")).toBeVisible();
   expect(
     screen
       .getAllByRole("region", { name: /^Type de sticker :/u })
       .map((card) => within(card).getByRole("heading").textContent),
-  ).toEqual(["location", "mention", "link", "music", "hashtag"]);
-  expect(screen.getAllByText("Aucun sticker")).toHaveLength(5);
+  ).toEqual(timelineProps.stickerKinds);
+  expect(screen.getAllByText("Aucun sticker")).toHaveLength(timelineProps.stickerKinds.length);
   expect(
     screen.queryByRole("button", { name: /Tout afficher|Afficher ou masquer :/u }),
   ).not.toBeInTheDocument();
@@ -138,14 +155,16 @@ test("an empty account keeps navigation and every sticker kind without expansion
   expect(scroll).not.toHaveBeenCalled();
 });
 
-test("a timeline story deep link opens the real preview and Escape closes it", async () => {
+test("a timeline story deep link opens the preview, steps to the next story and Escape closes it", async () => {
   const { user, router } = await renderPage(
     UserTimelinePage,
     timelineProps,
-    "/users/timeline-user?story=story-pk",
+    `/users/user_019?story=${timelineProps.stories[0].mediaPk}`,
   );
-  expect(await screen.findByRole("dialog", { name: "Aperçu de l’image" })).toBeVisible();
-  expect(screen.queryByRole("button", { name: "Image suivante" })).not.toBeInTheDocument();
+  const dialog = within(await screen.findByRole("dialog", { name: "Aperçu de l’image" }));
+  expect(dialog.getByText("1 / 2")).toBeVisible();
+  await user.click(dialog.getByRole("button", { name: "Image suivante" }));
+  expect(dialog.getByText("2 / 2")).toBeVisible();
   await user.keyboard("{Escape}");
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(router.state.location.search).toEqual({});
@@ -154,12 +173,12 @@ test("a timeline story deep link opens the real preview and Escape closes it", a
 test("mobile calendar opens in a sheet and closes after choosing a day", async () => {
   vi.stubGlobal("innerWidth", 390);
   const scroll = vi.spyOn(globalThis.Element.prototype, "scrollIntoView");
-  const { user } = await renderPage(UserTimelinePage, timelineProps, "/users/timeline-user");
+  const { user } = await renderPage(UserTimelinePage, timelineProps, "/users/user_019");
   expect(screen.queryByRole("navigation", { name: "Utilisateurs" })).not.toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "Afficher ou masquer le calendrier" }));
   const sidebar = await screen.findByRole("dialog");
-  expect(within(sidebar).getByRole("button", { name: /jeudi 1 janvier 2026/u })).toBeEnabled();
-  await user.click(within(sidebar).getByRole("button", { name: /jeudi 1 janvier 2026/u }));
+  expect(within(sidebar).getByRole("button", { name: /dimanche 26 juillet 2026/u })).toBeEnabled();
+  await user.click(within(sidebar).getByRole("button", { name: /dimanche 26 juillet 2026/u }));
   await waitFor(() => {
     expect(scroll).toHaveBeenCalled();
   });
@@ -167,9 +186,9 @@ test("mobile calendar opens in a sheet and closes after choosing a day", async (
 });
 
 test("the profile header handle opens the Instagram profile in a new tab", async () => {
-  await renderPage(UserTimelinePage, timelineProps, "/users/timeline-user");
-  const link = screen.getByRole("link", { name: "@timeline-user" });
-  expect(link).toHaveAttribute("href", "https://www.instagram.com/timeline-user/");
+  await renderPage(UserTimelinePage, timelineProps, "/users/user_019");
+  const link = screen.getByRole("link", { name: "@user_019" });
+  expect(link).toHaveAttribute("href", "https://www.instagram.com/user_019/");
   expect(link).toHaveAttribute("target", "_blank");
   expect(link).toHaveAttribute("rel", "noreferrer");
 });

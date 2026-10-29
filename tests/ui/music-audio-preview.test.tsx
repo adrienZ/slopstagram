@@ -3,7 +3,7 @@ import { fireEvent, screen } from "@testing-library/react";
 import { MusicAudioPreview } from "../../server/components/music-audio-preview.tsx";
 import { MusicSticker } from "../../server/components/music-sticker.tsx";
 import { Lightbox } from "../../server/components/lightbox.tsx";
-import { timelineProps } from "../page-fixtures.ts";
+import { timelineProps } from "../page-props.ts";
 import { renderContent, renderPage } from "./render.tsx";
 import type { MusicPreview } from "../../server/music-preview.ts";
 
@@ -144,7 +144,11 @@ test("detail-modal audio seeking keeps the selected story and navigation stops p
   function Details({ selectedStory }: { selectedStory?: string }) {
     return <Lightbox stories={stories} selectedStory={selectedStory} />;
   }
-  const { user, router } = await renderPage(Details, {}, "/report?story=story-pk");
+  const { user, router } = await renderPage(
+    Details,
+    {},
+    `/report?story=${timelineProps.stories[0].mediaPk}`,
+  );
   const audio = screen.getByLabelText("Écouter : Audio de la story");
   Object.defineProperty(audio, "duration", { configurable: true, value: 20 });
   fireEvent.durationChange(audio);
@@ -153,7 +157,7 @@ test("detail-modal audio seeking keeps the selected story and navigation stops p
   const seek = screen.getByRole("slider");
   seek.focus();
   await user.keyboard("{ArrowRight}");
-  expect(router.state.location.search.story).toBe("story-pk");
+  expect(String(router.state.location.search.story)).toBe(timelineProps.stories[0].mediaPk);
   fireEvent.change(seek, { target: { value: "8" } });
   expect(audio).toHaveProperty("currentTime", 8);
   await user.click(screen.getByRole("button", { name: "Image suivante" }));

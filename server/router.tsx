@@ -1,9 +1,11 @@
 import { createRouter, parseSearchWith, stringifySearchWith } from "@tanstack/react-router";
+import { queries } from "./query-service.ts";
 import { routeTree } from "./routeTree.gen.ts";
 
 export function getRouter() {
   return createRouter({
     routeTree,
+    context: { queries },
     // Avoid JSON parsing of numeric Instagram IDs; route schemas normalize primitive values to strings.
     parseSearch: parseSearchWith(String),
     stringifySearch: stringifySearchWith(JSON.stringify),

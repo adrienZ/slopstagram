@@ -1,6 +1,7 @@
-import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
+import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { ThemeProvider } from "../components/theme-provider.tsx";
+import type { Queries } from "../query-service.ts";
 import "../shadcn/styles.css";
 import "../assets/css/base.css";
 
@@ -28,7 +29,11 @@ export function rootHead() {
   };
 }
 
-export const Route = createRootRoute({
+export interface RouterContext {
+  queries: Queries;
+}
+
+export const Route = createRootRouteWithContext<RouterContext>()({
   head: rootHead,
   component: Outlet,
   shellComponent: RootDocument,

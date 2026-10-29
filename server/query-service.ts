@@ -15,16 +15,32 @@ export function loadOrNotFound<Result>(load: () => Result): Result {
   }
 }
 
-export const getReport = createServerFn({ method: "GET" })
-  .validator(z.object({ date: storyDateSchema.optional(), story: z.string().optional() }))
-  .handler(async ({ data }) => {
-    const { loadReport } = await import("./report-handler.tsx");
-    return loadOrNotFound(() => loadReport(new Date(), data.date, data.story));
-  });
+export async function fetchReport(data: { date?: string; story?: string }) {
+  const { loadReport } = await import("./report-handler.tsx");
+  return loadOrNotFound(() => loadReport(new Date(), data.date, data.story));
+}
 
-export const getUserTimeline = createServerFn({ method: "GET" })
+export async function fetchUserTimeline(username: string) {
+  const { loadUserTimeline } = await import("./user-timeline-handler.tsx");
+  return loadOrNotFound(() => loadUserTimeline(username));
+}
+
+const getReport = createServerFn({ method: "GET" })
+  .validator(z.object({ date: storyDateSchema.optional(), story: z.string().optional() }))
+  .handler(async ({ data }) => await fetchReport(data));
+
+const getUserTimeline = createServerFn({ method: "GET" })
   .validator(z.string())
-  .handler(async ({ data }) => {
-    const { loadUserTimeline } = await import("./user-timeline-handler.tsx");
-    return loadOrNotFound(() => loadUserTimeline(data));
-  });
+  .handler(async ({ data }) => await fetchUserTimeline(data));
+
+/** What route loaders read their data through, so tests can run them without the server function transport. */
+export interface Queries {
+  getReport: (options: {
+    data: Parameters<typeof fetchReport>[0];
+  }) => ReturnType<typeof fetchReport>;
+  getUserTimeline: (options: {
+    data: Parameters<typeof fetchUserTimeline>[0];
+  }) => ReturnType<typeof fetchUserTimeline>;
+}
+
+export const queries: Queries = { getReport, getUserTimeline };

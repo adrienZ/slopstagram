@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { screen } from "@testing-library/react";
 import { UserSection } from "../../server/components/user-section.tsx";
-import { reportProps } from "../page-fixtures.ts";
+import { reportProps } from "../page-props.ts";
 import { renderContent } from "./render.tsx";
 
 const [section] = reportProps.users;
@@ -17,7 +17,7 @@ test("missing display name uses the handle and an unavailable avatar has no brok
 
 test.each([undefined, ""])("an absent summary (%s) is omitted", async (summary) => {
   await renderContent(<UserSection {...section} summary={summary} stories={[]} />);
-  expect(screen.queryByText(section.summary ?? "")).not.toBeInTheDocument();
+  expect(screen.queryByRole("separator")).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /Ouvrir aperçu/u })).not.toBeInTheDocument();
 });
 

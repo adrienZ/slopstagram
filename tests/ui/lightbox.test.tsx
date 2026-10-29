@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { screen, within } from "@testing-library/react";
 import { Lightbox } from "../../server/components/lightbox.tsx";
 import { StoryCard } from "../../server/components/story-card.tsx";
-import { timelineProps } from "../page-fixtures.ts";
+import { timelineProps } from "../page-props.ts";
 import { renderPage } from "./render.tsx";
 
 const stories = ["12345678901234567890", "second", "third"].map((mediaPk, index) => ({
@@ -56,14 +56,14 @@ test("buttons and arrow keys wrap through the gallery while preserving other sea
 test("the header username links to the profile only when asked to", async () => {
   const linked = await renderPage(LinkedGallery, {}, "/report?story=second");
   expect(
-    within(await screen.findByRole("dialog")).getByRole("link", { name: /Timeline User/u }),
-  ).toHaveAttribute("href", "/users/timeline-user");
+    within(await screen.findByRole("dialog")).getByRole("link", { name: /user_019/u }),
+  ).toHaveAttribute("href", "/users/user_019");
   linked.unmount();
 
-  await renderPage(Gallery, {}, "/users/timeline-user?story=second");
+  await renderPage(Gallery, {}, "/users/user_019?story=second");
   const dialog = within(await screen.findByRole("dialog"));
-  expect(dialog.getByText(/Timeline User/u)).toBeVisible();
-  expect(dialog.queryByRole("link", { name: /Timeline User/u })).not.toBeInTheDocument();
+  expect(dialog.getByText(/user_019/u)).toBeVisible();
+  expect(dialog.queryByRole("link", { name: /user_019/u })).not.toBeInTheDocument();
 });
 
 test("the preview is repeated as a blurred backdrop behind the image", async () => {

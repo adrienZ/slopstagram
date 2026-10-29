@@ -1,5 +1,5 @@
 import {
-  createRootRoute,
+  createRootRouteWithContext,
   createRoute,
   createRouter,
   parseSearchWith,
@@ -8,34 +8,39 @@ import {
 import type { AnyRoute } from "@tanstack/react-router";
 import { createRequestHandler, defaultRenderHandler } from "@tanstack/react-router/ssr/server";
 import { RootDocument, rootHead } from "../server/pages/__root.tsx";
+import type { RouterContext } from "../server/pages/__root.tsx";
+import { inProcessQueries } from "./in-process-queries.ts";
 
-export function createPageRenderer<Props extends object>(
-  fileRoute: AnyRoute,
-  props: Props,
-  path: string,
-) {
+/**
+ * Server-renders a page route with its real loader. The loader runs the real
+ * handlers over the application database; tests only replace the server
+ * function transport, through the router context (see tests/in-process-queries.ts).
+ */
+export function createPageRenderer(fileRoute: AnyRoute, path: string) {
   return {
-    renderRoute: async (url: string, requestProps = props) => {
+    renderRoute: async (url: string) => {
       const handler = createRequestHandler({
         request: new globalThis.Request(`http://localhost${url}`),
         createRouter: () => {
           // Clone routes so concurrent SSR requests never share loader state.
-          const root = createRootRoute({ shellComponent: RootDocument, head: rootHead });
+          const root = createRootRouteWithContext<RouterContext>()({
+            shellComponent: RootDocument,
+            head: rootHead,
+          });
           const route = createRoute({
             ...fileRoute.options,
             getParentRoute: () => root,
             path,
-            loader: () => requestProps,
           });
           return createRouter({
             routeTree: root.addChildren([route]),
+            context: { queries: inProcessQueries },
             parseSearch: parseSearchWith(String),
             stringifySearch: stringifySearchWith(JSON.stringify),
           });
         },
       });
-      const response = await handler(defaultRenderHandler);
-      return await response.text();
+      return await handler(defaultRenderHandler);
     },
   };
 }

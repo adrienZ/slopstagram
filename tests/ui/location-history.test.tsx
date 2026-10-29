@@ -3,7 +3,7 @@ import { screen, within } from "@testing-library/react";
 import { UserTimelinePage } from "../../server/pages/users/$username.tsx";
 import type { TimelineContentProps } from "../../server/pages/users/$username.tsx";
 import type { StoryLocationObservation } from "../../sdk/entities/location-metadata.ts";
-import { timelineEntry, timelineProps } from "../page-fixtures.ts";
+import { stickerKindsOf, timelineEntry, timelineProps } from "../page-props.ts";
 import { renderPage } from "./render.tsx";
 import { LocationMapContext } from "../../server/components/location-history.tsx";
 import type { LocationMapCanvasProps } from "../../server/components/location-map-canvas.tsx";
@@ -33,7 +33,12 @@ function TestMapCanvas({ places, onSelect, children }: LocationMapCanvasProps) {
 function TestTimelinePage(props: TimelineContentProps & { selectedStory?: string }) {
   return (
     <LocationMapContext value={TestMapCanvas}>
-      <UserTimelinePage {...props} />
+      <UserTimelinePage
+        {...props}
+        stickerKinds={[
+          ...new Set([...props.stickerKinds, ...stickerKindsOf(props.timeline.stories)]),
+        ].toSorted()}
+      />
     </LocationMapContext>
   );
 }
@@ -130,7 +135,7 @@ test("location dialog maps the whole history by provider identity and preserves 
     [observation("d", "partial", null)],
     [],
   ]);
-  const { user } = await renderPage(TestTimelinePage, props, "/users/timeline-user");
+  const { user } = await renderPage(TestTimelinePage, props, "/users/user_019");
   expect(screen.queryByRole("region", { name: "Carte des lieux" })).not.toBeInTheDocument();
   expect(
     within(screen.getByRole("region", { name: "Type de sticker : location" })).getByText(
@@ -171,7 +176,7 @@ test("a location history without coordinates keeps every label and preview avail
   const { user } = await renderPage(
     TestTimelinePage,
     locationTimeline([[observation("partial", "missing", null)], []]),
-    "/users/timeline-user",
+    "/users/user_019",
   );
   await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
@@ -190,12 +195,15 @@ test("a location history without coordinates keeps every label and preview avail
 });
 
 test("metadata without a displayable sticker remains mappable through its story provenance", async () => {
-  const props = locationTimeline([[{ ...observation("unlabelled", "place"), occurrenceId: null }]]);
+  const props = {
+    ...locationTimeline([[{ ...observation("unlabelled", "place"), occurrenceId: null }]]),
+    stickerKinds: ["location"],
+  };
   const { annotations } = props.timeline.stories[0].story;
   if (annotations !== undefined) {
     annotations.stickers = [];
   }
-  const { user } = await renderPage(TestTimelinePage, props, "/users/timeline-user");
+  const { user } = await renderPage(TestTimelinePage, props, "/users/user_019");
   await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
   expect(modal.getByText("1 lieu sur la carte")).toBeVisible();
@@ -216,7 +224,7 @@ test("overlapping anonymous places stay distinct and can each be selected withou
   first.metadata.instagramPlaceId = null;
   second.metadata.instagramPlaceId = null;
   const props = locationTimeline([[first, { ...first, id: "repeat" }], [second]]);
-  const { user } = await renderPage(TestTimelinePage, props, "/users/timeline-user");
+  const { user } = await renderPage(TestTimelinePage, props, "/users/user_019");
   await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
   await user.selectOptions(
@@ -245,7 +253,7 @@ test("unlinked observations never supply a position for a separate legacy sticke
       { ...observation("partial", "unknown", null), occurrenceId: null },
     ],
   ]);
-  const { user } = await renderPage(TestTimelinePage, props, "/users/timeline-user");
+  const { user } = await renderPage(TestTimelinePage, props, "/users/user_019");
   await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
   expect(modal.getByText("1 sticker sans position confirmée")).toBeVisible();
@@ -258,7 +266,7 @@ test("a place category appears in the place list but not in the map popup", asyn
   const plain = observation("b", "place-b", 49);
   plain.metadata.name = "Sans catégorie";
   const props = locationTimeline([[observation("a", "place-a", 48, "Pont")], [plain]]);
-  const { user } = await renderPage(TestTimelinePage, props, "/users/timeline-user");
+  const { user } = await renderPage(TestTimelinePage, props, "/users/user_019");
   await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
   expect(modal.getByRole("option", { name: "Même nom · Pont · 1 stories" })).toBeVisible();
@@ -276,7 +284,7 @@ test("arrow keys step through the markers of an open popup and wrap around", asy
   const third = observation("c", "place-c", 50);
   third.metadata.name = "Troisième";
   const props = locationTimeline([[observation("a", "place-a")], [second], [third]]);
-  const { user } = await renderPage(TestTimelinePage, props, "/users/timeline-user");
+  const { user } = await renderPage(TestTimelinePage, props, "/users/user_019");
   await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
   const map = within(await modal.findByRole("region", { name: "Carte des lieux" }));
@@ -297,7 +305,7 @@ test("arrow keys step through the markers of an open popup and wrap around", asy
 
 test("a single place has no previous or next buttons", async () => {
   const props = locationTimeline([[observation("a", "place-a")]]);
-  const { user } = await renderPage(TestTimelinePage, props, "/users/timeline-user");
+  const { user } = await renderPage(TestTimelinePage, props, "/users/user_019");
   await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
   await user.click(await modal.findByRole("button", { name: "Même nom" }));
@@ -317,7 +325,7 @@ test("location stickers show a crossed-out pin when the place has no coordinates
       annotations: { locations: [], stickers: [{ kind: "location", label: "Legacy" }] },
     },
   });
-  await renderPage(TestTimelinePage, props, "/users/timeline-user");
+  await renderPage(TestTimelinePage, props, "/users/user_019");
   const card = screen.getByRole("region", { name: "Type de sticker : location" });
   expect(card.querySelectorAll(".lucide-map-pin")).toHaveLength(1);
   expect(card.querySelectorAll(".lucide-map-pin-off")).toHaveLength(2);
@@ -328,7 +336,7 @@ test("location stickers show the place category on a separate line when known", 
     [observation("a", "place-a", 48, "Parc")],
     [observation("b", "place-b")],
   ]);
-  await renderPage(TestTimelinePage, props, "/users/timeline-user");
+  await renderPage(TestTimelinePage, props, "/users/user_019");
   const card = within(screen.getByRole("region", { name: "Type de sticker : location" }));
   expect(card.getByText("Parc")).toBeVisible();
   expect(card.getAllByText("Paris, Paris")).toHaveLength(2);
