@@ -16,7 +16,7 @@ export interface WarmCacheJobResult {
   counts: CreateReportResult["report"]["metadata"]["counts"];
 }
 
-export function parseWarmCachePayload(payload: WarmCachePayload | undefined): WarmCachePayload {
+function parseWarmCachePayload(payload: WarmCachePayload | undefined): WarmCachePayload {
   return WarmCachePayloadSchema.parse(payload ?? {});
 }
 

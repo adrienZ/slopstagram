@@ -32,7 +32,7 @@ function localArtworkPath(key: string | null, state: string): string | null {
     : null;
 }
 
-export function musicPreview(observation: StoryMusicObservation): MusicPreview | null {
+function musicPreview(observation: StoryMusicObservation): MusicPreview | null {
   const { metadata } = observation;
   const audioUrl = localMediaPath(metadata.audioCachePath, metadata.audioState);
   if (audioUrl === null) {
@@ -66,7 +66,7 @@ function storySongDescription(annotations: StoryAnnotations | undefined): string
   return [...new Set(names)].join(" / ") || "Audio de la story";
 }
 
-export function storyAudioPreview(annotations: StoryAnnotations | undefined): MusicPreview | null {
+function storyAudioPreview(annotations: StoryAnnotations | undefined): MusicPreview | null {
   const audio = annotations?.storyAudio;
   const audioUrl = audio ? localMediaPath(audio.cachePath, audio.state) : null;
   return audioUrl === null || !audio
