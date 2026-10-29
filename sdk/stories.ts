@@ -69,13 +69,11 @@ function createReportMetadata(
     state: ReturnType<typeof createFetchState>;
   },
 ): StoriesManifestReport["metadata"] {
-  const { expectedMediaPks, cacheHitPks, fetchedMediaPks, failureByMediaPk } = options.state;
+  const { expectedMediaPks, fetchedMediaPks, failureByMediaPk } = options.state;
 
   return {
     broadcasts_count: trayJson.broadcasts.length,
     counts: {
-      cache_hits: expectedMediaPks.filter((mediaPk) => cacheHitPks.has(mediaPk)).length,
-      cache_misses: expectedMediaPks.filter((mediaPk) => !cacheHitPks.has(mediaPk)).length,
       failed: expectedMediaPks.filter((mediaPk) => failureByMediaPk.has(mediaPk)).length,
       fetched: expectedMediaPks.filter((mediaPk) => fetchedMediaPks.has(mediaPk)).length,
       reels: trayJson.tray.length,
@@ -192,7 +190,7 @@ export async function fetchStoriesManifest(
     state.failureByMediaPk,
   );
   logger.info(
-    `manifest complete: cached=${state.cacheHitPks.size} fetched=${state.fetchedMediaPks.size} failed=${state.failureByMediaPk.size}`,
+    `manifest complete: fetched=${state.fetchedMediaPks.size} failed=${state.failureByMediaPk.size}`,
   );
 
   return createStoriesReport({
