@@ -1,6 +1,6 @@
 import process from "node:process";
 import { pathToFileURL } from "node:url";
-import { createReport } from "../sdk/index.ts";
+import { createReport } from "../sdk/report.ts";
 import { createLogger } from "../sdk/lib/logging-service.ts";
 
 async function main(): Promise<void> {
