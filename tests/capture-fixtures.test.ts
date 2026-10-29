@@ -24,10 +24,20 @@ const secrets = [
   "private caption",
   "scontent.cdninstagram.com",
   "Cafe de Flore",
+  "Flore",
+  "cafe-de-flore",
   "Boulevard Saint-Germain",
+  "Paris",
+  "75006",
   "+33 1 23 45 67 89",
-  "Secret Song",
+  "48.85",
+  "2.33",
+  "real_artist_account",
+  "real_sharer",
+  "audio.cdninstagram.com",
 ];
+// Public music asset metadata is kept as recorded.
+const publicAudio = ["Synthetic Song", "Synthetic Artist", "777", "888000"];
 
 function trayEntry(userPk: string, username: string, fullName: string, mediaId: string) {
   return {
@@ -49,6 +59,23 @@ const liveTray = {
   ],
 };
 
+function musicAssetInfo() {
+  return {
+    audio_asset_id: "777",
+    audio_cluster_id: "888000",
+    title: "Synthetic Song",
+    display_artist: "Synthetic Artist",
+    duration_in_ms: 30_000,
+    progressive_download_url: "https://audio.cdninstagram.com/track.m4a",
+    cover_artwork_uri: "https://scontent.cdninstagram.com/v/cover.jpg",
+    ig_artist: {
+      id: "999",
+      username: "real_artist_account",
+      profile_pic_url: "https://scontent.cdninstagram.com/v/artist.jpg",
+    },
+  };
+}
+
 function liveStory(entry: ReturnType<typeof trayEntry>) {
   return {
     pk: entry.media_ids[0],
@@ -60,8 +87,21 @@ function liveStory(entry: ReturnType<typeof trayEntry>) {
     image_versions2: {
       candidates: [{ url: "https://scontent.cdninstagram.com/v/a.jpg", width: 1080, height: 1920 }],
     },
-    story_locations: [{ location: { pk: "555", name: "Cafe de Flore", lat: 48.85, lng: 2.33 } }],
-    story_music_stickers: [{ music_asset_info: { audio_asset_id: "777", title: "Secret Song" } }],
+    story_locations: [
+      {
+        id: "sticker-location",
+        location: {
+          pk: "555",
+          name: "Cafe de Flore",
+          short_name: "Flore",
+          lat: 48.85,
+          lng: 2.33,
+          address: "Boulevard Saint-Germain",
+          city: "Paris",
+        },
+      },
+    ],
+    story_music_stickers: [{ id: "sticker-music", music_asset_info: musicAssetInfo() }],
   };
 }
 
@@ -107,11 +147,15 @@ function liveSession(): Session {
                   native_location_data: {
                     location_info: {
                       name: "Cafe de Flore",
+                      short_name: "Flore",
                       location_id: "555",
                       location_address: "Boulevard Saint-Germain",
+                      location_city: "Paris",
+                      location_zip: "75006",
+                      slug: "cafe-de-flore",
                       lat: 48.85,
                       lng: 2.33,
-                      ig_business: { phone: "+33 1 23 45 67 89" },
+                      phone: "+33 1 23 45 67 89",
                     },
                   },
                 },
@@ -120,7 +164,10 @@ function liveSession(): Session {
           );
         }
         return await Promise.resolve(
-          body({ items: [{ audio_asset_id: "777", title: "Secret Song" }] }),
+          body({
+            metadata: { music_info: { music_asset_info: musicAssetInfo() } },
+            shared_by: { pk: "real_sharer_pk", username: "real_sharer" },
+          }),
         );
       },
     },
@@ -142,6 +189,9 @@ test("redacted captures contain no original name, identifier, URL, text, place o
 
   for (const secret of secrets) {
     expect(redacted).not.toContain(secret);
+  }
+  for (const kept of publicAudio) {
+    expect(redacted).toContain(kept);
   }
   expect(redacted).toContain('"media_type":1');
   expect(redacted).toContain('"width":1080');
@@ -213,6 +263,110 @@ test("fixture metadata omits the place and music files when they were not captur
     "instagram-story-data.json",
     "instagram-story-data-2.json",
   ]);
+});
+
+const syntheticPlace = {
+  location_info: {
+    name: "Synthetic Cafe",
+    short_name: "Synth",
+    location_id: "4242",
+    location_address: "1 Synthetic Street",
+    location_city: "Syntheticville",
+    location_zip: "91919",
+    slug: "synthetic-cafe",
+    category: "Synthetic Category",
+    lat: 12.3456,
+    lng: -65.4321,
+    latitude: 12.3456,
+    longitude: -65.4321,
+    facebook_places_id: 31_337,
+    ig_business: { profile: { id: "5150", username: "synthetic_business" } },
+  },
+};
+
+test("redaction replaces every place field, coordinates included, deterministically", () => {
+  const first = createRedactor()(syntheticPlace);
+  const second = createRedactor()(syntheticPlace);
+  const text = JSON.stringify(first);
+
+  expect(first).toStrictEqual(second);
+  for (const original of [
+    "Synthetic Cafe",
+    "Synth",
+    "4242",
+    "1 Synthetic Street",
+    "Syntheticville",
+    "91919",
+    "synthetic-cafe",
+    "Synthetic Category",
+    "12.3456",
+    "65.4321",
+    "31337",
+    "5150",
+    "synthetic_business",
+  ]) {
+    expect(text).not.toContain(original);
+  }
+  const info = z
+    .object({ location_info: z.object({ lat: z.number(), lng: z.number(), slug: z.string() }) })
+    .parse(first).location_info;
+  expect(Math.abs(info.lat)).toBeLessThanOrEqual(90);
+  expect(Math.abs(info.lng)).toBeLessThanOrEqual(180);
+  expect(info.slug).toMatch(/^fixture-slug-\d+$/u);
+});
+
+test("a place gets the same replacement wherever it appears across payloads", () => {
+  const redact = createRedactor();
+
+  const placeFields = z.object({ id: z.string(), name: z.string(), lat: z.number() });
+
+  const sticker = placeFields.parse(redact({ id: "4242", name: "Synthetic Cafe", lat: 12.3456 }));
+  const lookup = placeFields.parse(redact({ id: "4242", name: "Synthetic Cafe", lat: 12.3456 }));
+
+  expect(lookup).toStrictEqual(sticker);
+  expect(sticker.id).not.toBe("4242");
+  expect(sticker.name).not.toBe("Synthetic Cafe");
+  expect(sticker.lat).not.toBe(12.3456);
+});
+
+test("public audio metadata is kept while the people around the track are replaced", () => {
+  const redact = createRedactor();
+  const sticker = { id: "sticker-1", music_asset_info: musicAssetInfo() };
+  const asset = {
+    metadata: { music_info: { music_asset_info: musicAssetInfo() } },
+    shared_by: { username: "real_sharer" },
+  };
+
+  const redactedSticker = JSON.stringify(redact(sticker));
+  const redactedAsset = JSON.stringify(redact(asset));
+
+  for (const redacted of [redactedSticker, redactedAsset]) {
+    for (const kept of ["Synthetic Song", "Synthetic Artist", '"audio_asset_id":"777"']) {
+      expect(redacted).toContain(kept);
+    }
+    expect(redacted).toContain('"duration_in_ms":30000');
+    expect(redacted).not.toContain("cdninstagram.com");
+    expect(redacted).not.toContain("real_artist_account");
+  }
+  expect(redactedSticker).not.toContain("sticker-1");
+  expect(redactedAsset).not.toContain("real_sharer");
+});
+
+test("a username nested inside a music payload is still replaced", () => {
+  const redacted = JSON.stringify(
+    createRedactor()({
+      music_asset_info: {
+        title: "Synthetic Song",
+        username: "real_nested_user",
+        ig_artist: { username: "real_nested_artist", full_name: "Nested Person" },
+      },
+    }),
+  );
+
+  expect(redacted).toContain("Synthetic Song");
+  for (const original of ["real_nested_user", "real_nested_artist", "Nested Person"]) {
+    expect(redacted).not.toContain(original);
+  }
 });
 
 test("redaction replaces a string that is not known to be structural, whatever its key", () => {

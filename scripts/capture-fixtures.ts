@@ -8,25 +8,19 @@ import { isJsonObject, JsonValueSchema } from "../sdk/lib/json-value.ts";
 import type { JsonValue } from "../sdk/lib/json-value.ts";
 import { createInstagramClient } from "../sdk/story-client-service.ts";
 
-// Keys whose values identify a person, a story or a request; each distinct value gets a stable synthetic one.
+// Keys whose values identify a person, a story, a place or a request; each distinct value gets a
+// stable synthetic one. Any key ending in id, ids, pk or fbid is treated the same way.
 const IDENTIFIER_KEYS = new Set([
-  "audio_asset_id",
-  "audio_cluster_id",
   "client_cache_key",
   "code",
-  "fbid",
-  "id",
-  "interop_messaging_user_fbid",
-  "location_id",
-  "media_ids",
-  "media_pk",
   "mezql_token",
   "organic_tracking_token",
-  "pk",
-  "reel_ids",
   "strong_id__",
-  "user_id",
 ]);
+const IDENTIFIER_KEY_PATTERN = /(?:^|_)(?:fbid|id|ids|pk)(?:__)?$/u;
+const LATITUDE_KEY_PATTERN = /(?:^|_)(?:lat|latitude)$/u;
+const LONGITUDE_KEY_PATTERN = /(?:^|_)(?:lng|lon|longitude)$/u;
+const SLUG_KEY_PATTERN = /(?:^|_)slug$/u;
 // Keys whose string values are structural (enums, fixed labels), so they carry no personal data.
 const STRUCTURAL_KEYS = new Set([
   "__typename",
@@ -37,21 +31,50 @@ const STRUCTURAL_KEYS = new Set([
   "sticker_type",
   "type",
 ]);
-const COORDINATE_KEYS = new Set(["lat", "lng", "latitude", "longitude"]);
+// Public music asset metadata is recorded as is. The music sticker and the music asset response
+// both carry it under `music_asset_info`. Only these direct scalar fields are kept: the people
+// around the track (artist account, profile pictures, usernames) and every URL stay redacted.
+const MUSIC_ASSET_INFO_KEY = "music_asset_info";
+const PUBLIC_AUDIO_KEYS = new Set([
+  "audio_asset_id",
+  "audio_asset_start_time_in_ms",
+  "audio_cluster_id",
+  "display_artist",
+  "duration_in_ms",
+  "has_lyrics",
+  "highlight_start_times_in_ms",
+  "is_explicit",
+  "overlap_duration_in_ms",
+  "should_mute_audio",
+  "title",
+]);
 // Free text, and a manifest full of media URLs, that tests do not need.
 const OMITTED_KEYS = new Set(["video_dash_manifest", "caption", "accessibility_caption"]);
 const FIXTURE_ID_BASE = 700_000_000_000_000n;
-const COORDINATE_PLACEHOLDER = 48;
 const CAPTURED_REEL_COUNT = 3;
 const METADATA_FILE_NAME = "capture-metadata.json";
+const LATITUDE_STEPS = 600;
+const LONGITUDE_STEPS = 1600;
 
 function anonymizedUrl(index: number): string {
   return `https://example.com/anonymized/instagram-media-${String(index).padStart(4, "0")}.jpg`;
 }
 
+function isIdentifierKey(key: string): boolean {
+  return IDENTIFIER_KEYS.has(key) || IDENTIFIER_KEY_PATTERN.test(key);
+}
+
+function isPublicAudioValue(value: JsonValue): boolean {
+  return Array.isArray(value)
+    ? value.every((entry) => !Array.isArray(entry) && !isJsonObject(entry))
+    : !isJsonObject(value);
+}
+
 /**
  * Replaces everything that could identify someone while keeping the payload's shape.
- * Redaction is default-deny: every string is replaced unless its key is known to be structural.
+ * Redaction is default-deny: every string is replaced unless its key is known to be structural,
+ * and places lose their names, addresses, ids, slugs and coordinates. The one exception is public
+ * music asset metadata (see PUBLIC_AUDIO_KEYS).
  * One redactor gives the same replacement to the same original, across every payload it sees.
  */
 export function createRedactor() {
@@ -68,7 +91,7 @@ export function createRedactor() {
   }
 
   function redactText(text: string, key: string): string {
-    if (IDENTIFIER_KEYS.has(key)) {
+    if (isIdentifierKey(key)) {
       return replacement("id", text, (index) => String(FIXTURE_ID_BASE + BigInt(index)));
     }
     if (STRUCTURAL_KEYS.has(key) || text.length === 0) {
@@ -77,10 +100,32 @@ export function createRedactor() {
     if (key === "username") {
       return replacement("username", text, (index) => `user_${String(index).padStart(3, "0")}`);
     }
+    if (SLUG_KEY_PATTERN.test(key)) {
+      return replacement("slug", text, (index) => `fixture-slug-${index}`);
+    }
     if (/^https?:\/\//u.test(text)) {
       return replacement("url", text, anonymizedUrl);
     }
     return replacement("text", text, (index) => `Fixture text ${index}`);
+  }
+
+  // Synthetic coordinates are derived from the order of first appearance, never from the original.
+  function redactCoordinate(original: number, key: string): number | null {
+    if (LATITUDE_KEY_PATTERN.test(key)) {
+      return Number(
+        replacement("latitude", String(original), (index) =>
+          (10 + (index % LATITUDE_STEPS) / 10).toFixed(1),
+        ),
+      );
+    }
+    if (LONGITUDE_KEY_PATTERN.test(key)) {
+      return Number(
+        replacement("longitude", String(original), (index) =>
+          (10 + (index % LONGITUDE_STEPS) / 10).toFixed(1),
+        ),
+      );
+    }
+    return null;
   }
 
   function redact(value: JsonValue, key: string): JsonValue {
@@ -88,10 +133,16 @@ export function createRedactor() {
       return value.map((entry) => redact(entry, key));
     }
     if (isJsonObject(value)) {
+      const isMusicInfo = key === MUSIC_ASSET_INFO_KEY;
       return Object.fromEntries(
         Object.entries(value)
           .filter(([entryKey]) => !OMITTED_KEYS.has(entryKey))
-          .map(([entryKey, entry]) => [entryKey, redact(entry, entryKey)]),
+          .map(([entryKey, entry]) => [
+            entryKey,
+            isMusicInfo && PUBLIC_AUDIO_KEYS.has(entryKey) && isPublicAudioValue(entry)
+              ? entry
+              : redact(entry, entryKey),
+          ]),
       );
     }
     const text = z.string().safeParse(value);
@@ -102,10 +153,11 @@ export function createRedactor() {
     if (!number.success) {
       return value;
     }
-    if (COORDINATE_KEYS.has(key)) {
-      return COORDINATE_PLACEHOLDER;
+    const coordinate = redactCoordinate(number.data, key);
+    if (coordinate !== null) {
+      return coordinate;
     }
-    return IDENTIFIER_KEYS.has(key) ? redactText(String(number.data), key) : number.data;
+    return isIdentifierKey(key) ? Number(redactText(String(number.data), key)) : number.data;
   }
 
   return (payload: JsonValue) => redact(payload, "");
@@ -221,13 +273,17 @@ export function buildFixtureMetadata(payloads: CapturedPayloads, capturedAt: Dat
     ]),
   ];
   if (payloads.place !== null) {
-    files.push(["instagram-place.json", payloads.place, "One tagged place lookup response."]);
+    files.push([
+      "instagram-place.json",
+      payloads.place,
+      "One tagged place lookup response. Place names, addresses, ids, slugs and coordinates are synthetic.",
+    ]);
   }
   if (payloads.musicAsset !== null) {
     files.push([
       "instagram-music-asset.json",
       payloads.musicAsset,
-      "One music asset lookup response.",
+      "One music asset lookup response. Audio titles, artists and asset ids are kept as recorded; people and URLs are synthetic.",
     ]);
   }
   return {
