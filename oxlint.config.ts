@@ -87,12 +87,6 @@ export default defineConfig({
       },
     },
     {
-      files: ["sdk/index.ts"],
-      rules: {
-        "slopstagram/no-barrel-files": "off",
-      },
-    },
-    {
       files: [
         "tests/**/*.test.ts",
         "tests/**/*.test.tsx",
