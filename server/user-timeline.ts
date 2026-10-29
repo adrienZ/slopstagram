@@ -8,6 +8,7 @@ import type { VisionResult } from "../sdk/entities/vision.ts";
 import { createStoredStoryUser } from "../sdk/story-feed.ts";
 import { appleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
 import { visionRepository } from "../sdk/repositories/vision-repository.ts";
+import { readCurrentVisionResult } from "../sdk/lib/vision-analysis-service.ts";
 import {
   instagramUserRepository,
   type InstagramUserRepository,
@@ -144,7 +145,7 @@ function readTimelineDetails(stories: Array<UserTimelineStory>): TimelineDetails
     appleCaption: appleVisionRepository.findByMediaPk(story.story.pk),
     previewUrl: getStoryPreviewSource(story),
     storyPk: story.story.pk,
-    vision: visionRepository.findByMediaPk(story.story.pk),
+    vision: readCurrentVisionResult(visionRepository.findByMediaPk(story.story.pk)),
   }));
 
   for (const { appleCaption, previewUrl, storyPk, vision } of details) {
@@ -152,7 +153,7 @@ function readTimelineDetails(stories: Array<UserTimelineStory>): TimelineDetails
       appleCaptionByMediaPk.set(storyPk, appleCaption);
     }
     if (vision !== null) {
-      visionByPreviewUrl.set(previewUrl, vision.result);
+      visionByPreviewUrl.set(previewUrl, vision);
     }
   }
 

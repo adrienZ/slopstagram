@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import {
   storyRepository,
   type StoryRepository,
@@ -7,7 +6,7 @@ import {
 import { visionRepository, type VisionRepository } from "./repositories/vision-repository.ts";
 import type { StoryOutputUser } from "./report-types.ts";
 import type { VisionResult } from "./entities/vision.ts";
-import { VISION_MODEL, VISION_PROMPT } from "./lib/vision-analysis-service.ts";
+import { readCurrentVisionResult } from "./lib/vision-analysis-service.ts";
 import { getStoryDate, getStoryDayRange, storyDateSchema } from "./lib/story-date-service.ts";
 
 function getMediaType(value: number | undefined): "image" | "video" | null {
@@ -149,16 +148,10 @@ export function readStoryFeedVision(
   repository: Pick<VisionRepository, "findByMediaPk"> = visionRepository,
 ): Map<string, VisionResult> {
   const visionByPreviewUrl = new Map<string, VisionResult>();
-  const promptHash = createHash("sha256").update(VISION_PROMPT).digest("hex");
   for (const story of users.flatMap((user) => user.stories)) {
-    const entry = repository.findByMediaPk(story.media_pk);
-    if (
-      story.preview_image_url !== null &&
-      story.preview_image_url.length > 0 &&
-      entry?.model === VISION_MODEL &&
-      entry.prompt_hash === promptHash
-    ) {
-      visionByPreviewUrl.set(story.preview_image_url, entry.result);
+    const result = readCurrentVisionResult(repository.findByMediaPk(story.media_pk));
+    if (story.preview_image_url !== null && story.preview_image_url.length > 0 && result !== null) {
+      visionByPreviewUrl.set(story.preview_image_url, result);
     }
   }
   return visionByPreviewUrl;
