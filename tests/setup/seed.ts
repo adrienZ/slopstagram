@@ -127,6 +127,99 @@ function shiftPayloads(
   };
 }
 
+const EditableReelsPageSchema = z.looseObject({
+  data: z.looseObject({
+    xdt_api__v1__feed__reels_media__connection: z.looseObject({
+      edges: z.array(
+        z.looseObject({
+          node: z.looseObject({
+            items: z.array(
+              z.looseObject({
+                accessibility_caption: z.string().nullish(),
+                pk: z.string(),
+                taken_at: z.number(),
+              }),
+            ),
+            user: z.looseObject({
+              full_name: z.string().nullish(),
+              username: z.string(),
+            }),
+          }),
+        }),
+      ),
+    }),
+  }),
+});
+
+type RecordedNode = z.infer<
+  typeof EditableReelsPageSchema
+>["data"]["xdt_api__v1__feed__reels_media__connection"]["edges"][number]["node"];
+export type RecordedStory = RecordedNode["items"][number];
+export type RecordedOwner = RecordedNode["user"];
+
+/**
+ * Returns the recorded payloads with every story, and the account that published it,
+ * edited by `edit`. The edits travel through real ingestion with the rest of the recording,
+ * so a test can give a story a caption, a date or an owner name the recordings lack.
+ */
+export function editRecordedStories(
+  recorded: RecordedPayloads,
+  edit: (story: RecordedStory, owner: RecordedOwner) => void,
+): RecordedPayloads {
+  return {
+    ...recorded,
+    galleryPages: recorded.galleryPages.map((payload): JsonValue => {
+      const page = EditableReelsPageSchema.parse(payload);
+      for (const { node } of page.data.xdt_api__v1__feed__reels_media__connection.edges) {
+        for (const story of node.items) {
+          edit(story, node.user);
+        }
+      }
+      return JsonValueSchema.parse(page);
+    }),
+  };
+}
+
+/**
+ * Returns the recorded payloads with only the stories whose media ids are listed, dropping
+ * the reels left without a story. The recorded tray is dropped too, so the client derives
+ * it from the stories that remain.
+ */
+export function keepRecordedStories(
+  recorded: RecordedPayloads,
+  mediaPks: Array<string>,
+): RecordedPayloads {
+  return {
+    ...recorded,
+    galleryPages: recorded.galleryPages.map((payload): JsonValue => {
+      const page = EditableReelsPageSchema.parse(payload);
+      const connection = page.data.xdt_api__v1__feed__reels_media__connection;
+      for (const { node } of connection.edges) {
+        node.items = node.items.filter(({ pk }) => mediaPks.includes(pk));
+      }
+      connection.edges = connection.edges.filter(({ node }) => node.items.length > 0);
+      return JsonValueSchema.parse(page);
+    }),
+    tray: undefined,
+  };
+}
+
+/**
+ * The recorded Instagram client over the given payloads, or over the recorded fixtures
+ * when none are given, shifted in time when `publishedBefore` is set. It is the only fake
+ * in the seed and in report creation tests.
+ */
+export async function createRecordedInstagramClient(
+  recorded?: RecordedPayloads,
+  options: Pick<SeedOptions, "publishedBefore"> = {},
+) {
+  const payloads =
+    options.publishedBefore === undefined
+      ? (recorded ?? (await readRecordedPayloads()))
+      : shiftPayloads(recorded ?? (await readRecordedPayloads()), options.publishedBefore);
+  return createRecordedClient(payloads);
+}
+
 /**
  * Ingests recorded Instagram payloads the way production does: the production response
  * parsers over the recordings, then the real fetch, story storage, place and music
@@ -138,17 +231,13 @@ function shiftPayloads(
  * local models. Returns the report the fetch produced.
  */
 export async function seedRecordedStories(recorded?: RecordedPayloads, options: SeedOptions = {}) {
-  const payloads =
-    options.publishedBefore === undefined
-      ? (recorded ?? (await readRecordedPayloads()))
-      : shiftPayloads(recorded ?? (await readRecordedPayloads()), options.publishedBefore);
   const database = options.database ?? useDrizzle();
   migrateDatabase(database);
 
   const now = options.publishedBefore?.now;
   const logger = createMockLogger();
   const report = await fetchStories([], {
-    client: createRecordedClient(payloads),
+    client: await createRecordedInstagramClient(recorded, options),
     logger,
     maxAttempts: 1,
     now: now === undefined ? undefined : () => now,
