@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createLogger, type Logger } from "./lib/logging-service.ts";
-import { createReport, type CreateReportResult } from "./report.ts";
+import { createReport, type CreateReportBoundaries, type CreateReportResult } from "./report.ts";
 
 const WarmCachePayloadSchema = z.object({
   args: z.array(z.string()).optional(),
@@ -22,19 +22,19 @@ function parseWarmCachePayload(payload: WarmCachePayload | undefined): WarmCache
 interface RunWarmCacheJobOptions {
   payload?: WarmCachePayload;
   logger?: Logger;
-  dependencies?: {
-    createReport?: typeof createReport;
-  };
+  /** The external systems the report talks to; see {@link CreateReportBoundaries}. */
+  boundaries?: CreateReportBoundaries;
 }
 
 export async function runWarmCacheJob({
   payload,
   logger = createLogger("warm-cache-job"),
-  dependencies = {},
+  boundaries,
 }: RunWarmCacheJobOptions = {}): Promise<WarmCacheJobResult> {
   const parsedPayload = parseWarmCachePayload(payload);
-  const report = await (dependencies.createReport ?? createReport)({
+  const report = await createReport({
     args: parsedPayload.reportArgs ?? parsedPayload.args ?? [],
+    boundaries,
     logger,
   });
 
