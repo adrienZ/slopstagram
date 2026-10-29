@@ -11,7 +11,7 @@ Un ancien cache contient ces informations reçues, sans déduire l'identité du 
 
 - Morceau : **Glide — NEIKED, Portugal. The Man**.
 - `audio_asset_id` : `1088211046447259`.
-- Identifiant externe du sticker : `18104728184265296`, distinct de l'asset.
+- Identifiant externe du sticker : `700000000000902`, distinct de l'asset.
 
 L'ouverture de `https://www.instagram.com/reels/audio/1088211046447259/` dans la
 session Web authentifiée affiche le bon morceau. Le navigateur effectue :
@@ -59,10 +59,10 @@ fournit leur bande sonore, mais pas l'identité de l'asset musical ou sa pochett
 Deux identifiants externes réellement reçus ont été essayés comme candidats pour
 une page audio, sans les enregistrer comme identités musicales :
 
-| Story                 | Morceau déclaré                         | Identifiant externe essayé | Résultat                                                               |
-| --------------------- | --------------------------------------- | -------------------------- | ---------------------------------------------------------------------- |
-| `4016307915417510030` | Clocks — Coldplay                       | `1586058940227008`         | Endpoint HTTP 200, mais aucune métadonnée musicale et page audio vide. |
-| `4016312263132361859` | On Fire (Instrumental) — Giulio Cercato | `29093081140334722`        | Endpoint HTTP 200, mais aucune métadonnée musicale et page audio vide. |
+| Story             | Morceau déclaré                         | Identifiant externe essayé | Résultat                                                               |
+| ----------------- | --------------------------------------- | -------------------------- | ---------------------------------------------------------------------- |
+| `700000000000101` | Clocks — Coldplay                       | `1586058940227008`         | Endpoint HTTP 200, mais aucune métadonnée musicale et page audio vide. |
+| `700000000000102` | On Fire (Instrumental) — Giulio Cercato | `29093081140334722`        | Endpoint HTTP 200, mais aucune métadonnée musicale et page audio vide. |
 
 Ces essais confirment qu'on ne peut pas remplacer l'identité musicale manquante
 par `providerOccurrenceId`.
@@ -71,7 +71,7 @@ Autres observations, avec les mêmes droits de session :
 
 - Cliquer le libellé musical dans l'en-tête de la story Web n'ouvre pas de fiche
   musicale et ne déclenche pas de nouvelle requête de métadonnées observée.
-- `GET /api/v1/media/4016307915417510030/info/` répond HTTP 200, avec
+- `GET /api/v1/media/700000000000101/info/` répond HTTP 200, avec
   `music_metadata: null` et des listes d'attributions vides. Aucune cover ni
   identité musicale exploitable dans cette réponse.
 - Le même item contient `is_music_only_story: false`. C'est une déclaration du
@@ -164,7 +164,7 @@ Une reprise locale ponctuelle a renseigné 243 durées d'assets et 99 durées de
 pistes de stories, avec 19 pistes historiques supplémentaires récupérées.
 Les outils de reprise ne sont pas conservés dans le dépôt.
 
-**A Moment Apart — Hannah Stater**, story `4011588843195192586`, possède un titre,
+**A Moment Apart — Hannah Stater**, story `700000000000103`, possède un titre,
 un artiste et un manifeste dans le cache, mais aucun identifiant d'asset musical.
 Le GET de la source audio reçue répond HTTP 403 lors de cette reprise. La fiche
 reste donc partielle et son panneau est non interactif.
@@ -184,8 +184,8 @@ champs `product_type` et `story_feed_media` reçus. Les cinq sources récupéré
 `original_sound_info` ont été désactivées en base. Les fichiers n'ont pas été
 purgés et une sauvegarde précède la correction locale.
 
-La story `4016569967955848219` contient `story_locations[0].location.pk` égal à
-`106556130206942`, sans nom, adresse ni coordonnées. Le cache ne fournit aucune
+La story `700000000000104` contient `story_locations[0].location.pk` égal à
+`700000000000901`, sans nom, adresse ni coordonnées. Le cache ne fournit aucune
 autre observation plus complète pour ce lieu. L'observation est conservée
 dans les métadonnées partielles ; « Toronto » vient de l'image et de l'OCR, pas
 d'un nom de lieu reçu dans les métadonnées.

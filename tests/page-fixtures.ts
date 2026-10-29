@@ -19,11 +19,13 @@ export const reportProps: ReportPageProps = {
     avatar: user.profile_pic_url === null ? undefined : "/media/avatars/avatar.jpg",
     summary: "A text-focused story with extracted details.",
     stories: createStoryCards(user, {
-      appleCaptionByMediaPk: new Map([["story-pk-1", "apple <text>"]]),
+      appleCaptionByMediaPk: new Map([["fixture-pk-1", "apple <text>"]]),
       cachedImages: {
-        profilePicPathByUrl: new Map([["images/avatars/avatar.jpg", "/media/avatars/avatar.jpg"]]),
+        profilePicPathByUrl: new Map([
+          ["images/avatars/fixture-avatar-1.jpg", "/media/avatars/avatar.jpg"],
+        ]),
         storyPreviewPathByUrl: new Map([
-          ["images/story-previews/story-pk-1.jpg", "/media/story-previews/story-pk-1.jpg"],
+          ["images/story-previews/fixture-pk-1.jpg", "/media/story-previews/fixture-pk-1.jpg"],
         ]),
       },
       visionByPreviewUrl: new Map(),

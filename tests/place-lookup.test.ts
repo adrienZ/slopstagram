@@ -128,10 +128,10 @@ function storedPlace(repository: StoryRepository, pk: string) {
 
 test("a place that stories only identify by its id becomes usable after a lookup", async (context) => {
   const repository = setup(context);
-  const client = createPlaceClient([storyAt("m1", { pk: "633725939834688" })], {
-    "633725939834688": () =>
+  const client = createPlaceClient([storyAt("m1", { pk: "700000000000633" })], {
+    "700000000000633": () =>
       response(
-        placeBody("633725939834688", {
+        placeBody("700000000000633", {
           name: "V and B Amiens Les Halles",
           address: "1 Rue des Halles",
           lat: 49.8943,
@@ -146,9 +146,9 @@ test("a place that stories only identify by its id becomes usable after a lookup
   expect(place.address).toBe("1 Rue des Halles");
   expect(place.latitude).toBe(49.8943);
   expect(place.longitude).toBe(2.2957);
-  expect(place.instagramPlaceId).toBe("633725939834688");
+  expect(place.instagramPlaceId).toBe("700000000000633");
   expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
-  expect(client.lookups).toStrictEqual(["633725939834688"]);
+  expect(client.lookups).toStrictEqual(["700000000000633"]);
 });
 
 test("the category Instagram returns is stored exactly as received", async (context) => {
@@ -531,8 +531,8 @@ test("the phone, price range, slug and business account of a place are stored", 
           business: {
             profile: {
               id: "17841400000000001",
-              username: "chezpaul",
-              profile_pic_url: "https://example.com/chezpaul.jpg",
+              username: "fixture_business_1",
+              profile_pic_url: "https://example.com/fixture_business_1.jpg",
             },
           },
         }),
@@ -544,8 +544,8 @@ test("the phone, price range, slug and business account of a place are stored", 
     priceRange: 2,
     slug: "chez-paul",
     businessAccountId: "17841400000000001",
-    businessAccountUsername: "chezpaul",
-    businessAccountPictureUrl: "https://example.com/chezpaul.jpg",
+    businessAccountUsername: "fixture_business_1",
+    businessAccountPictureUrl: "https://example.com/fixture_business_1.jpg",
   });
 });
 
