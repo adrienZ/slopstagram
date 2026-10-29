@@ -9,6 +9,7 @@ import {
   RouterProvider,
   useSearch,
 } from "@tanstack/react-router";
+import { z } from "zod";
 import type { ComponentType, ReactNode } from "react";
 import { ThemeProvider } from "../../server/components/theme-provider.tsx";
 import { routerOptions } from "../../server/router.tsx";
@@ -36,7 +37,11 @@ export async function renderPage<Props extends object>(
   const route = createRoute({
     getParentRoute: () => root,
     path: url.split("?")[0],
-    validateSearch: (search) => search,
+    // Production coerces the story ID to a string; a numeric one would never match a media pk.
+    validateSearch: (search) => ({
+      ...search,
+      story: z.coerce.string().optional().parse(search.story),
+    }),
     beforeLoad: options.beforeLoad,
     component: PageWithSearch,
   });
