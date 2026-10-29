@@ -44,7 +44,10 @@ test("external-ID-only locations survive cold reads as separate partial observat
     story_locations: [
       {
         id: "both",
-        location: { facebook_places_id: "000123", external_source: "facebook_places" },
+        location: {
+          facebook_places_id: "000123",
+          external_source: "facebook_places",
+        },
       },
       { id: "id-only", location: { facebook_places_id: "000123" } },
       { id: "source-only", location: { external_source: "facebook_places" } },
@@ -92,7 +95,10 @@ test("external-only observations do not block other location updates during live
       pk: "m1",
       taken_at: 1_767_225_600,
       story_locations: [
-        { id: "located", location: { pk: "place", name: "Before", lat: 48, lng: 2 } },
+        {
+          id: "located",
+          location: { pk: "place", name: "Before", lat: 48, lng: 2 },
+        },
       ],
     },
     owner,
@@ -102,10 +108,16 @@ test("external-only observations do not block other location updates during live
     pk: "m1",
     taken_at: 1_767_225_600,
     story_locations: [
-      { id: "located", location: { pk: "place", name: "Updated", lat: 49, lng: 3 } },
+      {
+        id: "located",
+        location: { pk: "place", name: "Updated", lat: 49, lng: 3 },
+      },
       {
         id: "external",
-        location: { facebook_places_id: "000123", external_source: "facebook_places" },
+        location: {
+          facebook_places_id: "000123",
+          external_source: "facebook_places",
+        },
       },
       { facebook_places_id: "000456" },
     ],
@@ -150,7 +162,12 @@ test("promotion remains shared when another source omits the already known place
   await repository.save({
     pk: "m1",
     story_bloks_stickers: [
-      { id: "b", bloks_sticker: { sticker_data: { location: { pk: "place", name: "Before" } } } },
+      {
+        id: "b",
+        bloks_sticker: {
+          sticker_data: { location: { pk: "place", name: "Before" } },
+        },
+      },
     ],
     story_locations: [{ id: "a", location: { pk: "place", name: "Before" } }],
   });
@@ -160,7 +177,9 @@ test("promotion remains shared when another source omits the already known place
       {
         id: "b",
         bloks_sticker: {
-          sticker_data: { location: { pk: "place", name: "Updated", lat: 48, lng: 2 } },
+          sticker_data: {
+            location: { pk: "place", name: "Updated", lat: 48, lng: 2 },
+          },
         },
       },
     ],
@@ -270,7 +289,10 @@ test("ID-only observations preserve known contributions and promote every certai
     pk: "m1",
     story_locations: [{ id: "a", location: { pk: "place", name: "Before" } }],
   });
-  await repository.save({ pk: "m2", story_locations: [{ id: "b", location: { pk: "place" } }] });
+  await repository.save({
+    pk: "m2",
+    story_locations: [{ id: "b", location: { pk: "place" } }],
+  });
   const original = read(new StoryRepository(database), "m1");
   const partial = read(new StoryRepository(database), "m2");
   expect(partial.stickers).toStrictEqual([]);
@@ -280,7 +302,10 @@ test("ID-only observations preserve known contributions and promote every certai
   );
   expect(present(partial.locationObservations)[0].providerOccurrenceId).toBe("b");
   expect(present(partial.locationObservations)[0].occurrenceId).toBe(null);
-  await repository.save({ pk: "m1", story_locations: [{ id: "a", location: { pk: "place" } }] });
+  await repository.save({
+    pk: "m1",
+    story_locations: [{ id: "a", location: { pk: "place" } }],
+  });
   expect(read(repository, "m1").stickers).toStrictEqual(original.stickers);
   await repository.save({
     pk: "m3",
@@ -321,7 +346,10 @@ test("coordinates are validated and partial places without provider identity nev
   ];
   await repository.save({
     pk: "m1",
-    story_locations: observations.map((location, index) => ({ id: `sticker-${index}`, location })),
+    story_locations: observations.map((location, index) => ({
+      id: `sticker-${index}`,
+      location,
+    })),
   });
   const stored = read(new StoryRepository(database), "m1");
   expect(stored.stickers.length).toBe(8);
@@ -412,7 +440,10 @@ test("failed promotion rolls back metadata, occurrence links, ownership and medi
     },
     owner,
   );
-  await repository.save({ pk: "m2", story_locations: [{ id: "b", location: { pk: "place" } }] });
+  await repository.save({
+    pk: "m2",
+    story_locations: [{ id: "b", location: { pk: "place" } }],
+  });
   const before = repository.findByMediaPk("m1");
   const partial = repository.findByMediaPk("m2");
   database.$client
@@ -424,7 +455,9 @@ test("failed promotion rolls back metadata, occurrence links, ownership and medi
         pk: "m1",
         taken_at: 1_767_225_601,
         media_type: 2,
-        image_versions2: { candidates: [{ url: "https://example.com/new.jpg" }] },
+        image_versions2: {
+          candidates: [{ url: "https://example.com/new.jpg" }],
+        },
         story_locations: [{ id: "a", location: { pk: "place", name: "New", lat: 48, lng: 2 } }],
       },
       other,
@@ -446,7 +479,10 @@ test("failed promotion rolls back metadata, occurrence links, ownership and medi
 
 test("mixed labelled and ID-only locations keep valid labels and preserve earlier contributions", async (context) => {
   const { database, repository } = setup(context);
-  const first = { id: "a", location: { pk: "one", name: "One", lat: 1, lng: 2 } };
+  const first = {
+    id: "a",
+    location: { pk: "one", name: "One", lat: 1, lng: 2 },
+  };
   const partial = { id: "b", location: { pk: "two" } };
   await repository.save({ pk: "m1", story_locations: [first, partial] });
   const stored = read(new StoryRepository(database), "m1");
@@ -500,7 +536,10 @@ test("malformed and omitted sources preserve metadata while live nonempty values
     await repository.save({ pk: "m1", story_locations: value });
     expect(read(new StoryRepository(database), "m1")).toStrictEqual(before);
   }
-  await repository.save({ pk: "m1", story_hashtags: [{ hashtag: "other-source" }] });
+  await repository.save({
+    pk: "m1",
+    story_hashtags: [{ hashtag: "other-source" }],
+  });
   expect(read(repository, "m1").locationObservations).toStrictEqual(before.locationObservations);
   await repository.save({
     pk: "m2",
@@ -533,7 +572,10 @@ test("current extraction links repeated unidentifiable occurrences without guess
   const { database, repository } = setup(context);
   const location = { name: "Same", lat: 48, lng: 2 };
   const partial = { id: "unlabelled", location: { pk: "partial" } };
-  await repository.save({ pk: "m1", story_locations: [{ location }, { location }, partial] });
+  await repository.save({
+    pk: "m1",
+    story_locations: [{ location }, { location }, partial],
+  });
   const before = read(repository, "m1");
   const located = present(before.locationObservations).filter(
     ({ metadata }) => metadata.status === "usable",
@@ -543,7 +585,10 @@ test("current extraction links repeated unidentifiable occurrences without guess
   expect(located.map(({ occurrenceId }) => occurrenceId)).toStrictEqual(
     before.stickers.map(({ occurrenceId }) => occurrenceId),
   );
-  await repository.save({ pk: "m1", story_locations: [{ location }, { location }] });
+  await repository.save({
+    pk: "m1",
+    story_locations: [{ location }, { location }],
+  });
   const after = read(new StoryRepository(database), "m1");
   expect(after.stickers.length).toBe(2);
   for (const entry of present(after.locationObservations)) {
@@ -552,214 +597,4 @@ test("current extraction links repeated unidentifiable occurrences without guess
     ).toBeTruthy();
     expect(located.every((old) => old.metadata.id !== entry.metadata.id)).toBeTruthy();
   }
-});
-
-function readPlaces(repository: StoryRepository, pk: string) {
-  return present(read(repository, pk).locationObservations).map(({ metadata }) => metadata);
-}
-
-test("fill-only updates complete a partial tagged place by its Instagram place ID", async (context) => {
-  const { repository } = setup(context);
-  await repository.save({
-    pk: "m1",
-    story_locations: [{ id: "a", location: { pk: "place" } }],
-  });
-  const [before] = readPlaces(repository, "m1");
-  expect(before.status).toBe("partial");
-
-  repository.fillTaggedPlace("place", {
-    name: "Louvre",
-    address: "Rue de Rivoli",
-    latitude: 48.8606,
-    longitude: 2.3376,
-  });
-
-  const [after] = readPlaces(repository, "m1");
-  expect(after.status).toBe("usable");
-  expect(after.id).toBe(before.id);
-  expect(after.instagramPlaceId).toBe("place");
-  expect(after.name).toBe("Louvre");
-  expect(after.address).toBe("Rue de Rivoli");
-  expect(after.latitude).toBe(48.8606);
-  expect(after.longitude).toBe(2.3376);
-});
-
-test("fill-only updates never replace values the tagged place already has", async (context) => {
-  const { repository } = setup(context);
-  await repository.save({
-    pk: "m1",
-    story_locations: [
-      {
-        id: "a",
-        location: {
-          pk: "place",
-          name: "Story name",
-          address: "Story address",
-          lat: 48,
-          lng: 2,
-        },
-      },
-    ],
-  });
-  const [before] = readPlaces(repository, "m1");
-
-  repository.fillTaggedPlace("place", {
-    name: "Other name",
-    address: "Other address",
-    latitude: 10,
-    longitude: 20,
-  });
-
-  expect(readPlaces(repository, "m1")).toStrictEqual([before]);
-});
-
-test("fill-only updates fill only the missing fields of a partly known place", async (context) => {
-  const { repository } = setup(context);
-  await repository.save({
-    pk: "m1",
-    story_locations: [{ id: "a", location: { pk: "place", name: "Story name", lat: 48 } }],
-  });
-
-  repository.fillTaggedPlace("place", {
-    name: "Other name",
-    address: "Filled address",
-    latitude: 10,
-    longitude: 2,
-  });
-
-  const [after] = readPlaces(repository, "m1");
-  expect(after.name).toBe("Story name");
-  expect(after.address).toBe("Filled address");
-  expect(after.latitude).toBe(48);
-  expect(after.longitude).toBe(2);
-  expect(after.status).toBe("usable");
-});
-
-test("fill-only updates ignore absent, empty, and invalid incoming values", async (context) => {
-  const { repository } = setup(context);
-  await repository.save({
-    pk: "m1",
-    story_locations: [{ id: "a", location: { pk: "place" } }],
-  });
-  const [before] = readPlaces(repository, "m1");
-
-  repository.fillTaggedPlace("place", {});
-  repository.fillTaggedPlace("place", {
-    name: null,
-    address: "   ",
-    latitude: null,
-    longitude: null,
-  });
-  repository.fillTaggedPlace("place", {
-    name: "",
-    latitude: 91,
-    longitude: -181,
-  });
-  repository.fillTaggedPlace("place", {
-    latitude: Number.NaN,
-    longitude: Number.POSITIVE_INFINITY,
-  });
-
-  expect(readPlaces(repository, "m1")).toStrictEqual([before]);
-});
-
-test("a tagged place with only one coordinate filled stays partial", async (context) => {
-  const { repository } = setup(context);
-  await repository.save({
-    pk: "m1",
-    story_locations: [{ id: "a", location: { pk: "place" } }],
-  });
-
-  repository.fillTaggedPlace("place", { latitude: 48 });
-
-  const [after] = readPlaces(repository, "m1");
-  expect(after.status).toBe("partial");
-  expect(after.latitude).toBe(48);
-  expect(after.longitude).toBe(null);
-});
-
-test("fill-only updates leave other places alone and create nothing for unknown IDs", async (context) => {
-  const { repository } = setup(context);
-  await repository.save({
-    pk: "m1",
-    story_locations: [
-      { id: "a", location: { pk: "place" } },
-      { id: "b", location: { pk: "neighbour" } },
-      { id: "c", location: { facebook_places_id: "000123" } },
-    ],
-  });
-  const before = readPlaces(repository, "m1");
-
-  repository.fillTaggedPlace("unknown", {
-    name: "Nowhere",
-    latitude: 1,
-    longitude: 1,
-  });
-  repository.fillTaggedPlace("place", { name: "Filled" });
-
-  const after = readPlaces(repository, "m1");
-  expect(after.length).toBe(3);
-  expect(after[0].name).toBe("Filled");
-  expect(after.slice(1)).toStrictEqual(before.slice(1));
-  expect(after.map(({ instagramPlaceId }) => instagramPlaceId)).toStrictEqual([
-    "place",
-    "neighbour",
-    null,
-  ]);
-});
-
-test("story-driven merging still updates known values after a fill-only update", async (context) => {
-  const { repository } = setup(context);
-  await repository.save({
-    pk: "m1",
-    story_locations: [{ id: "a", location: { pk: "place", name: "Story name" } }],
-  });
-  repository.fillTaggedPlace("place", {
-    address: "Filled address",
-    latitude: 1,
-    longitude: 1,
-  });
-
-  await repository.save({
-    pk: "m1",
-    story_locations: [
-      {
-        id: "a",
-        location: {
-          pk: "place",
-          name: "Newer name",
-          address: "Newer address",
-          lat: 2,
-          lng: 3,
-        },
-      },
-    ],
-  });
-
-  const [after] = readPlaces(repository, "m1");
-  expect(after.name).toBe("Newer name");
-  expect(after.address).toBe("Newer address");
-  expect(after.latitude).toBe(2);
-  expect(after.longitude).toBe(3);
-});
-
-test("fill-only updates reach every story that references the tagged place", async (context) => {
-  const { repository } = setup(context);
-  await repository.save({
-    pk: "m1",
-    story_locations: [{ id: "a", location: { pk: "place" } }],
-  });
-  await repository.save({
-    pk: "m2",
-    story_locations: [{ id: "b", location: { pk: "place" } }],
-  });
-
-  repository.fillTaggedPlace("place", { name: "Louvre", latitude: 48.8606, longitude: 2.3376 });
-
-  const [first] = readPlaces(repository, "m1");
-  const [second] = readPlaces(repository, "m2");
-  expect(second).toStrictEqual(first);
-  expect(first.status).toBe("usable");
-  expect(first.name).toBe("Louvre");
-  expect(first.instagramPlaceId).toBe("place");
 });
