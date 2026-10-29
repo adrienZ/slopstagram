@@ -58,8 +58,7 @@ function getBarPrefix(prefix: string, options: ProgressOptions): string {
 }
 
 export function createLogger(prefix: string): Logger {
-  const instance = createConsola();
-  instance.withTag(prefix);
+  const instance = createConsola().withTag(prefix);
 
   let activeBar: ActiveProgressBar | null = null;
 
