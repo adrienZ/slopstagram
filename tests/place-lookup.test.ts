@@ -69,7 +69,11 @@ function placeBody(id: string, info: PlaceBodyInfo): JsonValue {
   const withBusiness =
     info.business === undefined ? locationInfo : { ...locationInfo, ig_business: info.business };
   return {
-    data: { xdt_location_get_web_info: { native_location_data: { location_info: withBusiness } } },
+    data: {
+      xdt_location_get_web_info: {
+        native_location_data: { location_info: withBusiness },
+      },
+    },
   };
 }
 
@@ -154,7 +158,13 @@ test("a place that stories only identify by its id becomes usable after a lookup
 test("the category Instagram returns is stored exactly as received", async (context) => {
   const repository = setup(context);
   const client = createPlaceClient([storyAt("m1", { pk: "111" })], {
-    "111": () => response(placeBody("111", { name: "Chez Paul", category: "Bistrot de quartier" })),
+    "111": () =>
+      response(
+        placeBody("111", {
+          name: "Chez Paul",
+          category: "Bistrot de quartier",
+        }),
+      ),
   });
   await ingest(repository, client);
   expect(storedPlace(repository, "m1").category).toBe("Bistrot de quartier");
@@ -175,7 +185,15 @@ test("a category never decides whether a place is usable", async (context) => {
   const repository = setup(context);
   const client = createPlaceClient([storyAt("m1", { pk: "111" }), storyAt("m2", { pk: "222" })], {
     "111": () => response(placeBody("111", { name: "No coordinates", category: "Pont" })),
-    "222": () => response(placeBody("222", { name: "No category", category: "", lat: 1, lng: 2 })),
+    "222": () =>
+      response(
+        placeBody("222", {
+          name: "No category",
+          category: "",
+          lat: 1,
+          lng: 2,
+        }),
+      ),
   });
   await ingest(repository, client);
   expect(storedPlace(repository, "m1").status).toBe("partial");
@@ -198,7 +216,13 @@ test("a city from a story is stored and never overwritten by a lookup", async (c
   const repository = setup(context);
   const client = createPlaceClient([storyAt("m1", { pk: "111", city: "Story City" })], {
     "111": () =>
-      response(placeBody("111", { name: "Chez Paul", city: "Instagram City", zip: "75001" })),
+      response(
+        placeBody("111", {
+          name: "Chez Paul",
+          city: "Instagram City",
+          zip: "75001",
+        }),
+      ),
   });
   await ingest(repository, client);
   const place = storedPlace(repository, "m1");
@@ -244,7 +268,13 @@ test("a city and a zip code never decide whether a place is usable", async (cont
   const repository = setup(context);
   const client = createPlaceClient([storyAt("m1", { pk: "111" }), storyAt("m2", { pk: "222" })], {
     "111": () =>
-      response(placeBody("111", { name: "No coordinates", city: "Amiens", zip: "80000" })),
+      response(
+        placeBody("111", {
+          name: "No coordinates",
+          city: "Amiens",
+          zip: "80000",
+        }),
+      ),
     "222": () => response(placeBody("222", { name: "No city", lat: 1, lng: 2 })),
   });
   await ingest(repository, client);
@@ -255,19 +285,63 @@ test("a city and a zip code never decide whether a place is usable", async (cont
 test("story values are never overwritten and only gaps are filled", async (context) => {
   const repository = setup(context);
   const client = createPlaceClient(
-    [storyAt("m1", { pk: "111", name: "Story name", lat: 10, lng: 20 })],
+    [
+      storyAt("m1", {
+        pk: "111",
+        name: "Story name",
+        address: "Story address",
+        lat: 10,
+      }),
+    ],
     {
       "111": () =>
-        response(placeBody("111", { name: "Instagram name", address: "Filled", lat: 11, lng: 21 })),
+        response(
+          placeBody("111", {
+            name: "Instagram name",
+            address: "Instagram address",
+            lat: 11,
+            lng: 21,
+          }),
+        ),
     },
   );
   await ingest(repository, client);
   const place = storedPlace(repository, "m1");
   expect(place.name).toBe("Story name");
+  expect(place.address).toBe("Story address");
   expect(place.latitude).toBe(10);
-  expect(place.longitude).toBe(20);
-  expect(place.address).toBe("Filled");
+  expect(place.longitude).toBe(21);
+  expect(place.status).toBe("usable");
   expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
+});
+
+test("blank text and out-of-range coordinates from Instagram fill nothing", async (context) => {
+  const repository = setup(context);
+  const client = createPlaceClient([storyAt("m1", { pk: "111" }), storyAt("m2", { pk: "222" })], {
+    "111": () => response(placeBody("111", { name: "   ", address: "  ", lat: 91, lng: -181 })),
+    "222": () => response(placeBody("222", { name: "", address: "", lat: -91, lng: 181 })),
+  });
+  await ingest(repository, client);
+  for (const pk of ["m1", "m2"]) {
+    const place = storedPlace(repository, pk);
+    expect(place.name).toBe(null);
+    expect(place.address).toBe(null);
+    expect(place.latitude).toBe(null);
+    expect(place.longitude).toBe(null);
+    expect(place.status).toBe("partial");
+  }
+});
+
+test("a place with only one coordinate filled stays partial", async (context) => {
+  const repository = setup(context);
+  const client = createPlaceClient([storyAt("m1", { pk: "111" })], {
+    "111": () => response(placeBody("111", { name: "Chez Paul", lat: 48 })),
+  });
+  await ingest(repository, client);
+  const place = storedPlace(repository, "m1");
+  expect(place.status).toBe("partial");
+  expect(place.latitude).toBe(48);
+  expect(place.longitude).toBe(null);
 });
 
 test("only places referenced by the stories saved in the run are looked up", async (context) => {
@@ -323,7 +397,11 @@ test("each kind of unusable lookup applies no values, keeps the story and is rec
   const unusable = {
     "1": () =>
       response({
-        data: { xdt_location_get_web_info: { native_location_data: { location_info: null } } },
+        data: {
+          xdt_location_get_web_info: {
+            native_location_data: { location_info: null },
+          },
+        },
       }),
     "2": () => response({ errors: [{ message: "field_exception" }], data: null }),
     "3": () => response(placeBody("999", { name: "Other place", lat: 1, lng: 2 })),
@@ -503,6 +581,38 @@ test("a later story observation keeps the recorded lookup", async (context) => {
   expect(place.name).toBe("From story");
 });
 
+test("a later story observation replaces the looked-up name, address and coordinates", async (context) => {
+  const repository = setup(context);
+  await ingest(
+    repository,
+    createPlaceClient([storyAt("m1", { pk: "111" })], {
+      "111": () =>
+        response(
+          placeBody("111", {
+            name: "Looked up",
+            address: "Looked-up address",
+            lat: 1,
+            lng: 1,
+          }),
+        ),
+    }),
+  );
+  await repository.save(
+    storyAt("m1", {
+      pk: "111",
+      name: "Newer name",
+      address: "Newer address",
+      lat: 2,
+      lng: 3,
+    }),
+  );
+  const place = storedPlace(repository, "m1");
+  expect(place.name).toBe("Newer name");
+  expect(place.address).toBe("Newer address");
+  expect(place.latitude).toBe(2);
+  expect(place.longitude).toBe(3);
+});
+
 test("a later story observation keeps the looked-up zip code and a story city replaces a looked-up one", async (context) => {
   const repository = setup(context);
   await ingest(
@@ -555,7 +665,13 @@ test("a place without a linked business account has no business information", as
     [storyAt("m1", { pk: "111" }), storyAt("m2", { pk: "222" }), storyAt("m3", { pk: "333" })],
     {
       "111": () =>
-        response(placeBody("111", { phone: "0102", priceRange: 1, business: { profile: null } })),
+        response(
+          placeBody("111", {
+            phone: "0102",
+            priceRange: 1,
+            business: { profile: null },
+          }),
+        ),
       "222": () => response(placeBody("222", { phone: "0304" })),
       "333": () => response(placeBody("333", { phone: "0506", business: null })),
     },
@@ -583,7 +699,9 @@ test("empty strings from Instagram are stored as missing details", async (contex
         placeBody("111", {
           phone: "",
           slug: "  ",
-          business: { profile: { id: "17841", username: "", profile_pic_url: "" } },
+          business: {
+            profile: { id: "17841", username: "", profile_pic_url: "" },
+          },
         }),
       ),
   });
@@ -617,7 +735,13 @@ test("a later lookup replaces the stored details and clears a business account t
           placeBody("111", {
             phone: "0102",
             priceRange: 3,
-            business: { profile: { id: "1", username: "old", profile_pic_url: "https://x/a.jpg" } },
+            business: {
+              profile: {
+                id: "1",
+                username: "old",
+                profile_pic_url: "https://x/a.jpg",
+              },
+            },
           }),
         ),
     }),
@@ -661,7 +785,15 @@ test("a malformed detail never blocks the place fill and keeps the earlier detai
     }),
   );
   const malformed = createPlaceClient([storyAt("m2", { pk: "222" })], {
-    "222": () => response(placeBody("222", { name: "Chez Paul", lat: 1, lng: 2, priceRange: 2.5 })),
+    "222": () =>
+      response(
+        placeBody("222", {
+          name: "Chez Paul",
+          lat: 1,
+          lng: 2,
+          priceRange: 2.5,
+        }),
+      ),
   });
   await ingest(repository, malformed);
   const place = storedPlace(repository, "m2");
@@ -690,7 +822,12 @@ test("a place named by a lookup becomes the location sticker of a story that onl
     createPlaceClient([storyAt("m1", { pk: "111" })], {
       "111": () =>
         response(
-          placeBody("111", { name: "Chez Paul", address: "1 Rue des Halles", lat: 1, lng: 2 }),
+          placeBody("111", {
+            name: "Chez Paul",
+            address: "1 Rue des Halles",
+            lat: 1,
+            lng: 2,
+          }),
         ),
     }),
   );
@@ -899,7 +1036,13 @@ test("a refresh fills only missing values and never replaces values from stories
   await ingest(
     repository,
     createPlaceClient([storyAt("m1", { pk: "111", name: "Story name", lat: 10, lng: 20 })], {
-      "111": () => response(placeBody("111", { name: "Instagram name", address: "First address" })),
+      "111": () =>
+        response(
+          placeBody("111", {
+            name: "Instagram name",
+            address: "First address",
+          }),
+        ),
     }),
   );
   await ingest(
@@ -931,7 +1074,14 @@ test("a refresh without a usable result leaves the category and details untouche
   await ingest(
     repository,
     createPlaceClient([storyAt("m1", { pk: "111" })], {
-      "111": () => response(placeBody("111", { category: "Bistro", phone: "0102", priceRange: 2 })),
+      "111": () =>
+        response(
+          placeBody("111", {
+            category: "Bistro",
+            phone: "0102",
+            priceRange: 2,
+          }),
+        ),
     }),
   );
   await ingest(

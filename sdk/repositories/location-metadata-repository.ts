@@ -98,11 +98,11 @@ export function enrichStoryLocations(
   }
 }
 
-export function fillTaggedPlace(
+function fillTaggedPlace(
   database: LocationDatabase,
   instagramPlaceId: string,
   incoming: PlaceFillInput,
-  lookedUpAt?: number,
+  lookedUpAt: number,
 ): string | null {
   const known = database
     .select()
@@ -112,11 +112,11 @@ export function fillTaggedPlace(
   if (known === undefined) {
     return null;
   }
-  const update: Partial<typeof metadataLocations.$inferInsert> = planPlaceFill(known, incoming);
-  if (lookedUpAt !== undefined) {
-    update.lastLookupAttemptAt = lookedUpAt;
-    update.lastLookupFailure = null;
-  }
+  const update = {
+    ...planPlaceFill(known, incoming),
+    lastLookupAttemptAt: lookedUpAt,
+    lastLookupFailure: null,
+  };
   database.update(metadataLocations).set(update).where(eq(metadataLocations.id, known.id)).run();
   return known.id;
 }
