@@ -29,6 +29,6 @@ export function presentSticker(
     place,
     label: expanded && kind !== "mention" ? label : formatStickerLabel(kind, label),
     profileUrl: user === undefined ? undefined : getUserTimelineUrl(user.username),
-    avatarUrl: user?.avatarPath ?? undefined,
+    avatarUrl: user?.avatarPath,
   };
 }

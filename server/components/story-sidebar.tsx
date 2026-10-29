@@ -131,7 +131,7 @@ export function StorySidebar({
                                 }
                               >
                                 <Avatar>
-                                  <AvatarImage src={user.avatarPath ?? undefined} alt="" />
+                                  <AvatarImage src={user.avatarPath} alt="" />
                                   <AvatarFallback>
                                     {user.username.slice(0, 2).toUpperCase()}
                                   </AvatarFallback>

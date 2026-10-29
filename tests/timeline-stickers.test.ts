@@ -8,19 +8,21 @@ test("links mentions only to saved accounts and preserves the canonical username
   assert.equal(
     presentSticker("mention", " @ALICE ", [
       { username: "alice", avatarPath: "/media/avatars/alice.jpg" },
-      { username: "bob", avatarPath: null },
+      { username: "bob", avatarPath: "/media/avatars/saved.jpg" },
     ]).profileUrl,
     "/users/alice",
   );
   assert.equal(
     presentSticker("mention", "@charlie", [
-      { username: "alice", avatarPath: null },
-      { username: "bob", avatarPath: null },
+      { username: "alice", avatarPath: "/media/avatars/saved.jpg" },
+      { username: "bob", avatarPath: "/media/avatars/saved.jpg" },
     ]).profileUrl,
     undefined,
   );
   assert.equal(
-    presentSticker("music", "@alice", [{ username: "alice", avatarPath: null }]).profileUrl,
+    presentSticker("music", "@alice", [
+      { username: "alice", avatarPath: "/media/avatars/saved.jpg" },
+    ]).profileUrl,
     undefined,
   );
   assert.equal(
