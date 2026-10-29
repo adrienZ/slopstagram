@@ -1,5 +1,5 @@
 import { assert, describe, test, expect } from "vitest";
-import { fetchStoriesManifest } from "../sdk/stories.ts";
+import { fetchStories } from "../sdk/stories.ts";
 import {
   createCapturingLogger,
   createClient,
@@ -13,7 +13,7 @@ import {
 } from "./mock-helpers.ts";
 import { createStoryFixtures } from "./test-database.ts";
 
-describe("fetchStoriesManifest edge cases", () => {
+describe("fetchStories edge cases", () => {
   test("preserves tray and media order in the manifest", async (context) => {
     const { storyRepository, storyStorage } = createStoryFixtures(context);
     const client = createClient(
@@ -29,7 +29,8 @@ describe("fetchStoriesManifest edge cases", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(client, {
+    const report = await fetchStories({
+      client,
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
@@ -107,7 +108,8 @@ describe("fetchStoriesManifest edge cases", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(client, {
+    const report = await fetchStories({
+      client,
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
@@ -149,7 +151,8 @@ describe("fetchStoriesManifest edge cases", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(client, {
+    const report = await fetchStories({
+      client,
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
@@ -172,7 +175,8 @@ describe("fetchStoriesManifest edge cases", () => {
       );
 
     await expect(
-      fetchStoriesManifest(client, {
+      fetchStories({
+        client,
         logger,
         maxAttempts: 1,
         now: fixedNow,
@@ -197,7 +201,8 @@ describe("fetchStoriesManifest edge cases", () => {
       [reelsResponse({}, 500), reelsResponse({}, 500)],
     );
 
-    const report = await fetchStoriesManifest(client, {
+    const report = await fetchStories({
+      client,
       logger,
       maxAttempts: 1,
       now: fixedNow,
@@ -238,7 +243,8 @@ describe("fetchStoriesManifest edge cases", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(client, {
+    const report = await fetchStories({
+      client,
       logger: createCapturingLogger(),
       now: fixedNow,
       sleep: noSleep,
@@ -264,7 +270,8 @@ describe("fetchStoriesManifest edge cases", () => {
       [reelsResponse({}, 429, { "retry-after": "1" })],
     );
 
-    const report = await fetchStoriesManifest(client, {
+    const report = await fetchStories({
+      client,
       logger: createCapturingLogger(),
       maxAttempts: 1,
       now: fixedNow,

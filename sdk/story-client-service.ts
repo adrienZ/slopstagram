@@ -25,6 +25,10 @@ class InstagramApiResponseError extends Error {
   readonly nonRetryable = true;
 }
 
+/**
+ * Test seam: recorded gallery pages are validated and edited through the production schema.
+ * @public
+ */
 export const GalleryPageSchema = z.object({
   data: z
     .object({
@@ -87,10 +91,18 @@ function parseInstagramResponse<T>(
   }
 }
 
+/**
+ * Test seam: the recorded client parses recorded trays like the live client does.
+ * @public
+ */
 export function parseTrayResponse(body: string, headers: Record<string, string>) {
   return parseInstagramResponse(body, headers, ReelTrayResponseSchema);
 }
 
+/**
+ * Test seam: the recorded client parses recorded gallery pages like the live client does.
+ * @public
+ */
 export function parseGalleryPage(body: string, headers: Record<string, string>) {
   return parseInstagramResponse(body, headers, GalleryResponseSchema);
 }

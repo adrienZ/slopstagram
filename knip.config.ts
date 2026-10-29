@@ -8,22 +8,38 @@ const config: KnipConfig = {
     "server/routeTree.gen.ts",
   ],
   // Only real entry points: listing every module as an entry hides unused files and exports.
+  // Entries marked with `!` are production entries, so `knip --production` reports code
+  // that only tests keep alive.
   entry: [
-    "scripts/*.ts",
-    "server/entry-server.tsx",
-    "server/router.tsx",
-    "server/pages/**/*.tsx",
-    "server/plugins/*.ts",
-    "server/routes/**/*.ts",
+    "scripts/*.ts!",
+    "server/entry-server.tsx!",
+    "server/router.tsx!",
+    "server/pages/**/*.tsx!",
+    "server/plugins/*.ts!",
+    "server/routes/**/*.ts!",
     "tests/**/*.test.ts",
     "tests/**/*.test.tsx",
     "oxlint/plugins/**/*.ts",
     "*.config.ts",
   ],
+  project: [
+    "sdk/**/*.ts!",
+    "server/**/*.{ts,tsx,css}!",
+    "scripts/**/*.ts!",
+    "tests/**/*.{ts,tsx}",
+    "oxlint/**/*.ts",
+  ],
+  // Exports that only tests use are dead code in production mode. Delete them, or keep a
+  // deliberate test seam and tag it with a JSDoc comment that starts with "Test seam:" and
+  // gives the reason, followed by `@public` (the tag knip honours in production mode).
   ignoreDependencies: [
     // Used by agents.
     "@playwright/cli",
+    // Started by `npm run bunqueue:server`, which no entry point references.
+    "bunqueue",
   ],
+  // Vite is a dependency of the Start and Vitest plugins; the scripts run its binary.
+  ignoreBinaries: ["vite"],
 };
 
 export default config;

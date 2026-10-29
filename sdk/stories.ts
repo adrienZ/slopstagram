@@ -12,7 +12,7 @@ import { fetchMissingStories } from "./story-live-fetch-service.ts";
 import { createManifestUsers, createOutputUsers } from "./story-output-service.ts";
 import { requestWithRetry, sleep } from "./story-retry-service.ts";
 
-export interface FetchStoriesManifestOptions {
+interface FetchStoriesManifestOptions {
   baseDelayMs?: number;
   maxAttempts?: number;
   maxRateLimitDelayMs?: number;
@@ -144,7 +144,7 @@ async function fetchMissingStoriesForReport(options: {
   });
 }
 
-export async function fetchStoriesManifest(
+async function fetchStoriesManifest(
   client: InstagramClient,
   options: FetchStoriesManifestOptions = {},
 ): Promise<StoriesManifestReport> {

@@ -12,7 +12,7 @@ export const VISION_PROMPT = `
     Then, provide a short description of the visual elements of the image. ignore all texts.
     \`\`\`json
   `;
-export const VISION_SERVER_NOT_RUNNING = "vision server not running";
+const VISION_SERVER_NOT_RUNNING = "vision server not running";
 
 const VisionResponseSchema = z
   .object({

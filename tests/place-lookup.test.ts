@@ -10,7 +10,7 @@ import { migrateDatabase } from "../sdk/database/migrate.ts";
 import type { JsonObject, JsonValue } from "../sdk/lib/json-value.ts";
 import type { StoryItem } from "../sdk/instagram-types.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
-import { fetchStoriesManifest } from "../sdk/stories.ts";
+import { fetchStories } from "../sdk/stories.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 import {
   createCapturingLogger,
@@ -115,7 +115,8 @@ async function ingest(
   client: ReturnType<typeof createPlaceClient>,
   now: () => Date = fixedNow,
 ) {
-  return await fetchStoriesManifest(client, {
+  return await fetchStories({
+    client,
     storyRepository: repository,
     storyStorage: createMemoryStorage(),
     logger: createCapturingLogger(),
@@ -375,7 +376,8 @@ test("a place with a non-numeric id is skipped without a request or a failure", 
     [storyAt("m1", { pk: "bloks_sticker_id", name: "Sticker" })],
     {},
   );
-  await fetchStoriesManifest(client, {
+  await fetchStories({
+    client,
     storyRepository: repository,
     storyStorage: createMemoryStorage(),
     logger,

@@ -6,7 +6,7 @@ import sharp from "sharp";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
-import { fetchStoriesManifest } from "../sdk/stories.ts";
+import { fetchStories } from "../sdk/stories.ts";
 import { cacheReportAudio } from "../sdk/report-audio-service.ts";
 import { cacheReceivedAudio } from "../sdk/music-media-service.ts";
 import { enrichCurrentMusicAssets } from "../sdk/music-asset-enrichment.ts";
@@ -87,7 +87,8 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
     return { ok: result.ok, status: result.status, headers: {}, json: () => body };
   };
   const repository = new StoryRepository(database);
-  const report = await fetchStoriesManifest(client, {
+  const report = await fetchStories({
+    client,
     storyRepository: repository,
     storyStorage: createMemoryStorage(),
     logger: createCapturingLogger(),
