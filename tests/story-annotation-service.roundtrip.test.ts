@@ -1,10 +1,9 @@
-import assert from "node:assert/strict";
 import { cpSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { URL, fileURLToPath } from "node:url";
 import { migrate } from "drizzle-orm/node-sqlite/migrator";
-import { test } from "vitest";
+import { assert, test, expect } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
@@ -58,20 +57,17 @@ test("upgrading existing occurrences preserves duplicates, order and provenance"
   const repository = new StoryRepository(database);
   const stored = readStoredStory(repository, "old");
   const { stickers } = stored.annotations;
-  assert.deepEqual(
-    stickers.map(({ kind, label, source }) => ({ kind, label, source })),
-    [
-      { kind: "location", label: "Paris, Paris", source: "story_locations" },
-      { kind: "location", label: "Paris, Paris", source: "story_locations" },
-      { kind: "custom", label: "unchanged:label", source: "unknown" },
-    ],
-  );
-  assert.ok(stickers.every((sticker) => (sticker.occurrenceId ?? "").length > 0));
-  assert.equal(new Set(stickers.map((sticker) => sticker.occurrenceId)).size, 3);
+  expect(stickers.map(({ kind, label, source }) => ({ kind, label, source }))).toStrictEqual([
+    { kind: "location", label: "Paris, Paris", source: "story_locations" },
+    { kind: "location", label: "Paris, Paris", source: "story_locations" },
+    { kind: "custom", label: "unchanged:label", source: "unknown" },
+  ]);
+  expect(stickers.every((sticker) => (sticker.occurrenceId ?? "").length > 0)).toBeTruthy();
+  expect(new Set(stickers.map((sticker) => sticker.occurrenceId)).size).toBe(3);
   migrateDatabase(database);
   await repository.save(stored);
   await repository.save(readStoredStory(repository, "old"));
-  assert.deepEqual(new StoryRepository(database).findByMediaPk("old"), stored);
+  expect(new StoryRepository(database).findByMediaPk("old")).toStrictEqual(stored);
 });
 
 test("provider-identified occurrences keep their identities through reordering and cold resaves", async (context) => {
@@ -122,12 +118,12 @@ test("provider-identified occurrences keep their identities through reordering a
   const report = await ingest(["sticker-a", "sticker-b"]);
   const before = readStoredStory(new StoryRepository(database));
   const original = before.annotations.stickers;
-  assert.match(original[0].occurrenceId ?? "", /\S/u);
-  assert.notEqual(original[0].occurrenceId, original[1].occurrenceId);
-  assert.deepEqual(
-    original.map((sticker) => sticker.providerOccurrenceId),
-    ["sticker-a", "sticker-b"],
-  );
+  expect(original[0].occurrenceId ?? "").toMatch(/\S/u);
+  expect(original[0].occurrenceId).not.toBe(original[1].occurrenceId);
+  expect(original.map((sticker) => sticker.providerOccurrenceId)).toStrictEqual([
+    "sticker-a",
+    "sticker-b",
+  ]);
   const reorderedReport = await ingest(["sticker-b", "sticker-a"], {
     story_bloks_stickers: [
       {
@@ -140,21 +136,21 @@ test("provider-identified occurrences keep their identities through reordering a
   });
   const cold = new StoryRepository(database);
   const reordered = readStoredStory(cold);
-  assert.deepEqual(reordered.annotations.stickers.slice(1), [original[1], original[0]]);
-  assert.deepEqual(reorderedReport.manifest.users[0].stories[0].stickers, [
+  expect(reordered.annotations.stickers.slice(1)).toStrictEqual([original[1], original[0]]);
+  expect(reorderedReport.manifest.users[0].stories[0].stickers).toStrictEqual([
     "@friend",
     "Song - Artist",
     "Song - Artist",
   ]);
-  assert.deepEqual(report.manifest.users[0].stories[0].stickers, [
+  expect(report.manifest.users[0].stories[0].stickers).toStrictEqual([
     "Song - Artist",
     "Song - Artist",
   ]);
   await cold.save(reordered, owner);
   await cold.save(reordered, owner);
-  assert.deepEqual(new StoryRepository(database).findByMediaPk("m1"), reordered);
+  expect(new StoryRepository(database).findByMediaPk("m1")).toStrictEqual(reordered);
   await ingest(["sticker-a", "sticker-b"], { story_bloks_stickers: [] });
-  assert.deepEqual(readStoredStory(cold).annotations.stickers, original);
+  expect(readStoredStory(cold).annotations.stickers).toStrictEqual(original);
 });
 
 test("uncertain replacements never inherit identities from labels or shared asset identifiers", async (context) => {
@@ -171,24 +167,28 @@ test("uncertain replacements never inherit identities from labels or shared asse
   ];
   await repository.save({ pk: "m1", story_music_stickers: [music], story_locations: locations });
   const before = readStoredStory(new StoryRepository(database)).annotations;
-  assert.ok(before.stickers.every((sticker) => sticker.providerOccurrenceId === undefined));
-  assert.equal(new Set(before.stickers.map((sticker) => sticker.occurrenceId)).size, 3);
+  expect(
+    before.stickers.every((sticker) => sticker.providerOccurrenceId === undefined),
+  ).toBeTruthy();
+  expect(new Set(before.stickers.map((sticker) => sticker.occurrenceId)).size).toBe(3);
   await repository.save({ pk: "m1", story_music_stickers: [music], story_locations: null });
   const replaced = readStoredStory(new StoryRepository(database)).annotations;
-  assert.notEqual(replaced.stickers[0].occurrenceId, before.stickers[0].occurrenceId);
-  assert.deepEqual(replaced.stickers.slice(1), before.stickers.slice(1));
+  expect(replaced.stickers[0].occurrenceId).not.toBe(before.stickers[0].occurrenceId);
+  expect(replaced.stickers.slice(1)).toStrictEqual(before.stickers.slice(1));
 
   const identified = { ...music, id: "sticker" };
   await repository.save({ pk: "m1", story_music_stickers: [identified] });
   const [unique] = readStoredStory(repository).annotations.stickers;
   await repository.save({ pk: "m1", story_music_stickers: [identified, identified] });
   const ambiguous = readStoredStory(repository).annotations.stickers.slice(0, 2);
-  assert.equal(new Set(ambiguous.map((sticker) => sticker.occurrenceId)).size, 2);
-  assert.ok(ambiguous.every((sticker) => sticker.occurrenceId !== unique.occurrenceId));
+  expect(new Set(ambiguous.map((sticker) => sticker.occurrenceId)).size).toBe(2);
+  expect(ambiguous.every((sticker) => sticker.occurrenceId !== unique.occurrenceId)).toBeTruthy();
   await repository.save({ pk: "m1", story_music_stickers: [] });
   await repository.save({ pk: "m1", story_music_stickers: [identified] });
   const [reintroduced] = readStoredStory(repository).annotations.stickers;
-  assert.ok(ambiguous.every((sticker) => sticker.occurrenceId !== reintroduced.occurrenceId));
+  expect(
+    ambiguous.every((sticker) => sticker.occurrenceId !== reintroduced.occurrenceId),
+  ).toBeTruthy();
 
   // A caller cloning a cold occurrence cannot choose which clone inherits its identity.
   const location = readStoredStory(repository).annotations.stickers.find(
@@ -203,8 +203,8 @@ test("uncertain replacements never inherit identities from labels or shared asse
     },
   });
   const clones = readStoredStory(repository).annotations.stickers;
-  assert.equal(clones.length, 2);
-  assert.ok(clones.every((sticker) => sticker.occurrenceId !== location.occurrenceId));
+  expect(clones.length).toBe(2);
+  expect(clones.every((sticker) => sticker.occurrenceId !== location.occurrenceId)).toBeTruthy();
 });
 
 test("story annotations survive ingestion, cold reports, and repeated saves", async (context) => {
@@ -238,8 +238,8 @@ test("story annotations survive ingestion, cold reports, and repeated saves", as
       storyStorage: createMemoryStorage<StoryItem>(),
     },
   );
-  assert.deepEqual(report.manifest.users[0]?.stories[0]?.locations, ["Paris", "Paris"]);
-  assert.deepEqual(report.manifest.users[0]?.stories[0]?.stickers, [
+  expect(report.manifest.users[0]?.stories[0]?.locations).toStrictEqual(["Paris", "Paris"]);
+  expect(report.manifest.users[0]?.stories[0]?.stickers).toStrictEqual([
     "@friend",
     "@friend",
     "Song - Artist",
@@ -253,29 +253,29 @@ test("story annotations survive ingestion, cold reports, and repeated saves", as
   const stored = coldRepository.findByMediaPk("m1");
   assert.ok(stored);
   const users = createManifestUsers(tray, new Map([[stored.pk, stored]]), new Map());
-  assert.deepEqual(users, report.manifest.users);
-  assert.equal(stored.story_bloks_stickers, undefined);
-  assert.equal(stored.story_locations, undefined);
+  expect(users).toStrictEqual(report.manifest.users);
+  expect(stored.story_bloks_stickers).toBe(undefined);
+  expect(stored.story_locations).toBe(undefined);
   const coldReport = {
     ...report,
     manifest: { users },
     output: { users: createOutputUsers(users) },
   };
   await reportRepository.save("cold", coldReport);
-  assert.deepEqual(reportRepository.findByKey("cold"), report);
+  expect(reportRepository.findByKey("cold")).toStrictEqual(report);
 
   await coldRepository.save(stored, owner);
   await coldRepository.save(stored, owner);
-  assert.deepEqual(coldRepository.findByMediaPk("m1"), stored);
-  assert.deepEqual(coldRepository.listByUsername("one")[0]?.locations, ["Paris", "Paris"]);
-  assert.deepEqual(coldRepository.listByUsername("one")[0]?.stickers, [
+  expect(coldRepository.findByMediaPk("m1")).toStrictEqual(stored);
+  expect(coldRepository.listByUsername("one")[0]?.locations).toStrictEqual(["Paris", "Paris"]);
+  expect(coldRepository.listByUsername("one")[0]?.stickers).toStrictEqual([
     "@friend",
     "@friend",
     "Song - Artist",
     "#weekend",
     "https://example.com",
   ]);
-  assert.deepEqual(reportRepository.findByKey("original"), report);
+  expect(reportRepository.findByKey("original")).toStrictEqual(report);
 });
 
 for (const unifiedLocations of [false, true]) {
@@ -339,22 +339,21 @@ for (const unifiedLocations of [false, true]) {
       ? ["First unified place", "Unified place", "Unified place"]
       : [];
     const users = createManifestUsers(tray, new Map([[stored.pk, stored]]), new Map());
-    assert.deepEqual(users[0]?.stories[0]?.locations, expectedLocations);
-    assert.deepEqual(users[0]?.stories[0]?.stickers, ["@same", "mention:@same", "@same"]);
-    assert.deepEqual(
-      stored.annotations?.stickers.map((sticker) => sticker.kind),
+    expect(users[0]?.stories[0]?.locations).toStrictEqual(expectedLocations);
+    expect(users[0]?.stories[0]?.stickers).toStrictEqual(["@same", "mention:@same", "@same"]);
+    expect(stored.annotations?.stickers.map((sticker) => sticker.kind)).toStrictEqual(
       unifiedLocations
         ? ["mention", "location", "location", "location", "custom", "mention"]
         : ["mention", "custom", "mention"],
     );
     await cold.save(stored, owner);
     await cold.save(stored, owner);
-    assert.deepEqual(cold.findByMediaPk("m1"), stored);
+    expect(cold.findByMediaPk("m1")).toStrictEqual(stored);
     const [timeline] = cold.listByUsername("one");
-    assert.deepEqual(timeline.locations, expectedLocations);
-    assert.deepEqual(timeline.stickers, users[0]?.stories[0]?.stickers);
-    assert.deepEqual(timeline.story, stored);
-    assert.deepEqual(reports.findByKey("historical"), original);
+    expect(timeline.locations).toStrictEqual(expectedLocations);
+    expect(timeline.stickers).toStrictEqual(users[0]?.stories[0]?.stickers);
+    expect(timeline.story).toStrictEqual(stored);
+    expect(reports.findByKey("historical")).toStrictEqual(original);
   });
 }
 
@@ -407,8 +406,8 @@ test("partial ingestion merges sources for fresh reports, cold reads, and resave
     story_music_stickers: null,
   });
   const updated = await ingest(partial);
-  assert.deepEqual(updated.manifest.users[0]?.stories[0]?.locations, ["Paris"]);
-  assert.deepEqual(updated.manifest.users[0]?.stories[0]?.stickers, [
+  expect(updated.manifest.users[0]?.stories[0]?.locations).toStrictEqual(["Paris"]);
+  expect(updated.manifest.users[0]?.stories[0]?.stickers).toStrictEqual([
     "@same",
     "@same",
     "Song",
@@ -420,14 +419,13 @@ test("partial ingestion merges sources for fresh reports, cold reads, and resave
   const cold = new StoryRepository(database);
   const stored = cold.findByMediaPk("m1");
   assert.ok(stored);
-  assert.deepEqual(
-    createManifestUsers(tray, new Map([["m1", stored]]), new Map()),
+  expect(createManifestUsers(tray, new Map([["m1", stored]]), new Map())).toStrictEqual(
     updated.manifest.users,
   );
   await cold.save(stored, owner);
-  assert.deepEqual(cold.findByMediaPk("m1"), stored);
-  assert.deepEqual(cold.listByUsername("one")[0]?.locations, ["Paris"]);
-  assert.deepEqual(reports.findByKey("before-partial"), original);
+  expect(cold.findByMediaPk("m1")).toStrictEqual(stored);
+  expect(cold.listByUsername("one")[0]?.locations).toStrictEqual(["Paris"]);
+  expect(reports.findByKey("before-partial")).toStrictEqual(original);
 });
 
 test("malformed sources preserve saved contributions and report the affected fields", async (context) => {
@@ -457,30 +455,31 @@ test("malformed sources preserve saved contributions and report the affected fie
     story_hashtags: "invalid",
     link: {},
   });
-  assert.deepEqual(repository.findByMediaPk("m1")?.annotations, before);
-  assert.ok(
+  expect(repository.findByMediaPk("m1")?.annotations).toStrictEqual(before);
+  expect(
     logger.messages.some(
       (message) => message.includes("story_locations") && message.includes("m1"),
     ),
-  );
-  assert.ok(logger.messages.some((message) => message.includes("story_hashtags")));
-  assert.ok(logger.messages.some((message) => message.includes("link")));
+  ).toBeTruthy();
+  expect(logger.messages.some((message) => message.includes("story_hashtags"))).toBeTruthy();
+  expect(logger.messages.some((message) => message.includes("link"))).toBeTruthy();
   await repository.save({
     pk: "m1",
     story_bloks_stickers: [{ bloks_sticker: { sticker_data: {} } }],
   });
-  assert.deepEqual(repository.findByMediaPk("m1")?.annotations, before);
+  expect(repository.findByMediaPk("m1")?.annotations).toStrictEqual(before);
 
   await repository.save({ pk: "m1", story_locations: null, story_hashtags: null, link: null });
-  assert.deepEqual(repository.findByMediaPk("m1")?.annotations, before);
+  expect(repository.findByMediaPk("m1")?.annotations).toStrictEqual(before);
   await repository.save({ pk: "m1", story_locations: [], story_hashtags: [] });
   const cleared = new StoryRepository(database).findByMediaPk("m1");
   assert.ok(cleared);
-  assert.deepEqual(cleared.annotations?.locations, []);
-  assert.deepEqual(
-    cleared.annotations.stickers.map((sticker) => sticker.label),
-    ["@friend", "https://example.com"],
-  );
+  expect(cleared.annotations?.locations).toStrictEqual([]);
+  assert.ok(cleared.annotations);
+  expect(cleared.annotations.stickers.map((sticker) => sticker.label)).toStrictEqual([
+    "@friend",
+    "https://example.com",
+  ]);
 });
 
 test("legacy provenance survives partial observations until one complete observation supersedes its kind", async (context) => {
@@ -508,19 +507,18 @@ test("legacy provenance survives partial observations until one complete observa
   await repository.save({ pk: "legacy", story_locations: [] });
   const partial = repository.findByMediaPk("legacy");
   assert.ok(partial);
-  assert.deepEqual(partial.annotations?.locations, ["Old place"]);
+  expect(partial.annotations?.locations).toStrictEqual(["Old place"]);
   await repository.save(partial);
-  assert.deepEqual(repository.findByMediaPk("legacy"), partial);
+  expect(repository.findByMediaPk("legacy")).toStrictEqual(partial);
   await repository.save({
     pk: "legacy",
     story_bloks_stickers: [],
     story_music_stickers: [],
     story_hashtags: [],
   });
-  assert.deepEqual(
+  expect(
     repository.findByMediaPk("legacy")?.annotations?.stickers.map((sticker) => sticker.label),
-    ["Old place", "old", "other:untouched"],
-  );
+  ).toStrictEqual(["Old place", "old", "other:untouched"]);
   const links = {
     story_link_stickers: [],
     story_cta: [],
@@ -528,10 +526,9 @@ test("legacy provenance survives partial observations until one complete observa
     text_post_share_to_ig_story_stickers: [],
   };
   await repository.save({ pk: "legacy", ...links });
-  assert.deepEqual(
+  expect(
     repository.findByMediaPk("legacy")?.annotations?.stickers.map((sticker) => sticker.label),
-    ["Old place", "old", "other:untouched"],
-  );
+  ).toStrictEqual(["Old place", "old", "other:untouched"]);
   await repository.save({
     pk: "legacy",
     ...links,
@@ -541,7 +538,8 @@ test("legacy provenance survives partial observations until one complete observa
   });
   const complete = repository.findByMediaPk("legacy");
   assert.ok(complete);
-  assert.deepEqual(complete.annotations?.stickers, [
+  assert.ok(partial.annotations);
+  expect(complete.annotations?.stickers).toStrictEqual([
     {
       occurrenceId: partial.annotations.stickers.at(-1)?.occurrenceId,
       kind: "custom",
@@ -550,7 +548,7 @@ test("legacy provenance survives partial observations until one complete observa
     },
   ]);
   await repository.save(complete);
-  assert.deepEqual(repository.findByMediaPk("legacy"), complete);
+  expect(repository.findByMediaPk("legacy")).toStrictEqual(complete);
 });
 
 test("a failed annotation replacement rolls back occurrences", async (context) => {
@@ -569,18 +567,17 @@ test("a failed annotation replacement rolls back occurrences", async (context) =
   const before = repository.findByMediaPk("m1");
   database.$client.exec(`CREATE TEMP TRIGGER reject_annotation BEFORE INSERT ON story_stickers
     WHEN NEW.label = '#fail' BEGIN SELECT RAISE(ABORT, 'fixture write failure'); END`);
-  await assert.rejects(
+  await expect(
     repository.save({ pk: "m1", story_hashtags: [{ hashtag: "fail" }], story_music_stickers: [] }),
-  );
-  assert.deepEqual(new StoryRepository(database).findByMediaPk("m1"), before);
+  ).rejects.toThrow();
+  expect(new StoryRepository(database).findByMediaPk("m1")).toStrictEqual(before);
   database.$client.exec("DROP TRIGGER reject_annotation");
   await repository.save({
     pk: "m1",
     story_hashtags: [{ hashtag: "ok" }],
     story_music_stickers: [],
   });
-  assert.deepEqual(
+  expect(
     repository.findByMediaPk("m1")?.annotations?.stickers.map((sticker) => sticker.label),
-    ["#ok"],
-  );
+  ).toStrictEqual(["#ok"]);
 });

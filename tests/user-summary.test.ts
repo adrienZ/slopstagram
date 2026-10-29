@@ -1,6 +1,5 @@
-import assert from "node:assert/strict";
 import process from "node:process";
-import { describe, test, vi } from "vitest";
+import { assert, describe, test, vi, expect } from "vitest";
 import { setTimeout as delay } from "node:timers/promises";
 import { z } from "zod";
 import { readUserSummaries, resolveUserSummariesForReport } from "../sdk/user-summary.ts";
@@ -52,15 +51,15 @@ describe("resolveUserSummariesForReport", () => {
         repository,
         fetchOllama: async (_url, init) => {
           const body = UserSummaryRequestSchema.parse(JSON.parse(requestBodyToString(init?.body)));
-          assert.equal(body.model, expectedModel);
+          expect(body.model).toBe(expectedModel);
           return new globalThis.Response(
             JSON.stringify({ response: JSON.stringify({ summary: "Platform summary." }) }),
           );
         },
       });
 
-      assert.equal(summaries.get("summaryuser"), "Platform summary.");
-      assert.deepEqual(readUserSummaries(report.output.users, { repository }), summaries);
+      expect(summaries.get("summaryuser")).toBe("Platform summary.");
+      expect(readUserSummaries(report.output.users, { repository })).toStrictEqual(summaries);
     });
   }
 
@@ -68,7 +67,7 @@ describe("resolveUserSummariesForReport", () => {
     const repository = createUserSummaryRepositoryAdapter();
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
-    assert.equal(userKey, "summaryuser");
+    expect(userKey).toBe("summaryuser");
     const visionByPreviewUrl = new Map([
       [
         "https://example.com/story.jpg",
@@ -85,15 +84,15 @@ describe("resolveUserSummariesForReport", () => {
       visionByPreviewUrl,
       runUserSummary: async (prompt) => {
         runCount += 1;
-        assert.match(prompt, /A food stall with readable prices\./u);
-        assert.match(prompt, /Paris Market/u);
-        assert.doesNotMatch(prompt, /May be food/u);
-        assert.doesNotMatch(prompt, /menu prices/u);
-        assert.doesNotMatch(prompt, /ig_caption/u);
-        assert.doesNotMatch(prompt, /ocr_text/u);
-        assert.doesNotMatch(prompt, /"status"/u);
-        assert.doesNotMatch(prompt, /"ok"/u);
-        assert.match(prompt, /Réponds en français\./u);
+        expect(prompt).toMatch(/A food stall with readable prices\./u);
+        expect(prompt).toMatch(/Paris Market/u);
+        expect(prompt).not.toMatch(/May be food/u);
+        expect(prompt).not.toMatch(/menu prices/u);
+        expect(prompt).not.toMatch(/ig_caption/u);
+        expect(prompt).not.toMatch(/ocr_text/u);
+        expect(prompt).not.toMatch(/"status"/u);
+        expect(prompt).not.toMatch(/"ok"/u);
+        expect(prompt).toMatch(/Réponds en français\./u);
 
         return JSON.stringify({
           summary:
@@ -112,15 +111,13 @@ describe("resolveUserSummariesForReport", () => {
       repository,
     });
 
-    assert.equal(
-      first.get(userKey),
+    expect(first.get(userKey)).toBe(
       "Summary User shared a Paris food story with a visible menu. The post centers on street food and readable prices.",
     );
-    assert.equal(
-      second.get(userKey),
+    expect(second.get(userKey)).toBe(
       "Summary User shared a Paris food story with a visible menu. The post centers on street food and readable prices.",
     );
-    assert.equal(runCount, 1);
+    expect(runCount).toBe(1);
   });
 
   test("uses the Ollama model in the repository identity", async () => {
@@ -147,9 +144,9 @@ describe("resolveUserSummariesForReport", () => {
       repository,
     });
 
-    assert.equal(first.get(userKey), "default model summary");
-    assert.equal(second.get(userKey), "custom model summary");
-    assert.equal(runCount, 2);
+    expect(first.get(userKey)).toBe("default model summary");
+    expect(second.get(userKey)).toBe("custom model summary");
+    expect(runCount).toBe(2);
   });
 
   test("runs the default Ollama client with qwen3.5 and OLLAMA_HOST", async () => {
@@ -161,21 +158,21 @@ describe("resolveUserSummariesForReport", () => {
     const summaries = await resolveUserSummariesForReport(report, {
       logger: createMockLogger(),
       fetchOllama: async (url, init) => {
-        assert.equal(url, "http://summary.example:11434/api/generate");
+        expect(url).toBe("http://summary.example:11434/api/generate");
         const body = UserSummaryRequestSchema.parse(JSON.parse(requestBodyToString(init?.body)));
 
-        assert.equal(body.stream, false);
-        assert.deepEqual(body.options, {
+        expect(body.stream).toBe(false);
+        expect(body.options).toStrictEqual({
           num_predict: 300,
           temperature: 0.2,
         });
-        assert.equal(body.think, false);
-        assert.equal(body.format.additionalProperties, false);
-        assert.equal(body.format.type, "object");
-        assert.equal(body.format.properties.summary.type, "string");
-        assert.deepEqual(body.format.required.toSorted(), ["summary"]);
-        assert.doesNotMatch(String(body.prompt), /May be food/u);
-        assert.doesNotMatch(String(body.prompt), /menu prices/u);
+        expect(body.think).toBe(false);
+        expect(body.format.additionalProperties).toBe(false);
+        expect(body.format.type).toBe("object");
+        expect(body.format.properties.summary.type).toBe("string");
+        expect(body.format.required.toSorted()).toStrictEqual(["summary"]);
+        expect(String(body.prompt)).not.toMatch(/May be food/u);
+        expect(String(body.prompt)).not.toMatch(/menu prices/u);
 
         return new globalThis.Response(
           JSON.stringify({
@@ -187,7 +184,7 @@ describe("resolveUserSummariesForReport", () => {
       repository,
     });
 
-    assert.equal(summaries.get(userKey), "sdk summary");
+    expect(summaries.get(userKey)).toBe("sdk summary");
   });
 
   test("honors a custom timeout for a blocked summary request", { timeout: 1000 }, async () => {
@@ -206,10 +203,10 @@ describe("resolveUserSummariesForReport", () => {
     });
 
     const summaries = await result;
-    assert.equal(summaries.get("summaryuser"), "résumé indisponible");
+    expect(summaries.get("summaryuser")).toBe("résumé indisponible");
     assert.ok(requestSignal);
-    assert.equal(requestSignal.aborted, true);
-    assert.equal(repository.entries.size, 0);
+    expect(requestSignal.aborted).toBe(true);
+    expect(repository.entries.size).toBe(0);
   });
 
   test("returns fallback text when user summary fails", async () => {
@@ -225,7 +222,7 @@ describe("resolveUserSummariesForReport", () => {
       repository,
     });
 
-    assert.equal(summaries.get(userKey), "résumé indisponible");
+    expect(summaries.get(userKey)).toBe("résumé indisponible");
   });
 
   test("uses report fallback and does not store a missing Ollama response", async () => {
@@ -236,11 +233,10 @@ describe("resolveUserSummariesForReport", () => {
       repository,
     });
 
-    assert.equal(
-      summaries.get("summaryuser"),
+    expect(summaries.get("summaryuser")).toBe(
       "Summary User a partagé 1 story. Éléments visibles: location:Paris; Paris Market, 10 Rue Food, Paris.",
     );
-    assert.equal(repository.entries.size, 0);
+    expect(repository.entries.size).toBe(0);
   });
 
   test("uses report fallback and does not store empty user summary responses", async () => {
@@ -253,10 +249,9 @@ describe("resolveUserSummariesForReport", () => {
       runUserSummary: async () => "",
       repository,
     });
-    assert.equal(
-      summaries.get(userKey),
+    expect(summaries.get(userKey)).toBe(
       "Summary User a partagé 1 story. Éléments visibles: location:Paris; Paris Market, 10 Rue Food, Paris.",
     );
-    assert.equal(repository.entries.size, 0);
+    expect(repository.entries.size).toBe(0);
   });
 });

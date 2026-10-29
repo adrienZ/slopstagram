@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { test } from "vitest";
+import { test, expect } from "vitest";
 import { createServer } from "vite";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -22,8 +21,8 @@ test("Vite SSR loads both react-use application hooks", async (context) => {
   try {
     const audioPreview = await server.ssrLoadModule("/server/hooks/use-audio-preview.ts");
     const timelineCalendar = await server.ssrLoadModule("/server/hooks/use-timeline-calendar.ts");
-    assert.deepEqual(Object.keys(audioPreview), ["useAudioPreview"]);
-    assert.deepEqual(Object.keys(timelineCalendar), ["useTimelineCalendar"]);
+    expect(Object.keys(audioPreview)).toStrictEqual(["useAudioPreview"]);
+    expect(Object.keys(timelineCalendar)).toStrictEqual(["useTimelineCalendar"]);
   } finally {
     await server.close();
   }

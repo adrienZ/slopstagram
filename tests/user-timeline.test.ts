@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { test, vi } from "vitest";
+import { assert, test, vi, expect } from "vitest";
 import {
   createUserTimeline,
   getTimelinePreviewPaths,
@@ -28,7 +27,7 @@ test("groups stories by their Paris publication day, month, and year", () => {
     timelineStory("previous-year", 1_735_689_600),
   ]);
 
-  assert.deepEqual(
+  expect(
     timeline.map((year) => ({
       label: year.label,
       months: year.months.map((month) => ({
@@ -39,27 +38,26 @@ test("groups stories by their Paris publication day, month, and year", () => {
         label: month.label,
       })),
     })),
-    [
-      {
-        label: "2026",
-        months: [
-          {
-            days: [{ key: "2026-01-01", stories: ["new-year", "same-day"] }],
-            label: "janvier",
-          },
-        ],
-      },
-      {
-        label: "2025",
-        months: [
-          {
-            days: [{ key: "2025-01-01", stories: ["previous-year"] }],
-            label: "janvier",
-          },
-        ],
-      },
-    ],
-  );
+  ).toStrictEqual([
+    {
+      label: "2026",
+      months: [
+        {
+          days: [{ key: "2026-01-01", stories: ["new-year", "same-day"] }],
+          label: "janvier",
+        },
+      ],
+    },
+    {
+      label: "2025",
+      months: [
+        {
+          days: [{ key: "2025-01-01", stories: ["previous-year"] }],
+          label: "janvier",
+        },
+      ],
+    },
+  ]);
 });
 
 test("returns no timeline for an unknown user", () => {
@@ -67,18 +65,18 @@ test("returns no timeline for an unknown user", () => {
     "missing-user",
     {
       listByUsername: (username) => {
-        assert.equal(username, "missing-user");
+        expect(username).toBe("missing-user");
         return [];
       },
     },
     {
       findByUsername: (username) => {
-        assert.equal(username, "missing-user");
+        expect(username).toBe("missing-user");
         return null;
       },
     },
   );
-  assert.equal(result, null);
+  expect(result).toBe(null);
 });
 
 test("returns an empty timeline for a saved account without stories", () => {
@@ -95,9 +93,9 @@ test("returns an empty timeline for a saved account without stories", () => {
     },
   );
   assert.ok(result);
-  assert.equal(result.timelineUser.username, "saved-user");
-  assert.deepEqual(result.stories, []);
-  assert.deepEqual(result.years, []);
+  expect(result.timelineUser.username).toBe("saved-user");
+  expect(result.stories).toStrictEqual([]);
+  expect(result.years).toStrictEqual([]);
 });
 
 test("assembles timeline media, captions, cached vision and local paths", () => {
@@ -120,17 +118,16 @@ test("assembles timeline media, captions, cached vision and local paths", () => 
 
   const timeline = createUserTimeline("timeline-user", {
     listByUsername: (username) => {
-      assert.equal(username, "timeline-user");
+      expect(username).toBe("timeline-user");
       return stories;
     },
   });
 
   assert.ok(timeline);
-  assert.equal(timeline.avatarPath, "/media/avatars/user-pk.jpg");
-  assert.equal(timeline.timelineUser.username, "timeline-user");
-  assert.equal(timeline.timelineUser.full_name, "Timeline User");
-  assert.deepEqual(
-    timeline.timelineUser.stories,
+  expect(timeline.avatarPath).toBe("/media/avatars/user-pk.jpg");
+  expect(timeline.timelineUser.username).toBe("timeline-user");
+  expect(timeline.timelineUser.full_name).toBe("Timeline User");
+  expect(timeline.timelineUser.stories).toStrictEqual(
     stories.map((entry, index) => ({
       ig_caption: index === 0 ? "Instagram caption" : "",
       locations: entry.locations,
@@ -141,15 +138,13 @@ test("assembles timeline media, captions, cached vision and local paths", () => 
       stickers: entry.stickers,
     })),
   );
-  assert.deepEqual(timeline.appleCaptionByMediaPk, new Map([["image", "Apple caption"]]));
-  assert.deepEqual(
-    timeline.visionByPreviewUrl,
+  expect(timeline.appleCaptionByMediaPk).toStrictEqual(new Map([["image", "Apple caption"]]));
+  expect(timeline.visionByPreviewUrl).toStrictEqual(
     new Map([["images/story-previews/video.jpg", vision]]),
   );
-  assert.deepEqual(timeline.stories, stories);
-  assert.deepEqual(timeline.years[0]?.months[0]?.days[0]?.stories, stories);
-  assert.deepEqual(
-    getTimelinePreviewPaths(stories),
+  expect(timeline.stories).toStrictEqual(stories);
+  expect(timeline.years[0]?.months[0]?.days[0]?.stories).toStrictEqual(stories);
+  expect(getTimelinePreviewPaths(stories)).toStrictEqual(
     new Map([
       ["images/story-previews/image.jpg", "/media/story-previews/image.jpg"],
       ["images/story-previews/video.jpg", "/media/story-previews/video.jpg"],
@@ -167,10 +162,10 @@ test("omits avatar and analysis when the story has no owner or cached details", 
   const timeline = createUserTimeline("timeline-user", { listByUsername: () => [story] });
 
   assert.ok(timeline);
-  assert.equal(timeline.avatarPath, null);
-  assert.equal(timeline.timelineUser.profile_pic_url, null);
-  assert.equal(timeline.appleCaptionByMediaPk.size, 0);
-  assert.equal(timeline.visionByPreviewUrl.size, 0);
+  expect(timeline.avatarPath).toBe(null);
+  expect(timeline.timelineUser.profile_pic_url).toBe(null);
+  expect(timeline.appleCaptionByMediaPk.size).toBe(0);
+  expect(timeline.visionByPreviewUrl.size).toBe(0);
 });
 
 test("skips invalid dates and sorts months and days newest first across Paris midnight", () => {
@@ -182,8 +177,8 @@ test("skips invalid dates and sorts months and days newest first across Paris mi
   ];
   const years = groupStoriesByPublishedDate(stories);
 
-  assert.equal(years.length, 1);
-  assert.deepEqual(
+  expect(years.length).toBe(1);
+  expect(
     years[0]?.months.map((month) => ({
       key: month.key,
       days: month.days.map((day) => ({
@@ -191,15 +186,14 @@ test("skips invalid dates and sorts months and days newest first across Paris mi
         pks: day.stories.map((story) => story.story.pk),
       })),
     })),
-    [
-      {
-        key: "2026-02",
-        days: [
-          { key: "2026-02-02", pks: ["february-second"] },
-          { key: "2026-02-01", pks: ["february-first"] },
-        ],
-      },
-      { key: "2026-01", days: [{ key: "2026-01-01", pks: ["january"] }] },
-    ],
-  );
+  ).toStrictEqual([
+    {
+      key: "2026-02",
+      days: [
+        { key: "2026-02-02", pks: ["february-second"] },
+        { key: "2026-02-01", pks: ["february-first"] },
+      ],
+    },
+    { key: "2026-01", days: [{ key: "2026-01-01", pks: ["january"] }] },
+  ]);
 });

@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { test } from "vitest";
+import { test, expect } from "vitest";
 import type { StoryOutputUser } from "../sdk/report-types.ts";
 import { createStoryCards, type StoryCardSources } from "../server/story-card-view-model.ts";
 
@@ -41,29 +40,28 @@ test("story cards exclude unavailable previews and preserve source order and use
   user.stories[3].preview_image_url = " ";
   const cards = createStoryCards(user, createSources());
 
-  assert.deepEqual(
+  expect(
     cards.map(({ mediaPk, position, count, preview }) => ({ mediaPk, position, count, preview })),
-    [
-      { mediaPk: "first", position: 1, count: 5, preview: "/media/first.jpg" },
-      { mediaPk: "last", position: 5, count: 5, preview: "/media/last.jpg" },
-    ],
-  );
+  ).toStrictEqual([
+    { mediaPk: "first", position: 1, count: 5, preview: "/media/first.jpg" },
+    { mediaPk: "last", position: 5, count: 5, preview: "/media/last.jpg" },
+  ]);
 });
 
 test("story cards supply complete lightbox details and normalize absent values", () => {
   const sources = createSources();
   const user = createUser();
   const [first] = createStoryCards(user, sources);
-  assert.equal(first.userName, "Story User (@story-user)");
-  assert.equal(first.avatar, "/media/avatar.jpg");
-  assert.equal(first.url, "https://www.instagram.com/stories/story-user/first/");
-  assert.equal(first.mediaType, "Image");
-  assert.equal(first.igCaption, "caption");
-  assert.equal(first.appleCaption, "apple <text>");
-  assert.equal(first.stickers, "link:A & B");
-  assert.equal(first.locations, "Paris\nLyon");
-  assert.equal(first.visionOcr, "OCR text");
-  assert.equal(first.visionDescription, "Vue de Paris");
+  expect(first.userName).toBe("Story User (@story-user)");
+  expect(first.avatar).toBe("/media/avatar.jpg");
+  expect(first.url).toBe("https://www.instagram.com/stories/story-user/first/");
+  expect(first.mediaType).toBe("Image");
+  expect(first.igCaption).toBe("caption");
+  expect(first.appleCaption).toBe("apple <text>");
+  expect(first.stickers).toBe("link:A & B");
+  expect(first.locations).toBe("Paris\nLyon");
+  expect(first.visionOcr).toBe("OCR text");
+  expect(first.visionDescription).toBe("Vue de Paris");
 
   user.profile_pic_url = null;
   user.stories[0].media_type = "video";
@@ -73,8 +71,8 @@ test("story cards supply complete lightbox details and normalize absent values",
   sources.appleCaptionByMediaPk.clear();
   sources.visionByPreviewUrl.clear();
   const [empty] = createStoryCards(user, sources);
-  assert.equal(empty.avatar, undefined);
-  assert.equal(empty.mediaType, "Vidéo");
+  expect(empty.avatar).toBe(undefined);
+  expect(empty.mediaType).toBe("Vidéo");
   for (const key of [
     "igCaption",
     "stickers",
@@ -83,6 +81,6 @@ test("story cards supply complete lightbox details and normalize absent values",
     "visionOcr",
     "visionDescription",
   ] as const) {
-    assert.equal(empty[key], "—");
+    expect(empty[key]).toBe("—");
   }
 });

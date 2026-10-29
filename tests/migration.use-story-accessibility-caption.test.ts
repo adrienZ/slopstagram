@@ -1,9 +1,8 @@
-import assert from "node:assert/strict";
 import { cpSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, URL } from "node:url";
-import { test, type TestContext } from "vitest";
+import { test, type TestContext, expect } from "vitest";
 import { migrate } from "drizzle-orm/node-sqlite/migrator";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
@@ -47,11 +46,10 @@ for (const caption of [null, "", " \t\n ", "\u00A0\uFEFF", undefined]) {
         .run(caption);
     }
 
-    assert.throws(() => {
+    expect(() => {
       migrateDatabase(database);
-    }, /INSERT INTO `__report_caption_removal_guard`/u);
-    assert.equal(
-      database.$client.prepare("SELECT igCaption FROM report_stories").get()?.igCaption,
+    }).toThrow(/INSERT INTO `__report_caption_removal_guard`/u);
+    expect(database.$client.prepare("SELECT igCaption FROM report_stories").get()?.igCaption).toBe(
       "Legacy caption",
     );
     // A reviewed recovery in this fixture lets migration retry on the same connection.
@@ -59,10 +57,9 @@ for (const caption of [null, "", " \t\n ", "\u00A0\uFEFF", undefined]) {
       VALUES ('story', 'Recovered caption')
       ON CONFLICT(mediaPk) DO UPDATE SET accessibilityCaption = excluded.accessibilityCaption;`);
     migrateDatabase(database);
-    assert.equal(
+    expect(
       new ReportRepository(database).findByKey("legacy")?.output.users[0]?.stories[0]?.ig_caption,
-      "Recovered caption",
-    );
+    ).toBe("Recovered caption");
   });
 }
 
@@ -76,16 +73,15 @@ test("caption migration keeps canonical captions and report snapshots, then remo
   migrateDatabase(database);
   migrateDatabase(database);
 
-  assert.deepEqual(repository.findByKey("legacy"), before);
-  assert.equal(before?.output.users[0]?.stories[0]?.ig_caption, " Canonical caption ");
-  assert.equal(
+  expect(repository.findByKey("legacy")).toStrictEqual(before);
+  expect(before?.output.users[0]?.stories[0]?.ig_caption).toBe(" Canonical caption ");
+  expect(
     database.$client
       .prepare("PRAGMA table_info(report_stories)")
       .all()
       .some((row) => row.name === "igCaption"),
-    false,
-  );
-  assert.deepEqual(database.$client.prepare("PRAGMA foreign_key_check").all(), []);
+  ).toBe(false);
+  expect(database.$client.prepare("PRAGMA foreign_key_check").all()).toStrictEqual([]);
 });
 
 test("caption migration allows empty legacy captions and the N/A placeholder without inventing stories", (context) => {
@@ -98,9 +94,9 @@ test("caption migration allows empty legacy captions and the N/A placeholder wit
   migrateDatabase(database);
 
   const report = new ReportRepository(database).findByKey("legacy");
-  assert.deepEqual(
-    report?.output.users[0]?.stories.map((story) => story.ig_caption),
-    ["N/A", "N/A"],
-  );
-  assert.equal(database.$client.prepare("SELECT COUNT(*) AS count FROM stories").get()?.count, 0);
+  expect(report?.output.users[0]?.stories.map((story) => story.ig_caption)).toStrictEqual([
+    "N/A",
+    "N/A",
+  ]);
+  expect(database.$client.prepare("SELECT COUNT(*) AS count FROM stories").get()?.count).toBe(0);
 });

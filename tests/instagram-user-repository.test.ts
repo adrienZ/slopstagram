@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { describe, test } from "vitest";
+import { describe, test, expect } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
@@ -12,16 +11,13 @@ describe("InstagramUserRepository", () => {
       database.$client.close();
     });
     const repository = new InstagramUserRepository(database);
-    assert.deepEqual(repository.listAll(), []);
+    expect(repository.listAll()).toStrictEqual([]);
     await Promise.all(
       ["zebra", "alice"].map(async (username) => {
         await repository.save({ username, id: username, pk: username, full_name: null });
       }),
     );
-    assert.deepEqual(
-      repository.listAll().map((user) => user.username),
-      ["alice", "zebra"],
-    );
+    expect(repository.listAll().map((user) => user.username)).toStrictEqual(["alice", "zebra"]);
   });
 
   test("stores and updates Instagram users in SQLite", async (context) => {
@@ -45,7 +41,7 @@ describe("InstagramUserRepository", () => {
       username: "fixture-user",
     });
 
-    assert.deepEqual(repository.findByUsername("fixture-user"), {
+    expect(repository.findByUsername("fixture-user")).toStrictEqual({
       full_name: "Updated Name",
       id: "id-2",
       pk: "pk-1",

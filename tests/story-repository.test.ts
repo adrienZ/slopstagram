@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { describe, test } from "vitest";
+import { assert, describe, test, expect } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
@@ -47,11 +46,12 @@ describe("StoryRepository", () => {
     await repository.save({ pk: "undated" }, owner);
     // A second observation of the same story must not duplicate it in the feed.
     await repository.save({ pk: "active", taken_at: 1_792_612_801 }, owner);
-    assert.deepEqual(
+    expect(
       repository.listActive(new Date(1_792_699_200_000)).map((entry) => entry.story.pk),
-      ["now", "active"],
-    );
-    assert.ok(repository.listByUsername("feed-user").some((entry) => entry.story.pk === "expired"));
+    ).toStrictEqual(["now", "active"]);
+    expect(
+      repository.listByUsername("feed-user").some((entry) => entry.story.pk === "expired"),
+    ).toBeTruthy();
   });
 
   test("stores story details in relational tables", async (context) => {
@@ -81,7 +81,7 @@ describe("StoryRepository", () => {
 
     const stored = repository.findByMediaPk("story-1");
     assert.ok(stored);
-    assert.deepEqual(withLabelOnlyAnnotations(stored), {
+    expect(withLabelOnlyAnnotations(stored)).toStrictEqual({
       accessibility_caption: "Updated",
       annotations: {
         locations: ["Paris"],
@@ -113,7 +113,7 @@ describe("StoryRepository", () => {
       .prepare("SELECT accessibilityCaption, mediaType, originalHeight, originalWidth FROM stories")
       .all()
       .map((row) => Object.fromEntries(Object.entries(row)));
-    assert.deepEqual(storedStory, {
+    expect(storedStory).toStrictEqual({
       accessibilityCaption: "Updated",
       mediaType: 2,
       originalHeight: 1920,
@@ -123,20 +123,19 @@ describe("StoryRepository", () => {
       .prepare("SELECT height, url, width FROM story_image_versions")
       .all()
       .map((row) => Object.fromEntries(Object.entries(row)));
-    assert.deepEqual(imageVersions, [
+    expect(imageVersions).toStrictEqual([
       { height: 100, url: "https://example.com/image.jpg", width: 80 },
     ]);
     const stickers = database.$client
       .prepare("SELECT kind, label FROM story_stickers")
       .all()
       .map((row) => Object.fromEntries(Object.entries(row)));
-    assert.deepEqual(stickers, [
+    expect(stickers).toStrictEqual([
       { kind: "hashtag", label: "#structured" },
       { kind: "location", label: "Paris" },
     ]);
     const storyColumns = database.$client.prepare("PRAGMA table_info(stories)").all();
-    assert.equal(
-      storyColumns.some((column) => String(column.name).toLowerCase().includes("json")),
+    expect(storyColumns.some((column) => String(column.name).toLowerCase().includes("json"))).toBe(
       false,
     );
   });
@@ -179,50 +178,49 @@ describe("StoryRepository", () => {
       },
     );
 
-    assert.deepEqual(
+    expect(
       repository.listByUsername("timeline-user").map((entry) => ({
         ...entry,
         story: withLabelOnlyAnnotations(entry.story),
       })),
-      [
-        {
-          full_name: "Timeline User",
-          locations: [],
-          owner_pk: "user-pk",
-          story: {
-            annotations: { locations: [], stickers: [] },
-            media_type: 2,
-            pk: "newer-story",
-            taken_at: 1_767_312_000,
-          },
-          stickers: [],
+    ).toStrictEqual([
+      {
+        full_name: "Timeline User",
+        locations: [],
+        owner_pk: "user-pk",
+        story: {
+          annotations: { locations: [], stickers: [] },
+          media_type: 2,
+          pk: "newer-story",
           taken_at: 1_767_312_000,
-          username: "timeline-user",
         },
-        {
-          full_name: "Timeline User",
-          locations: [],
-          owner_pk: "user-pk",
-          story: {
-            annotations: {
-              locations: [],
-              stickers: [
-                {
-                  kind: "hashtag",
-                  label: "#weekend",
-                  source: "story_hashtags",
-                },
-              ],
-            },
-            media_type: 1,
-            pk: "older-story",
-            taken_at: 1_767_225_600,
+        stickers: [],
+        taken_at: 1_767_312_000,
+        username: "timeline-user",
+      },
+      {
+        full_name: "Timeline User",
+        locations: [],
+        owner_pk: "user-pk",
+        story: {
+          annotations: {
+            locations: [],
+            stickers: [
+              {
+                kind: "hashtag",
+                label: "#weekend",
+                source: "story_hashtags",
+              },
+            ],
           },
-          stickers: ["#weekend"],
+          media_type: 1,
+          pk: "older-story",
           taken_at: 1_767_225_600,
-          username: "timeline-user",
         },
-      ],
-    );
+        stickers: ["#weekend"],
+        taken_at: 1_767_225_600,
+        username: "timeline-user",
+      },
+    ]);
   });
 });

@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { describe, test } from "vitest";
+import { describe, test, expect } from "vitest";
 import {
   getLargestVersion,
   parseStoryManifestReport,
@@ -16,7 +15,7 @@ const report = storiesFixture as StoriesMediaReport;
 
 describe("parseStoryReport", () => {
   test("returns the largest image candidate for image stories", () => {
-    assert.deepEqual(parseStoryReport(report, "700000000000271"), {
+    expect(parseStoryReport(report, "700000000000271")).toStrictEqual({
       height: 2080,
       media_type: STORY_MEDIA_TYPES.IMAGE,
       pk: "700000000000271",
@@ -63,7 +62,7 @@ describe("parseStoryReport", () => {
   });
 
   test("returns a video source for video stories", () => {
-    assert.deepEqual(parseStoryReport(report, "700000000000292"), {
+    expect(parseStoryReport(report, "700000000000292")).toStrictEqual({
       height: 1274,
       media_type: STORY_MEDIA_TYPES.VIDEO,
       pk: "700000000000292",
@@ -162,7 +161,7 @@ describe("parseStoryReport", () => {
 
     await storyRepository.save(cachedItem);
 
-    assert.deepEqual(parseStoryManifestReport(manifestReport, "cached-pk", storyRepository), {
+    expect(parseStoryManifestReport(manifestReport, "cached-pk", storyRepository)).toStrictEqual({
       height: 120,
       media_type: STORY_MEDIA_TYPES.IMAGE,
       pk: "cached-pk",
@@ -182,7 +181,7 @@ describe("getLargestVersion", () => {
       { height: 200, url: "large", width: 80 },
     ];
 
-    assert.deepEqual(getLargestVersion(versions), {
+    expect(getLargestVersion(versions)).toStrictEqual({
       height: 200,
       url: "large",
       width: 80,
@@ -190,7 +189,7 @@ describe("getLargestVersion", () => {
   });
 
   test("returns null for empty input", () => {
-    assert.equal(getLargestVersion([]), null);
-    assert.equal(getLargestVersion(null), null);
+    expect(getLargestVersion([])).toBe(null);
+    expect(getLargestVersion(null)).toBe(null);
   });
 });

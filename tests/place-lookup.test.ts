@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { test } from "vitest";
+import { assert, test, expect } from "vitest";
 import { eq } from "drizzle-orm";
 import { createDrizzle } from "../sdk/database/client.ts";
 import {
@@ -141,14 +140,14 @@ test("a place that stories only identify by its id becomes usable after a lookup
   });
   await ingest(repository, client);
   const place = storedPlace(repository, "m1");
-  assert.equal(place.status, "usable");
-  assert.equal(place.name, "V and B Amiens Les Halles");
-  assert.equal(place.address, "1 Rue des Halles");
-  assert.equal(place.latitude, 49.8943);
-  assert.equal(place.longitude, 2.2957);
-  assert.equal(place.instagramPlaceId, "633725939834688");
-  assert.equal(place.lastLookupAttemptAt, fixedNow().getTime());
-  assert.deepEqual(client.lookups, ["633725939834688"]);
+  expect(place.status).toBe("usable");
+  expect(place.name).toBe("V and B Amiens Les Halles");
+  expect(place.address).toBe("1 Rue des Halles");
+  expect(place.latitude).toBe(49.8943);
+  expect(place.longitude).toBe(2.2957);
+  expect(place.instagramPlaceId).toBe("633725939834688");
+  expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
+  expect(client.lookups).toStrictEqual(["633725939834688"]);
 });
 
 test("the category Instagram returns is stored exactly as received", async (context) => {
@@ -157,7 +156,7 @@ test("the category Instagram returns is stored exactly as received", async (cont
     "111": () => response(placeBody("111", { name: "Chez Paul", category: "Bistrot de quartier" })),
   });
   await ingest(repository, client);
-  assert.equal(storedPlace(repository, "m1").category, "Bistrot de quartier");
+  expect(storedPlace(repository, "m1").category).toBe("Bistrot de quartier");
 });
 
 test("an empty category from Instagram is stored as a missing category", async (context) => {
@@ -167,8 +166,8 @@ test("an empty category from Instagram is stored as a missing category", async (
     "222": () => response(placeBody("222", { name: "Blank", category: "   " })),
   });
   await ingest(repository, client);
-  assert.equal(storedPlace(repository, "m1").category, null);
-  assert.equal(storedPlace(repository, "m2").category, null);
+  expect(storedPlace(repository, "m1").category).toBe(null);
+  expect(storedPlace(repository, "m2").category).toBe(null);
 });
 
 test("a category never decides whether a place is usable", async (context) => {
@@ -178,9 +177,9 @@ test("a category never decides whether a place is usable", async (context) => {
     "222": () => response(placeBody("222", { name: "No category", category: "", lat: 1, lng: 2 })),
   });
   await ingest(repository, client);
-  assert.equal(storedPlace(repository, "m1").status, "partial");
-  assert.equal(storedPlace(repository, "m1").category, "Pont");
-  assert.equal(storedPlace(repository, "m2").status, "usable");
+  expect(storedPlace(repository, "m1").status).toBe("partial");
+  expect(storedPlace(repository, "m1").category).toBe("Pont");
+  expect(storedPlace(repository, "m2").status).toBe("usable");
 });
 
 test("a lookup supplies the zip code and fills a missing city", async (context) => {
@@ -190,8 +189,8 @@ test("a lookup supplies the zip code and fills a missing city", async (context) 
   });
   await ingest(repository, client);
   const place = storedPlace(repository, "m1");
-  assert.equal(place.city, "Amiens");
-  assert.equal(place.zip, "80000");
+  expect(place.city).toBe("Amiens");
+  expect(place.zip).toBe("80000");
 });
 
 test("a city from a story is stored and never overwritten by a lookup", async (context) => {
@@ -202,8 +201,8 @@ test("a city from a story is stored and never overwritten by a lookup", async (c
   });
   await ingest(repository, client);
   const place = storedPlace(repository, "m1");
-  assert.equal(place.city, "Story City");
-  assert.equal(place.zip, "75001");
+  expect(place.city).toBe("Story City");
+  expect(place.zip).toBe("75001");
 });
 
 test("empty strings are stored as a missing city and a missing zip code", async (context) => {
@@ -217,8 +216,8 @@ test("empty strings are stored as a missing city and a missing zip code", async 
   );
   await ingest(repository, client);
   for (const pk of ["m1", "m2"]) {
-    assert.equal(storedPlace(repository, pk).city, null);
-    assert.equal(storedPlace(repository, pk).zip, null);
+    expect(storedPlace(repository, pk).city).toBe(null);
+    expect(storedPlace(repository, pk).zip).toBe(null);
   }
 });
 
@@ -228,7 +227,7 @@ test("a blank city from a story leaves the gap for the lookup to fill", async (c
     "111": () => response(placeBody("111", { name: "Chez Paul", city: "Amiens" })),
   });
   await ingest(repository, client);
-  assert.equal(storedPlace(repository, "m1").city, "Amiens");
+  expect(storedPlace(repository, "m1").city).toBe("Amiens");
 });
 
 test("a story never supplies the zip code", async (context) => {
@@ -237,7 +236,7 @@ test("a story never supplies the zip code", async (context) => {
     "111": () => response(placeBody("111", { name: "Chez Paul", zip: "" })),
   });
   await ingest(repository, client);
-  assert.equal(storedPlace(repository, "m1").zip, null);
+  expect(storedPlace(repository, "m1").zip).toBe(null);
 });
 
 test("a city and a zip code never decide whether a place is usable", async (context) => {
@@ -248,8 +247,8 @@ test("a city and a zip code never decide whether a place is usable", async (cont
     "222": () => response(placeBody("222", { name: "No city", lat: 1, lng: 2 })),
   });
   await ingest(repository, client);
-  assert.equal(storedPlace(repository, "m1").status, "partial");
-  assert.equal(storedPlace(repository, "m2").status, "usable");
+  expect(storedPlace(repository, "m1").status).toBe("partial");
+  expect(storedPlace(repository, "m2").status).toBe("usable");
 });
 
 test("story values are never overwritten and only gaps are filled", async (context) => {
@@ -263,11 +262,11 @@ test("story values are never overwritten and only gaps are filled", async (conte
   );
   await ingest(repository, client);
   const place = storedPlace(repository, "m1");
-  assert.equal(place.name, "Story name");
-  assert.equal(place.latitude, 10);
-  assert.equal(place.longitude, 20);
-  assert.equal(place.address, "Filled");
-  assert.equal(place.lastLookupAttemptAt, fixedNow().getTime());
+  expect(place.name).toBe("Story name");
+  expect(place.latitude).toBe(10);
+  expect(place.longitude).toBe(20);
+  expect(place.address).toBe("Filled");
+  expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
 });
 
 test("only places referenced by the stories saved in the run are looked up", async (context) => {
@@ -277,9 +276,9 @@ test("only places referenced by the stories saved in the run are looked up", asy
     "111": () => response(placeBody("111", { name: "Fresh", lat: 1, lng: 2 })),
   });
   await ingest(repository, client);
-  assert.deepEqual(client.lookups, ["111"]);
-  assert.equal(storedPlace(repository, "old").lastLookupAttemptAt, null);
-  assert.equal(storedPlace(repository, "old").name, null);
+  expect(client.lookups).toStrictEqual(["111"]);
+  expect(storedPlace(repository, "old").lastLookupAttemptAt).toBe(null);
+  expect(storedPlace(repository, "old").name).toBe(null);
 });
 
 test("a place that was already looked up is not looked up again", async (context) => {
@@ -290,8 +289,8 @@ test("a place that was already looked up is not looked up again", async (context
   await ingest(repository, first);
   const second = createPlaceClient([storyAt("m2", { pk: "111" })], {});
   await ingest(repository, second);
-  assert.deepEqual(second.lookups, []);
-  assert.equal(storedPlace(repository, "m2").lastLookupAttemptAt, fixedNow().getTime());
+  expect(second.lookups).toStrictEqual([]);
+  expect(storedPlace(repository, "m2").lastLookupAttemptAt).toBe(fixedNow().getTime());
 });
 
 test("a place with a non-numeric id is skipped without a request or a failure", async (context) => {
@@ -308,15 +307,14 @@ test("a place with a non-numeric id is skipped without a request or a failure", 
     now: fixedNow,
     sleep: noSleep,
   });
-  assert.deepEqual(client.lookups, []);
-  assert.equal(storedPlace(repository, "m1").lastLookupAttemptAt, null);
-  assert.deepEqual(
+  expect(client.lookups).toStrictEqual([]);
+  expect(storedPlace(repository, "m1").lastLookupAttemptAt).toBe(null);
+  expect(
     logger.messages.filter(
       (message) =>
         message.startsWith("warn") || message.startsWith("error") || message.includes("place"),
     ),
-    [],
-  );
+  ).toStrictEqual([]);
 });
 
 test("each kind of unusable lookup applies no values, keeps the story and is recorded as failed", async (context) => {
@@ -342,17 +340,17 @@ test("each kind of unusable lookup applies no values, keeps the story and is rec
   const failures: Record<string, string | null> = {};
   for (const pk of Object.keys(unusable)) {
     const place = storedPlace(repository, `m${pk}`);
-    assert.equal(place.status, "partial");
-    assert.equal(place.name, null);
-    assert.equal(place.lastLookupAttemptAt, fixedNow().getTime());
+    expect(place.status).toBe("partial");
+    expect(place.name).toBe(null);
+    expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
     failures[pk] = place.lastLookupFailure;
   }
-  assert.match(failures["1"] ?? "", /no place data/iu);
-  assert.match(failures["2"] ?? "", /field_exception/u);
-  assert.match(failures["3"] ?? "", /no place data/iu);
-  assert.equal(failures["4"], "Instagram returned text/html");
-  assert.match(failures["5"] ?? "", /500/u);
-  assert.match(failures["6"] ?? "", /invalid/iu);
+  expect(failures["1"] ?? "").toMatch(/no place data/iu);
+  expect(failures["2"] ?? "").toMatch(/field_exception/u);
+  expect(failures["3"] ?? "").toMatch(/no place data/iu);
+  expect(failures["4"]).toBe("Instagram returned text/html");
+  expect(failures["5"] ?? "").toMatch(/500/u);
+  expect(failures["6"] ?? "").toMatch(/invalid/iu);
 });
 
 test("a thrown lookup never blocks the story or the lookups after it", async (context) => {
@@ -364,10 +362,10 @@ test("a thrown lookup never blocks the story or the lookups after it", async (co
     "2": () => response(placeBody("2", { name: "Second", lat: 1, lng: 2 })),
   });
   const report = await ingest(repository, client);
-  assert.equal(report.metadata.counts.fetched, 2);
-  assert.notEqual(repository.findByMediaPk("m1"), null);
-  assert.equal(storedPlace(repository, "m2").name, "Second");
-  assert.deepEqual(client.lookups, ["1", "2"]);
+  expect(report.metadata.counts.fetched).toBe(2);
+  expect(repository.findByMediaPk("m1")).not.toBe(null);
+  expect(storedPlace(repository, "m2").name).toBe("Second");
+  expect(client.lookups).toStrictEqual(["1", "2"]);
 });
 
 test("a thrown lookup is recorded with its attempt time and raw error", async (context) => {
@@ -379,10 +377,10 @@ test("a thrown lookup is recorded with its attempt time and raw error", async (c
   });
   await ingest(repository, client);
   const place = storedPlace(repository, "m1");
-  assert.equal(place.lastLookupAttemptAt, fixedNow().getTime());
-  assert.equal(place.lastLookupFailure, "socket hang up");
-  assert.equal(place.name, "Known");
-  assert.equal(place.status, "usable");
+  expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
+  expect(place.lastLookupFailure).toBe("socket hang up");
+  expect(place.name).toBe("Known");
+  expect(place.status).toBe("usable");
 });
 
 test("a blocked session stops the remaining lookups and records nothing", async (context) => {
@@ -393,10 +391,10 @@ test("a blocked session stops the remaining lookups and records nothing", async 
     });
     // oxlint-disable-next-line no-await-in-loop -- Each status uses its own database.
     await ingest(repository, client);
-    assert.deepEqual(client.lookups, ["1"]);
-    assert.equal(storedPlace(repository, "m1").lastLookupAttemptAt, null);
-    assert.equal(storedPlace(repository, "m1").lastLookupFailure, null);
-    assert.equal(storedPlace(repository, "m2").lastLookupAttemptAt, null);
+    expect(client.lookups).toStrictEqual(["1"]);
+    expect(storedPlace(repository, "m1").lastLookupAttemptAt).toBe(null);
+    expect(storedPlace(repository, "m1").lastLookupFailure).toBe(null);
+    expect(storedPlace(repository, "m2").lastLookupAttemptAt).toBe(null);
   }
 });
 
@@ -418,17 +416,17 @@ test("a place whose last lookup failed is looked up again only after twelve hour
   );
   const tooSoon = createPlaceClient([storyAt("m2", { pk: "111" })], {});
   await ingest(repository, tooSoon, laterBy(12 * HOUR - 1));
-  assert.deepEqual(tooSoon.lookups, []);
-  assert.equal(storedPlace(repository, "m2").lastLookupAttemptAt, fixedNow().getTime());
+  expect(tooSoon.lookups).toStrictEqual([]);
+  expect(storedPlace(repository, "m2").lastLookupAttemptAt).toBe(fixedNow().getTime());
 
   const retried = createPlaceClient([storyAt("m3", { pk: "111" })], {
     "111": () => response(placeBody("111", { name: "Chez Paul", lat: 1, lng: 2 })),
   });
   await ingest(repository, retried, laterBy(12 * HOUR));
-  assert.deepEqual(retried.lookups, ["111"]);
+  expect(retried.lookups).toStrictEqual(["111"]);
   const place = storedPlace(repository, "m3");
-  assert.equal(place.name, "Chez Paul");
-  assert.equal(place.lastLookupAttemptAt, fixedNow().getTime() + 12 * HOUR);
+  expect(place.name).toBe("Chez Paul");
+  expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime() + 12 * HOUR);
 });
 
 test("a recorded failure is bounded and never holds request headers, cookies or tokens", async (context) => {
@@ -447,8 +445,8 @@ test("a recorded failure is bounded and never holds request headers, cookies or 
     }),
   );
   const failure = storedPlace(repository, "m1").lastLookupFailure;
-  assert.equal(failure, "x".repeat(2000));
-  assert.doesNotMatch(failure, /secret/u);
+  expect(failure).toBe("x".repeat(2000));
+  expect(failure).not.toMatch(/secret/u);
 });
 
 test("a failure that cannot be recorded never blocks the story or the lookups after it", async (context) => {
@@ -463,9 +461,9 @@ test("a failure that cannot be recorded never blocks the story or the lookups af
     "2": () => response(placeBody("2", { name: "Second" })),
   });
   const report = await ingest(repository, client);
-  assert.equal(report.metadata.counts.fetched, 2);
-  assert.deepEqual(client.lookups, ["1", "2"]);
-  assert.equal(storedPlace(repository, "m2").name, "Second");
+  expect(report.metadata.counts.fetched).toBe(2);
+  expect(client.lookups).toStrictEqual(["1", "2"]);
+  expect(storedPlace(repository, "m2").name).toBe("Second");
 });
 
 test("a later successful lookup clears the stored failure", async (context) => {
@@ -478,7 +476,7 @@ test("a later successful lookup clears the stored failure", async (context) => {
       },
     }),
   );
-  assert.equal(storedPlace(repository, "m1").lastLookupFailure, "socket hang up");
+  expect(storedPlace(repository, "m1").lastLookupFailure).toBe("socket hang up");
   await ingest(
     repository,
     createPlaceClient([storyAt("m2", { pk: "111" })], {
@@ -486,7 +484,7 @@ test("a later successful lookup clears the stored failure", async (context) => {
     }),
     laterBy(12 * HOUR),
   );
-  assert.equal(storedPlace(repository, "m2").lastLookupFailure, null);
+  expect(storedPlace(repository, "m2").lastLookupFailure).toBe(null);
 });
 
 test("a later story observation keeps the recorded lookup", async (context) => {
@@ -499,9 +497,9 @@ test("a later story observation keeps the recorded lookup", async (context) => {
   );
   await repository.save(storyAt("m1", { pk: "111", name: "From story" }));
   const place = storedPlace(repository, "m1");
-  assert.equal(place.lastLookupAttemptAt, fixedNow().getTime());
-  assert.equal(place.category, "Bistro");
-  assert.equal(place.name, "From story");
+  expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
+  expect(place.category).toBe("Bistro");
+  expect(place.name).toBe("From story");
 });
 
 test("a later story observation keeps the looked-up zip code and a story city replaces a looked-up one", async (context) => {
@@ -512,11 +510,11 @@ test("a later story observation keeps the looked-up zip code and a story city re
       "111": () => response(placeBody("111", { name: "Looked up", city: "Amiens", zip: "80000" })),
     }),
   );
-  assert.equal(storedPlace(repository, "m1").city, "Amiens");
+  expect(storedPlace(repository, "m1").city).toBe("Amiens");
   await repository.save(storyAt("m1", { pk: "111", city: "Story City" }));
   const place = storedPlace(repository, "m1");
-  assert.equal(place.city, "Story City");
-  assert.equal(place.zip, "80000");
+  expect(place.city).toBe("Story City");
+  expect(place.zip).toBe("80000");
 });
 
 test("the phone, price range, slug and business account of a place are stored", async (context) => {
@@ -540,7 +538,7 @@ test("the phone, price range, slug and business account of a place are stored", 
       ),
   });
   await ingest(repository, client);
-  assert.deepEqual(repository.findPlaceDetails("111"), {
+  expect(repository.findPlaceDetails("111")).toStrictEqual({
     phone: "+33 1 23 45 67 89",
     priceRange: 2,
     slug: "chez-paul",
@@ -569,10 +567,10 @@ test("a place without a linked business account has no business information", as
   ]) {
     const details = repository.findPlaceDetails(id);
     assert.ok(details);
-    assert.equal(details.phone, phone);
-    assert.equal(details.businessAccountId, null);
-    assert.equal(details.businessAccountUsername, null);
-    assert.equal(details.businessAccountPictureUrl, null);
+    expect(details.phone).toBe(phone);
+    expect(details.businessAccountId).toBe(null);
+    expect(details.businessAccountUsername).toBe(null);
+    expect(details.businessAccountPictureUrl).toBe(null);
   }
 });
 
@@ -589,7 +587,7 @@ test("empty strings from Instagram are stored as missing details", async (contex
       ),
   });
   await ingest(repository, client);
-  assert.deepEqual(repository.findPlaceDetails("111"), {
+  expect(repository.findPlaceDetails("111")).toStrictEqual({
     phone: null,
     priceRange: 0,
     slug: null,
@@ -605,7 +603,7 @@ test("an unusable lookup stores no details", async (context) => {
     "5": () => response(placeBody("5", { phone: "0102" }), 500),
   });
   await ingest(repository, client);
-  assert.equal(repository.findPlaceDetails("5"), null);
+  expect(repository.findPlaceDetails("5")).toBe(null);
 });
 
 test("a later lookup replaces the stored details and clears a business account that is gone", async (context) => {
@@ -628,7 +626,7 @@ test("a later lookup replaces the stored details and clears a business account t
     { details: { phone: "", priceRange: 1, slug: "new-slug", business: null } },
     fixedNow(),
   );
-  assert.deepEqual(repository.findPlaceDetails("111"), {
+  expect(repository.findPlaceDetails("111")).toStrictEqual({
     phone: null,
     priceRange: 1,
     slug: "new-slug",
@@ -647,10 +645,10 @@ test("the details of a place are deleted with the place", async (context) => {
       "111": () => response(placeBody("111", { phone: "0102" })),
     }),
   );
-  assert.equal(database.select().from(metadataLocationDetails).all().length, 1);
+  expect(database.select().from(metadataLocationDetails).all().length).toBe(1);
   database.delete(storyLocationObservations).run();
   database.delete(metadataLocations).where(eq(metadataLocations.instagramPlaceId, "111")).run();
-  assert.equal(database.select().from(metadataLocationDetails).all().length, 0);
+  expect(database.select().from(metadataLocationDetails).all().length).toBe(0);
 });
 
 test("a malformed detail never blocks the place fill and keeps the earlier details", async (context) => {
@@ -666,11 +664,11 @@ test("a malformed detail never blocks the place fill and keeps the earlier detai
   });
   await ingest(repository, malformed);
   const place = storedPlace(repository, "m2");
-  assert.equal(place.name, "Chez Paul");
-  assert.equal(place.status, "usable");
-  assert.equal(place.lastLookupAttemptAt, fixedNow().getTime());
-  assert.equal(repository.findPlaceDetails("222"), null);
-  assert.equal(repository.findPlaceDetails("111")?.phone, "0102");
+  expect(place.name).toBe("Chez Paul");
+  expect(place.status).toBe("usable");
+  expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
+  expect(repository.findPlaceDetails("222")).toBe(null);
+  expect(repository.findPlaceDetails("111")?.phone).toBe("0102");
 });
 
 function locationStickers(repository: StoryRepository, pk: string) {
@@ -695,12 +693,12 @@ test("a place named by a lookup becomes the location sticker of a story that onl
         ),
     }),
   );
-  assert.deepEqual(shownLocations(repository, "m1"), ["Chez Paul, 1 Rue des Halles"]);
+  expect(shownLocations(repository, "m1")).toStrictEqual(["Chez Paul, 1 Rue des Halles"]);
   const [sticker] = locationStickers(repository, "m1");
-  assert.equal(sticker.source, "story_locations");
-  assert.equal(storedPlace(repository, "m1").name, "Chez Paul");
+  expect(sticker.source).toBe("story_locations");
+  expect(storedPlace(repository, "m1").name).toBe("Chez Paul");
   const observation = repository.findByMediaPk("m1")?.annotations?.locationObservations?.[0];
-  assert.equal(observation?.occurrenceId, sticker.occurrenceId);
+  expect(observation?.occurrenceId).toBe(sticker.occurrenceId);
 });
 
 test("a name without an address is the whole label", async (context) => {
@@ -711,7 +709,7 @@ test("a name without an address is the whole label", async (context) => {
       "111": () => response(placeBody("111", { name: "Chez Paul" })),
     }),
   );
-  assert.deepEqual(shownLocations(repository, "m1"), ["Chez Paul"]);
+  expect(shownLocations(repository, "m1")).toStrictEqual(["Chez Paul"]);
 });
 
 test("every story of the run that references the place gets the location sticker", async (context) => {
@@ -722,8 +720,8 @@ test("every story of the run that references the place gets the location sticker
       "111": () => response(placeBody("111", { name: "Chez Paul" })),
     }),
   );
-  assert.deepEqual(shownLocations(repository, "m1"), ["Chez Paul"]);
-  assert.deepEqual(shownLocations(repository, "m2"), ["Chez Paul"]);
+  expect(shownLocations(repository, "m1")).toStrictEqual(["Chez Paul"]);
+  expect(shownLocations(repository, "m2")).toStrictEqual(["Chez Paul"]);
 });
 
 test("a story that already shows the place keeps its single location sticker", async (context) => {
@@ -734,8 +732,8 @@ test("a story that already shows the place keeps its single location sticker", a
       "111": () => response(placeBody("111", { name: "Instagram name", address: "Filled" })),
     }),
   );
-  assert.deepEqual(shownLocations(repository, "m1"), ["Story name"]);
-  assert.equal(locationStickers(repository, "m1").length, 1);
+  expect(shownLocations(repository, "m1")).toStrictEqual(["Story name"]);
+  expect(locationStickers(repository, "m1").length).toBe(1);
 });
 
 test("a lookup that names nothing or fails adds no location sticker", async (context) => {
@@ -747,8 +745,8 @@ test("a lookup that names nothing or fails adds no location sticker", async (con
       "2": () => response(placeBody("2", { name: "Rejected" }), 500),
     }),
   );
-  assert.deepEqual(locationStickers(repository, "m1"), []);
-  assert.deepEqual(locationStickers(repository, "m2"), []);
+  expect(locationStickers(repository, "m1")).toStrictEqual([]);
+  expect(locationStickers(repository, "m2")).toStrictEqual([]);
 });
 
 test("a later save of the story keeps the location sticker made by a lookup", async (context) => {
@@ -760,8 +758,8 @@ test("a later save of the story keeps the location sticker made by a lookup", as
     }),
   );
   await repository.save(storyAt("m1", { pk: "111" }));
-  assert.deepEqual(shownLocations(repository, "m1"), ["Chez Paul"]);
-  assert.equal(locationStickers(repository, "m1").length, 1);
+  expect(shownLocations(repository, "m1")).toStrictEqual(["Chez Paul"]);
+  expect(locationStickers(repository, "m1").length).toBe(1);
 });
 
 test("a later lookup of the same place never adds a second location sticker", async (context) => {
@@ -773,8 +771,8 @@ test("a later lookup of the same place never adds a second location sticker", as
     }),
   );
   repository.recordPlaceLookup("111", { name: "Chez Paul", address: "Later address" }, fixedNow());
-  assert.equal(locationStickers(repository, "m1").length, 1);
-  assert.deepEqual(shownLocations(repository, "m1"), ["Chez Paul"]);
+  expect(locationStickers(repository, "m1").length).toBe(1);
+  expect(shownLocations(repository, "m1")).toStrictEqual(["Chez Paul"]);
 });
 
 test("a story that tags the same place twice gets a single location sticker", async (context) => {
@@ -792,8 +790,8 @@ test("a story that tags the same place twice gets a single location sticker", as
       "111": () => response(placeBody("111", { name: "Chez Paul" })),
     }),
   );
-  assert.equal(locationStickers(repository, "m1").length, 1);
-  assert.deepEqual(shownLocations(repository, "m1"), ["Chez Paul"]);
+  expect(locationStickers(repository, "m1").length).toBe(1);
+  expect(shownLocations(repository, "m1")).toStrictEqual(["Chez Paul"]);
 });
 
 test("a lookup recorded for an unknown place changes nothing", async (context) => {
@@ -804,9 +802,9 @@ test("a lookup recorded for an unknown place changes nothing", async (context) =
     { name: "Nobody", details: { phone: "0102", priceRange: 1 } },
     fixedNow(),
   );
-  assert.deepEqual(locationStickers(repository, "m1"), []);
-  assert.equal(repository.findPlaceDetails("999"), null);
-  assert.equal(storedPlace(repository, "m1").name, null);
+  expect(locationStickers(repository, "m1")).toStrictEqual([]);
+  expect(repository.findPlaceDetails("999")).toBe(null);
+  expect(storedPlace(repository, "m1").name).toBe(null);
 });
 
 test("a story that tags two places gets one location sticker per place, in lookup order", async (context) => {
@@ -825,7 +823,7 @@ test("a story that tags two places gets one location sticker per place, in looku
       "222": () => response(placeBody("222", { name: "Second place" })),
     }),
   );
-  assert.deepEqual(shownLocations(repository, "m1"), ["First place", "Second place"]);
+  expect(shownLocations(repository, "m1")).toStrictEqual(["First place", "Second place"]);
 });
 
 test("a place whose last lookup succeeded three months ago is looked up again, a younger one is not", async (context) => {
@@ -838,16 +836,15 @@ test("a place whose last lookup succeeded three months ago is looked up again, a
   );
   const tooSoon = createPlaceClient([storyAt("m2", { pk: "111" })], {});
   await ingest(repository, tooSoon, laterBy(REFRESH_AFTER - 1));
-  assert.deepEqual(tooSoon.lookups, []);
-  assert.equal(storedPlace(repository, "m2").lastLookupAttemptAt, fixedNow().getTime());
+  expect(tooSoon.lookups).toStrictEqual([]);
+  expect(storedPlace(repository, "m2").lastLookupAttemptAt).toBe(fixedNow().getTime());
 
   const refreshed = createPlaceClient([storyAt("m3", { pk: "111" })], {
     "111": () => response(placeBody("111", { name: "Chez Paul" })),
   });
   await ingest(repository, refreshed, laterBy(REFRESH_AFTER));
-  assert.deepEqual(refreshed.lookups, ["111"]);
-  assert.equal(
-    storedPlace(repository, "m3").lastLookupAttemptAt,
+  expect(refreshed.lookups).toStrictEqual(["111"]);
+  expect(storedPlace(repository, "m3").lastLookupAttemptAt).toBe(
     fixedNow().getTime() + REFRESH_AFTER,
   );
 });
@@ -885,8 +882,8 @@ test("a refresh replaces the stored category and place details with the latest o
     }),
     laterBy(REFRESH_AFTER),
   );
-  assert.equal(storedPlace(repository, "m2").category, "Restaurant");
-  assert.deepEqual(repository.findPlaceDetails("111"), {
+  expect(storedPlace(repository, "m2").category).toBe("Restaurant");
+  expect(repository.findPlaceDetails("111")).toStrictEqual({
     phone: "0304",
     priceRange: 3,
     slug: "new-slug",
@@ -921,11 +918,11 @@ test("a refresh fills only missing values and never replaces values from stories
     laterBy(REFRESH_AFTER),
   );
   const place = storedPlace(repository, "m2");
-  assert.equal(place.name, "Story name");
-  assert.equal(place.address, "First address");
-  assert.equal(place.latitude, 10);
-  assert.equal(place.longitude, 20);
-  assert.equal(place.city, "Amiens");
+  expect(place.name).toBe("Story name");
+  expect(place.address).toBe("First address");
+  expect(place.latitude).toBe(10);
+  expect(place.longitude).toBe(20);
+  expect(place.city).toBe("Amiens");
 });
 
 test("a refresh without a usable result leaves the category and details untouched", async (context) => {
@@ -944,9 +941,9 @@ test("a refresh without a usable result leaves the category and details untouche
     laterBy(REFRESH_AFTER),
   );
   const place = storedPlace(repository, "m2");
-  assert.equal(place.category, "Bistro");
-  assert.equal(place.lastLookupAttemptAt, fixedNow().getTime() + REFRESH_AFTER);
-  assert.match(place.lastLookupFailure ?? "", /500/u);
-  assert.equal(repository.findPlaceDetails("111")?.phone, "0102");
-  assert.equal(repository.findPlaceDetails("111")?.priceRange, 2);
+  expect(place.category).toBe("Bistro");
+  expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime() + REFRESH_AFTER);
+  expect(place.lastLookupFailure ?? "").toMatch(/500/u);
+  expect(repository.findPlaceDetails("111")?.phone).toBe("0102");
+  expect(repository.findPlaceDetails("111")?.priceRange).toBe(2);
 });

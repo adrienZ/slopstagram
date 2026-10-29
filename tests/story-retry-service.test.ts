@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { test } from "vitest";
+import { test, expect } from "vitest";
 import { requestWithRetry, type RetryOptions } from "../sdk/story-retry-service.ts";
 import { createMockLogger, fixedNow, response } from "./mock-helpers.ts";
 
@@ -32,9 +31,9 @@ test("retries transient HTTP failures with exponential backoff and jitter", asyn
     "stories",
   );
 
-  assert.deepEqual(result, { ok: true, value: "recovered" });
-  assert.equal(attempts, 3);
-  assert.deepEqual(delays, [150, 250]);
+  expect(result).toStrictEqual({ ok: true, value: "recovered" });
+  expect(attempts).toBe(3);
+  expect(delays).toStrictEqual([150, 250]);
 });
 
 const retryAfterCases: Array<{ name: string; headers: Record<string, string>; delay: number }> = [
@@ -60,9 +59,9 @@ for (const entry of retryAfterCases) {
       "stories",
     );
 
-    assert.deepEqual(result, { ok: true, value: "recovered" });
-    assert.equal(attempts, 2);
-    assert.deepEqual(delays, [entry.delay]);
+    expect(result).toStrictEqual({ ok: true, value: "recovered" });
+    expect(attempts).toBe(2);
+    expect(delays).toStrictEqual([entry.delay]);
   });
 }
 
@@ -78,7 +77,7 @@ test("does not retry permanent HTTP failures", async () => {
     "stories",
   );
 
-  assert.deepEqual(result, {
+  expect(result).toStrictEqual({
     ok: false,
     failure: {
       attemptCount: 1,
@@ -87,8 +86,8 @@ test("does not retry permanent HTTP failures", async () => {
       status: 403,
     },
   });
-  assert.equal(attempts, 1);
-  assert.deepEqual(delays, []);
+  expect(attempts).toBe(1);
+  expect(delays).toStrictEqual([]);
 });
 
 test("stops retrying rate limits at the configured attempt limit", async () => {
@@ -103,7 +102,7 @@ test("stops retrying rate limits at the configured attempt limit", async () => {
     "stories",
   );
 
-  assert.deepEqual(result, {
+  expect(result).toStrictEqual({
     ok: false,
     failure: {
       attemptCount: 2,
@@ -112,8 +111,8 @@ test("stops retrying rate limits at the configured attempt limit", async () => {
       status: 429,
     },
   });
-  assert.equal(attempts, 2);
-  assert.deepEqual(delays, [150]);
+  expect(attempts).toBe(2);
+  expect(delays).toStrictEqual([150]);
 });
 
 test("retries thrown network failures before recovering", async () => {
@@ -131,9 +130,9 @@ test("retries thrown network failures before recovering", async () => {
     "stories",
   );
 
-  assert.deepEqual(result, { ok: true, value: "recovered" });
-  assert.equal(attempts, 2);
-  assert.deepEqual(delays, [150]);
+  expect(result).toStrictEqual({ ok: true, value: "recovered" });
+  expect(attempts).toBe(2);
+  expect(delays).toStrictEqual([150]);
 });
 
 test("reports the final thrown failure after exhausting retries", async () => {
@@ -148,7 +147,7 @@ test("reports the final thrown failure after exhausting retries", async () => {
     "stories",
   );
 
-  assert.deepEqual(result, {
+  expect(result).toStrictEqual({
     ok: false,
     failure: {
       attemptCount: 2,
@@ -157,8 +156,8 @@ test("reports the final thrown failure after exhausting retries", async () => {
       status: null,
     },
   });
-  assert.equal(attempts, 2);
-  assert.deepEqual(delays, [150]);
+  expect(attempts).toBe(2);
+  expect(delays).toStrictEqual([150]);
 });
 
 test("does not retry errors marked non-retryable", async () => {
@@ -173,7 +172,7 @@ test("does not retry errors marked non-retryable", async () => {
     "stories",
   );
 
-  assert.deepEqual(result, {
+  expect(result).toStrictEqual({
     ok: false,
     failure: {
       attemptCount: 1,
@@ -182,6 +181,6 @@ test("does not retry errors marked non-retryable", async () => {
       status: null,
     },
   });
-  assert.equal(attempts, 1);
-  assert.deepEqual(delays, []);
+  expect(attempts).toBe(1);
+  expect(delays).toStrictEqual([]);
 });

@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { test } from "vitest";
+import { assert, test, expect } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
@@ -24,21 +23,18 @@ test("extracts content-only labels including fallback forms and literal colons",
     ],
     story_locations: [{ location: { name: "Paris", address: "France" } }],
   });
-  assert.deepEqual(
-    stickers.map(({ kind, label }) => ({ kind, label })),
-    [
-      { kind: "mention", label: "@friend" },
-      { kind: "mention", label: "Friend Name" },
-      { kind: "music", label: "Song - Artist" },
-      { kind: "music", label: "music: a title" },
-      { kind: "hashtag", label: "#weekend" },
-      { kind: "hashtag", label: "#ready" },
-      { kind: "link", label: "Read: this (https://example.com/a:b)" },
-      { kind: "link", label: "https://example.com" },
-      { kind: "link", label: "Only a title" },
-      { kind: "location", label: "Paris, France" },
-    ],
-  );
+  expect(stickers.map(({ kind, label }) => ({ kind, label }))).toStrictEqual([
+    { kind: "mention", label: "@friend" },
+    { kind: "mention", label: "Friend Name" },
+    { kind: "music", label: "Song - Artist" },
+    { kind: "music", label: "music: a title" },
+    { kind: "hashtag", label: "#weekend" },
+    { kind: "hashtag", label: "#ready" },
+    { kind: "link", label: "Read: this (https://example.com/a:b)" },
+    { kind: "link", label: "https://example.com" },
+    { kind: "link", label: "Only a title" },
+    { kind: "location", label: "Paris, France" },
+  ]);
 });
 
 test("normalizes legacy explicit annotations and keeps raw content intact", async (context) => {
@@ -65,23 +61,20 @@ test("normalizes legacy explicit annotations and keeps raw content intact", asyn
   });
   const stored = repository.findByMediaPk("explicit");
   assert.ok(stored);
-  assert.deepEqual(
-    stored.annotations?.stickers.map(({ label }) => label),
-    [
-      "@friend",
-      "@friend",
-      "Song - Artist",
-      "#weekend",
-      "https://example.com/a:b",
-      "Paris",
-      "mention:@friend",
-    ],
-  );
+  expect(stored.annotations?.stickers.map(({ label }) => label)).toStrictEqual([
+    "@friend",
+    "@friend",
+    "Song - Artist",
+    "#weekend",
+    "https://example.com/a:b",
+    "Paris",
+    "mention:@friend",
+  ]);
   await repository.save(stored);
-  assert.deepEqual(repository.findByMediaPk("explicit"), stored);
+  expect(repository.findByMediaPk("explicit")).toStrictEqual(stored);
   await repository.save({
     pk: "raw",
     story_music_stickers: [{ music_asset_info: { title: "music: a title" } }],
   });
-  assert.equal(repository.findByMediaPk("raw")?.annotations?.stickers[0]?.label, "music: a title");
+  expect(repository.findByMediaPk("raw")?.annotations?.stickers[0]?.label).toBe("music: a title");
 });

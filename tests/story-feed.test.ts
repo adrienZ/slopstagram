@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { test, type TestContext } from "vitest";
+import { test, type TestContext, expect } from "vitest";
 import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
@@ -59,7 +58,7 @@ async function createFixture(context: TestContext) {
 
 test("lists distinct sticker kinds across all saved accounts", async (context) => {
   const { stories } = await createFixture(context);
-  assert.deepEqual(stories.listStickerKinds(), []);
+  expect(stories.listStickerKinds()).toStrictEqual([]);
   await stories.save(
     {
       pk: "alice-older",
@@ -80,29 +79,30 @@ test("lists distinct sticker kinds across all saved accounts", async (context) =
     },
     { pk: "bob", username: "bob" },
   );
-  assert.deepEqual(stories.listStickerKinds(), ["mention", "poll"]);
+  expect(stories.listStickerKinds()).toStrictEqual(["mention", "poll"]);
 });
 
 test("combines stored stories without a selected report, ranks accounts by recency, and plays chronologically", async (context) => {
   const { feed } = await createFixture(context);
   const users = feed("2026-10-22T10:00:00Z");
-  assert.deepEqual(
+  expect(
     users.map((user) => ({
       username: user.username,
       stories: user.stories.map((story) => story.media_pk),
     })),
-    [
-      { username: "bob", stories: ["bob-newest"] },
-      { username: "alice", stories: ["alice-older", "alice-newer"] },
-    ],
-  );
-  assert.deepEqual(feed("2026-10-24T10:00:00Z"), []);
+  ).toStrictEqual([
+    { username: "bob", stories: ["bob-newest"] },
+    { username: "alice", stories: ["alice-older", "alice-newer"] },
+  ]);
+  expect(feed("2026-10-24T10:00:00Z")).toStrictEqual([]);
 });
 
 test("the default feed includes stored stories without checking the preview file", async (context) => {
   const { stories } = await createFixture(context);
   const users = createStoryFeed(new Date("2026-10-22T10:00:00Z"), { repository: stories });
-  assert.ok(users.some((user) => user.stories.some((story) => story.media_pk === "no-image")));
+  expect(
+    users.some((user) => user.stories.some((story) => story.media_pk === "no-image")),
+  ).toBeTruthy();
 });
 
 test("today uses the rolling feed, including yesterday's recent stories; past dates use calendar days", async (context) => {
@@ -111,19 +111,18 @@ test("today uses the rolling feed, including yesterday's recent stories; past da
   const options = { repository: stories, hasPreview: (pk: string) => pk !== "no-image" };
   for (const selectedDate of [undefined, "2026-10-22", "2026-10-23"]) {
     const feed = createReportFeed(now, selectedDate, options);
-    assert.equal(feed.selectedDate, "2026-10-22");
-    assert.equal(feed.today, "2026-10-22");
-    assert.deepEqual(
-      feed.users.flatMap((user) => user.stories.map((story) => story.media_pk)),
+    expect(feed.selectedDate).toBe("2026-10-22");
+    expect(feed.today).toBe("2026-10-22");
+    expect(feed.users.flatMap((user) => user.stories.map((story) => story.media_pk))).toStrictEqual(
       ["bob-newest", "alice-older", "alice-newer"],
     );
   }
   const past = createReportFeed(now, "2026-10-21", options);
-  assert.equal(past.selectedDate, "2026-10-21");
-  assert.deepEqual(
-    past.users.flatMap((user) => user.stories.map((story) => story.media_pk)),
-    ["alice-older", "expired"],
-  );
+  expect(past.selectedDate).toBe("2026-10-21");
+  expect(past.users.flatMap((user) => user.stories.map((story) => story.media_pk))).toStrictEqual([
+    "alice-older",
+    "expired",
+  ]);
 });
 
 test("available report dates require visible stories and include today for a rolling result from yesterday", async (context) => {
@@ -137,14 +136,14 @@ test("available report dates require visible stories and include today for a rol
     hasPreview: (pk: string) => pk !== "no-preview" && pk !== "no-image",
   };
   const feed = createReportFeed(new Date("2026-10-24T10:00:00Z"), undefined, options);
-  assert.deepEqual(feed.availableDates, ["2026-10-21", "2026-10-22"]);
+  expect(feed.availableDates).toStrictEqual(["2026-10-21", "2026-10-22"]);
   const afterMidnight = createReportFeed(new Date("2026-10-22T00:00:00Z"), undefined, options);
-  assert.deepEqual(afterMidnight.availableDates, ["2026-10-21", "2026-10-22"]);
-  assert.ok(
+  expect(afterMidnight.availableDates).toStrictEqual(["2026-10-21", "2026-10-22"]);
+  expect(
     afterMidnight.users
       .flatMap((user) => user.stories)
       .some((story) => story.media_pk === "alice-older"),
-  );
+  ).toBeTruthy();
 });
 
 test("story deep links retrieve historical stories with exact IDs and select their publication day", async (context) => {
@@ -158,13 +157,13 @@ test("story deep links retrieve historical stories with exact IDs and select the
   const options = { repository: stories, hasPreview: () => true, selectedStory: mediaPk };
   for (const requestedDate of [undefined, "2026-10-21"]) {
     const feed = createReportFeed(now, requestedDate, options);
-    assert.equal(feed.selectedDate, "2026-09-08");
-    assert.ok(
+    expect(feed.selectedDate).toBe("2026-09-08");
+    expect(
       feed.users.flatMap((user) => user.stories).some((story) => story.media_pk === mediaPk),
-    );
+    ).toBeTruthy();
   }
   const unknown = createReportFeed(now, undefined, { ...options, selectedStory: "missing" });
-  assert.equal(unknown.selectedDate, "2026-10-22");
+  expect(unknown.selectedDate).toBe("2026-10-22");
 });
 
 test("deep links to recent stories retain the rolling feed even when the story was published yesterday", async (context) => {
@@ -172,17 +171,17 @@ test("deep links to recent stories retain the rolling feed even when the story w
   const now = new Date("2026-10-22T10:00:00Z");
   const options = { repository: stories, hasPreview: () => true };
   const yesterday = createReportFeed(now, undefined, { ...options, selectedStory: "alice-older" });
-  assert.equal(yesterday.selectedDate, "2026-10-22");
+  expect(yesterday.selectedDate).toBe("2026-10-22");
   const mismatchedDate = createReportFeed(now, "2026-10-20", {
     ...options,
     selectedStory: "alice-newer",
   });
-  assert.equal(mismatchedDate.selectedDate, "2026-10-22");
-  assert.ok(
+  expect(mismatchedDate.selectedDate).toBe("2026-10-22");
+  expect(
     mismatchedDate.users
       .flatMap((user) => user.stories)
       .some((story) => story.media_pk === "alice-older"),
-  );
+  ).toBeTruthy();
 });
 
 test("hides a summary after stories expire until a matching summary is generated by a later collection", async (context) => {
@@ -198,19 +197,17 @@ test("hides a summary after stories expire until a matching summary is generated
     },
   };
   await resolveUserSummariesForReport({ output: { users } }, options);
-  assert.equal(
-    createReportViewModel(users, repositories).userSummaryByUserKey.get("alice"),
+  expect(createReportViewModel(users, repositories).userSummaryByUserKey.get("alice")).toBe(
     "Activités des stories visibles.",
   );
   const laterUsers = feed("2026-10-22T10:02:00Z");
   const laterView = createReportViewModel(laterUsers, repositories);
-  assert.equal(laterView.userSummaryByUserKey.has("alice"), false);
-  assert.equal(laterView.userSummaryByUserKey.has("bob"), true);
-  assert.equal(generations, 2);
+  expect(laterView.userSummaryByUserKey.has("alice")).toBe(false);
+  expect(laterView.userSummaryByUserKey.has("bob")).toBe(true);
+  expect(generations).toBe(2);
   await resolveUserSummariesForReport({ output: { users: laterUsers } }, options);
-  assert.equal(generations, 3);
-  assert.equal(
-    createReportViewModel(laterUsers, repositories).userSummaryByUserKey.get("alice"),
+  expect(generations).toBe(3);
+  expect(createReportViewModel(laterUsers, repositories).userSummaryByUserKey.get("alice")).toBe(
     "Activités des stories visibles.",
   );
 });
@@ -230,15 +227,13 @@ test("a selected day includes midnight and excludes the next midnight, including
       );
     }),
   );
-  assert.deepEqual(
+  expect(
     dayFeed("2026-10-25").flatMap((user) => user.stories.map((story) => story.media_pk)),
-    ["midnight", "last-second"],
-  );
-  assert.deepEqual(
+  ).toStrictEqual(["midnight", "last-second"]);
+  expect(
     dayFeed("2026-10-26").flatMap((user) => user.stories.map((story) => story.media_pk)),
-    ["next-day"],
-  );
-  assert.deepEqual(dayFeed("2026-10-27"), []);
+  ).toStrictEqual(["next-day"]);
+  expect(dayFeed("2026-10-27")).toStrictEqual([]);
 });
 
 test("story day ranges follow Paris midnight through both daylight-saving changes", () => {
@@ -248,9 +243,9 @@ test("story day ranges follow Paris midnight through both daylight-saving change
     ["2026-12-31", "2026-12-30T23:00:00.000Z", "2026-12-31T23:00:00.000Z"],
   ]) {
     const range = getStoryDayRange(day);
-    assert.equal(range.start.toISOString(), start);
-    assert.equal(range.end.toISOString(), end);
+    expect(range.start.toISOString()).toBe(start);
+    expect(range.end.toISOString()).toBe(end);
   }
-  assert.equal(getStoryDate(new Date("2026-10-22T22:30:00Z")), "2026-10-23");
-  assert.throws(() => getStoryDayRange("2026-02-30"));
+  expect(getStoryDate(new Date("2026-10-22T22:30:00Z"))).toBe("2026-10-23");
+  expect(() => getStoryDayRange("2026-02-30")).toThrow();
 });
