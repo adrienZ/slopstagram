@@ -6,7 +6,7 @@ import { ReportStorySchema, ReportFailureSchema } from "../entities/report.ts";
 import { StoryStickerSchema } from "../entities/story.ts";
 import { JsonValueSchema } from "./json-value.ts";
 
-export const StoryVersionSchema = z.object({
+const StoryVersionSchema = z.object({
   height: z.number().optional(),
   url: z.string().optional(),
   width: z.number().optional(),

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export type JsonPrimitive = boolean | null | number | string;
+type JsonPrimitive = boolean | null | number | string;
 export interface JsonObject {
   readonly [key: string]: JsonValue;
 }

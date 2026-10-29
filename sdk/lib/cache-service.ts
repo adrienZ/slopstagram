@@ -29,7 +29,7 @@ export function createAudioCacheStorage(
   });
 }
 
-export function createStoryStorage(storage: Storage = baseStorage): StoryStorage {
+function createStoryStorage(storage: Storage = baseStorage): StoryStorage {
   return prefixStorage<StoryItem>(storage, STORIES_STORAGE_DIR);
 }
 
