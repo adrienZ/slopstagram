@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { createLogger } from "./lib/logging-service.ts";
-import type { Logger } from "./lib/logging-service.ts";
+import { createLogger, type Logger } from "./lib/logging-service.ts";
 import { createReport, type CreateReportResult } from "./report.ts";
 
 const WarmCachePayloadSchema = z.object({

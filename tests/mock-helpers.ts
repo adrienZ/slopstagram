@@ -9,12 +9,13 @@ import type { Logger } from "../sdk/lib/logging-service.ts";
 import type {
   StoryItem,
   StoryReel,
-  StoriesManifestReport,
-  StoryStorage,
   StoryTrayEntry,
-} from "../sdk/lib/types.ts";
+  InstagramClient,
+  InstagramClientResponse,
+} from "../sdk/instagram-types.ts";
+import type { StoriesManifestReport } from "../sdk/report-types.ts";
+import type { StoryStorage } from "../sdk/lib/cache-service.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
-import type { InstagramClient, InstagramClientResponse } from "../sdk/stories.ts";
 
 export const previewSource = "https://example.com/story-preview.webp";
 

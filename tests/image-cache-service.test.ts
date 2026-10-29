@@ -4,7 +4,7 @@ import { describe, test } from "vitest";
 import { TextEncoder } from "node:util";
 import { BASE_CACHE_DIR, createImageCacheStorage } from "../sdk/lib/cache-service.ts";
 import { cacheReportImages } from "../sdk/lib/image-cache-service.ts";
-import type { StoriesManifestReport } from "../sdk/lib/types.ts";
+import type { StoriesManifestReport } from "../sdk/report-types.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 import { createMockLogger } from "./mock-helpers.ts";
 

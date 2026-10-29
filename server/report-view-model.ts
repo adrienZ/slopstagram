@@ -1,13 +1,17 @@
-import { appleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
-import { userSummaryRepository } from "../sdk/repositories/user-summary-repository.ts";
-import { visionRepository } from "../sdk/repositories/vision-repository.ts";
+import {
+  appleVisionRepository,
+  type AppleVisionRepository,
+} from "../sdk/repositories/apple-vision-repository.ts";
+import {
+  userSummaryRepository,
+  type UserSummaryRepository,
+} from "../sdk/repositories/user-summary-repository.ts";
+import { visionRepository, type VisionRepository } from "../sdk/repositories/vision-repository.ts";
 import type { CachedReportImages } from "../sdk/lib/image-cache-service.ts";
 import { readUserSummaries } from "../sdk/user-summary.ts";
-import type { StoryOutputUser, VisionResult } from "../sdk/lib/types.ts";
+import type { StoryOutputUser } from "../sdk/report-types.ts";
+import type { VisionResult } from "../sdk/entities/vision.ts";
 import { readStoryFeedVision } from "../sdk/story-feed.ts";
-import type { AppleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
-import type { UserSummaryRepository } from "../sdk/repositories/user-summary-repository.ts";
-import type { VisionRepository } from "../sdk/repositories/vision-repository.ts";
 
 interface FeedRepositories {
   appleVision: Pick<AppleVisionRepository, "findByMediaPk">;

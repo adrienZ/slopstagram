@@ -1,16 +1,17 @@
 import { resolveAppleCaptionsForReport } from "./apple-caption-report-service.ts";
 import { recordFetchRun } from "./fetch-run.ts";
-import type { ReportRepository } from "./repositories/report-repository.ts";
+import { type ReportRepository, reportRepository } from "./repositories/report-repository.ts";
 import { BASE_CACHE_DIR } from "./lib/cache-service.ts";
-import { fetchRunRepository } from "./repositories/fetch-run-repository.ts";
-import { reportRepository } from "./repositories/report-repository.ts";
-import type { FetchRunRepository } from "./repositories/fetch-run-repository.ts";
+import {
+  fetchRunRepository,
+  type FetchRunRepository,
+} from "./repositories/fetch-run-repository.ts";
 import { createStoryFeed, readStoryFeedVision } from "./story-feed.ts";
 import { cacheReportImages } from "./lib/image-cache-service.ts";
 import { cacheReportAudio } from "./report-audio-service.ts";
 import { persistReportInstagramUsers } from "./lib/instagram-user-service.ts";
 import type { Logger } from "./lib/logging-service.ts";
-import type { StoriesManifestReport } from "./lib/types.ts";
+import type { StoriesManifestReport } from "./report-types.ts";
 import { resolveUserSummariesForReport } from "./user-summary.ts";
 import { resolveVisionForReport } from "./lib/vision-report-service.ts";
 import { fetchStories } from "./stories.ts";

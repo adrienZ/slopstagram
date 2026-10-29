@@ -1,16 +1,33 @@
+import type { JsonValue } from "./json-value.ts";
 import type { StoryRepository } from "../repositories/story-repository.ts";
-import {
-  STORY_MEDIA_TYPES,
-  type ParsedStory,
-  type ParsedStoryTrayUser,
-  type StoriesMediaReport,
-  type StoriesManifestReport,
-  type StoriesReport,
-  type StoryItem,
-  type StoryMediaType,
-  type StoryTrayEntry,
-  type StoryVersion,
-} from "./types.ts";
+import { STORY_MEDIA_TYPES, type StoryMediaType } from "../story-types.ts";
+import type {
+  StoriesMediaReport,
+  StoriesReport,
+  StoryItem,
+  StoryTrayEntry,
+  StoryVersion,
+} from "../instagram-types.ts";
+import type { StoriesManifestReport } from "../report-types.ts";
+
+interface ParsedStoryTrayItem {
+  media_ids: Array<string>;
+}
+
+export interface ParsedStoryTrayUser {
+  items: Array<ParsedStoryTrayItem>;
+  username: string;
+}
+
+export interface ParsedStory {
+  height: number | null;
+  media_type: StoryMediaType;
+  pk: string;
+  story_bloks_stickers: Array<JsonValue> | null;
+  story_music_stickers: Array<JsonValue> | null;
+  url: string | null;
+  width: number | null;
+}
 
 export function getLargestVersion<T extends StoryVersion>(
   versions: Array<T> | null | undefined,

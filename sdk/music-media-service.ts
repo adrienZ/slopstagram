@@ -14,8 +14,8 @@ import {
   IMAGES_STORAGE_DIR,
   audioCacheStorage,
   createAudioCacheStorage,
+  type AudioCacheStorage,
 } from "./lib/cache-service.ts";
-import type { AudioCacheStorage } from "./lib/types.ts";
 import { audioFileExtension } from "./lib/music-media-types.ts";
 import { findMusicMetadata, saveMusicMedia } from "./repositories/music-metadata-repository.ts";
 

@@ -9,7 +9,7 @@ import {
 } from "../sdk/entities/location-metadata.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import type { JsonObject, JsonValue } from "../sdk/lib/json-value.ts";
-import type { StoryItem } from "../sdk/lib/types.ts";
+import type { StoryItem } from "../sdk/instagram-types.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
 import { fetchStoriesManifest } from "../sdk/stories.ts";
 import { createMemoryStorage } from "./memory-storage.ts";

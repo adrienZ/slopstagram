@@ -1,6 +1,6 @@
 import type { StoryRepository } from "./repositories/story-repository.ts";
-import { getMediaCacheKey } from "./lib/cache-service.ts";
-import type { StoryItem, StoryReel, StoryStorage } from "./lib/types.ts";
+import { getMediaCacheKey, type StoryStorage } from "./lib/cache-service.ts";
+import type { StoryItem, StoryReel } from "./instagram-types.ts";
 
 export async function storeReturnedReels(
   reels: Record<string, StoryReel>,

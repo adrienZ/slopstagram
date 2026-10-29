@@ -1,4 +1,4 @@
-import type { StoryOutputUser } from "../../sdk/lib/types.ts";
+import type { StoryOutputUser } from "../../sdk/report-types.ts";
 import { formatUserHandle, formatUserName, getUserTimelineUrl } from "../helper.ts";
 import type { StoryCardViewModel } from "../story-card-view-model.ts";
 import { StoryCard } from "./story-card.tsx";

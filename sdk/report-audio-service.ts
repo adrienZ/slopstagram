@@ -1,5 +1,5 @@
 import { useDrizzle } from "./database/client.ts";
-import type { StoriesManifestReport } from "./lib/types.ts";
+import type { StoriesManifestReport } from "./report-types.ts";
 import {
   cacheReceivedAudio,
   processMusicMedia,

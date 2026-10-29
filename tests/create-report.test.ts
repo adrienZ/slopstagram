@@ -10,7 +10,7 @@ import { StoryRepository } from "../sdk/repositories/story-repository.ts";
 import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
 import { persistReportInstagramUsers } from "../sdk/lib/instagram-user-service.ts";
 import type { Logger } from "../sdk/lib/logging-service.ts";
-import type { StoriesManifestReport } from "../sdk/lib/types.ts";
+import type { StoriesManifestReport } from "../sdk/report-types.ts";
 import { createStoryFeed } from "../sdk/story-feed.ts";
 import { cacheReportAudio } from "../sdk/report-audio-service.ts";
 import { startMediaServer, wavAudio } from "./media-server.ts";
