@@ -26,7 +26,7 @@ function coordinate(record: JsonObject, keys: Array<string>, bound: number): num
   return null;
 }
 
-export function findLocationRecord(value: JsonValue | undefined): JsonObject | null {
+function findLocationRecord(value: JsonValue | undefined): JsonObject | null {
   if (value === undefined || !isJsonObject(value)) {
     return null;
   }

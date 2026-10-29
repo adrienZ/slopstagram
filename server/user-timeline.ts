@@ -9,13 +9,13 @@ import type { InstagramUserRepository } from "../sdk/repositories/instagram-user
 
 const PARIS_TIME_ZONE = "Europe/Paris";
 
-export interface UserTimelineDay {
+interface UserTimelineDay {
   key: string;
   label: string;
   stories: Array<UserTimelineStory>;
 }
 
-export interface UserTimelineMonth {
+interface UserTimelineMonth {
   key: string;
   label: string;
   days: Array<UserTimelineDay>;

@@ -24,7 +24,7 @@ function MentionAvatar({ src }: { src: string }) {
   );
 }
 
-export function MentionSticker({ sticker }: { sticker: StickerPresentation }) {
+function MentionSticker({ sticker }: { sticker: StickerPresentation }) {
   const content = (
     <>
       {sticker.avatarUrl !== undefined && (
@@ -46,7 +46,7 @@ export function MentionSticker({ sticker }: { sticker: StickerPresentation }) {
   );
 }
 
-export function LocationSticker({ label, place }: { label: string; place?: StickerPlace }) {
+function LocationSticker({ label, place }: { label: string; place?: StickerPlace }) {
   const category = place?.category;
   const Icon = place?.hasCoordinates === false ? MapPinOffIcon : MapPinIcon;
   return (
@@ -64,7 +64,7 @@ export function LocationSticker({ label, place }: { label: string; place?: Stick
   );
 }
 
-export function HashtagSticker({ label }: { label: string }) {
+function HashtagSticker({ label }: { label: string }) {
   return (
     <Badge variant="secondary" title={label} className={badgeClass}>
       <span className="tw:wrap-anywhere">{label}</span>

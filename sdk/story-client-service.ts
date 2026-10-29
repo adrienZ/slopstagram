@@ -27,7 +27,7 @@ const PLACE_DOCUMENT_ID = "28572807415659320";
 // PolarisStoriesV3ReelPageGalleryQuery, verified against the web story viewer.
 const REELS_MEDIA_DOCUMENT_ID = "29306733562261201";
 
-export class InstagramApiResponseError extends Error {
+class InstagramApiResponseError extends Error {
   override readonly name = "InstagramApiResponseError";
   readonly nonRetryable = true;
 }
