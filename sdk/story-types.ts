@@ -1,50 +1,19 @@
-import type { closeInstagramSession, openInstagramSession } from "./lib/playwright-service.ts";
-import type { Logger } from "./lib/logging-service.ts";
-import type { StoryRepository } from "./repositories/story-repository.ts";
-import type { StoryStorage, StoryTrayEntry } from "./lib/types.ts";
-import type { ReelsMediaResponse } from "./story-client-service.ts";
-import type { JsonValue } from "./lib/json-value.ts";
+import type { StorySticker } from "./entities/story.ts";
+import type { StoryLocationObservation } from "./entities/location-metadata.ts";
+import type { StoryMusicObservation } from "./entities/music-metadata.ts";
+import type { StoryAudio } from "./entities/story-audio.ts";
 
-export interface ReelTrayResponse {
-  broadcasts: Array<unknown>;
-  story_ranking_token: string;
-  status: string;
-  tray: Array<StoryTrayEntry>;
+export const STORY_MEDIA_TYPES = {
+  IMAGE: "image",
+  VIDEO: "video",
+} as const;
+
+export type StoryMediaType = (typeof STORY_MEDIA_TYPES)[keyof typeof STORY_MEDIA_TYPES];
+
+export interface StoryAnnotations {
+  storyAudio?: StoryAudio;
+  locationObservations?: Array<StoryLocationObservation>;
+  musicObservations?: Array<StoryMusicObservation>;
+  locations: Array<string>;
+  stickers: Array<StorySticker>;
 }
-
-export interface InstagramClientResponse<T> {
-  headers: Record<string, string>;
-  json: () => T;
-  ok: boolean;
-  status: number;
-}
-
-export interface InstagramClient {
-  getReelsMedia: (reelIds: Array<string>) => Promise<InstagramClientResponse<ReelsMediaResponse>>;
-  getTray: () => Promise<InstagramClientResponse<ReelTrayResponse>>;
-  getMusicAsset?: (audioId: string) => Promise<InstagramClientResponse<JsonValue>>;
-  getPlace?: (placeId: string) => Promise<InstagramClientResponse<JsonValue>>;
-}
-
-export interface FetchStoriesManifestOptions {
-  baseDelayMs?: number;
-  maxAttempts?: number;
-  maxRateLimitDelayMs?: number;
-  now?: () => Date;
-  random?: () => number;
-  reelIdsPerRequest?: number;
-  reportName?: string;
-  logger?: Logger;
-  sleep?: (durationMs: number) => Promise<void>;
-  storyRepository?: Pick<StoryRepository, "findByMediaPk" | "save"> &
-    Partial<
-      Pick<StoryRepository, "recordFailedPlaceLookup" | "recordPlaceLookup" | "refreshMusicAsset">
-    >;
-  storyStorage?: StoryStorage;
-}
-
-export type FetchStoriesOptions = FetchStoriesManifestOptions & {
-  client?: InstagramClient;
-  closeSession?: typeof closeInstagramSession;
-  openSession?: typeof openInstagramSession;
-};

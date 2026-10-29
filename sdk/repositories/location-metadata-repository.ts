@@ -9,7 +9,8 @@ import {
   type StoryLocationObservation,
 } from "../entities/location-metadata.ts";
 import { storyStickers } from "../entities/story.ts";
-import type { StoryAnnotations, StoryItem } from "../lib/types.ts";
+import type { StoryAnnotations } from "../story-types.ts";
+import type { StoryItem } from "../instagram-types.ts";
 import type { LocationObservationInput } from "../location-observation-service.ts";
 import {
   planLocationMetadataWrite,

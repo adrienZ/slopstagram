@@ -1,5 +1,5 @@
 import type { StoryMusicObservation } from "../sdk/entities/music-metadata.ts";
-import type { StoryAnnotations } from "../sdk/lib/types.ts";
+import type { StoryAnnotations } from "../sdk/story-types.ts";
 
 export interface MusicPreview {
   id: string;

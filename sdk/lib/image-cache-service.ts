@@ -1,9 +1,14 @@
 import { Buffer } from "node:buffer";
 import path from "node:path";
-import { BASE_CACHE_DIR, IMAGES_STORAGE_DIR, imageCacheStorage } from "./cache-service.ts";
+import {
+  BASE_CACHE_DIR,
+  IMAGES_STORAGE_DIR,
+  imageCacheStorage,
+  type ImageCacheStorage,
+} from "./cache-service.ts";
 import { convertImageToJpeg } from "./image-conversion-service.ts";
 import type { Logger } from "./logging-service.ts";
-import type { ImageCacheStorage, StoriesManifestReport } from "./types.ts";
+import type { StoriesManifestReport } from "../report-types.ts";
 
 interface FetchResponse {
   arrayBuffer: () => Promise<ArrayBuffer>;

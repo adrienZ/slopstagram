@@ -1,15 +1,9 @@
-import { storiesStorage } from "./lib/cache-service.ts";
-import { storyRepository } from "./repositories/story-repository.ts";
-import type { StoryRepository } from "./repositories/story-repository.ts";
-import type { Logger } from "./lib/logging-service.ts";
-import { createLogger } from "./lib/logging-service.ts";
+import { storiesStorage, type StoryStorage } from "./lib/cache-service.ts";
+import { storyRepository, type StoryRepository } from "./repositories/story-repository.ts";
+import { type Logger, createLogger } from "./lib/logging-service.ts";
 import { closeInstagramSession, openInstagramSession } from "./lib/playwright-service.ts";
-import type {
-  StoriesManifestReport,
-  StoryManifestReel,
-  StoryStorage,
-  StoryTrayEntry,
-} from "./lib/types.ts";
+import type { StoriesManifestReport, StoryManifestReel } from "./report-types.ts";
+import type { StoryTrayEntry, InstagramClient, ReelTrayResponse } from "./instagram-types.ts";
 import { createInstagramClient } from "./story-client-service.ts";
 import { enrichCurrentMusicAssets } from "./music-asset-enrichment.ts";
 import { lookUpTaggedPlaces } from "./place-lookup.ts";
@@ -17,19 +11,29 @@ import { createFetchState } from "./story-failure-service.ts";
 import { fetchMissingStories } from "./story-live-fetch-service.ts";
 import { createManifestUsers, createOutputUsers } from "./story-output-service.ts";
 import { requestWithRetry, sleep } from "./story-retry-service.ts";
-import type {
-  FetchStoriesManifestOptions,
-  FetchStoriesOptions,
-  InstagramClient,
-  ReelTrayResponse,
-} from "./story-types.ts";
 
-export type {
-  FetchStoriesManifestOptions,
-  FetchStoriesOptions,
-  InstagramClient,
-  InstagramClientResponse,
-} from "./story-types.ts";
+export interface FetchStoriesManifestOptions {
+  baseDelayMs?: number;
+  maxAttempts?: number;
+  maxRateLimitDelayMs?: number;
+  now?: () => Date;
+  random?: () => number;
+  reelIdsPerRequest?: number;
+  reportName?: string;
+  logger?: Logger;
+  sleep?: (durationMs: number) => Promise<void>;
+  storyRepository?: Pick<StoryRepository, "findByMediaPk" | "save"> &
+    Partial<
+      Pick<StoryRepository, "recordFailedPlaceLookup" | "recordPlaceLookup" | "refreshMusicAsset">
+    >;
+  storyStorage?: StoryStorage;
+}
+
+export type FetchStoriesOptions = FetchStoriesManifestOptions & {
+  client?: InstagramClient;
+  closeSession?: typeof closeInstagramSession;
+  openSession?: typeof openInstagramSession;
+};
 
 const DEFAULT_REPORT_NAME = "stories-report.json";
 const DEFAULT_REEL_IDS_PER_REQUEST = 25;

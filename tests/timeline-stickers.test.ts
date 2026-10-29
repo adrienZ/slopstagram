@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "vitest";
 import { groupTimelineStickers, formatStickerLabel } from "../server/timeline-stickers.ts";
 import { presentSticker } from "../server/sticker-presentation.ts";
-import type { UserTimelineStory } from "../sdk/lib/types.ts";
+import type { UserTimelineStory } from "../sdk/repositories/story-repository.ts";
 
 test("links mentions only to saved accounts and preserves the canonical username in URLs", () => {
   assert.equal(

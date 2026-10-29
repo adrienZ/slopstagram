@@ -8,7 +8,8 @@ import {
   type MusicMediaState,
   type StoryMusicObservation,
 } from "../entities/music-metadata.ts";
-import type { StoryAnnotations, StoryItem } from "../lib/types.ts";
+import type { StoryAnnotations } from "../story-types.ts";
+import type { StoryItem } from "../instagram-types.ts";
 import type { MusicObservationInput } from "../music-observation-service.ts";
 import { planMusicMetadataWrite, planStoryMusicUpdates } from "../music-metadata-service.ts";
 
