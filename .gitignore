@@ -14,10 +14,3 @@ coverage/
 # data
 data/*
 !data/.gitkeep
-
-public
-!/public/
-/public/*
-!/public/css/
-/public/css/*
-!/public/css/*.css
