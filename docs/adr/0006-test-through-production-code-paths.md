@@ -18,7 +18,11 @@ the real `reels_media` shape. Only the steps that need the network, macOS servic
 local models (media caching, Apple captions, vision, summaries) are skipped. Tests
 that need a case the recordings lack insert it through the repositories, not by typing
 view models. Doubles stay at true process boundaries: Instagram, Ollama, the file
-system cache, and the clock.
+system cache, and the clock. The server function transport is one too: route loaders
+read their queries from the router context, production passes the server functions, and
+tests pass in-process calls to the functions they wrap, so SSR tests run the real
+loaders. jsdom tests cannot open SQLite, so a Vitest `globalSetup` computes the page
+props once in Node, from the same seed, and provides them to the UI project.
 
 There is no end-to-end layer for now. A Playwright smoke test (build the app, seed a
 database file, start the built server without the warm-cache job, check both pages,
