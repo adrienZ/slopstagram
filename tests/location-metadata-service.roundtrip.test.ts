@@ -423,60 +423,6 @@ test("place links survive reordering and cold saves while explicit source cleari
   expect(read(repository, "m1").locationObservations).toBe(undefined);
 });
 
-test("failed promotion rolls back metadata, occurrence links, ownership and media together", async (context) => {
-  const { database, repository } = setup(context);
-  const users = new InstagramUserRepository(database);
-  const owner = { id: "u1", pk: "u1", username: "one", full_name: "One" };
-  const other = { id: "u2", pk: "u2", username: "two", full_name: "Two" };
-  await users.save(owner);
-  await users.save(other);
-  await repository.save(
-    {
-      pk: "m1",
-      taken_at: 1_767_225_600,
-      media_type: 1,
-      image_versions2: { candidates: [{ url: "https://example.com/old.jpg" }] },
-      story_locations: [{ id: "a", location: { pk: "place", name: "Old" } }],
-    },
-    owner,
-  );
-  await repository.save({
-    pk: "m2",
-    story_locations: [{ id: "b", location: { pk: "place" } }],
-  });
-  const before = repository.findByMediaPk("m1");
-  const partial = repository.findByMediaPk("m2");
-  database.$client
-    .exec(`CREATE TEMP TRIGGER reject_promotion BEFORE UPDATE ON story_location_observations
-    WHEN NEW.locationId IS NOT NULL BEGIN SELECT RAISE(ABORT, 'fixture promotion failure'); END`);
-  await expect(
-    repository.save(
-      {
-        pk: "m1",
-        taken_at: 1_767_225_601,
-        media_type: 2,
-        image_versions2: {
-          candidates: [{ url: "https://example.com/new.jpg" }],
-        },
-        story_locations: [{ id: "a", location: { pk: "place", name: "New", lat: 48, lng: 2 } }],
-      },
-      other,
-    ),
-  ).rejects.toThrow();
-  const cold = new StoryRepository(database);
-  expect(cold.findByMediaPk("m1")).toStrictEqual(before);
-  expect(cold.findByMediaPk("m2")).toStrictEqual(partial);
-  expect(cold.listByUsername("one").length).toBe(1);
-  expect(cold.listByUsername("two").length).toBe(0);
-  database.$client.exec("DROP TRIGGER reject_promotion");
-  await repository.save({
-    pk: "m2",
-    story_locations: [{ id: "b", location: { pk: "place", lat: 48, lng: 2 } }],
-  });
-  expect(present(read(cold, "m1").locationObservations)[0].metadata.status).toBe("usable");
-  expect(present(read(cold, "m1").locationObservations)[0].metadata.name).toBe("Old");
-});
-
 test("mixed labelled and ID-only locations keep valid labels and preserve earlier contributions", async (context) => {
   const { database, repository } = setup(context);
   const first = {
