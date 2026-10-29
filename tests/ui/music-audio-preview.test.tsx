@@ -3,7 +3,7 @@ import { fireEvent, screen } from "@testing-library/react";
 import { MusicAudioPreview } from "../../server/components/music-audio-preview.tsx";
 import { MusicSticker } from "../../server/components/music-sticker.tsx";
 import { Lightbox } from "../../server/components/lightbox.tsx";
-import { timelineProps } from "../page-fixtures.ts";
+import { timelineProps } from "./page-props.ts";
 import { renderContent, renderPage } from "./render.tsx";
 import type { MusicPreview } from "../../server/music-preview.ts";
 
@@ -20,13 +20,19 @@ function mockPlayback(context: TestContext) {
   const play = vi
     .spyOn(globalThis.HTMLMediaElement.prototype, "play")
     .mockImplementation(async function playAudio(this: HTMLMediaElement) {
-      Object.defineProperty(this, "paused", { configurable: true, value: false });
+      Object.defineProperty(this, "paused", {
+        configurable: true,
+        value: false,
+      });
       this.dispatchEvent(new globalThis.Event("play"));
     });
   const pause = vi
     .spyOn(globalThis.HTMLMediaElement.prototype, "pause")
     .mockImplementation(function pauseAudio(this: HTMLMediaElement) {
-      Object.defineProperty(this, "paused", { configurable: true, value: true });
+      Object.defineProperty(this, "paused", {
+        configurable: true,
+        value: true,
+      });
       this.dispatchEvent(new globalThis.Event("pause"));
     });
   context.onTestFinished(() => {
@@ -43,7 +49,9 @@ test("the compact player displays duration before playback, then plays, pauses a
   expect(audio).toHaveAttribute("preload", "metadata");
   expect(audio).not.toHaveAttribute("autoplay");
   expect(play).not.toHaveBeenCalled();
-  const seek = screen.getByRole("slider", { name: "Avancer dans l’audio : Audio de la story" });
+  const seek = screen.getByRole("slider", {
+    name: "Avancer dans l’audio : Audio de la story",
+  });
   expect(seek).toBeDisabled();
   Object.defineProperty(audio, "duration", { configurable: true, value: 20 });
   fireEvent.durationChange(audio);
@@ -139,12 +147,20 @@ test("detail-modal audio seeking keeps the selected story and navigation stops p
         music: [{ key: preview.id, label: preview.description, preview }],
       },
     },
-    { ...timelineProps.stories[0], mediaPk: "next", stickerDetails: { text: "", music: [] } },
+    {
+      ...timelineProps.stories[0],
+      mediaPk: "next",
+      stickerDetails: { text: "", music: [] },
+    },
   ];
   function Details({ selectedStory }: { selectedStory?: string }) {
     return <Lightbox stories={stories} selectedStory={selectedStory} />;
   }
-  const { user, router } = await renderPage(Details, {}, "/report?story=story-pk");
+  const { user, router } = await renderPage(
+    Details,
+    {},
+    `/report?story=${timelineProps.stories[0].mediaPk}`,
+  );
   const audio = screen.getByLabelText("Écouter : Audio de la story");
   Object.defineProperty(audio, "duration", { configurable: true, value: 20 });
   fireEvent.durationChange(audio);
@@ -153,7 +169,7 @@ test("detail-modal audio seeking keeps the selected story and navigation stops p
   const seek = screen.getByRole("slider");
   seek.focus();
   await user.keyboard("{ArrowRight}");
-  expect(router.state.location.search.story).toBe("story-pk");
+  expect(String(router.state.location.search.story)).toBe(timelineProps.stories[0].mediaPk);
   fireEvent.change(seek, { target: { value: "8" } });
   expect(audio).toHaveProperty("currentTime", 8);
   await user.click(screen.getByRole("button", { name: "Image suivante" }));

@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { screen } from "@testing-library/react";
 import { UserSection } from "../../server/components/user-section.tsx";
-import { reportProps } from "../page-fixtures.ts";
+import { reportProps } from "./page-props.ts";
 import { renderContent } from "./render.tsx";
 
 const [section] = reportProps.users;
