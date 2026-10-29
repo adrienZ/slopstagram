@@ -181,7 +181,7 @@ describe("fetchStoriesManifest edge cases", () => {
         storyStorage: storyRepository.storyStorage,
       }),
     ).rejects.toThrow(/Instagram request failed with HTTP 429/u);
-    assert.deepEqual(client.reelsCalls, []);
+    expect(client.reelsCalls).toEqual([]);
     assert.ok(
       logger.messages.some((message) =>
         message.includes("error: tray fetch failed: Instagram request failed with HTTP 429"),

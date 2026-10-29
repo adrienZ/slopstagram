@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { describe, test } from "vitest";
+import { describe, expect, test } from "vitest";
 import { getLargestVersion } from "../sdk/lib/parser-service.ts";
 import type { StoryVersion } from "../sdk/instagram-types.ts";
 
@@ -11,7 +10,7 @@ describe("getLargestVersion", () => {
       { height: 200, url: "large", width: 80 },
     ];
 
-    assert.deepEqual(getLargestVersion(versions), {
+    expect(getLargestVersion(versions)).toEqual({
       height: 200,
       url: "large",
       width: 80,
@@ -19,7 +18,7 @@ describe("getLargestVersion", () => {
   });
 
   test("returns null for empty input", () => {
-    assert.equal(getLargestVersion([]), null);
-    assert.equal(getLargestVersion(null), null);
+    expect(getLargestVersion([])).toBeNull();
+    expect(getLargestVersion(null)).toBeNull();
   });
 });

@@ -1,4 +1,4 @@
-import { assert, test, vi, expect } from "vitest";
+import { test, vi, expect } from "vitest";
 import { z } from "zod";
 import type { JsonValue } from "../sdk/lib/json-value.ts";
 import { createInstagramClient } from "../sdk/story-client-service.ts";
@@ -418,8 +418,8 @@ test("returns a failed response, not partial reels, when a later gallery page is
 
   const response = await createInstagramClient(session).getReelsMedia(["r1", "r2"]);
 
-  assert.equal(response.ok, false);
-  assert.equal(response.status, 429);
+  expect(response.ok).toBe(false);
+  expect(response.status).toBe(429);
 });
 
 test("returns a failed response when the first gallery page is not OK", async () => {
@@ -427,8 +427,8 @@ test("returns a failed response when the first gallery page is not OK", async ()
 
   const response = await createInstagramClient(session).getReelsMedia(["r1"]);
 
-  assert.equal(response.ok, false);
-  assert.equal(response.status, 500);
+  expect(response.ok).toBe(false);
+  expect(response.status).toBe(500);
 });
 
 test("an empty reel request returns no reels without querying Instagram", async () => {
@@ -436,7 +436,7 @@ test("an empty reel request returns no reels without querying Instagram", async 
 
   const response = await createInstagramClient(createSession({}, calls)).getReelsMedia([]);
 
-  assert.equal(response.ok, true);
-  assert.deepEqual(response.json(), { reels_media: [] });
-  assert.deepEqual(calls, []);
+  expect(response.ok).toBe(true);
+  expect(response.json()).toEqual({ reels_media: [] });
+  expect(calls).toEqual([]);
 });
