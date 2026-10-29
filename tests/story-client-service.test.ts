@@ -379,3 +379,64 @@ test("rejects a gallery response whose pagination cannot advance", async () => {
     /pagination/u,
   );
 });
+
+function createPagedSession(
+  pages: Array<{ body: JsonValue; ok?: boolean; status?: number }>,
+): Parameters<typeof createInstagramClient>[0] {
+  return {
+    page: {
+      evaluate: async () => {
+        const page = pages.shift();
+        if (page === undefined) {
+          throw new Error("Unexpected extra page request");
+        }
+        return {
+          body: JSON.stringify(page.body),
+          headers: { "content-type": "application/json" },
+          ok: page.ok ?? true,
+          status: page.status ?? 200,
+        };
+      },
+    },
+  };
+}
+
+test("returns a failed response, not partial reels, when a later gallery page is not OK", async () => {
+  const session = createPagedSession([
+    {
+      body: {
+        data: {
+          xdt_api__v1__feed__reels_media__connection: {
+            edges: [{ node: { id: "r1", items: [{ pk: "story1" }] } }],
+            page_info: { has_next_page: true, end_cursor: "cursor-1" },
+          },
+        },
+      },
+    },
+    { body: { status: "fail" }, ok: false, status: 429 },
+  ]);
+
+  const response = await createInstagramClient(session).getReelsMedia(["r1", "r2"]);
+
+  expect(response.ok).toBe(false);
+  expect(response.status).toBe(429);
+});
+
+test("returns a failed response when the first gallery page is not OK", async () => {
+  const session = createPagedSession([{ body: { status: "fail" }, ok: false, status: 500 }]);
+
+  const response = await createInstagramClient(session).getReelsMedia(["r1"]);
+
+  expect(response.ok).toBe(false);
+  expect(response.status).toBe(500);
+});
+
+test("an empty reel request returns no reels without querying Instagram", async () => {
+  const calls: Array<BrowserFetchCall> = [];
+
+  const response = await createInstagramClient(createSession({}, calls)).getReelsMedia([]);
+
+  expect(response.ok).toBe(true);
+  expect(response.json()).toEqual({ reels_media: [] });
+  expect(calls).toEqual([]);
+});

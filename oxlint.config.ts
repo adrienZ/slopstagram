@@ -95,6 +95,15 @@ export default defineConfig({
         "tests/mock-helpers.ts",
       ],
       rules: {
+        // Sonar (typescript:S2699) only counts `expect` as an assertion. `assert.ok` stays for type narrowing.
+        "no-restricted-properties": [
+          "error",
+          {
+            object: "assert",
+            allowProperties: ["ok"],
+            message: "Use expect instead of assert, except assert.ok for type narrowing.",
+          },
+        ],
         // oxlint-disable-next-line no-warning-comments
         // TODO: Enable require-await rule
         "typescript/require-await": "off",
