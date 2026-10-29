@@ -13,6 +13,3 @@ and tests. Note meaningful vocabulary gaps for domain modeling.
 
 Explicitly identify any proposal that contradicts an existing ADR,
 including the ADR reference and reason for reconsidering it.
-
-Skip `docs/archive/` unless investigating history: its documents may describe
-code and schemas that no longer exist.
