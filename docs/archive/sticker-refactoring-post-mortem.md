@@ -28,7 +28,7 @@ Earlier changes renamed `report_reels` to `report_story_groups` in
 [PR #8](https://github.com/adrienZ/slopstagram/pull/8) and made summary ownership
 reference `instagram_users.pk` in [PR #9](https://github.com/adrienZ/slopstagram/pull/9).
 [PR #10](https://github.com/adrienZ/slopstagram/pull/10), biography enrichment, was
-dropped because it required another request per account; see [RATIONALE.md](../RATIONALE.md).
+dropped because it required another request per account; see [RATIONALE.md](../../RATIONALE.md).
 
 Before the staged sticker work, recovery reconciled an accidentally applied broader
 draft with the merged schema. It restored 7,737 available report annotations and 82
@@ -83,7 +83,7 @@ then its explicit backfill was added. Its only historical sources were
 backups and network refetches were deliberately excluded as backfill inputs.
 They could not reliably establish occurrence identity or source completeness.
 
-The [additive migration](../sdk/database/migrations/20261022123737_unify_story_stickers/migration.sql)
+The [additive migration](../../sdk/database/migrations/20261022123737_unify_story_stickers/migration.sql)
 adds source provenance and the source-presence table, then stages every existing
 sticker and location using `UNION ALL`. Old stickers precede old locations, each in
 its previous relative order. Dense zero-based positions avoid collisions from sparse
@@ -93,7 +93,7 @@ runtime transition. Drizzle wraps the migration and ledger update in a transacti
 an injected insertion failure verified rollback. Repeat migrator runs are a no-op;
 manually repeating raw backfill SQL is unsupported.
 
-The [cleanup migration](../sdk/database/migrations/20261022131359_remove_story_locations/migration.sql),
+The [cleanup migration](../../sdk/database/migrations/20261022131359_remove_story_locations/migration.sql),
 generated with `npm run db:generate -- --name remove_story_locations`, contains only:
 
 ```sql
@@ -197,7 +197,7 @@ possible. Source identity and known emptiness proved necessary for correct parti
 updates; label equality was insufficient evidence for deduplication.
 
 - [x] Keep entity schemas in `sdk/entities/` and persistence logic in
-      `sdk/repositories/`; the rule is recorded in [AGENTS.md](../AGENTS.md#persistence-layout).
+      `sdk/repositories/`; the rule is recorded in [AGENTS.md](../../AGENTS.md#persistence-layout).
 - [x] Keep migration tests on explicitly supplied disposable databases.
 - [ ] Guard live startup migrations with an explicit execution boundary; this
       refactor did not implement that guard. Check and stop development servers before

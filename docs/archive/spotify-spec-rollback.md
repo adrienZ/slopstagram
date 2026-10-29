@@ -64,7 +64,7 @@ from pathlib import Path
 
 repository = "adrienZ/slopstagram"
 folder = Path(sys.argv[1])
-document = Path("docs/spotify-spec-rollback.md").read_text()
+document = Path("docs/archive/spotify-spec-rollback.md").read_text()
 
 for number in (35, 41, 42):
     heading = re.search(rf"^## Issue #{number} — (.+)$", document, re.MULTILINE)
