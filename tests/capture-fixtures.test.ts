@@ -36,7 +36,7 @@ const secrets = [
   "real_sharer",
   "audio.cdninstagram.com",
 ];
-// Public music asset metadata is kept as recorded.
+// Public metadata of a licensed catalog track is kept as recorded.
 const publicAudio = ["Synthetic Song", "Synthetic Artist", "777", "888000"];
 
 function trayEntry(userPk: string, username: string, fullName: string, mediaId: string) {
@@ -63,6 +63,7 @@ function musicAssetInfo() {
   return {
     audio_asset_id: "777",
     audio_cluster_id: "888000",
+    is_original_sound: false,
     title: "Synthetic Song",
     display_artist: "Synthetic Artist",
     duration_in_ms: 30_000,
@@ -356,6 +357,7 @@ test("a username nested inside a music payload is still replaced", () => {
   const redacted = JSON.stringify(
     createRedactor()({
       music_asset_info: {
+        is_original_sound: false,
         title: "Synthetic Song",
         username: "real_nested_user",
         ig_artist: { username: "real_nested_artist", full_name: "Nested Person" },
@@ -367,6 +369,87 @@ test("a username nested inside a music payload is still replaced", () => {
   for (const original of ["real_nested_user", "real_nested_artist", "Nested Person"]) {
     expect(redacted).not.toContain(original);
   }
+});
+
+function originalAudioInfo(extra: Record<string, JsonValue> = {}) {
+  return {
+    audio_asset_id: "4321",
+    audio_cluster_id: "4321000",
+    duration_in_ms: 12_000,
+    title: "Original audio - creator_example",
+    display_artist: "creator_example",
+    ig_artist: { id: "55", username: "creator_example", full_name: "Creator Example" },
+    ...extra,
+  };
+}
+
+const creatorTexts = ["creator_example", "Creator Example", "Original audio"];
+
+test("original audio replaces the creator name but keeps ids and durations", () => {
+  const redacted = JSON.stringify(
+    createRedactor()({ music_asset_info: originalAudioInfo({ is_original_sound: true }) }),
+  );
+
+  for (const original of creatorTexts) {
+    expect(redacted).not.toContain(original);
+  }
+  expect(redacted).toContain('"audio_asset_id":"4321"');
+  expect(redacted).toContain('"duration_in_ms":12000');
+  expect(redacted).toContain("Fixture audio title");
+  expect(redacted).toContain("Fixture audio artist");
+});
+
+test("audio is replaced when the original indicator is missing or ambiguous", () => {
+  const cases = [
+    originalAudioInfo(),
+    originalAudioInfo({ is_original_sound: null }),
+    originalAudioInfo({ is_original_sound: "false" }),
+    originalAudioInfo({ is_original_sound: false, original_audio_title: "Original audio" }),
+    originalAudioInfo({ is_original_sound: false, original_sound_info: { audio_asset_id: "1" } }),
+    originalAudioInfo({ is_original_sound: false, is_original_audio: true }),
+  ];
+
+  for (const info of cases) {
+    const redacted = JSON.stringify(createRedactor()({ music_asset_info: info }));
+    for (const original of creatorTexts) {
+      expect(redacted).not.toContain(original);
+    }
+  }
+});
+
+test("a licensed-looking track whose text names an account in the payload is replaced", () => {
+  const redacted = JSON.stringify(
+    createRedactor()({
+      user: { username: "named_example_user" },
+      music_asset_info: {
+        is_original_sound: false,
+        title: "Synthetic Song",
+        display_artist: "Named_Example_User",
+      },
+    }),
+  );
+
+  expect(redacted).not.toContain("Named_Example_User");
+  expect(redacted).not.toContain("named_example_user");
+});
+
+test("replaced audio text is deterministic and distinct per original", () => {
+  const first = createRedactor();
+  const second = createRedactor();
+  const info = originalAudioInfo();
+  const other = originalAudioInfo({
+    title: "Another creator_two sound",
+    display_artist: "creator_two",
+  });
+
+  const a = JSON.stringify(first({ music_asset_info: info }));
+  const again = JSON.stringify(first({ music_asset_info: info }));
+  const otherRedacted = JSON.stringify(first({ music_asset_info: other }));
+
+  expect(again).toBe(a);
+  expect(JSON.stringify(second({ music_asset_info: info }))).toBe(a);
+  expect(otherRedacted).not.toBe(a);
+  expect(otherRedacted).not.toContain("creator_two");
 });
 
 test("redaction replaces a string that is not known to be structural, whatever its key", () => {

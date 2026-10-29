@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 import { z } from "zod";
 import { closeInstagramSession, openInstagramSession } from "../sdk/lib/playwright-service.ts";
 import { isJsonObject, JsonValueSchema } from "../sdk/lib/json-value.ts";
-import type { JsonValue } from "../sdk/lib/json-value.ts";
+import type { JsonObject, JsonValue } from "../sdk/lib/json-value.ts";
 import { createInstagramClient } from "../sdk/story-client-service.ts";
 
 // Keys whose values identify a person, a story, a place or a request; each distinct value gets a
@@ -31,9 +31,11 @@ const STRUCTURAL_KEYS = new Set([
   "sticker_type",
   "type",
 ]);
-// Public music asset metadata is recorded as is. The music sticker and the music asset response
-// both carry it under `music_asset_info`. Only these direct scalar fields are kept: the people
-// around the track (artist account, profile pictures, usernames) and every URL stay redacted.
+// Public music asset metadata of licensed catalog tracks is recorded as is. The music sticker and
+// the music asset response both carry it under `music_asset_info`. Only these direct scalar fields
+// are kept: the people around the track (artist account, profile pictures, usernames) and every URL
+// stay redacted. Original (user-made) audio is not public catalog data: its title and display
+// artist are usually the creator's name, so they are replaced (see isLicensedCatalogTrack).
 const MUSIC_ASSET_INFO_KEY = "music_asset_info";
 const PUBLIC_AUDIO_KEYS = new Set([
   "audio_asset_id",
@@ -48,6 +50,17 @@ const PUBLIC_AUDIO_KEYS = new Set([
   "should_mute_audio",
   "title",
 ]);
+// Human-readable audio text; only kept for licensed catalog tracks.
+const AUDIO_TEXT_KEYS = new Set(["display_artist", "title"]);
+// Any of these present on music asset info marks the audio as user-made, so its text is replaced.
+const ORIGINAL_AUDIO_KEYS = [
+  "is_original",
+  "is_original_audio",
+  "is_original_sound",
+  "original_audio_title",
+  "original_sound_info",
+];
+const MIN_ACCOUNT_NAME_LENGTH = 3;
 // Free text, and a manifest full of media URLs, that tests do not need.
 const OMITTED_KEYS = new Set(["video_dash_manifest", "caption", "accessibility_caption"]);
 const FIXTURE_ID_BASE = 700_000_000_000_000n;
@@ -70,11 +83,65 @@ function isPublicAudioValue(value: JsonValue): boolean {
     : !isJsonObject(value);
 }
 
+function normalizedName(text: string): string {
+  return text.trim().toLowerCase();
+}
+
+// Usernames and full names found anywhere in a payload, to spot audio text that names a person.
+function collectAccountNames(value: JsonValue, names = new Set<string>()): Set<string> {
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      collectAccountNames(entry, names);
+    }
+  } else if (isJsonObject(value)) {
+    for (const [key, entry] of Object.entries(value)) {
+      const text = z.string().safeParse(entry);
+      if ((key === "username" || key === "full_name") && text.success) {
+        const name = normalizedName(text.data);
+        if (name.length >= MIN_ACCOUNT_NAME_LENGTH) {
+          names.add(name);
+        }
+      } else {
+        collectAccountNames(entry, names);
+      }
+    }
+  }
+  return names;
+}
+
+/**
+ * Whether music asset info is clearly a licensed catalog track, the only audio whose title and
+ * display artist are public. Default-deny: the info must say explicitly that it is not original
+ * sound (`is_original_sound: false`), carry no other original-audio marker, and its title and
+ * display artist must not contain any username or full name found in the same payload. A missing
+ * or ambiguous indicator means the audio is treated as user-made.
+ */
+function isLicensedCatalogTrack(info: JsonObject, accountNames: ReadonlySet<string>): boolean {
+  if (info.is_original_sound !== false) {
+    return false;
+  }
+  const markedOriginal = ORIGINAL_AUDIO_KEYS.some(
+    (key) =>
+      key !== "is_original_sound" &&
+      Object.hasOwn(info, key) &&
+      info[key] !== null &&
+      info[key] !== false,
+  );
+  if (markedOriginal) {
+    return false;
+  }
+  const texts = [info.title, info.display_artist]
+    .map((text) => z.string().safeParse(text))
+    .flatMap((text) => (text.success ? [normalizedName(text.data)] : []));
+  return texts.every((text) => [...accountNames].every((name) => !text.includes(name)));
+}
+
 /**
  * Replaces everything that could identify someone while keeping the payload's shape.
  * Redaction is default-deny: every string is replaced unless its key is known to be structural,
  * and places lose their names, addresses, ids, slugs and coordinates. The one exception is public
- * music asset metadata (see PUBLIC_AUDIO_KEYS).
+ * music asset metadata of licensed catalog tracks (see PUBLIC_AUDIO_KEYS); original audio gets a
+ * synthetic title and display artist because they are usually the creator's name.
  * One redactor gives the same replacement to the same original, across every payload it sees.
  */
 export function createRedactor() {
@@ -128,9 +195,33 @@ export function createRedactor() {
     return null;
   }
 
-  function redact(value: JsonValue, key: string): JsonValue {
+  // Synthetic stand-in for the title or display artist of audio that is not a licensed track.
+  function redactAudioText(entry: JsonValue, kind: string): JsonValue {
+    if (Array.isArray(entry)) {
+      return entry.map((item) => redactAudioText(item, kind));
+    }
+    const text = z.string().safeParse(entry);
+    return text.success && text.data.length > 0
+      ? replacement(`audio-${kind}`, text.data, (index) => `Fixture audio ${kind} ${index}`)
+      : entry;
+  }
+
+  // Kept public fields: licensed tracks keep their text, other audio gets synthetic text.
+  function publicAudioEntry(
+    info: JsonObject,
+    entryKey: string,
+    entry: JsonValue,
+    names: ReadonlySet<string>,
+  ): JsonValue {
+    if (!AUDIO_TEXT_KEYS.has(entryKey) || isLicensedCatalogTrack(info, names)) {
+      return entry;
+    }
+    return redactAudioText(entry, entryKey === "title" ? "title" : "artist");
+  }
+
+  function redact(value: JsonValue, key: string, names: ReadonlySet<string>): JsonValue {
     if (Array.isArray(value)) {
-      return value.map((entry) => redact(entry, key));
+      return value.map((entry) => redact(entry, key, names));
     }
     if (isJsonObject(value)) {
       const isMusicInfo = key === MUSIC_ASSET_INFO_KEY;
@@ -140,8 +231,8 @@ export function createRedactor() {
           .map(([entryKey, entry]) => [
             entryKey,
             isMusicInfo && PUBLIC_AUDIO_KEYS.has(entryKey) && isPublicAudioValue(entry)
-              ? entry
-              : redact(entry, entryKey),
+              ? publicAudioEntry(value, entryKey, entry, names)
+              : redact(entry, entryKey, names),
           ]),
       );
     }
@@ -160,7 +251,7 @@ export function createRedactor() {
     return isIdentifierKey(key) ? Number(redactText(String(number.data), key)) : number.data;
   }
 
-  return (payload: JsonValue) => redact(payload, "");
+  return (payload: JsonValue) => redact(payload, "", collectAccountNames(payload));
 }
 
 type Session = Parameters<typeof createInstagramClient>[0];
@@ -283,7 +374,7 @@ export function buildFixtureMetadata(payloads: CapturedPayloads, capturedAt: Dat
     files.push([
       "instagram-music-asset.json",
       payloads.musicAsset,
-      "One music asset lookup response. Audio titles, artists and asset ids are kept as recorded; people and URLs are synthetic.",
+      "One music asset lookup response. Asset ids and durations are kept as recorded; titles and artists are kept only for licensed catalog tracks and are synthetic for original audio; people and URLs are synthetic.",
     ]);
   }
   return {
