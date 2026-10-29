@@ -12,7 +12,7 @@ function createReport(name: string): StoriesManifestReport {
     manifest: { users: [] },
     metadata: {
       broadcasts_count: 0,
-      counts: { cache_hits: 0, cache_misses: 0, failed: 0, fetched: 0, reels: 0, stories: 0 },
+      counts: { failed: 0, fetched: 0, reels: 0, stories: 0 },
       created_at: "2026-08-17T12:00:00.000Z",
       report_name: name,
       status: "ok",
@@ -52,7 +52,7 @@ function createReportWithStory(name: string): StoriesManifestReport {
     },
     metadata: {
       ...createReport(name).metadata,
-      counts: { cache_hits: 1, cache_misses: 0, failed: 0, fetched: 0, reels: 1, stories: 1 },
+      counts: { failed: 0, fetched: 0, reels: 1, stories: 1 },
     },
     output: {
       users: [

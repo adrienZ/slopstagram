@@ -1,0 +1,1994 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "0b14e87e-c7ef-42b4-90a5-ce51bec5dbdb",
+  "prevIds": ["e9f3643c-1536-48cf-970c-941f014c6952"],
+  "ddl": [
+    {
+      "name": "apple_vision",
+      "entityType": "tables"
+    },
+    {
+      "name": "fetch_runs",
+      "entityType": "tables"
+    },
+    {
+      "name": "instagram_users",
+      "entityType": "tables"
+    },
+    {
+      "name": "metadata_location_details",
+      "entityType": "tables"
+    },
+    {
+      "name": "metadata_location",
+      "entityType": "tables"
+    },
+    {
+      "name": "story_location_observations",
+      "entityType": "tables"
+    },
+    {
+      "name": "metadata_music",
+      "entityType": "tables"
+    },
+    {
+      "name": "story_music_observations",
+      "entityType": "tables"
+    },
+    {
+      "name": "report_failures",
+      "entityType": "tables"
+    },
+    {
+      "name": "report_stories",
+      "entityType": "tables"
+    },
+    {
+      "name": "report_story_groups",
+      "entityType": "tables"
+    },
+    {
+      "name": "reports",
+      "entityType": "tables"
+    },
+    {
+      "name": "story_audio",
+      "entityType": "tables"
+    },
+    {
+      "name": "stories",
+      "entityType": "tables"
+    },
+    {
+      "name": "story_image_versions",
+      "entityType": "tables"
+    },
+    {
+      "name": "story_stickers",
+      "entityType": "tables"
+    },
+    {
+      "name": "story_video_versions",
+      "entityType": "tables"
+    },
+    {
+      "name": "user_summaries",
+      "entityType": "tables"
+    },
+    {
+      "name": "vision",
+      "entityType": "tables"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "caption",
+      "entityType": "columns",
+      "table": "apple_vision"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "mediaPk",
+      "entityType": "columns",
+      "table": "apple_vision"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "fetch_runs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "startedAt",
+      "entityType": "columns",
+      "table": "fetch_runs"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "finishedAt",
+      "entityType": "columns",
+      "table": "fetch_runs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "status",
+      "entityType": "columns",
+      "table": "fetch_runs"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "error",
+      "entityType": "columns",
+      "table": "fetch_runs"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "reportKey",
+      "entityType": "columns",
+      "table": "fetch_runs"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "storiesCount",
+      "entityType": "columns",
+      "table": "fetch_runs"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "reelsCount",
+      "entityType": "columns",
+      "table": "fetch_runs"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fetchedCount",
+      "entityType": "columns",
+      "table": "fetch_runs"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "failedCount",
+      "entityType": "columns",
+      "table": "fetch_runs"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fullName",
+      "entityType": "columns",
+      "table": "instagram_users"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "instagram_users"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "pk",
+      "entityType": "columns",
+      "table": "instagram_users"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "username",
+      "entityType": "columns",
+      "table": "instagram_users"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "locationId",
+      "entityType": "columns",
+      "table": "metadata_location_details"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "phone",
+      "entityType": "columns",
+      "table": "metadata_location_details"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "priceRange",
+      "entityType": "columns",
+      "table": "metadata_location_details"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "slug",
+      "entityType": "columns",
+      "table": "metadata_location_details"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "businessAccountId",
+      "entityType": "columns",
+      "table": "metadata_location_details"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "businessAccountUsername",
+      "entityType": "columns",
+      "table": "metadata_location_details"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "businessAccountPictureUrl",
+      "entityType": "columns",
+      "table": "metadata_location_details"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "metadata_location"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "instagramPlaceId",
+      "entityType": "columns",
+      "table": "metadata_location"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "name",
+      "entityType": "columns",
+      "table": "metadata_location"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "address",
+      "entityType": "columns",
+      "table": "metadata_location"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "latitude",
+      "entityType": "columns",
+      "table": "metadata_location"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "longitude",
+      "entityType": "columns",
+      "table": "metadata_location"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "facebookPlacesId",
+      "entityType": "columns",
+      "table": "metadata_location"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "externalSource",
+      "entityType": "columns",
+      "table": "metadata_location"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "category",
+      "entityType": "columns",
+      "table": "metadata_location"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "city",
+      "entityType": "columns",
+      "table": "metadata_location"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "zip",
+      "entityType": "columns",
+      "table": "metadata_location"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "lastLookupAttemptAt",
+      "entityType": "columns",
+      "table": "metadata_location"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "lastLookupFailure",
+      "entityType": "columns",
+      "table": "metadata_location"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "story_location_observations"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "mediaPk",
+      "entityType": "columns",
+      "table": "story_location_observations"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "source",
+      "entityType": "columns",
+      "table": "story_location_observations"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "sortOrder",
+      "entityType": "columns",
+      "table": "story_location_observations"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "providerOccurrenceId",
+      "entityType": "columns",
+      "table": "story_location_observations"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "occurrenceId",
+      "entityType": "columns",
+      "table": "story_location_observations"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "locationId",
+      "entityType": "columns",
+      "table": "story_location_observations"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "metadata_music"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "instagramAudioAssetId",
+      "entityType": "columns",
+      "table": "metadata_music"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "title",
+      "entityType": "columns",
+      "table": "metadata_music"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "artist",
+      "entityType": "columns",
+      "table": "metadata_music"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "durationMs",
+      "entityType": "columns",
+      "table": "metadata_music"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "audioSourceUrl",
+      "entityType": "columns",
+      "table": "metadata_music"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "audioDurationMs",
+      "entityType": "columns",
+      "table": "metadata_music"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "artworkSourceUrl",
+      "entityType": "columns",
+      "table": "metadata_music"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "audioCachePath",
+      "entityType": "columns",
+      "table": "metadata_music"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "artworkCachePath",
+      "entityType": "columns",
+      "table": "metadata_music"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'unavailable'",
+      "generated": null,
+      "name": "audioState",
+      "entityType": "columns",
+      "table": "metadata_music"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'unavailable'",
+      "generated": null,
+      "name": "artworkState",
+      "entityType": "columns",
+      "table": "metadata_music"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "story_music_observations"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "mediaPk",
+      "entityType": "columns",
+      "table": "story_music_observations"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "source",
+      "entityType": "columns",
+      "table": "story_music_observations"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "sortOrder",
+      "entityType": "columns",
+      "table": "story_music_observations"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "providerOccurrenceId",
+      "entityType": "columns",
+      "table": "story_music_observations"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "occurrenceId",
+      "entityType": "columns",
+      "table": "story_music_observations"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "musicId",
+      "entityType": "columns",
+      "table": "story_music_observations"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "attemptCount",
+      "entityType": "columns",
+      "table": "report_failures"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "failureIndex",
+      "entityType": "columns",
+      "table": "report_failures"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "httpStatus",
+      "entityType": "columns",
+      "table": "report_failures"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "mediaPk",
+      "entityType": "columns",
+      "table": "report_failures"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "message",
+      "entityType": "columns",
+      "table": "report_failures"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "reason",
+      "entityType": "columns",
+      "table": "report_failures"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "reelId",
+      "entityType": "columns",
+      "table": "report_failures"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "reportKey",
+      "entityType": "columns",
+      "table": "report_failures"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "failureIndex",
+      "entityType": "columns",
+      "table": "report_stories"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "locations",
+      "entityType": "columns",
+      "table": "report_stories"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "mediaPk",
+      "entityType": "columns",
+      "table": "report_stories"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "mediaType",
+      "entityType": "columns",
+      "table": "report_stories"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "previewImageUrl",
+      "entityType": "columns",
+      "table": "report_stories"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "reelId",
+      "entityType": "columns",
+      "table": "report_stories"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "reportKey",
+      "entityType": "columns",
+      "table": "report_stories"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "sortOrder",
+      "entityType": "columns",
+      "table": "report_stories"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "status",
+      "entityType": "columns",
+      "table": "report_stories"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "stickers",
+      "entityType": "columns",
+      "table": "report_stories"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fullName",
+      "entityType": "columns",
+      "table": "report_story_groups"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "instagramId",
+      "entityType": "columns",
+      "table": "report_story_groups"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "instagramPk",
+      "entityType": "columns",
+      "table": "report_story_groups"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "profilePicUrl",
+      "entityType": "columns",
+      "table": "report_story_groups"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "reelId",
+      "entityType": "columns",
+      "table": "report_story_groups"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "reportKey",
+      "entityType": "columns",
+      "table": "report_story_groups"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "sortOrder",
+      "entityType": "columns",
+      "table": "report_story_groups"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "username",
+      "entityType": "columns",
+      "table": "report_story_groups"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "broadcastsCount",
+      "entityType": "columns",
+      "table": "reports"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "createdAt",
+      "entityType": "columns",
+      "table": "reports"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "failedCount",
+      "entityType": "columns",
+      "table": "reports"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fetchedCount",
+      "entityType": "columns",
+      "table": "reports"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "key",
+      "entityType": "columns",
+      "table": "reports"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "reelsCount",
+      "entityType": "columns",
+      "table": "reports"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "reportName",
+      "entityType": "columns",
+      "table": "reports"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "status",
+      "entityType": "columns",
+      "table": "reports"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "storiesCount",
+      "entityType": "columns",
+      "table": "reports"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "storyRankingToken",
+      "entityType": "columns",
+      "table": "reports"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "mediaPk",
+      "entityType": "columns",
+      "table": "story_audio"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "sourceUrl",
+      "entityType": "columns",
+      "table": "story_audio"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "mimeType",
+      "entityType": "columns",
+      "table": "story_audio"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "codecs",
+      "entityType": "columns",
+      "table": "story_audio"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "cachePath",
+      "entityType": "columns",
+      "table": "story_audio"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "durationMs",
+      "entityType": "columns",
+      "table": "story_audio"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'pending'",
+      "generated": null,
+      "name": "state",
+      "entityType": "columns",
+      "table": "story_audio"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "accessibilityCaption",
+      "entityType": "columns",
+      "table": "stories"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "stories"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "instagramUserPk",
+      "entityType": "columns",
+      "table": "stories"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "mediaPk",
+      "entityType": "columns",
+      "table": "stories"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "mediaType",
+      "entityType": "columns",
+      "table": "stories"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "originalHeight",
+      "entityType": "columns",
+      "table": "stories"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "originalWidth",
+      "entityType": "columns",
+      "table": "stories"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "takenAt",
+      "entityType": "columns",
+      "table": "stories"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "height",
+      "entityType": "columns",
+      "table": "story_image_versions"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "mediaPk",
+      "entityType": "columns",
+      "table": "story_image_versions"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "sortOrder",
+      "entityType": "columns",
+      "table": "story_image_versions"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "url",
+      "entityType": "columns",
+      "table": "story_image_versions"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "width",
+      "entityType": "columns",
+      "table": "story_image_versions"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "occurrenceId",
+      "entityType": "columns",
+      "table": "story_stickers"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "providerOccurrenceId",
+      "entityType": "columns",
+      "table": "story_stickers"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "kind",
+      "entityType": "columns",
+      "table": "story_stickers"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "label",
+      "entityType": "columns",
+      "table": "story_stickers"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "mediaPk",
+      "entityType": "columns",
+      "table": "story_stickers"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "sortOrder",
+      "entityType": "columns",
+      "table": "story_stickers"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'unknown'",
+      "generated": null,
+      "name": "source",
+      "entityType": "columns",
+      "table": "story_stickers"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "height",
+      "entityType": "columns",
+      "table": "story_video_versions"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "mediaPk",
+      "entityType": "columns",
+      "table": "story_video_versions"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "sortOrder",
+      "entityType": "columns",
+      "table": "story_video_versions"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "type",
+      "entityType": "columns",
+      "table": "story_video_versions"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "url",
+      "entityType": "columns",
+      "table": "story_video_versions"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "width",
+      "entityType": "columns",
+      "table": "story_video_versions"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "instagramUserPk",
+      "entityType": "columns",
+      "table": "user_summaries"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "legacyUsername",
+      "entityType": "columns",
+      "table": "user_summaries"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "promptHash",
+      "entityType": "columns",
+      "table": "user_summaries"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "result",
+      "entityType": "columns",
+      "table": "user_summaries"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "sourceHash",
+      "entityType": "columns",
+      "table": "user_summaries"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "mediaPk",
+      "entityType": "columns",
+      "table": "vision"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "model",
+      "entityType": "columns",
+      "table": "vision"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "promptHash",
+      "entityType": "columns",
+      "table": "vision"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "text",
+      "entityType": "columns",
+      "table": "vision"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "visual",
+      "entityType": "columns",
+      "table": "vision"
+    },
+    {
+      "columns": ["reportKey"],
+      "tableTo": "reports",
+      "columnsTo": ["key"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "nameExplicit": false,
+      "name": "fk_fetch_runs_reportKey_reports_key_fk",
+      "entityType": "fks",
+      "table": "fetch_runs"
+    },
+    {
+      "columns": ["locationId"],
+      "tableTo": "metadata_location",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_metadata_location_details_locationId_metadata_location_id_fk",
+      "entityType": "fks",
+      "table": "metadata_location_details"
+    },
+    {
+      "columns": ["mediaPk"],
+      "tableTo": "stories",
+      "columnsTo": ["mediaPk"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_story_location_observations_mediaPk_stories_mediaPk_fk",
+      "entityType": "fks",
+      "table": "story_location_observations"
+    },
+    {
+      "columns": ["occurrenceId"],
+      "tableTo": "story_stickers",
+      "columnsTo": ["occurrenceId"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "nameExplicit": false,
+      "name": "fk_story_location_observations_occurrenceId_story_stickers_occurrenceId_fk",
+      "entityType": "fks",
+      "table": "story_location_observations"
+    },
+    {
+      "columns": ["locationId"],
+      "tableTo": "metadata_location",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_story_location_observations_locationId_metadata_location_id_fk",
+      "entityType": "fks",
+      "table": "story_location_observations"
+    },
+    {
+      "columns": ["mediaPk"],
+      "tableTo": "stories",
+      "columnsTo": ["mediaPk"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_story_music_observations_mediaPk_stories_mediaPk_fk",
+      "entityType": "fks",
+      "table": "story_music_observations"
+    },
+    {
+      "columns": ["occurrenceId"],
+      "tableTo": "story_stickers",
+      "columnsTo": ["occurrenceId"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "nameExplicit": false,
+      "name": "fk_story_music_observations_occurrenceId_story_stickers_occurrenceId_fk",
+      "entityType": "fks",
+      "table": "story_music_observations"
+    },
+    {
+      "columns": ["musicId"],
+      "tableTo": "metadata_music",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_story_music_observations_musicId_metadata_music_id_fk",
+      "entityType": "fks",
+      "table": "story_music_observations"
+    },
+    {
+      "columns": ["reportKey"],
+      "tableTo": "reports",
+      "columnsTo": ["key"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_report_failures_reportKey_reports_key_fk",
+      "entityType": "fks",
+      "table": "report_failures"
+    },
+    {
+      "columns": ["reportKey"],
+      "tableTo": "reports",
+      "columnsTo": ["key"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_report_stories_reportKey_reports_key_fk",
+      "entityType": "fks",
+      "table": "report_stories"
+    },
+    {
+      "columns": ["reportKey"],
+      "tableTo": "reports",
+      "columnsTo": ["key"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_report_reels_reportKey_reports_key_fk",
+      "entityType": "fks",
+      "table": "report_story_groups"
+    },
+    {
+      "columns": ["mediaPk"],
+      "tableTo": "stories",
+      "columnsTo": ["mediaPk"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_story_audio_mediaPk_stories_mediaPk_fk",
+      "entityType": "fks",
+      "table": "story_audio"
+    },
+    {
+      "columns": ["mediaPk"],
+      "tableTo": "stories",
+      "columnsTo": ["mediaPk"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_story_image_versions_mediaPk_stories_mediaPk_fk",
+      "entityType": "fks",
+      "table": "story_image_versions"
+    },
+    {
+      "columns": ["mediaPk"],
+      "tableTo": "stories",
+      "columnsTo": ["mediaPk"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_story_stickers_mediaPk_stories_mediaPk_fk",
+      "entityType": "fks",
+      "table": "story_stickers"
+    },
+    {
+      "columns": ["mediaPk"],
+      "tableTo": "stories",
+      "columnsTo": ["mediaPk"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_story_video_versions_mediaPk_stories_mediaPk_fk",
+      "entityType": "fks",
+      "table": "story_video_versions"
+    },
+    {
+      "columns": ["instagramUserPk"],
+      "tableTo": "instagram_users",
+      "columnsTo": ["pk"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_user_summaries_instagramUserPk_instagram_users_pk_fk",
+      "entityType": "fks",
+      "table": "user_summaries"
+    },
+    {
+      "columns": ["reportKey", "failureIndex"],
+      "nameExplicit": false,
+      "name": "report_failures_pk",
+      "entityType": "pks",
+      "table": "report_failures"
+    },
+    {
+      "columns": ["reportKey", "reelId", "mediaPk"],
+      "nameExplicit": false,
+      "name": "report_stories_pk",
+      "entityType": "pks",
+      "table": "report_stories"
+    },
+    {
+      "columns": ["reportKey", "reelId"],
+      "nameExplicit": false,
+      "name": "report_reels_pk",
+      "entityType": "pks",
+      "table": "report_story_groups"
+    },
+    {
+      "columns": ["mediaPk", "sortOrder"],
+      "nameExplicit": false,
+      "name": "story_image_versions_pk",
+      "entityType": "pks",
+      "table": "story_image_versions"
+    },
+    {
+      "columns": ["mediaPk", "sortOrder"],
+      "nameExplicit": false,
+      "name": "story_video_versions_pk",
+      "entityType": "pks",
+      "table": "story_video_versions"
+    },
+    {
+      "columns": ["mediaPk"],
+      "nameExplicit": false,
+      "name": "apple_vision_pk",
+      "table": "apple_vision",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
+      "name": "fetch_runs_pk",
+      "table": "fetch_runs",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["pk"],
+      "nameExplicit": false,
+      "name": "instagram_users_pk",
+      "table": "instagram_users",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["locationId"],
+      "nameExplicit": false,
+      "name": "metadata_location_details_pk",
+      "table": "metadata_location_details",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
+      "name": "metadata_location_pk",
+      "table": "metadata_location",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
+      "name": "story_location_observations_pk",
+      "table": "story_location_observations",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
+      "name": "metadata_music_pk",
+      "table": "metadata_music",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
+      "name": "story_music_observations_pk",
+      "table": "story_music_observations",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["key"],
+      "nameExplicit": false,
+      "name": "reports_pk",
+      "table": "reports",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["mediaPk"],
+      "nameExplicit": false,
+      "name": "story_audio_pk",
+      "table": "story_audio",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["mediaPk"],
+      "nameExplicit": false,
+      "name": "stories_pk",
+      "table": "stories",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["occurrenceId"],
+      "nameExplicit": false,
+      "name": "story_stickers_pk",
+      "table": "story_stickers",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["sourceHash"],
+      "nameExplicit": false,
+      "name": "user_summaries_pk",
+      "table": "user_summaries",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["mediaPk"],
+      "nameExplicit": false,
+      "name": "vision_pk",
+      "table": "vision",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        {
+          "value": "mediaPk",
+          "isExpression": false
+        },
+        {
+          "value": "source",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "location_observations_story_source",
+      "entityType": "indexes",
+      "table": "story_location_observations"
+    },
+    {
+      "columns": [
+        {
+          "value": "mediaPk",
+          "isExpression": false
+        },
+        {
+          "value": "source",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "music_observations_story_source",
+      "entityType": "indexes",
+      "table": "story_music_observations"
+    },
+    {
+      "columns": [
+        {
+          "value": "mediaPk",
+          "isExpression": false
+        },
+        {
+          "value": "sortOrder",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "story_stickers_media_order",
+      "entityType": "indexes",
+      "table": "story_stickers"
+    },
+    {
+      "columns": [
+        {
+          "value": "instagramUserPk",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "user_summaries_instagram_user_pk_index",
+      "entityType": "indexes",
+      "table": "user_summaries"
+    },
+    {
+      "columns": ["instagramPlaceId"],
+      "nameExplicit": false,
+      "name": "metadata_location_instagramPlaceId_unique",
+      "entityType": "uniques",
+      "table": "metadata_location"
+    },
+    {
+      "columns": ["instagramAudioAssetId"],
+      "nameExplicit": false,
+      "name": "metadata_music_instagramAudioAssetId_unique",
+      "entityType": "uniques",
+      "table": "metadata_music"
+    },
+    {
+      "value": "\"phone\" IS NULL OR length(trim(\"phone\", char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) > 0",
+      "name": "location_details_text_nonempty_0",
+      "entityType": "checks",
+      "table": "metadata_location_details"
+    },
+    {
+      "value": "\"slug\" IS NULL OR length(trim(\"slug\", char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) > 0",
+      "name": "location_details_text_nonempty_1",
+      "entityType": "checks",
+      "table": "metadata_location_details"
+    },
+    {
+      "value": "\"businessAccountId\" IS NULL OR length(trim(\"businessAccountId\", char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) > 0",
+      "name": "location_details_text_nonempty_2",
+      "entityType": "checks",
+      "table": "metadata_location_details"
+    },
+    {
+      "value": "\"businessAccountUsername\" IS NULL OR length(trim(\"businessAccountUsername\", char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) > 0",
+      "name": "location_details_text_nonempty_3",
+      "entityType": "checks",
+      "table": "metadata_location_details"
+    },
+    {
+      "value": "\"businessAccountPictureUrl\" IS NULL OR length(trim(\"businessAccountPictureUrl\", char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) > 0",
+      "name": "location_details_text_nonempty_4",
+      "entityType": "checks",
+      "table": "metadata_location_details"
+    },
+    {
+      "value": "\"latitude\" IS NULL OR \"latitude\" BETWEEN -90 AND 90",
+      "name": "location_latitude_bounds",
+      "entityType": "checks",
+      "table": "metadata_location"
+    },
+    {
+      "value": "\"longitude\" IS NULL OR \"longitude\" BETWEEN -180 AND 180",
+      "name": "location_longitude_bounds",
+      "entityType": "checks",
+      "table": "metadata_location"
+    },
+    {
+      "value": "\"instagramPlaceId\" IS NULL OR length(trim(\"instagramPlaceId\", char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) > 0",
+      "name": "location_text_nonempty_0",
+      "entityType": "checks",
+      "table": "metadata_location"
+    },
+    {
+      "value": "\"name\" IS NULL OR length(trim(\"name\", char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) > 0",
+      "name": "location_text_nonempty_1",
+      "entityType": "checks",
+      "table": "metadata_location"
+    },
+    {
+      "value": "\"address\" IS NULL OR length(trim(\"address\", char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) > 0",
+      "name": "location_text_nonempty_2",
+      "entityType": "checks",
+      "table": "metadata_location"
+    },
+    {
+      "value": "\"facebookPlacesId\" IS NULL OR length(trim(\"facebookPlacesId\", char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) > 0",
+      "name": "location_text_nonempty_3",
+      "entityType": "checks",
+      "table": "metadata_location"
+    },
+    {
+      "value": "\"externalSource\" IS NULL OR length(trim(\"externalSource\", char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) > 0",
+      "name": "location_text_nonempty_4",
+      "entityType": "checks",
+      "table": "metadata_location"
+    },
+    {
+      "value": "\"instagramAudioAssetId\" IS NULL OR length(trim(\"instagramAudioAssetId\", char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) > 0",
+      "name": "music_text_nonempty_0",
+      "entityType": "checks",
+      "table": "metadata_music"
+    },
+    {
+      "value": "\"title\" IS NULL OR length(trim(\"title\", char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) > 0",
+      "name": "music_text_nonempty_1",
+      "entityType": "checks",
+      "table": "metadata_music"
+    },
+    {
+      "value": "\"artist\" IS NULL OR length(trim(\"artist\", char(9) || char(10) || char(11) || char(12) || char(13) || ' ')) > 0",
+      "name": "music_text_nonempty_2",
+      "entityType": "checks",
+      "table": "metadata_music"
+    },
+    {
+      "value": "\"durationMs\" IS NULL OR \"durationMs\" > 0",
+      "name": "music_duration_positive",
+      "entityType": "checks",
+      "table": "metadata_music"
+    },
+    {
+      "value": "\"audioDurationMs\" IS NULL OR \"audioDurationMs\" > 0",
+      "name": "music_audio_duration_positive",
+      "entityType": "checks",
+      "table": "metadata_music"
+    },
+    {
+      "value": "(\"instagramUserPk\" IS NOT NULL AND \"legacyUsername\" IS NULL) OR (\"instagramUserPk\" IS NULL AND \"legacyUsername\" IS NOT NULL)",
+      "name": "user_summaries_owner_check",
+      "entityType": "checks",
+      "table": "user_summaries"
+    }
+  ],
+  "renames": []
+}

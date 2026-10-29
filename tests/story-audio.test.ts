@@ -180,7 +180,7 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
     manifest: { users: [] },
     metadata: {
       broadcasts_count: 0,
-      counts: { cache_hits: 0, cache_misses: 1, failed: 0, fetched: 1, reels: 1, stories: 1 },
+      counts: { failed: 0, fetched: 1, reels: 1, stories: 1 },
       created_at: "2026-10-26T12:00:00Z",
       report_name: "audio",
       status: "ok",

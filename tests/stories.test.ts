@@ -54,8 +54,6 @@ describe("fetchStoriesManifest", () => {
 
     assert.deepEqual(client.reelsCalls, [["r1", "r2"]]);
     assert.deepEqual(report.metadata.counts, {
-      cache_hits: 0,
-      cache_misses: 2,
       failed: 0,
       fetched: 2,
       reels: 2,
@@ -198,7 +196,6 @@ describe("fetchStoriesManifest", () => {
         },
       ],
     );
-    assert.equal(report.metadata.counts.cache_hits, 0);
     assert.equal(report.metadata.counts.fetched, 2);
   });
 

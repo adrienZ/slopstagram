@@ -57,8 +57,6 @@ export interface StoryOutputUser {
 }
 
 interface StoryFetchCounts {
-  cache_hits: number;
-  cache_misses: number;
   failed: number;
   fetched: number;
   reels: number;

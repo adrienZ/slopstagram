@@ -126,8 +126,6 @@ const StoryFetchFailureSchema = z.object({
   reel_id: z.string(),
 });
 const StoryFetchCountsSchema = z.object({
-  cache_hits: z.number(),
-  cache_misses: z.number(),
   failed: z.number(),
   fetched: z.number(),
   reels: z.number(),
