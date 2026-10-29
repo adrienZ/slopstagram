@@ -1,6 +1,6 @@
 import { integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-orm/zod";
-import { STORY_MEDIA_TYPES } from "../lib/types.ts";
+import { STORY_MEDIA_TYPES } from "../story-types.ts";
 
 export const reports = sqliteTable("reports", {
   broadcastsCount: integer().notNull(),
@@ -67,5 +67,7 @@ export const reportFailures = sqliteTable(
   (table) => [primaryKey({ columns: [table.reportKey, table.failureIndex] })],
 );
 export const NewReportSchema = createInsertSchema(reports);
+export const ReportSchema = createSelectSchema(reports);
+export const ReportStoryGroupSchema = createSelectSchema(reportStoryGroups);
 export const ReportStorySchema = createSelectSchema(reportStories);
 export const ReportFailureSchema = createSelectSchema(reportFailures);

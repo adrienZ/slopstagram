@@ -1,6 +1,6 @@
 import { isJsonObject, type JsonObject, type JsonValue } from "./lib/json-value.ts";
 import type { LocationFields } from "./entities/location-metadata.ts";
-import type { StoryItem } from "./lib/types.ts";
+import type { StoryItem } from "./instagram-types.ts";
 import { getProviderIdentifier } from "./lib/provider-identifier.ts";
 import { z } from "zod";
 

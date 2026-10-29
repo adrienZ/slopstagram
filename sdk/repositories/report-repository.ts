@@ -19,7 +19,7 @@ import type {
   StoryFetchFailure,
   StoryManifestItem,
   StoryManifestReel,
-} from "../lib/types.ts";
+} from "../report-types.ts";
 
 type ReportStoryRow = typeof reportStories.$inferSelect & { accessibilityCaption: string | null };
 

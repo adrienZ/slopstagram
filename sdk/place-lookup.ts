@@ -3,7 +3,11 @@ import type { JsonValue } from "./lib/json-value.ts";
 import type { StoryLocationObservation } from "./entities/location-metadata.ts";
 import type { Logger } from "./lib/logging-service.ts";
 import type { PlaceLookupInput } from "./location-metadata-service.ts";
-import type { InstagramClient, FetchStoriesManifestOptions } from "./story-types.ts";
+import type { InstagramClient } from "./instagram-types.ts";
+import type { StoryRepository } from "./repositories/story-repository.ts";
+
+type PlaceLookupRepository = Pick<StoryRepository, "findByMediaPk"> &
+  Partial<Pick<StoryRepository, "recordFailedPlaceLookup" | "recordPlaceLookup">>;
 
 // Story payloads also carry non-place identifiers, such as the generic bloks sticker one.
 const NUMERIC_PLACE_ID = /^\d+$/u;
@@ -113,7 +117,7 @@ function needsLookup(metadata: StoryLocationObservation["metadata"], now: Date) 
 
 function listPlacesToLookUp(
   mediaPks: Iterable<string>,
-  repository: NonNullable<FetchStoriesManifestOptions["storyRepository"]>,
+  repository: Pick<StoryRepository, "findByMediaPk">,
   now: Date,
 ) {
   const placeIds = new Set<string>();
@@ -135,7 +139,7 @@ function listPlacesToLookUp(
 export async function lookUpTaggedPlaces(
   client: Pick<InstagramClient, "getPlace">,
   savedMediaPks: Iterable<string>,
-  repository: FetchStoriesManifestOptions["storyRepository"],
+  repository: PlaceLookupRepository | undefined,
   logger: Pick<Logger, "warn">,
   now: () => Date,
 ) {

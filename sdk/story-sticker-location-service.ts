@@ -1,7 +1,8 @@
 import { URL } from "node:url";
 import { z } from "zod";
 import { isJsonObject, type JsonObject, type JsonValue } from "./lib/json-value.ts";
-import type { StoryAnnotations, StoryItem } from "./lib/types.ts";
+import type { StoryAnnotations } from "./story-types.ts";
+import type { StoryItem } from "./instagram-types.ts";
 import { ProviderIdentifierSchema } from "./lib/provider-identifier.ts";
 import { getMusicObservation, getMusicSourceUpdate } from "./music-observation-service.ts";
 import {

@@ -22,7 +22,7 @@ import {
   response,
   storyItemWithStickers,
 } from "./mock-helpers.ts";
-import type { StoryItem } from "../sdk/lib/types.ts";
+import type { StoryItem } from "../sdk/instagram-types.ts";
 
 function readStoredStory(repository: StoryRepository, mediaPk = "m1") {
   const stored = repository.findByMediaPk(mediaPk);

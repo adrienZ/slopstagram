@@ -7,7 +7,7 @@ import {
 } from "../server/user-timeline.ts";
 import { appleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
 import { visionRepository } from "../sdk/repositories/vision-repository.ts";
-import type { UserTimelineStory } from "../sdk/lib/types.ts";
+import type { UserTimelineStory } from "../sdk/repositories/story-repository.ts";
 
 function timelineStory(pk: string, takenAt: number): UserTimelineStory {
   return {

@@ -13,7 +13,8 @@ import { processStoryAudio, cacheReportAudio } from "../sdk/report-audio-service
 import { createMediaResponse } from "../server/routes/media/[...path].ts";
 import { groupTimelineStickers } from "../server/timeline-stickers.ts";
 import { musicStickerItems, storyMusicPreviews } from "../server/music-preview.ts";
-import type { StoriesManifestReport, StoryItem } from "../sdk/lib/types.ts";
+import type { StoriesManifestReport } from "../sdk/report-types.ts";
+import type { StoryItem } from "../sdk/instagram-types.ts";
 import { fetchStoriesManifest } from "../sdk/stories.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 import {

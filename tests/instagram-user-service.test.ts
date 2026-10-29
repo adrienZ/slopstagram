@@ -4,7 +4,8 @@ import {
   hydrateReportInstagramUsers,
   persistReportInstagramUsers,
 } from "../sdk/lib/instagram-user-service.ts";
-import type { InstagramUserEntry, StoriesManifestReport } from "../sdk/lib/types.ts";
+import type { InstagramUserEntry } from "../sdk/entities/instagram-user.ts";
+import type { StoriesManifestReport } from "../sdk/report-types.ts";
 
 function createReportWithInstagramUser(): StoriesManifestReport {
   return {

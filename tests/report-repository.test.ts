@@ -4,7 +4,7 @@ import { createDrizzle } from "../sdk/database/client.ts";
 import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { ReportRepository } from "../sdk/repositories/report-repository.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
-import type { StoriesManifestReport } from "../sdk/lib/types.ts";
+import type { StoriesManifestReport } from "../sdk/report-types.ts";
 
 function createReport(name: string): StoriesManifestReport {
   return {

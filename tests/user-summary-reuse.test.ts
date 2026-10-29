@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
 import { createReportViewModel } from "../server/report-view-model.ts";
-import type { StoriesManifestReport, UserSummaryEntry } from "../sdk/lib/types.ts";
+import type { StoriesManifestReport } from "../sdk/report-types.ts";
+import type { UserSummaryEntry } from "../sdk/entities/user-summary.ts";
 import { readUserSummaries, resolveUserSummariesForReport } from "../sdk/user-summary.ts";
 import { createMockLogger, createSummaryReport } from "./mock-helpers.ts";
 import { createUserSummaryRepositoryAdapter } from "./repository-adapters.ts";

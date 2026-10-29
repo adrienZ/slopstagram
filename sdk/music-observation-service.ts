@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { MusicFields } from "./entities/music-metadata.ts";
 import { isJsonObject, type JsonValue } from "./lib/json-value.ts";
-import type { StoryItem } from "./lib/types.ts";
+import type { StoryItem } from "./instagram-types.ts";
 import { getProviderIdentifier } from "./lib/provider-identifier.ts";
 
 const TextSchema = z.string().refine((value) => value.trim().length > 0);

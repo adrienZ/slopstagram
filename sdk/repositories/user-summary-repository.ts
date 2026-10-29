@@ -1,7 +1,10 @@
 import { eq } from "drizzle-orm";
 import { useDrizzle, type DrizzleDatabase } from "../database/client.ts";
-import { userSummaries, NewUserSummarySchema } from "../entities/user-summary.ts";
-import type { UserSummaryEntry } from "../lib/types.ts";
+import {
+  userSummaries,
+  NewUserSummarySchema,
+  type UserSummaryEntry,
+} from "../entities/user-summary.ts";
 import { instagramUsers } from "../entities/instagram-user.ts";
 
 export class UserSummaryRepository {
