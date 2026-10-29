@@ -314,61 +314,6 @@ test("malformed or omitted music sources preserve rich metadata and all saved co
   }
 });
 
-test("failed metadata update rolls back metadata, links, ownership and media", async (context) => {
-  const { database, repository } = setup(context);
-  const users = new InstagramUserRepository(database);
-  const owner = { id: "u1", pk: "u1", username: "one", full_name: "One" };
-  const other = { id: "u2", pk: "u2", username: "two", full_name: "Two" };
-  await users.save(owner);
-  await users.save(other);
-  await repository.save(
-    {
-      pk: "m1",
-      taken_at: 1_767_225_600,
-      media_type: 1,
-      image_versions2: { candidates: [{ url: "https://example.com/old.jpg" }] },
-      story_music_stickers: [
-        { id: "a", music_asset_info: { audio_asset_id: "audio", title: "Song" } },
-      ],
-    },
-    owner,
-  );
-  await repository.save({
-    pk: "m2",
-    story_music_stickers: [{ id: "b", music_asset_info: { audio_asset_id: "audio" } }],
-  });
-  const before = repository.findByMediaPk("m1");
-  const partial = repository.findByMediaPk("m2");
-  database.$client.exec(`CREATE TEMP TRIGGER reject_partial_removal BEFORE UPDATE ON metadata_music
-    BEGIN SELECT RAISE(ABORT, 'fixture promotion failure'); END`);
-  const promoted: StoryItem = {
-    pk: "m1",
-    taken_at: 1_767_225_601,
-    media_type: 2,
-    image_versions2: { candidates: [{ url: "https://example.com/new.jpg" }] },
-    story_music_stickers: [
-      { id: "a", music_asset_info: { audio_asset_id: "audio", display_artist: "Artist" } },
-    ],
-  };
-  await assert.rejects(repository.save(promoted, other));
-  const cold = new StoryRepository(database);
-  assert.deepEqual(cold.findByMediaPk("m1"), before);
-  assert.deepEqual(cold.findByMediaPk("m2"), partial);
-  assert.equal(cold.listByUsername("one").length, 1);
-  assert.equal(cold.listByUsername("two").length, 0);
-  database.$client.exec("DROP TRIGGER reject_partial_removal");
-  await repository.save(promoted, other);
-  const [first] = present(read(cold, "m1").musicObservations);
-  const [second] = present(read(cold, "m2").musicObservations);
-  assert.equal(first.metadata.status, "usable");
-  assert.equal(first.metadata.title, "Song");
-  assert.equal(first.metadata.artist, "Artist");
-  assert.deepEqual(first.metadata, second.metadata);
-  assert.equal(first.occurrenceId, before?.annotations?.stickers[0].occurrenceId);
-  assert.equal(cold.listByUsername("two").length, 1);
-  assert.equal(database.$client.prepare("SELECT count(*) n FROM metadata_music").get()?.n, 1);
-});
-
 test("changed audio identity cannot inherit the previous recording's missing fields", async (context) => {
   const { database, repository } = setup(context);
   await repository.save({

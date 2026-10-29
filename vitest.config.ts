@@ -8,7 +8,7 @@ export default defineConfig({
       // Count files no test loads, so untested modules lower the figure instead of vanishing.
       include: ["sdk/**", "server/**"],
       exclude: ["server/shadcn/**", "server/routeTree.gen.ts", "sdk/database/migrations/**"],
-      thresholds: { statements: 88, branches: 82, functions: 87, lines: 88 },
+      thresholds: { statements: 90, branches: 84, functions: 89, lines: 90 },
     },
     // Keep server/SQLite tests in Node and browser UI tests in jsdom with their own setup.
     projects: [

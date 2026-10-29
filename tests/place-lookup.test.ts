@@ -271,6 +271,34 @@ test("story values are never overwritten and only gaps are filled", async (conte
   assert.equal(place.lastLookupAttemptAt, fixedNow().getTime());
 });
 
+test("coordinates from Instagram that are out of range or not finite never make a place usable", async (context) => {
+  const repository = setup(context);
+  const places = {
+    "1": () => response(placeBody("1", { name: "Out of range", lat: 91, lng: -181 })),
+    "2": () => response(placeBody("2", { name: "Blank address", address: "   " })),
+  };
+  const stories = Object.keys(places).map((pk) => storyAt(`m${pk}`, { pk }));
+  await ingest(repository, createPlaceClient(stories, places));
+  const outOfRange = storedPlace(repository, "m1");
+  assert.equal(outOfRange.status, "partial");
+  assert.equal(outOfRange.name, "Out of range");
+  assert.equal(outOfRange.latitude, null);
+  assert.equal(outOfRange.longitude, null);
+  assert.equal(storedPlace(repository, "m2").address, null);
+});
+
+test("a place with only one coordinate stays partial", async (context) => {
+  const repository = setup(context);
+  const client = createPlaceClient([storyAt("m1", { pk: "111" })], {
+    "111": () => response(placeBody("111", { name: "Half placed", lat: 48 })),
+  });
+  await ingest(repository, client);
+  const place = storedPlace(repository, "m1");
+  assert.equal(place.status, "partial");
+  assert.equal(place.latitude, 48);
+  assert.equal(place.longitude, null);
+});
+
 test("only places referenced by the stories saved in the run are looked up", async (context) => {
   const repository = setup(context);
   await repository.save(storyAt("old", { pk: "222" }));
