@@ -87,6 +87,14 @@ function parseInstagramResponse<T>(
   }
 }
 
+export function parseTrayResponse(body: string, headers: Record<string, string>) {
+  return parseInstagramResponse(body, headers, ReelTrayResponseSchema);
+}
+
+export function parseGalleryPage(body: string, headers: Record<string, string>) {
+  return parseInstagramResponse(body, headers, GalleryResponseSchema);
+}
+
 interface BrowserFetchResponse {
   body: string;
   headers: Record<string, string>;
@@ -265,7 +273,7 @@ export function createInstagramClient(session: InstagramClientSession): Instagra
             })),
           );
         }
-        const page = parseInstagramResponse(response.body, response.headers, GalleryResponseSchema);
+        const page = parseGalleryPage(response.body, response.headers);
         reels.push(...page.edges.map(({ node }) => node));
         if (!page.page_info.has_next_page) {
           return {
