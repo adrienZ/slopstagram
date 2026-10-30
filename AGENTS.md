@@ -55,6 +55,37 @@ or explicitly with Drizzle Kit's `migrate` command.
 Scripts in `scripts/` require an initialized database and must not trigger migrations,
 directly or through SDK calls. Tests may migrate their isolated databases.
 
+## Testing
+
+Tests go through production code paths (`docs/adr/0006-test-through-production-code-paths.md`).
+
+- Fix a bug by writing the failing test first.
+- Never mock project code: no `vi.mock` or `vi.spyOn` of our modules, no fake repositories,
+  no replaced loaders or routers. Fake only external boundaries: the Instagram session or
+  client, Ollama, Apple OCR, the Playwright session, media downloads, bunqueue
+  (`Queue`/`Worker`), and browser APIs jsdom lacks (map canvas, canvas, audio playback).
+- Seed a database with `seedRecordedStories(recorded?, { database?, publishedBefore? })`
+  from `tests/seed.ts`. It runs real ingestion over recorded payloads
+  (`readRecordedPayloads(names?)`). Change a recording with
+  `editRecordedStories(recorded, (story, owner) => ...)`. Use `createTestDatabase(context)`
+  from `tests/test-database.ts` for a small migrated in-memory database, and the real
+  repositories for a case the recordings lack.
+- Page tests: `createInProcessQueries(now)` (`tests/in-process-queries.ts`) and
+  `renderApp(url, queries)` (`tests/render-app.ts`). jsdom tests under `tests/ui/` read data
+  that `tests/ui/global-setup.ts` computes once with the real loaders.
+- Fixtures in `tests/fixtures/` come from `npm run fixtures:capture`, which anonymizes a live
+  session. Never copy them from `data/cache` or the media cache. Never run the command in CI.
+- Never write personal data into source, fixtures, tests, docs, commits, PRs or issues:
+  usernames, ids, names, captions, places, CDN URLs. Use synthetic values. Only public audio
+  metadata (titles, artists) may stay. `tests/fixtures.privacy.test.ts` runs
+  `findUnsafeFixtureValues` over every fixture and fails on anything else.
+- An export only a test uses fails `npm run knip:production`. Delete it, or tag it with a JSDoc
+  starting `Test seam: <reason>` followed by `@public` (see `knip.config.ts`).
+- Name tests after the module they cover: `tests/<module>[.<aspect>].test.ts`, e.g.
+  `stories.edge-cases.test.ts`.
+- Coverage thresholds in `vitest.config.ts` raise themselves when `npm test` runs. Commit the
+  change.
+
 ## Agent skills
 
 ### Issue tracker
