@@ -19,8 +19,6 @@ function createReportResult(): CreateReportResult {
       metadata: {
         broadcasts_count: 0,
         counts: {
-          cache_hits: 1,
-          cache_misses: 2,
           failed: 3,
           fetched: 4,
           reels: 5,
@@ -57,8 +55,6 @@ test("runWarmCacheJob creates a report using reportArgs from the payload", async
     outputFileName: "stories-report-test.json",
     reportKey: "stories-report-test.json",
     counts: {
-      cache_hits: 1,
-      cache_misses: 2,
       failed: 3,
       fetched: 4,
       reels: 5,

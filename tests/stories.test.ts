@@ -51,8 +51,6 @@ describe("fetchStoriesManifest", () => {
 
     expect(client.reelsCalls).toStrictEqual([["r1", "r2"]]);
     expect(report.metadata.counts).toStrictEqual({
-      cache_hits: 0,
-      cache_misses: 2,
       failed: 0,
       fetched: 2,
       reels: 2,
@@ -189,7 +187,6 @@ describe("fetchStoriesManifest", () => {
         stickers: [],
       },
     ]);
-    expect(report.metadata.counts.cache_hits).toBe(0);
     expect(report.metadata.counts.fetched).toBe(2);
   });
 
