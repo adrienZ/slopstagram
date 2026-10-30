@@ -9,6 +9,7 @@ import { enrichCurrentMusicAssets } from "./music-asset-enrichment.ts";
 import { lookUpTaggedPlaces } from "./place-lookup.ts";
 import { createFetchState } from "./story-failure-service.ts";
 import { fetchMissingStories } from "./story-live-fetch-service.ts";
+import { preloadStoredStories } from "./story-preload-service.ts";
 import { createManifestUsers, createOutputUsers } from "./story-output-service.ts";
 import { requestWithRetry, sleep } from "./story-retry-service.ts";
 
@@ -172,6 +173,10 @@ export async function fetchStoriesManifest(
     `tray fetched: reels=${trayJson.tray.length} stories=${state.expectedMediaPks.length} status=${trayJson.status}`,
   );
   const repository = options.storyRepository ?? storyRepository;
+  const cacheStatus = preloadStoredStories(state, repository);
+  logger.info(
+    `stored stories loaded: hits=${cacheStatus.hitCount} misses=${cacheStatus.missCount}`,
+  );
   await fetchMissingStoriesForReport({
     client,
     logger,

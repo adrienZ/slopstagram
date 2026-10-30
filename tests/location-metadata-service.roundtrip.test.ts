@@ -81,7 +81,7 @@ test("external-ID-only locations survive cold reads as separate partial observat
   expect(logger.messages).toStrictEqual([]);
 });
 
-test("external-only observations do not block other location updates during live ingestion", async (context) => {
+test("external-only observations do not block other location updates when a story is saved again", async (context) => {
   const { database } = setup(context);
   const logger = createCapturingLogger();
   const repository = new StoryRepository(database, logger);
@@ -110,19 +110,7 @@ test("external-only observations do not block other location updates during live
       { facebook_places_id: "000456" },
     ],
   };
-  const report = await fetchStoriesManifest(
-    createClient(
-      [{ id: "r1", media_ids: ["m1"], user: owner }],
-      [reelsResponse({ r1: { ...reel("r1", [item]), user: owner } })],
-    ),
-    {
-      logger,
-      now: fixedNow,
-      storyRepository: repository,
-      storyStorage: createMemoryStorage<StoryItem>(),
-    },
-  );
-  expect(report.manifest.users[0].stories[0].locations).toStrictEqual(["Updated"]);
+  await repository.save(item, owner);
   const [history] = new StoryRepository(database).listByUsername("one");
   const stored = present(history.story.annotations);
   expect(stored.locations).toStrictEqual(["Updated"]);

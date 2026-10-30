@@ -14,143 +14,113 @@ import {
 } from "./mock-helpers.ts";
 
 describe("fetchStoriesManifest", () => {
-  test("fetches API media even when story storage has existing entries", async () => {
+  test("serves stories already stored without fetching them from Instagram", async () => {
     const storyRepository = createMemoryStoryRepository();
-    await storyRepository.save(storyItem("m1"));
+    await storyRepository.save(storyItem("m1", "Stored caption"));
     await storyRepository.save(storyItem("m2"));
-
-    const client = createClient(
-      [
-        {
-          id: "r1",
-          media_ids: ["m1"],
-          user: {
-            id: "instagram-id-1",
-            pk: "instagram-pk-1",
-            profile_pic_url: "https://example.com/one.jpg",
-            username: "one",
-          },
-        },
-        { id: "r2", media_ids: ["m2"], user: { username: "two" } },
-      ],
-      [
-        reelsResponse({
-          r1: reel("r1", [storyItem("m1")]),
-          r2: reel("r2", [storyItem("m2")]),
-        }),
-      ],
-    );
-
-    const report = await fetchStoriesManifest(client, {
-      logger: createCapturingLogger(),
-      now: fixedNow,
-      sleep: noSleep,
-      storyRepository,
-      storyStorage: storyRepository.storyStorage,
-    });
-
-    expect(client.reelsCalls).toStrictEqual([["r1", "r2"]]);
-    expect(report.metadata.counts).toStrictEqual({
-      cache_hits: 0,
-      cache_misses: 2,
-      failed: 0,
-      fetched: 2,
-      reels: 2,
-      stories: 2,
-    });
-    expect(
-      report.manifest.users.map((user) => ({
-        id: user.id,
-        ig_caption: user.stories[0]?.ig_caption,
-        locations: user.stories[0]?.locations,
-        media_type: user.stories[0]?.media_type,
-        pk: user.pk,
-        profile_pic_url: user.profile_pic_url,
-        reel_id: user.reel_id,
-        status: user.stories[0]?.status,
-        stickers: user.stories[0]?.stickers,
-        username: user.username,
-      })),
-    ).toStrictEqual([
-      {
-        id: "instagram-id-1",
-        ig_caption: "N/A",
-        locations: [],
-        media_type: "image",
-        pk: "instagram-pk-1",
-        profile_pic_url: "https://example.com/one.jpg",
-        reel_id: "r1",
-        status: "ok",
-        stickers: [],
-        username: "one",
-      },
-      {
-        id: "r2",
-        ig_caption: "N/A",
-        locations: [],
-        media_type: "image",
-        pk: "r2",
-        profile_pic_url: null,
-        reel_id: "r2",
-        status: "ok",
-        stickers: [],
-        username: "two",
-      },
-    ]);
-    expect(report.output.users).toStrictEqual([
-      {
-        full_name: null,
-        profile_pic_url: "https://example.com/one.jpg",
-        reel_ids: ["r1"],
-        stories: [
-          {
-            ig_caption: "N/A",
-            locations: [],
-            media_type: "image",
-            media_pk: "m1",
-            preview_image_url: "https://example.com/m1.jpg",
-            stickers: [],
-            status: "ok",
-          },
-        ],
-        username: "one",
-      },
-      {
-        full_name: null,
-        profile_pic_url: null,
-        reel_ids: ["r2"],
-        stories: [
-          {
-            ig_caption: "N/A",
-            locations: [],
-            media_type: "image",
-            media_pk: "m2",
-            preview_image_url: "https://example.com/m2.jpg",
-            stickers: [],
-            status: "ok",
-          },
-        ],
-        username: "two",
-      },
-    ]);
-    expect(await storyRepository.storyStorage.getItem(getMediaCacheKey("m1"))).toStrictEqual(
-      globalThis.structuredClone(storyItem("m1")),
-    );
-  });
-
-  test("stores every returned media item as a side effect", async () => {
-    const storyRepository = createMemoryStoryRepository();
-    await storyRepository.save(storyItem("m1", "Cached image caption"));
 
     const client = createClient(
       [
         { id: "r1", media_ids: ["m1"], user: { username: "one" } },
         { id: "r2", media_ids: ["m2"], user: { username: "two" } },
       ],
+      [],
+    );
+    const logger = createCapturingLogger();
+
+    const report = await fetchStoriesManifest(client, {
+      logger,
+      now: fixedNow,
+      sleep: noSleep,
+      storyRepository,
+      storyStorage: storyRepository.storyStorage,
+    });
+
+    expect(client.reelsCalls).toStrictEqual([]);
+    expect(report.metadata.counts).toStrictEqual({
+      cache_hits: 2,
+      cache_misses: 0,
+      failed: 0,
+      fetched: 0,
+      reels: 2,
+      stories: 2,
+    });
+    expect(report.failures).toStrictEqual([]);
+    expect(
+      report.output.users.map((user) => ({
+        ig_caption: user.stories[0]?.ig_caption,
+        preview_image_url: user.stories[0]?.preview_image_url,
+        status: user.stories[0]?.status,
+        username: user.username,
+      })),
+    ).toStrictEqual([
+      {
+        ig_caption: "Stored caption",
+        preview_image_url: "https://example.com/m1.jpg",
+        status: "ok",
+        username: "one",
+      },
+      {
+        ig_caption: "N/A",
+        preview_image_url: "https://example.com/m2.jpg",
+        status: "ok",
+        username: "two",
+      },
+    ]);
+    expect(logger.messages.join("\n")).toContain("stored stories loaded: hits=2 misses=0");
+    expect(logger.messages.join("\n")).toContain("all expected stories were found in cache");
+  });
+
+  test("fetches only the stories missing from storage and leaves stored ones as they are", async () => {
+    const storyRepository = createMemoryStoryRepository();
+    await storyRepository.save(storyItem("m1", "Stored caption"));
+
+    const client = createClient(
+      [
+        { id: "r1", media_ids: ["m1"], user: { username: "one" } },
+        { id: "r2", media_ids: ["m2"], user: { username: "two" } },
+      ],
+      [reelsResponse({ r2: reel("r2", [storyItem("m2")]) })],
+    );
+
+    const report = await fetchStoriesManifest(client, {
+      logger: createCapturingLogger(),
+      now: fixedNow,
+      sleep: noSleep,
+      storyRepository,
+      storyStorage: storyRepository.storyStorage,
+    });
+
+    expect(client.reelsCalls).toStrictEqual([["r2"]]);
+    expect(report.metadata.counts).toStrictEqual({
+      cache_hits: 1,
+      cache_misses: 1,
+      failed: 0,
+      fetched: 1,
+      reels: 2,
+      stories: 2,
+    });
+    expect(storyRepository.findByMediaPk("m1")).toStrictEqual(storyItem("m1", "Stored caption"));
+    expect(storyRepository.findByMediaPk("m2")).toStrictEqual(storyItem("m2"));
+    expect(await storyRepository.storyStorage.getItem(getMediaCacheKey("m2"))).toStrictEqual(
+      globalThis.structuredClone(storyItem("m2")),
+    );
+    expect(await storyRepository.storyStorage.getItem(getMediaCacheKey("m1"))).toBeNull();
+    expect(report.output.users.map((user) => user.stories[0]?.ig_caption)).toStrictEqual([
+      "Stored caption",
+      "N/A",
+    ]);
+  });
+
+  test("keeps the stored version of a story when its reel is fetched for another story", async () => {
+    const storyRepository = createMemoryStoryRepository();
+    await storyRepository.save(storyItem("m1", "Stored caption"));
+
+    const client = createClient(
+      [{ id: "r1", media_ids: ["m1", "m2"], user: { username: "one" } }],
       [
         reelsResponse({
-          r1: reel("r1", [storyItem("m1", "Latest image caption")]),
-          r2: reel("r2", [storyItem("m2")]),
+          r1: reel("r1", [storyItem("m1", "Latest caption"), storyItem("m2")]),
         }),
       ],
     );
@@ -163,34 +133,14 @@ describe("fetchStoriesManifest", () => {
       storyStorage: storyRepository.storyStorage,
     });
 
-    expect(client.reelsCalls).toStrictEqual([["r1", "r2"]]);
-    expect(storyRepository.findByMediaPk("m2")).toStrictEqual(storyItem("m2"));
-    expect(await storyRepository.storyStorage.getItem(getMediaCacheKey("m2"))).toStrictEqual(
-      globalThis.structuredClone(storyItem("m2")),
-    );
-    expect(
-      report.manifest.users.map((user) => ({
-        ig_caption: user.stories[0]?.ig_caption,
-        locations: user.stories[0]?.locations,
-        status: user.stories[0]?.status,
-        stickers: user.stories[0]?.stickers,
-      })),
-    ).toStrictEqual([
-      {
-        ig_caption: "Latest image caption",
-        locations: [],
-        status: "ok",
-        stickers: [],
-      },
-      {
-        ig_caption: "N/A",
-        locations: [],
-        status: "ok",
-        stickers: [],
-      },
+    expect(client.reelsCalls).toStrictEqual([["r1"]]);
+    expect(report.metadata.counts.cache_hits).toBe(1);
+    expect(report.metadata.counts.fetched).toBe(1);
+    expect(storyRepository.findByMediaPk("m1")?.accessibility_caption).toBe("Stored caption");
+    expect(report.output.users[0]?.stories.map((story) => story.ig_caption)).toStrictEqual([
+      "Stored caption",
+      "N/A",
     ]);
-    expect(report.metadata.counts.cache_hits).toBe(0);
-    expect(report.metadata.counts.fetched).toBe(2);
   });
 
   test("groups final output by user with story accessibility captions", async () => {
