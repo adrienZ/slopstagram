@@ -24,8 +24,6 @@ function createReportMetadata(): StoriesManifestReport["metadata"] {
   return {
     broadcasts_count: 0,
     counts: {
-      cache_hits: 0,
-      cache_misses: 0,
       failed: 0,
       fetched: 0,
       reels: 0,
