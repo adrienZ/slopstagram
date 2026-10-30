@@ -107,13 +107,13 @@ test("looks up a place with the location container query from the authenticated 
   if (getPlace === undefined) {
     throw new Error("Place lookup unavailable");
   }
-  const result = await getPlace("633725939834688");
+  const result = await getPlace("700000000000633");
   expect(result.json()).toStrictEqual(body);
   expect(calls).toStrictEqual([
     {
       appId: "936619743392459",
       requestUrl: "https://www.instagram.com/api/graphql",
-      placeQuery: { documentId: "28572807415659320", placeId: "633725939834688" },
+      placeQuery: { documentId: "28572807415659320", placeId: "700000000000633" },
     },
   ]);
 });
@@ -146,7 +146,7 @@ test("sends the place query from the page with the page's own tokens", async (co
   if (getPlace === undefined) {
     throw new Error("Place lookup unavailable");
   }
-  const result = await getPlace("633725939834688");
+  const result = await getPlace("700000000000633");
   expect(result.json()).toStrictEqual({ ok: true });
   expect(requests.length).toBe(1);
   const [request] = requests;
@@ -156,7 +156,7 @@ test("sends the place query from the page with the page's own tokens", async (co
   expect(request.headers.get("x-ig-app-id")).toBe("936619743392459");
   expect(Object.fromEntries(new globalThis.URLSearchParams(request.body))).toStrictEqual({
     doc_id: "28572807415659320",
-    variables: JSON.stringify({ location_id_str: "633725939834688", show_nearby: false }),
+    variables: JSON.stringify({ location_id_str: "700000000000633", show_nearby: false }),
     fb_dtsg: "dtsg-token",
     lsd: "lsd-token",
     av: "user-1",
@@ -188,7 +188,7 @@ test("rejects an HTML place lookup response", async () => {
   if (getPlace === undefined) {
     throw new Error("Place lookup unavailable");
   }
-  const result = await getPlace("633725939834688");
+  const result = await getPlace("700000000000633");
   expect(() => result.json()).toThrow(/text\/html/u);
 });
 
@@ -225,7 +225,7 @@ test("preserves large numeric Instagram identifiers exactly", async () => {
     "story_ranking_token": "ranking-token",
     "tray": [{
       "id": 1767198846,
-      "media_ids": [3967029617634386001],
+      "media_ids": [3111111111111111117],
       "user": { "pk": 1767198846, "username": "one" }
     }]
   }`);
@@ -236,7 +236,7 @@ test("preserves large numeric Instagram identifiers exactly", async () => {
   expect(body.tray).toStrictEqual([
     {
       id: "1767198846",
-      media_ids: ["3967029617634386001"],
+      media_ids: ["3111111111111111117"],
       user: { pk: "1767198846", username: "one" },
     },
   ]);
@@ -288,13 +288,13 @@ test("preserves large numeric media identifiers in GraphQL responses", async () 
   const session = createSession(`{
     "data": { "xdt_api__v1__feed__reels_media__connection": { "edges": [{ "node": {
       "id": 123,
-      "items": [{ "pk": 3967029617634386001, "taken_at": 1790000000 }]
+      "items": [{ "pk": 3111111111111111117, "taken_at": 1790000000 }]
     } }], "page_info": { "has_next_page": false, "end_cursor": null } } }
   }`);
 
   const response = await createInstagramClient(session).getReelsMedia(["123"]);
   expect(response.json()).toStrictEqual({
-    reels_media: [{ id: "123", items: [{ pk: "3967029617634386001", taken_at: 1_790_000_000 }] }],
+    reels_media: [{ id: "123", items: [{ pk: "3111111111111111117", taken_at: 1_790_000_000 }] }],
   });
 });
 

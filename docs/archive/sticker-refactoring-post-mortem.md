@@ -116,7 +116,7 @@ transition requires a consistent earlier backup.
 
 The user required concrete SQL review before execution and approved validation on
 disposable databases only. The confirmed production source was
-`/Users/adrienzaganelli/Documents/code/slopstagram/data/slopstagram.sqlite`.
+`/Users/example/Documents/code/slopstagram/data/slopstagram.sqlite`.
 The validation scripts opened sources read-only and targeted guarded, distinct
 SQLite backup files containing committed WAL data. They issued no live migration
 command.
