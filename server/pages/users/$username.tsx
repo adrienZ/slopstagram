@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { Card, CardHeader, CardTitle, CardDescription } from "../../shadcn/ui/card.tsx";
-import { getUserTimeline } from "../../query-service.ts";
 
 import { ExternalLinkIcon } from "lucide-react";
 import { formatUserHandle, formatUserName, getInstagramProfileUrl } from "../../helper.ts";
@@ -122,7 +121,8 @@ export function UserTimelinePage(props: TimelineContentProps & { selectedStory?:
 
 export const Route = createFileRoute("/users/$username")({
   validateSearch: z.object({ story: z.coerce.string().optional() }),
-  loader: async ({ params }) => await getUserTimeline({ data: params.username }),
+  loader: async ({ params, context }) =>
+    await context.queries.getUserTimeline({ data: params.username }),
   head: ({ loaderData }) => ({
     meta: [
       {

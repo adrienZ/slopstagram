@@ -1,4 +1,5 @@
 import { fetchReport } from "../server/report-query.ts";
+import { fetchUserTimeline } from "../server/user-timeline-query.ts";
 import type { Queries } from "../server/query-service.ts";
 
 /**
@@ -7,5 +8,8 @@ import type { Queries } from "../server/query-service.ts";
  * handlers behind them are the production ones.
  */
 export function createInProcessQueries(now: Date): Queries {
-  return { getReport: async ({ data }) => await fetchReport(data, now) };
+  return {
+    getReport: async ({ data }) => await fetchReport(data, now),
+    getUserTimeline: async ({ data }) => await fetchUserTimeline(data, now),
+  };
 }
