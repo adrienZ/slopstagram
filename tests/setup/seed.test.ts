@@ -92,9 +92,9 @@ test("seeding a recorded tray fetches only the reels it lists", async (context) 
     story_ranking_token: "recorded",
     tray: [
       {
-        id: "700000000000188",
+        id: "700000000000001",
         media_ids: [imageStoryPk],
-        user: { username: "user_041" },
+        user: { username: "user_026" },
       },
     ],
   };
@@ -103,7 +103,7 @@ test("seeding a recorded tray fetches only the reels it lists", async (context) 
 
   expect(report.metadata.counts).toMatchObject({ failed: 0, reels: 1, stories: 1 });
   expect(stories.findByMediaPk(imageStoryPk)).not.toBeNull();
-  expect(stories.findByMediaPk("700000000000292")).toBeNull();
+  expect(stories.findByMediaPk("700000000000028")).toBeNull();
 });
 
 test("seeding fails loudly when a recording no longer matches the validation schemas", async (context) => {
