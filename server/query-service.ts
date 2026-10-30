@@ -2,20 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { notFound } from "@tanstack/react-router";
 import { z } from "zod";
 import { storyDateSchema } from "../sdk/lib/story-date-service.ts";
+import { fetchReport } from "./report-query.ts";
+import type { ReportQuery } from "./report-query.ts";
 
-export const getReport = createServerFn({ method: "GET" })
+const getReport = createServerFn({ method: "GET" })
   .validator(z.object({ date: storyDateSchema.optional(), story: z.string().optional() }))
-  .handler(async ({ data }) => {
-    const { loadReport } = await import("./report-handler.tsx");
-    try {
-      return loadReport(new Date(), data.date, data.story);
-    } catch (error) {
-      if (error instanceof Error && "status" in error && error.status === 404) {
-        notFound({ throw: true });
-      }
-      throw error;
-    }
-  });
+  .handler(async ({ data }) => await fetchReport(data));
 
 export const getUserTimeline = createServerFn({ method: "GET" })
   .validator(z.string())
@@ -30,3 +22,14 @@ export const getUserTimeline = createServerFn({ method: "GET" })
       throw error;
     }
   });
+
+/**
+ * Where route loaders read their data. The router receives it through its context, so
+ * production uses the server functions and tests pass the in-process implementation
+ * instead of replacing a loader or the router.
+ */
+export interface Queries {
+  getReport: (options: { data: ReportQuery }) => ReturnType<typeof fetchReport>;
+}
+
+export const queries: Queries = { getReport };

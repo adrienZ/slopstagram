@@ -1,6 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
-import { getReport } from "../query-service.ts";
 
 import type { UserSectionProps } from "../components/user-section.tsx";
 import { Lightbox } from "../components/lightbox.tsx";
@@ -74,7 +73,9 @@ export const Route = createFileRoute("/report")({
   loaderDeps: ({ search }) => ({ date: search.date }),
   beforeLoad: ({ search }) => ({ selectedStory: search.story }),
   loader: async ({ deps, context }) => {
-    const report = await getReport({ data: { ...deps, story: context.selectedStory } });
+    const report = await context.queries.getReport({
+      data: { ...deps, story: context.selectedStory },
+    });
     if (
       context.selectedStory !== undefined &&
       report.selectedDate !== (deps.date ?? report.today)
