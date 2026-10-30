@@ -104,7 +104,7 @@ export async function createReport(options: CreateReportOptions): Promise<Create
       await dependencies.saveReport(outputFileName, report);
       run.reportKey = outputFileName;
       const { counts } = report.metadata;
-      if (counts.stories > 0 && counts.fetched + counts.cache_hits === 0) {
+      if (counts.stories > 0 && counts.fetched === 0) {
         throw new Error(
           `No story media could be fetched (${counts.failed}/${counts.stories} failed). ${report.failures[0]?.message ?? "Instagram returned no story media"}`,
         );
@@ -135,12 +135,9 @@ export async function createReport(options: CreateReportOptions): Promise<Create
       );
       await dependencies.saveReport(outputFileName, report);
       logger.info(
-        [
-          `stories=${counts.stories}`,
-          `cache_hits=${counts.cache_hits}`,
-          `fetched=${counts.fetched}`,
-          `failed=${counts.failed}`,
-        ].join(" "),
+        [`stories=${counts.stories}`, `fetched=${counts.fetched}`, `failed=${counts.failed}`].join(
+          " ",
+        ),
       );
       logger.success(`saved report ${outputFileName} to the database`);
 
