@@ -32,7 +32,7 @@ beforeAll(async () => {
   });
 });
 
-test("the account timeline exposes only vision results from the current model and prompt", () => {
+test("the account timeline keeps outdated vision results and reports how they are outdated", () => {
   const timeline = createUserTimeline("vision-user");
 
   assert.ok(timeline);
@@ -41,6 +41,23 @@ test("the account timeline exposes only vision results from the current model an
       [
         "images/story-previews/current.jpg",
         { text: "current text", visual: "current description" },
+      ],
+      [
+        "images/story-previews/outdated.jpg",
+        { text: "outdated text", visual: "outdated description" },
+      ],
+    ]),
+  );
+  expect(timeline.outdatedVisionByPreviewUrl).toStrictEqual(
+    new Map([
+      [
+        "images/story-previews/outdated.jpg",
+        {
+          currentModel: VISION_MODEL,
+          currentPromptHash: promptHash,
+          model: "retired-model",
+          promptHash,
+        },
       ],
     ]),
   );

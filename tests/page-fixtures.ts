@@ -45,6 +45,7 @@ export const timelineEntry = {
 const timeline: UserTimeline = {
   appleCaptionByMediaPk: new Map([["story-pk", "apple <text>"]]),
   avatarPath: "/media/avatar.jpg",
+  outdatedVisionByPreviewUrl: new Map(),
   stories: [timelineEntry],
   timelineUser: {
     full_name: timelineEntry.full_name,

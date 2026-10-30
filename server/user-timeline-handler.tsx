@@ -26,6 +26,7 @@ function getTimelineViewModel(
       profilePicPathByUrl,
       storyPreviewPathByUrl: previewPaths,
     },
+    outdatedVisionByPreviewUrl: timeline.outdatedVisionByPreviewUrl,
     visionByPreviewUrl: timeline.visionByPreviewUrl,
   };
 }

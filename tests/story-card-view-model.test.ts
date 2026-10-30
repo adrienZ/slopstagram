@@ -48,6 +48,20 @@ test("story cards exclude unavailable previews and preserve source order and use
   ]);
 });
 
+test("story cards carry how their vision analysis is outdated", () => {
+  const sources = createSources();
+  const outdated = {
+    currentModel: "new-model",
+    currentPromptHash: "new-hash",
+    model: "old-model",
+    promptHash: "old-hash",
+  };
+  sources.outdatedVisionByPreviewUrl = new Map([["first.jpg", outdated]]);
+  const [first, ...others] = createStoryCards(createUser(), sources);
+  expect(first.visionOutdated).toStrictEqual(outdated);
+  expect(others.every((card) => !("visionOutdated" in card))).toBe(true);
+});
+
 test("story cards supply complete lightbox details and normalize absent values", () => {
   const sources = createSources();
   const user = createUser();
