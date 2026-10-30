@@ -1,4 +1,5 @@
 import { STORY_MEDIA_TYPES } from "../sdk/story-types.ts";
+import type { OutdatedVision } from "../sdk/lib/vision-analysis-service.ts";
 import type { StoryOutputUser } from "../sdk/report-types.ts";
 import type { UserTimelineStory } from "../sdk/repositories/story-repository.ts";
 import { presentSticker, type StickerPresentation } from "./sticker-presentation.ts";
@@ -11,7 +12,7 @@ import type { ReportViewModel } from "./report-view-model.ts";
 export type StoryCardSources = Pick<
   ReportViewModel,
   "appleCaptionByMediaPk" | "cachedImages" | "visionByPreviewUrl"
->;
+> & { outdatedVisionByPreviewUrl?: Map<string, OutdatedVision> };
 
 export interface StoryCardViewModel {
   stickerDetails?: {
@@ -35,6 +36,7 @@ export interface StoryCardViewModel {
   appleCaption: string;
   visionOcr: string;
   visionDescription: string;
+  visionOutdated?: OutdatedVision;
 }
 
 export function withStoryStickers(
@@ -99,26 +101,29 @@ export function createStoryCards(
       return [];
     }
     const vision = sources.visionByPreviewUrl.get(source);
+    const visionOutdated = sources.outdatedVisionByPreviewUrl?.get(source);
 
-    return [
-      {
-        mediaPk: story.media_pk,
-        username: user.username,
-        preview,
-        alt: `aperçu ${story.media_pk}`,
-        url: getStoryUrl(user.username, story.media_pk),
-        userName,
-        avatar: avatar === "" ? undefined : avatar,
-        position: index + 1,
-        count: user.stories.length,
-        mediaType: getMediaType(story),
-        stickers: textOrDash(story.stickers.join(", ")),
-        locations: textOrDash(story.locations.join("\n")),
-        igCaption: textOrDash(story.ig_caption.trim()),
-        appleCaption: textOrDash(sources.appleCaptionByMediaPk.get(story.media_pk)?.trim()),
-        visionOcr: textOrDash(vision?.text),
-        visionDescription: textOrDash(vision?.visual),
-      },
-    ];
+    const card: StoryCardViewModel = {
+      mediaPk: story.media_pk,
+      username: user.username,
+      preview,
+      alt: `aperçu ${story.media_pk}`,
+      url: getStoryUrl(user.username, story.media_pk),
+      userName,
+      avatar: avatar === "" ? undefined : avatar,
+      position: index + 1,
+      count: user.stories.length,
+      mediaType: getMediaType(story),
+      stickers: textOrDash(story.stickers.join(", ")),
+      locations: textOrDash(story.locations.join("\n")),
+      igCaption: textOrDash(story.ig_caption.trim()),
+      appleCaption: textOrDash(sources.appleCaptionByMediaPk.get(story.media_pk)?.trim()),
+      visionOcr: textOrDash(vision?.text),
+      visionDescription: textOrDash(vision?.visual),
+    };
+    if (visionOutdated !== undefined) {
+      card.visionOutdated = visionOutdated;
+    }
+    return [card];
   });
 }

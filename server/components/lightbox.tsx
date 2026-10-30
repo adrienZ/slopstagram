@@ -5,12 +5,24 @@ import { useState, type ReactNode } from "react";
 import { Sticker } from "./sticker.tsx";
 import { MusicSticker } from "./music-sticker.tsx";
 import { getUserTimelineUrl } from "../helper.ts";
-import { Dialog, DialogClose, DialogContent, DialogTitle } from "../shadcn/ui/dialog.tsx";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../shadcn/ui/dialog.tsx";
+import { InfoIcon } from "lucide-react";
+import type { OutdatedVision } from "../../sdk/lib/vision-analysis-service.ts";
 
 const detailsCellClassName =
-  "tw:border tw:border-border tw:px-3 tw:py-2.75 tw:text-left tw:align-top tw:wrap-anywhere tw:whitespace-pre-wrap tw:max-[760px]:block tw:max-[760px]:w-auto tw:max-[760px]:border-0 tw:max-[760px]:px-2.5 tw:max-[760px]:py-2";
+  "tw:border tw:border-border tw:px-3 tw:py-2.75 tw:text-left tw:text-xs tw:align-top tw:wrap-anywhere tw:whitespace-pre-wrap tw:max-[760px]:block tw:max-[760px]:w-auto tw:max-[760px]:border-0 tw:max-[760px]:px-2.5 tw:max-[760px]:py-2";
 
-function LightboxDetailsRow(props: { label: string; value: ReactNode }) {
+const HASH_PREVIEW_LENGTH = 12;
+
+function LightboxDetailsRow(props: { label: ReactNode; value: ReactNode }) {
   return (
     <tr className="tw:max-[760px]:block">
       <th className={cn(detailsCellClassName, "tw:w-32 tw:bg-muted")} scope="row">
@@ -18,6 +30,47 @@ function LightboxDetailsRow(props: { label: string; value: ReactNode }) {
       </th>
       <td className={detailsCellClassName}>{props.value ?? "—"}</td>
     </tr>
+  );
+}
+
+function VisionLabel(props: { label: string; outdated?: OutdatedVision }) {
+  if (props.outdated === undefined) {
+    return props.label;
+  }
+  const { currentModel, currentPromptHash, model, promptHash } = props.outdated;
+  return (
+    <span className="tw:inline-flex tw:items-center tw:gap-1.5">
+      {props.label}
+      <Dialog>
+        <DialogTrigger asChild>
+          <button
+            className="tw:cursor-pointer tw:text-muted-foreground"
+            type="button"
+            aria-label="Analyse obsolète"
+          >
+            <InfoIcon className="tw:size-3.5" />
+          </button>
+        </DialogTrigger>
+        <DialogContent className="tw:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Analyse obsolète</DialogTitle>
+            <DialogDescription>
+              Cette analyse n’a pas été produite avec le modèle et le prompt actuels.
+            </DialogDescription>
+          </DialogHeader>
+          <dl className="tw:grid tw:grid-cols-[auto_1fr] tw:gap-x-3 tw:gap-y-1 tw:text-sm">
+            <dt className="tw:text-muted-foreground">Modèle</dt>
+            <dd>{model}</dd>
+            <dt className="tw:text-muted-foreground">Modèle actuel</dt>
+            <dd>{currentModel}</dd>
+            <dt className="tw:text-muted-foreground">Prompt</dt>
+            <dd className="tw:font-mono">{promptHash.slice(0, HASH_PREVIEW_LENGTH)}</dd>
+            <dt className="tw:text-muted-foreground">Prompt actuel</dt>
+            <dd className="tw:font-mono">{currentPromptHash.slice(0, HASH_PREVIEW_LENGTH)}</dd>
+          </dl>
+        </DialogContent>
+      </Dialog>
+    </span>
   );
 }
 
@@ -205,9 +258,14 @@ function LightboxDialog(props: {
                 <LightboxDetailsRow label="Lieux" value={props.story.locations} />
                 <LightboxDetailsRow label="Instagram" value={props.story.igCaption} />
                 <LightboxDetailsRow label="Apple OCR" value={props.story.appleCaption} />
-                <LightboxDetailsRow label="Vision OCR" value={props.story.visionOcr} />
                 <LightboxDetailsRow
-                  label="Vision description"
+                  label={<VisionLabel label="Vision OCR" outdated={props.story.visionOutdated} />}
+                  value={props.story.visionOcr}
+                />
+                <LightboxDetailsRow
+                  label={
+                    <VisionLabel label="Vision description" outdated={props.story.visionOutdated} />
+                  }
                   value={props.story.visionDescription}
                 />
               </tbody>

@@ -8,6 +8,7 @@ import type { VisionResult } from "../sdk/entities/vision.ts";
 import { createStoredStoryUser } from "../sdk/story-feed.ts";
 import { appleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
 import { visionRepository } from "../sdk/repositories/vision-repository.ts";
+import { describeOutdatedVision, type OutdatedVision } from "../sdk/lib/vision-analysis-service.ts";
 import {
   instagramUserRepository,
   type InstagramUserRepository,
@@ -36,6 +37,7 @@ export interface UserTimeline {
   appleCaptionByMediaPk: Map<string, string>;
   avatarPath: string | null;
   stories: Array<UserTimelineStory>;
+  outdatedVisionByPreviewUrl: Map<string, OutdatedVision>;
   timelineUser: StoryOutputUser;
   visionByPreviewUrl: Map<string, VisionResult>;
   years: Array<UserTimelineYear>;
@@ -133,11 +135,13 @@ function getStoryPreviewSource(story: UserTimelineStory): string {
 
 interface TimelineDetails {
   appleCaptionByMediaPk: Map<string, string>;
+  outdatedVisionByPreviewUrl: Map<string, OutdatedVision>;
   visionByPreviewUrl: Map<string, VisionResult>;
 }
 
 function readTimelineDetails(stories: Array<UserTimelineStory>): TimelineDetails {
   const appleCaptionByMediaPk = new Map<string, string>();
+  const outdatedVisionByPreviewUrl = new Map<string, OutdatedVision>();
   const visionByPreviewUrl = new Map<string, VisionResult>();
 
   const details = stories.map((story) => ({
@@ -153,10 +157,14 @@ function readTimelineDetails(stories: Array<UserTimelineStory>): TimelineDetails
     }
     if (vision !== null) {
       visionByPreviewUrl.set(previewUrl, vision.result);
+      const outdated = describeOutdatedVision(vision);
+      if (outdated !== null) {
+        outdatedVisionByPreviewUrl.set(previewUrl, outdated);
+      }
     }
   }
 
-  return { appleCaptionByMediaPk, visionByPreviewUrl };
+  return { appleCaptionByMediaPk, outdatedVisionByPreviewUrl, visionByPreviewUrl };
 }
 
 export function createUserTimeline(
@@ -173,6 +181,7 @@ export function createUserTimeline(
     return {
       appleCaptionByMediaPk: new Map(),
       avatarPath: `/media/avatars/${user.pk}.jpg`,
+      outdatedVisionByPreviewUrl: new Map(),
       stories: [],
       timelineUser: {
         username: user.username,
