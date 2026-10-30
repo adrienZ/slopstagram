@@ -238,6 +238,30 @@ function createGalleryPages(galleryPages: Array<JsonValue>) {
 }
 
 /**
+ * The real Instagram client over a browser session that serves the recorded payloads, so
+ * recordings go through the production parsing and schemas. It is the only fake in the
+ * seed and in report creation tests. With no tray recorded, the tray lists every reel of
+ * the gallery pages.
+ */
+export async function createRecordedInstagramClient(
+  recorded?: RecordedPayloads,
+  options: Pick<SeedOptions, "publishedBefore"> = {},
+) {
+  const payloads =
+    options.publishedBefore === undefined
+      ? (recorded ?? (await readRecordedPayloads()))
+      : shiftPayloads(recorded ?? (await readRecordedPayloads()), options.publishedBefore);
+  return createInstagramClient(
+    createRecordedSession({
+      galleryPage: createGalleryPages(payloads.galleryPages),
+      musicAsset: payloads.musicAsset,
+      place: payloads.place,
+      tray: payloads.tray ?? deriveTray(payloads.galleryPages),
+    }),
+  );
+}
+
+/**
  * Ingests recorded Instagram payloads the way production does: the real Instagram client
  * over a browser session that serves the recordings, then the real fetch, story storage,
  * place and music enrichment, and user persistence. Only the browser is replaced, so a
@@ -248,23 +272,13 @@ function createGalleryPages(galleryPages: Array<JsonValue>) {
  * local models. Returns the report the fetch produced.
  */
 export async function seedRecordedStories(recorded?: RecordedPayloads, options: SeedOptions = {}) {
-  const payloads =
-    options.publishedBefore === undefined
-      ? (recorded ?? (await readRecordedPayloads()))
-      : shiftPayloads(recorded ?? (await readRecordedPayloads()), options.publishedBefore);
   const database = options.database ?? useDrizzle();
   migrateDatabase(database);
 
-  const session = createRecordedSession({
-    galleryPage: createGalleryPages(payloads.galleryPages),
-    musicAsset: payloads.musicAsset,
-    place: payloads.place,
-    tray: payloads.tray ?? deriveTray(payloads.galleryPages),
-  });
   const now = options.publishedBefore?.now;
   const logger = createMockLogger();
   const report = await fetchStories([], {
-    client: createInstagramClient(session),
+    client: await createRecordedInstagramClient(recorded, options),
     logger,
     maxAttempts: 1,
     now: now === undefined ? undefined : () => now,
