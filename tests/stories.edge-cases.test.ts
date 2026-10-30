@@ -3,7 +3,6 @@ import { fetchStoriesManifest } from "../sdk/stories.ts";
 import {
   createCapturingLogger,
   createClient,
-  createMemoryStoryRepository,
   fixedNow,
   noSleep,
   reel,
@@ -12,10 +11,11 @@ import {
   reelsResponse,
   response,
 } from "./mock-helpers.ts";
+import { createStoryFixtures } from "./test-database.ts";
 
 describe("fetchStoriesManifest edge cases", () => {
-  test("preserves tray and media order in the manifest", async () => {
-    const storyRepository = createMemoryStoryRepository();
+  test("preserves tray and media order in the manifest", async (context) => {
+    const { storyRepository, storyStorage } = createStoryFixtures(context);
     const client = createClient(
       [
         { id: "r2", media_ids: ["m2", "m3"], user: { username: "two" } },
@@ -34,7 +34,7 @@ describe("fetchStoriesManifest edge cases", () => {
       now: fixedNow,
       sleep: noSleep,
       storyRepository,
-      storyStorage: storyRepository.storyStorage,
+      storyStorage,
     });
 
     expect(
@@ -48,8 +48,8 @@ describe("fetchStoriesManifest edge cases", () => {
     ]);
   });
 
-  test("extracts sticker summaries from story payload", async () => {
-    const storyRepository = createMemoryStoryRepository();
+  test("extracts sticker summaries from story payload", async (context) => {
+    const { storyRepository, storyStorage } = createStoryFixtures(context);
     const client = createClient(
       [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
       [
@@ -112,7 +112,7 @@ describe("fetchStoriesManifest edge cases", () => {
       now: fixedNow,
       sleep: noSleep,
       storyRepository,
-      storyStorage: storyRepository.storyStorage,
+      storyStorage,
     });
 
     expect(report.manifest.users[0]?.stories[0]?.stickers).toStrictEqual([
@@ -127,8 +127,8 @@ describe("fetchStoriesManifest edge cases", () => {
     ]);
   });
 
-  test("unwraps instagram redirect links inside sticker summaries", async () => {
-    const storyRepository = createMemoryStoryRepository();
+  test("unwraps instagram redirect links inside sticker summaries", async (context) => {
+    const { storyRepository, storyStorage } = createStoryFixtures(context);
     const client = createClient(
       [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
       [
@@ -154,7 +154,7 @@ describe("fetchStoriesManifest edge cases", () => {
       now: fixedNow,
       sleep: noSleep,
       storyRepository,
-      storyStorage: storyRepository.storyStorage,
+      storyStorage,
     });
 
     expect(report.output.users[0]?.stories[0]?.stickers).toStrictEqual([
@@ -162,8 +162,8 @@ describe("fetchStoriesManifest edge cases", () => {
     ]);
   });
 
-  test("stops when the tray cannot be fetched, without requesting any reel", async () => {
-    const storyRepository = createMemoryStoryRepository();
+  test("stops when the tray cannot be fetched, without requesting any reel", async (context) => {
+    const { storyRepository, storyStorage } = createStoryFixtures(context);
     const logger = createCapturingLogger();
     const client = createClient([], []);
     client.getTray = async () =>
@@ -178,7 +178,7 @@ describe("fetchStoriesManifest edge cases", () => {
         now: fixedNow,
         sleep: noSleep,
         storyRepository,
-        storyStorage: storyRepository.storyStorage,
+        storyStorage,
       }),
     ).rejects.toThrow(/Instagram request failed with HTTP 429/u);
     expect(client.reelsCalls).toEqual([]);
@@ -189,8 +189,8 @@ describe("fetchStoriesManifest edge cases", () => {
     );
   });
 
-  test("falls back after chunk failure and records failed stories", async () => {
-    const storyRepository = createMemoryStoryRepository();
+  test("falls back after chunk failure and records failed stories", async (context) => {
+    const { storyRepository, storyStorage } = createStoryFixtures(context);
     const logger = createCapturingLogger();
     const client = createClient(
       [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
@@ -203,7 +203,7 @@ describe("fetchStoriesManifest edge cases", () => {
       now: fixedNow,
       sleep: noSleep,
       storyRepository,
-      storyStorage: storyRepository.storyStorage,
+      storyStorage,
     });
 
     expect(client.reelsCalls).toStrictEqual([["r1"], ["r1"]]);
@@ -227,8 +227,8 @@ describe("fetchStoriesManifest edge cases", () => {
     ).toBeTruthy();
   });
 
-  test("records missing stories when Instagram omits expected media", async () => {
-    const storyRepository = createMemoryStoryRepository();
+  test("records missing stories when Instagram omits expected media", async (context) => {
+    const { storyRepository, storyStorage } = createStoryFixtures(context);
     const client = createClient(
       [{ id: "r1", media_ids: ["m1", "m2"], user: { username: "one" } }],
       [
@@ -243,7 +243,7 @@ describe("fetchStoriesManifest edge cases", () => {
       now: fixedNow,
       sleep: noSleep,
       storyRepository,
-      storyStorage: storyRepository.storyStorage,
+      storyStorage,
     });
 
     expect(report.manifest.users[0]?.stories.map((story) => story.status)).toStrictEqual([
@@ -254,8 +254,8 @@ describe("fetchStoriesManifest edge cases", () => {
     expect(report.failures[0]?.media_pk).toBe("m2");
   });
 
-  test("stops further live fetches after rate limiting", async () => {
-    const storyRepository = createMemoryStoryRepository();
+  test("stops further live fetches after rate limiting", async (context) => {
+    const { storyRepository, storyStorage } = createStoryFixtures(context);
     const client = createClient(
       [
         { id: "r1", media_ids: ["m1"], user: { username: "one" } },
@@ -271,7 +271,7 @@ describe("fetchStoriesManifest edge cases", () => {
       reelIdsPerRequest: 1,
       sleep: noSleep,
       storyRepository,
-      storyStorage: storyRepository.storyStorage,
+      storyStorage,
     });
 
     expect(client.reelsCalls).toStrictEqual([["r1"]]);
