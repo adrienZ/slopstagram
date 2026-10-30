@@ -87,11 +87,11 @@ function parseInstagramResponse<T>(
   }
 }
 
-export function parseTrayResponse(body: string, headers: Record<string, string> = {}) {
+export function parseTrayResponse(body: string, headers: Record<string, string>) {
   return parseInstagramResponse(body, headers, ReelTrayResponseSchema);
 }
 
-export function parseGalleryPage(body: string, headers: Record<string, string> = {}) {
+export function parseGalleryPage(body: string, headers: Record<string, string>) {
   return parseInstagramResponse(body, headers, GalleryResponseSchema);
 }
 

@@ -83,6 +83,29 @@ test("seeding stores the reels of every recorded gallery page", async (context) 
   expect(stories.findByMediaPk("700000000000292")).not.toBeNull();
 });
 
+test("seeding a recorded tray fetches only the reels it lists", async (context) => {
+  const { database, stories } = createDatabase(context);
+  const { galleryPages } = await readRecordedPayloads(["instagram-story-data.json"]);
+  const tray = {
+    broadcasts: [],
+    status: "ok",
+    story_ranking_token: "recorded",
+    tray: [
+      {
+        id: "700000000000188",
+        media_ids: [imageStoryPk],
+        user: { username: "user_041" },
+      },
+    ],
+  };
+
+  const report = await seedRecordedStories({ galleryPages, tray }, { database });
+
+  expect(report.metadata.counts).toMatchObject({ failed: 0, reels: 1, stories: 1 });
+  expect(stories.findByMediaPk(imageStoryPk)).not.toBeNull();
+  expect(stories.findByMediaPk("700000000000292")).toBeNull();
+});
+
 test("seeding fails loudly when a recording no longer matches the validation schemas", async (context) => {
   const { database, stories } = createDatabase(context);
   const drifted = await recordedGalleryPage();
