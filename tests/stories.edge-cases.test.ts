@@ -139,7 +139,7 @@ describe("fetchStoriesManifest edge cases", () => {
               {
                 link: {
                   title: "Visit Link",
-                  url: "https://l.instagram.com/?u=https%3A%2F%2Finstallclaw.io%2Ffr%3Ffbclid%3DPAcGRvZgRleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAwyNTYyODEwNDA1NTgAAaees2JVYiKznrVRdrE8jUP0t055Ywo5c27Qe7zZvMdkJw4mRFLCM-_N39601g_aem_zcP2VBsrm0eIv1jimc94uQ&e=AUCmysVsYFdNrKGJp7Q0gcfWAbjsWt8JpZDcBDd_-NHBcUmft9eEQIoVQXv-HKNBFJtz4zRPoRllkQBozb6cDjlBocBjgrb3rEYJr2zjkEG3ODw9GwudH1HSKA",
+                  url: "https://l.instagram.com/?u=https%3A%2F%2Flink.example.test%2Ffixture%3Ftoken%3Dfixture-token-1",
                 },
               },
               "caption",
@@ -158,7 +158,7 @@ describe("fetchStoriesManifest edge cases", () => {
     });
 
     expect(report.output.users[0]?.stories[0]?.stickers).toStrictEqual([
-      "Visit Link (https://installclaw.io/fr?fbclid=PAcGRvZgRleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAwyNTYyODEwNDA1NTgAAaees2JVYiKznrVRdrE8jUP0t055Ywo5c27Qe7zZvMdkJw4mRFLCM-_N39601g_aem_zcP2VBsrm0eIv1jimc94uQ)",
+      "Visit Link (https://link.example.test/fixture?token=fixture-token-1)",
     ]);
   });
 
