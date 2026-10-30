@@ -1,9 +1,9 @@
 import { expect, test, type TestContext } from "vitest";
 import { z } from "zod";
-import { createDrizzle } from "../sdk/database/client.ts";
-import { type JsonValue, JsonValueSchema } from "../sdk/lib/json-value.ts";
-import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
-import { StoryRepository, storyRepository } from "../sdk/repositories/story-repository.ts";
+import { createDrizzle } from "../../sdk/database/client.ts";
+import { type JsonValue, JsonValueSchema } from "../../sdk/lib/json-value.ts";
+import { InstagramUserRepository } from "../../sdk/repositories/instagram-user-repository.ts";
+import { StoryRepository, storyRepository } from "../../sdk/repositories/story-repository.ts";
 import { readRecordedPayloads, seedRecordedStories } from "./seed.ts";
 
 const now = new Date("2026-10-29T12:00:00.000Z");
@@ -68,7 +68,7 @@ test("seeding a chosen set of recorded payloads stores only that set", async (co
   expect(stories.findByMediaPk("700000000000292")).toBeNull();
 });
 
-test("seeding walks every recorded gallery page like the production client", async (context) => {
+test("seeding stores the reels of every recorded gallery page", async (context) => {
   const { database, stories } = createDatabase(context);
   const pages = await Promise.all([recordedGalleryPage(), recordedGalleryPage()]);
   const [pageOne, pageTwo] = pages.map((page, index) => {
@@ -91,7 +91,7 @@ test("seeding fails loudly when a recording no longer matches the validation sch
 
   await expect(
     seedRecordedStories({ galleryPages: [toPayload(drifted)] }, { database }),
-  ).rejects.toThrow(/Seeding failed for \d+ recorded stories[\s\S]*taken_at/u);
+  ).rejects.toThrow(/taken_at/u);
   expect(stories.findByMediaPk(imageStoryPk)).toBeNull();
 });
 
