@@ -4,79 +4,79 @@
       "edges": [
         {
           "node": {
-            "id": "700000000000188",
+            "id": "700000000000001",
             "items": [
               {
-                "pk": "700000000000271",
-                "id": "700000000000271_700000000000188",
+                "pk": "700000000000002",
+                "id": "700000000000003",
                 "has_audio": null,
                 "carousel_media": null,
-                "code": "AnonStory0272",
+                "code": "700000000000004",
                 "image_versions2": {
                   "candidates": [
                     {
                       "height": 2080,
-                      "url": "https://example.com/anonymized/instagram-media-0273.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0005.jpg",
                       "width": 1170
                     },
                     {
                       "height": 1280,
-                      "url": "https://example.com/anonymized/instagram-media-0274.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0006.jpg",
                       "width": 720
                     },
                     {
                       "height": 1138,
-                      "url": "https://example.com/anonymized/instagram-media-0275.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0007.jpg",
                       "width": 640
                     },
                     {
                       "height": 853,
-                      "url": "https://example.com/anonymized/instagram-media-0276.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0008.jpg",
                       "width": 480
                     },
                     {
                       "height": 569,
-                      "url": "https://example.com/anonymized/instagram-media-0277.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0009.jpg",
                       "width": 320
                     },
                     {
                       "height": 427,
-                      "url": "https://example.com/anonymized/instagram-media-0278.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0010.jpg",
                       "width": 240
                     },
                     {
                       "height": 1080,
-                      "url": "https://example.com/anonymized/instagram-media-0279.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0011.jpg",
                       "width": 1080
                     },
                     {
                       "height": 750,
-                      "url": "https://example.com/anonymized/instagram-media-0280.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0012.jpg",
                       "width": 750
                     },
                     {
                       "height": 640,
-                      "url": "https://example.com/anonymized/instagram-media-0281.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0013.jpg",
                       "width": 640
                     },
                     {
                       "height": 480,
-                      "url": "https://example.com/anonymized/instagram-media-0282.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0014.jpg",
                       "width": 480
                     },
                     {
                       "height": 320,
-                      "url": "https://example.com/anonymized/instagram-media-0283.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0015.jpg",
                       "width": 320
                     },
                     {
                       "height": 240,
-                      "url": "https://example.com/anonymized/instagram-media-0284.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0016.jpg",
                       "width": 240
                     },
                     {
                       "height": 150,
-                      "url": "https://example.com/anonymized/instagram-media-0285.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0017.jpg",
                       "width": 150
                     }
                   ]
@@ -86,7 +86,6 @@
                 "taken_at": 1784935054,
                 "is_dash_eligible": null,
                 "number_of_qualities": null,
-                "video_dash_manifest": null,
                 "video_versions": null,
                 "media_type": 1,
                 "video_duration": null,
@@ -98,16 +97,14 @@
                 "viewers": [],
                 "story_music_stickers": null,
                 "user": {
-                  "pk": "700000000000188",
-                  "id": "700000000000188",
-                  "interop_messaging_user_fbid": "88888888888888139"
+                  "pk": "700000000000001",
+                  "id": "700000000000001",
+                  "interop_messaging_user_fbid": "700000000000018"
                 },
                 "inventory_source": null,
                 "carousel_media_count": null,
                 "media_overlay_info": null,
-                "caption": null,
-                "accessibility_caption": null,
-                "organic_tracking_token": "anonymized-organic-tracking-token-0287",
+                "organic_tracking_token": "700000000000019",
                 "visual_comment_reply_sticker_info": null,
                 "story_bloks_stickers": [
                   {
@@ -119,13 +116,13 @@
                     "bloks_sticker": {
                       "sticker_data": {
                         "ig_mention": {
-                          "full_name": "Fixture User 288",
-                          "username": "user_045"
+                          "full_name": "Fixture text 20",
+                          "username": "user_021"
                         }
                       },
-                      "id": "bloks_sticker_id"
+                      "id": "700000000000022"
                     },
-                    "id": "700000000000289"
+                    "id": "700000000000023"
                   },
                   {
                     "x": 0.49980769230769,
@@ -136,13 +133,13 @@
                     "bloks_sticker": {
                       "sticker_data": {
                         "ig_mention": {
-                          "full_name": "Fixture User 288",
-                          "username": "user_045"
+                          "full_name": "Fixture text 20",
+                          "username": "user_021"
                         }
                       },
-                      "id": "bloks_sticker_id"
+                      "id": "700000000000022"
                     },
-                    "id": "700000000000290"
+                    "id": "700000000000024"
                   }
                 ],
                 "story_link_stickers": null,
@@ -182,16 +179,16 @@
             ],
             "unviewable_authors_infos": [],
             "user": {
-              "pk": "700000000000188",
+              "pk": "700000000000001",
               "__typename": "XDTUserDict",
               "friendship_status": {
                 "following": true
               },
-              "id": "700000000000188",
-              "interop_messaging_user_fbid": "88888888888888139",
-              "profile_pic_url": "https://example.com/anonymized/instagram-media-0291.jpg",
-              "username": "user_041",
-              "user_id": "700000000000188",
+              "id": "700000000000001",
+              "interop_messaging_user_fbid": "700000000000018",
+              "profile_pic_url": "https://example.com/anonymized/instagram-media-0025.jpg",
+              "username": "user_026",
+              "user_id": "700000000000001",
               "is_private": false,
               "is_verified": false,
               "aigm_account_label_info": null,
@@ -212,79 +209,79 @@
         },
         {
           "node": {
-            "id": "700000000000193",
+            "id": "700000000000027",
             "items": [
               {
-                "pk": "700000000000292",
-                "id": "700000000000292_700000000000193",
+                "pk": "700000000000028",
+                "id": "700000000000029",
                 "has_audio": true,
                 "carousel_media": null,
-                "code": "AnonStory0293",
+                "code": "700000000000030",
                 "image_versions2": {
                   "candidates": [
                     {
                       "height": 2096,
-                      "url": "https://example.com/anonymized/instagram-media-0294.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0031.jpg",
                       "width": 1179
                     },
                     {
                       "height": 1280,
-                      "url": "https://example.com/anonymized/instagram-media-0295.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0032.jpg",
                       "width": 720
                     },
                     {
                       "height": 1138,
-                      "url": "https://example.com/anonymized/instagram-media-0296.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0033.jpg",
                       "width": 640
                     },
                     {
                       "height": 853,
-                      "url": "https://example.com/anonymized/instagram-media-0297.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0034.jpg",
                       "width": 480
                     },
                     {
                       "height": 569,
-                      "url": "https://example.com/anonymized/instagram-media-0298.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0035.jpg",
                       "width": 320
                     },
                     {
                       "height": 427,
-                      "url": "https://example.com/anonymized/instagram-media-0299.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0036.jpg",
                       "width": 240
                     },
                     {
                       "height": 1080,
-                      "url": "https://example.com/anonymized/instagram-media-0300.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0037.jpg",
                       "width": 1080
                     },
                     {
                       "height": 750,
-                      "url": "https://example.com/anonymized/instagram-media-0301.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0038.jpg",
                       "width": 750
                     },
                     {
                       "height": 640,
-                      "url": "https://example.com/anonymized/instagram-media-0302.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0039.jpg",
                       "width": 640
                     },
                     {
                       "height": 480,
-                      "url": "https://example.com/anonymized/instagram-media-0303.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0040.jpg",
                       "width": 480
                     },
                     {
                       "height": 320,
-                      "url": "https://example.com/anonymized/instagram-media-0304.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0041.jpg",
                       "width": 320
                     },
                     {
                       "height": 240,
-                      "url": "https://example.com/anonymized/instagram-media-0305.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0042.jpg",
                       "width": 240
                     },
                     {
                       "height": 150,
-                      "url": "https://example.com/anonymized/instagram-media-0306.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0043.jpg",
                       "width": 150
                     }
                   ]
@@ -294,19 +291,18 @@
                 "taken_at": 1784930413,
                 "is_dash_eligible": 1,
                 "number_of_qualities": 2,
-                "video_dash_manifest": "anonymized-video-dash-manifest-0307",
                 "video_versions": [
                   {
                     "type": 101,
-                    "url": "https://example.com/anonymized/instagram-media-0308.mp4"
+                    "url": "https://example.com/anonymized/instagram-media-0044.jpg"
                   },
                   {
                     "type": 102,
-                    "url": "https://example.com/anonymized/instagram-media-0308.mp4"
+                    "url": "https://example.com/anonymized/instagram-media-0044.jpg"
                   },
                   {
                     "type": 103,
-                    "url": "https://example.com/anonymized/instagram-media-0308.mp4"
+                    "url": "https://example.com/anonymized/instagram-media-0044.jpg"
                   }
                 ],
                 "media_type": 2,
@@ -314,7 +310,7 @@
                 "ai_label_info": {
                   "attribution_label_text": null,
                   "gen_ai_detection_method": "AI_EDITED",
-                  "subtitle_text": "Notice sur l’IA"
+                  "subtitle_text": "Fixture text 45"
                 },
                 "product_type": "story",
                 "audience": null,
@@ -326,23 +322,21 @@
                     "music_asset_info": {
                       "should_mute_audio": false,
                       "should_mute_audio_reason": "",
-                      "title": "cats",
-                      "display_artist": "liminalx, exhibit"
+                      "title": "Fixture audio title 46",
+                      "display_artist": "Fixture audio artist 47"
                     },
-                    "id": "700000000000309"
+                    "id": "700000000000048"
                   }
                 ],
                 "user": {
-                  "pk": "700000000000193",
-                  "id": "700000000000193",
-                  "interop_messaging_user_fbid": "888888888888140"
+                  "pk": "700000000000027",
+                  "id": "700000000000027",
+                  "interop_messaging_user_fbid": "700000000000049"
                 },
                 "inventory_source": null,
                 "carousel_media_count": null,
                 "media_overlay_info": null,
-                "caption": null,
-                "accessibility_caption": null,
-                "organic_tracking_token": "anonymized-organic-tracking-token-0311",
+                "organic_tracking_token": "700000000000050",
                 "visual_comment_reply_sticker_info": null,
                 "story_bloks_stickers": null,
                 "story_link_stickers": null,
@@ -360,9 +354,9 @@
                         "logging_surface": "ig_stories_consumption",
                         "logging_mechanism": "ig_stories_consumption_bottom_sheet"
                       },
-                      "id": "700000000000312"
+                      "id": "700000000000051"
                     },
-                    "id": "700000000000313"
+                    "id": "700000000000052"
                   }
                 ],
                 "story_feed_media": null,
@@ -396,76 +390,76 @@
                 "can_reshare": false
               },
               {
-                "pk": "700000000000314",
-                "id": "700000000000314_700000000000193",
+                "pk": "700000000000053",
+                "id": "700000000000054",
                 "has_audio": true,
                 "carousel_media": null,
-                "code": "AnonStory0315",
+                "code": "700000000000055",
                 "image_versions2": {
                   "candidates": [
                     {
                       "height": 2096,
-                      "url": "https://example.com/anonymized/instagram-media-0316.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0056.jpg",
                       "width": 1179
                     },
                     {
                       "height": 1280,
-                      "url": "https://example.com/anonymized/instagram-media-0317.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0057.jpg",
                       "width": 720
                     },
                     {
                       "height": 1138,
-                      "url": "https://example.com/anonymized/instagram-media-0318.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0058.jpg",
                       "width": 640
                     },
                     {
                       "height": 853,
-                      "url": "https://example.com/anonymized/instagram-media-0319.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0059.jpg",
                       "width": 480
                     },
                     {
                       "height": 569,
-                      "url": "https://example.com/anonymized/instagram-media-0320.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0060.jpg",
                       "width": 320
                     },
                     {
                       "height": 427,
-                      "url": "https://example.com/anonymized/instagram-media-0321.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0061.jpg",
                       "width": 240
                     },
                     {
                       "height": 1080,
-                      "url": "https://example.com/anonymized/instagram-media-0322.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0062.jpg",
                       "width": 1080
                     },
                     {
                       "height": 750,
-                      "url": "https://example.com/anonymized/instagram-media-0323.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0063.jpg",
                       "width": 750
                     },
                     {
                       "height": 640,
-                      "url": "https://example.com/anonymized/instagram-media-0324.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0064.jpg",
                       "width": 640
                     },
                     {
                       "height": 480,
-                      "url": "https://example.com/anonymized/instagram-media-0325.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0065.jpg",
                       "width": 480
                     },
                     {
                       "height": 320,
-                      "url": "https://example.com/anonymized/instagram-media-0326.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0066.jpg",
                       "width": 320
                     },
                     {
                       "height": 240,
-                      "url": "https://example.com/anonymized/instagram-media-0327.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0067.jpg",
                       "width": 240
                     },
                     {
                       "height": 150,
-                      "url": "https://example.com/anonymized/instagram-media-0328.jpg",
+                      "url": "https://example.com/anonymized/instagram-media-0068.jpg",
                       "width": 150
                     }
                   ]
@@ -475,19 +469,18 @@
                 "taken_at": 1784933048,
                 "is_dash_eligible": 1,
                 "number_of_qualities": 2,
-                "video_dash_manifest": "anonymized-video-dash-manifest-0329",
                 "video_versions": [
                   {
                     "type": 101,
-                    "url": "https://example.com/anonymized/instagram-media-0330.mp4"
+                    "url": "https://example.com/anonymized/instagram-media-0069.jpg"
                   },
                   {
                     "type": 102,
-                    "url": "https://example.com/anonymized/instagram-media-0330.mp4"
+                    "url": "https://example.com/anonymized/instagram-media-0069.jpg"
                   },
                   {
                     "type": 103,
-                    "url": "https://example.com/anonymized/instagram-media-0330.mp4"
+                    "url": "https://example.com/anonymized/instagram-media-0069.jpg"
                   }
                 ],
                 "media_type": 2,
@@ -503,23 +496,21 @@
                     "music_asset_info": {
                       "should_mute_audio": false,
                       "should_mute_audio_reason": "",
-                      "title": "Les revenants",
-                      "display_artist": "Vanessa Paradis"
+                      "title": "Fixture audio title 70",
+                      "display_artist": "Fixture audio artist 71"
                     },
-                    "id": "700000000000331"
+                    "id": "700000000000072"
                   }
                 ],
                 "user": {
-                  "pk": "700000000000193",
-                  "id": "700000000000193",
-                  "interop_messaging_user_fbid": "888888888888140"
+                  "pk": "700000000000027",
+                  "id": "700000000000027",
+                  "interop_messaging_user_fbid": "700000000000049"
                 },
                 "inventory_source": null,
                 "carousel_media_count": null,
                 "media_overlay_info": null,
-                "caption": null,
-                "accessibility_caption": null,
-                "organic_tracking_token": "anonymized-organic-tracking-token-0332",
+                "organic_tracking_token": "700000000000073",
                 "visual_comment_reply_sticker_info": null,
                 "story_bloks_stickers": null,
                 "story_link_stickers": null,
@@ -559,16 +550,16 @@
             ],
             "unviewable_authors_infos": [],
             "user": {
-              "pk": "700000000000193",
+              "pk": "700000000000027",
               "__typename": "XDTUserDict",
               "friendship_status": {
                 "following": true
               },
-              "id": "700000000000193",
-              "interop_messaging_user_fbid": "888888888888140",
-              "profile_pic_url": "https://example.com/anonymized/instagram-media-0333.jpg",
-              "username": "user_019",
-              "user_id": "700000000000193",
+              "id": "700000000000027",
+              "interop_messaging_user_fbid": "700000000000049",
+              "profile_pic_url": "https://example.com/anonymized/instagram-media-0074.jpg",
+              "username": "user_075",
+              "user_id": "700000000000027",
               "is_private": false,
               "is_verified": false,
               "aigm_account_label_info": null,
@@ -589,10 +580,10 @@
         }
       ],
       "page_info": {
-        "end_cursor": "anonymized-end-cursor-0334",
+        "end_cursor": "Fixture text 76",
         "has_next_page": true,
         "has_previous_page": true,
-        "start_cursor": "anonymized-start-cursor-0335"
+        "start_cursor": "Fixture text 77"
       }
     }
   },

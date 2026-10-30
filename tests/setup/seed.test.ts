@@ -8,8 +8,8 @@ import { readRecordedPayloads, seedRecordedStories } from "./seed.ts";
 
 const now = new Date("2026-10-29T12:00:00.000Z");
 const HOUR = 3600;
-const imageStoryPk = "700000000000271";
-const storyPks = [imageStoryPk, "700000000000292", "700000000000314"];
+const imageStoryPk = "700000000000002";
+const storyPks = [imageStoryPk, "700000000000028", "700000000000053"];
 
 const GalleryPageSchema = z.looseObject({
   data: z.looseObject({
@@ -47,14 +47,14 @@ test("seeding stores the recorded stories, users, stickers and previews like a f
   const report = await seedRecordedStories(undefined, { database });
 
   expect(report.metadata.counts).toMatchObject({ failed: 0, fetched: 3, reels: 2, stories: 3 });
-  expect(users.listAll().map(({ username }) => username)).toEqual(["user_019", "user_041"]);
+  expect(users.listAll().map(({ username }) => username)).toEqual(["user_026", "user_075"]);
   const image = stories.findByMediaPk(imageStoryPk);
   expect(image?.media_type).toBe(1);
   expect(image?.image_versions2?.candidates?.[0]?.url).toBeTypeOf("string");
   expect(image?.annotations?.stickers.length).toBeGreaterThan(0);
   expect(stories.listStickerKinds().length).toBeGreaterThan(0);
-  expect(stories.findByMediaPk("700000000000292")?.media_type).toBe(2);
-  expect(stories.findByMediaPk("700000000000314")?.annotations?.musicObservations).not.toEqual([]);
+  expect(stories.findByMediaPk("700000000000028")?.media_type).toBe(2);
+  expect(stories.findByMediaPk("700000000000053")?.annotations?.musicObservations).not.toEqual([]);
 });
 
 test("seeding a chosen set of recorded payloads stores only that set", async (context) => {
@@ -65,7 +65,7 @@ test("seeding a chosen set of recorded payloads stores only that set", async (co
   await seedRecordedStories({ galleryPages: [toPayload(galleryPage)] }, { database });
 
   expect(stories.findByMediaPk(imageStoryPk)).not.toBeNull();
-  expect(stories.findByMediaPk("700000000000292")).toBeNull();
+  expect(stories.findByMediaPk("700000000000028")).toBeNull();
 });
 
 test("seeding stores the reels of every recorded gallery page", async (context) => {
@@ -80,7 +80,7 @@ test("seeding stores the reels of every recorded gallery page", async (context) 
   await seedRecordedStories({ galleryPages: [pageOne, pageTwo] }, { database });
 
   expect(stories.findByMediaPk(imageStoryPk)).not.toBeNull();
-  expect(stories.findByMediaPk("700000000000292")).not.toBeNull();
+  expect(stories.findByMediaPk("700000000000028")).not.toBeNull();
 });
 
 test("seeding a recorded tray fetches only the reels it lists", async (context) => {
@@ -92,9 +92,9 @@ test("seeding a recorded tray fetches only the reels it lists", async (context) 
     story_ranking_token: "recorded",
     tray: [
       {
-        id: "700000000000188",
+        id: "700000000000001",
         media_ids: [imageStoryPk],
-        user: { username: "user_041" },
+        user: { username: "user_026" },
       },
     ],
   };
@@ -103,7 +103,7 @@ test("seeding a recorded tray fetches only the reels it lists", async (context) 
 
   expect(report.metadata.counts).toMatchObject({ failed: 0, reels: 1, stories: 1 });
   expect(stories.findByMediaPk(imageStoryPk)).not.toBeNull();
-  expect(stories.findByMediaPk("700000000000292")).toBeNull();
+  expect(stories.findByMediaPk("700000000000028")).toBeNull();
 });
 
 test("seeding fails loudly when a recording no longer matches the validation schemas", async (context) => {

@@ -16,8 +16,11 @@ test("the feed renders ranked users, separate handles, summaries, and local prev
   );
   expect(screen.getByText(`Fil chargé le ${reportProps.date}`)).toBeVisible();
   const headings = screen.getAllByRole("heading", { level: 2 });
-  expect(headings.map((heading) => heading.textContent)).toEqual(["Ranked First", 'Html "User"']);
-  expect(screen.getByText("@ranked-second")).toBeVisible();
+  expect(headings.map((heading) => heading.textContent)).toEqual([
+    "Fixture user 1",
+    'Fixture "user" 2',
+  ]);
+  expect(screen.getByText("@fixture_user_2")).toBeVisible();
   expect(screen.getAllByText("A text-focused story with extracted details.")).toHaveLength(2);
   for (const image of screen.getAllByRole("img")) {
     expect(image.getAttribute("src")).toMatch(/^\/media\//u);
@@ -100,10 +103,10 @@ test("report calendar with no available data cannot navigate before today’s mo
 
 test("opening a preview updates the real router and closing restores focus and search", async () => {
   const { user, router } = await renderPage(ReportPage, reportProps, "/report?date=2026-07-26");
-  const preview = screen.getByRole("button", { name: "Ouvrir aperçu story-pk-1" });
+  const preview = screen.getByRole("button", { name: "Ouvrir aperçu fixture-pk-1" });
   await user.click(preview);
   const dialog = await screen.findByRole("dialog", { name: "Aperçu de l’image" });
-  expect(router.state.location.search).toEqual({ date: "2026-07-26", story: "story-pk-1" });
+  expect(router.state.location.search).toEqual({ date: "2026-07-26", story: "fixture-pk-1" });
   expect(
     within(dialog).getByRole("cell", { name: "</script><script>caption</script>" }),
   ).toBeVisible();
@@ -118,7 +121,7 @@ test("opening a preview updates the real router and closing restores focus and s
 });
 
 test("a story deep link opens after mount and an unknown story stays closed", async () => {
-  const page = await renderPage(ReportPage, reportProps, "/report?story=story-pk-1");
+  const page = await renderPage(ReportPage, reportProps, "/report?story=fixture-pk-1");
   expect(await screen.findByRole("dialog")).toBeVisible();
   page.unmount();
   await renderPage(ReportPage, reportProps, "/report?story=missing");
@@ -128,7 +131,7 @@ test("a story deep link opens after mount and an unknown story stays closed", as
 test("closing story details hides the dialog immediately while route navigation is pending", async (context) => {
   let delayNavigation = false;
   const { promise: pending, resolve: release } = Promise.withResolvers<null>();
-  const { user, router } = await renderPage(ReportPage, reportProps, "/report?story=story-pk-1", {
+  const { user, router } = await renderPage(ReportPage, reportProps, "/report?story=fixture-pk-1", {
     beforeLoad: async () => {
       if (delayNavigation) {
         await pending;
@@ -157,7 +160,7 @@ test("mentions in report details link to saved user pages without inventing an a
       [
         {
           story: {
-            pk: "story-pk-1",
+            pk: "fixture-pk-1",
             annotations: { locations: [], stickers: [{ kind: "mention", label: "@outside-feed" }] },
           },
         },
@@ -165,7 +168,11 @@ test("mentions in report details link to saved user pages without inventing an a
       sidebarUsers,
     ),
   }));
-  await renderPage(ReportPage, { ...reportProps, users, sidebarUsers }, "/report?story=story-pk-1");
+  await renderPage(
+    ReportPage,
+    { ...reportProps, users, sidebarUsers },
+    "/report?story=fixture-pk-1",
+  );
   const details = within(await screen.findByRole("dialog", { name: "Aperçu de l’image" }));
   const mention = details.getByRole("link", { name: "@outside-feed" });
   expect(mention).toHaveAttribute("href", "/users/outside-feed");
