@@ -70,6 +70,21 @@ test("upgrading existing occurrences preserves duplicates, order and provenance"
   expect(new StoryRepository(database).findByMediaPk("old")).toStrictEqual(stored);
 });
 
+function buildItem(ids: Array<string>, extra: Partial<StoryItem> = {}) {
+  return storyItemWithStickers("m1", {
+    taken_at: 1_767_225_600,
+    story_music_stickers: ids.map((id) => ({
+      id,
+      music_asset_info: {
+        audio_asset_id: "shared-audio",
+        title: "Song",
+        display_artist: "Artist",
+      },
+    })),
+    ...extra,
+  });
+}
+
 test("provider-identified occurrences keep their identities through reordering and cold resaves", async (context) => {
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
@@ -79,32 +94,10 @@ test("provider-identified occurrences keep their identities through reordering a
   const repository = new StoryRepository(database);
   const owner = { full_name: "One", id: "u1", pk: "u1", username: "one" };
   await new InstagramUserRepository(database).save(owner);
-  async function ingest(ids: Array<string>, extra: Partial<StoryItem> = {}) {
+  const tray = [{ id: "r1", media_ids: ["m1"], user: owner }];
+  async function ingest(ids: Array<string>) {
     return await fetchStoriesManifest(
-      createClient(
-        [{ id: "r1", media_ids: ["m1"], user: owner }],
-        [
-          reelsResponse({
-            r1: {
-              ...reel("r1", [
-                storyItemWithStickers("m1", {
-                  taken_at: 1_767_225_600,
-                  story_music_stickers: ids.map((id) => ({
-                    id,
-                    music_asset_info: {
-                      audio_asset_id: "shared-audio",
-                      title: "Song",
-                      display_artist: "Artist",
-                    },
-                  })),
-                  ...extra,
-                }),
-              ]),
-              user: owner,
-            },
-          }),
-        ],
-      ),
+      createClient(tray, [reelsResponse({ r1: { ...reel("r1", [buildItem(ids)]), user: owner } })]),
       {
         logger: createCapturingLogger(),
         now: fixedNow,
@@ -112,6 +105,9 @@ test("provider-identified occurrences keep their identities through reordering a
         storyStorage: createMemoryStorage<StoryItem>(),
       },
     );
+  }
+  async function resave(ids: Array<string>, extra: Partial<StoryItem> = {}) {
+    await repository.save(buildItem(ids, extra), owner);
   }
   const report = await ingest(["sticker-a", "sticker-b"]);
   const before = readStoredStory(new StoryRepository(database));
@@ -122,7 +118,7 @@ test("provider-identified occurrences keep their identities through reordering a
     "sticker-a",
     "sticker-b",
   ]);
-  const reorderedReport = await ingest(["sticker-b", "sticker-a"], {
+  await resave(["sticker-b", "sticker-a"], {
     story_bloks_stickers: [
       {
         id: "mention-a",
@@ -135,11 +131,9 @@ test("provider-identified occurrences keep their identities through reordering a
   const cold = new StoryRepository(database);
   const reordered = readStoredStory(cold);
   expect(reordered.annotations.stickers.slice(1)).toStrictEqual([original[1], original[0]]);
-  expect(reorderedReport.manifest.users[0].stories[0].stickers).toStrictEqual([
-    "@friend",
-    "Song - Artist",
-    "Song - Artist",
-  ]);
+  expect(
+    createManifestUsers(tray, new Map([["m1", reordered]]), new Map())[0]?.stories[0]?.stickers,
+  ).toStrictEqual(["@friend", "Song - Artist", "Song - Artist"]);
   expect(report.manifest.users[0].stories[0].stickers).toStrictEqual([
     "Song - Artist",
     "Song - Artist",
@@ -147,7 +141,7 @@ test("provider-identified occurrences keep their identities through reordering a
   await cold.save(reordered, owner);
   await cold.save(reordered, owner);
   expect(new StoryRepository(database).findByMediaPk("m1")).toStrictEqual(reordered);
-  await ingest(["sticker-a", "sticker-b"], { story_bloks_stickers: [] });
+  await resave(["sticker-a", "sticker-b"], { story_bloks_stickers: [] });
   expect(readStoredStory(cold).annotations.stickers).toStrictEqual(original);
 });
 
@@ -353,7 +347,7 @@ for (const unifiedLocations of [false, true]) {
   });
 }
 
-test("partial ingestion merges sources for fresh reports, cold reads, and resaves", async (context) => {
+test("a partial observation merges sources for fresh reports, cold reads, and resaves", async (context) => {
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
   context.onTestFinished(() => {
@@ -364,35 +358,30 @@ test("partial ingestion merges sources for fresh reports, cold reads, and resave
   const owner = { full_name: "One", id: "u1", pk: "u1", username: "one" };
   await new InstagramUserRepository(database).save(owner);
   const tray = [{ id: "r1", media_ids: ["m1"], user: owner }];
-  const storage = createMemoryStorage<StoryItem>();
-  async function ingest(item: StoryItem) {
-    return await fetchStoriesManifest(
-      createClient(tray, [reelsResponse({ r1: { ...reel("r1", [item]), user: owner } })]),
+  const first = storyItemWithStickers("m1", {
+    taken_at: 1_767_225_600,
+    story_bloks_stickers: [
       {
-        logger: createCapturingLogger(),
-        now: fixedNow,
-        storyRepository: repository,
-        storyStorage: storage,
-      },
-    );
-  }
-  const original = await ingest(
-    storyItemWithStickers("m1", {
-      taken_at: 1_767_225_600,
-      story_bloks_stickers: [
-        {
-          bloks_sticker: {
-            sticker_data: { ig_mention: { username: "same" }, location: { name: "Paris" } },
-          },
+        bloks_sticker: {
+          sticker_data: { ig_mention: { username: "same" }, location: { name: "Paris" } },
         },
-        { bloks_sticker: { sticker_data: { ig_mention: { username: "same" } } } },
-      ],
-      story_locations: [{ location: { name: "Paris" } }, { location: { name: "Paris" } }],
-      story_hashtags: [{ hashtag: "old" }],
-      story_music_stickers: [{ music_asset_info: { title: "Song" } }],
-      story_link_stickers: [{ url: "https://example.com" }],
-      story_cta: [{ url: "https://example.com" }],
-    }),
+      },
+      { bloks_sticker: { sticker_data: { ig_mention: { username: "same" } } } },
+    ],
+    story_locations: [{ location: { name: "Paris" } }, { location: { name: "Paris" } }],
+    story_hashtags: [{ hashtag: "old" }],
+    story_music_stickers: [{ music_asset_info: { title: "Song" } }],
+    story_link_stickers: [{ url: "https://example.com" }],
+    story_cta: [{ url: "https://example.com" }],
+  });
+  const original = await fetchStoriesManifest(
+    createClient(tray, [reelsResponse({ r1: { ...reel("r1", [first]), user: owner } })]),
+    {
+      logger: createCapturingLogger(),
+      now: fixedNow,
+      storyRepository: repository,
+      storyStorage: createMemoryStorage<StoryItem>(),
+    },
   );
   await reports.save("before-partial", original);
   const partial = storyItemWithStickers("m1", {
@@ -401,9 +390,14 @@ test("partial ingestion merges sources for fresh reports, cold reads, and resave
     story_hashtags: [{ hashtag: "new" }],
     story_music_stickers: null,
   });
-  const updated = await ingest(partial);
-  expect(updated.manifest.users[0]?.stories[0]?.locations).toStrictEqual(["Paris"]);
-  expect(updated.manifest.users[0]?.stories[0]?.stickers).toStrictEqual([
+  await repository.save(partial, owner);
+  const updated = createManifestUsers(
+    tray,
+    new Map([["m1", readStoredStory(repository)]]),
+    new Map(),
+  );
+  expect(updated[0]?.stories[0]?.locations).toStrictEqual(["Paris"]);
+  expect(updated[0]?.stories[0]?.stickers).toStrictEqual([
     "@same",
     "@same",
     "Song",
@@ -411,13 +405,11 @@ test("partial ingestion merges sources for fresh reports, cold reads, and resave
     "https://example.com",
     "https://example.com",
   ]);
-  await ingest(partial);
+  await repository.save(partial, owner);
   const cold = new StoryRepository(database);
   const stored = cold.findByMediaPk("m1");
   assert.ok(stored);
-  expect(createManifestUsers(tray, new Map([["m1", stored]]), new Map())).toStrictEqual(
-    updated.manifest.users,
-  );
+  expect(createManifestUsers(tray, new Map([["m1", stored]]), new Map())).toStrictEqual(updated);
   await cold.save(stored, owner);
   expect(cold.findByMediaPk("m1")).toStrictEqual(stored);
   expect(cold.listByUsername("one")[0]?.locations).toStrictEqual(["Paris"]);
