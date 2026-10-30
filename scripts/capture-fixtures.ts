@@ -79,9 +79,10 @@ const SYNTHETIC_ID_PATTERN = /^7000000\d{8}$/u;
 const SYNTHETIC_USERNAME_PATTERN = /^user_\d{3,}$/u;
 const SYNTHETIC_AUDIO_TEXT_PATTERN = /^Fixture audio (?:title|artist) \d+$/u;
 // Hand-written fixtures: "fixture" followed by words and a number, e.g. `Fixture caption 1`,
-// `fixture_user_1` or `images/avatars/fixture-avatar-1.jpg`, optionally after a `kind:` prefix.
+// `Fixture "quoted" 2`, `fixture_user_1` or `images/avatars/fixture-avatar-1.jpg`, optionally after a
+// `kind:` prefix.
 const SYNTHETIC_MARKER_PATTERN =
-  /^(?:[a-z-]+\/)*(?:[a-z]+:)?fixture[\s_-](?:[a-z]+[\s_-])*\d+(?:\.[a-z0-9]+)?$/iu;
+  /^(?:[a-z-]+\/)*(?:[a-z]+:)?fixture[\s_-](?:"?[a-z]+"?[\s_-])*\d+(?:\.[a-z0-9]+)?$/iu;
 // Hosts that can never serve real data: IANA reserved example domains.
 const RESERVED_HOST_PATTERN = /(?:^|\.)example\.(?:com|org|net|test)$|\.test$/u;
 const MAX_COORDINATE_DECIMALS = 1;

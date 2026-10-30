@@ -18,7 +18,7 @@ test("the feed renders ranked users, separate handles, summaries, and local prev
   const headings = screen.getAllByRole("heading", { level: 2 });
   expect(headings.map((heading) => heading.textContent)).toEqual([
     "Fixture user 1",
-    "Fixture user 2",
+    'Fixture "user" 2',
   ]);
   expect(screen.getByText("@fixture_user_2")).toBeVisible();
   expect(screen.getAllByText("A text-focused story with extracted details.")).toHaveLength(2);

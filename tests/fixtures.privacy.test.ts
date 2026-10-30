@@ -130,6 +130,7 @@ describe("the fixture privacy guard", () => {
   test("accepts explicit hand-written synthetic values", () => {
     const handWritten = {
       full_name: "Fixture user 1",
+      quoted_name: 'Fixture "user" 2',
       ig_caption: "Fixture caption 1",
       locations: ["Fixture place 1"],
       media_pk: "fixture-pk-1",

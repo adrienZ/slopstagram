@@ -3,7 +3,7 @@
   "manifest": {
     "users": [
       {
-        "full_name": "Fixture user 2",
+        "full_name": "Fixture \"user\" 2",
         "media_ids": [
           "fixture-pk-1"
         ],
@@ -58,7 +58,7 @@
   "output": {
     "users": [
       {
-        "full_name": "Fixture user 2",
+        "full_name": "Fixture \"user\" 2",
         "profile_pic_url": "images/avatars/fixture-avatar-1.jpg",
         "reel_ids": [
           "fixture-reel-1"
