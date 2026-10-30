@@ -6,13 +6,12 @@ import { useDrizzle, type DrizzleDatabase } from "../database/client.ts";
 import { instagramUsers } from "../entities/instagram-user.ts";
 import {
   enrichStoryLocations,
-  fillTaggedPlace,
   readLocationObservations,
   readPlaceDetails,
   recordFailedPlaceLookup,
   recordPlaceLookup,
 } from "./location-metadata-repository.ts";
-import type { PlaceFillInput, PlaceLookupInput } from "../location-metadata-service.ts";
+import type { PlaceLookupInput } from "../location-metadata-service.ts";
 import {
   enrichStoryMusic,
   readMusicObservations,
@@ -302,12 +301,6 @@ export class StoryRepository {
       if (previous !== undefined && previous.metadata.instagramAudioAssetId !== null) {
         refreshMusicAsset(database, previous, observation);
       }
-    });
-  }
-
-  fillTaggedPlace(instagramPlaceId: string, incoming: PlaceFillInput) {
-    this.database.transaction((transaction) => {
-      fillTaggedPlace(transaction, instagramPlaceId, incoming);
     });
   }
 
