@@ -27,8 +27,6 @@ function toReportEntry(key: string, report: StoriesManifestReport): typeof repor
   const { counts } = report.metadata;
   return NewReportSchema.parse({
     broadcastsCount: report.metadata.broadcasts_count,
-    cacheHits: counts.cache_hits,
-    cacheMisses: counts.cache_misses,
     createdAt: report.metadata.created_at,
     failedCount: counts.failed,
     fetchedCount: counts.fetched,
@@ -148,8 +146,6 @@ function toReport(
     metadata: {
       broadcasts_count: report.broadcastsCount,
       counts: {
-        cache_hits: report.cacheHits,
-        cache_misses: report.cacheMisses,
         failed: report.failedCount,
         fetched: report.fetchedCount,
         reels: report.reelsCount,
@@ -177,8 +173,6 @@ async function upsertReport(
     .onConflictDoUpdate({
       set: {
         broadcastsCount: entry.broadcastsCount,
-        cacheHits: entry.cacheHits,
-        cacheMisses: entry.cacheMisses,
         createdAt: entry.createdAt,
         failedCount: entry.failedCount,
         fetchedCount: entry.fetchedCount,

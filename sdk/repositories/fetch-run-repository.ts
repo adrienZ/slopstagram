@@ -33,8 +33,6 @@ export class FetchRunRepository {
         storiesCount: result.counts?.stories ?? null,
         reelsCount: result.counts?.reels ?? null,
         fetchedCount: result.counts?.fetched ?? null,
-        cacheHits: result.counts?.cache_hits ?? null,
-        cacheMisses: result.counts?.cache_misses ?? null,
         failedCount: result.counts?.failed ?? null,
       })
       .where(eq(fetchRuns.id, id))

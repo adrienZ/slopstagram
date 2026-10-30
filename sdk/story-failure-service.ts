@@ -5,7 +5,6 @@ import type { RequestFailure } from "./story-retry-service.ts";
 
 export interface FetchState {
   cachedItems: Map<string, StoryItem>;
-  cacheHitPks: Set<string>;
   expectedMediaIdsByReel: Map<string, Array<string>>;
   expectedMediaPks: Array<string>;
   failureByMediaPk: Map<string, number>;
@@ -16,7 +15,6 @@ export interface FetchState {
 export function createFetchState(tray: Array<StoryTrayEntry>): FetchState {
   return {
     cachedItems: new Map(),
-    cacheHitPks: new Set(),
     expectedMediaIdsByReel: new Map(tray.map((entry) => [entry.id, entry.media_ids])),
     expectedMediaPks: tray.flatMap((entry) => entry.media_ids),
     failureByMediaPk: new Map(),
@@ -78,7 +76,7 @@ export function addFailuresForPendingReelStories(
 }
 
 function getResolvedStoryCount(state: FetchState): number {
-  return state.cacheHitPks.size + state.fetchedMediaPks.size + state.failureByMediaPk.size;
+  return state.fetchedMediaPks.size + state.failureByMediaPk.size;
 }
 
 export function logStoryProgress(logger: Logger, state: FetchState, suffix: string): void {
