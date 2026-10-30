@@ -81,6 +81,10 @@ function storyAudioPreview(annotations: StoryAnnotations | undefined): MusicPrev
       };
 }
 
+/**
+ * Test seam: tests read the previews of one annotation set without rendering the stickers.
+ * @public
+ */
 export function storyMusicPreviews(annotations: StoryAnnotations | undefined): Array<MusicPreview> {
   const soundtrack = storyAudioPreview(annotations);
   if (soundtrack !== null) {

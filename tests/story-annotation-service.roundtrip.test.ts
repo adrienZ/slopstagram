@@ -11,7 +11,7 @@ import { ReportRepository } from "../sdk/repositories/report-repository.ts";
 import { storyStickers } from "../sdk/entities/story.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
 import { createManifestUsers, createOutputUsers } from "../sdk/story-output-service.ts";
-import { fetchStoriesManifest } from "../sdk/stories.ts";
+import { fetchStories } from "../sdk/stories.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 import {
   createCapturingLogger,
@@ -80,8 +80,8 @@ test("provider-identified occurrences keep their identities through reordering a
   const owner = { full_name: "One", id: "u1", pk: "u1", username: "one" };
   await new InstagramUserRepository(database).save(owner);
   async function ingest(ids: Array<string>, extra: Partial<StoryItem> = {}) {
-    return await fetchStoriesManifest(
-      createClient(
+    return await fetchStories([], {
+      client: createClient(
         [{ id: "r1", media_ids: ["m1"], user: owner }],
         [
           reelsResponse({
@@ -105,13 +105,11 @@ test("provider-identified occurrences keep their identities through reordering a
           }),
         ],
       ),
-      {
-        logger: createCapturingLogger(),
-        now: fixedNow,
-        storyRepository: repository,
-        storyStorage: createMemoryStorage<StoryItem>(),
-      },
-    );
+      logger: createCapturingLogger(),
+      now: fixedNow,
+      storyRepository: repository,
+      storyStorage: createMemoryStorage<StoryItem>(),
+    });
   }
   const report = await ingest(["sticker-a", "sticker-b"]);
   const before = readStoredStory(new StoryRepository(database));
@@ -227,15 +225,13 @@ test("story annotations survive ingestion, cold reports, and repeated saves", as
     story_music_stickers: [{ music_asset_info: { title: "Song", display_artist: "Artist" } }],
     taken_at: 1_767_225_600,
   });
-  const report = await fetchStoriesManifest(
-    createClient(tray, [reelsResponse({ r1: { ...reel("r1", [item]), user: owner } })]),
-    {
-      logger: createCapturingLogger(),
-      now: fixedNow,
-      storyRepository: repository,
-      storyStorage: createMemoryStorage<StoryItem>(),
-    },
-  );
+  const report = await fetchStories([], {
+    client: createClient(tray, [reelsResponse({ r1: { ...reel("r1", [item]), user: owner } })]),
+    logger: createCapturingLogger(),
+    now: fixedNow,
+    storyRepository: repository,
+    storyStorage: createMemoryStorage<StoryItem>(),
+  });
   expect(report.manifest.users[0]?.stories[0]?.locations).toStrictEqual(["Paris", "Paris"]);
   expect(report.manifest.users[0]?.stories[0]?.stickers).toStrictEqual([
     "@friend",
@@ -288,8 +284,8 @@ for (const unifiedLocations of [false, true]) {
     const owner = { full_name: "One", id: "id-1", pk: "user-1", username: "one" };
     await new InstagramUserRepository(database).save(owner);
     const tray = [{ id: "r1", media_ids: ["m1"], user: owner }];
-    const original = await fetchStoriesManifest(
-      createClient(tray, [
+    const original = await fetchStories([], {
+      client: createClient(tray, [
         reelsResponse({
           r1: {
             ...reel("r1", [
@@ -302,13 +298,11 @@ for (const unifiedLocations of [false, true]) {
           },
         }),
       ]),
-      {
-        logger: createCapturingLogger(),
-        now: fixedNow,
-        storyRepository: repository,
-        storyStorage: createMemoryStorage<StoryItem>(),
-      },
-    );
+      logger: createCapturingLogger(),
+      now: fixedNow,
+      storyRepository: repository,
+      storyStorage: createMemoryStorage<StoryItem>(),
+    });
     await reports.save("historical", original);
 
     // Existing relational data may contain repeated labels and kinds unknown to the extractor.
@@ -366,15 +360,13 @@ test("partial ingestion merges sources for fresh reports, cold reads, and resave
   const tray = [{ id: "r1", media_ids: ["m1"], user: owner }];
   const storage = createMemoryStorage<StoryItem>();
   async function ingest(item: StoryItem) {
-    return await fetchStoriesManifest(
-      createClient(tray, [reelsResponse({ r1: { ...reel("r1", [item]), user: owner } })]),
-      {
-        logger: createCapturingLogger(),
-        now: fixedNow,
-        storyRepository: repository,
-        storyStorage: storage,
-      },
-    );
+    return await fetchStories([], {
+      client: createClient(tray, [reelsResponse({ r1: { ...reel("r1", [item]), user: owner } })]),
+      logger: createCapturingLogger(),
+      now: fixedNow,
+      storyRepository: repository,
+      storyStorage: storage,
+    });
   }
   const original = await ingest(
     storyItemWithStickers("m1", {

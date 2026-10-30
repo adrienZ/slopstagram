@@ -4,7 +4,6 @@ import { assert, test, expect } from "vitest";
 import { createInstagramClient } from "../sdk/story-client-service.ts";
 import {
   startWarmCacheQueue,
-  WARM_CACHE_CRON_PATTERN,
   WARM_CACHE_QUEUE_NAME,
   type WarmCacheQueueDependencies,
 } from "../sdk/warm-cache-queue.ts";
@@ -174,7 +173,7 @@ test("startWarmCacheQueue schedules and processes warm-cache jobs", async (conte
     {
       arguments: [
         WARM_CACHE_QUEUE_NAME,
-        { pattern: WARM_CACHE_CRON_PATTERN },
+        { pattern: "0 * * * *" },
         {
           data: {},
           name: WARM_CACHE_QUEUE_NAME,
