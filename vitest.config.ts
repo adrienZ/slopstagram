@@ -4,6 +4,8 @@ export default defineConfig({
   resolve: { tsconfigPaths: true },
   test: {
     env: { SLOPSTAGRAM_DATABASE_PATH: ":memory:" },
+    // node:sqlite prints an experimental-feature notice in every worker.
+    execArgv: ["--disable-warning=ExperimentalWarning"],
     coverage: {
       // Count files no test loads, so untested modules lower the figure instead of vanishing.
       include: ["sdk/**", "server/**"],
