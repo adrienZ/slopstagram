@@ -1,0 +1,19 @@
+{
+  "payload": {
+    "metadata": {
+      "music_info": {
+        "music_asset_info": {
+          "audio_asset_id": "700000000000920",
+          "audio_cluster_id": "700000000000921",
+          "display_artist": "Fixture audio artist 1",
+          "duration_in_ms": 30000,
+          "has_lyrics": false,
+          "is_explicit": false,
+          "is_original_sound": false,
+          "should_mute_audio": false,
+          "title": "Fixture audio title 1"
+        }
+      }
+    }
+  }
+}

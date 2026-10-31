@@ -1,0 +1,653 @@
+{
+  "tray": [
+    {
+      "id": 700000000000001,
+      "strong_id__": "700000000000001",
+      "latest_reel_media": 1793439717,
+      "seen": 1793439717,
+      "can_reply": false,
+      "can_gif_quick_reply": true,
+      "can_reshare": true,
+      "reel_type": "user_reel",
+      "ad_expiry_timestamp_in_millis": null,
+      "is_cta_sticker_available": null,
+      "should_treat_link_sticker_as_cta": null,
+      "can_react_with_avatar": false,
+      "is_archived": false,
+      "prefetch_count": 0,
+      "disabled_reply_types": [
+        "Fixture text 2",
+        "Fixture text 3",
+        "Fixture text 4"
+      ],
+      "pool_refresh_ttl_in_sec": null,
+      "user": {
+        "id": "700000000000001",
+        "strong_id__": "700000000000001",
+        "full_name": "Fixture text 5",
+        "is_private": true,
+        "is_verified": false,
+        "pk": 700000000000001,
+        "pk_id": "700000000000001",
+        "profile_pic_id": "700000000000006",
+        "profile_pic_url": "https://example.com/anonymized/instagram-media-0007.jpg",
+        "username": "user_008",
+        "aigm_account_label_info": {
+          "is_enabled": false,
+          "is_auto_detected": false,
+          "is_manually_enabled": false
+        },
+        "is_ring_creator": false,
+        "show_ring_award": false
+      },
+      "is_viewer_digest_eligible": false,
+      "birthday_badge_enabled": false,
+      "has_quicksnap_recap_media": false,
+      "seen_ranked_position": 1,
+      "muted": false,
+      "has_fan_club_media": false,
+      "has_video": false,
+      "show_fan_club_stories_teaser": false,
+      "latest_besties_reel_media": 0,
+      "media_count": 1,
+      "media_ids": [
+        700000000000079
+      ],
+      "has_besties_media": false,
+      "ranked_position": 1,
+      "hide_from_feed_unit": true,
+      "ranker_scores": {
+        "ranking_info_token": "Fixture text 10",
+        "delivered_at_timestamp_s": 1793475189
+      },
+      "latest_wearables_reel_media_long": 0,
+      "unseen_wearables_media_igids": [],
+      "expiring_at": 1793526117,
+      "items": [
+        {
+          "original_media_type": 1,
+          "is_music_collection_story": false,
+          "is_music_collection_summary": false,
+          "is_quicksnap_recap": false,
+          "is_story_edited": false,
+          "story_critic_stickers": [],
+          "can_extend_expiration": null,
+          "trending_content_info": [],
+          "show_story_deleted_error_label": false,
+          "story_has_likes": true,
+          "story_emoji_reactions": [
+            "Fixture text 11"
+          ],
+          "story_highlight_reshare_stickers": [],
+          "is_story_image_with_music": false,
+          "is_terminal_video_segment": false,
+          "voice_replies_enabled": false,
+          "taken_at": 1793439717,
+          "pk": 700000000000009,
+          "id": "700000000000012",
+          "comments_disabled": false,
+          "is_visual_reply_commenter_notice_enabled": true,
+          "can_viewer_save": false,
+          "is_reel_media": true,
+          "can_see_insights_as_brand": false,
+          "is_affiliate_commission_eligible": false,
+          "fbid": 700000000000013,
+          "device_timestamp": 1793439717210130,
+          "media_type": 1,
+          "code": "700000000000014",
+          "caption_is_edited": false,
+          "strong_id__": "700000000000012",
+          "image_versions2": {
+            "candidates": [
+              {
+                "estimated_scans_sizes": [],
+                "height": 1706,
+                "scans_profile": null,
+                "url": "https://example.com/anonymized/instagram-media-0015.jpg",
+                "width": 960,
+                "is_spatial_image": false
+              },
+              {
+                "estimated_scans_sizes": [],
+                "height": 1280,
+                "scans_profile": null,
+                "url": "https://example.com/anonymized/instagram-media-0016.jpg",
+                "width": 720,
+                "is_spatial_image": false
+              },
+              {
+                "estimated_scans_sizes": [],
+                "height": 1137,
+                "scans_profile": null,
+                "url": "https://example.com/anonymized/instagram-media-0017.jpg",
+                "width": 640,
+                "is_spatial_image": false
+              },
+              {
+                "estimated_scans_sizes": [],
+                "height": 853,
+                "scans_profile": null,
+                "url": "https://example.com/anonymized/instagram-media-0018.jpg",
+                "width": 480,
+                "is_spatial_image": false
+              },
+              {
+                "estimated_scans_sizes": [],
+                "height": 569,
+                "scans_profile": null,
+                "url": "https://example.com/anonymized/instagram-media-0019.jpg",
+                "width": 320,
+                "is_spatial_image": false
+              },
+              {
+                "estimated_scans_sizes": [],
+                "height": 427,
+                "scans_profile": null,
+                "url": "https://example.com/anonymized/instagram-media-0020.jpg",
+                "width": 240,
+                "is_spatial_image": false
+              },
+              {
+                "estimated_scans_sizes": [],
+                "height": 960,
+                "scans_profile": null,
+                "url": "https://example.com/anonymized/instagram-media-0021.jpg",
+                "width": 960,
+                "is_spatial_image": false
+              },
+              {
+                "estimated_scans_sizes": [],
+                "height": 750,
+                "scans_profile": null,
+                "url": "https://example.com/anonymized/instagram-media-0022.jpg",
+                "width": 750,
+                "is_spatial_image": false
+              },
+              {
+                "estimated_scans_sizes": [],
+                "height": 640,
+                "scans_profile": null,
+                "url": "https://example.com/anonymized/instagram-media-0023.jpg",
+                "width": 640,
+                "is_spatial_image": false
+              },
+              {
+                "estimated_scans_sizes": [],
+                "height": 480,
+                "scans_profile": null,
+                "url": "https://example.com/anonymized/instagram-media-0024.jpg",
+                "width": 480,
+                "is_spatial_image": false
+              },
+              {
+                "estimated_scans_sizes": [],
+                "height": 320,
+                "scans_profile": null,
+                "url": "https://example.com/anonymized/instagram-media-0025.jpg",
+                "width": 320,
+                "is_spatial_image": false
+              },
+              {
+                "estimated_scans_sizes": [],
+                "height": 240,
+                "scans_profile": null,
+                "url": "https://example.com/anonymized/instagram-media-0026.jpg",
+                "width": 240,
+                "is_spatial_image": false
+              },
+              {
+                "estimated_scans_sizes": [],
+                "height": 150,
+                "scans_profile": null,
+                "url": "https://example.com/anonymized/instagram-media-0027.jpg",
+                "width": 150,
+                "is_spatial_image": false
+              }
+            ]
+          },
+          "original_width": 960,
+          "original_height": 1706,
+          "product_type": "story",
+          "deleted_reason": 0,
+          "has_shared_to_fb": 0,
+          "cutout_sticker_info": [],
+          "can_hype": true,
+          "ai_label_info": {
+            "subtitle_text": "",
+            "gen_ai_detection_method": "NONE",
+            "attribution_label_text": "",
+            "is_self_disclosed": false,
+            "can_edit_self_disclosure": true,
+            "should_read_attribution_label": true,
+            "content_sheet_sections": []
+          },
+          "should_show_author_pog_for_tagged_media_shared_to_profile_grid": false,
+          "should_request_ads": false,
+          "is_open_to_public_submission": false,
+          "timezone_offset": 3600,
+          "client_cache_key": "700000000000028",
+          "has_privately_liked": false,
+          "filter_type": 0,
+          "eligible_insights_entrypoints": "Fixture text 29",
+          "can_reshare": true,
+          "archive_story_deletion_ts": 0,
+          "can_mention_back": false,
+          "can_send_prompt": false,
+          "has_shared_to_fb_dating": 0,
+          "is_arirang_prize": false,
+          "is_first_take": false,
+          "is_from_ayt_clips_inspiration": false,
+          "is_from_discovery_surface": false,
+          "is_rollcall_v2": false,
+          "is_superlative": false,
+          "mention_sharing_enabled": true,
+          "show_one_tap_fb_share_tooltip": true,
+          "story_is_saved_to_archive": true,
+          "supports_reel_reactions": true,
+          "is_photo_mash_story": false,
+          "can_mention_share": false,
+          "is_viewer_mentioned": false,
+          "wearables_creator_tools_info": [],
+          "wearable_shared_media_resolutions": [],
+          "spatial_media_info": null,
+          "viewer_cursor": "Fixture text 30",
+          "total_rewatcher_count": null,
+          "can_play_spotify_audio": false,
+          "viewers": [
+            {
+              "strong_id__": "700000000000031",
+              "id": "700000000000031",
+              "pk": 700000000000031,
+              "pk_id": "700000000000031",
+              "username": "user_032",
+              "full_name": "Fixture text 33",
+              "is_private": true,
+              "is_verified": false,
+              "profile_pic_id": "700000000000034",
+              "profile_pic_url": "https://example.com/anonymized/instagram-media-0035.jpg"
+            },
+            {
+              "strong_id__": "700000000000036",
+              "id": "700000000000036",
+              "pk": 700000000000036,
+              "pk_id": "700000000000036",
+              "username": "user_037",
+              "full_name": "",
+              "is_private": false,
+              "is_verified": false,
+              "profile_pic_url": "https://example.com/anonymized/instagram-media-0038.jpg"
+            },
+            {
+              "strong_id__": "700000000000039",
+              "id": "700000000000039",
+              "pk": 700000000000039,
+              "pk_id": "700000000000039",
+              "username": "user_040",
+              "full_name": "",
+              "is_private": true,
+              "is_verified": false,
+              "profile_pic_id": "700000000000041",
+              "profile_pic_url": "https://example.com/anonymized/instagram-media-0042.jpg"
+            },
+            {
+              "strong_id__": "700000000000043",
+              "id": "700000000000043",
+              "pk": 700000000000043,
+              "pk_id": "700000000000043",
+              "username": "user_044",
+              "full_name": "Fixture text 45",
+              "is_private": true,
+              "is_verified": false,
+              "profile_pic_id": "700000000000046",
+              "profile_pic_url": "https://example.com/anonymized/instagram-media-0047.jpg"
+            },
+            {
+              "strong_id__": "700000000000048",
+              "id": "700000000000048",
+              "pk": 700000000000048,
+              "pk_id": "700000000000048",
+              "username": "user_049",
+              "full_name": "Fixture text 5",
+              "is_private": true,
+              "is_verified": false,
+              "profile_pic_id": "700000000000050",
+              "profile_pic_url": "https://example.com/anonymized/instagram-media-0051.jpg"
+            }
+          ],
+          "viewer_count": 70,
+          "fb_viewer_count": null,
+          "total_viewer_count": 70,
+          "multi_author_reel_names": [],
+          "can_reply": false,
+          "commenting_disabled_for_viewer": false,
+          "hide_view_all_comment_entrypoint": false,
+          "has_hidden_comments": false,
+          "sticker_translations_enabled": false,
+          "is_reshare_of_text_post_app_media_in_ig": false,
+          "is_organic_product_tagging_eligible": false,
+          "sharing_friction_info": {
+            "bloks_app_url": null,
+            "should_have_sharing_friction": false,
+            "sharing_friction_payload": null
+          },
+          "has_translation": false,
+          "coauthor_producers": [],
+          "media_overlay_info": null,
+          "is_paid_partnership": false,
+          "music_metadata": null,
+          "organic_tracking_token": "700000000000052",
+          "ig_media_sharing_disabled": false,
+          "crosspost_metadata": {
+            "fb_downstream_use_xpost_metadata": {
+              "downstream_use_xpost_deny_reason": "Fixture text 29"
+            }
+          },
+          "boost_unavailable_identifier": null,
+          "boost_unavailable_reason": null,
+          "boost_unavailable_reason_v2": null,
+          "creative_config": null,
+          "mezql_token": "700000000000053",
+          "gen_ai_detection_method": {
+            "detection_method": "Fixture text 29"
+          },
+          "has_high_risk_gen_ai_inform_treatment": false,
+          "is_tagged_media_shared_to_viewer_profile_grid": false,
+          "integrity_review_decision": "Fixture text 54",
+          "media_attributions_data": [],
+          "media_ui_attributions_data_v2": [],
+          "user": {
+            "strong_id__": "700000000000001",
+            "hd_profile_pic_url_info": {
+              "height": 1080,
+              "url": "https://example.com/anonymized/instagram-media-0055.jpg",
+              "width": 1080
+            },
+            "hd_profile_pic_versions": [
+              {
+                "height": 320,
+                "url": "https://example.com/anonymized/instagram-media-0056.jpg",
+                "width": 320
+              },
+              {
+                "height": 640,
+                "url": "https://example.com/anonymized/instagram-media-0057.jpg",
+                "width": 640
+              }
+            ],
+            "id": "700000000000001",
+            "is_private": true,
+            "pk": 700000000000001,
+            "account_badges": [],
+            "fbid_v2": 17841400826955336,
+            "full_name": "Fixture text 5",
+            "is_verified": false,
+            "pk_id": "700000000000001",
+            "profile_pic_id": "700000000000006",
+            "profile_pic_url": "https://example.com/anonymized/instagram-media-0058.jpg",
+            "username": "user_008",
+            "eligible_for_text_app_activation_badge": false,
+            "account_type": 1,
+            "user_activation_info": {}
+          },
+          "owner": {
+            "strong_id__": "700000000000001",
+            "hd_profile_pic_url_info": {
+              "height": 1080,
+              "url": "https://example.com/anonymized/instagram-media-0055.jpg",
+              "width": 1080
+            },
+            "hd_profile_pic_versions": [
+              {
+                "height": 320,
+                "url": "https://example.com/anonymized/instagram-media-0056.jpg",
+                "width": 320
+              },
+              {
+                "height": 640,
+                "url": "https://example.com/anonymized/instagram-media-0057.jpg",
+                "width": 640
+              }
+            ],
+            "id": "700000000000001",
+            "is_private": true,
+            "pk": 700000000000001,
+            "account_badges": [],
+            "fbid_v2": 17841400826955336,
+            "full_name": "Fixture text 5",
+            "is_verified": false,
+            "pk_id": "700000000000001",
+            "profile_pic_id": "700000000000006",
+            "profile_pic_url": "https://example.com/anonymized/instagram-media-0058.jpg",
+            "username": "user_008",
+            "eligible_for_text_app_activation_badge": false,
+            "account_type": 1,
+            "user_activation_info": {}
+          },
+          "expiring_at": 1793526117,
+          "shop_routing_user_id": null,
+          "subscribe_cta_visible": false,
+          "source_type": 1,
+          "story_comments": [
+            {
+              "strong_id__": "700000000000059",
+              "pk": "700000000000059",
+              "user_id": 700000000000001,
+              "type": 0,
+              "text": "Fixture text 60",
+              "did_report_as_spam": false,
+              "created_at": 1793440969,
+              "created_at_utc": 1793440969,
+              "created_at_for_fb_app": 1793440969,
+              "content_type": "Fixture text 61",
+              "status": "Active",
+              "bit_flags": 0,
+              "share_enabled": false,
+              "is_ranked_comment": false,
+              "is_covered": false,
+              "media_id": 700000000000009,
+              "restricted_status": 0,
+              "is_created_by_media_owner": true,
+              "user": {
+                "strong_id__": "700000000000001",
+                "pk": 700000000000001,
+                "pk_id": "700000000000001",
+                "id": "700000000000001",
+                "username": "user_008",
+                "full_name": "Fixture text 5",
+                "is_private": true,
+                "is_verified": false,
+                "profile_pic_id": "700000000000006",
+                "profile_pic_url": "https://example.com/anonymized/instagram-media-0058.jpg",
+                "has_onboarded_to_text_post_app": false,
+                "aigm_account_label_info": {
+                  "is_enabled": false,
+                  "is_auto_detected": false,
+                  "is_manually_enabled": false
+                },
+                "fbid_v2": 17841400826955336
+              }
+            }
+          ]
+        }
+      ],
+      "is_cacheable": true
+    },
+    {
+      "id": 700000000000062,
+      "strong_id__": "700000000000062",
+      "latest_reel_media": 1793446752,
+      "seen": 1793378119,
+      "can_reply": true,
+      "can_gif_quick_reply": true,
+      "can_reshare": true,
+      "reel_type": "user_reel",
+      "ad_expiry_timestamp_in_millis": null,
+      "is_cta_sticker_available": null,
+      "should_treat_link_sticker_as_cta": null,
+      "can_react_with_avatar": false,
+      "is_archived": false,
+      "prefetch_count": 0,
+      "disabled_reply_types": [
+        "Fixture text 2",
+        "Fixture text 3",
+        "Fixture text 4"
+      ],
+      "pool_refresh_ttl_in_sec": null,
+      "user": {
+        "id": "700000000000062",
+        "friendship_status": {
+          "following": true,
+          "is_muting_reel": false,
+          "muting": false,
+          "outgoing_request": false
+        },
+        "strong_id__": "700000000000062",
+        "full_name": "Fixture text 63",
+        "is_private": true,
+        "is_verified": false,
+        "pk": 700000000000062,
+        "pk_id": "700000000000062",
+        "profile_pic_id": "700000000000064",
+        "profile_pic_url": "https://example.com/anonymized/instagram-media-0065.jpg",
+        "username": "user_066",
+        "aigm_account_label_info": {
+          "is_enabled": false,
+          "is_auto_detected": false,
+          "is_manually_enabled": false
+        },
+        "is_ring_creator": false,
+        "show_ring_award": false
+      },
+      "is_viewer_digest_eligible": false,
+      "birthday_badge_enabled": false,
+      "has_quicksnap_recap_media": false,
+      "seen_ranked_position": 2,
+      "muted": false,
+      "has_fan_club_media": false,
+      "has_video": false,
+      "show_fan_club_stories_teaser": false,
+      "latest_besties_reel_media": 0,
+      "media_count": 1,
+      "media_ids": [
+        700000000000090
+      ],
+      "has_besties_media": false,
+      "client_prefetch_score": 0.294677734375,
+      "ranked_position": 2,
+      "ranker_scores": {
+        "ptap": 0.294677734375,
+        "fp": null,
+        "vm": 1,
+        "ranking_info_token": "Fixture text 10",
+        "delivered_at_timestamp_s": 1793475189,
+        "ranked_at_timestamp_s": 1793475189
+      },
+      "latest_wearables_reel_media_long": 0,
+      "unseen_wearables_media_igids": [],
+      "expiring_at": 1793533152,
+      "story_duration_secs": 12
+    },
+    {
+      "id": 700000000000068,
+      "strong_id__": "700000000000068",
+      "latest_reel_media": 1793471287,
+      "seen": 1793387263,
+      "can_reply": true,
+      "can_gif_quick_reply": true,
+      "can_reshare": true,
+      "reel_type": "user_reel",
+      "ad_expiry_timestamp_in_millis": null,
+      "is_cta_sticker_available": null,
+      "should_treat_link_sticker_as_cta": null,
+      "can_react_with_avatar": false,
+      "is_archived": false,
+      "prefetch_count": 0,
+      "disabled_reply_types": [
+        "Fixture text 2",
+        "Fixture text 3",
+        "Fixture text 4"
+      ],
+      "pool_refresh_ttl_in_sec": null,
+      "user": {
+        "id": "700000000000068",
+        "friendship_status": {
+          "following": true,
+          "is_muting_reel": false,
+          "muting": false,
+          "outgoing_request": false
+        },
+        "strong_id__": "700000000000068",
+        "full_name": "Fixture text 69",
+        "is_private": false,
+        "is_verified": false,
+        "pk": 700000000000068,
+        "pk_id": "700000000000068",
+        "profile_pic_id": "700000000000070",
+        "profile_pic_url": "https://example.com/anonymized/instagram-media-0071.jpg",
+        "username": "user_072",
+        "aigm_account_label_info": {
+          "is_enabled": false,
+          "is_auto_detected": false,
+          "is_manually_enabled": false
+        },
+        "is_ring_creator": false,
+        "show_ring_award": false
+      },
+      "is_viewer_digest_eligible": false,
+      "birthday_badge_enabled": false,
+      "has_quicksnap_recap_media": false,
+      "seen_ranked_position": 3,
+      "muted": false,
+      "has_fan_club_media": false,
+      "has_video": true,
+      "show_fan_club_stories_teaser": false,
+      "latest_besties_reel_media": 0,
+      "media_count": 5,
+      "media_ids": [
+        700000000000100,
+        700000000000107,
+        700000000000116,
+        700000000000122,
+        700000000000129,
+        700000000000900,
+        700000000000903,
+        700000000000906
+      ],
+      "has_besties_media": false,
+      "client_prefetch_score": 0.043731689453125,
+      "ranked_position": 3,
+      "ranker_scores": {
+        "ptap": 0.043731689453125,
+        "fp": null,
+        "vm": 0.5,
+        "ranking_info_token": "Fixture text 10",
+        "delivered_at_timestamp_s": 1793475189,
+        "ranked_at_timestamp_s": 1793475189
+      },
+      "latest_wearables_reel_media_long": 0,
+      "unseen_wearables_media_igids": [],
+      "expiring_at": 1793557687,
+      "story_duration_secs": 8
+    }
+  ],
+  "broadcasts": [],
+  "has_new_nux_story": false,
+  "logging_info_token": "Fixture text 78",
+  "lookahead_count_tray": 25,
+  "lookahead_count_viewer": 25,
+  "refresh_window_ms": 5000,
+  "personalization_features": {
+    "is_us_user": false,
+    "is_high_me_user": true,
+    "warm_start_refresh_timer_in_seconds": null,
+    "surface_usage_prediction": {},
+    "surface_usage_prediction_percentile": {}
+  },
+  "story_likes_config": {
+    "is_enabled": true,
+    "ufi_type": 1
+  },
+  "story_ranking_token": "Fixture text 10",
+  "response_timestamp": 1793475190,
+  "status": "ok"
+}
