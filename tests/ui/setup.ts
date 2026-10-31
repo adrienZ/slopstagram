@@ -27,6 +27,14 @@ Object.defineProperty(globalThis.Element.prototype, "scrollIntoView", {
   },
 });
 
+// The router restores scroll positions on navigation, which jsdom reports as not implemented.
+Object.defineProperty(globalThis, "scrollTo", {
+  configurable: true,
+  value() {
+    // jsdom has no layout or viewport to scroll. Tests can spy on this boundary.
+  },
+});
+
 beforeEach(() => {
   const queries = new Map<string, TestMediaQuery>();
   vi.stubGlobal("matchMedia", (query: string) => {
