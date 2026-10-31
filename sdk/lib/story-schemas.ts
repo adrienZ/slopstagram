@@ -133,8 +133,6 @@ export const StoryFetchFailureSchema = z.object({
   reel_id: ReportFailureSchema.shape.reelId,
 });
 const StoryFetchCountsSchema = z.object({
-  cache_hits: ReportSchema.shape.cacheHits,
-  cache_misses: ReportSchema.shape.cacheMisses,
   failed: ReportSchema.shape.failedCount,
   fetched: ReportSchema.shape.fetchedCount,
   reels: ReportSchema.shape.reelsCount,

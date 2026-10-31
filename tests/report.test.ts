@@ -38,7 +38,7 @@ function createFixture(context: TestContext) {
     output: { users: [] },
     metadata: {
       broadcasts_count: 0,
-      counts: { cache_hits: 0, cache_misses: 1, failed: 0, fetched: 1, reels: 1, stories: 1 },
+      counts: { failed: 0, fetched: 1, reels: 1, stories: 1 },
       created_at: "2026-10-22T10:00:00.000Z",
       report_name: "placeholder.json",
       status: "ok",
@@ -120,16 +120,14 @@ test("preserves a totally failed observation and its errors before rejecting the
 });
 
 for (const scenario of [
-  { name: "empty tray", stories: 0, fetched: 0, cacheHits: 0, failed: 0, status: "succeeded" },
-  { name: "cached stories", stories: 1, fetched: 0, cacheHits: 1, failed: 0, status: "succeeded" },
-  { name: "partial failure", stories: 2, fetched: 1, cacheHits: 0, failed: 1, status: "partial" },
+  { name: "empty tray", stories: 0, fetched: 0, failed: 0, status: "succeeded" },
+  { name: "partial failure", stories: 2, fetched: 1, failed: 1, status: "partial" },
 ]) {
   test(`stores the run and observation for ${scenario.name}`, async (context) => {
     const { runs, reports, report, options } = createFixture(context);
     Object.assign(report.metadata.counts, {
       stories: scenario.stories,
       fetched: scenario.fetched,
-      cache_hits: scenario.cacheHits,
       failed: scenario.failed,
     });
     const result = await createReport(options);
@@ -138,7 +136,6 @@ for (const scenario of [
     expect(run.reportKey).toBe(result.reportKey);
     expect(run.storiesCount).toBe(scenario.stories);
     expect(run.fetchedCount).toBe(scenario.fetched);
-    expect(run.cacheHits).toBe(scenario.cacheHits);
     expect(run.failedCount).toBe(scenario.failed);
     expect(run.error).toBe(null);
     expect(reports.findByKey(result.reportKey)).toBeTruthy();
