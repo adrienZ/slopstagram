@@ -1,15 +1,9 @@
 import { createRouter, parseSearchWith, stringifySearchWith } from "@tanstack/react-router";
-import type { RouterContext } from "./pages/__root.tsx";
-import { queries } from "./query-service.ts";
 import { routeTree } from "./routeTree.gen.ts";
 
-const applicationContext: RouterContext = { queries };
-
-/** Creates the application router. Tests pass their own context to inject the data source. */
-export function getRouter(context = applicationContext) {
+export function getRouter() {
   return createRouter({
     routeTree,
-    context,
     // Avoid JSON parsing of numeric Instagram IDs; route schemas normalize primitive values to strings.
     parseSearch: parseSearchWith(String),
     stringifySearch: stringifySearchWith(JSON.stringify),

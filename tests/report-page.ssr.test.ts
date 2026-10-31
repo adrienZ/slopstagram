@@ -1,3 +1,4 @@
+import { URL } from "node:url";
 import { beforeAll, expect, test } from "vitest";
 import { within } from "@testing-library/dom";
 import { JSDOM } from "jsdom";
@@ -7,9 +8,9 @@ import { type JsonValue, JsonValueSchema } from "../sdk/lib/json-value.ts";
 import { instagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
 import { storyRepository } from "../sdk/repositories/story-repository.ts";
 import { Route } from "../server/pages/report.tsx";
-import { createInProcessQueries } from "./in-process-queries.ts";
+import { loadReport } from "../server/report-handler.tsx";
 import { storyItem } from "./mock-helpers.ts";
-import { renderApp } from "./render-app.ts";
+import { createPageRenderer } from "./render-page.ts";
 import { readRecordedPayloads, seedRecordedStories } from "./setup/seed.ts";
 
 const now = new Date("2026-10-29T12:00:00.000Z");
@@ -67,11 +68,19 @@ function readHydrationData(html: string): string {
   return readDocument(html).querySelector("script[data-tsr-stream-part]")?.textContent ?? "";
 }
 
+const renderer = createPageRenderer(Route, {}, "/report");
+
+/** Renders the route with the real report the handler loads from the seeded database for the URL. */
 async function render(url: string, at: Date = now) {
-  const response = await renderApp(url, createInProcessQueries(at));
-  const html = await response.text();
+  const { searchParams } = new URL(url, "http://localhost");
+  const report = loadReport(
+    at,
+    searchParams.get("date") ?? undefined,
+    searchParams.get("story") ?? undefined,
+  );
+  const html = await renderer.renderRoute(url, report);
   const document = readDocument(html);
-  return { document, html, page: within(document.body), response };
+  return { document, html, page: within(document.body) };
 }
 
 beforeAll(async () => {
@@ -86,9 +95,8 @@ beforeAll(async () => {
 });
 
 test("today's feed lists the seeded accounts with their story previews and sidebar", async () => {
-  const { document, page, response } = await render("/report");
+  const { document, page } = await render("/report");
 
-  expect(response.status).toBe(200);
   expect(page.getAllByRole("main")).toHaveLength(1);
   expect(page.getByRole("heading", { name: todayHeading, level: 1 })).toBeDefined();
   expect(page.getByText("Fil chargé le 29 octobre 2026 à 13:00 UTC+1")).toBeDefined();
@@ -137,7 +145,6 @@ test("a past day lists the stories published that day, and today drops out of th
   const day = await render(`/report?date=${publishedDay}`, threeDaysLater);
   const today = await render("/report", threeDaysLater);
 
-  expect(day.response.status).toBe(200);
   expect(
     day.page.getByRole("heading", { name: "Stories du 29 octobre 2026", level: 1 }),
   ).toBeDefined();
@@ -153,9 +160,8 @@ test("a past day lists the stories published that day, and today drops out of th
 });
 
 test("a day without stories renders its empty state", async () => {
-  const { page, response } = await render(`/report?date=${emptyDay}`);
+  const { page } = await render(`/report?date=${emptyDay}`);
 
-  expect(response.status).toBe(200);
   expect(page.getByRole("heading", { name: "Stories du 28 octobre 2026", level: 1 })).toBeDefined();
   expect(page.getByText(emptyDayText)).toBeDefined();
   expect(page.queryByRole("button", { name: /Ouvrir aperçu/u })).toBeNull();
