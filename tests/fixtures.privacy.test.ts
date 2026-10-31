@@ -12,7 +12,11 @@ const MEDIA_EXTENSIONS = new Set([".m4a", ".mp4"]);
 const PERSONAL_MEDIA_TAGS = ["©nam", "©ART", "©alb", "©cmt", "©day", "©xyz"];
 
 const fixtureNames = await readdir(fixturesDirectory);
-const jsonNames = fixtureNames.filter((name) => name.endsWith(".json"));
+// Capture metadata describes the files (names, dates, what they cover); it holds no payload.
+const METADATA_FILE_NAME = "capture-metadata.json";
+const jsonNames = fixtureNames.filter(
+  (name) => name.endsWith(".json") && name !== METADATA_FILE_NAME,
+);
 const mediaNames = fixtureNames.filter((name) => MEDIA_EXTENSIONS.has(path.extname(name)));
 
 function describeUnsafe(payload: JsonValue): Array<string> {
@@ -29,7 +33,8 @@ describe("committed fixtures hold no personal data", () => {
 
   test("every committed file is a JSON payload or a known media clip", () => {
     const unknown = fixtureNames.filter(
-      (name) => !jsonNames.includes(name) && !mediaNames.includes(name),
+      (name) =>
+        name !== METADATA_FILE_NAME && !jsonNames.includes(name) && !mediaNames.includes(name),
     );
 
     expect(unknown).toStrictEqual([]);
