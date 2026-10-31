@@ -1,11 +1,13 @@
 import { expect, test, vi } from "vitest";
 import { act, screen, waitFor, within } from "@testing-library/react";
-import { UserTimelinePage } from "../../server/pages/users/$username.tsx";
+import { Route } from "../../server/pages/users/$username.tsx";
 import { timelineProps, timelineEntry } from "../page-fixtures.ts";
-import { renderPage } from "./render.tsx";
+import { createPageRenderer } from "../render-page.ts";
+
+const renderer = createPageRenderer(Route, timelineProps, "/users/$username");
 
 test("timeline shows separate display name and handle, dated gallery and active account", async () => {
-  await renderPage(UserTimelinePage, timelineProps, "/users/timeline-user");
+  await renderer.mountRoute("/users/timeline-user", timelineProps);
   expect(screen.getByRole("heading", { level: 1, name: "Timeline User" })).toBeVisible();
   expect(screen.getByRole("heading", { level: 2, name: "2026" })).toBeVisible();
   expect(screen.getByRole("heading", { level: 3, name: "janvier" })).toBeVisible();
@@ -27,11 +29,7 @@ test("timeline shows separate display name and handle, dated gallery and active 
 
 test("timeline calendar scrolls to the selected day without changing the route", async () => {
   const scroll = vi.spyOn(globalThis.Element.prototype, "scrollIntoView");
-  const { user, router } = await renderPage(
-    UserTimelinePage,
-    timelineProps,
-    "/users/timeline-user",
-  );
+  const { user, router } = await renderer.mountRoute("/users/timeline-user", timelineProps);
   expect(screen.getByRole("button", { name: /vendredi 2 janvier 2026/u })).toBeDisabled();
   await user.click(screen.getByRole("button", { name: /jeudi 1 janvier 2026/u }));
   await waitFor(() => {
@@ -53,33 +51,29 @@ test("timeline calendar scrolls to the selected day without changing the route",
 test("calendar navigates between months to another available day", async () => {
   const scroll = vi.spyOn(globalThis.Element.prototype, "scrollIntoView");
   const older = { ...timelineEntry, story: { ...timelineEntry.story, pk: "older" } };
-  const { user } = await renderPage(
-    UserTimelinePage,
-    {
-      ...timelineProps,
-      timeline: {
-        ...timelineProps.timeline,
-        years: [
-          {
-            label: "2026",
-            months: [
-              {
-                key: "2026-02",
-                label: "février",
-                days: [{ key: "2026-02-02", label: "02", stories: [timelineEntry] }],
-              },
-              {
-                key: "2026-01",
-                label: "janvier",
-                days: [{ key: "2026-01-01", label: "01", stories: [older] }],
-              },
-            ],
-          },
-        ],
-      },
+  const { user } = await renderer.mountRoute("/users/timeline-user", {
+    ...timelineProps,
+    timeline: {
+      ...timelineProps.timeline,
+      years: [
+        {
+          label: "2026",
+          months: [
+            {
+              key: "2026-02",
+              label: "février",
+              days: [{ key: "2026-02-02", label: "02", stories: [timelineEntry] }],
+            },
+            {
+              key: "2026-01",
+              label: "janvier",
+              days: [{ key: "2026-01-01", label: "01", stories: [older] }],
+            },
+          ],
+        },
+      ],
     },
-    "/users/timeline-user",
-  );
+  });
   expect(screen.getByRole("button", { name: /mois précédent/iu })).not.toHaveAttribute(
     "aria-disabled",
     "true",
@@ -98,21 +92,17 @@ test("calendar navigates between months to another available day", async () => {
 });
 
 test("an empty account keeps navigation and every sticker kind without expansion controls", async () => {
-  const { user } = await renderPage(
-    UserTimelinePage,
-    {
-      ...timelineProps,
+  const { user } = await renderer.mountRoute("/users/timeline-user", {
+    ...timelineProps,
+    stories: [],
+    timeline: {
+      ...timelineProps.timeline,
+      avatarPath: null,
       stories: [],
-      timeline: {
-        ...timelineProps.timeline,
-        avatarPath: null,
-        stories: [],
-        years: [],
-        timelineUser: { ...timelineProps.timeline.timelineUser, full_name: null },
-      },
+      years: [],
+      timelineUser: { ...timelineProps.timeline.timelineUser, full_name: null },
     },
-    "/users/timeline-user",
-  );
+  });
   expect(screen.getByRole("heading", { name: "@timeline-user", level: 1 })).toBeVisible();
   expect(screen.getByText("Aucune story enregistrée pour cet utilisateur.")).toBeVisible();
   expect(
@@ -139,10 +129,9 @@ test("an empty account keeps navigation and every sticker kind without expansion
 });
 
 test("a timeline story deep link opens the real preview and Escape closes it", async () => {
-  const { user, router } = await renderPage(
-    UserTimelinePage,
-    timelineProps,
+  const { user, router } = await renderer.mountRoute(
     "/users/timeline-user?story=story-pk",
+    timelineProps,
   );
   expect(await screen.findByRole("dialog", { name: "Aperçu de l’image" })).toBeVisible();
   expect(screen.queryByRole("button", { name: "Image suivante" })).not.toBeInTheDocument();
@@ -154,7 +143,7 @@ test("a timeline story deep link opens the real preview and Escape closes it", a
 test("mobile calendar opens in a sheet and closes after choosing a day", async () => {
   vi.stubGlobal("innerWidth", 390);
   const scroll = vi.spyOn(globalThis.Element.prototype, "scrollIntoView");
-  const { user } = await renderPage(UserTimelinePage, timelineProps, "/users/timeline-user");
+  const { user } = await renderer.mountRoute("/users/timeline-user", timelineProps);
   expect(screen.queryByRole("navigation", { name: "Utilisateurs" })).not.toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "Afficher ou masquer le calendrier" }));
   const sidebar = await screen.findByRole("dialog");
@@ -167,7 +156,7 @@ test("mobile calendar opens in a sheet and closes after choosing a day", async (
 });
 
 test("the profile header handle opens the Instagram profile in a new tab", async () => {
-  await renderPage(UserTimelinePage, timelineProps, "/users/timeline-user");
+  await renderer.mountRoute("/users/timeline-user", timelineProps);
   const link = screen.getByRole("link", { name: "@timeline-user" });
   expect(link).toHaveAttribute("href", "https://www.instagram.com/timeline-user/");
   expect(link).toHaveAttribute("target", "_blank");

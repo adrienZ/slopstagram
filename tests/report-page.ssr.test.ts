@@ -1,4 +1,3 @@
-import { URL } from "node:url";
 import { beforeAll, expect, test } from "vitest";
 import { within } from "@testing-library/dom";
 import { JSDOM } from "jsdom";
@@ -68,17 +67,17 @@ function readHydrationData(html: string): string {
   return readDocument(html).querySelector("script[data-tsr-stream-part]")?.textContent ?? "";
 }
 
-const renderer = createPageRenderer(Route, {}, "/report");
-
-/** Renders the route with the real report the handler loads from the seeded database for the URL. */
-async function render(url: string, at: Date = now) {
-  const { searchParams } = new URL(url, "http://localhost");
-  const report = loadReport(
-    at,
-    searchParams.get("date") ?? undefined,
-    searchParams.get("story") ?? undefined,
+/** The report the handler loads from the seeded database, with the arguments the real loader receives. */
+function createRenderer(at: Date) {
+  return createPageRenderer(
+    Route,
+    ({ deps, context }) => loadReport(at, deps.date, context.selectedStory),
+    "/report",
   );
-  const html = await renderer.renderRoute(url, report);
+}
+
+async function render(url: string, at: Date = now) {
+  const html = await createRenderer(at).renderRoute(url);
   const document = readDocument(html);
   return { document, html, page: within(document.body) };
 }

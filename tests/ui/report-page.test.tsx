@@ -1,16 +1,18 @@
 import { expect, test } from "vitest";
 import { screen, within, waitFor } from "@testing-library/react";
 import { withStoryStickers } from "../../server/story-card-view-model.ts";
-import { ReportPage } from "../../server/pages/report.tsx";
+import { Route } from "../../server/pages/report.tsx";
 import { reportProps } from "../page-fixtures.ts";
-import { renderPage } from "./render.tsx";
+import { createPageRenderer } from "../render-page.ts";
+
+const renderer = createPageRenderer(Route, reportProps, "/report");
 
 function getPreviousMonthButton() {
   return screen.getByRole("button", { name: /mois précédent/iu });
 }
 
 test("the feed renders ranked users, separate handles, summaries, and local previews", async () => {
-  await renderPage(ReportPage, reportProps);
+  await renderer.mountRoute("/report", reportProps);
   expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
     "Stories des dernières 24 heures",
   );
@@ -29,17 +31,17 @@ test("the feed renders ranked users, separate handles, summaries, and local prev
 });
 
 test("today and historical empty states describe their different time windows", async () => {
-  const today = await renderPage(ReportPage, { ...reportProps, users: [] });
+  const today = await renderer.mountRoute("/report", { ...reportProps, users: [] });
   expect(screen.getByText("Aucune story publiée dans les dernières 24 heures.")).toBeVisible();
   today.unmount();
-  await renderPage(ReportPage, { ...reportProps, selectedDate: "2026-07-25", users: [] });
+  await renderer.mountRoute("/report", { ...reportProps, selectedDate: "2026-07-25", users: [] });
   expect(screen.getByRole("heading", { name: "Stories du 25 juillet 2026" })).toBeVisible();
   expect(screen.getByText("Aucune story publiée ce jour-là.")).toBeVisible();
   expect(screen.queryByText(/Fil chargé le/u)).not.toBeInTheDocument();
 });
 
 test("calendar disables future and empty days, preserving today's marker on a past selection", async () => {
-  await renderPage(ReportPage, { ...reportProps, selectedDate: "2026-07-25" });
+  await renderer.mountRoute("/report", { ...reportProps, selectedDate: "2026-07-25" });
   expect(screen.getByRole("button", { name: /24 juillet 2026/u })).toBeDisabled();
   expect(screen.getByRole("button", { name: /25 juillet 2026/u })).toBeEnabled();
   expect(screen.getByRole("button", { name: /27 juillet 2026/u })).toBeDisabled();
@@ -55,7 +57,7 @@ test("calendar disables future and empty days, preserving today's marker on a pa
 });
 
 test("saved users are linked with handles and can be collapsed and reopened", async () => {
-  const { user } = await renderPage(ReportPage, reportProps);
+  const { user } = await renderer.mountRoute("/report", reportProps);
   const navigation = within(screen.getByRole("navigation", { name: "Utilisateurs" }));
   expect(navigation.getByRole("link", { name: /@outside-feed/u })).toHaveAttribute(
     "href",
@@ -70,7 +72,7 @@ test("saved users are linked with handles and can be collapsed and reopened", as
 });
 
 test("report calendar stops at the oldest available month across a year boundary", async () => {
-  const { user } = await renderPage(ReportPage, {
+  const { user } = await renderer.mountRoute("/report", {
     ...reportProps,
     selectedDate: "2026-02-02",
     availableDates: ["2026-01-15", "2025-12-20", "2026-02-02"],
@@ -90,7 +92,7 @@ test("report calendar stops at the oldest available month across a year boundary
 });
 
 test("report calendar with no available data cannot navigate before today’s month", async () => {
-  await renderPage(ReportPage, { ...reportProps, availableDates: [], users: [] });
+  await renderer.mountRoute("/report", { ...reportProps, availableDates: [], users: [] });
   expect(screen.getByRole("button", { name: /mois précédent/iu })).toHaveAttribute(
     "aria-disabled",
     "true",
@@ -102,7 +104,7 @@ test("report calendar with no available data cannot navigate before today’s mo
 });
 
 test("opening a preview updates the real router and closing restores focus and search", async () => {
-  const { user, router } = await renderPage(ReportPage, reportProps, "/report?date=2026-07-26");
+  const { user, router } = await renderer.mountRoute("/report?date=2026-07-26", reportProps);
   const preview = screen.getByRole("button", { name: "Ouvrir aperçu fixture-pk-1" });
   await user.click(preview);
   const dialog = await screen.findByRole("dialog", { name: "Aperçu de l’image" });
@@ -121,17 +123,17 @@ test("opening a preview updates the real router and closing restores focus and s
 });
 
 test("a story deep link opens after mount and an unknown story stays closed", async () => {
-  const page = await renderPage(ReportPage, reportProps, "/report?story=fixture-pk-1");
+  const page = await renderer.mountRoute("/report?story=fixture-pk-1", reportProps);
   expect(await screen.findByRole("dialog")).toBeVisible();
   page.unmount();
-  await renderPage(ReportPage, reportProps, "/report?story=missing");
+  await renderer.mountRoute("/report?story=missing", reportProps);
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
 
 test("closing story details hides the dialog immediately while route navigation is pending", async (context) => {
   let delayNavigation = false;
   const { promise: pending, resolve: release } = Promise.withResolvers<null>();
-  const { user, router } = await renderPage(ReportPage, reportProps, "/report?story=fixture-pk-1", {
+  const { user, router } = await renderer.mountRoute("/report?story=fixture-pk-1", reportProps, {
     beforeLoad: async () => {
       if (delayNavigation) {
         await pending;
@@ -147,7 +149,7 @@ test("closing story details hides the dialog immediately while route navigation 
   expect(router.state.isLoading).toBe(true);
   release(null);
   await waitFor(() => {
-    expect(router.state.location.search.story).toBeUndefined();
+    expect(router.state.location.search).not.toHaveProperty("story");
   });
 });
 
@@ -168,11 +170,7 @@ test("mentions in report details link to saved user pages without inventing an a
       sidebarUsers,
     ),
   }));
-  await renderPage(
-    ReportPage,
-    { ...reportProps, users, sidebarUsers },
-    "/report?story=fixture-pk-1",
-  );
+  await renderer.mountRoute("/report?story=fixture-pk-1", { ...reportProps, users, sidebarUsers });
   const details = within(await screen.findByRole("dialog", { name: "Aperçu de l’image" }));
   const mention = details.getByRole("link", { name: "@outside-feed" });
   expect(mention).toHaveAttribute("href", "/users/outside-feed");

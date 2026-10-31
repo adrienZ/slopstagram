@@ -6,13 +6,12 @@ import {
   createRoute,
   createRouter,
   Outlet,
-  parseSearchWith,
   RouterProvider,
-  stringifySearchWith,
   useSearch,
 } from "@tanstack/react-router";
 import type { ComponentType, ReactNode } from "react";
 import { ThemeProvider } from "../../server/components/theme-provider.tsx";
+import { routerOptions } from "../../server/router.tsx";
 
 function FixtureRoot() {
   return (
@@ -44,8 +43,7 @@ export async function renderPage<Props extends object>(
   const router = createRouter({
     routeTree: root.addChildren([route]),
     history: createMemoryHistory({ initialEntries: [url] }),
-    parseSearch: parseSearchWith(String),
-    stringifySearch: stringifySearchWith(JSON.stringify),
+    ...routerOptions,
     defaultPendingMinMs: 0,
   });
   await router.load();

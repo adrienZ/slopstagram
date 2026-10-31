@@ -1,9 +1,11 @@
 import { expect, test } from "vitest";
 import { fireEvent, screen, within } from "@testing-library/react";
-import { UserTimelinePage } from "../../server/pages/users/$username.tsx";
+import { Route } from "../../server/pages/users/$username.tsx";
 import type { TimelineContentProps } from "../../server/pages/users/$username.tsx";
 import { timelineEntry, timelineProps } from "../page-fixtures.ts";
-import { renderPage } from "./render.tsx";
+import { createPageRenderer } from "../render-page.ts";
+
+const renderer = createPageRenderer(Route, {}, "/users/$username");
 
 function stickerTimeline(count = 8): TimelineContentProps {
   return {
@@ -38,7 +40,7 @@ function stickerTimeline(count = 8): TimelineContentProps {
 }
 
 test("pagination shows three story groups, keeps occurrences together, and has correct boundaries", async () => {
-  const { user } = await renderPage(UserTimelinePage, stickerTimeline(), "/users/timeline-user");
+  const { user } = await renderer.mountRoute("/users/timeline-user", stickerTimeline());
   const card = within(screen.getByRole("region", { name: "Type de sticker : mention" }));
   expect(card.getByText("16 stickers · 8 stories")).toBeVisible();
   expect(within(card.getByRole("table")).getAllByRole("row")).toHaveLength(4);
@@ -64,7 +66,7 @@ test("pagination shows three story groups, keeps occurrences together, and has c
 });
 
 test("sticker cards stay expanded and have no collapse control", async () => {
-  const { user } = await renderPage(UserTimelinePage, stickerTimeline(), "/users/timeline-user");
+  const { user } = await renderer.mountRoute("/users/timeline-user", stickerTimeline());
   const card = within(screen.getByRole("region", { name: "Type de sticker : mention" }));
   await user.click(card.getByRole("button", { name: "Page suivante : mention" }));
   expect(card.getByText("2 / 3")).toBeVisible();
@@ -75,7 +77,7 @@ test("sticker cards stay expanded and have no collapse control", async () => {
 });
 
 test("full history opens all results and a nested preview returns to the kind modal", async () => {
-  const { user } = await renderPage(UserTimelinePage, stickerTimeline(), "/users/timeline-user");
+  const { user } = await renderer.mountRoute("/users/timeline-user", stickerTimeline());
   await user.click(screen.getByRole("button", { name: "Tout afficher : mention" }));
   const modal = await screen.findByRole("dialog", { name: "Stickers · mention" });
   expect(within(modal).getByText("16 stickers dans 8 stories · historique complet")).toBeVisible();
@@ -97,7 +99,7 @@ test("full history opens all results and a nested preview returns to the kind mo
 });
 
 test("only saved mentions link to their canonical profile and unknown mentions remain text", async () => {
-  await renderPage(UserTimelinePage, stickerTimeline(1), "/users/timeline-user");
+  await renderer.mountRoute("/users/timeline-user", stickerTimeline(1));
   const table = within(screen.getByRole("table", { name: "Stickers : mention" }));
   expect(table.getByRole("link", { name: "@OTHER-user" })).toHaveAttribute(
     "href",
@@ -110,7 +112,7 @@ test("only saved mentions link to their canonical profile and unknown mentions r
 });
 
 test("link badges are condensed in cards and show full URLs in the history modal", async () => {
-  const { user } = await renderPage(UserTimelinePage, stickerTimeline(1), "/users/timeline-user");
+  const { user } = await renderer.mountRoute("/users/timeline-user", stickerTimeline(1));
   const table = within(screen.getByRole("table", { name: "Stickers : link" }));
   expect(table.getByText("example.com/story/0").closest("[data-slot=badge]")).toHaveAttribute(
     "title",
@@ -123,11 +125,7 @@ test("link badges are condensed in cards and show full URLs in the history modal
 });
 
 test("missing previews keep their sticker rows and full history available", async () => {
-  await renderPage(
-    UserTimelinePage,
-    { ...stickerTimeline(1), stories: [] },
-    "/users/timeline-user",
-  );
+  await renderer.mountRoute("/users/timeline-user", { ...stickerTimeline(1), stories: [] });
   expect(screen.getAllByText("Preview unavailable")).toHaveLength(2);
   expect(screen.getByRole("table", { name: "Stickers : mention" })).toHaveTextContent("@person-0");
   expect(screen.getByRole("button", { name: "Tout afficher : mention" })).toBeEnabled();
@@ -174,7 +172,7 @@ test("music shows its cached cover in the card, expanded modal and story details
       },
     ],
   };
-  const { user } = await renderPage(UserTimelinePage, props, "/users/timeline-user");
+  const { user } = await renderer.mountRoute("/users/timeline-user", props);
   const card = within(screen.getByRole("region", { name: "Type de sticker : music" }));
   expect(card.getByText("2 stickers · 1 stories")).toBeVisible();
   expect(card.getAllByText("Exact, original label")).toHaveLength(1);
@@ -251,7 +249,7 @@ test("music without audio stays hidden and another asset does not borrow its cov
       },
     ],
   };
-  const { user } = await renderPage(UserTimelinePage, props, "/users/timeline-user");
+  const { user } = await renderer.mountRoute("/users/timeline-user", props);
   const card = within(screen.getByRole("region", { name: "Type de sticker : music" }));
   expect(card.getByText("1 stickers · 1 stories")).toBeVisible();
   expect(card.queryByText("Cover only")).not.toBeInTheDocument();
@@ -310,7 +308,7 @@ test("music observations with media but without labels stay visible without incr
       },
     },
   });
-  const { user } = await renderPage(UserTimelinePage, props, "/users/timeline-user");
+  const { user } = await renderer.mountRoute("/users/timeline-user", props);
   const card = within(screen.getByRole("region", { name: "Type de sticker : music" }));
   expect(card.getByText("1 stickers · 1 stories")).toBeVisible();
   expect(card.getByRole("button", { name: "Lire : Musique reçue" })).toBeVisible();
@@ -350,7 +348,7 @@ test("sticker dates show days without times and unavailable music stays silent i
       },
     ],
   };
-  const { user } = await renderPage(UserTimelinePage, props, "/users/timeline-user");
+  const { user } = await renderer.mountRoute("/users/timeline-user", props);
   const card = within(screen.getByRole("region", { name: "Type de sticker : music" }));
   expect(card.getByText("1 janv.")).toBeVisible();
   expect(card.queryByText(/indisponible/u)).not.toBeInTheDocument();
@@ -383,7 +381,7 @@ test("a DASH soundtrack has one explicitly labeled player per story in the card 
       state: "available",
     },
   };
-  const { user } = await renderPage(UserTimelinePage, props, "/users/timeline-user");
+  const { user } = await renderer.mountRoute("/users/timeline-user", props);
   const card = within(screen.getByRole("region", { name: "Type de sticker : music" }));
   expect(card.getAllByText("Exact original label")).toHaveLength(2);
   expect(card.getByText("2 stickers · 1 stories")).toBeVisible();

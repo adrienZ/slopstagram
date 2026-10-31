@@ -1,6 +1,5 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath, URL } from "node:url";
 import { z } from "zod";
 import type { DrizzleDatabase } from "../../sdk/database/client.ts";
 import { useDrizzle } from "../../sdk/database/client.ts";
@@ -14,7 +13,7 @@ import { createRecordedClient } from "./recorded-client.ts";
 import { createMemoryStorage } from "../memory-storage.ts";
 import { createMockLogger, noSleep } from "../mock-helpers.ts";
 
-const fixturesDirectory = fileURLToPath(new URL("../fixtures", import.meta.url));
+const fixturesDirectory = path.join(import.meta.dirname, "../fixtures");
 const TRAY_FILE = "instagram-reels-tray.json";
 const PLACE_FILE = "instagram-place.json";
 const MUSIC_ASSET_FILE = "instagram-music-asset.json";
