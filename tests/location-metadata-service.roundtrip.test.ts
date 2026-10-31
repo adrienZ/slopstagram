@@ -26,7 +26,7 @@ function setup(context: { onTestFinished: (callback: () => void) => void }) {
   context.onTestFinished(() => {
     database.$client.close();
   });
-  return { database, repository: new StoryRepository(database) };
+  return { database, repository: new StoryRepository(database, createCapturingLogger()) };
 }
 
 function read(repository: StoryRepository, pk: string) {
@@ -221,7 +221,7 @@ test("live ingestion shares tagged places and exposes exact metadata with occurr
     {
       logger: createCapturingLogger(),
       now: fixedNow,
-      storyRepository: new StoryRepository(database),
+      storyRepository: new StoryRepository(database, createCapturingLogger()),
       storyStorage: createMemoryStorage<StoryItem>(),
     },
   );

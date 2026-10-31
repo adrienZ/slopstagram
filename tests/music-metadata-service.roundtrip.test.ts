@@ -25,7 +25,7 @@ function setup(context: { onTestFinished: (callback: () => void) => void }) {
   context.onTestFinished(() => {
     database.$client.close();
   });
-  return { database, repository: new StoryRepository(database) };
+  return { database, repository: new StoryRepository(database, createCapturingLogger()) };
 }
 
 function read(repository: StoryRepository, pk: string) {
