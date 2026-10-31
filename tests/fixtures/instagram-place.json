@@ -1,0 +1,18 @@
+{
+  "data": {
+    "xdt_location_get_web_info": {
+      "native_location_data": {
+        "location_info": {
+          "category": "Fixture category 1",
+          "lat": 48.8,
+          "lng": 12.5,
+          "location_address": "Fixture address 1",
+          "location_city": "Fixture city 1",
+          "location_id": "700000000000930",
+          "location_zip": "Fixture zip 1",
+          "name": "Fixture place 1"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "capturedAt": "2026-10-31T19:33:11.781Z",
+  "files": [
+    {
+      "name": "instagram-reels-tray.json",
+      "covers": "Story tray limited to the first 3 entries, with no live broadcasts."
+    },
+    {
+      "name": "instagram-story-data.json",
+      "covers": "Reels media gallery page 1 for the captured tray entries. Normal and video stories are live; the last reel ends with three synthetic stories added by hand (a music sticker, a location sticker and a reel share), because the live tray held none."
+    },
+    {
+      "name": "instagram-place.json",
+      "covers": "One synthetic tagged place lookup response for the location sticker story. The live lookup returned a GraphQL error, so this is hand-written with synthetic values."
+    },
+    {
+      "name": "instagram-music-asset.json",
+      "covers": "One synthetic music asset lookup response for the music sticker story. Hand-written with synthetic values; no licensed track data is recorded."
+    },
+    {
+      "name": "instagram-failure-tray.json",
+      "covers": "A tray failure body (status fail). Hand-written; not served by the recorded client, which answers every request with a success."
+    },
+    {
+      "name": "instagram-failure-pagination-page.json",
+      "covers": "A failed pagination page: more pages are announced but the cursor is missing, so pagination cannot advance. Hand-written; not served by the recorded client."
+    }
+  ]
+}

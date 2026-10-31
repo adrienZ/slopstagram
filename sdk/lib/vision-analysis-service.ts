@@ -65,6 +65,26 @@ export function readCurrentVisionResult(entry: VisionEntry | null): VisionResult
     : null;
 }
 
+export interface OutdatedVision {
+  currentModel: string;
+  currentPromptHash: string;
+  model: string;
+  promptHash: string;
+}
+
+/** Describes how a saved vision entry differs from the current model and prompt, or null when it matches. */
+export function describeOutdatedVision(entry: VisionEntry | null): OutdatedVision | null {
+  if (entry === null || readCurrentVisionResult(entry) !== null) {
+    return null;
+  }
+  return {
+    currentModel: VISION_MODEL,
+    currentPromptHash: getPromptHash(VISION_PROMPT),
+    model: entry.model,
+    promptHash: entry.prompt_hash,
+  };
+}
+
 function normalizeVisionText(value: string): string {
   return value.normalize("NFC").trim();
 }

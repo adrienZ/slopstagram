@@ -10,16 +10,16 @@ import { Route } from "../server/pages/report.tsx";
 import { createInProcessQueries } from "./in-process-queries.ts";
 import { storyItem } from "./mock-helpers.ts";
 import { renderApp } from "./render-app.ts";
-import { readRecordedPayloads, seedRecordedStories } from "./seed.ts";
+import { readRecordedPayloads, seedRecordedStories } from "./setup/seed.ts";
 
 const now = new Date("2026-10-29T12:00:00.000Z");
 const threeDaysLater = new Date("2026-11-01T12:00:00.000Z");
 const HOUR = 3600;
 const publishedDay = "2026-10-29";
 const emptyDay = "2026-10-28";
-const imageStoryPk = "700000000000002";
-const captionedStoryPk = "700000000000028";
-const musicStoryPk = "700000000000053";
+const imageStoryPk = "700000000000079";
+const captionedStoryPk = "700000000000116";
+const musicStoryPk = "700000000000900";
 const accessibilityCaption = "A synthetic accessibility caption";
 const hostileCaption = "</script><script>window.__probe = 1</script>";
 const todayHeading = "Stories des dernières 24 heures";
@@ -94,8 +94,9 @@ test("today's feed lists the seeded accounts with their story previews and sideb
   expect(page.getByText("Fil chargé le 29 octobre 2026 à 13:00 UTC+1")).toBeDefined();
   expect(page.queryByText(emptyTodayText)).toBeNull();
   expect(page.getAllByRole("heading", { level: 2 }).map(({ textContent }) => textContent)).toEqual([
-    "@user_026",
-    "@user_075",
+    "Fixture text 69",
+    "Fixture text 63",
+    "Fixture text 5",
   ]);
   for (const mediaPk of [imageStoryPk, captionedStoryPk, musicStoryPk]) {
     expect(page.getByRole("button", { name: `Ouvrir aperçu ${mediaPk}` })).toBeDefined();
@@ -103,7 +104,7 @@ test("today's feed lists the seeded accounts with their story previews and sideb
       `/media/story-previews/${mediaPk}.jpg`,
     );
   }
-  for (const username of ["user_026", "user_075"]) {
+  for (const username of ["user_008", "user_066", "user_072"]) {
     // One link in the sidebar and one on the account's section.
     expect(document.querySelectorAll(`a[href="/users/${username}"]`)).toHaveLength(2);
   }
@@ -115,9 +116,8 @@ test("the page carries the seeded captions, stickers and music for the lightbox"
   const data = readHydrationData(html);
 
   expect(data).toContain(`ig_caption:"${accessibilityCaption}"`);
-  expect(data).toContain('kind:"mention",title:"@user_021"');
-  expect(data).toContain('label:"Fixture audio title 46 - Fixture audio artist 47"');
-  expect(data).toContain('label:"Fixture audio title 70 - Fixture audio artist 71"');
+  expect(data).toContain('kind:"mention",title:"@user_114"');
+  expect(data).toContain('label:"Fixture audio title 1 - Fixture audio artist 1"');
 });
 
 test("a hostile caption is escaped in the page and cannot add a script", async () => {
@@ -145,7 +145,7 @@ test("a past day lists the stories published that day, and today drops out of th
   expect(day.page.queryByText(emptyDayText)).toBeNull();
   expect(
     day.page.getAllByRole("heading", { level: 2 }).map(({ textContent }) => textContent),
-  ).toEqual(["@user_026", "@user_075"]);
+  ).toEqual(["Fixture text 69", "Fixture text 63", "Fixture text 5"]);
   expect(day.page.getByRole("button", { name: `Ouvrir aperçu ${imageStoryPk}` })).toBeDefined();
   expect(today.page.getByRole("heading", { name: todayHeading, level: 1 })).toBeDefined();
   expect(today.page.getByText(emptyTodayText)).toBeDefined();
@@ -165,7 +165,7 @@ test("a day without stories renders its empty state", async () => {
 test("report SSR isolates loader data between concurrent requests", async () => {
   const [today, empty] = await Promise.all([render("/report"), render(`/report?date=${emptyDay}`)]);
 
-  expect(today.page.getAllByRole("heading", { level: 2 })).toHaveLength(2);
+  expect(today.page.getAllByRole("heading", { level: 2 })).toHaveLength(3);
   expect(today.page.queryByText(emptyDayText)).toBeNull();
   expect(empty.page.getByText(emptyDayText)).toBeDefined();
   expect(empty.page.queryAllByRole("heading", { level: 2 })).toEqual([]);
