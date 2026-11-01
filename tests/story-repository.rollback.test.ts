@@ -1,10 +1,9 @@
 import { assert, expect, test } from "vitest";
 import type { StoryItem } from "../sdk/instagram-types.ts";
-import { createDrizzle } from "../sdk/database/client.ts";
 import type { DrizzleDatabase } from "../sdk/database/client.ts";
-import { migrateDatabase } from "../sdk/database/migrate.ts";
 import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
 import { StoryRepository } from "../sdk/repositories/story-repository.ts";
+import { createTestDatabase } from "./test-database.ts";
 
 const owner = { id: "u1", pk: "u1", username: "one", full_name: "One" };
 const other = { id: "u2", pk: "u2", username: "two", full_name: "Two" };
@@ -106,7 +105,7 @@ const scenarios: Array<RollbackScenario> = [
       const [first] = annotationsOf(cold, "m1").musicObservations ?? [];
       const [second] = annotationsOf(cold, "m2").musicObservations ?? [];
       expect(first.metadata).toMatchObject({ status: "usable", title: "Song", artist: "Artist" });
-      expect(first.metadata).toEqual(second.metadata);
+      expect(first.metadata).toStrictEqual(second.metadata);
       expect(first.occurrenceId).toBe(before?.annotations?.stickers[0].occurrenceId);
       expect(cold.listByUsername("two")).toHaveLength(1);
       expect(database.$client.prepare("SELECT count(*) n FROM metadata_music").get()?.n).toBe(1);
@@ -139,11 +138,7 @@ const scenarios: Array<RollbackScenario> = [
 test.for(scenarios)(
   "a failed $name leaves every stored value untouched, and the save works once the failure is gone",
   async (scenario, context) => {
-    const database = createDrizzle(":memory:");
-    migrateDatabase(database);
-    context.onTestFinished(() => {
-      database.$client.close();
-    });
+    const database = createTestDatabase(context);
     const repository = new StoryRepository(database);
     if (scenario.withOwners) {
       const users = new InstagramUserRepository(database);
@@ -162,7 +157,7 @@ test.for(scenarios)(
     ).rejects.toThrow();
 
     const cold = new StoryRepository(database);
-    expect(scenario.saved.map(({ pk }) => cold.findByMediaPk(pk))).toEqual(before);
+    expect(scenario.saved.map(({ pk }) => cold.findByMediaPk(pk))).toStrictEqual(before);
     if (scenario.withOwners) {
       expect(cold.listByUsername("one")).toHaveLength(1);
       expect(cold.listByUsername("two")).toHaveLength(0);
