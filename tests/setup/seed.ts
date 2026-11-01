@@ -9,6 +9,7 @@ import { persistReportInstagramUsers } from "../../sdk/lib/instagram-user-servic
 import { InstagramUserRepository } from "../../sdk/repositories/instagram-user-repository.ts";
 import { StoryRepository } from "../../sdk/repositories/story-repository.ts";
 import { fetchStories } from "../../sdk/stories.ts";
+import { GalleryPageSchema } from "../../sdk/story-client-service.ts";
 import { createRecordedClient } from "./recorded-client.ts";
 import { createMemoryStorage } from "../memory-storage.ts";
 import { createMockLogger, noSleep } from "../mock-helpers.ts";
@@ -127,56 +128,45 @@ function shiftPayloads(
   };
 }
 
-const EditableReelsPageSchema = z.looseObject({
-  data: z.looseObject({
-    xdt_api__v1__feed__reels_media__connection: z.looseObject({
-      edges: z.array(
-        z.looseObject({
-          node: z.looseObject({
-            items: z.array(
-              z.looseObject({
-                accessibility_caption: z.string().nullish(),
-                pk: z.string(),
-                taken_at: z.number(),
-              }),
-            ),
-            user: z.looseObject({
-              full_name: z.string().nullish(),
-              username: z.string(),
-            }),
-          }),
-        }),
-      ),
-    }),
-  }),
-});
+type GalleryConnection = NonNullable<
+  z.output<typeof GalleryPageSchema>["data"]
+>["xdt_api__v1__feed__reels_media__connection"];
+type RecordedStory = NonNullable<GalleryConnection["edges"][number]["node"]["items"]>[number];
 
-type RecordedNode = z.infer<
-  typeof EditableReelsPageSchema
->["data"]["xdt_api__v1__feed__reels_media__connection"]["edges"][number]["node"];
-export type RecordedStory = RecordedNode["items"][number];
-export type RecordedOwner = RecordedNode["user"];
+/** Parses a recorded gallery page with the production schema, lets `update` edit it, and writes it back as a payload. */
+function updateGalleryPage(
+  payload: JsonValue,
+  update: (connection: GalleryConnection) => void,
+): JsonValue {
+  const page = GalleryPageSchema.parse(payload);
+  const connection = page.data?.xdt_api__v1__feed__reels_media__connection;
+  if (connection === undefined) {
+    throw new Error("A recorded gallery page has no reels connection");
+  }
+  update(connection);
+  return JsonValueSchema.parse(page);
+}
 
 /**
- * Returns the recorded payloads with every story, and the account that published it,
- * edited by `edit`. The edits travel through real ingestion with the rest of the recording,
- * so a test can give a story a caption, a date or an owner name the recordings lack.
+ * Returns the recorded payloads with every story edited by `edit`. The edits travel through
+ * real ingestion with the rest of the recording, so a test can give a story a caption, a
+ * date or a sticker the recordings lack.
  */
 export function editRecordedStories(
   recorded: RecordedPayloads,
-  edit: (story: RecordedStory, owner: RecordedOwner) => void,
+  edit: (story: RecordedStory) => void,
 ): RecordedPayloads {
   return {
     ...recorded,
-    galleryPages: recorded.galleryPages.map((payload): JsonValue => {
-      const page = EditableReelsPageSchema.parse(payload);
-      for (const { node } of page.data.xdt_api__v1__feed__reels_media__connection.edges) {
-        for (const story of node.items) {
-          edit(story, node.user);
+    galleryPages: recorded.galleryPages.map((payload) =>
+      updateGalleryPage(payload, ({ edges }) => {
+        for (const { node } of edges) {
+          for (const story of node.items ?? []) {
+            edit(story);
+          }
         }
-      }
-      return JsonValueSchema.parse(page);
-    }),
+      }),
+    ),
   };
 }
 
@@ -191,15 +181,14 @@ export function keepRecordedStories(
 ): RecordedPayloads {
   return {
     ...recorded,
-    galleryPages: recorded.galleryPages.map((payload): JsonValue => {
-      const page = EditableReelsPageSchema.parse(payload);
-      const connection = page.data.xdt_api__v1__feed__reels_media__connection;
-      for (const { node } of connection.edges) {
-        node.items = node.items.filter(({ pk }) => mediaPks.includes(pk));
-      }
-      connection.edges = connection.edges.filter(({ node }) => node.items.length > 0);
-      return JsonValueSchema.parse(page);
-    }),
+    galleryPages: recorded.galleryPages.map((payload) =>
+      updateGalleryPage(payload, (connection) => {
+        for (const { node } of connection.edges) {
+          node.items = node.items?.filter(({ pk }) => mediaPks.includes(pk));
+        }
+        connection.edges = connection.edges.filter(({ node }) => (node.items?.length ?? 0) > 0);
+      }),
+    ),
     tray: undefined,
   };
 }
