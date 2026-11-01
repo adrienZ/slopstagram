@@ -14,10 +14,10 @@ export default defineConfig({
       thresholds: {
         // Floor to whole percents: just under the measured value, so tiny fluctuations never fail.
         autoUpdate: (value) => Math.floor(value),
-        statements: 89,
-        branches: 84,
-        functions: 89,
-        lines: 89,
+        statements: 90,
+        branches: 85,
+        functions: 90,
+        lines: 90,
       },
     },
     // Keep server/SQLite tests in Node and browser UI tests in jsdom with their own setup.
