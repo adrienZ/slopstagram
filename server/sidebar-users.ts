@@ -3,7 +3,7 @@ import { instagramUserRepository } from "../sdk/repositories/instagram-user-repo
 
 export interface SidebarUser {
   username: string;
-  avatarPath: string | null;
+  avatarPath: string;
 }
 
 export function loadSidebarUsers(): Array<SidebarUser> {

@@ -22,8 +22,7 @@ export function createStoredStoryUser(
 ): StoryOutputUser {
   return {
     full_name: latestStory.full_name,
-    profile_pic_url:
-      latestStory.owner_pk === null ? null : `images/avatars/${latestStory.owner_pk}.jpg`,
+    profile_pic_url: `images/avatars/${latestStory.owner_pk}.jpg`,
     reel_ids: [],
     stories: stories.map((entry) => ({
       ig_caption: entry.story.accessibility_caption ?? "",

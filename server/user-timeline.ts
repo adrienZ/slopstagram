@@ -35,7 +35,7 @@ export interface UserTimelineYear {
 
 export interface UserTimeline {
   appleCaptionByMediaPk: Map<string, string>;
-  avatarPath: string | null;
+  avatarPath: string;
   stories: Array<UserTimelineStory>;
   outdatedVisionByPreviewUrl: Map<string, OutdatedVision>;
   timelineUser: StoryOutputUser;
@@ -197,11 +197,10 @@ export function createUserTimeline(
 
   const timelineUser = createStoredStoryUser(stories[0], stories);
   const details = readTimelineDetails(stories);
-  const avatarPath = timelineUser.profile_pic_url?.replace(/^images\//u, "/media/") ?? null;
 
   return {
     ...details,
-    avatarPath,
+    avatarPath: `/media/avatars/${stories[0].owner_pk}.jpg`,
     stories,
     timelineUser,
     years: groupStoriesByPublishedDate(stories),

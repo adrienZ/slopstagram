@@ -7,17 +7,19 @@ test("links mentions only to saved accounts and preserves the canonical username
   expect(
     presentSticker("mention", " @ALICE ", [
       { username: "alice", avatarPath: "/media/avatars/alice.jpg" },
-      { username: "bob", avatarPath: null },
+      { username: "bob", avatarPath: "/media/avatars/unused.jpg" },
     ]).profileUrl,
   ).toBe("/users/alice");
   expect(
     presentSticker("mention", "@charlie", [
-      { username: "alice", avatarPath: null },
-      { username: "bob", avatarPath: null },
+      { username: "alice", avatarPath: "/media/avatars/unused.jpg" },
+      { username: "bob", avatarPath: "/media/avatars/unused.jpg" },
     ]).profileUrl,
   ).toBe(undefined);
   expect(
-    presentSticker("music", "@alice", [{ username: "alice", avatarPath: null }]).profileUrl,
+    presentSticker("music", "@alice", [
+      { username: "alice", avatarPath: "/media/avatars/unused.jpg" },
+    ]).profileUrl,
   ).toBe(undefined);
   expect(
     presentSticker("mention", "@ALICE", [

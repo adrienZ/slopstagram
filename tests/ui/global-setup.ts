@@ -55,7 +55,7 @@ export default async function setup(project: TestProject): Promise<void> {
     if (story.pk === captionedStoryPk) {
       story.accessibility_caption = hostileCaption;
     }
-    if (story.pk === pastStoryPk) {
+    if (story.pk === pastStoryPk && story.taken_at !== undefined) {
       story.taken_at -= PAST_STORY_AGE_SECONDS;
     }
   });

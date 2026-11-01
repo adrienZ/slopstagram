@@ -5,6 +5,7 @@ import type { DrizzleDatabase } from "../../sdk/database/client.ts";
 import { useDrizzle } from "../../sdk/database/client.ts";
 import { migrateDatabase } from "../../sdk/database/migrate.ts";
 import { type JsonObject, type JsonValue, JsonValueSchema } from "../../sdk/lib/json-value.ts";
+import { GalleryPageSchema } from "../../sdk/story-client-service.ts";
 import { persistReportInstagramUsers } from "../../sdk/lib/instagram-user-service.ts";
 import { InstagramUserRepository } from "../../sdk/repositories/instagram-user-repository.ts";
 import { StoryRepository } from "../../sdk/repositories/story-repository.ts";
@@ -127,52 +128,30 @@ function shiftPayloads(
   };
 }
 
-const EditableReelsPageSchema = z.looseObject({
-  data: z.looseObject({
-    xdt_api__v1__feed__reels_media__connection: z.looseObject({
-      edges: z.array(
-        z.looseObject({
-          node: z.looseObject({
-            items: z.array(
-              z.looseObject({
-                accessibility_caption: z.string().nullish(),
-                pk: z.string(),
-                taken_at: z.number(),
-              }),
-            ),
-            user: z.looseObject({
-              full_name: z.string().nullish(),
-              username: z.string(),
-            }),
-          }),
-        }),
-      ),
-    }),
-  }),
-});
-
-type RecordedNode = z.infer<
-  typeof EditableReelsPageSchema
->["data"]["xdt_api__v1__feed__reels_media__connection"]["edges"][number]["node"];
-export type RecordedStory = RecordedNode["items"][number];
-export type RecordedOwner = RecordedNode["user"];
+type GalleryPage = z.output<typeof GalleryPageSchema>;
+type GalleryConnection = NonNullable<
+  GalleryPage["data"]
+>["xdt_api__v1__feed__reels_media__connection"];
+export type RecordedStory = NonNullable<
+  GalleryConnection["edges"][number]["node"]["items"]
+>[number];
 
 /**
- * Returns the recorded payloads with every story, and the account that published it,
- * edited by `edit`. The edits travel through real ingestion with the rest of the recording,
- * so a test can give a story a caption, a date or an owner name the recordings lack.
+ * Returns the recorded payloads with every story edited by `edit`, over the production
+ * gallery page schema. The edits travel through real ingestion with the rest of the
+ * recording, so a test can give a story a caption or a date that the recordings lack.
  */
 export function editRecordedStories(
   recorded: RecordedPayloads,
-  edit: (story: RecordedStory, owner: RecordedOwner) => void,
+  edit: (story: RecordedStory) => void,
 ): RecordedPayloads {
   return {
     ...recorded,
     galleryPages: recorded.galleryPages.map((payload): JsonValue => {
-      const page = EditableReelsPageSchema.parse(payload);
-      for (const { node } of page.data.xdt_api__v1__feed__reels_media__connection.edges) {
-        for (const story of node.items) {
-          edit(story, node.user);
+      const page = GalleryPageSchema.parse(payload);
+      for (const { node } of page.data?.xdt_api__v1__feed__reels_media__connection.edges ?? []) {
+        for (const story of node.items ?? []) {
+          edit(story);
         }
       }
       return JsonValueSchema.parse(page);

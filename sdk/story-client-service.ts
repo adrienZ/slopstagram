@@ -25,26 +25,26 @@ class InstagramApiResponseError extends Error {
   readonly nonRetryable = true;
 }
 
-const GalleryResponseSchema = z
-  .object({
-    data: z
-      .object({
-        xdt_api__v1__feed__reels_media__connection: z.object({
-          edges: z.array(z.object({ node: StoryReelSchema })),
-          page_info: z.object({ has_next_page: z.boolean(), end_cursor: z.string().nullish() }),
-        }),
-      })
-      .nullish(),
-    errors: z.array(z.object({ message: z.string() })).optional(),
-  })
-  .transform((response) => {
-    if ((response.errors?.length ?? 0) > 0 || !response.data) {
-      throw new InstagramApiResponseError(
-        `Instagram story media query failed: ${response.errors?.[0]?.message ?? "missing media data"}`,
-      );
-    }
-    return response.data.xdt_api__v1__feed__reels_media__connection;
-  });
+export const GalleryPageSchema = z.object({
+  data: z
+    .object({
+      xdt_api__v1__feed__reels_media__connection: z.object({
+        edges: z.array(z.object({ node: StoryReelSchema })),
+        page_info: z.object({ has_next_page: z.boolean(), end_cursor: z.string().nullish() }),
+      }),
+    })
+    .nullish(),
+  errors: z.array(z.object({ message: z.string() })).optional(),
+});
+
+const GalleryResponseSchema = GalleryPageSchema.transform((response) => {
+  if ((response.errors?.length ?? 0) > 0 || !response.data) {
+    throw new InstagramApiResponseError(
+      `Instagram story media query failed: ${response.errors?.[0]?.message ?? "missing media data"}`,
+    );
+  }
+  return response.data.xdt_api__v1__feed__reels_media__connection;
+});
 
 function quoteNumericIdentifiers(body: string): string {
   // Instagram sometimes emits IDs as JSON numbers. Its media IDs exceed
