@@ -1,14 +1,21 @@
 import { createHash } from "node:crypto";
-import { assert, test, vi, expect } from "vitest";
+import { assert, beforeAll, test, expect } from "vitest";
 import {
   createUserTimeline,
   getTimelinePreviewPaths,
   groupStoriesByPublishedDate,
 } from "../server/user-timeline.ts";
 import { appleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
+import { migrateDatabase } from "../sdk/database/migrate.ts";
+import { instagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
+import { storyRepository } from "../sdk/repositories/story-repository.ts";
 import { visionRepository } from "../sdk/repositories/vision-repository.ts";
 import { VISION_MODEL, VISION_PROMPT } from "../sdk/lib/vision-analysis-service.ts";
 import type { UserTimelineStory } from "../sdk/repositories/story-repository.ts";
+
+beforeAll(() => {
+  migrateDatabase();
+});
 
 function timelineStory(pk: string, takenAt: number): UserTimelineStory {
   return {
@@ -63,94 +70,96 @@ test("groups stories by their Paris publication day, month, and year", () => {
 });
 
 test("returns no timeline for an unknown user", () => {
-  const result = createUserTimeline(
-    "missing-user",
-    {
-      listByUsername: (username) => {
-        expect(username).toBe("missing-user");
-        return [];
-      },
-    },
-    {
-      findByUsername: (username) => {
-        expect(username).toBe("missing-user");
-        return null;
-      },
-    },
-  );
-  expect(result).toBe(null);
+  expect(createUserTimeline("missing-user")).toBe(null);
 });
 
-test("returns an empty timeline for a saved account without stories", () => {
-  const result = createUserTimeline(
-    "saved-user",
-    { listByUsername: () => [] },
-    {
-      findByUsername: () => ({
-        username: "saved-user",
-        full_name: "Saved User",
-        id: "saved",
-        pk: "saved",
-      }),
-    },
-  );
+test("returns an empty timeline for a saved account without stories", async () => {
+  await instagramUserRepository.save({
+    username: "saved-user",
+    full_name: "Saved User",
+    id: "saved",
+    pk: "saved",
+  });
+
+  const result = createUserTimeline("saved-user");
+
   assert.ok(result);
   expect(result.timelineUser.username).toBe("saved-user");
+  expect(result.avatarPath).toBe("/media/avatars/saved.jpg");
   expect(result.stories).toStrictEqual([]);
   expect(result.years).toStrictEqual([]);
 });
 
-test("assembles timeline media, captions, cached vision and local paths", () => {
-  const image = timelineStory("image", 1_767_225_600);
-  image.story.accessibility_caption = "Instagram caption";
-  image.locations = ["Paris"];
-  image.stickers = ["location:Paris"];
-  const video = timelineStory("video", 1_767_225_500);
-  video.story.media_type = 2;
-  const unknown = timelineStory("unknown", 1_767_225_400);
-  unknown.story.media_type = 99;
-  const stories = [image, video, unknown];
-  const vision = { text: "visible text", visual: "a street" };
-  vi.spyOn(appleVisionRepository, "findByMediaPk").mockImplementation((pk: string) =>
-    pk === "image" ? "Apple caption" : null,
-  );
-  vi.spyOn(visionRepository, "findByMediaPk").mockImplementation((pk: string) =>
-    pk === "video"
-      ? {
-          model: VISION_MODEL,
-          prompt_hash: createHash("sha256").update(VISION_PROMPT).digest("hex"),
-          result: vision,
-        }
-      : null,
-  );
-
-  const timeline = createUserTimeline("timeline-user", {
-    listByUsername: (username) => {
-      expect(username).toBe("timeline-user");
-      return stories;
+test("assembles timeline media, captions, cached vision and local paths", async () => {
+  await instagramUserRepository.save({
+    full_name: "Timeline User",
+    id: "timeline-id",
+    pk: "timeline-pk",
+    username: "timeline-user",
+  });
+  const owner = { pk: "timeline-pk", username: "timeline-user" };
+  await storyRepository.save(
+    {
+      accessibility_caption: "Instagram caption",
+      media_type: 1,
+      pk: "image",
+      story_hashtags: [{ hashtag: "food" }],
+      story_locations: [{ location: { address: "1 Rue Example, Paris", name: "Cafe Example" } }],
+      taken_at: 1_767_225_600,
     },
+    owner,
+  );
+  await storyRepository.save({ media_type: 2, pk: "video", taken_at: 1_767_225_500 }, owner);
+  await storyRepository.save({ media_type: 99, pk: "unknown", taken_at: 1_767_225_400 }, owner);
+  const vision = { text: "visible text", visual: "a street" };
+  await appleVisionRepository.save("image", "Apple caption");
+  await visionRepository.save("video", {
+    model: VISION_MODEL,
+    prompt_hash: createHash("sha256").update(VISION_PROMPT).digest("hex"),
+    result: vision,
   });
 
+  const timeline = createUserTimeline("timeline-user");
+
   assert.ok(timeline);
-  expect(timeline.avatarPath).toBe("/media/avatars/user-pk.jpg");
+  const { stories } = timeline;
+  expect(stories.map((entry) => entry.story.pk)).toStrictEqual(["image", "video", "unknown"]);
+  expect(timeline.avatarPath).toBe("/media/avatars/timeline-pk.jpg");
   expect(timeline.timelineUser.username).toBe("timeline-user");
   expect(timeline.timelineUser.full_name).toBe("Timeline User");
-  expect(timeline.timelineUser.stories).toStrictEqual(
-    stories.map((entry, index) => ({
-      ig_caption: index === 0 ? "Instagram caption" : "",
-      locations: entry.locations,
-      media_type: ["image", "video", null][index],
-      media_pk: entry.story.pk,
-      preview_image_url: `images/story-previews/${entry.story.pk}.jpg`,
+  expect(timeline.timelineUser.stories).toStrictEqual([
+    {
+      ig_caption: "Instagram caption",
+      locations: ["Cafe Example, 1 Rue Example, Paris"],
+      media_type: "image",
+      media_pk: "image",
+      preview_image_url: "images/story-previews/image.jpg",
       status: "ok",
-      stickers: entry.stickers,
-    })),
-  );
+      stickers: ["#food"],
+    },
+    {
+      ig_caption: "",
+      locations: [],
+      media_type: "video",
+      media_pk: "video",
+      preview_image_url: "images/story-previews/video.jpg",
+      status: "ok",
+      stickers: [],
+    },
+    {
+      ig_caption: "",
+      locations: [],
+      media_type: null,
+      media_pk: "unknown",
+      preview_image_url: "images/story-previews/unknown.jpg",
+      status: "ok",
+      stickers: [],
+    },
+  ]);
   expect(timeline.appleCaptionByMediaPk).toStrictEqual(new Map([["image", "Apple caption"]]));
   expect(timeline.visionByPreviewUrl).toStrictEqual(
     new Map([["images/story-previews/video.jpg", vision]]),
   );
-  expect(timeline.stories).toStrictEqual(stories);
   expect(timeline.years[0]?.months[0]?.days[0]?.stories).toStrictEqual(stories);
   expect(getTimelinePreviewPaths(stories)).toStrictEqual(
     new Map([
@@ -161,14 +170,23 @@ test("assembles timeline media, captions, cached vision and local paths", () => 
   );
 });
 
-test("omits analysis when the story has no cached details", () => {
-  const story = timelineStory("no-details", 1_767_225_600);
-  vi.spyOn(appleVisionRepository, "findByMediaPk").mockImplementation(() => null);
-  vi.spyOn(visionRepository, "findByMediaPk").mockImplementation(() => null);
+test("omits analysis when the stories have no cached details", async () => {
+  await instagramUserRepository.save({
+    full_name: "Plain User",
+    id: "plain-id",
+    pk: "plain-pk",
+    username: "plain-user",
+  });
+  await storyRepository.save(
+    { media_type: 1, pk: "plain-story", taken_at: 1_767_225_600 },
+    { pk: "plain-pk", username: "plain-user" },
+  );
 
-  const timeline = createUserTimeline("timeline-user", { listByUsername: () => [story] });
+  const timeline = createUserTimeline("plain-user");
 
   assert.ok(timeline);
+  expect(timeline.avatarPath).toBe("/media/avatars/plain-pk.jpg");
+  expect(timeline.timelineUser.profile_pic_url).toBe("images/avatars/plain-pk.jpg");
   expect(timeline.appleCaptionByMediaPk.size).toBe(0);
   expect(timeline.visionByPreviewUrl.size).toBe(0);
 });

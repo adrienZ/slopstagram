@@ -3,7 +3,6 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createConsola } from "consola";
-import type { StoryRepository } from "../sdk/repositories/story-repository.ts";
 import type { CachedReportImages } from "../sdk/lib/image-cache-service.ts";
 import type { Logger } from "../sdk/lib/logging-service.ts";
 import type {
@@ -15,8 +14,6 @@ import type {
   ReelsMediaResponse,
 } from "../sdk/instagram-types.ts";
 import type { StoriesManifestReport } from "../sdk/report-types.ts";
-import type { StoryStorage } from "../sdk/lib/cache-service.ts";
-import { createMemoryStorage } from "./memory-storage.ts";
 
 export const previewSource = "https://example.com/story-preview.webp";
 
@@ -115,23 +112,6 @@ export function createCapturingLogger(): Logger & { messages: Array<string> } {
     messages,
     progress,
   });
-}
-
-export function createMemoryStoryRepository(): Pick<StoryRepository, "findByMediaPk" | "save"> & {
-  entries: Map<string, StoryItem>;
-  storyStorage: StoryStorage;
-} {
-  const entries = new Map<string, StoryItem>();
-  const storyStorage = createMemoryStorage<StoryItem>();
-
-  return {
-    entries,
-    storyStorage,
-    findByMediaPk: (mediaPk) => entries.get(mediaPk) ?? null,
-    save: async (story) => {
-      entries.set(story.pk, story);
-    },
-  };
 }
 
 export function createVisionReport(source: string = previewSource): StoriesManifestReport {

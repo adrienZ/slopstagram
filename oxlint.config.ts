@@ -91,7 +91,6 @@ export default defineConfig({
         "tests/**/*.test.ts",
         "tests/**/*.test.tsx",
         "tests/**/*.spec.ts",
-        "tests/repository-adapters.ts",
         "tests/mock-helpers.ts",
       ],
       rules: {
