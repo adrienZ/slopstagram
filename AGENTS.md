@@ -64,25 +64,23 @@ Tests go through production code paths (`docs/adr/0006-test-through-production-c
   no replaced loaders or routers. Fake only external boundaries: the Instagram client, Ollama,
   Apple OCR, the Playwright session, media downloads, and browser APIs jsdom lacks (map
   rendering, canvas, audio playback).
-- Seed a database with `seedRecordedStories(recorded?, { database?, publishedBefore? })`
-  from `tests/setup/seed.ts`. It runs real ingestion over recorded payloads
-  (`readRecordedPayloads(names?)`). Change a recording with
-  `editRecordedStories(recorded, (story) => ...)`. Use `createTestDatabase(context)`
-  from `tests/test-database.ts` for a small migrated in-memory database, and the real
-  repositories for a case the recordings lack.
+- Seed test data by running real ingestion over recorded payloads, never by building rows by
+  hand (`tests/setup/seed.ts`). Edit a recording to shape a case. For a case the recordings
+  lack, use a small migrated in-memory database and the real repositories
+  (`tests/test-database.ts`).
 - Page tests: `createPageRenderer(route, props, path)` (`tests/render-page.ts`) renders the real
   route and answers only its loader. jsdom tests under `tests/ui/` seed the page database
   with `seedPageDatabase()` from `tests/ui/seeded-pages.ts`.
 - Fixtures in `tests/fixtures/` come from `npm run fixtures:capture`, which anonymizes a live
-  session. Never copy them from `data/cache` or the media cache. Never run the command in CI.
-- Never write personal data into source, fixtures, tests, docs, commits, PRs or issues:
+  session. Never copy them from `data/cache` or the media cache, and never run the command in
+  CI. Never write personal data into source, fixtures, tests, docs, commits, PRs or issues:
   usernames, ids, names, captions, places, CDN URLs. Use synthetic values. Only public audio
-  metadata (titles, artists) may stay. `tests/fixtures.privacy.test.ts` runs
-  `findUnsafeFixtureValues` over every fixture and fails on anything else.
+  metadata (titles, artists) may stay. `tests/fixtures.privacy.test.ts` fails on any other
+  value in a fixture.
 - Name tests after the module they cover: `tests/<module>[.<aspect>].test.ts`, e.g.
   `stories.edge-cases.test.ts`.
-- Coverage thresholds in `vitest.config.ts` raise themselves when `npm test` runs. Commit the
-  change.
+- `npm test` raises the coverage thresholds in `vitest.config.ts` (`autoUpdate`). Commit the
+  rewrite.
 
 ## Agent skills
 
