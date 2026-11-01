@@ -13,6 +13,7 @@ const ReelTrayResponseSchema = z.object({
 const IG_APP_ID = "936619743392459";
 const REELS_TRAY_URL = "https://www.instagram.com/api/v1/feed/reels_tray/";
 const REELS_MEDIA_URL = "https://www.instagram.com/graphql/query";
+const MEDIA_URL = "https://www.instagram.com/api/v1/media";
 const MUSIC_ASSET_URL = "https://www.instagram.com/api/v1/clips/music/";
 const PLACE_URL = "https://www.instagram.com/api/graphql";
 // PolarisExploreLocationsContainerQuery, verified against the web location page.
@@ -296,6 +297,13 @@ export function createInstagramClient(session: InstagramClientSession): Instagra
         cursors.add(cursor);
         after = cursor;
       }
+    },
+
+    async getStoryComments(mediaPk) {
+      return toClientResponse(
+        await fetchFromInstagramPage(session, `${MEDIA_URL}/${mediaPk}/comments/`),
+        JsonValueSchema,
+      );
     },
 
     async getTray() {

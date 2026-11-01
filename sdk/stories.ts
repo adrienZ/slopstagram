@@ -7,6 +7,7 @@ import type { StoryTrayEntry, InstagramClient, ReelTrayResponse } from "./instag
 import { createInstagramClient } from "./story-client-service.ts";
 import { enrichCurrentMusicAssets } from "./music-asset-enrichment.ts";
 import { lookUpTaggedPlaces } from "./place-lookup.ts";
+import { collectOwnerComments } from "./story-owner-comment-service.ts";
 import { createFetchState } from "./story-failure-service.ts";
 import { fetchMissingStories } from "./story-live-fetch-service.ts";
 import { createManifestUsers, createOutputUsers } from "./story-output-service.ts";
@@ -24,7 +25,13 @@ export interface FetchStoriesManifestOptions {
   sleep?: (durationMs: number) => Promise<void>;
   storyRepository?: Pick<StoryRepository, "findByMediaPk" | "save"> &
     Partial<
-      Pick<StoryRepository, "recordFailedPlaceLookup" | "recordPlaceLookup" | "refreshMusicAsset">
+      Pick<
+        StoryRepository,
+        | "recordFailedPlaceLookup"
+        | "recordOwnerComments"
+        | "recordPlaceLookup"
+        | "refreshMusicAsset"
+      >
     >;
   storyStorage?: StoryStorage;
 }
@@ -183,6 +190,7 @@ export async function fetchStoriesManifest(
 
   await enrichCurrentMusicAssets(client, state.cachedItems.values(), repository, logger);
   await lookUpTaggedPlaces(client, state.fetchedMediaPks, repository, logger, now);
+  await collectOwnerComments(client, state.fetchedMediaPks, state.cachedItems, repository, logger);
 
   const manifestUsers = createManifestUsers(
     trayJson.tray,

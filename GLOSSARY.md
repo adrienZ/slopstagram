@@ -20,6 +20,11 @@ The still image that represents a story, kept as a local JPEG copy. Vision analy
 **Accessibility caption**:
 Instagram's own text description of a story's media, when Instagram provides one.
 
+**Owner comment**:
+A comment written by a story's own account on that story. Instagram marks it as
+created by the media owner. It is shown with the story in the mobile app, is only
+available while the story is live, and is not a sticker or the accessibility caption.
+
 **Sticker**:
 An annotation attached to a story, including a location, mention, music, hashtag,
 or link.
