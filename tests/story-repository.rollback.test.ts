@@ -8,17 +8,20 @@ import { createTestDatabase } from "./test-database.ts";
 const owner = { id: "u1", pk: "u1", username: "one", full_name: "One" };
 const other = { id: "u2", pk: "u2", username: "two", full_name: "Two" };
 
+type User = typeof owner;
+
 interface RollbackScenario {
   name: string;
-  /** Stories saved before the failure; the first belongs to `owner`. */
+  /** Users behind the first saved story, the failing save and the retry; absent when the scenario has no users. */
+  owners?: { saved: User; failing: User; retry?: User };
+  /** Stories saved before the failure. */
   saved: Array<StoryItem>;
   /** A temporary trigger that makes one of the save's writes fail. */
-  trigger: { name: string; sql: string };
-  /** The save that fails, made by `other` when the scenario has owners. */
+  trigger: { name: string; on: string; when?: string };
+  /** The save that fails. */
   failing: StoryItem;
   /** The save that succeeds once the trigger is gone. */
   retry: StoryItem;
-  withOwners: boolean;
   verifyRetry: (
     cold: StoryRepository,
     database: DrizzleDatabase,
@@ -30,6 +33,12 @@ function annotationsOf(repository: StoryRepository, pk: string) {
   const annotations = repository.findByMediaPk(pk)?.annotations;
   assert.ok(annotations);
   return annotations;
+}
+
+function firstOf<T>(items: Array<T> | undefined): T {
+  const item = items?.[0];
+  assert.ok(item !== undefined, "expected an observation");
+  return item;
 }
 
 const oldImage = { candidates: [{ url: "https://example.com/old.jpg" }] };
@@ -47,7 +56,7 @@ const promotedMusic: StoryItem = {
 const scenarios: Array<RollbackScenario> = [
   {
     name: "location promotion",
-    withOwners: true,
+    owners: { saved: owner, failing: other },
     saved: [
       {
         pk: "m1",
@@ -60,8 +69,8 @@ const scenarios: Array<RollbackScenario> = [
     ],
     trigger: {
       name: "reject_promotion",
-      sql: `CREATE TEMP TRIGGER reject_promotion BEFORE UPDATE ON story_location_observations
-        WHEN NEW.locationId IS NOT NULL BEGIN SELECT RAISE(ABORT, 'fixture promotion failure'); END`,
+      on: "BEFORE UPDATE ON story_location_observations",
+      when: "NEW.locationId IS NOT NULL",
     },
     failing: {
       pk: "m1",
@@ -72,13 +81,13 @@ const scenarios: Array<RollbackScenario> = [
     },
     retry: { pk: "m2", story_locations: [{ id: "b", location: { pk: "place", lat: 48, lng: 2 } }] },
     verifyRetry: (cold) => {
-      const [observation] = annotationsOf(cold, "m1").locationObservations ?? [];
+      const observation = firstOf(annotationsOf(cold, "m1").locationObservations);
       expect(observation.metadata).toMatchObject({ status: "usable", name: "Old" });
     },
   },
   {
     name: "music metadata update",
-    withOwners: true,
+    owners: { saved: owner, failing: other, retry: other },
     saved: [
       {
         pk: "m1",
@@ -94,16 +103,12 @@ const scenarios: Array<RollbackScenario> = [
         story_music_stickers: [{ id: "b", music_asset_info: { audio_asset_id: "audio" } }],
       },
     ],
-    trigger: {
-      name: "reject_partial_removal",
-      sql: `CREATE TEMP TRIGGER reject_partial_removal BEFORE UPDATE ON metadata_music
-        BEGIN SELECT RAISE(ABORT, 'fixture promotion failure'); END`,
-    },
+    trigger: { name: "reject_music_update", on: "BEFORE UPDATE ON metadata_music" },
     failing: promotedMusic,
     retry: promotedMusic,
     verifyRetry: (cold, database, [before]) => {
-      const [first] = annotationsOf(cold, "m1").musicObservations ?? [];
-      const [second] = annotationsOf(cold, "m2").musicObservations ?? [];
+      const first = firstOf(annotationsOf(cold, "m1").musicObservations);
+      const second = firstOf(annotationsOf(cold, "m2").musicObservations);
       expect(first.metadata).toMatchObject({ status: "usable", title: "Song", artist: "Artist" });
       expect(first.metadata).toStrictEqual(second.metadata);
       expect(first.occurrenceId).toBe(before?.annotations?.stickers[0].occurrenceId);
@@ -113,7 +118,6 @@ const scenarios: Array<RollbackScenario> = [
   },
   {
     name: "annotation replacement",
-    withOwners: false,
     saved: [
       {
         pk: "m1",
@@ -124,8 +128,8 @@ const scenarios: Array<RollbackScenario> = [
     ],
     trigger: {
       name: "reject_annotation",
-      sql: `CREATE TEMP TRIGGER reject_annotation BEFORE INSERT ON story_stickers
-        WHEN NEW.label = '#fail' BEGIN SELECT RAISE(ABORT, 'fixture write failure'); END`,
+      on: "BEFORE INSERT ON story_stickers",
+      when: "NEW.label = '#fail'",
     },
     failing: { pk: "m1", story_hashtags: [{ hashtag: "fail" }], story_music_stickers: [] },
     retry: { pk: "m1", story_hashtags: [{ hashtag: "ok" }], story_music_stickers: [] },
@@ -140,31 +144,33 @@ test.for(scenarios)(
   async (scenario, context) => {
     const database = createTestDatabase(context);
     const repository = new StoryRepository(database);
-    if (scenario.withOwners) {
+    const { owners, trigger } = scenario;
+    if (owners) {
       const users = new InstagramUserRepository(database);
-      await users.save(owner);
-      await users.save(other);
+      await users.save(owners.saved);
+      await users.save(owners.failing);
     }
     for (const [index, story] of scenario.saved.entries()) {
       // oxlint-disable-next-line no-await-in-loop -- Saves are ordered: the first story owns the shared record.
-      await repository.save(story, index === 0 && scenario.withOwners ? owner : undefined);
+      await repository.save(story, index === 0 ? owners?.saved : undefined);
     }
     const before = scenario.saved.map(({ pk }) => repository.findByMediaPk(pk));
-    database.$client.exec(scenario.trigger.sql);
+    database.$client.exec(
+      `CREATE TEMP TRIGGER ${trigger.name} ${trigger.on} ${trigger.when === undefined ? "" : `WHEN ${trigger.when}`}
+        BEGIN SELECT RAISE(ABORT, 'injected write failure'); END`,
+    );
 
-    await expect(
-      repository.save(scenario.failing, scenario.withOwners ? other : undefined),
-    ).rejects.toThrow();
+    await expect(repository.save(scenario.failing, owners?.failing)).rejects.toThrow();
 
     const cold = new StoryRepository(database);
     expect(scenario.saved.map(({ pk }) => cold.findByMediaPk(pk))).toStrictEqual(before);
-    if (scenario.withOwners) {
-      expect(cold.listByUsername("one")).toHaveLength(1);
-      expect(cold.listByUsername("two")).toHaveLength(0);
+    if (owners) {
+      expect(cold.listByUsername(owners.saved.username)).toHaveLength(1);
+      expect(cold.listByUsername(owners.failing.username)).toHaveLength(0);
     }
 
-    database.$client.exec(`DROP TRIGGER ${scenario.trigger.name}`);
-    await repository.save(scenario.retry, scenario.withOwners ? other : undefined);
+    database.$client.exec(`DROP TRIGGER ${trigger.name}`);
+    await repository.save(scenario.retry, owners?.retry);
     scenario.verifyRetry(cold, database, before);
   },
 );
