@@ -16,7 +16,7 @@ function getTimelineViewModel(
   const profilePicPathByUrl = new Map<string, string>();
   const profilePicUrl = timeline.timelineUser.profile_pic_url;
 
-  if (profilePicUrl !== null && profilePicUrl !== undefined && timeline.avatarPath !== null) {
+  if (profilePicUrl !== null && profilePicUrl !== undefined) {
     profilePicPathByUrl.set(profilePicUrl, timeline.avatarPath);
   }
 

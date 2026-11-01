@@ -2,12 +2,16 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, URL } from "node:url";
 import { expect, test, type TestContext } from "vitest";
-import { z } from "zod";
+import type { z } from "zod";
 import { createDrizzle } from "../../sdk/database/client.ts";
 import { type JsonValue, JsonValueSchema } from "../../sdk/lib/json-value.ts";
 import { InstagramUserRepository } from "../../sdk/repositories/instagram-user-repository.ts";
 import { StoryRepository, storyRepository } from "../../sdk/repositories/story-repository.ts";
-import { parseGalleryPage, parseTrayResponse } from "../../sdk/story-client-service.ts";
+import {
+  GalleryPageSchema,
+  parseGalleryPage,
+  parseTrayResponse,
+} from "../../sdk/story-client-service.ts";
 import { readRecordedPayloads, seedRecordedStories } from "./seed.ts";
 
 const now = new Date("2026-10-29T12:00:00.000Z");
@@ -30,21 +34,21 @@ const storyPks = [
   "700000000000906",
 ];
 
-const GalleryPageSchema = z.looseObject({
-  data: z.looseObject({
-    xdt_api__v1__feed__reels_media__connection: z.looseObject({
-      edges: z.array(z.looseObject({ node: z.looseObject({ items: z.array(z.looseObject({})) }) })),
-    }),
-  }),
-});
-
 /** A fresh copy of the recorded gallery page, typed enough to edit what a test needs. */
 async function recordedGalleryPage() {
   const { galleryPages } = await readRecordedPayloads(["instagram-story-data.json"]);
   return GalleryPageSchema.parse(galleryPages[0]);
 }
 
-function toPayload(page: z.infer<typeof GalleryPageSchema>): JsonValue {
+function connectionOf(page: z.output<typeof GalleryPageSchema>) {
+  const connection = page.data?.xdt_api__v1__feed__reels_media__connection;
+  if (connection === undefined) {
+    throw new Error("The recorded gallery page has no reels connection");
+  }
+  return connection;
+}
+
+function toPayload(page: z.output<typeof GalleryPageSchema>): JsonValue {
   return JsonValueSchema.parse(page);
 }
 
@@ -84,7 +88,7 @@ test("seeding stores the recorded stories, users, stickers and previews like a f
 test("seeding a chosen set of recorded payloads stores only that set", async (context) => {
   const { database, stories } = createDatabase(context);
   const galleryPage = await recordedGalleryPage();
-  galleryPage.data.xdt_api__v1__feed__reels_media__connection.edges.pop();
+  connectionOf(galleryPage).edges.pop();
 
   await seedRecordedStories({ galleryPages: [toPayload(galleryPage)] }, { database });
 
@@ -96,7 +100,7 @@ test("seeding stores the reels of every recorded gallery page", async (context) 
   const { database, stories } = createDatabase(context);
   const pages = await Promise.all([recordedGalleryPage(), recordedGalleryPage()]);
   const [pageOne, pageTwo] = pages.map((page, index) => {
-    const connection = page.data.xdt_api__v1__feed__reels_media__connection;
+    const connection = connectionOf(page);
     connection.edges = [connection.edges[index]];
     return toPayload(page);
   });
@@ -133,8 +137,8 @@ test("seeding a recorded tray fetches only the reels it lists", async (context) 
 test("seeding fails loudly when a recording no longer matches the validation schemas", async (context) => {
   const { database, stories } = createDatabase(context);
   const drifted = await recordedGalleryPage();
-  const [firstItem] = drifted.data.xdt_api__v1__feed__reels_media__connection.edges[0].node.items;
-  firstItem.taken_at = "yesterday";
+  const [firstItem] = connectionOf(drifted).edges[0].node.items ?? [];
+  Reflect.set(firstItem, "taken_at", "yesterday");
 
   await expect(
     seedRecordedStories({ galleryPages: [toPayload(drifted)] }, { database }),

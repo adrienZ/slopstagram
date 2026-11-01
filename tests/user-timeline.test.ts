@@ -161,17 +161,14 @@ test("assembles timeline media, captions, cached vision and local paths", () => 
   );
 });
 
-test("omits avatar and analysis when the story has no owner or cached details", () => {
-  const story = timelineStory("no-owner", 1_767_225_600);
-  story.owner_pk = null;
+test("omits analysis when the story has no cached details", () => {
+  const story = timelineStory("no-details", 1_767_225_600);
   vi.spyOn(appleVisionRepository, "findByMediaPk").mockImplementation(() => null);
   vi.spyOn(visionRepository, "findByMediaPk").mockImplementation(() => null);
 
   const timeline = createUserTimeline("timeline-user", { listByUsername: () => [story] });
 
   assert.ok(timeline);
-  expect(timeline.avatarPath).toBe(null);
-  expect(timeline.timelineUser.profile_pic_url).toBe(null);
   expect(timeline.appleCaptionByMediaPk.size).toBe(0);
   expect(timeline.visionByPreviewUrl.size).toBe(0);
 });

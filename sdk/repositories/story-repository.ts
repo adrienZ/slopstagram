@@ -47,7 +47,7 @@ export interface StoryOwner {
 export interface UserTimelineStory {
   full_name: string | null;
   locations: Array<string>;
-  owner_pk: string | null;
+  owner_pk: string;
   story: StoryItem;
   stickers: Array<string>;
   taken_at: number;

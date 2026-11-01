@@ -33,17 +33,13 @@ function TimelineHeader({
       </a>
       <Card className="tw:mb-8">
         <CardHeader className="tw:flex tw:flex-col tw:items-start tw:gap-4.5 tw:sm:flex-row tw:sm:items-center">
-          {timeline.avatarPath === null ? (
-            <div className="tw:size-30 tw:shrink-0 tw:rounded-full tw:bg-muted" />
-          ) : (
-            <img
-              className="tw:size-30 tw:shrink-0 tw:rounded-full tw:bg-muted tw:object-cover"
-              src={timeline.avatarPath}
-              alt={`${userName} avatar`}
-              width="120"
-              height="120"
-            />
-          )}
+          <img
+            className="tw:size-30 tw:shrink-0 tw:rounded-full tw:bg-muted tw:object-cover"
+            src={timeline.avatarPath}
+            alt={`${userName} avatar`}
+            width="120"
+            height="120"
+          />
           <div className="tw:min-w-0">
             <CardTitle>
               <h1 className="tw:text-[28px] tw:font-bold tw:wrap-anywhere">
