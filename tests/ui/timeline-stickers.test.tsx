@@ -1,9 +1,14 @@
-import { expect, test } from "vitest";
+import { beforeAll, expect, test } from "vitest";
 import { fireEvent, screen, within } from "@testing-library/react";
 import { Route } from "../../server/pages/users/$username.tsx";
 import type { TimelineContentProps } from "../../server/pages/users/$username.tsx";
-import { mentionedAccount, pageNow, timelineAccount } from "./page-data.ts";
-import { stickerKindsOf, timelineEntry, timelineProps } from "./page-props.ts";
+import {
+  mentionedAccount,
+  pageNow,
+  stickerKindsOf,
+  timelineAccount,
+  seedPageDatabase,
+} from "./seeded-pages.ts";
 import { loadUserTimeline } from "../../server/user-timeline-handler.tsx";
 import { createPageRenderer } from "../render-page.ts";
 
@@ -12,6 +17,15 @@ const renderer = createPageRenderer(
   ({ params }) => loadUserTimeline(params.username, pageNow),
   "/users/$username",
 );
+
+let timelineProps: ReturnType<typeof loadUserTimeline>;
+let timelineEntry: (typeof timelineProps)["timeline"]["stories"][number];
+
+beforeAll(async () => {
+  await seedPageDatabase();
+  timelineProps = loadUserTimeline(timelineAccount, pageNow);
+  [timelineEntry] = timelineProps.timeline.stories;
+});
 
 /** Renders the page with the sticker kinds its stories really have, as the loader would report them. */
 async function renderTimeline(props: TimelineContentProps) {

@@ -1,11 +1,27 @@
-import { expect, test, vi, type TestContext } from "vitest";
-import { fireEvent, screen } from "@testing-library/react";
+import { beforeAll, expect, test, vi, type TestContext } from "vitest";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { Route } from "../../server/pages/users/$username.tsx";
+import { loadUserTimeline } from "../../server/user-timeline-handler.tsx";
+import { createPageRenderer } from "../render-page.ts";
 import { MusicAudioPreview } from "../../server/components/music-audio-preview.tsx";
 import { MusicSticker } from "../../server/components/music-sticker.tsx";
-import { Lightbox } from "../../server/components/lightbox.tsx";
-import { timelineProps } from "./page-props.ts";
-import { renderContent, renderPage } from "./render.tsx";
+import { pageNow, seedPageDatabase, timelineAccount } from "./seeded-pages.ts";
 import type { MusicPreview } from "../../server/music-preview.ts";
+
+// The detail modal is tested through the timeline page that hosts it.
+const renderer = createPageRenderer(
+  Route,
+  ({ params }) => loadUserTimeline(params.username, pageNow),
+  "/users/$username",
+);
+
+let timelineProps: ReturnType<typeof loadUserTimeline>;
+
+beforeAll(async () => {
+  await seedPageDatabase();
+  timelineProps = loadUserTimeline(timelineAccount, pageNow);
+});
 
 const preview: MusicPreview = {
   id: "first",
@@ -44,7 +60,7 @@ function mockPlayback(context: TestContext) {
 
 test("the compact player displays duration before playback, then plays, pauses and seeks", async (context) => {
   const { play } = mockPlayback(context);
-  const { user } = await renderContent(<MusicAudioPreview preview={preview} />);
+  render(<MusicAudioPreview preview={preview} />);
   const audio = screen.getByLabelText("Écouter : Audio de la story");
   expect(audio).toHaveAttribute("preload", "metadata");
   expect(audio).not.toHaveAttribute("autoplay");
@@ -59,7 +75,7 @@ test("the compact player displays duration before playback, then plays, pauses a
   expect(screen.getByText("0:20")).toBeVisible();
   expect(play).not.toHaveBeenCalled();
   expect(seek).not.toBeDisabled();
-  await user.click(screen.getByRole("button", { name: "Lire : Audio de la story" }));
+  await userEvent.click(screen.getByRole("button", { name: "Lire : Audio de la story" }));
   expect(
     screen.getByRole("button", { name: "Mettre en pause : Audio de la story" }),
   ).toHaveAttribute("aria-pressed", "true");
@@ -68,19 +84,21 @@ test("the compact player displays duration before playback, then plays, pauses a
   expect(audio).toHaveProperty("currentTime", 10);
   expect(screen.getByText("0:10")).toBeVisible();
   expect(screen.getByText("0:20")).toBeVisible();
-  await user.click(screen.getByRole("button", { name: "Mettre en pause : Audio de la story" }));
+  await userEvent.click(
+    screen.getByRole("button", { name: "Mettre en pause : Audio de la story" }),
+  );
   expect(screen.getByRole("button", { name: "Lire : Audio de la story" })).toHaveAttribute(
     "aria-pressed",
     "false",
   );
-  await user.click(screen.getByRole("button", { name: "Lire : Audio de la story" }));
+  await userEvent.click(screen.getByRole("button", { name: "Lire : Audio de la story" }));
   fireEvent.ended(audio);
   expect(screen.getByRole("button", { name: "Lire : Audio de la story" })).toBeVisible();
 });
 
 test("a broken cover disappears without interrupting audio playback", async (context) => {
   mockPlayback(context);
-  const { user } = await renderContent(
+  render(
     <MusicSticker
       label="Song - Artist"
       preview={{
@@ -90,7 +108,7 @@ test("a broken cover disappears without interrupting audio playback", async (con
       }}
     />,
   );
-  await user.click(screen.getByRole("button", { name: "Lire : Song — Artist" }));
+  await userEvent.click(screen.getByRole("button", { name: "Lire : Song — Artist" }));
   expect(screen.getByRole("img", { name: "Pochette de Song — Artist" })).toHaveStyle({
     animationPlayState: "running",
   });
@@ -105,28 +123,28 @@ test("a broken cover disappears without interrupting audio playback", async (con
 
 test("starting another preview pauses the currently playing preview", async (context) => {
   mockPlayback(context);
-  const { user } = await renderContent(
+  render(
     <>
       <MusicAudioPreview preview={{ ...preview, description: "First" }} />
       <MusicAudioPreview preview={{ ...preview, id: "second", description: "Second" }} />
     </>,
   );
-  await user.click(screen.getByRole("button", { name: "Lire : First" }));
-  await user.click(screen.getByRole("button", { name: "Lire : Second" }));
+  await userEvent.click(screen.getByRole("button", { name: "Lire : First" }));
+  await userEvent.click(screen.getByRole("button", { name: "Lire : Second" }));
   expect(screen.getByRole("button", { name: "Lire : First" })).toBeVisible();
   expect(screen.getByRole("button", { name: "Mettre en pause : Second" })).toBeVisible();
 });
 
 test("missing or failed audio keeps its sticker label without a player", async () => {
-  const empty = await renderContent(<MusicAudioPreview preview={{ ...preview, audioUrl: null }} />);
+  const empty = render(<MusicAudioPreview preview={{ ...preview, audioUrl: null }} />);
   expect(screen.queryByRole("group")).not.toBeInTheDocument();
   empty.unmount();
-  const { unmount } = await renderContent(<MusicSticker label="Song - Artist" />);
+  const { unmount } = render(<MusicSticker label="Song - Artist" />);
   expect(screen.getByText("Song - Artist")).toBeVisible();
   expect(screen.queryByRole("slider")).not.toBeInTheDocument();
   expect(screen.queryByRole("button")).not.toBeInTheDocument();
   unmount();
-  await renderContent(
+  render(
     <MusicSticker label="Song - Artist" preview={{ ...preview, description: "Song — Artist" }} />,
   );
   expect(screen.queryByText("Song - Artist")).not.toBeInTheDocument();
@@ -139,47 +157,72 @@ test("missing or failed audio keeps its sticker label without a player", async (
 
 test("detail-modal audio seeking keeps the selected story and navigation stops playback", async (context) => {
   const { pause } = mockPlayback(context);
-  const stories = [
+  const [entry, ...others] = timelineProps.timeline.stories;
+  const { router } = await renderer.mountRoute(
+    `/users/${timelineAccount}?story=${entry.story.pk}`,
     {
-      ...timelineProps.stories[0],
-      stickerDetails: {
-        text: "",
-        music: [{ key: preview.id, label: preview.description, preview }],
+      ...timelineProps,
+      timeline: {
+        ...timelineProps.timeline,
+        stories: [
+          {
+            ...entry,
+            story: {
+              ...entry.story,
+              annotations: {
+                locations: [],
+                stickers: [{ kind: "music", label: "Song" }],
+                musicObservations: [
+                  {
+                    id: "observation",
+                    source: "story_music_stickers",
+                    providerOccurrenceId: null,
+                    occurrenceId: null,
+                    metadata: {
+                      status: "partial",
+                      id: "music",
+                      instagramAudioAssetId: null,
+                      title: "Audio de la story",
+                      artist: null,
+                      durationMs: null,
+                      audioDurationMs: null,
+                      audioSourceUrl: null,
+                      artworkSourceUrl: null,
+                      audioCachePath: `audio/${"a".repeat(64)}.m4a`,
+                      artworkCachePath: null,
+                      audioState: "available",
+                      artworkState: "unavailable",
+                    },
+                  },
+                ],
+              },
+            },
+          },
+          ...others,
+        ],
       },
     },
-    {
-      ...timelineProps.stories[0],
-      mediaPk: "next",
-      stickerDetails: { text: "", music: [] },
-    },
-  ];
-  function Details({ selectedStory }: { selectedStory?: string }) {
-    return <Lightbox stories={stories} selectedStory={selectedStory} />;
-  }
-  const { user, router } = await renderPage(
-    Details,
-    {},
-    `/report?story=${timelineProps.stories[0].mediaPk}`,
   );
-  const audio = screen.getByLabelText("Écouter : Audio de la story");
+  const dialog = within(await screen.findByRole("dialog", { name: "Aperçu de l’image" }));
+  const audio = dialog.getByLabelText("Écouter : Audio de la story");
   Object.defineProperty(audio, "duration", { configurable: true, value: 20 });
   fireEvent.durationChange(audio);
   fireEvent.loadedMetadata(audio);
-  await user.click(screen.getByRole("button", { name: "Lire : Audio de la story" }));
-  const seek = screen.getByRole("slider");
+  await userEvent.click(dialog.getByRole("button", { name: "Lire : Audio de la story" }));
+  const seek = dialog.getByRole("slider");
   seek.focus();
-  await user.keyboard("{ArrowRight}");
-  expect(String(router.state.location.search.story)).toBe(timelineProps.stories[0].mediaPk);
+  await userEvent.keyboard("{ArrowRight}");
+  expect(router.state.location.href).toContain(`story=${entry.story.pk}`);
   fireEvent.change(seek, { target: { value: "8" } });
   expect(audio).toHaveProperty("currentTime", 8);
-  await user.click(screen.getByRole("button", { name: "Image suivante" }));
-  expect(router.state.location.search.story).toBe("next");
-  expect(screen.queryByRole("slider")).not.toBeInTheDocument();
+  await userEvent.click(dialog.getByRole("button", { name: "Image suivante" }));
+  expect(router.state.location.href).not.toContain(`story=${entry.story.pk}`);
+  expect(dialog.queryByRole("slider")).not.toBeInTheDocument();
   expect(pause).toHaveBeenCalled();
 });
 
 test("stored playback duration is visible without preloading the audio", async () => {
-  await renderContent(<MusicAudioPreview preview={{ ...preview, durationMs: 124_000 }} />);
+  render(<MusicAudioPreview preview={{ ...preview, durationMs: 124_000 }} />);
   expect(screen.getByText("2:04")).toBeVisible();
   const audio = screen.getByLabelText("Écouter : Audio de la story");
   expect(audio).toHaveAttribute("preload", "none");
@@ -196,8 +239,8 @@ test("a rejected play request falls back to the sticker label", async (context) 
   context.onTestFinished(() => {
     play.mockRestore();
   });
-  const { user } = await renderContent(<MusicSticker label="Song" preview={preview} />);
-  await user.click(screen.getByRole("button", { name: "Lire : Audio de la story" }));
+  render(<MusicSticker label="Song" preview={preview} />);
+  await userEvent.click(screen.getByRole("button", { name: "Lire : Audio de la story" }));
   expect(screen.getByText("Song")).toBeVisible();
   expect(screen.queryByRole("slider")).not.toBeInTheDocument();
 });

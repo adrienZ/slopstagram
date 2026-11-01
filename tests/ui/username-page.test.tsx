@@ -1,8 +1,7 @@
-import { expect, test, vi } from "vitest";
+import { beforeAll, expect, test, vi } from "vitest";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import { Route } from "../../server/pages/users/$username.tsx";
-import { namedAccount, pageNow, timelineAccount } from "./page-data.ts";
-import { timelineProps, timelineEntry } from "./page-props.ts";
+import { namedAccount, pageNow, timelineAccount, seedPageDatabase } from "./seeded-pages.ts";
 import { loadUserTimeline } from "../../server/user-timeline-handler.tsx";
 import { createPageRenderer } from "../render-page.ts";
 
@@ -11,6 +10,15 @@ const renderer = createPageRenderer(
   ({ params }) => loadUserTimeline(params.username, pageNow),
   "/users/$username",
 );
+
+let timelineProps: ReturnType<typeof loadUserTimeline>;
+let timelineEntry: (typeof timelineProps)["timeline"]["stories"][number];
+
+beforeAll(async () => {
+  await seedPageDatabase();
+  timelineProps = loadUserTimeline(timelineAccount, pageNow);
+  [timelineEntry] = timelineProps.timeline.stories;
+});
 
 test("timeline shows the handle, the dated gallery and the active account", async () => {
   await renderer.mountRoute(`/users/${timelineAccount}`);

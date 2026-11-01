@@ -1,12 +1,19 @@
-import { expect, test, vi } from "vitest";
+import { beforeAll, expect, test, vi } from "vitest";
 import { act, screen, within } from "@testing-library/react";
-import { ThemeToggle } from "../../server/components/theme-toggle.tsx";
-import { renderContent } from "./render.tsx";
+import { Route } from "../../server/pages/report.tsx";
+import { loadReport } from "../../server/report-handler.tsx";
+import { createPageRenderer } from "../render-page.ts";
+import { pageNow, seedPageDatabase } from "./seeded-pages.ts";
+
+// The toggle lives in the page's sidebar, so it is tested through the report page.
+const renderer = createPageRenderer(Route, () => loadReport(pageNow), "/report");
 
 const storageKey = "slopstagram-theme";
 
+beforeAll(seedPageDatabase);
+
 test("theme choices persist, apply document colors, and update the trigger icon", async () => {
-  const { user } = await renderContent(<ThemeToggle />);
+  const { user } = await renderer.mountRoute("/report");
   const trigger = screen.getByRole("button", { name: "Choisir le thème" });
   expect(trigger.querySelector("svg")).toHaveClass("lucide-monitor");
   await user.click(trigger);
@@ -40,7 +47,7 @@ test("theme choices persist, apply document colors, and update the trigger icon"
 });
 
 test("cross-tab storage changes update the selected theme and clearing storage restores system", async () => {
-  const { user } = await renderContent(<ThemeToggle />);
+  const { user } = await renderer.mountRoute("/report");
   act(() => {
     globalThis.localStorage.setItem(storageKey, "dark");
     globalThis.window.dispatchEvent(new globalThis.StorageEvent("storage", { key: storageKey }));
@@ -68,7 +75,7 @@ test("theme selection still works when browser storage is blocked", async () => 
   vi.spyOn(globalThis.Storage.prototype, "setItem").mockImplementation(() => {
     throw new globalThis.DOMException("Blocked", "SecurityError");
   });
-  const { user } = await renderContent(<ThemeToggle />);
+  const { user } = await renderer.mountRoute("/report");
   act(() => {
     globalThis.window.dispatchEvent(new globalThis.StorageEvent("storage", { key: storageKey }));
   });

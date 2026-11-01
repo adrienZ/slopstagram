@@ -12,13 +12,12 @@ import {
   emptyTodayNow,
   pageNow,
   pastDay,
+  seedPageDatabase,
   today,
   userSummary,
-} from "./page-data.ts";
+} from "./seeded-pages.ts";
 import { loadReport } from "../../server/report-handler.tsx";
-import type { ReportPageProps } from "../../server/pages/report.tsx";
 import { createPageRenderer } from "../render-page.ts";
-import { seedPageDatabase } from "./seed-pages.ts";
 
 // The report the real loader would build, with the arguments it receives, at the test's "now".
 let now = pageNow;
@@ -28,8 +27,8 @@ const renderer = createPageRenderer(
   "/report",
 );
 
-let reportProps: ReportPageProps;
-let emptyTodayReportProps: ReportPageProps;
+let reportProps: ReturnType<typeof loadReport>;
+let emptyTodayReportProps: ReturnType<typeof loadReport>;
 
 beforeAll(async () => {
   await seedPageDatabase();
@@ -230,4 +229,34 @@ test("report details link the mentions of a saved account to its page", async ()
     expect(mention).toHaveAttribute("href", `/users/${mentionedAccount}`);
   }
   expect(details.queryByRole("rowheader", { name: /^Story$/u })).not.toBeInTheDocument();
+});
+
+test("a user without a display name is titled by the handle, and without an avatar has no broken image", async () => {
+  const [section] = reportProps.users;
+  await renderer.mountRoute("/report", {
+    ...reportProps,
+    users: [{ ...section, user: { ...section.user, full_name: null }, avatar: undefined }],
+  });
+  const heading = screen.getByRole("heading", { level: 2, name: `@${section.user.username}` });
+  expect(heading.closest("a")).toHaveAttribute("href", `/users/${section.user.username}`);
+  expect(screen.queryByRole("img", { name: /avatar/u })).not.toBeInTheDocument();
+});
+
+test.each([undefined, ""])("an absent summary (%s) is omitted", async (summary) => {
+  const [section] = reportProps.users;
+  await renderer.mountRoute("/report", {
+    ...reportProps,
+    users: [{ ...section, summary, stories: [] }],
+  });
+  expect(screen.queryByText(userSummary)).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /Ouvrir aperçu/u })).not.toBeInTheDocument();
+});
+
+test("a summary remains visible when there are no cached story previews", async () => {
+  const [section] = reportProps.users;
+  await renderer.mountRoute("/report", {
+    ...reportProps,
+    users: [{ ...section, summary: "A visible summary", stories: [] }],
+  });
+  expect(screen.getByText("A visible summary")).toBeVisible();
 });

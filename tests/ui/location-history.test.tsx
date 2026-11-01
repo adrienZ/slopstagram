@@ -1,11 +1,10 @@
 import type { ReactNode } from "react";
-import { expect, test } from "vitest";
+import { beforeAll, expect, test } from "vitest";
 import { screen, within } from "@testing-library/react";
 import { Route } from "../../server/pages/users/$username.tsx";
 import type { TimelineContentProps } from "../../server/pages/users/$username.tsx";
 import type { StoryLocationObservation } from "../../sdk/entities/location-metadata.ts";
-import { pageNow, timelineAccount } from "./page-data.ts";
-import { stickerKindsOf, timelineEntry, timelineProps } from "./page-props.ts";
+import { pageNow, stickerKindsOf, timelineAccount, seedPageDatabase } from "./seeded-pages.ts";
 import { loadUserTimeline } from "../../server/user-timeline-handler.tsx";
 import { createPageRenderer } from "../render-page.ts";
 import { LocationMapContext } from "../../server/components/location-history.tsx";
@@ -16,6 +15,15 @@ const renderer = createPageRenderer(
   ({ params }) => loadUserTimeline(params.username, pageNow),
   "/users/$username",
 );
+
+let timelineProps: ReturnType<typeof loadUserTimeline>;
+let timelineEntry: (typeof timelineProps)["timeline"]["stories"][number];
+
+beforeAll(async () => {
+  await seedPageDatabase();
+  timelineProps = loadUserTimeline(timelineAccount, pageNow);
+  [timelineEntry] = timelineProps.timeline.stories;
+});
 
 // Only the WebGL/tile boundary is replaced; the page and grouping run unchanged.
 function TestMapCanvas({ places, onSelect, children }: LocationMapCanvasProps) {
