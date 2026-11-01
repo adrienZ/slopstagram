@@ -67,7 +67,7 @@ Tests go through production code paths (`docs/adr/0006-test-through-production-c
 - Seed a database with `seedRecordedStories(recorded?, { database?, publishedBefore? })`
   from `tests/setup/seed.ts`. It runs real ingestion over recorded payloads
   (`readRecordedPayloads(names?)`). Change a recording with
-  `editRecordedStories(recorded, (story, owner) => ...)`. Use `createTestDatabase(context)`
+  `editRecordedStories(recorded, (story) => ...)`. Use `createTestDatabase(context)`
   from `tests/test-database.ts` for a small migrated in-memory database, and the real
   repositories for a case the recordings lack.
 - Page tests: `createPageRenderer(route, props, path)` (`tests/render-page.ts`) renders the real
