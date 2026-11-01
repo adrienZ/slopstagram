@@ -2,11 +2,16 @@ import { expect, test } from "vitest";
 import { fireEvent, screen, within } from "@testing-library/react";
 import { Route } from "../../server/pages/users/$username.tsx";
 import type { TimelineContentProps } from "../../server/pages/users/$username.tsx";
-import { mentionedAccount, timelineAccount } from "./page-data.ts";
+import { mentionedAccount, pageNow, timelineAccount } from "./page-data.ts";
 import { stickerKindsOf, timelineEntry, timelineProps } from "./page-props.ts";
+import { loadUserTimeline } from "../../server/user-timeline-handler.tsx";
 import { createPageRenderer } from "../render-page.ts";
 
-const renderer = createPageRenderer(Route, timelineProps, "/users/$username");
+const renderer = createPageRenderer(
+  Route,
+  ({ params }) => loadUserTimeline(params.username, pageNow),
+  "/users/$username",
+);
 
 /** Renders the page with the sticker kinds its stories really have, as the loader would report them. */
 async function renderTimeline(props: TimelineContentProps) {

@@ -8,6 +8,8 @@ export const PUBLISHED_BEFORE_SECONDS = 3600;
 /** Moves a recorded story out of the rolling 24 hour feed, onto the previous day. */
 export const PAST_STORY_AGE_SECONDS = 26 * 3600;
 export const today = "2026-07-26";
+/** Three days on, when nothing is left in the rolling 24 hour feed. */
+export const emptyTodayNow = new Date(pageNow.getTime() + 3 * 24 * 3600 * 1000);
 export const pastDay = "2026-07-25";
 export const emptyDay = "2026-07-24";
 

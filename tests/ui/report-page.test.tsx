@@ -1,32 +1,52 @@
-import { expect, test } from "vitest";
+import { beforeAll, beforeEach, expect, test } from "vitest";
 import { screen, within, waitFor } from "@testing-library/react";
 import { Route } from "../../server/pages/report.tsx";
 import {
   appleCaption,
   captionedStoryPk,
+  emptyDay,
   hostileCaption,
   mentionedAccount,
   namedAccount,
   outsideFeedAccount,
+  emptyTodayNow,
+  pageNow,
+  pastDay,
   today,
   userSummary,
 } from "./page-data.ts";
-import {
-  emptyDayReportProps,
-  emptyTodayReportProps,
-  pastReportProps,
-  reportProps,
-} from "./page-props.ts";
+import { loadReport } from "../../server/report-handler.tsx";
+import type { ReportPageProps } from "../../server/pages/report.tsx";
 import { createPageRenderer } from "../render-page.ts";
+import { seedPageDatabase } from "./seed-pages.ts";
 
-const renderer = createPageRenderer(Route, reportProps, "/report");
+// The report the real loader would build, with the arguments it receives, at the test's "now".
+let now = pageNow;
+const renderer = createPageRenderer(
+  Route,
+  ({ deps, context }) => loadReport(now, deps.date, context.selectedStory),
+  "/report",
+);
+
+let reportProps: ReportPageProps;
+let emptyTodayReportProps: ReportPageProps;
+
+beforeAll(async () => {
+  await seedPageDatabase();
+  reportProps = loadReport(pageNow);
+  emptyTodayReportProps = loadReport(emptyTodayNow);
+});
+
+beforeEach(() => {
+  now = pageNow;
+});
 
 function getPreviousMonthButton() {
   return screen.getByRole("button", { name: /mois précédent/iu });
 }
 
 test("the feed renders ranked users, separate handles, summaries, and local previews", async () => {
-  await renderer.mountRoute("/report", reportProps);
+  await renderer.mountRoute("/report");
   expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
     "Stories des dernières 24 heures",
   );
@@ -49,17 +69,18 @@ test("the feed renders ranked users, separate handles, summaries, and local prev
 });
 
 test("today and historical empty states describe their different time windows", async () => {
-  const todayPage = await renderer.mountRoute("/report", emptyTodayReportProps);
+  now = emptyTodayNow;
+  const todayPage = await renderer.mountRoute("/report");
   expect(screen.getByText("Aucune story publiée dans les dernières 24 heures.")).toBeVisible();
   todayPage.unmount();
-  await renderer.mountRoute("/report", emptyDayReportProps);
+  await renderer.mountRoute(`/report?date=${emptyDay}`);
   expect(screen.getByRole("heading", { name: "Stories du 24 juillet 2026" })).toBeVisible();
   expect(screen.getByText("Aucune story publiée ce jour-là.")).toBeVisible();
   expect(screen.queryByText(/Fil chargé le/u)).not.toBeInTheDocument();
 });
 
 test("a past day lists the stories published that day without the loaded-at line", async () => {
-  await renderer.mountRoute("/report", pastReportProps);
+  await renderer.mountRoute(`/report?date=${pastDay}`);
   expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Stories du 25 juillet 2026");
   expect(screen.queryByText(/Fil chargé le/u)).not.toBeInTheDocument();
   expect(
@@ -68,7 +89,7 @@ test("a past day lists the stories published that day without the loaded-at line
 });
 
 test("calendar disables future and empty days, preserving today's marker on a past selection", async () => {
-  await renderer.mountRoute("/report", pastReportProps);
+  await renderer.mountRoute(`/report?date=${pastDay}`);
   expect(screen.getByRole("button", { name: /24 juillet 2026/u })).toBeDisabled();
   expect(screen.getByRole("button", { name: /25 juillet 2026/u })).toBeEnabled();
   expect(screen.getByRole("button", { name: /27 juillet 2026/u })).toBeDisabled();
@@ -84,7 +105,7 @@ test("calendar disables future and empty days, preserving today's marker on a pa
 });
 
 test("saved users are linked with handles and can be collapsed and reopened", async () => {
-  const { user } = await renderer.mountRoute("/report", reportProps);
+  const { user } = await renderer.mountRoute("/report");
   const navigation = within(screen.getByRole("navigation", { name: "Utilisateurs" }));
   expect(
     navigation.getByRole("link", {
@@ -139,7 +160,7 @@ test("report calendar with no available data cannot navigate before today’s mo
 });
 
 test("opening a preview updates the real router and closing restores focus and search", async () => {
-  const { user, router } = await renderer.mountRoute(`/report?date=${today}`, reportProps);
+  const { user, router } = await renderer.mountRoute(`/report?date=${today}`);
   const preview = screen.getByRole("button", {
     name: `Ouvrir aperçu ${captionedStoryPk}`,
   });
@@ -164,7 +185,7 @@ test("opening a preview updates the real router and closing restores focus and s
 });
 
 test("a story deep link opens after mount and an unknown story stays closed", async () => {
-  const page = await renderer.mountRoute(`/report?story=${captionedStoryPk}`, reportProps);
+  const page = await renderer.mountRoute(`/report?story=${captionedStoryPk}`);
   expect(await screen.findByRole("dialog")).toBeVisible();
   page.unmount();
   await renderer.mountRoute("/report?story=missing", reportProps);
@@ -199,7 +220,7 @@ test("closing story details hides the dialog immediately while route navigation 
 });
 
 test("report details link the mentions of a saved account to its page", async () => {
-  await renderer.mountRoute(`/report?story=${captionedStoryPk}`, reportProps);
+  await renderer.mountRoute(`/report?story=${captionedStoryPk}`);
   const details = within(await screen.findByRole("dialog", { name: "Aperçu de l’image" }));
   const mentions = details.getAllByRole("link", {
     name: `@${mentionedAccount}`,

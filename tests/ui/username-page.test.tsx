@@ -1,14 +1,19 @@
 import { expect, test, vi } from "vitest";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import { Route } from "../../server/pages/users/$username.tsx";
-import { namedAccount, timelineAccount } from "./page-data.ts";
+import { namedAccount, pageNow, timelineAccount } from "./page-data.ts";
 import { timelineProps, timelineEntry } from "./page-props.ts";
+import { loadUserTimeline } from "../../server/user-timeline-handler.tsx";
 import { createPageRenderer } from "../render-page.ts";
 
-const renderer = createPageRenderer(Route, timelineProps, "/users/$username");
+const renderer = createPageRenderer(
+  Route,
+  ({ params }) => loadUserTimeline(params.username, pageNow),
+  "/users/$username",
+);
 
 test("timeline shows the handle, the dated gallery and the active account", async () => {
-  await renderer.mountRoute(`/users/${timelineAccount}`, timelineProps);
+  await renderer.mountRoute(`/users/${timelineAccount}`);
   expect(screen.getByRole("heading", { level: 1, name: namedAccount.fullName })).toBeVisible();
   expect(screen.getByRole("link", { name: `@${timelineAccount}` })).toBeVisible();
   expect(screen.getByRole("heading", { level: 2, name: "2026" })).toBeVisible();
@@ -54,7 +59,7 @@ test("a saved display name is shown above the separate handle", async () => {
 
 test("timeline calendar scrolls to the selected day without changing the route", async () => {
   const scroll = vi.spyOn(globalThis.Element.prototype, "scrollIntoView");
-  const { user, router } = await renderer.mountRoute(`/users/${timelineAccount}`, timelineProps);
+  const { user, router } = await renderer.mountRoute(`/users/${timelineAccount}`);
   expect(screen.getByRole("button", { name: /lundi 27 juillet 2026/u })).toBeDisabled();
   await user.click(screen.getByRole("button", { name: /dimanche 26 juillet 2026/u }));
   await waitFor(() => {
@@ -180,7 +185,7 @@ test("a timeline story deep link opens the preview, steps to the next story and 
 test("mobile calendar opens in a sheet and closes after choosing a day", async () => {
   vi.stubGlobal("innerWidth", 390);
   const scroll = vi.spyOn(globalThis.Element.prototype, "scrollIntoView");
-  const { user } = await renderer.mountRoute(`/users/${timelineAccount}`, timelineProps);
+  const { user } = await renderer.mountRoute(`/users/${timelineAccount}`);
   expect(screen.queryByRole("navigation", { name: "Utilisateurs" })).not.toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "Afficher ou masquer le calendrier" }));
   const sidebar = await screen.findByRole("dialog");
@@ -193,7 +198,7 @@ test("mobile calendar opens in a sheet and closes after choosing a day", async (
 });
 
 test("the profile header handle opens the Instagram profile in a new tab", async () => {
-  await renderer.mountRoute(`/users/${timelineAccount}`, timelineProps);
+  await renderer.mountRoute(`/users/${timelineAccount}`);
   const link = screen.getByRole("link", { name: `@${timelineAccount}` });
   expect(link).toHaveAttribute("href", `https://www.instagram.com/${timelineAccount}/`);
   expect(link).toHaveAttribute("target", "_blank");

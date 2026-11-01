@@ -5,7 +5,6 @@ import type { DrizzleDatabase } from "../../sdk/database/client.ts";
 import { useDrizzle } from "../../sdk/database/client.ts";
 import { migrateDatabase } from "../../sdk/database/migrate.ts";
 import { type JsonObject, type JsonValue, JsonValueSchema } from "../../sdk/lib/json-value.ts";
-import { GalleryPageSchema } from "../../sdk/story-client-service.ts";
 import { persistReportInstagramUsers } from "../../sdk/lib/instagram-user-service.ts";
 import { InstagramUserRepository } from "../../sdk/repositories/instagram-user-repository.ts";
 import { StoryRepository } from "../../sdk/repositories/story-repository.ts";
@@ -125,37 +124,6 @@ function shiftPayloads(
     ...recorded,
     galleryPages: recorded.galleryPages.map((page) => shiftTimestamps(page, offset)),
     tray: recorded.tray === undefined ? undefined : shiftTimestamps(recorded.tray, offset),
-  };
-}
-
-type GalleryPage = z.output<typeof GalleryPageSchema>;
-type GalleryConnection = NonNullable<
-  GalleryPage["data"]
->["xdt_api__v1__feed__reels_media__connection"];
-export type RecordedStory = NonNullable<
-  GalleryConnection["edges"][number]["node"]["items"]
->[number];
-
-/**
- * Returns the recorded payloads with every story edited by `edit`, over the production
- * gallery page schema. The edits travel through real ingestion with the rest of the
- * recording, so a test can give a story a caption or a date that the recordings lack.
- */
-export function editRecordedStories(
-  recorded: RecordedPayloads,
-  edit: (story: RecordedStory) => void,
-): RecordedPayloads {
-  return {
-    ...recorded,
-    galleryPages: recorded.galleryPages.map((payload): JsonValue => {
-      const page = GalleryPageSchema.parse(payload);
-      for (const { node } of page.data?.xdt_api__v1__feed__reels_media__connection.edges ?? []) {
-        for (const story of node.items ?? []) {
-          edit(story);
-        }
-      }
-      return JsonValueSchema.parse(page);
-    }),
   };
 }
 

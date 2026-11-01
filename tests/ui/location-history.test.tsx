@@ -4,13 +4,18 @@ import { screen, within } from "@testing-library/react";
 import { Route } from "../../server/pages/users/$username.tsx";
 import type { TimelineContentProps } from "../../server/pages/users/$username.tsx";
 import type { StoryLocationObservation } from "../../sdk/entities/location-metadata.ts";
-import { timelineAccount } from "./page-data.ts";
+import { pageNow, timelineAccount } from "./page-data.ts";
 import { stickerKindsOf, timelineEntry, timelineProps } from "./page-props.ts";
+import { loadUserTimeline } from "../../server/user-timeline-handler.tsx";
 import { createPageRenderer } from "../render-page.ts";
 import { LocationMapContext } from "../../server/components/location-history.tsx";
 import type { LocationMapCanvasProps } from "../../server/components/location-map-canvas.tsx";
 
-const renderer = createPageRenderer(Route, timelineProps, "/users/$username");
+const renderer = createPageRenderer(
+  Route,
+  ({ params }) => loadUserTimeline(params.username, pageNow),
+  "/users/$username",
+);
 
 // Only the WebGL/tile boundary is replaced; the page and grouping run unchanged.
 function TestMapCanvas({ places, onSelect, children }: LocationMapCanvasProps) {
