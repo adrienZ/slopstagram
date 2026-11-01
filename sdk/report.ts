@@ -55,7 +55,6 @@ export interface CreateReportBoundaries {
 }
 
 export interface CreateReportOptions {
-  args?: Array<string>;
   boundaries?: CreateReportBoundaries;
   logger: Logger;
   now?: () => Date;
@@ -111,7 +110,7 @@ export async function createReport(options: CreateReportOptions): Promise<Create
       const outputFileName = `stories-report-${timestamp}-${run.id}.json`;
       const { logger } = options;
       logger.box(`${pkg.name} - report ${outputFileName}`);
-      const report = await fetchStories(options.args ?? [], {
+      const report = await fetchStories({
         client: boundaries.client,
         logger,
         now,

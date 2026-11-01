@@ -71,3 +71,30 @@ export function createRecordedClient(recorded: RecordedPayloads): InstagramClien
       ),
   };
 }
+
+/**
+ * An Instagram client whose every request answers with `status`, after calling `onRequest`.
+ * A non-transient status such as 401 fails at once, without the retry delays.
+ */
+export function createFailingClient(status: number, onRequest?: () => void): InstagramClient {
+  async function refuse() {
+    onRequest?.();
+    return await Promise.resolve({
+      headers: {},
+      json: () => ({ status: "fail" }),
+      ok: false,
+      status,
+    });
+  }
+  return {
+    getMusicAsset: refuse,
+    getPlace: refuse,
+    getReelsMedia: async () =>
+      await refuse().then((response) => ({ ...response, json: () => ({ reels_media: [] }) })),
+    getTray: async () =>
+      await refuse().then((response) => ({
+        ...response,
+        json: () => ({ broadcasts: [], status: "fail", story_ranking_token: "", tray: [] }),
+      })),
+  };
+}

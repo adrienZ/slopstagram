@@ -4,25 +4,25 @@ import path from "node:path";
 import { expect, type TestContext } from "vitest";
 import sharp from "sharp";
 import { z } from "zod";
-import { createDrizzle } from "../sdk/database/client.ts";
-import { migrateDatabase } from "../sdk/database/migrate.ts";
-import type { JsonValue } from "../sdk/lib/json-value.ts";
-import { createReport, type CreateReportBoundaries } from "../sdk/report.ts";
-import { AppleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
-import { FetchRunRepository } from "../sdk/repositories/fetch-run-repository.ts";
-import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
-import { ReportRepository } from "../sdk/repositories/report-repository.ts";
-import { StoryRepository } from "../sdk/repositories/story-repository.ts";
-import { UserSummaryRepository } from "../sdk/repositories/user-summary-repository.ts";
-import { VisionRepository } from "../sdk/repositories/vision-repository.ts";
-import { createCapturingLogger } from "./mock-helpers.ts";
+import { createDrizzle } from "../../sdk/database/client.ts";
+import { migrateDatabase } from "../../sdk/database/migrate.ts";
+import type { JsonValue } from "../../sdk/lib/json-value.ts";
+import { createReport, type CreateReportBoundaries } from "../../sdk/report.ts";
+import { AppleVisionRepository } from "../../sdk/repositories/apple-vision-repository.ts";
+import { FetchRunRepository } from "../../sdk/repositories/fetch-run-repository.ts";
+import { InstagramUserRepository } from "../../sdk/repositories/instagram-user-repository.ts";
+import { ReportRepository } from "../../sdk/repositories/report-repository.ts";
+import { StoryRepository } from "../../sdk/repositories/story-repository.ts";
+import { UserSummaryRepository } from "../../sdk/repositories/user-summary-repository.ts";
+import { VisionRepository } from "../../sdk/repositories/vision-repository.ts";
+import { createCapturingLogger } from "../mock-helpers.ts";
 import {
   createRecordedInstagramClient,
   editRecordedStories,
   keepRecordedStories,
   readRecordedPayloads,
   type RecordedPayloads,
-} from "./setup/seed.ts";
+} from "./seed.ts";
 
 /**
  * A pipeline world for tests: an in-memory database, a temporary cache directory and fakes for
@@ -209,7 +209,7 @@ export async function createWorld(
   const png = await sharp({ create: { background: "teal", channels: 3, height: 8, width: 8 } })
     .png()
     .toBuffer();
-  const audio = await readFile(new globalThis.URL("fixtures/audio-clip.m4a", import.meta.url));
+  const audio = await readFile(new globalThis.URL("../fixtures/audio-clip.m4a", import.meta.url));
   const ollama = createOllama(options.ollama);
   let ocrCalls = 0;
   const boundaries: CreateReportBoundaries = {

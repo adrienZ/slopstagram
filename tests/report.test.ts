@@ -2,10 +2,9 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { assert, expect, test } from "vitest";
 import { AppleOcrUnavailableError } from "../sdk/lib/apple-ocr-service.ts";
-import { createInstagramClient } from "../sdk/story-client-service.ts";
 import { createStoryFeed, readStoryFeedVision } from "../sdk/story-feed.ts";
 import { readUserSummaries } from "../sdk/user-summary.ts";
-import { createFailingSession, createRecordedSession } from "./instagram-session.ts";
+import { createFailingClient, createRecordedClient } from "./setup/recorded-client.ts";
 import { createRecordedInstagramClient } from "./setup/seed.ts";
 import {
   audioAssetId,
@@ -19,7 +18,7 @@ import {
   recordedPayloads,
   storyPks,
   trayBody,
-} from "./report-world.ts";
+} from "./setup/report-world.ts";
 
 test("creates a report by running the whole pipeline over recorded Instagram payloads", async (context) => {
   const world = await createWorld(context);
@@ -235,16 +234,15 @@ test("stores an empty caption as not available", async (context) => {
 
 test("records a failed fetch attempt even when Instagram returns no tray", async (context) => {
   let time = now;
-  const world = await createWorld(context, { client: undefined });
-  const client = createInstagramClient(
-    createFailingSession(401, () => {
+  const world = await createWorld(context, {
+    client: createFailingClient(401, () => {
       expect(world.runs.list()[0].status).toBe("running");
       expect(world.runs.list()[0].startedAt).toBe("2026-10-29T12:00:00.000Z");
       time = new Date("2026-10-29T12:00:03Z");
     }),
-  );
+  });
 
-  await expect(world.run({ client }, () => time)).rejects.toThrow(/HTTP 401/u);
+  await expect(world.run({}, () => time)).rejects.toThrow(/HTTP 401/u);
 
   const [run] = world.runs.list();
   expect(run.status).toBe("failed");
@@ -256,17 +254,14 @@ test("records a failed fetch attempt even when Instagram returns no tray", async
 });
 
 test("preserves a totally failed observation and its errors before rejecting the fetch", async (context) => {
-  const world = await createWorld(context);
-  const client = createInstagramClient(
-    createRecordedSession({
-      galleryPage: () => ({ data: null, errors: [{ message: "media unavailable" }] }),
+  const world = await createWorld(context, {
+    client: createRecordedClient({
+      galleryPages: [{ data: null, errors: [{ message: "media unavailable" }] }],
       tray: trayBody(),
     }),
-  );
+  });
 
-  await expect(world.run({ client })).rejects.toThrow(
-    /No story media could be fetched.*media unavailable/u,
-  );
+  await expect(world.run()).rejects.toThrow(/No story media could be fetched.*media unavailable/u);
 
   const [run] = world.runs.list();
   expect(run.status).toBe("failed");

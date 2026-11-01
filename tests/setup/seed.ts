@@ -225,7 +225,7 @@ export async function seedRecordedStories(recorded?: RecordedPayloads, options: 
 
   const now = options.publishedBefore?.now;
   const logger = createMockLogger();
-  const report = await fetchStories([], {
+  const report = await fetchStories({
     client: await createRecordedInstagramClient(recorded, options),
     logger,
     maxAttempts: 1,

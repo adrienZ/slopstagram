@@ -1,7 +1,6 @@
 import { readdir } from "node:fs/promises";
 import path from "node:path";
-import { assert, test, expect } from "vitest";
-import { createInstagramClient } from "../sdk/story-client-service.ts";
+import { afterEach, assert, beforeEach, test, expect, vi } from "vitest";
 import {
   startWarmCacheQueue,
   WARM_CACHE_CRON_PATTERN,
@@ -9,8 +8,19 @@ import {
   type WarmCacheQueueDependencies,
 } from "../sdk/warm-cache-queue.ts";
 import { runWarmCacheJob } from "../sdk/warm-cache.ts";
-import { createFailingSession } from "./instagram-session.ts";
-import { audioUrl, createWorld, musicStoryPk, storyPks } from "./report-world.ts";
+import { audioUrl, createWorld, musicStoryPk, now, storyPks } from "./setup/report-world.ts";
+import { createFailingClient } from "./setup/recorded-client.ts";
+
+// The job reads the clock itself. The recorded stories are dated around `now`, so the feed
+// that the user summaries are written from only holds them when the clock reads `now` too.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(now);
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 /** Every file the job cached, relative to the cache directory. */
 async function listCacheFiles(directory: string): Promise<Array<string>> {
@@ -27,7 +37,6 @@ test("runWarmCacheJob runs the whole pipeline and stores the report, database ro
   const result = await runWarmCacheJob({
     boundaries: world.boundaries,
     logger: world.logger,
-    payload: { args: ["--report-name", "ignored"], reportArgs: ["--report-name", "synthetic"] },
   });
 
   expect(result).toStrictEqual({
@@ -57,6 +66,10 @@ test("runWarmCacheJob runs the whole pipeline and stores the report, database ro
     "user_072",
   ]);
 
+  // One summary per account, written from the stored vision analyses.
+  expect(world.ollama.requests.filter(({ kind }) => kind === "summary")).toHaveLength(2);
+  expect(world.ollama.requests.filter(({ kind }) => kind === "vision")).toHaveLength(3);
+
   // The media output: warming the cache downloaded every preview, avatar and the audio.
   const files = await listCacheFiles(world.cacheDirectory);
   expect(files).toStrictEqual(
@@ -82,14 +95,10 @@ test("runWarmCacheJob accepts an empty payload", async (context) => {
 });
 
 test("runWarmCacheJob stores nothing in the cache when Instagram refuses the request", async (context) => {
-  const world = await createWorld(context);
-  const client = createInstagramClient(createFailingSession(401));
+  const world = await createWorld(context, { client: createFailingClient(401) });
 
   await expect(
-    runWarmCacheJob({
-      boundaries: { ...world.boundaries, client },
-      logger: world.logger,
-    }),
+    runWarmCacheJob({ boundaries: world.boundaries, logger: world.logger }),
   ).rejects.toThrow(/HTTP 401/u);
 
   expect(world.runs.list()).toMatchObject([{ reportKey: null, status: "failed" }]);
@@ -150,7 +159,7 @@ test("startWarmCacheQueue schedules and processes warm-cache jobs", async (conte
 
   await runtime.ready;
   assert.ok(processor);
-  const result = await processor({ data: { reportArgs: ["--report-name", "queued"] } });
+  const result = await processor();
   expect(result).toStrictEqual({
     counts: { failed: 0, fetched: 3, reels: 2, stories: 3 },
     outputFileName: result.reportKey,
