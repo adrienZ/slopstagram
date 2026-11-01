@@ -94,4 +94,5 @@ export interface InstagramClient {
   getTray: () => Promise<InstagramClientResponse<ReelTrayResponse>>;
   getMusicAsset?: (audioId: string) => Promise<InstagramClientResponse<JsonValue>>;
   getPlace?: (placeId: string) => Promise<InstagramClientResponse<JsonValue>>;
+  getStoryComments?: (mediaPk: string) => Promise<InstagramClientResponse<JsonValue>>;
 }

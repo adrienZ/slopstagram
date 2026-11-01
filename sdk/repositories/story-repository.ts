@@ -26,6 +26,8 @@ import {
   storyVideoVersions,
   storyStickers,
 } from "../entities/story.ts";
+import type { StoryOwnerComment } from "../entities/story-owner-comment.ts";
+import { readOwnerComments, recordOwnerComments } from "./story-owner-comment-repository.ts";
 import { createLogger, type Logger } from "../lib/logging-service.ts";
 import { StoryItemSchema } from "../lib/story-schemas.ts";
 import type { StoryAnnotations } from "../story-types.ts";
@@ -302,6 +304,16 @@ export class StoryRepository {
       if (previous !== undefined && previous.metadata.instagramAudioAssetId !== null) {
         refreshMusicAsset(database, previous, observation);
       }
+    });
+  }
+
+  findOwnerComments(mediaPk: string) {
+    return readOwnerComments(this.database, mediaPk);
+  }
+
+  recordOwnerComments(mediaPk: string, comments: ReadonlyArray<StoryOwnerComment>) {
+    this.database.transaction((transaction) => {
+      recordOwnerComments(transaction, mediaPk, comments);
     });
   }
 

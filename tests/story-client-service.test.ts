@@ -97,6 +97,26 @@ test("music lookup uses the authenticated session and preserves large numeric au
   ]);
 });
 
+test("reads a story's comments from the authenticated page and keeps large comment IDs exact", async () => {
+  const calls: Array<BrowserFetchCall> = [];
+  const { getStoryComments } = createInstagramClient(
+    createSession('{"comments":[{"pk":18000000000000001,"text":"Meet me outside"}]}', calls),
+  );
+  if (getStoryComments === undefined) {
+    throw new Error("Story comments lookup unavailable");
+  }
+  const result = await getStoryComments("4000000000000000001");
+  expect(result.json()).toStrictEqual({
+    comments: [{ pk: "18000000000000001", text: "Meet me outside" }],
+  });
+  expect(calls).toStrictEqual([
+    {
+      appId: "936619743392459",
+      requestUrl: "https://www.instagram.com/api/v1/media/4000000000000000001/comments/",
+    },
+  ]);
+});
+
 test("looks up a place with the location container query from the authenticated page", async () => {
   const calls: Array<BrowserFetchCall> = [];
   const body = { data: { xdt_location_get_web_info: { native_location_data: null } } };
