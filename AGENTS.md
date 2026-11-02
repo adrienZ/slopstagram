@@ -24,6 +24,28 @@ Keep UI components limited to rendering, local UI behavior, and presentation tra
   display helpers shared by components.
 - `server/`: Nitro only, the media route and the plugins.
 - `core/`: domain and ingestion code, with no React and no Nitro.
+- `core/runtime/`: the composition root. `createRuntime` builds the repositories once from a
+  database and the external boundaries (Instagram client, image and media downloads, Ollama,
+  Apple OCR, storage, logger, queue). `getProductionRuntime` creates the production one on first
+  use, and that call is what opens the database. Only the server function behind each page, the
+  Nitro plugins, the fetch-run job and the scripts call it. Time (the clock and the retry sleep)
+  is not a boundary.
+
+### Dependencies and options
+
+A step is called with its dependencies first, its input next and its options last. Dependencies
+are who the step talks to, options are how: tunables with defaults, such as retry attempts or the
+clock. An options object never holds a collaborator.
+
+The dependencies argument is a view of the runtime narrowed to the repository methods the step
+calls, for example `{ stories: Pick<StoryRepository, "listActive"> }`, or
+`Pick<Runtime, "logger">` for the other parts. The real runtime and the test runtime satisfy it
+without a cast. Each collaborator has one name across the code base (`fetchOllama`, `storage`).
+
+No module opens the database or a store, or builds a repository, when it is imported. The
+`slopstagram/composition-root` lint rule only lets `core/runtime` construct repositories or call
+`createDrizzle` and `createFileCacheStorage`, and forbids repositories, databases and stores at
+module level anywhere else in the code; tests are exempt.
 
 ### Generated UI
 
@@ -76,9 +98,13 @@ Tests go through production code paths (`docs/adr/0006-test-through-production-c
   hand (`tests/setup/seed.ts`). Edit a recording to shape a case. For a case the recordings
   lack, use a small migrated in-memory database and the real repositories
   (`tests/test-database.ts`).
+- Runtime in tests: `createTestRuntime(context, boundaries)` (`tests/setup/test-runtime.ts`) gives
+  a runtime over a fresh migrated in-memory database and in-memory stores; a test overrides only
+  the external boundary it needs. Read-only tests of a file share one runtime with
+  `useSharedTestRuntime(seed)`. Control time with vitest fake timers, not an injected clock.
 - Page tests: `createPageRenderer(route, props, path)` (`tests/render-page.ts`) renders the real
-  route and answers only its loader. jsdom tests under `tests/ui/` seed the page database
-  with `seedPageDatabase()` from `tests/ui/seeded-pages.ts`.
+  route and answers only its loader, which the test calls with its runtime. jsdom tests under
+  `tests/ui/` seed it with `seedPageDatabase(runtime)` from `tests/ui/seeded-pages.ts`.
 - Fixtures in `tests/fixtures/` come from `npm run fixtures:capture`, which anonymizes a live
   session. Never copy them from `data/cache` or the media store, and never run the command in
   CI. Never write personal data into source, fixtures, tests, docs, commits, PRs or issues:
