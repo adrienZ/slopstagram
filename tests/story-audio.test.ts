@@ -201,6 +201,7 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
   });
   await cacheReportAudio(report, {
     database,
+    storyRepository: repository,
     directory,
     fetchMedia: media.fetchMedia,
   });
@@ -388,7 +389,12 @@ test("fresh story ingestion caches the story excerpt and prefers it over the lon
       response.end(musicBytes);
     }
   });
-  await cacheReportAudio(report, { database, directory, fetchMedia: media.fetchMedia });
+  await cacheReportAudio(report, {
+    database,
+    storyRepository: repository,
+    directory,
+    fetchMedia: media.fetchMedia,
+  });
   const annotations = new StoryRepository(database).findByMediaPk(story.pk)?.annotations;
   assert.ok(annotations?.storyAudio);
   assert.ok(annotations.storyAudio.cachePath !== null);
