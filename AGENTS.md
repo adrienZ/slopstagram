@@ -70,7 +70,7 @@ Tests go through production code paths (`docs/adr/0006-test-through-production-c
 - Fix a bug by writing the failing test first.
 - Never mock project code: no `vi.mock` or `vi.spyOn` of our modules, no fake repositories,
   no replaced loaders or routers. Fake only external boundaries: the Instagram client, Ollama,
-  Apple OCR, the Playwright session, media downloads, the `writeFile` and `rename` calls of
+  Apple OCR, the Playwright session, media downloads, the `mkdir`, `writeFile` and `rename` calls of
   `node:fs/promises`, and browser APIs jsdom lacks (map rendering, canvas, audio playback).
 - Seed test data by running real ingestion over recorded payloads, never by building rows by
   hand (`tests/setup/seed.ts`). Edit a recording to shape a case. For a case the recordings
