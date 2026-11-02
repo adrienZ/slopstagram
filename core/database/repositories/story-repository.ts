@@ -11,7 +11,7 @@ import {
   recordFailedPlaceLookup,
   recordPlaceLookup,
 } from "./location-metadata-repository.ts";
-import type { PlaceLookupInput } from "@@/core/location-metadata-service.ts";
+import type { PlaceLookupInput } from "@@/core/places/location-metadata.ts";
 import {
   enrichStoryMusic,
   readMusicObservations,

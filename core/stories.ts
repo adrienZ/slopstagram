@@ -16,7 +16,7 @@ import type {
 } from "@@/core/instagram/instagram-types.ts";
 import { createInstagramClient } from "@@/core/instagram/story-client.ts";
 import { enrichCurrentMusicAssets } from "./music-asset-enrichment.ts";
-import { lookUpTaggedPlaces } from "./place-lookup.ts";
+import { lookUpTaggedPlaces } from "@@/core/places/place-lookup.ts";
 import { createFetchState } from "./story-failure-service.ts";
 import { fetchMissingStories } from "./story-live-fetch-service.ts";
 import { createManifestUsers, createOutputUsers } from "./story-output-service.ts";
