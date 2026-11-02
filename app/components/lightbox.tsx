@@ -1,10 +1,10 @@
 import { useNavigate } from "@tanstack/react-router";
 import { cn } from "cn";
-import type { StoryCardViewModel } from "../story-card-view-model.ts";
+import type { StoryCardData } from "../utils/story-cards.ts";
 import { useState, type ReactNode } from "react";
 import { Sticker } from "./sticker.tsx";
 import { MusicSticker } from "./music-sticker.tsx";
-import { getUserTimelineUrl } from "../helper.ts";
+import { getUserTimelineUrl } from "../utils/helper.ts";
 import {
   Dialog,
   DialogClose,
@@ -100,14 +100,14 @@ function LightboxNavButton(props: {
 }
 
 interface LightboxProps {
-  stories: Array<StoryCardViewModel>;
+  stories: Array<StoryCardData>;
   selectedStory?: string;
   linkToProfile?: boolean;
 }
 
 function LightboxDialog(props: {
-  stories: Array<StoryCardViewModel>;
-  story: StoryCardViewModel;
+  stories: Array<StoryCardData>;
+  story: StoryCardData;
   linkToProfile: boolean;
 }) {
   const navigateTo = useNavigate();

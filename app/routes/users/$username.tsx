@@ -4,24 +4,19 @@ import { Card, CardHeader, CardTitle, CardDescription } from "../../shadcn/ui/ca
 import { getUserTimeline } from "../../query-service.ts";
 
 import { ExternalLinkIcon } from "lucide-react";
-import { formatUserHandle, formatUserName, getInstagramProfileUrl } from "../../helper.ts";
-import type { StoryCardViewModel } from "../../story-card-view-model.ts";
-import { withStoryStickers } from "../../story-card-view-model.ts";
-import type { UserTimeline } from "../../user-timeline.ts";
+import { formatUserHandle, formatUserName, getInstagramProfileUrl } from "../../utils/helper.ts";
+import type { AccountTimelinePageData } from "../../loaders/account-timeline.ts";
 import { Lightbox } from "../../components/lightbox.tsx";
 import { StoryLayout } from "../../components/story-layout.tsx";
 import { useTimelineCalendar } from "../../hooks/use-timeline-calendar.ts";
-import { groupTimelineStickers } from "../../timeline-stickers.ts";
-import { groupTimelineLocations } from "../../timeline-locations.ts";
 import { TimelineStickers } from "../../components/timeline-stickers.tsx";
 import { TimelineGallery } from "../../components/timeline-gallery.tsx";
-import type { SidebarUser } from "../../sidebar-users.ts";
 
 function TimelineHeader({
   timeline,
   userName,
 }: {
-  timeline: TimelineContentProps["timeline"];
+  timeline: AccountTimelinePageData["timeline"];
   userName: string;
 }) {
   const displayName = timeline.timelineUser.full_name?.trim();
@@ -65,40 +60,32 @@ function TimelineHeader({
   );
 }
 
-export interface TimelineContentProps {
-  today: string;
-  stickerKinds: Array<string>;
-  sidebarUsers: Array<SidebarUser>;
-  timeline: Pick<UserTimeline, "avatarPath" | "timelineUser" | "stories" | "years">;
-  stories: Array<StoryCardViewModel>;
-}
-
 export function TimelineContent({
   timeline,
   stories,
   selectedStory,
-  stickerKinds,
+  stickerGroups,
+  locations,
   sidebarUsers,
-}: TimelineContentProps & { selectedStory?: string }) {
-  const cards = withStoryStickers(stories, timeline.stories, sidebarUsers);
-  const storyByMediaPk = new Map(cards.map((story) => [story.mediaPk, story]));
+}: AccountTimelinePageData & { selectedStory?: string }) {
+  const storyByMediaPk = new Map(stories.map((story) => [story.mediaPk, story]));
   return (
     <>
       <TimelineHeader timeline={timeline} userName={formatUserName(timeline.timelineUser)} />
       <TimelineStickers
-        groups={groupTimelineStickers(timeline.stories, stickerKinds)}
-        locations={groupTimelineLocations(timeline.stories)}
+        groups={stickerGroups}
+        locations={locations}
         storyByMediaPk={storyByMediaPk}
         users={sidebarUsers}
       />
       {timeline.stories.length === 0 && <p>Aucune story enregistrée pour cet utilisateur.</p>}
       <TimelineGallery years={timeline.years} storyByMediaPk={storyByMediaPk} />
-      <Lightbox stories={cards} selectedStory={selectedStory} />
+      <Lightbox stories={stories} selectedStory={selectedStory} />
     </>
   );
 }
 
-export function UserTimelinePage(props: TimelineContentProps & { selectedStory?: string }) {
+export function UserTimelinePage(props: AccountTimelinePageData & { selectedStory?: string }) {
   const days = props.timeline.years.flatMap((year) =>
     year.months.flatMap((month) => month.days.map((day) => day.key)),
   );

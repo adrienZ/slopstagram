@@ -5,7 +5,7 @@ import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { instagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
 import { storyRepository } from "@@/core/repositories/story-repository.ts";
 import { Route } from "../app/routes/report.tsx";
-import { loadReport } from "../app/report-handler.tsx";
+import { loadStoryFeed } from "../app/loaders/story-feed.ts";
 import { storyItem } from "./mock-helpers.ts";
 import { createPageRenderer } from "./render-page.ts";
 import { readRecordedPayloads, seedRecordedStories } from "./setup/seed.ts";
@@ -18,7 +18,7 @@ const emptyDayText = "Aucune story publiée ce jour-là.";
 // The report the handler loads from the seeded database, with the arguments the real loader receives.
 const renderer = createPageRenderer(
   Route,
-  ({ deps, context }) => loadReport(now, deps.date, context.selectedStory),
+  ({ deps, context }) => loadStoryFeed(now, deps.date, context.selectedStory),
   "/report",
 );
 

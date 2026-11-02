@@ -1,3 +1,5 @@
+import "@tanstack/react-start/server-only";
+import { HTTPError } from "nitro/h3";
 import type { StoryOutputUser } from "@@/core/report-types.ts";
 import {
   type UserTimelineStory,
@@ -16,6 +18,13 @@ import {
   instagramUserRepository,
   type InstagramUserRepository,
 } from "@@/core/repositories/instagram-user-repository.ts";
+
+import { getStoryDate } from "@@/core/lib/story-date-service.ts";
+import { createStoryCards, withStoryStickers } from "../utils/story-cards.ts";
+import type { StoryCardSources } from "../utils/story-cards.ts";
+import { groupTimelineLocations } from "../utils/timeline-locations.ts";
+import { groupTimelineStickers } from "../utils/timeline-stickers.ts";
+import { loadSidebarUsers } from "./sidebar-users.ts";
 
 const PARIS_TIME_ZONE = "Europe/Paris";
 
@@ -218,3 +227,66 @@ export function getTimelinePreviewPaths(stories: Array<UserTimelineStory>): Map<
     ]),
   );
 }
+
+function getStoryCardSources(
+  timeline: UserTimeline,
+  previewPaths: Map<string, string>,
+): StoryCardSources {
+  const profilePicPathByUrl = new Map<string, string>();
+  const profilePicUrl = timeline.timelineUser.profile_pic_url;
+
+  if (profilePicUrl !== null && profilePicUrl !== undefined) {
+    profilePicPathByUrl.set(profilePicUrl, timeline.avatarPath);
+  }
+
+  return {
+    appleCaptionByMediaPk: timeline.appleCaptionByMediaPk,
+    cachedImages: {
+      profilePicPathByUrl,
+      storyPreviewPathByUrl: previewPaths,
+    },
+    outdatedVisionByPreviewUrl: timeline.outdatedVisionByPreviewUrl,
+    visionByPreviewUrl: timeline.visionByPreviewUrl,
+  };
+}
+
+export function loadAccountTimeline(username: string, now: Date = new Date()) {
+  const timeline = createUserTimeline(username);
+  if (timeline === null) {
+    throw new HTTPError({ status: 404, message: `no published stories found for ${username}` });
+  }
+  const previewPaths = getTimelinePreviewPaths(timeline.stories);
+  const sidebarUsers = loadSidebarUsers();
+  const cards = withStoryStickers(
+    createStoryCards(timeline.timelineUser, getStoryCardSources(timeline, previewPaths)),
+    timeline.stories,
+    sidebarUsers,
+  );
+  const cardByMediaPk = new Map(cards.map((card) => [card.mediaPk, card]));
+  const stories = timeline.years.flatMap((year) =>
+    year.months.flatMap((month) =>
+      month.days.flatMap((day) =>
+        day.stories.flatMap((entry) => {
+          const card = cardByMediaPk.get(entry.story.pk);
+          return card === undefined ? [] : [card];
+        }),
+      ),
+    ),
+  );
+
+  return {
+    today: getStoryDate(now),
+    sidebarUsers,
+    stickerGroups: groupTimelineStickers(timeline.stories, storyRepository.listStickerKinds()),
+    locations: groupTimelineLocations(timeline.stories),
+    timeline: {
+      avatarPath: timeline.avatarPath,
+      timelineUser: timeline.timelineUser,
+      stories: timeline.stories,
+      years: timeline.years,
+    },
+    stories,
+  };
+}
+
+export type AccountTimelinePageData = ReturnType<typeof loadAccountTimeline>;

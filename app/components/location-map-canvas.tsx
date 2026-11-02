@@ -10,7 +10,7 @@ import { setWorkerUrl } from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { MapPinIcon } from "lucide-react";
-import type { TimelinePlace } from "../timeline-locations.ts";
+import type { TimelinePlace } from "../utils/timeline-locations.ts";
 
 setWorkerUrl(workerUrl);
 

@@ -2,25 +2,25 @@ import { beforeAll, expect, test, vi, type TestContext } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route } from "../../app/routes/users/$username.tsx";
-import { loadUserTimeline } from "../../app/user-timeline-handler.tsx";
+import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
 import { createPageRenderer } from "../render-page.ts";
 import { MusicAudioPreview } from "../../app/components/music-audio-preview.tsx";
 import { MusicSticker } from "../../app/components/music-sticker.tsx";
-import { pageNow, seedPageDatabase, timelineAccount } from "./seeded-pages.ts";
-import type { MusicPreview } from "../../app/music-preview.ts";
+import { pageNow, regroupTimeline, seedPageDatabase, timelineAccount } from "./seeded-pages.ts";
+import type { MusicPreview } from "../../app/utils/music-preview.ts";
 
 // The detail modal is tested through the timeline page that hosts it.
 const renderer = createPageRenderer(
   Route,
-  ({ params }) => loadUserTimeline(params.username, pageNow),
+  ({ params }) => loadAccountTimeline(params.username, pageNow),
   "/users/$username",
 );
 
-let timelineProps: ReturnType<typeof loadUserTimeline>;
+let timelineProps: ReturnType<typeof loadAccountTimeline>;
 
 beforeAll(async () => {
   await seedPageDatabase();
-  timelineProps = loadUserTimeline(timelineAccount, pageNow);
+  timelineProps = loadAccountTimeline(timelineAccount, pageNow);
 });
 
 const preview: MusicPreview = {
@@ -160,7 +160,7 @@ test("detail-modal audio seeking keeps the selected story and navigation stops p
   const [entry, ...others] = timelineProps.timeline.stories;
   const { router } = await renderer.mountRoute(
     `/users/${timelineAccount}?story=${entry.story.pk}`,
-    {
+    regroupTimeline({
       ...timelineProps,
       timeline: {
         ...timelineProps.timeline,
@@ -201,7 +201,7 @@ test("detail-modal audio seeking keeps the selected story and navigation stops p
           ...others,
         ],
       },
-    },
+    }),
   );
   const dialog = within(await screen.findByRole("dialog", { name: "Aperçu de l’image" }));
   const audio = dialog.getByLabelText("Écouter : Audio de la story");

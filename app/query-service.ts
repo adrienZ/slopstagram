@@ -6,9 +6,9 @@ import { storyDateSchema } from "@@/core/lib/story-date-service.ts";
 export const getReport = createServerFn({ method: "GET" })
   .validator(z.object({ date: storyDateSchema.optional(), story: z.string().optional() }))
   .handler(async ({ data }) => {
-    const { loadReport } = await import("./report-handler.tsx");
+    const { loadStoryFeed } = await import("./loaders/story-feed.ts");
     try {
-      return loadReport(new Date(), data.date, data.story);
+      return loadStoryFeed(new Date(), data.date, data.story);
     } catch (error) {
       if (error instanceof Error && "status" in error && error.status === 404) {
         notFound({ throw: true });
@@ -20,9 +20,9 @@ export const getReport = createServerFn({ method: "GET" })
 export const getUserTimeline = createServerFn({ method: "GET" })
   .validator(z.string())
   .handler(async ({ data }) => {
-    const { loadUserTimeline } = await import("./user-timeline-handler.tsx");
+    const { loadAccountTimeline } = await import("./loaders/account-timeline.ts");
     try {
-      return loadUserTimeline(data);
+      return loadAccountTimeline(data);
     } catch (error) {
       if (error instanceof Error && "status" in error && error.status === 404) {
         notFound({ throw: true });

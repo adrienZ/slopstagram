@@ -3,18 +3,21 @@ import type { OutdatedVision } from "@@/core/lib/vision-analysis-service.ts";
 import type { StoryOutputUser } from "@@/core/report-types.ts";
 import type { UserTimelineStory } from "@@/core/repositories/story-repository.ts";
 import { presentSticker, type StickerPresentation } from "./sticker-presentation.ts";
-import type { SidebarUser } from "./sidebar-users.ts";
+import type { SidebarUser } from "../loaders/sidebar-users.ts";
 import { stickerPlace, stickerPlaces } from "./timeline-stickers.ts";
 import { musicStickerItems, type MusicStickerItem } from "./music-preview.ts";
 import { formatUserName, getStoryUrl } from "./helper.ts";
-import type { ReportViewModel } from "./report-view-model.ts";
+import type { CachedReportImages } from "@@/core/lib/image-cache-service.ts";
+import type { VisionResult } from "@@/core/entities/vision.ts";
 
-export type StoryCardSources = Pick<
-  ReportViewModel,
-  "appleCaptionByMediaPk" | "cachedImages" | "visionByPreviewUrl"
-> & { outdatedVisionByPreviewUrl?: Map<string, OutdatedVision> };
+export interface StoryCardSources {
+  appleCaptionByMediaPk: Map<string, string>;
+  cachedImages: CachedReportImages;
+  visionByPreviewUrl: Map<string, VisionResult>;
+  outdatedVisionByPreviewUrl?: Map<string, OutdatedVision>;
+}
 
-export interface StoryCardViewModel {
+export interface StoryCardData {
   stickerDetails?: {
     text?: string;
     stickers?: Array<StickerPresentation>;
@@ -40,7 +43,7 @@ export interface StoryCardViewModel {
 }
 
 export function withStoryStickers(
-  cards: Array<StoryCardViewModel>,
+  cards: Array<StoryCardData>,
   stories: Array<Pick<UserTimelineStory, "story">>,
   users: Array<SidebarUser> = [],
 ) {
@@ -83,7 +86,7 @@ function getMediaType(story: StoryOutputUser["stories"][number]): string {
 export function createStoryCards(
   user: StoryOutputUser,
   sources: StoryCardSources,
-): Array<StoryCardViewModel> {
+): Array<StoryCardData> {
   const userName = formatUserName(user);
   const profilePicUrl = user.profile_pic_url?.trim();
   const avatar =
@@ -103,7 +106,7 @@ export function createStoryCards(
     const vision = sources.visionByPreviewUrl.get(source);
     const visionOutdated = sources.outdatedVisionByPreviewUrl?.get(source);
 
-    const card: StoryCardViewModel = {
+    const card: StoryCardData = {
       mediaPk: story.media_pk,
       username: user.username,
       preview,

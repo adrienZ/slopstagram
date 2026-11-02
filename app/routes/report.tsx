@@ -2,26 +2,16 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { getReport } from "../query-service.ts";
 
-import type { UserSectionProps } from "../components/user-section.tsx";
 import { Lightbox } from "../components/lightbox.tsx";
 import { StoryLayout } from "../components/story-layout.tsx";
 import {
   getDisabledStoryDates,
   getOldestStoryDate,
   navigateToReportDate,
-} from "../story-navigation.ts";
+} from "../utils/story-navigation.ts";
 import { formatStoryViewTitle, storyDateSchema } from "@@/core/lib/story-date-service.ts";
 import { UserSection } from "../components/user-section.tsx";
-import type { SidebarUser } from "../sidebar-users.ts";
-
-export interface ReportPageProps {
-  date: string;
-  selectedDate: string;
-  today: string;
-  availableDates: Array<string>;
-  sidebarUsers: Array<SidebarUser>;
-  users: Array<UserSectionProps>;
-}
+import type { StoryFeedPageData } from "../loaders/story-feed.ts";
 
 export function ReportPage({
   date,
@@ -31,7 +21,7 @@ export function ReportPage({
   sidebarUsers,
   users,
   selectedStory,
-}: ReportPageProps & { selectedStory?: string }) {
+}: StoryFeedPageData & { selectedStory?: string }) {
   return (
     <StoryLayout
       selectedDate={selectedDate}

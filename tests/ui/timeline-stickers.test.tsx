@@ -1,41 +1,38 @@
 import { beforeAll, expect, test } from "vitest";
 import { fireEvent, screen, within } from "@testing-library/react";
 import { Route } from "../../app/routes/users/$username.tsx";
-import type { TimelineContentProps } from "../../app/routes/users/$username.tsx";
+import type { AccountTimelinePageData } from "../../app/loaders/account-timeline.ts";
 import {
   mentionedAccount,
   pageNow,
-  stickerKindsOf,
+  regroupTimeline,
   timelineAccount,
   seedPageDatabase,
 } from "./seeded-pages.ts";
-import { loadUserTimeline } from "../../app/user-timeline-handler.tsx";
+import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
 import { createPageRenderer } from "../render-page.ts";
 
 const renderer = createPageRenderer(
   Route,
-  ({ params }) => loadUserTimeline(params.username, pageNow),
+  ({ params }) => loadAccountTimeline(params.username, pageNow),
   "/users/$username",
 );
 
-let timelineProps: ReturnType<typeof loadUserTimeline>;
+let timelineProps: ReturnType<typeof loadAccountTimeline>;
 let timelineEntry: (typeof timelineProps)["timeline"]["stories"][number];
 
 beforeAll(async () => {
   await seedPageDatabase();
-  timelineProps = loadUserTimeline(timelineAccount, pageNow);
+  timelineProps = loadAccountTimeline(timelineAccount, pageNow);
   [timelineEntry] = timelineProps.timeline.stories;
 });
 
 /** Renders the page with the sticker kinds its stories really have, as the loader would report them. */
-async function renderTimeline(props: TimelineContentProps) {
-  return await renderer.mountRoute(`/users/${timelineAccount}`, {
-    ...props,
-    stickerKinds: stickerKindsOf(props.timeline.stories),
-  });
+async function renderTimeline(props: AccountTimelinePageData) {
+  return await renderer.mountRoute(`/users/${timelineAccount}`, regroupTimeline(props));
 }
 
-function stickerTimeline(count = 8): TimelineContentProps {
+function stickerTimeline(count = 8): AccountTimelinePageData {
   return {
     ...timelineProps,
     stories: Array.from({ length: count }, (_, index) => ({

@@ -1,12 +1,12 @@
 import { beforeAll, expect, test, vi } from "vitest";
 import { act, screen, within } from "@testing-library/react";
 import { Route } from "../../app/routes/report.tsx";
-import { loadReport } from "../../app/report-handler.tsx";
+import { loadStoryFeed } from "../../app/loaders/story-feed.ts";
 import { createPageRenderer } from "../render-page.ts";
 import { pageNow, seedPageDatabase } from "./seeded-pages.ts";
 
 // The toggle lives in the page's sidebar, so it is tested through the report page.
-const renderer = createPageRenderer(Route, () => loadReport(pageNow), "/report");
+const renderer = createPageRenderer(Route, () => loadStoryFeed(pageNow), "/report");
 
 const storageKey = "slopstagram-theme";
 
