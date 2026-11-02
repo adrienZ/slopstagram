@@ -43,18 +43,17 @@ function getReelIdsToFetch(options: Pick<MissingStoriesContext, "state" | "trayR
 }
 
 async function cacheSuccessfulResponse(
+  runtime: Pick<Runtime, "logger" | "stories" | "storage">,
   reels: ReturnType<typeof extractReels>,
   idChunk: Array<string>,
-  logger: Logger,
   state: FetchState,
-  runtime: Pick<Runtime, "stories" | "storage">,
 ): Promise<number> {
   const fetchedBefore = state.fetchedMediaPks.size;
   await storeReturnedReels(runtime, reels, state.cachedItems, state.fetchedMediaPks);
   addFailuresForPendingReelStories(
     idChunk,
     state,
-    logger,
+    runtime.logger,
     createMissingResponseFailure(),
     "missing_from_response",
   );
@@ -175,11 +174,10 @@ async function fetchReelChunk(
   }
 
   const cachedCount = await cacheSuccessfulResponse(
+    options,
     extractReels(chunkResult.value),
     idChunk,
-    options.logger,
     options.state,
-    options,
   );
   logStoryProgress(
     options.logger,
