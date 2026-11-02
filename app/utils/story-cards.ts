@@ -1,7 +1,7 @@
 import { STORY_MEDIA_TYPES } from "@@/core/story-types.ts";
 import type { OutdatedVision } from "@@/core/lib/vision-analysis-service.ts";
 import type { StoryOutputUser } from "@@/core/report-types.ts";
-import type { UserTimelineStory } from "@@/core/repositories/story-repository.ts";
+import type { UserTimelineStory } from "@@/core/database/repositories/story-repository.ts";
 import { presentSticker, type StickerPresentation } from "./sticker-presentation.ts";
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
 import { stickerPlace, stickerPlaces } from "./timeline-stickers.ts";

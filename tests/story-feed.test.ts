@@ -1,11 +1,11 @@
 import { test, type TestContext, expect } from "vitest";
 import { createDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
-import { StoryRepository } from "@@/core/repositories/story-repository.ts";
-import { InstagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
-import { UserSummaryRepository } from "@@/core/repositories/user-summary-repository.ts";
-import { AppleVisionRepository } from "@@/core/repositories/apple-vision-repository.ts";
-import { VisionRepository } from "@@/core/repositories/vision-repository.ts";
+import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
+import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
+import { UserSummaryRepository } from "@@/core/database/repositories/user-summary-repository.ts";
+import { AppleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
+import { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
 import { createStoryFeed, createStoryDayFeed, createReportFeed } from "@@/core/story-feed.ts";
 import { getStoryDate, getStoryDayRange } from "@@/core/lib/story-date-service.ts";
 import { readStoryFeedSources } from "../app/loaders/story-feed.ts";

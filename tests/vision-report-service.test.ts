@@ -9,7 +9,7 @@ import {
   previewSource,
   withReportImage,
 } from "./mock-helpers.ts";
-import { VisionRepository } from "@@/core/repositories/vision-repository.ts";
+import { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
 import { createTestDatabase } from "./test-database.ts";
 
 const VisionJsonSchemaPropertySchema = z.object({

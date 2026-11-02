@@ -1,7 +1,7 @@
 import {
   type InstagramUserRepository,
   instagramUserRepository,
-} from "../repositories/instagram-user-repository.ts";
+} from "@@/core/database/repositories/instagram-user-repository.ts";
 import type { InstagramUserEntry } from "@@/core/database/entities/instagram-user.ts";
 import type { StoriesManifestReport } from "../report-types.ts";
 

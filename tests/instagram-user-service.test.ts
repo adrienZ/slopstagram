@@ -3,7 +3,7 @@ import {
   hydrateReportInstagramUsers,
   persistReportInstagramUsers,
 } from "@@/core/lib/instagram-user-service.ts";
-import { InstagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
+import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
 import type { StoriesManifestReport } from "@@/core/report-types.ts";
 import { createTestDatabase } from "./test-database.ts";
 

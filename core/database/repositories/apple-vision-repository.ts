@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import { useDrizzle, type DrizzleDatabase } from "../database/client.ts";
-import { appleVision, NewAppleVisionSchema } from "@@/core/database/entities/apple-vision.ts";
+import { useDrizzle, type DrizzleDatabase } from "../client.ts";
+import { appleVision, NewAppleVisionSchema } from "../entities/apple-vision.ts";
 
 export class AppleVisionRepository {
   private readonly database: DrizzleDatabase;

@@ -1,6 +1,6 @@
 import { asc, eq, getTableColumns } from "drizzle-orm";
 import { z } from "zod";
-import type { DrizzleDatabase } from "../database/client.ts";
+import type { DrizzleDatabase } from "../client.ts";
 import {
   NewReportSchema,
   ReportStorySchema,
@@ -9,17 +9,17 @@ import {
   reportStoryGroups,
   reportStories,
   reportFailures,
-} from "@@/core/database/entities/report.ts";
-import { stories } from "@@/core/database/entities/story.ts";
+} from "../entities/report.ts";
+import { stories } from "../entities/story.ts";
 import { NO_ACCESSIBILITY_CAPTION } from "@@/core/utils/report-constants.ts";
-import { StoriesManifestReportSchema } from "../lib/story-schemas.ts";
-import { createOutputUsers } from "../story-output-service.ts";
+import { StoriesManifestReportSchema } from "@@/core/lib/story-schemas.ts";
+import { createOutputUsers } from "@@/core/story-output-service.ts";
 import type {
   StoriesManifestReport,
   StoryFetchFailure,
   StoryManifestItem,
   StoryManifestReel,
-} from "../report-types.ts";
+} from "@@/core/report-types.ts";
 
 type ReportStoryRow = typeof reportStories.$inferSelect & { accessibilityCaption: string | null };
 

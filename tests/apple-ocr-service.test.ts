@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import { describe, test, expect } from "vitest";
 import { recognizeAppleCaption } from "@@/core/lib/apple-ocr-service.ts";
-import { AppleVisionRepository } from "@@/core/repositories/apple-vision-repository.ts";
+import { AppleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
 import { createTestDatabase } from "./test-database.ts";
 
 describe("recognizeAppleCaption", () => {

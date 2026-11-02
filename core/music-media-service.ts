@@ -20,7 +20,10 @@ import {
   type AudioCacheStorage,
 } from "./lib/cache-service.ts";
 import { audioFileExtension } from "./lib/music-media-types.ts";
-import { findMusicMetadata, saveMusicMedia } from "./repositories/music-metadata-repository.ts";
+import {
+  findMusicMetadata,
+  saveMusicMedia,
+} from "@@/core/database/repositories/music-metadata-repository.ts";
 
 const MAX_MEDIA_BYTES = 60 * 1024 * 1024;
 
