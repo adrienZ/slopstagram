@@ -10,7 +10,7 @@ import type {
   MusicMediaState,
   MusicMetadataReference,
 } from "@@/core/database/entities/music-metadata.ts";
-import { audioFileDurationMs } from "@@/core/lib/audio-duration.ts";
+import { audioFileDurationMs } from "./audio-duration.ts";
 import {
   AUDIO_STORAGE_DIR,
   BASE_CACHE_DIR,

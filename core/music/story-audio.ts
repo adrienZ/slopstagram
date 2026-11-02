@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { StoryAudio } from "@@/core/database/entities/story-audio.ts";
-import { dashAudioSource } from "./lib/dash-audio.ts";
+import { dashAudioSource } from "./dash-audio.ts";
 import { isJsonObject } from "@@/core/utils/json-value.ts";
 import type { StoryAnnotations } from "@@/core/stickers/story-types.ts";
 import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
