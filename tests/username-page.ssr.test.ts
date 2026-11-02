@@ -3,7 +3,7 @@ import { beforeAll, expect, test } from "vitest";
 import { within } from "@testing-library/dom";
 import { JSDOM } from "jsdom";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
-import { VISION_MODEL, VISION_PROMPT } from "@@/core/lib/vision-analysis-service.ts";
+import { VISION_MODEL, VISION_PROMPT } from "@@/core/vision/vision-analysis.ts";
 import { appleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
 import { instagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
 import { storyRepository } from "@@/core/database/repositories/story-repository.ts";

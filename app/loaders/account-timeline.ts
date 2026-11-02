@@ -10,10 +10,7 @@ import type { VisionResult } from "@@/core/database/entities/vision.ts";
 import { createStoredStoryUser } from "@@/core/story-feed.ts";
 import { appleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
 import { visionRepository } from "@@/core/database/repositories/vision-repository.ts";
-import {
-  describeOutdatedVision,
-  type OutdatedVision,
-} from "@@/core/lib/vision-analysis-service.ts";
+import { describeOutdatedVision, type OutdatedVision } from "@@/core/vision/vision-analysis.ts";
 import {
   instagramUserRepository,
   type InstagramUserRepository,

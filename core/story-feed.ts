@@ -9,7 +9,7 @@ import {
 } from "@@/core/database/repositories/vision-repository.ts";
 import type { StoryOutputUser } from "./report-types.ts";
 import type { VisionResult } from "@@/core/database/entities/vision.ts";
-import { readCurrentVisionResult } from "./lib/vision-analysis-service.ts";
+import { readCurrentVisionResult } from "@@/core/vision/vision-analysis.ts";
 import { getStoryDate, getStoryDayRange, storyDateSchema } from "./lib/story-date-service.ts";
 
 function getMediaType(value: number | undefined): "image" | "video" | null {

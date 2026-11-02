@@ -3,7 +3,7 @@ import process from "node:process";
 import { clearTimeout, setTimeout } from "node:timers";
 import type { Fetch as OllamaFetch } from "ollama";
 import { z } from "zod";
-import { getOllamaClient } from "./ollama.ts";
+import { getOllamaClient } from "@@/core/vision/ollama.ts";
 import {
   userSummaryRepository,
   type UserSummaryRepository,
