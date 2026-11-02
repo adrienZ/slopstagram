@@ -1,22 +1,28 @@
 import { beforeAll, expect, test, vi } from "vitest";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import { Route } from "../../app/routes/users/$username.tsx";
-import { namedAccount, pageNow, timelineAccount, seedPageDatabase } from "./seeded-pages.ts";
-import { loadUserTimeline } from "../../app/user-timeline-handler.tsx";
+import {
+  namedAccount,
+  pageNow,
+  regroupTimeline,
+  timelineAccount,
+  seedPageDatabase,
+} from "./seeded-pages.ts";
+import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
 import { createPageRenderer } from "../render-page.ts";
 
 const renderer = createPageRenderer(
   Route,
-  ({ params }) => loadUserTimeline(params.username, pageNow),
+  ({ params }) => loadAccountTimeline(params.username, pageNow),
   "/users/$username",
 );
 
-let timelineProps: ReturnType<typeof loadUserTimeline>;
+let timelineProps: ReturnType<typeof loadAccountTimeline>;
 let timelineEntry: (typeof timelineProps)["timeline"]["stories"][number];
 
 beforeAll(async () => {
   await seedPageDatabase();
-  timelineProps = loadUserTimeline(timelineAccount, pageNow);
+  timelineProps = loadAccountTimeline(timelineAccount, pageNow);
   [timelineEntry] = timelineProps.timeline.stories;
 });
 
@@ -136,27 +142,33 @@ test("calendar navigates between months to another available day", async () => {
 });
 
 test("an empty account keeps navigation and every sticker kind without expansion controls", async () => {
-  const { user } = await renderer.mountRoute(`/users/${timelineAccount}`, {
-    ...timelineProps,
-    stories: [],
-    timeline: {
-      ...timelineProps.timeline,
-      stories: [],
-      years: [],
-      timelineUser: {
-        ...timelineProps.timeline.timelineUser,
-        full_name: null,
+  const { user } = await renderer.mountRoute(
+    `/users/${timelineAccount}`,
+    regroupTimeline(
+      {
+        ...timelineProps,
+        stories: [],
+        timeline: {
+          ...timelineProps.timeline,
+          stories: [],
+          years: [],
+          timelineUser: {
+            ...timelineProps.timeline.timelineUser,
+            full_name: null,
+          },
+        },
       },
-    },
-  });
+      timelineProps.stickerGroups.map(({ kind }) => kind),
+    ),
+  );
   expect(screen.getByRole("heading", { name: `@${timelineAccount}`, level: 1 })).toBeVisible();
   expect(screen.getByText("Aucune story enregistrée pour cet utilisateur.")).toBeVisible();
   expect(
     screen
       .getAllByRole("region", { name: /^Type de sticker :/u })
       .map((card) => within(card).getByRole("heading").textContent),
-  ).toEqual(timelineProps.stickerKinds);
-  expect(screen.getAllByText("Aucun sticker")).toHaveLength(timelineProps.stickerKinds.length);
+  ).toEqual(timelineProps.stickerGroups.map(({ kind }) => kind));
+  expect(screen.getAllByText("Aucun sticker")).toHaveLength(timelineProps.stickerGroups.length);
   expect(
     screen.queryByRole("button", {
       name: /Tout afficher|Afficher ou masquer :/u,

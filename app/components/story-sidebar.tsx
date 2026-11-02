@@ -6,8 +6,8 @@ import { formatStoryDay, STORY_TIME_ZONE } from "@@/core/lib/story-date-service.
 import { Button } from "../shadcn/ui/button.tsx";
 import { Calendar } from "../shadcn/ui/calendar.tsx";
 import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/ui/avatar.tsx";
-import type { SidebarUser } from "../sidebar-users.ts";
-import { formatUserHandle, getUserTimelineUrl } from "../helper.ts";
+import type { SidebarUser } from "../loaders/sidebar-users.ts";
+import { formatUserHandle, getUserTimelineUrl } from "../utils/helper.ts";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../shadcn/ui/collapsible.tsx";
 import {
   Sidebar,

@@ -16,24 +16,24 @@ import {
   today,
   userSummary,
 } from "./seeded-pages.ts";
-import { loadReport } from "../../app/report-handler.tsx";
+import { loadStoryFeed } from "../../app/loaders/story-feed.ts";
 import { createPageRenderer } from "../render-page.ts";
 
 // The report the real loader would build, with the arguments it receives, at the test's "now".
 let now = pageNow;
 const renderer = createPageRenderer(
   Route,
-  ({ deps, context }) => loadReport(now, deps.date, context.selectedStory),
+  ({ deps, context }) => loadStoryFeed(now, deps.date, context.selectedStory),
   "/report",
 );
 
-let reportProps: ReturnType<typeof loadReport>;
-let emptyTodayReportProps: ReturnType<typeof loadReport>;
+let reportProps: ReturnType<typeof loadStoryFeed>;
+let emptyTodayReportProps: ReturnType<typeof loadStoryFeed>;
 
 beforeAll(async () => {
   await seedPageDatabase();
-  reportProps = loadReport(pageNow);
-  emptyTodayReportProps = loadReport(emptyTodayNow);
+  reportProps = loadStoryFeed(pageNow);
+  emptyTodayReportProps = loadStoryFeed(emptyTodayNow);
 });
 
 beforeEach(() => {

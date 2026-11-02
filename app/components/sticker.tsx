@@ -1,8 +1,8 @@
 import { MapPinIcon, MapPinOffIcon } from "lucide-react";
 import { Badge } from "../shadcn/ui/badge.tsx";
 import { useState } from "react";
-import type { StickerPresentation } from "../sticker-presentation.ts";
-import type { StickerPlace } from "../timeline-stickers.ts";
+import type { StickerPresentation } from "../utils/sticker-presentation.ts";
+import type { StickerPlace } from "../utils/timeline-stickers.ts";
 
 const badgeClass = "tw:h-auto tw:max-w-full tw:gap-1 tw:py-1 tw:whitespace-normal";
 

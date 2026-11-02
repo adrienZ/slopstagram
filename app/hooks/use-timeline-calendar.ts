@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMedia } from "react-use";
 import { getStoryDate } from "@@/core/lib/story-date-service.ts";
-import { getOldestStoryDate, getTimelineDayId } from "../story-navigation.ts";
+import { getOldestStoryDate, getTimelineDayId } from "../utils/story-navigation.ts";
 
 export function useTimelineCalendar(days: Array<string>, today: string) {
   const [selectedDate, setSelectedDate] = useState(days[0] ?? today);

@@ -4,7 +4,7 @@ import {
   createUserTimeline,
   getTimelinePreviewPaths,
   groupStoriesByPublishedDate,
-} from "../app/user-timeline.ts";
+} from "../app/loaders/account-timeline.ts";
 import { appleVisionRepository } from "@@/core/repositories/apple-vision-repository.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { instagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";

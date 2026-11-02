@@ -8,7 +8,7 @@ import { AppleVisionRepository } from "@@/core/repositories/apple-vision-reposit
 import { VisionRepository } from "@@/core/repositories/vision-repository.ts";
 import { createStoryFeed, createStoryDayFeed, createReportFeed } from "@@/core/story-feed.ts";
 import { getStoryDate, getStoryDayRange } from "@@/core/lib/story-date-service.ts";
-import { createReportViewModel } from "../app/report-view-model.ts";
+import { readStoryFeedSources } from "../app/loaders/story-feed.ts";
 import { resolveUserSummariesForReport } from "@@/core/user-summary.ts";
 import { createLogger } from "@@/core/lib/logging-service.ts";
 
@@ -197,17 +197,17 @@ test("hides a summary after stories expire until a matching summary is generated
     },
   };
   await resolveUserSummariesForReport({ output: { users } }, options);
-  expect(createReportViewModel(users, repositories).userSummaryByUserKey.get("alice")).toBe(
+  expect(readStoryFeedSources(users, repositories).userSummaryByUserKey.get("alice")).toBe(
     "Activités des stories visibles.",
   );
   const laterUsers = feed("2026-10-22T10:02:00Z");
-  const laterView = createReportViewModel(laterUsers, repositories);
+  const laterView = readStoryFeedSources(laterUsers, repositories);
   expect(laterView.userSummaryByUserKey.has("alice")).toBe(false);
   expect(laterView.userSummaryByUserKey.has("bob")).toBe(true);
   expect(generations).toBe(2);
   await resolveUserSummariesForReport({ output: { users: laterUsers } }, options);
   expect(generations).toBe(3);
-  expect(createReportViewModel(laterUsers, repositories).userSummaryByUserKey.get("alice")).toBe(
+  expect(readStoryFeedSources(laterUsers, repositories).userSummaryByUserKey.get("alice")).toBe(
     "Activités des stories visibles.",
   );
 });

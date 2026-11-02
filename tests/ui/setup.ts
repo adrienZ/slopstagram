@@ -2,7 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach, beforeEach, vi } from "vitest";
 import cssEscape from "css.escape";
-import { setTheme } from "../../app/theme.ts";
+import { setTheme } from "../../app/components/theme.ts";
 
 // jsdom does not evaluate media queries. Tests can spy on the native-shaped
 // matches getter and dispatch change events without mocking application code.
