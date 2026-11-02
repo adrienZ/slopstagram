@@ -2,7 +2,7 @@ import path from "node:path";
 import { test, expect } from "vitest";
 import { resolveAppleCaptionsForReport } from "@@/core/vision/apple-caption.ts";
 import { AppleOcrUnavailableError } from "@@/core/vision/apple-ocr.ts";
-import { fetchStoriesManifest } from "@@/core/stories.ts";
+import { fetchStoriesManifest } from "@@/core/fetch-run/stories.ts";
 import {
   createCapturingLogger,
   createClient,

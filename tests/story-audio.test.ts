@@ -14,7 +14,7 @@ import { groupTimelineStickers } from "../app/utils/timeline-stickers.ts";
 import { musicStickerItems, storyMusicPreviews } from "../app/utils/music-preview.ts";
 import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
 import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
-import { fetchStoriesManifest } from "@@/core/stories.ts";
+import { fetchStoriesManifest } from "@@/core/fetch-run/stories.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 import {
   createCapturingLogger,

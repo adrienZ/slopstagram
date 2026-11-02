@@ -31,7 +31,7 @@ import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoriesManifestReport } from "./report-types.ts";
 import { resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
 import { resolveVisionForReport } from "@@/core/vision/vision-report.ts";
-import { fetchStories } from "@@/core/stories.ts";
+import { fetchStories } from "./stories.ts";
 import pkg from "../../package.json" with { type: "json" };
 
 type HttpFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;

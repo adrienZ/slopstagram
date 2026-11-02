@@ -10,7 +10,7 @@ import { migrateDatabase } from "@@/core/database/migrate.ts";
 import type { JsonObject, JsonValue } from "@@/core/utils/json-value.ts";
 import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
 import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
-import { fetchStoriesManifest } from "@@/core/stories.ts";
+import { fetchStoriesManifest } from "@@/core/fetch-run/stories.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 import {
   createCapturingLogger,

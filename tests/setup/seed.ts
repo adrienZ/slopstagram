@@ -8,7 +8,7 @@ import { type JsonObject, type JsonValue, JsonValueSchema } from "@@/core/utils/
 import { persistReportInstagramUsers } from "@@/core/accounts/instagram-user.ts";
 import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
 import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
-import { fetchStories } from "@@/core/stories.ts";
+import { fetchStories } from "@@/core/fetch-run/stories.ts";
 import { GalleryPageSchema } from "@@/core/instagram/story-client.ts";
 import { createRecordedClient } from "./recorded-client.ts";
 import { createMemoryStorage } from "../memory-storage.ts";
