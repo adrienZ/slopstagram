@@ -23,8 +23,7 @@ Keep UI components limited to rendering, local UI behavior, and presentation tra
   loader of each page (it owns the page data type and returns data ready to render), `utils/`
   display helpers shared by components.
 - `server/`: Nitro only, the media route and the plugins.
-- `core/`: domain and ingestion code, with no React and no Nitro. One folder per domain; see
-  `core/AGENTS.md` for the domains and the import rules.
+- `core/`: domain and ingestion code, with no React and no Nitro.
 
 ### Generated UI
 
