@@ -1,5 +1,5 @@
-import { createLogger, type Logger } from "@@/core/utils/logging.ts";
-import { createReport, type CreateReportBoundaries, type CreateReportResult } from "./report.ts";
+import type { Runtime } from "@@/core/runtime/runtime.ts";
+import { createReport, type CreateReportResult } from "./report.ts";
 
 export interface WarmCacheJobResult {
   outputFileName: string;
@@ -7,20 +7,8 @@ export interface WarmCacheJobResult {
   counts: CreateReportResult["report"]["metadata"]["counts"];
 }
 
-interface RunWarmCacheJobOptions {
-  logger?: Logger;
-  /** The external systems the report talks to; see {@link CreateReportBoundaries}. */
-  boundaries?: CreateReportBoundaries;
-}
-
-export async function runWarmCacheJob({
-  logger = createLogger("warm-cache-job"),
-  boundaries,
-}: RunWarmCacheJobOptions = {}): Promise<WarmCacheJobResult> {
-  const report = await createReport({
-    boundaries,
-    logger,
-  });
+export async function runWarmCacheJob(runtime: Runtime): Promise<WarmCacheJobResult> {
+  const report = await createReport(runtime);
 
   return {
     outputFileName: report.outputFileName,

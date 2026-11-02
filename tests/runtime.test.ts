@@ -89,3 +89,9 @@ test("the production runtime is created once and reused", () => {
   expect(runtime.queue).toBeTypeOf("function");
   expect(Object.keys(runtime.storage).toSorted()).toStrictEqual(["audio", "images", "stories"]);
 });
+
+test("the production runtime does not migrate its database", () => {
+  expect(() => getProductionRuntime().stories.findByMediaPk(recordedStoryPk)).toThrow(
+    "Failed query",
+  );
+});

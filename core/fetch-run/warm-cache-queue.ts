@@ -1,6 +1,4 @@
 import type { Runtime } from "@@/core/runtime/runtime.ts";
-import { createLogger, type Logger } from "@@/core/utils/logging.ts";
-import type { CreateReportBoundaries } from "./report.ts";
 import { runWarmCacheJob, type WarmCacheJobResult } from "./warm-cache.ts";
 
 export const WARM_CACHE_QUEUE_NAME = "warm-cache";
@@ -18,8 +16,6 @@ export type FetchRunQueue = (
 ) => ScheduledQueue;
 
 export interface StartWarmCacheQueueOptions {
-  boundaries?: CreateReportBoundaries;
-  logger?: Logger;
   onError?: (error: Error) => void;
 }
 
@@ -29,17 +25,10 @@ export interface StartedWarmCacheQueue {
 }
 
 export function startWarmCacheQueue(
-  runtime: Pick<Runtime, "queue">,
-  {
-    boundaries,
-    logger = createLogger(WARM_CACHE_QUEUE_NAME),
-    onError,
-  }: StartWarmCacheQueueOptions = {},
+  runtime: Runtime,
+  { onError }: StartWarmCacheQueueOptions = {},
 ): StartedWarmCacheQueue {
-  const queue = runtime.queue(
-    WARM_CACHE_QUEUE_NAME,
-    async () => await runWarmCacheJob({ boundaries, logger }),
-  );
+  const queue = runtime.queue(WARM_CACHE_QUEUE_NAME, async () => await runWarmCacheJob(runtime));
 
   queue.on("error", (error) => {
     onError?.(error);
