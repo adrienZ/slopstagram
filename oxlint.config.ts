@@ -76,6 +76,7 @@ export default defineConfig({
   rules: {
     "slopstagram/no-barrel-files": "error",
     "slopstagram/domain-layering": "error",
+    "slopstagram/private-repository-helpers": "error",
   },
   overrides: [
     {

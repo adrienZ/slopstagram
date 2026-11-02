@@ -1,5 +1,6 @@
 import domainLayering from "./rules/domain-layering.ts";
 import noBarrelFiles from "./rules/no-barrel-files.ts";
+import privateRepositoryHelpers from "./rules/private-repository-helpers.ts";
 
 const plugin = {
   meta: {
@@ -9,6 +10,7 @@ const plugin = {
   rules: {
     "domain-layering": domainLayering,
     "no-barrel-files": noBarrelFiles,
+    "private-repository-helpers": privateRepositoryHelpers,
   },
 };
 
