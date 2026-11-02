@@ -86,11 +86,20 @@ test("a test runtime logs through the logger a test passes", async (context) => 
   expect(logger.messages).toStrictEqual(["warn: retrying"]);
 });
 
+test("a test runtime has no queue unless a test passes one", async (context) => {
+  const runtime = await createTestRuntime(context);
+
+  expect(() =>
+    runtime.queue("warm-cache", async () => await Promise.reject(new Error("unused"))),
+  ).toThrow("no fake for queue");
+});
+
 test("the production runtime is created once and reused", () => {
   const runtime = getProductionRuntime();
 
   expect(getProductionRuntime()).toBe(runtime);
   expect(runtime.client).toBeUndefined();
   expect(runtime.logger.options.defaults.tag).toBe("runtime");
+  expect(runtime.queue).toBeTypeOf("function");
   expect(Object.keys(runtime.storage).toSorted()).toStrictEqual(["audio", "images", "stories"]);
 });
