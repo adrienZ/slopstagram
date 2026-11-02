@@ -15,7 +15,7 @@ import type {
   ReelTrayResponse,
 } from "@@/core/instagram/instagram-types.ts";
 import { createInstagramClient } from "@@/core/instagram/story-client.ts";
-import { enrichCurrentMusicAssets } from "./music-asset-enrichment.ts";
+import { enrichCurrentMusicAssets } from "@@/core/music/music-asset-enrichment.ts";
 import { lookUpTaggedPlaces } from "@@/core/places/place-lookup.ts";
 import { createFetchState } from "./story-failure-service.ts";
 import { fetchMissingStories } from "./story-live-fetch-service.ts";

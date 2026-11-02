@@ -5,7 +5,7 @@ import { assert, test, expect } from "vitest";
 import { createDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
-import { processMusicMedia } from "@@/core/music-media-service.ts";
+import { processMusicMedia } from "@@/core/music/music-media.ts";
 import { startMediaServer, wavAudio } from "./media-server.ts";
 
 test("music processing publishes audio only and reuses it without provider requests", async (context) => {

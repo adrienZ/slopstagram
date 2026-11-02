@@ -1,7 +1,7 @@
 import { open, realpath, type FileHandle } from "node:fs/promises";
 import path from "node:path";
 import { defineEventHandler } from "nitro/h3";
-import { cachedMediaContentType } from "@@/core/lib/music-media-types.ts";
+import { cachedMediaContentType } from "@@/core/music/music-media-types.ts";
 import { z } from "zod";
 import {
   AUDIO_STORAGE_DIR,
