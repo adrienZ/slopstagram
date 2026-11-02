@@ -1,7 +1,7 @@
-import { isJsonObject, type JsonObject, type JsonValue } from "./lib/json-value.ts";
+import { isJsonObject, type JsonObject, type JsonValue } from "@@/core/utils/json-value.ts";
 import type { LocationFields } from "./entities/location-metadata.ts";
 import type { StoryItem } from "./instagram-types.ts";
-import { getProviderIdentifier } from "./lib/provider-identifier.ts";
+import { getProviderIdentifier } from "@@/core/utils/provider-identifier.ts";
 import { z } from "zod";
 
 const ReceivedTextSchema = z.string().refine((value) => value.trim().length > 0);

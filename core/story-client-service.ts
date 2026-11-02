@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { StoryReelSchema, StoryTrayEntrySchema } from "./lib/story-schemas.ts";
 import type { InstagramClient, ReelsMediaResponse, StoryReel } from "./instagram-types.ts";
-import { JsonValueSchema } from "./lib/json-value.ts";
+import { JsonValueSchema } from "@@/core/utils/json-value.ts";
 
 const ReelTrayResponseSchema = z.object({
   broadcasts: z.array(z.unknown()),

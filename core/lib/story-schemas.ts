@@ -9,7 +9,7 @@ import {
   ReportStorySchema,
 } from "../entities/report.ts";
 import { StoryStickerSchema } from "../entities/story.ts";
-import { JsonValueSchema } from "./json-value.ts";
+import { JsonValueSchema } from "@@/core/utils/json-value.ts";
 
 const StoryVersionSchema = z.object({
   height: z.number().optional(),

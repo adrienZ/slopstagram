@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import type { Ollama as VisionSdk } from "ollama";
 import { z } from "zod";
 import type { VisionRepository } from "../repositories/vision-repository.ts";
-import type { Logger } from "./logging-service.ts";
+import type { Logger } from "@@/core/utils/logging.ts";
 import type { VisionEntry, VisionResult } from "../entities/vision.ts";
 
 export const VISION_MODEL = "minicpm-v4.6";

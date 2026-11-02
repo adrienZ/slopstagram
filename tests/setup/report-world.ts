@@ -6,7 +6,7 @@ import sharp from "sharp";
 import { z } from "zod";
 import { createDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
-import type { JsonValue } from "@@/core/lib/json-value.ts";
+import type { JsonValue } from "@@/core/utils/json-value.ts";
 import { createReport, type CreateReportBoundaries } from "@@/core/report.ts";
 import { AppleVisionRepository } from "@@/core/repositories/apple-vision-repository.ts";
 import { FetchRunRepository } from "@@/core/repositories/fetch-run-repository.ts";

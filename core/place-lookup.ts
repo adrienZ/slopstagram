@@ -1,7 +1,7 @@
 import { z } from "zod";
-import type { JsonValue } from "./lib/json-value.ts";
+import type { JsonValue } from "@@/core/utils/json-value.ts";
 import type { StoryLocationObservation } from "./entities/location-metadata.ts";
-import type { Logger } from "./lib/logging-service.ts";
+import type { Logger } from "@@/core/utils/logging.ts";
 import type { PlaceLookupInput } from "./location-metadata-service.ts";
 import type { InstagramClient } from "./instagram-types.ts";
 import type { StoryRepository } from "./repositories/story-repository.ts";

@@ -24,7 +24,7 @@ import {
 import { cacheReportAudio } from "./report-audio-service.ts";
 import type { MusicMediaOptions } from "./music-media-service.ts";
 import { persistReportInstagramUsers } from "./lib/instagram-user-service.ts";
-import type { Logger } from "./lib/logging-service.ts";
+import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoriesManifestReport } from "./report-types.ts";
 import { resolveUserSummariesForReport } from "./user-summary.ts";
 import { resolveVisionForReport } from "./lib/vision-report-service.ts";

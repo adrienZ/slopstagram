@@ -10,7 +10,7 @@ import { fetchStoriesManifest } from "@@/core/stories.ts";
 import { cacheReportAudio } from "@@/core/report-audio-service.ts";
 import { cacheReceivedAudio } from "@@/core/music-media-service.ts";
 import { enrichCurrentMusicAssets } from "@@/core/music-asset-enrichment.ts";
-import { JsonValueSchema } from "@@/core/lib/json-value.ts";
+import { JsonValueSchema } from "@@/core/utils/json-value.ts";
 import { createMediaResponse } from "../server/routes/media/[...path].ts";
 import { startMediaServer } from "./media-server.ts";
 import { createMemoryStorage } from "./memory-storage.ts";

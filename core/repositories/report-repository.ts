@@ -11,7 +11,7 @@ import {
   reportFailures,
 } from "../entities/report.ts";
 import { stories } from "../entities/story.ts";
-import { NO_ACCESSIBILITY_CAPTION } from "../lib/report-constants.ts";
+import { NO_ACCESSIBILITY_CAPTION } from "@@/core/utils/report-constants.ts";
 import { StoriesManifestReportSchema } from "../lib/story-schemas.ts";
 import { createOutputUsers } from "../story-output-service.ts";
 import type {

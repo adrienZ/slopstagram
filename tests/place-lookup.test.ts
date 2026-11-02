@@ -7,7 +7,7 @@ import {
   storyLocationObservations,
 } from "@@/core/entities/location-metadata.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
-import type { JsonObject, JsonValue } from "@@/core/lib/json-value.ts";
+import type { JsonObject, JsonValue } from "@@/core/utils/json-value.ts";
 import type { StoryItem } from "@@/core/instagram-types.ts";
 import { StoryRepository } from "@@/core/repositories/story-repository.ts";
 import { fetchStoriesManifest } from "@@/core/stories.ts";

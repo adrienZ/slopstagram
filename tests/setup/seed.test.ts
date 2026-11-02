@@ -4,7 +4,7 @@ import { fileURLToPath, URL } from "node:url";
 import { expect, test, type TestContext } from "vitest";
 import type { z } from "zod";
 import { createDrizzle } from "@@/core/database/client.ts";
-import { type JsonValue, JsonValueSchema } from "@@/core/lib/json-value.ts";
+import { type JsonValue, JsonValueSchema } from "@@/core/utils/json-value.ts";
 import { InstagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
 import { StoryRepository, storyRepository } from "@@/core/repositories/story-repository.ts";
 import {
