@@ -3,7 +3,7 @@ import { getReportUserKey } from "../sdk/lib/report-user-key-service.ts";
 import { formatReportDate } from "./helper.ts";
 import { createReportFeed } from "../sdk/story-feed.ts";
 import { createStoryCards, withStoryStickers } from "./story-card-view-model.ts";
-import type { ReportPageProps } from "./pages/report.tsx";
+import type { ReportPageProps } from "./routes/report.tsx";
 import { createReportViewModel } from "./report-view-model.ts";
 import { loadSidebarUsers } from "./sidebar-users.ts";
 import { storyRepository } from "../sdk/repositories/story-repository.ts";

@@ -3,7 +3,7 @@ import { HTTPError } from "nitro/h3";
 import { createStoryCards } from "./story-card-view-model.ts";
 import type { StoryCardSources } from "./story-card-view-model.ts";
 import type { UserTimeline } from "./user-timeline.ts";
-import type { TimelineContentProps } from "./pages/users/$username.tsx";
+import type { TimelineContentProps } from "./routes/users/$username.tsx";
 import { createUserTimeline, getTimelinePreviewPaths } from "./user-timeline.ts";
 import { getStoryDate } from "../sdk/lib/story-date-service.ts";
 import { loadSidebarUsers } from "./sidebar-users.ts";

@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
-import { getRouter, routerOptions } from "../../server/router.tsx";
+import { getRouter, routerOptions } from "../../app/router.tsx";
 
 test("an unknown URL renders the not-found page of the application router", async () => {
   const router = getRouter();

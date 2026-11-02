@@ -1,8 +1,8 @@
 import { beforeAll, expect, test, vi } from "vitest";
 import { act, screen, waitFor, within } from "@testing-library/react";
-import { Route } from "../../server/pages/users/$username.tsx";
+import { Route } from "../../app/routes/users/$username.tsx";
 import { namedAccount, pageNow, timelineAccount, seedPageDatabase } from "./seeded-pages.ts";
-import { loadUserTimeline } from "../../server/user-timeline-handler.tsx";
+import { loadUserTimeline } from "../../app/user-timeline-handler.tsx";
 import { createPageRenderer } from "../render-page.ts";
 
 const renderer = createPageRenderer(

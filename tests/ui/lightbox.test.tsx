@@ -1,9 +1,9 @@
 import { beforeAll, expect, test } from "vitest";
 import { screen, within } from "@testing-library/react";
-import { Route as ReportRoute } from "../../server/pages/report.tsx";
-import { Route as TimelineRoute } from "../../server/pages/users/$username.tsx";
-import { loadReport } from "../../server/report-handler.tsx";
-import { loadUserTimeline } from "../../server/user-timeline-handler.tsx";
+import { Route as ReportRoute } from "../../app/routes/report.tsx";
+import { Route as TimelineRoute } from "../../app/routes/users/$username.tsx";
+import { loadReport } from "../../app/report-handler.tsx";
+import { loadUserTimeline } from "../../app/user-timeline-handler.tsx";
 import { createPageRenderer } from "../render-page.ts";
 import { pageNow, seedPageDatabase, timelineAccount, today } from "./seeded-pages.ts";
 

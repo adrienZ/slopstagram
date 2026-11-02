@@ -8,7 +8,7 @@ import { AppleVisionRepository } from "../sdk/repositories/apple-vision-reposito
 import { VisionRepository } from "../sdk/repositories/vision-repository.ts";
 import { createStoryFeed, createStoryDayFeed, createReportFeed } from "../sdk/story-feed.ts";
 import { getStoryDate, getStoryDayRange } from "../sdk/lib/story-date-service.ts";
-import { createReportViewModel } from "../server/report-view-model.ts";
+import { createReportViewModel } from "../app/report-view-model.ts";
 import { resolveUserSummariesForReport } from "../sdk/user-summary.ts";
 import { createLogger } from "../sdk/lib/logging-service.ts";
 
