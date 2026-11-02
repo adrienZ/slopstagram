@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import {
   hydrateReportInstagramUsers,
   persistReportInstagramUsers,
-} from "@@/core/lib/instagram-user-service.ts";
+} from "@@/core/accounts/instagram-user.ts";
 import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
 import type { StoriesManifestReport } from "@@/core/report-types.ts";
 import { createTestDatabase } from "./test-database.ts";

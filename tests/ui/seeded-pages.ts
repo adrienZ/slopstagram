@@ -5,7 +5,7 @@ import { stories } from "@@/core/database/entities/story.ts";
 import { appleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
 import { instagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
 import { createReportFeed } from "@@/core/story-feed.ts";
-import { resolveUserSummariesForReport } from "@@/core/user-summary.ts";
+import { resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
 import type { SidebarUser } from "../../app/loaders/sidebar-users.ts";
 import { withStoryStickers, type StoryCardData } from "../../app/utils/story-cards.ts";
 import { groupTimelineLocations } from "../../app/utils/timeline-locations.ts";
