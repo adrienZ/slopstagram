@@ -1,5 +1,4 @@
 import { createHash } from "node:crypto";
-import path from "node:path";
 import { Buffer } from "node:buffer";
 import sharp from "sharp";
 import { z } from "zod";
@@ -8,19 +7,15 @@ import type {
   MusicMediaState,
   MusicMetadataReference,
 } from "@@/core/database/entities/music-metadata.ts";
-import { audioFileDurationMs } from "./audio-duration.ts";
+import { audioDurationMs } from "./audio-duration.ts";
 import {
   AUDIO_STORAGE_DIR,
-  BASE_CACHE_DIR,
   type AudioCacheStorage,
-  type CacheStorage,
   type ImageCacheStorage,
 } from "@@/core/media-store/cache-storage.ts";
 import { audioFileExtension } from "./music-media-types.ts";
-import {
-  type StoryRepository,
-  storyRepository,
-} from "@@/core/database/repositories/story-repository.ts";
+import type { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
+import type { Runtime } from "@@/core/runtime/runtime.ts";
 
 const MAX_MEDIA_BYTES = 60 * 1024 * 1024;
 
@@ -30,12 +25,13 @@ interface CachedMusicMedia {
   durationMs: number | null;
 }
 
-export interface MusicMediaOptions {
-  storyRepository?: Pick<StoryRepository, "findMusicMetadata" | "saveMusicMedia">;
-  directory?: string;
-  fetchMedia?: (url: string) => Promise<Response>;
-  storage: Pick<CacheStorage, "audio" | "images">;
-}
+export type FetchMedia = (url: string) => Promise<Response>;
+
+type MusicStorageRuntime = Pick<Runtime, "fetchMedia" | "storage">;
+
+type MusicMediaRuntime = MusicStorageRuntime & {
+  stories: Pick<StoryRepository, "findMusicMetadata" | "saveMusicMedia">;
+};
 
 async function fileExists(storage: AudioCacheStorage, key: string | null) {
   if (key === null || !/^audio\/[a-f0-9]{64}\.(?:mp3|m4a|aac|ogg|webm|wav|flac)$/u.test(key)) {
@@ -81,9 +77,7 @@ async function readBounded(response: Response, limit = MAX_MEDIA_BYTES) {
 async function downloadMedia(
   source: string,
   id: string,
-  directory: string,
-  storage: AudioCacheStorage,
-  options: MusicMediaOptions,
+  runtime: MusicStorageRuntime,
   declaredAudioType?: "audio/mp4",
 ): Promise<CachedMusicMedia> {
   const url = new globalThis.URL(source);
@@ -91,7 +85,7 @@ async function downloadMedia(
     return { cachePath: null, state: "unsupported", durationMs: null };
   }
   const response = await (
-    options.fetchMedia ??
+    runtime.fetchMedia ??
     (async (value) =>
       await globalThis.fetch(value, { signal: globalThis.AbortSignal.timeout(20_000) }))
   )(source);
@@ -121,32 +115,31 @@ async function downloadMedia(
   }
   const filename = `${createHash("sha256").update(`${id}:audio`).digest("hex")}.${extension}`;
   const key = `${AUDIO_STORAGE_DIR}/${filename}`;
-  const destination = path.join(directory, key);
-  await storage.setItemRaw(filename, received);
-  return { cachePath: key, state: "available", durationMs: await audioFileDurationMs(destination) };
+  await runtime.storage.audio.setItemRaw(filename, received);
+  return { cachePath: key, state: "available", durationMs: await audioDurationMs(received) };
 }
 
 export async function cacheReceivedAudio(
+  runtime: MusicStorageRuntime,
   id: string,
   source: string | null,
   cached: string | null,
-  options: MusicMediaOptions,
   declaredAudioType?: "audio/mp4",
 ): Promise<CachedMusicMedia> {
-  const directory = options.directory ?? BASE_CACHE_DIR;
-  const storage = options.storage.audio;
+  const storage = runtime.storage.audio;
   if (cached !== null && (await fileExists(storage, cached))) {
+    const stored: unknown = await storage.getItemRaw(cached.slice(`${AUDIO_STORAGE_DIR}/`.length));
     return {
       cachePath: cached,
       state: "available",
-      durationMs: await audioFileDurationMs(path.join(directory, cached)),
+      durationMs: stored instanceof Uint8Array ? await audioDurationMs(stored) : null,
     };
   }
   if (source === null) {
     return { cachePath: null, state: "unavailable", durationMs: null };
   }
   try {
-    return await downloadMedia(source, id, directory, storage, options, declaredAudioType);
+    return await downloadMedia(source, id, runtime, declaredAudioType);
   } catch {
     return { cachePath: null, state: "failed", durationMs: null };
   }
@@ -154,19 +147,19 @@ export async function cacheReceivedAudio(
 
 // Cache received audio during report enrichment; artwork downloads are separate.
 export async function processMusicMedia(
+  runtime: MusicMediaRuntime,
   reference: MusicMetadataReference,
-  options: MusicMediaOptions,
 ) {
-  const repository = options.storyRepository ?? storyRepository;
+  const repository = runtime.stories;
   const current = repository.findMusicMetadata(reference);
   if (!current) {
     return null;
   }
   const result = await cacheReceivedAudio(
+    runtime,
     current.id,
     current.audioSourceUrl,
     current.audioCachePath,
-    options,
   );
   repository.saveMusicMedia(
     reference,
@@ -195,7 +188,7 @@ async function downloadArtwork(
   source: string,
   id: string,
   storage: ImageCacheStorage,
-  options: MusicMediaOptions,
+  runtime: MusicStorageRuntime,
 ) {
   try {
     const url = new globalThis.URL(source);
@@ -203,7 +196,7 @@ async function downloadArtwork(
       return { cachePath: null, state: "unsupported" as const };
     }
     const response = await (
-      options.fetchMedia ??
+      runtime.fetchMedia ??
       (async (value) =>
         await globalThis.fetch(value, { signal: globalThis.AbortSignal.timeout(20_000) }))
     )(url.href);
@@ -229,19 +222,19 @@ async function downloadArtwork(
 }
 
 export async function processMusicArtwork(
+  runtime: MusicMediaRuntime,
   reference: MusicMetadataReference,
-  options: MusicMediaOptions,
 ) {
-  const repository = options.storyRepository ?? storyRepository;
+  const repository = runtime.stories;
   const current = repository.findMusicMetadata(reference);
   if (!current || current.artworkSourceUrl === null) {
     return current ?? null;
   }
-  const storage = options.storage.images;
+  const storage = runtime.storage.images;
   if (await cachedArtworkExists(storage, current.artworkCachePath)) {
     return current;
   }
-  const result = await downloadArtwork(current.artworkSourceUrl, current.id, storage, options);
+  const result = await downloadArtwork(current.artworkSourceUrl, current.id, storage, runtime);
   repository.saveMusicMedia(
     reference,
     "artwork",

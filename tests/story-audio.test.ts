@@ -200,12 +200,14 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
     response.writeHead(200, { "content-type": "video/mp4" });
     response.end(audio);
   });
-  await cacheReportAudio(report, {
-    storyRepository: repository,
-    directory,
-    storage: createFileCacheStorage(directory),
-    fetchMedia: media.fetchMedia,
-  });
+  await cacheReportAudio(
+    {
+      stories: repository,
+      storage: createFileCacheStorage(directory),
+      fetchMedia: media.fetchMedia,
+    },
+    report,
+  );
   expect(media.requests).toStrictEqual(["/story.mp4?a=1&b=2"]);
   const saved = new StoryRepository(database).findByMediaPk("story")?.annotations?.storyAudio;
   assert.ok(saved);
@@ -230,12 +232,14 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
     video_dash_manifest: manifest("fresh"),
     story_music_stickers: [{ music_asset_info: { title: "Song" } }],
   });
-  const reused = await processStoryAudio("story", {
-    storyRepository: repository,
-    directory,
-    storage: createFileCacheStorage(directory),
-    fetchMedia: media.fetchMedia,
-  });
+  const reused = await processStoryAudio(
+    {
+      stories: repository,
+      storage: createFileCacheStorage(directory),
+      fetchMedia: media.fetchMedia,
+    },
+    "story",
+  );
   expect(reused?.cachePath).toBe(saved.cachePath);
   expect(media.requests).toStrictEqual(["/story.mp4?a=1&b=2"]);
   await repository.save({
@@ -274,12 +278,14 @@ test("expired and interrupted DASH downloads fail silently without publishing in
       response.end("expired");
     }
   });
-  const failed = await processStoryAudio("story", {
-    storyRepository: repository,
-    directory,
-    storage: createFileCacheStorage(directory),
-    fetchMedia: media.fetchMedia,
-  });
+  const failed = await processStoryAudio(
+    {
+      stories: repository,
+      storage: createFileCacheStorage(directory),
+      fetchMedia: media.fetchMedia,
+    },
+    "story",
+  );
   expect(failed?.state).toBe("failed");
   assert.ok(failed);
   expect(failed.cachePath).toBe(null);
@@ -302,12 +308,14 @@ test("expired and interrupted DASH downloads fail silently without publishing in
   expect(groups[0].stories[0].musicItems?.[0].preview).toBe(null);
   expect(groups[0].stories[0].labels[0].label).toBe("Song");
   interrupted = true;
-  const interruptedResult = await processStoryAudio("story", {
-    storyRepository: repository,
-    directory,
-    storage: createFileCacheStorage(directory),
-    fetchMedia: media.fetchMedia,
-  });
+  const interruptedResult = await processStoryAudio(
+    {
+      stories: repository,
+      storage: createFileCacheStorage(directory),
+      fetchMedia: media.fetchMedia,
+    },
+    "story",
+  );
   expect(interruptedResult?.state).toBe("failed");
   expect(await readdir(directory)).toStrictEqual([]);
 });
@@ -392,12 +400,14 @@ test("fresh story ingestion caches the story excerpt and prefers it over the lon
       response.end(musicBytes);
     }
   });
-  await cacheReportAudio(report, {
-    storyRepository: repository,
-    directory,
-    storage: createFileCacheStorage(directory),
-    fetchMedia: media.fetchMedia,
-  });
+  await cacheReportAudio(
+    {
+      stories: repository,
+      storage: createFileCacheStorage(directory),
+      fetchMedia: media.fetchMedia,
+    },
+    report,
+  );
   const annotations = new StoryRepository(database).findByMediaPk(story.pk)?.annotations;
   assert.ok(annotations?.storyAudio);
   assert.ok(annotations.storyAudio.cachePath !== null);

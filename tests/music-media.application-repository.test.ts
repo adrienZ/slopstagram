@@ -45,14 +45,22 @@ test("music media caching defaults to the application's story repository", async
   const reference = { id: metadata.id, status: metadata.status };
 
   const storage = createMemoryCacheStorage();
-  const artwork = await processMusicArtwork(reference, {
-    fetchMedia: media.fetchMedia,
-    storage,
-  });
-  const audio = await processMusicMedia(reference, {
-    fetchMedia: media.fetchMedia,
-    storage,
-  });
+  const artwork = await processMusicArtwork(
+    {
+      stories: storyRepository,
+      fetchMedia: media.fetchMedia,
+      storage,
+    },
+    reference,
+  );
+  const audio = await processMusicMedia(
+    {
+      stories: storyRepository,
+      fetchMedia: media.fetchMedia,
+      storage,
+    },
+    reference,
+  );
 
   expect(artwork?.artworkState).toBe("available");
   expect(await storage.images.getKeys()).toHaveLength(1);

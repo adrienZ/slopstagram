@@ -14,8 +14,8 @@ import {
   createFileCacheStorage,
   type CacheStorage,
 } from "@@/core/media-store/cache-storage.ts";
-import type { CacheReportImagesOptions } from "@@/core/media-store/image-cache.ts";
-import type { MusicMediaOptions } from "@@/core/music/music-media.ts";
+import type { FetchImage } from "@@/core/media-store/image-cache.ts";
+import type { FetchMedia } from "@@/core/music/music-media.ts";
 import { createLogger, type Logger } from "@@/core/utils/logging.ts";
 import type { AppleOcrRunner } from "@@/core/vision/apple-ocr.ts";
 
@@ -23,8 +23,8 @@ type HttpFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Respo
 
 export interface RuntimeBoundaries {
   client?: InstagramClient;
-  fetchImage?: CacheReportImagesOptions["fetchImage"];
-  fetchMedia?: MusicMediaOptions["fetchMedia"];
+  fetchImage?: FetchImage;
+  fetchMedia?: FetchMedia;
   fetchOllama?: HttpFetch;
   logger?: Logger;
   queue?: FetchRunQueue;

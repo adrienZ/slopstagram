@@ -4,7 +4,7 @@ import { createStoryFeed, readStoryFeedVision } from "@@/core/story-feed/story-f
 import { cacheReportImages } from "@@/core/media-store/image-cache.ts";
 import { cacheReportAudio } from "@@/core/music/report-audio.ts";
 import { persistReportInstagramUsers } from "@@/core/accounts/instagram-user.ts";
-import type { Runtime } from "@@/core/runtime/runtime.ts";
+import type { ReportRepository } from "@@/core/database/repositories/report-repository.ts";
 import type { StoriesManifestReport } from "./report-types.ts";
 import { resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
 import { resolveVisionForReport } from "@@/core/vision/vision-report.ts";
@@ -46,26 +46,34 @@ function formatFilenameTimestamp(date: Date): string {
   return `${year}-${month}-${day}T${hours}-${minutes}-${seconds}${formatTimezoneOffset(date)}`;
 }
 
+type CreateReportRuntime = { reports: Pick<ReportRepository, "save"> } & Parameters<
+  typeof recordFetchRun
+>[0] &
+  Parameters<typeof fetchStories>[0] &
+  Parameters<typeof cacheReportAudio>[0] &
+  Parameters<typeof cacheReportImages>[0] &
+  Parameters<typeof resolveAppleCaptionsForReport>[0] &
+  Parameters<typeof resolveVisionForReport>[0] &
+  Parameters<typeof persistReportInstagramUsers>[0] &
+  Parameters<typeof createStoryFeed>[0] &
+  Parameters<typeof readStoryFeedVision>[0] &
+  Parameters<typeof resolveUserSummariesForReport>[0];
+
 export async function createReport(
-  runtime: Runtime,
+  runtime: CreateReportRuntime,
   options: CreateReportOptions = {},
 ): Promise<CreateReportResult> {
-  const { appleVision, fetchRuns, logger, reports, stories, storage, summaries, users, vision } =
-    runtime;
   const now = options.now ?? (() => new Date());
   return await recordFetchRun(
-    { fetchRuns },
+    runtime,
     async (run) => {
       const timestamp = formatFilenameTimestamp(run.startedAt);
       const outputFileName = `stories-report-${timestamp}-${run.id}.json`;
-      logger.box(`${pkg.name} - report ${outputFileName}`);
-      const report = await fetchStories(
-        { client: runtime.client, logger, storage, stories },
-        { now, reportName: outputFileName },
-      );
+      runtime.logger.box(`${pkg.name} - report ${outputFileName}`);
+      const report = await fetchStories(runtime, { now, reportName: outputFileName });
       run.report = report;
       // Keep the observation and failures even if enrichment or every media fetch fails.
-      await reports.save(outputFileName, report);
+      await runtime.reports.save(outputFileName, report);
       run.reportKey = outputFileName;
       const { counts } = report.metadata;
       if (counts.stories > 0 && counts.fetched === 0) {
@@ -73,41 +81,25 @@ export async function createReport(
           `No story media could be fetched (${counts.failed}/${counts.stories} failed). ${report.failures[0]?.message ?? "Instagram returned no story media"}`,
         );
       }
-      await cacheReportAudio(report, {
-        storyRepository: stories,
-        fetchMedia: runtime.fetchMedia,
-        storage,
-      });
-      const cachedImages = await cacheReportImages(report, {
-        fetchImage: runtime.fetchImage,
-        logger,
-        storage: storage.images,
-      });
-      await resolveAppleCaptionsForReport(
-        { appleVision, logger, runAppleOcr: runtime.runAppleOcr, storage },
-        report,
-        cachedImages,
-      );
-      await resolveVisionForReport(
-        { fetchOllama: runtime.fetchOllama, logger, storage, vision },
-        report,
-        cachedImages,
-      );
-      await persistReportInstagramUsers({ users }, report);
+      await cacheReportAudio(runtime, report);
+      const cachedImages = await cacheReportImages(runtime, report);
+      await resolveAppleCaptionsForReport(runtime, report, cachedImages);
+      await resolveVisionForReport(runtime, report, cachedImages);
+      await persistReportInstagramUsers(runtime, report);
       // Generate from the same canonical, active story set used by the user app.
-      const feedUsers = createStoryFeed({ stories }, now());
+      const feedUsers = createStoryFeed(runtime, now());
       await resolveUserSummariesForReport(
-        { fetchOllama: runtime.fetchOllama, logger, summaries },
+        runtime,
         { output: { users: feedUsers } },
-        { visionByPreviewUrl: readStoryFeedVision({ vision }, feedUsers) },
+        { visionByPreviewUrl: readStoryFeedVision(runtime, feedUsers) },
       );
-      await reports.save(outputFileName, report);
-      logger.info(
+      await runtime.reports.save(outputFileName, report);
+      runtime.logger.info(
         [`stories=${counts.stories}`, `fetched=${counts.fetched}`, `failed=${counts.failed}`].join(
           " ",
         ),
       );
-      logger.success(`saved report ${outputFileName} to the database`);
+      runtime.logger.success(`saved report ${outputFileName} to the database`);
 
       return { outputFileName, reportKey: outputFileName, report };
     },
