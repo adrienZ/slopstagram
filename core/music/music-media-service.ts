@@ -5,12 +5,12 @@ import { Buffer } from "node:buffer";
 import sharp from "sharp";
 import { z } from "zod";
 import { parseBuffer } from "music-metadata";
-import type { DrizzleDatabase } from "./database/client.ts";
+import type { DrizzleDatabase } from "@@/core/database/client.ts";
 import type {
   MusicMediaState,
   MusicMetadataReference,
 } from "@@/core/database/entities/music-metadata.ts";
-import { audioFileDurationMs } from "./lib/audio-duration.ts";
+import { audioFileDurationMs } from "@@/core/lib/audio-duration.ts";
 import {
   AUDIO_STORAGE_DIR,
   BASE_CACHE_DIR,
@@ -19,7 +19,7 @@ import {
   createAudioCacheStorage,
   type AudioCacheStorage,
 } from "@@/core/media-store/cache-storage.ts";
-import { audioFileExtension } from "./lib/music-media-types.ts";
+import { audioFileExtension } from "./music-media-types.ts";
 import {
   findMusicMetadata,
   saveMusicMedia,

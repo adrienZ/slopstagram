@@ -10,8 +10,11 @@ import {
 } from "../entities/music-metadata.ts";
 import type { StoryAnnotations } from "@@/core/stickers/story-types.ts";
 import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
-import type { MusicObservationInput } from "@@/core/music-observation-service.ts";
-import { planMusicMetadataWrite, planStoryMusicUpdates } from "@@/core/music-metadata-service.ts";
+import type { MusicObservationInput } from "@@/core/music/music-observation-service.ts";
+import {
+  planMusicMetadataWrite,
+  planStoryMusicUpdates,
+} from "@@/core/music/music-metadata-service.ts";
 
 type MusicDatabase = Pick<DrizzleDatabase, "select" | "insert" | "update" | "delete">;
 

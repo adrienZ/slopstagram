@@ -17,7 +17,7 @@ import {
   readMusicObservations,
   refreshMusicAsset,
 } from "./music-metadata-repository.ts";
-import type { MusicObservationInput } from "@@/core/music-observation-service.ts";
+import type { MusicObservationInput } from "@@/core/music/music-observation-service.ts";
 import {
   stories,
   type StoryRow,
