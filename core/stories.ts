@@ -8,7 +8,7 @@ import {
   closeInstagramSession,
   openInstagramSession,
 } from "@@/core/instagram/playwright-session.ts";
-import type { StoriesManifestReport, StoryManifestReel } from "./report-types.ts";
+import type { StoriesManifestReport, StoryManifestReel } from "@@/core/fetch-run/report-types.ts";
 import type {
   StoryTrayEntry,
   InstagramClient,

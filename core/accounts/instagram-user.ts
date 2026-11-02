@@ -3,7 +3,7 @@ import {
   instagramUserRepository,
 } from "@@/core/database/repositories/instagram-user-repository.ts";
 import type { InstagramUserEntry } from "@@/core/database/entities/instagram-user.ts";
-import type { StoriesManifestReport } from "@@/core/report-types.ts";
+import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
 
 interface InstagramUserFields {
   full_name?: string | null;

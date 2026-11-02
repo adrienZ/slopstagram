@@ -1,4 +1,4 @@
-import type { StoryOutputUser } from "@@/core/report-types.ts";
+import type { StoryOutputUser } from "@@/core/fetch-run/report-types.ts";
 import { formatUserHandle, formatUserName, getUserTimelineUrl } from "../utils/helper.ts";
 import type { StoryCardData } from "../utils/story-cards.ts";
 import { StoryCard } from "./story-card.tsx";

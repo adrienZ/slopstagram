@@ -3,7 +3,7 @@ import { once } from "node:events";
 import process from "node:process";
 import { Queue, Worker } from "bunqueue-client";
 import { definePlugin } from "nitro";
-import { startWarmCacheQueue, WARM_CACHE_QUEUE_NAME } from "@@/core/warm-cache-queue.ts";
+import { startWarmCacheQueue, WARM_CACHE_QUEUE_NAME } from "@@/core/fetch-run/warm-cache-queue.ts";
 
 function spawnBunqueueServer(onError: (error: Error) => void) {
   const server = spawn("npm", ["run", "bunqueue:server"], {

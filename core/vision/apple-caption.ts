@@ -2,7 +2,7 @@ import path from "node:path";
 import { isAppleOcrUnavailable, recognizeAppleCaption } from "./apple-ocr.ts";
 import type { CachedReportImages } from "@@/core/media-store/image-cache.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
-import type { StoriesManifestReport } from "@@/core/report-types.ts";
+import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
 
 type AppleCaptionResolver = (mediaPk: string, imagePath: string) => Promise<string>;
 

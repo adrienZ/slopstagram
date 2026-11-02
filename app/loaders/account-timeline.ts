@@ -1,6 +1,6 @@
 import "@tanstack/react-start/server-only";
 import { HTTPError } from "nitro/h3";
-import type { StoryOutputUser } from "@@/core/report-types.ts";
+import type { StoryOutputUser } from "@@/core/fetch-run/report-types.ts";
 import {
   type UserTimelineStory,
   type StoryRepository,

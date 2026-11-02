@@ -8,7 +8,7 @@ import {
 } from "./cache-storage.ts";
 import { convertImageToJpeg } from "./image-conversion.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
-import type { StoriesManifestReport } from "@@/core/report-types.ts";
+import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
 
 interface FetchResponse {
   arrayBuffer: () => Promise<ArrayBuffer>;
