@@ -10,7 +10,6 @@ const config: KnipConfig = {
   // Only real entry points: listing every module as an entry hides unused files and exports.
   entry: [
     "scripts/*.ts",
-    "app/entry-server.tsx",
     "app/router.tsx",
     "app/routes/**/*.tsx",
     "server/plugins/*.ts",

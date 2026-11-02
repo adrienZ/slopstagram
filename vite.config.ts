@@ -21,12 +21,8 @@ export default defineConfig({
     tailwindcss(),
     tanstackStart({
       srcDirectory: "app",
-      server: { entry: "entry-server.tsx" },
     }),
     react(),
     nitro(),
   ],
-  environments: {
-    ssr: { build: { rolldownOptions: { input: "./app/entry-server.tsx" } } },
-  },
 });
