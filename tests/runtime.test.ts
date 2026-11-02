@@ -4,7 +4,7 @@ import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { storyRepository } from "@@/core/database/repositories/story-repository.ts";
 import { fetchStories } from "@@/core/fetch-run/stories.ts";
 import { getProductionRuntime } from "@@/core/runtime/production-runtime.ts";
-import { createMockLogger, noSleep } from "./mock-helpers.ts";
+import { createCapturingLogger, createMockLogger, noSleep } from "./mock-helpers.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 
 const recordedStoryPk = "700000000000079";
@@ -76,10 +76,21 @@ test("a test runtime overrides only the boundary a test passes", async (context)
   );
 });
 
+test("a test runtime logs through the logger a test passes", async (context) => {
+  const logger = createCapturingLogger();
+  const runtime = await createTestRuntime(context, { logger });
+
+  runtime.logger.warn("retrying");
+
+  expect(runtime.logger).toBe(logger);
+  expect(logger.messages).toStrictEqual(["warn: retrying"]);
+});
+
 test("the production runtime is created once and reused", () => {
   const runtime = getProductionRuntime();
 
   expect(getProductionRuntime()).toBe(runtime);
   expect(runtime.client).toBeUndefined();
+  expect(runtime.logger.options.defaults.tag).toBe("runtime");
   expect(Object.keys(runtime.storage).toSorted()).toStrictEqual(["audio", "images", "stories"]);
 });
