@@ -3,10 +3,7 @@ import { NO_ACCESSIBILITY_CAPTION } from "@@/core/utils/report-constants.ts";
 import { STORY_MEDIA_TYPES, type StoryMediaType } from "@@/core/stickers/story-types.ts";
 import type { StoryItem, StoryTrayEntry } from "@@/core/instagram/instagram-types.ts";
 import type { StoryManifestItem, StoryManifestReel, StoryOutputUser } from "./report-types.ts";
-import {
-  getStoryLocations,
-  getStoryStickers,
-} from "@@/core/stickers/story-sticker-location-service.ts";
+import { getStoryLocations, getStoryStickers } from "@@/core/stickers/story-sticker-location.ts";
 
 function getAccessibilityCaption(mediaPk: string, cachedItems: Map<string, StoryItem>): string {
   const caption = cachedItems.get(mediaPk)?.accessibility_caption;

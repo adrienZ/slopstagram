@@ -1,4 +1,4 @@
-import { planStoryAnnotations } from "@@/core/stickers/story-annotation-service.ts";
+import { planStoryAnnotations } from "@@/core/stickers/story-annotation.ts";
 import { planStoryAudio } from "@@/core/story-audio-service.ts";
 import { findStoryAudio, saveStoryAudio } from "./story-audio-repository.ts";
 import { and, asc, desc, eq, gt, gte, lt, lte, notInArray } from "drizzle-orm";
@@ -34,7 +34,7 @@ import {
   getStoryAnnotationUpdates,
   getStoryLocations,
   getStoryStickers,
-} from "@@/core/stickers/story-sticker-location-service.ts";
+} from "@@/core/stickers/story-sticker-location.ts";
 
 export interface StoryOwner {
   full_name?: string;

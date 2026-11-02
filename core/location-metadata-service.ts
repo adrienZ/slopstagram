@@ -12,7 +12,7 @@ import {
   getLocationSourceUpdates,
   type LocationObservationInput,
 } from "./location-observation-service.ts";
-import { getStoryAnnotationUpdates } from "@@/core/stickers/story-sticker-location-service.ts";
+import { getStoryAnnotationUpdates } from "@@/core/stickers/story-sticker-location.ts";
 
 function mergeFields(
   previous: LocationFields | undefined,
