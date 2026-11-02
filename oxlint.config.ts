@@ -32,6 +32,68 @@ function restrictImports(
   return ["error", { paths: restrictedReactPaths, patterns }];
 }
 
+// Value imports between core domains point down this table. Type-only imports are always
+// allowed, and fetch-run sits on top: it may import any domain and no domain imports it.
+const domainDependencies = {
+  utils: [],
+  database: ["utils"],
+  instagram: ["database", "utils"],
+  "media-store": ["utils"],
+  stickers: ["database", "utils"],
+  places: ["database", "utils"],
+  music: ["database", "media-store", "utils"],
+  vision: ["database", "media-store", "utils"],
+  accounts: ["database", "vision", "utils"],
+  "story-feed": ["database", "vision", "utils"],
+} satisfies Record<string, Array<string>>;
+const dependencyTable = new Map<string, Array<string>>(Object.entries(domainDependencies));
+const coreDomains = [...dependencyTable.keys(), "fetch-run"];
+
+// Baseline of the violations that exist today, per importing module. It can only shrink: a new
+// violation fails lint. The repository shape spec (#157) and the composition root spec (#159)
+// remove them.
+const domainViolations = {
+  // #157: the report entity imports the story media types, which belong to stickers.
+  "core/database/entities/report.ts": ["stickers"],
+  // #157: repositories call the planners of the domains they persist.
+  "core/database/repositories/location-metadata-repository.ts": ["places"],
+  "core/database/repositories/music-metadata-repository.ts": ["music"],
+  // #157: the report repository validates payloads and reads story output.
+  "core/database/repositories/report-repository.ts": ["fetch-run", "instagram"],
+  // #157: the story repository calls the annotation, audio and payload planners.
+  "core/database/repositories/story-repository.ts": ["instagram", "music", "stickers"],
+  // #159: stickers, places and music import each other through sticker and location extraction.
+  "core/places/location-metadata.ts": ["stickers"],
+  "core/stickers/story-sticker-location.ts": ["music", "places"],
+} satisfies Record<string, Array<string>>;
+
+function restrictDomainImports(domain: string, allowed: Array<string>): RestrictedPattern {
+  const forbidden = coreDomains.filter((other) => other !== domain && !allowed.includes(other));
+  return {
+    group: forbidden.map((other) => `@@/core/${other}/*`),
+    allowTypeImports: true,
+    message: `Core domains import only the domains below them (see domainDependencies in oxlint.config.ts). Import types only, or move the code.`,
+  };
+}
+
+const domainLayeringOverrides = [
+  ...[...dependencyTable].map(([domain, allowed]) => ({
+    files: [`core/${domain}/**`],
+    rules: { "no-restricted-imports": restrictImports([restrictDomainImports(domain, allowed)]) },
+  })),
+  ...Object.entries(domainViolations).map(([file, extra]) => {
+    const domain = /^core\/(?<domain>[^/]+)\//u.exec(file)?.groups?.domain ?? "";
+    return {
+      files: [file],
+      rules: {
+        "no-restricted-imports": restrictImports([
+          restrictDomainImports(domain, [...(dependencyTable.get(domain) ?? []), ...extra]),
+        ]),
+      },
+    };
+  }),
+];
+
 const restrictedReactImports = defineConfig({
   rules: { "no-restricted-imports": restrictImports() },
 });
@@ -77,6 +139,7 @@ export default defineConfig({
     "slopstagram/no-barrel-files": "error",
   },
   overrides: [
+    ...domainLayeringOverrides,
     {
       files: ["scripts/**/*.ts"],
       rules: {
