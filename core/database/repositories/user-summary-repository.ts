@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { useDrizzle, type DrizzleDatabase } from "../client.ts";
+import type { DrizzleDatabase } from "../client.ts";
 import {
   userSummaries,
   NewUserSummarySchema,
@@ -71,5 +71,3 @@ export class UserSummaryRepository {
       });
   }
 }
-
-export const userSummaryRepository = new UserSummaryRepository(useDrizzle());

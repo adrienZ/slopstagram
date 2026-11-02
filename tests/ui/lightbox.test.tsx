@@ -5,32 +5,28 @@ import { Route as TimelineRoute } from "../../app/routes/users/$username.tsx";
 import { loadStoryFeed } from "../../app/loaders/story-feed.ts";
 import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
 import { createPageRenderer } from "../render-page.ts";
-import type { Runtime } from "@@/core/runtime/runtime.ts";
-import {
-  applicationRuntime,
-  pageNow,
-  seedPageDatabase,
-  timelineAccount,
-  today,
-} from "./seeded-pages.ts";
+import { useSharedTestRuntime } from "../setup/test-runtime.ts";
+import { pageNow, seedPageDatabase, timelineAccount, today } from "./seeded-pages.ts";
 
-let runtime: Runtime;
+const shared = useSharedTestRuntime(seedPageDatabase);
 
 // The lightbox keeps its state in the search parameters, so it is tested through the pages that host it.
-const reportRenderer = createPageRenderer(ReportRoute, () => loadStoryFeed(pageNow), "/report");
+const reportRenderer = createPageRenderer(
+  ReportRoute,
+  () => loadStoryFeed(shared.runtime, pageNow),
+  "/report",
+);
 const timelineRenderer = createPageRenderer(
   TimelineRoute,
-  ({ params }) => loadAccountTimeline(runtime, params.username, pageNow),
+  ({ params }) => loadAccountTimeline(shared.runtime, params.username, pageNow),
   "/users/$username",
 );
 
 // The report feed in the order the lightbox navigates it.
 let stories: Array<{ mediaPk: string; alt: string; preview: string }>;
 
-beforeAll(async () => {
-  runtime = applicationRuntime();
-  await seedPageDatabase(runtime);
-  stories = loadStoryFeed(pageNow).users.flatMap((section) => section.stories);
+beforeAll(() => {
+  stories = loadStoryFeed(shared.runtime, pageNow).users.flatMap((section) => section.stories);
 });
 
 test("buttons and arrow keys wrap through the gallery while preserving other search parameters", async () => {

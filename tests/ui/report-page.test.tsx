@@ -18,22 +18,23 @@ import {
 } from "./seeded-pages.ts";
 import { loadStoryFeed } from "../../app/loaders/story-feed.ts";
 import { createPageRenderer } from "../render-page.ts";
+import { useSharedTestRuntime } from "../setup/test-runtime.ts";
 
 // The report the real loader would build, with the arguments it receives, at the test's "now".
+const shared = useSharedTestRuntime(seedPageDatabase);
 let now = pageNow;
 const renderer = createPageRenderer(
   Route,
-  ({ deps, context }) => loadStoryFeed(now, deps.date, context.selectedStory),
+  ({ deps, context }) => loadStoryFeed(shared.runtime, now, deps.date, context.selectedStory),
   "/report",
 );
 
 let reportProps: ReturnType<typeof loadStoryFeed>;
 let emptyTodayReportProps: ReturnType<typeof loadStoryFeed>;
 
-beforeAll(async () => {
-  await seedPageDatabase();
-  reportProps = loadStoryFeed(pageNow);
-  emptyTodayReportProps = loadStoryFeed(emptyTodayNow);
+beforeAll(() => {
+  reportProps = loadStoryFeed(shared.runtime, pageNow);
+  emptyTodayReportProps = loadStoryFeed(shared.runtime, emptyTodayNow);
 });
 
 beforeEach(() => {

@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { useDrizzle, type DrizzleDatabase } from "../client.ts";
+import type { DrizzleDatabase } from "../client.ts";
 import { vision, NewVisionSchema, type VisionEntry } from "../entities/vision.ts";
 
 export class VisionRepository {
@@ -45,5 +45,3 @@ export class VisionRepository {
       });
   }
 }
-
-export const visionRepository = new VisionRepository(useDrizzle());

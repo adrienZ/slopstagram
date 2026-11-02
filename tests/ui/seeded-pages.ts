@@ -44,7 +44,7 @@ export const hostileCaption = "</script><script>caption</script>";
 export const appleCaption = "apple <text>";
 export const userSummary = "A synthetic summary of the recorded stories.";
 
-export function applicationRuntime(): Runtime {
+function applicationRuntime(): Runtime {
   migrateDatabase();
   return createRuntime(useDrizzle(), {
     logger: createMockLogger(),

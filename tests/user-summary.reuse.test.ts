@@ -19,12 +19,7 @@ async function createStoredSummary(context: TestContext) {
   assert.ok(entry);
   return {
     entry,
-    feed: () =>
-      readStoryFeedSources(report.output.users, {
-        appleVision: runtime.appleVision,
-        userSummary: runtime.summaries,
-        vision: runtime.vision,
-      }).userSummaryByUserKey,
+    feed: () => readStoryFeedSources(runtime, report.output.users).userSummaryByUserKey,
     report,
     runtime,
   };
@@ -132,12 +127,6 @@ for (const outcome of ["empty", "error"] as const) {
 
     expect(summaries.size).toBe(1);
     expect(countSummaries(runtime)).toBe(0);
-    expect(
-      readStoryFeedSources(report.output.users, {
-        appleVision: runtime.appleVision,
-        userSummary: runtime.summaries,
-        vision: runtime.vision,
-      }).userSummaryByUserKey.size,
-    ).toBe(0);
+    expect(readStoryFeedSources(runtime, report.output.users).userSummaryByUserKey.size).toBe(0);
   });
 }
