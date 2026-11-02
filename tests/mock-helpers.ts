@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { createConsola } from "consola";
 import type { CachedReportImages } from "@@/core/lib/image-cache-service.ts";
-import type { Logger } from "@@/core/utils/logging-service.ts";
+import type { Logger } from "@@/core/utils/logging.ts";
 import type {
   StoryItem,
   StoryReel,

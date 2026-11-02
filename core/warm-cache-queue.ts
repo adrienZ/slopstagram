@@ -1,5 +1,5 @@
 import { setTimeout as sleep } from "node:timers/promises";
-import { createLogger, type Logger } from "@@/core/utils/logging-service.ts";
+import { createLogger, type Logger } from "@@/core/utils/logging.ts";
 import type { CreateReportBoundaries } from "./report.ts";
 import { runWarmCacheJob, type WarmCacheJobResult } from "./warm-cache.ts";
 

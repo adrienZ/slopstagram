@@ -1,4 +1,4 @@
-import type { Logger } from "@@/core/utils/logging-service.ts";
+import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoryRepository } from "./repositories/story-repository.ts";
 import type { StoryStorage } from "./lib/cache-service.ts";
 import { extractReels } from "./story-client-service.ts";

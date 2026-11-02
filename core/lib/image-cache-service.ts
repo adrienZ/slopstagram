@@ -7,7 +7,7 @@ import {
   type ImageCacheStorage,
 } from "./cache-service.ts";
 import { convertImageToJpeg } from "./image-conversion-service.ts";
-import type { Logger } from "@@/core/utils/logging-service.ts";
+import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoriesManifestReport } from "../report-types.ts";
 
 interface FetchResponse {
