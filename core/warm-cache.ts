@@ -1,4 +1,4 @@
-import { createLogger, type Logger } from "./lib/logging-service.ts";
+import { createLogger, type Logger } from "@@/core/utils/logging-service.ts";
 import { createReport, type CreateReportBoundaries, type CreateReportResult } from "./report.ts";
 
 export interface WarmCacheJobResult {

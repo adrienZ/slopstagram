@@ -4,8 +4,8 @@ import process from "node:process";
 import { pathToFileURL } from "node:url";
 import { z } from "zod";
 import { closeInstagramSession, openInstagramSession } from "@@/core/lib/playwright-service.ts";
-import { isJsonObject, JsonValueSchema } from "@@/core/lib/json-value.ts";
-import type { JsonObject, JsonValue } from "@@/core/lib/json-value.ts";
+import { isJsonObject, JsonValueSchema } from "@@/core/utils/json-value.ts";
+import type { JsonObject, JsonValue } from "@@/core/utils/json-value.ts";
 import { createInstagramClient } from "@@/core/story-client-service.ts";
 
 // Keys whose values identify a person, a story, a place or a request; each distinct value gets a

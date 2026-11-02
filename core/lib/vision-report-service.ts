@@ -3,7 +3,7 @@ import type { Ollama as VisionSdk } from "ollama";
 import { getOllamaClient } from "../ollama.ts";
 import { type VisionRepository, visionRepository } from "../repositories/vision-repository.ts";
 import type { CachedReportImages } from "./image-cache-service.ts";
-import type { Logger } from "./logging-service.ts";
+import type { Logger } from "@@/core/utils/logging-service.ts";
 import type { StoriesManifestReport } from "../report-types.ts";
 import type { VisionResult } from "../entities/vision.ts";
 import {

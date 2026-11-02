@@ -2,7 +2,7 @@ import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { drizzle } from "drizzle-orm/node-sqlite";
-import { APP_DATABASE_PATH } from "../lib/app-data-paths.ts";
+import { APP_DATABASE_PATH } from "@@/core/utils/app-data-paths.ts";
 
 export type DrizzleDatabase = ReturnType<typeof drizzle>;
 

@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import process from "node:process";
 import type { AppleVisionRepository } from "../repositories/apple-vision-repository.ts";
 import { appleVisionRepository } from "../repositories/apple-vision-repository.ts";
-import { NO_APPLE_CAPTION } from "./report-constants.ts";
+import { NO_APPLE_CAPTION } from "@@/core/utils/report-constants.ts";
 
 type AppleOcrRunner = (image: Uint8Array) => Promise<string>;
 type ReadImage = (imagePath: string) => Promise<Uint8Array>;

@@ -1,4 +1,4 @@
-import type { Logger } from "./lib/logging-service.ts";
+import type { Logger } from "@@/core/utils/logging-service.ts";
 import type { StoryFetchFailure, StoryFetchFailureReason } from "./report-types.ts";
 import type { StoryItem, StoryTrayEntry } from "./instagram-types.ts";
 import type { RequestFailure } from "./story-retry-service.ts";

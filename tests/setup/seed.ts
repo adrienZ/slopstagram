@@ -4,7 +4,7 @@ import { z } from "zod";
 import type { DrizzleDatabase } from "@@/core/database/client.ts";
 import { useDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
-import { type JsonObject, type JsonValue, JsonValueSchema } from "@@/core/lib/json-value.ts";
+import { type JsonObject, type JsonValue, JsonValueSchema } from "@@/core/utils/json-value.ts";
 import { persistReportInstagramUsers } from "@@/core/lib/instagram-user-service.ts";
 import { InstagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
 import { StoryRepository } from "@@/core/repositories/story-repository.ts";

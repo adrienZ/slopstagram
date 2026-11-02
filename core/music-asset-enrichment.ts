@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { isJsonObject, JsonValueSchema } from "./lib/json-value.ts";
+import { isJsonObject, JsonValueSchema } from "@@/core/utils/json-value.ts";
 import type { StoryItem, InstagramClient } from "./instagram-types.ts";
-import type { Logger } from "./lib/logging-service.ts";
+import type { Logger } from "@@/core/utils/logging-service.ts";
 import type { StoryRepository } from "./repositories/story-repository.ts";
 import { getMusicObservation } from "./music-observation-service.ts";
 

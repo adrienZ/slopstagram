@@ -4,7 +4,7 @@ import type {
   ReelTrayResponse,
   StoryReel,
 } from "@@/core/instagram-types.ts";
-import type { JsonValue } from "@@/core/lib/json-value.ts";
+import type { JsonValue } from "@@/core/utils/json-value.ts";
 import { parseGalleryPage, parseTrayResponse } from "@@/core/story-client-service.ts";
 import type { RecordedPayloads } from "./seed.ts";
 

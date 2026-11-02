@@ -3,8 +3,8 @@ import path from "node:path";
 import { fileURLToPath, URL } from "node:url";
 import { describe, expect, test } from "vitest";
 import { createRedactor, findUnsafeFixtureValues } from "../scripts/capture-fixtures.ts";
-import { JsonValueSchema } from "@@/core/lib/json-value.ts";
-import type { JsonValue } from "@@/core/lib/json-value.ts";
+import { JsonValueSchema } from "@@/core/utils/json-value.ts";
+import type { JsonValue } from "@@/core/utils/json-value.ts";
 
 const fixturesDirectory = fileURLToPath(new URL("fixtures", import.meta.url));
 const MEDIA_EXTENSIONS = new Set([".m4a", ".mp4"]);

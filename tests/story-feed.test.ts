@@ -10,7 +10,7 @@ import { createStoryFeed, createStoryDayFeed, createReportFeed } from "@@/core/s
 import { getStoryDate, getStoryDayRange } from "@@/core/lib/story-date-service.ts";
 import { readStoryFeedSources } from "../app/loaders/story-feed.ts";
 import { resolveUserSummariesForReport } from "@@/core/user-summary.ts";
-import { createLogger } from "@@/core/lib/logging-service.ts";
+import { createLogger } from "@@/core/utils/logging-service.ts";
 
 async function createFixture(context: TestContext) {
   const database = createDrizzle(":memory:");
