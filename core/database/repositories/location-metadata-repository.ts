@@ -10,7 +10,7 @@ import {
 } from "../entities/location-metadata.ts";
 import { storyStickers } from "../entities/story.ts";
 import type { StoryAnnotations } from "@@/core/story-types.ts";
-import type { StoryItem } from "@@/core/instagram-types.ts";
+import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
 import type { LocationObservationInput } from "@@/core/location-observation-service.ts";
 import {
   planLocationMetadataWrite,

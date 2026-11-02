@@ -12,7 +12,7 @@ import {
 } from "../entities/report.ts";
 import { stories } from "../entities/story.ts";
 import { NO_ACCESSIBILITY_CAPTION } from "@@/core/utils/report-constants.ts";
-import { StoriesManifestReportSchema } from "@@/core/lib/story-schemas.ts";
+import { StoriesManifestReportSchema } from "@@/core/instagram/story-schemas.ts";
 import { createOutputUsers } from "@@/core/story-output-service.ts";
 import type {
   StoriesManifestReport,

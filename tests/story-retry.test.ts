@@ -1,5 +1,5 @@
 import { test, expect } from "vitest";
-import { requestWithRetry, type RetryOptions } from "@@/core/story-retry-service.ts";
+import { requestWithRetry, type RetryOptions } from "@@/core/instagram/story-retry.ts";
 import { createMockLogger, fixedNow, response } from "./mock-helpers.ts";
 
 function retryOptions(overrides: Partial<RetryOptions> = {}) {

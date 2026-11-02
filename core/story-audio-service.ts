@@ -3,7 +3,7 @@ import type { StoryAudio } from "@@/core/database/entities/story-audio.ts";
 import { dashAudioSource } from "./lib/dash-audio.ts";
 import { isJsonObject } from "@@/core/utils/json-value.ts";
 import type { StoryAnnotations } from "./story-types.ts";
-import type { StoryItem } from "./instagram-types.ts";
+import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
 
 const SharedReelSchema = z.object({ product_type: z.literal("clips") });
 

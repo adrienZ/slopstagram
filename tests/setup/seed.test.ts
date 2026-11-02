@@ -14,7 +14,7 @@ import {
   GalleryPageSchema,
   parseGalleryPage,
   parseTrayResponse,
-} from "@@/core/story-client-service.ts";
+} from "@@/core/instagram/story-client.ts";
 import { readRecordedPayloads, seedRecordedStories } from "./seed.ts";
 
 const now = new Date("2026-10-29T12:00:00.000Z");

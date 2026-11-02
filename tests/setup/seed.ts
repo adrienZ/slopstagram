@@ -9,7 +9,7 @@ import { persistReportInstagramUsers } from "@@/core/lib/instagram-user-service.
 import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
 import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
 import { fetchStories } from "@@/core/stories.ts";
-import { GalleryPageSchema } from "@@/core/story-client-service.ts";
+import { GalleryPageSchema } from "@@/core/instagram/story-client.ts";
 import { createRecordedClient } from "./recorded-client.ts";
 import { createMemoryStorage } from "../memory-storage.ts";
 import { createMockLogger, noSleep } from "../mock-helpers.ts";
