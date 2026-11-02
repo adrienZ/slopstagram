@@ -61,12 +61,13 @@ export function devtoolsLaunchers(): Plugin {
     devtools: {
       setup(ctx) {
         for (const tool of TOOLS) {
-          const launcher = {
+          // The browser viewer cannot call a function on the dock entry, so the launch button is
+          // bound to a registered command instead.
+          const commandId = `${tool.id}:launch`;
+          ctx.commands.register({
+            id: commandId,
             title: `Start ${tool.title}`,
-            description: `${tool.description}. Opens in a new tab.`,
-            buttonStart: "Start and open",
-            buttonLoading: "Starting...",
-            async onLaunch() {
+            async handler() {
               await ctx.terminals.startChildProcess(
                 {
                   command: "npm",
@@ -78,13 +79,19 @@ export function devtoolsLaunchers(): Plugin {
               );
               openInBrowser(tool.url);
             },
-          };
+          });
           ctx.docks.register({
             id: tool.id,
             title: tool.title,
             icon: tool.icon,
             type: "launcher",
-            launcher,
+            launcher: {
+              title: `Start ${tool.title}`,
+              description: `${tool.description}. Opens in a new tab.`,
+              buttonStart: "Start and open",
+              buttonLoading: "Starting...",
+              command: commandId,
+            },
           });
         }
       },
