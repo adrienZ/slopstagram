@@ -13,21 +13,23 @@ import {
 } from "./seeded-pages.ts";
 import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
 import { createPageRenderer } from "../render-page.ts";
+import { useSharedTestRuntime } from "../setup/test-runtime.ts";
 import { LocationMapContext } from "../../app/components/location-history.tsx";
 import type { LocationMapCanvasProps } from "../../app/components/location-map-canvas.tsx";
 
+const shared = useSharedTestRuntime(seedPageDatabase);
+
 const renderer = createPageRenderer(
   Route,
-  ({ params }) => loadAccountTimeline(params.username, pageNow),
+  ({ params }) => loadAccountTimeline(shared.runtime, params.username, pageNow),
   "/users/$username",
 );
 
 let timelineProps: ReturnType<typeof loadAccountTimeline>;
 let timelineEntry: (typeof timelineProps)["timeline"]["stories"][number];
 
-beforeAll(async () => {
-  await seedPageDatabase();
-  timelineProps = loadAccountTimeline(timelineAccount, pageNow);
+beforeAll(() => {
+  timelineProps = loadAccountTimeline(shared.runtime, timelineAccount, pageNow);
   [timelineEntry] = timelineProps.timeline.stories;
 });
 

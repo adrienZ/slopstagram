@@ -1,21 +1,13 @@
 import { createHash } from "node:crypto";
-import { assert, beforeAll, test, expect } from "vitest";
+import { assert, test, expect } from "vitest";
 import {
   createUserTimeline,
   getTimelinePreviewPaths,
   groupStoriesByPublishedDate,
 } from "../app/loaders/account-timeline.ts";
-import { appleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
-import { migrateDatabase } from "@@/core/database/migrate.ts";
-import { instagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
-import { storyRepository } from "@@/core/database/repositories/story-repository.ts";
-import { visionRepository } from "@@/core/database/repositories/vision-repository.ts";
 import { VISION_MODEL, VISION_PROMPT } from "@@/core/vision/vision-analysis.ts";
 import type { UserTimelineStory } from "@@/core/database/repositories/story-repository.ts";
-
-beforeAll(() => {
-  migrateDatabase();
-});
+import { createTestRuntime } from "./setup/test-runtime.ts";
 
 function timelineStory(pk: string, takenAt: number): UserTimelineStory {
   return {
@@ -69,19 +61,22 @@ test("groups stories by their Paris publication day, month, and year", () => {
   ]);
 });
 
-test("returns no timeline for an unknown user", () => {
-  expect(createUserTimeline("missing-user")).toBe(null);
+test("returns no timeline for an unknown user", async (context) => {
+  const runtime = await createTestRuntime(context);
+
+  expect(createUserTimeline(runtime, "missing-user")).toBe(null);
 });
 
-test("returns an empty timeline for a saved account without stories", async () => {
-  await instagramUserRepository.save({
+test("returns an empty timeline for a saved account without stories", async (context) => {
+  const runtime = await createTestRuntime(context);
+  await runtime.users.save({
     username: "saved-user",
     full_name: "Saved User",
     id: "saved",
     pk: "saved",
   });
 
-  const result = createUserTimeline("saved-user");
+  const result = createUserTimeline(runtime, "saved-user");
 
   assert.ok(result);
   expect(result.timelineUser.username).toBe("saved-user");
@@ -90,15 +85,16 @@ test("returns an empty timeline for a saved account without stories", async () =
   expect(result.years).toStrictEqual([]);
 });
 
-test("assembles timeline media, captions, cached vision and local paths", async () => {
-  await instagramUserRepository.save({
+test("assembles timeline media, captions, cached vision and local paths", async (context) => {
+  const runtime = await createTestRuntime(context);
+  await runtime.users.save({
     full_name: "Timeline User",
     id: "timeline-id",
     pk: "timeline-pk",
     username: "timeline-user",
   });
   const owner = { pk: "timeline-pk", username: "timeline-user" };
-  await storyRepository.save(
+  await runtime.stories.save(
     {
       accessibility_caption: "Instagram caption",
       media_type: 1,
@@ -109,17 +105,17 @@ test("assembles timeline media, captions, cached vision and local paths", async 
     },
     owner,
   );
-  await storyRepository.save({ media_type: 2, pk: "video", taken_at: 1_767_225_500 }, owner);
-  await storyRepository.save({ media_type: 99, pk: "unknown", taken_at: 1_767_225_400 }, owner);
+  await runtime.stories.save({ media_type: 2, pk: "video", taken_at: 1_767_225_500 }, owner);
+  await runtime.stories.save({ media_type: 99, pk: "unknown", taken_at: 1_767_225_400 }, owner);
   const vision = { text: "visible text", visual: "a street" };
-  await appleVisionRepository.save("image", "Apple caption");
-  await visionRepository.save("video", {
+  await runtime.appleVision.save("image", "Apple caption");
+  await runtime.vision.save("video", {
     model: VISION_MODEL,
     prompt_hash: createHash("sha256").update(VISION_PROMPT).digest("hex"),
     result: vision,
   });
 
-  const timeline = createUserTimeline("timeline-user");
+  const timeline = createUserTimeline(runtime, "timeline-user");
 
   assert.ok(timeline);
   const { stories } = timeline;
@@ -170,19 +166,20 @@ test("assembles timeline media, captions, cached vision and local paths", async 
   );
 });
 
-test("omits analysis when the stories have no cached details", async () => {
-  await instagramUserRepository.save({
+test("omits analysis when the stories have no cached details", async (context) => {
+  const runtime = await createTestRuntime(context);
+  await runtime.users.save({
     full_name: "Plain User",
     id: "plain-id",
     pk: "plain-pk",
     username: "plain-user",
   });
-  await storyRepository.save(
+  await runtime.stories.save(
     { media_type: 1, pk: "plain-story", taken_at: 1_767_225_600 },
     { pk: "plain-pk", username: "plain-user" },
   );
 
-  const timeline = createUserTimeline("plain-user");
+  const timeline = createUserTimeline(runtime, "plain-user");
 
   assert.ok(timeline);
   expect(timeline.avatarPath).toBe("/media/avatars/plain-pk.jpg");

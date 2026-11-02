@@ -21,8 +21,9 @@ export const getUserTimeline = createServerFn({ method: "GET" })
   .validator(z.string())
   .handler(async ({ data }) => {
     const { loadAccountTimeline } = await import("./loaders/account-timeline.ts");
+    const { getProductionRuntime } = await import("@@/core/runtime/production-runtime.ts");
     try {
-      return loadAccountTimeline(data);
+      return loadAccountTimeline(getProductionRuntime(), data);
     } catch (error) {
       if (error instanceof Error && "status" in error && error.status === 404) {
         notFound({ throw: true });

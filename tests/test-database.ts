@@ -7,10 +7,15 @@ import type { Runtime } from "@@/core/runtime/runtime.ts";
 import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 
-/** A migrated in-memory database, closed when the test ends. */
-export function createTestDatabase(context: Pick<TestContext, "onTestFinished">) {
+export function createMigratedDatabase() {
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
+  return database;
+}
+
+/** A migrated in-memory database, closed when the test ends. */
+export function createTestDatabase(context: Pick<TestContext, "onTestFinished">) {
+  const database = createMigratedDatabase();
   context.onTestFinished(() => {
     database.$client.close();
   });

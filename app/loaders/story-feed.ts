@@ -11,6 +11,7 @@ import {
   visionRepository,
   type VisionRepository,
 } from "@@/core/database/repositories/vision-repository.ts";
+import { instagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
 import { storyRepository } from "@@/core/database/repositories/story-repository.ts";
 import type { CachedReportImages } from "@@/core/media-store/image-cache.ts";
 import { getReportUserKey } from "@@/core/accounts/report-user-key.ts";
@@ -137,7 +138,7 @@ export function loadStoryFeed(
     selectedStory,
   });
   const sources = readStoryFeedSources(feedUsers);
-  const sidebarUsers = loadSidebarUsers();
+  const sidebarUsers = loadSidebarUsers({ users: instagramUserRepository });
   const storedStories = feedUsers.flatMap((user) =>
     user.stories.flatMap(({ media_pk }) => {
       const story = storyRepository.findByMediaPk(media_pk);

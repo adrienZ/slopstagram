@@ -2,16 +2,14 @@ import { eq, sql } from "drizzle-orm";
 import { useDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { stories } from "@@/core/database/entities/story.ts";
-import { appleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
-import { storyRepository } from "@@/core/database/repositories/story-repository.ts";
-import { instagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
-import { userSummaryRepository } from "@@/core/database/repositories/user-summary-repository.ts";
+import { createRuntime, type Runtime } from "@@/core/runtime/runtime.ts";
 import { createReportFeed } from "@@/core/story-feed/story-feed.ts";
 import { resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
 import type { SidebarUser } from "../../app/loaders/sidebar-users.ts";
 import { withStoryStickers, type StoryCardData } from "../../app/utils/story-cards.ts";
 import { groupTimelineLocations } from "../../app/utils/timeline-locations.ts";
 import { groupTimelineStickers } from "../../app/utils/timeline-stickers.ts";
+import { createMemoryCacheStorage } from "../memory-storage.ts";
 import { createMockLogger } from "../mock-helpers.ts";
 import { readRecordedPayloads, seedRecordedStories } from "../setup/seed.ts";
 
@@ -46,18 +44,26 @@ export const hostileCaption = "</script><script>caption</script>";
 export const appleCaption = "apple <text>";
 export const userSummary = "A synthetic summary of the recorded stories.";
 
-/**
- * Seeds the application database (in memory under vitest) with what the page tests render:
- * the recorded stories through production ingestion, plus the accounts, captions and
- * summaries that ingestion does not produce.
- */
-export async function seedPageDatabase(): Promise<void> {
+export function applicationRuntime(): Runtime {
   migrateDatabase();
+  return createRuntime(useDrizzle(), {
+    logger: createMockLogger(),
+    storage: createMemoryCacheStorage(),
+  });
+}
+
+/**
+ * Seeds a runtime's database with what the page tests render: the recorded stories through
+ * production ingestion, plus the accounts, captions and summaries that ingestion does not
+ * produce. Without a runtime it seeds the application database (in memory under vitest).
+ */
+export async function seedPageDatabase(runtime: Runtime = applicationRuntime()): Promise<void> {
   await seedRecordedStories(await readRecordedPayloads(), {
+    database: runtime.database,
     publishedBefore: { now: pageNow, seconds: PUBLISHED_BEFORE_SECONDS },
   });
   // The recording has neither a markup-laden caption nor a story outside the rolling 24 hours.
-  const database = useDrizzle();
+  const { database } = runtime;
   database
     .update(stories)
     .set({ accessibilityCaption: hostileCaption })
@@ -68,13 +74,13 @@ export async function seedPageDatabase(): Promise<void> {
     .set({ takenAt: sql`${stories.takenAt} - ${PAST_STORY_AGE_SECONDS}` })
     .where(eq(stories.mediaPk, pastStoryPk))
     .run();
-  await appleVisionRepository.save(captionedStoryPk, appleCaption);
+  await runtime.appleVision.save(captionedStoryPk, appleCaption);
   for (const [pk, username] of [
     ["700000000000901", outsideFeedAccount],
     ["700000000000114", mentionedAccount],
   ]) {
     // oxlint-disable-next-line no-await-in-loop -- Two inserts, saved in order.
-    await instagramUserRepository.save({
+    await runtime.users.save({
       full_name: null,
       id: pk,
       pk,
@@ -82,8 +88,8 @@ export async function seedPageDatabase(): Promise<void> {
     });
   }
   await resolveUserSummariesForReport(
-    { logger: createMockLogger(), summaries: userSummaryRepository },
-    { output: { users: createReportFeed({ stories: storyRepository }, pageNow).users } },
+    runtime,
+    { output: { users: createReportFeed(runtime, pageNow).users } },
     { runUserSummary: async () => await Promise.resolve(JSON.stringify({ summary: userSummary })) },
   );
 }

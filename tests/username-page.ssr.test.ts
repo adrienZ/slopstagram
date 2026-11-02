@@ -1,17 +1,14 @@
 import { createHash } from "node:crypto";
-import { beforeAll, expect, test } from "vitest";
+import { expect, test } from "vitest";
 import { within } from "@testing-library/dom";
 import { JSDOM } from "jsdom";
-import { migrateDatabase } from "@@/core/database/migrate.ts";
+import type { Runtime } from "@@/core/runtime/runtime.ts";
 import { VISION_MODEL, VISION_PROMPT } from "@@/core/vision/vision-analysis.ts";
-import { appleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
-import { instagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
-import { storyRepository } from "@@/core/database/repositories/story-repository.ts";
-import { visionRepository } from "@@/core/database/repositories/vision-repository.ts";
 import { Route } from "../app/routes/users/$username.tsx";
 import { loadAccountTimeline } from "../app/loaders/account-timeline.ts";
 import { storyItem } from "./mock-helpers.ts";
 import { createPageRenderer } from "./render-page.ts";
+import { useSharedTestRuntime } from "./setup/test-runtime.ts";
 
 const now = new Date("2026-10-29T12:00:00.000Z");
 const owner = { pk: "700000000000075", username: "user_075" };
@@ -20,10 +17,36 @@ const laterStoryPk = "700000000000053";
 const earlierStoryPk = "700000000000028";
 const promptHash = createHash("sha256").update(VISION_PROMPT).digest("hex");
 
+async function seed(runtime: Runtime) {
+  await runtime.users.save({ ...owner, full_name: null, id: owner.pk });
+  await runtime.users.save({ ...emptyOwner, full_name: null, id: emptyOwner.pk });
+  await runtime.stories.save(
+    { ...storyItem(laterStoryPk), taken_at: Date.parse("2026-10-29T10:00:00Z") / 1000 },
+    owner,
+  );
+  await runtime.stories.save(
+    { ...storyItem(earlierStoryPk), taken_at: Date.parse("2026-10-27T10:00:00Z") / 1000 },
+    owner,
+  );
+  await runtime.vision.save(laterStoryPk, {
+    model: VISION_MODEL,
+    prompt_hash: promptHash,
+    result: { text: "Current synthetic OCR text", visual: "Current synthetic description" },
+  });
+  await runtime.vision.save(earlierStoryPk, {
+    model: "retired-model",
+    prompt_hash: promptHash,
+    result: { text: "Outdated synthetic OCR text", visual: "Outdated synthetic description" },
+  });
+  await runtime.appleVision.save(laterStoryPk, "Synthetic Apple caption");
+}
+
+const shared = useSharedTestRuntime(seed);
+
 // The timeline the handler loads from the seeded database, with the username the real loader receives.
 const renderer = createPageRenderer(
   Route,
-  ({ params }) => loadAccountTimeline(params.username, now),
+  ({ params }) => loadAccountTimeline(shared.runtime, params.username, now),
   "/users/$username",
 );
 
@@ -38,31 +61,6 @@ async function render(url: string) {
   const html = await renderer.renderRoute(url);
   return { html, page: within(new JSDOM(html).window.document.body) };
 }
-
-beforeAll(async () => {
-  migrateDatabase();
-  await instagramUserRepository.save({ ...owner, full_name: null, id: owner.pk });
-  await instagramUserRepository.save({ ...emptyOwner, full_name: null, id: emptyOwner.pk });
-  await storyRepository.save(
-    { ...storyItem(laterStoryPk), taken_at: Date.parse("2026-10-29T10:00:00Z") / 1000 },
-    owner,
-  );
-  await storyRepository.save(
-    { ...storyItem(earlierStoryPk), taken_at: Date.parse("2026-10-27T10:00:00Z") / 1000 },
-    owner,
-  );
-  await visionRepository.save(laterStoryPk, {
-    model: VISION_MODEL,
-    prompt_hash: promptHash,
-    result: { text: "Current synthetic OCR text", visual: "Current synthetic description" },
-  });
-  await visionRepository.save(earlierStoryPk, {
-    model: "retired-model",
-    prompt_hash: promptHash,
-    result: { text: "Outdated synthetic OCR text", visual: "Outdated synthetic description" },
-  });
-  await appleVisionRepository.save(laterStoryPk, "Synthetic Apple caption");
-});
 
 test("an account's stories are grouped by the day they were published", async () => {
   const { page } = await render(`/users/${owner.username}`);
@@ -105,7 +103,7 @@ test("an account without stories renders an empty timeline", async () => {
 });
 
 test("an account the application has never seen has no timeline", () => {
-  expect(() => loadAccountTimeline("unknown_account", now)).toThrow(
+  expect(() => loadAccountTimeline(shared.runtime, "unknown_account", now)).toThrow(
     "no published stories found for unknown_account",
   );
 });

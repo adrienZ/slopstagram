@@ -1,20 +1,16 @@
 import "@tanstack/react-start/server-only";
 import { HTTPError } from "nitro/h3";
 import type { StoryOutputUser } from "@@/core/fetch-run/report-types.ts";
-import {
-  type UserTimelineStory,
-  type StoryRepository,
-  storyRepository,
+import type {
+  UserTimelineStory,
+  StoryRepository,
 } from "@@/core/database/repositories/story-repository.ts";
 import type { VisionResult } from "@@/core/database/entities/vision.ts";
 import { createStoredStoryUser } from "@@/core/story-feed/story-feed.ts";
-import { appleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
-import { visionRepository } from "@@/core/database/repositories/vision-repository.ts";
+import type { AppleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
+import type { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
 import { describeOutdatedVision, type OutdatedVision } from "@@/core/vision/vision-analysis.ts";
-import {
-  instagramUserRepository,
-  type InstagramUserRepository,
-} from "@@/core/database/repositories/instagram-user-repository.ts";
+import type { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
 
 import { getStoryDate } from "@@/core/story-feed/story-days.ts";
 import { createStoryCards, withStoryStickers } from "../utils/story-cards.ts";
@@ -22,6 +18,21 @@ import type { StoryCardSources } from "../utils/story-cards.ts";
 import { groupTimelineLocations } from "../utils/timeline-locations.ts";
 import { groupTimelineStickers } from "../utils/timeline-stickers.ts";
 import { loadSidebarUsers } from "./sidebar-users.ts";
+
+interface TimelineDetailsRuntime {
+  appleVision: Pick<AppleVisionRepository, "findByMediaPk">;
+  vision: Pick<VisionRepository, "findByMediaPk">;
+}
+
+interface UserTimelineRuntime extends TimelineDetailsRuntime {
+  stories: Pick<StoryRepository, "listByUsername">;
+  users: Pick<InstagramUserRepository, "findByUsername">;
+}
+
+interface AccountTimelineRuntime extends UserTimelineRuntime {
+  stories: Pick<StoryRepository, "listByUsername" | "listStickerKinds">;
+  users: Pick<InstagramUserRepository, "findByUsername" | "listAll">;
+}
 
 const PARIS_TIME_ZONE = "Europe/Paris";
 
@@ -148,16 +159,19 @@ interface TimelineDetails {
   visionByPreviewUrl: Map<string, VisionResult>;
 }
 
-function readTimelineDetails(stories: Array<UserTimelineStory>): TimelineDetails {
+function readTimelineDetails(
+  runtime: TimelineDetailsRuntime,
+  stories: Array<UserTimelineStory>,
+): TimelineDetails {
   const appleCaptionByMediaPk = new Map<string, string>();
   const outdatedVisionByPreviewUrl = new Map<string, OutdatedVision>();
   const visionByPreviewUrl = new Map<string, VisionResult>();
 
   const details = stories.map((story) => ({
-    appleCaption: appleVisionRepository.findByMediaPk(story.story.pk),
+    appleCaption: runtime.appleVision.findByMediaPk(story.story.pk),
     previewUrl: getStoryPreviewSource(story),
     storyPk: story.story.pk,
-    vision: visionRepository.findByMediaPk(story.story.pk),
+    vision: runtime.vision.findByMediaPk(story.story.pk),
   }));
 
   for (const { appleCaption, previewUrl, storyPk, vision } of details) {
@@ -177,13 +191,12 @@ function readTimelineDetails(stories: Array<UserTimelineStory>): TimelineDetails
 }
 
 export function createUserTimeline(
+  runtime: UserTimelineRuntime,
   username: string,
-  repository: Pick<StoryRepository, "listByUsername"> = storyRepository,
-  users: Pick<InstagramUserRepository, "findByUsername"> = instagramUserRepository,
 ): UserTimeline | null {
-  const stories = repository.listByUsername(username);
+  const stories = runtime.stories.listByUsername(username);
   if (stories.length === 0) {
-    const user = users.findByUsername(username);
+    const user = runtime.users.findByUsername(username);
     if (user === null) {
       return null;
     }
@@ -205,7 +218,7 @@ export function createUserTimeline(
   }
 
   const timelineUser = createStoredStoryUser(stories[0], stories);
-  const details = readTimelineDetails(stories);
+  const details = readTimelineDetails(runtime, stories);
 
   return {
     ...details,
@@ -247,13 +260,17 @@ function getStoryCardSources(
   };
 }
 
-export function loadAccountTimeline(username: string, now: Date = new Date()) {
-  const timeline = createUserTimeline(username);
+export function loadAccountTimeline(
+  runtime: AccountTimelineRuntime,
+  username: string,
+  now: Date = new Date(),
+) {
+  const timeline = createUserTimeline(runtime, username);
   if (timeline === null) {
     throw new HTTPError({ status: 404, message: `no published stories found for ${username}` });
   }
   const previewPaths = getTimelinePreviewPaths(timeline.stories);
-  const sidebarUsers = loadSidebarUsers();
+  const sidebarUsers = loadSidebarUsers(runtime);
   const cards = withStoryStickers(
     createStoryCards(timeline.timelineUser, getStoryCardSources(timeline, previewPaths)),
     timeline.stories,
@@ -274,7 +291,7 @@ export function loadAccountTimeline(username: string, now: Date = new Date()) {
   return {
     today: getStoryDate(now),
     sidebarUsers,
-    stickerGroups: groupTimelineStickers(timeline.stories, storyRepository.listStickerKinds()),
+    stickerGroups: groupTimelineStickers(timeline.stories, runtime.stories.listStickerKinds()),
     locations: groupTimelineLocations(timeline.stories),
     timeline: {
       avatarPath: timeline.avatarPath,

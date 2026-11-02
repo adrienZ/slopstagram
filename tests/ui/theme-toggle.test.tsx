@@ -10,7 +10,9 @@ const renderer = createPageRenderer(Route, () => loadStoryFeed(pageNow), "/repor
 
 const storageKey = "slopstagram-theme";
 
-beforeAll(seedPageDatabase);
+beforeAll(async () => {
+  await seedPageDatabase();
+});
 
 test("theme choices persist, apply document colors, and update the trigger icon", async () => {
   const { user } = await renderer.mountRoute("/report");
