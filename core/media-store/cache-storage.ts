@@ -5,7 +5,7 @@ import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
 
 export type ImageCacheStorage = Storage<Record<string, never>>;
 export type AudioCacheStorage = Storage<Record<string, never>>;
-export type StoryStorage = Storage<StoryItem>;
+type StoryStorage = Storage<StoryItem>;
 
 export interface CacheStorage {
   audio: AudioCacheStorage;

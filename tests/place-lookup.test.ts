@@ -11,7 +11,7 @@ import type { JsonObject, JsonValue } from "@@/core/utils/json-value.ts";
 import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
 import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
 import { fetchStoriesManifest } from "@@/core/fetch-run/stories.ts";
-import { createMemoryStorage } from "./memory-storage.ts";
+import { createMemoryCacheStorage } from "./memory-storage.ts";
 import {
   createCapturingLogger,
   createClient,
@@ -115,13 +115,11 @@ async function ingest(
   client: ReturnType<typeof createPlaceClient>,
   now: () => Date = fixedNow,
 ) {
-  return await fetchStoriesManifest(client, {
-    storyRepository: repository,
-    storyStorage: createMemoryStorage(),
-    logger: createCapturingLogger(),
-    now,
-    sleep: noSleep,
-  });
+  return await fetchStoriesManifest(
+    { logger: createCapturingLogger(), stories: repository, storage: createMemoryCacheStorage() },
+    client,
+    { now, sleep: noSleep },
+  );
 }
 
 function storedPlace(repository: StoryRepository, pk: string) {
@@ -375,13 +373,11 @@ test("a place with a non-numeric id is skipped without a request or a failure", 
     [storyAt("m1", { pk: "bloks_sticker_id", name: "Sticker" })],
     {},
   );
-  await fetchStoriesManifest(client, {
-    storyRepository: repository,
-    storyStorage: createMemoryStorage(),
-    logger,
-    now: fixedNow,
-    sleep: noSleep,
-  });
+  await fetchStoriesManifest(
+    { logger, stories: repository, storage: createMemoryCacheStorage() },
+    client,
+    { now: fixedNow, sleep: noSleep },
+  );
   expect(client.lookups).toStrictEqual([]);
   expect(storedPlace(repository, "m1").lastLookupAttemptAt).toBe(null);
   expect(

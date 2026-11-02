@@ -15,10 +15,7 @@ import {
   cacheReportImages,
   type CacheReportImagesOptions,
 } from "@@/core/media-store/image-cache.ts";
-import {
-  type RecognizeAppleCaptionOptions,
-  recognizeAppleCaption,
-} from "@@/core/vision/apple-ocr.ts";
+import type { AppleOcrRunner } from "@@/core/vision/apple-ocr.ts";
 import { cacheReportAudio } from "@@/core/music/report-audio.ts";
 import type { MusicMediaOptions } from "@@/core/music/music-media.ts";
 import { persistReportInstagramUsers } from "@@/core/accounts/instagram-user.ts";
@@ -49,7 +46,7 @@ export interface CreateReportBoundaries {
   /** HTTP calls to Ollama, for vision analysis and user summaries. */
   fetchOllama?: HttpFetch;
   /** Runs Apple OCR on an image. */
-  runAppleOcr?: RecognizeAppleCaptionOptions["runAppleOcr"];
+  runAppleOcr?: AppleOcrRunner;
 }
 
 export interface CreateReportOptions {
@@ -98,23 +95,21 @@ export async function createReport(options: CreateReportOptions): Promise<Create
   const vision = new VisionRepository(database);
   const appleVision = new AppleVisionRepository(database);
   const summaries = new UserSummaryRepository(database);
+  const fetchRuns = new FetchRunRepository(database);
   const cacheDirectory = boundaries.cacheDirectory ?? BASE_CACHE_DIR;
   const storage = createFileCacheStorage(cacheDirectory);
   const now = options.now ?? (() => new Date());
   return await recordFetchRun(
+    { fetchRuns },
     async (run) => {
       const timestamp = formatFilenameTimestamp(run.startedAt);
       const outputFileName = `stories-report-${timestamp}-${run.id}.json`;
       const { logger } = options;
       logger.box(`${pkg.name} - report ${outputFileName}`);
-      const report = await fetchStories({
-        client: boundaries.client,
-        logger,
-        now,
-        reportName: outputFileName,
-        storyRepository: stories,
-        storyStorage: storage.stories,
-      });
+      const report = await fetchStories(
+        { client: boundaries.client, logger, storage, stories },
+        { now, reportName: outputFileName },
+      );
       run.report = report;
       // Keep the observation and failures even if enrichment or every media fetch fails.
       await reports.save(outputFileName, report);
@@ -137,32 +132,23 @@ export async function createReport(options: CreateReportOptions): Promise<Create
         logger,
         storage: storage.images,
       });
-      await resolveAppleCaptionsForReport(report, cachedImages, {
-        cacheDirectory,
-        logger,
-        resolver: async (mediaPk, imagePath) =>
-          await recognizeAppleCaption(mediaPk, imagePath, {
-            repository: appleVision,
-            runAppleOcr: boundaries.runAppleOcr,
-          }),
-      });
-      await resolveVisionForReport(report, cachedImages, {
-        cacheDirectory,
-        fetchVision: boundaries.fetchOllama,
-        logger,
-        repository: vision,
-      });
-      await persistReportInstagramUsers(report, users);
+      await resolveAppleCaptionsForReport(
+        { appleVision, logger, runAppleOcr: boundaries.runAppleOcr, storage },
+        report,
+        cachedImages,
+      );
+      await resolveVisionForReport(
+        { fetchOllama: boundaries.fetchOllama, logger, storage, vision },
+        report,
+        cachedImages,
+      );
+      await persistReportInstagramUsers({ users }, report);
       // Generate from the same canonical, active story set used by the user app.
-      const feedUsers = createStoryFeed(now(), { repository: stories });
+      const feedUsers = createStoryFeed({ stories }, now());
       await resolveUserSummariesForReport(
+        { fetchOllama: boundaries.fetchOllama, logger, summaries },
         { output: { users: feedUsers } },
-        {
-          fetchOllama: boundaries.fetchOllama,
-          logger,
-          repository: summaries,
-          visionByPreviewUrl: readStoryFeedVision(feedUsers, vision),
-        },
+        { visionByPreviewUrl: readStoryFeedVision({ vision }, feedUsers) },
       );
       await reports.save(outputFileName, report);
       logger.info(
@@ -174,6 +160,6 @@ export async function createReport(options: CreateReportOptions): Promise<Create
 
       return { outputFileName, reportKey: outputFileName, report };
     },
-    { repository: new FetchRunRepository(database), now },
+    { now },
   );
 }

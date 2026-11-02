@@ -1,7 +1,4 @@
-import {
-  type InstagramUserRepository,
-  instagramUserRepository,
-} from "@@/core/database/repositories/instagram-user-repository.ts";
+import type { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
 import type { InstagramUserEntry } from "@@/core/database/entities/instagram-user.ts";
 import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
 
@@ -47,8 +44,8 @@ function removeEmbeddedUser(user: InstagramUserFields): void {
 }
 
 export async function persistReportInstagramUsers(
+  { users: repository }: { users: InstagramUserStore },
   report: StoriesManifestReport,
-  repository: InstagramUserStore = instagramUserRepository,
 ): Promise<void> {
   const usersByUsername = new Map<string, InstagramUserEntry>();
 
@@ -75,8 +72,8 @@ export async function persistReportInstagramUsers(
 }
 
 export function hydrateReportInstagramUsers(
+  { users: repository }: { users: InstagramUserStore },
   report: StoriesManifestReport,
-  repository: InstagramUserStore = instagramUserRepository,
 ): void {
   const usersByUsername = new Map<string, InstagramUserEntry | null>();
 

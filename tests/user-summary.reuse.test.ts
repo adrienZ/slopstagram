@@ -1,48 +1,41 @@
 import { assert, test, expect, type TestContext } from "vitest";
 import { readStoryFeedSources } from "../app/loaders/story-feed.ts";
 import { userSummaries } from "@@/core/database/entities/user-summary.ts";
-import { AppleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
-import { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
 import { readUserSummaries, resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
-import { createMockLogger, createSummaryReport } from "./mock-helpers.ts";
-import { createSummaryFixtures } from "./test-database.ts";
+import { createSummaryReport } from "./mock-helpers.ts";
+import { createTestRuntime } from "./setup/test-runtime.ts";
+import { countSummaries, saveSummaryUsers } from "./test-database.ts";
 
 async function createStoredSummary(context: TestContext) {
   const report = createSummaryReport();
-  const { database, repository } = await createSummaryFixtures(context, [
-    "summaryuser",
-    "mismatched",
-  ]);
-  await resolveUserSummariesForReport(report, {
-    logger: createMockLogger(),
-    repository,
+  const runtime = await createTestRuntime(context);
+  await saveSummaryUsers(runtime, ["summaryuser", "mismatched"]);
+  await resolveUserSummariesForReport(runtime, report, {
     runUserSummary: async () => JSON.stringify({ summary: "Résumé initial." }),
   });
-  const stored = database.select().from(userSummaries).get();
+  const stored = runtime.database.select().from(userSummaries).get();
   assert.ok(stored);
-  const entry = repository.findBySourceHash(stored.sourceHash);
+  const entry = runtime.summaries.findBySourceHash(stored.sourceHash);
   assert.ok(entry);
   return {
     entry,
     feed: () =>
       readStoryFeedSources(report.output.users, {
-        appleVision: new AppleVisionRepository(database),
-        userSummary: repository,
-        vision: new VisionRepository(database),
+        appleVision: runtime.appleVision,
+        userSummary: runtime.summaries,
+        vision: runtime.vision,
       }).userSummaryByUserKey,
     report,
-    repository,
+    runtime,
   };
 }
 
 test("feed and collection normalize stored summaries identically without rewriting them", async (context) => {
-  const { entry, feed, report, repository } = await createStoredSummary(context);
+  const { entry, feed, report, runtime } = await createStoredSummary(context);
   const storedResult = "  Cafe\u0301\n  et\tmarche\u0301.  ";
-  await repository.save({ ...entry, result: storedResult });
+  await runtime.summaries.save({ ...entry, result: storedResult });
   const feedSummaries = feed();
-  const collectionSummaries = await resolveUserSummariesForReport(report, {
-    logger: createMockLogger(),
-    repository,
+  const collectionSummaries = await resolveUserSummariesForReport(runtime, report, {
     runUserSummary: async () => {
       expect.unreachable("a usable stored summary must not be regenerated");
     },
@@ -50,7 +43,7 @@ test("feed and collection normalize stored summaries identically without rewriti
 
   expect(feedSummaries.get(entry.user_key)).toBe("Café et marché.");
   expect(collectionSummaries).toStrictEqual(feedSummaries);
-  expect(repository.findBySourceHash(entry.source_hash)?.result).toBe(storedResult);
+  expect(runtime.summaries.findBySourceHash(entry.source_hash)?.result).toBe(storedResult);
 });
 
 for (const [name, result] of [
@@ -60,13 +53,11 @@ for (const [name, result] of [
   ["decomposed Unicode and repeated whitespace", "  re\u0301sume\u0301\n  indisponible  "],
 ]) {
   test(`feed hides and collection regenerates a matching ${name} summary`, async (context) => {
-    const { entry, feed, report, repository } = await createStoredSummary(context);
-    await repository.save({ ...entry, result });
+    const { entry, feed, report, runtime } = await createStoredSummary(context);
+    await runtime.summaries.save({ ...entry, result });
     expect(feed().size).toBe(0);
     let generations = 0;
-    const summaries = await resolveUserSummariesForReport(report, {
-      logger: createMockLogger(),
-      repository,
+    const summaries = await resolveUserSummariesForReport(runtime, report, {
       runUserSummary: async () => {
         generations += 1;
         return JSON.stringify({ summary: "Résumé régénéré." });
@@ -82,13 +73,11 @@ for (const [name, result] of [
 // A summary is looked up by its source hash, so a stored one can only mismatch on these fields.
 for (const field of ["prompt_hash", "user_key"] as const) {
   test(`feed and collection reject a stored summary with a mismatched ${field}`, async (context) => {
-    const { entry, feed, report, repository } = await createStoredSummary(context);
-    await repository.save({ ...entry, [field]: "mismatched" });
+    const { entry, feed, report, runtime } = await createStoredSummary(context);
+    await runtime.summaries.save({ ...entry, [field]: "mismatched" });
     expect(feed().size).toBe(0);
     let generations = 0;
-    const summaries = await resolveUserSummariesForReport(report, {
-      logger: createMockLogger(),
-      repository,
+    const summaries = await resolveUserSummariesForReport(runtime, report, {
       runUserSummary: async () => {
         generations += 1;
         return JSON.stringify({ summary: "Résumé corrigé." });
@@ -102,12 +91,10 @@ for (const field of ["prompt_hash", "user_key"] as const) {
 }
 
 test("changed story content hides the old summary until collection regenerates it", async (context) => {
-  const { entry, feed, report, repository } = await createStoredSummary(context);
+  const { entry, feed, report, runtime } = await createStoredSummary(context);
   report.output.users[0].stories[0].stickers.push("#food");
   expect(feed().size).toBe(0);
-  const summaries = await resolveUserSummariesForReport(report, {
-    logger: createMockLogger(),
-    repository,
+  const summaries = await resolveUserSummariesForReport(runtime, report, {
     runUserSummary: async () => JSON.stringify({ summary: "Une story de cuisine." }),
   });
 
@@ -116,27 +103,25 @@ test("changed story content hides the old summary until collection regenerates i
 });
 
 test("a changed model requires its own summary for both reading and generation", async (context) => {
-  const { entry, feed, report, repository } = await createStoredSummary(context);
-  const options = { repository, model: "new-model" };
-  expect(readUserSummaries(report.output.users, options).size).toBe(0);
-  const summaries = await resolveUserSummariesForReport(report, {
+  const { entry, feed, report, runtime } = await createStoredSummary(context);
+  const options = { model: "new-model" };
+  expect(readUserSummaries(runtime, report.output.users, options).size).toBe(0);
+  const summaries = await resolveUserSummariesForReport(runtime, report, {
     ...options,
-    logger: createMockLogger(),
     runUserSummary: async () => JSON.stringify({ summary: "Résumé du nouveau modèle." }),
   });
 
   expect(summaries.get(entry.user_key)).toBe("Résumé du nouveau modèle.");
-  expect(readUserSummaries(report.output.users, options)).toStrictEqual(summaries);
+  expect(readUserSummaries(runtime, report.output.users, options)).toStrictEqual(summaries);
   expect(feed().get(entry.user_key)).toBe("Résumé initial.");
 });
 
 for (const outcome of ["empty", "error"] as const) {
   test(`a generation ${outcome} leaves no stored summary for the feed`, async (context) => {
     const report = createSummaryReport();
-    const { countSummaries, database, repository } = await createSummaryFixtures(context);
-    const summaries = await resolveUserSummariesForReport(report, {
-      logger: createMockLogger(),
-      repository,
+    const runtime = await createTestRuntime(context);
+    await saveSummaryUsers(runtime);
+    const summaries = await resolveUserSummariesForReport(runtime, report, {
       runUserSummary: async () => {
         if (outcome === "error") {
           throw new Error("model unavailable");
@@ -146,12 +131,12 @@ for (const outcome of ["empty", "error"] as const) {
     });
 
     expect(summaries.size).toBe(1);
-    expect(countSummaries()).toBe(0);
+    expect(countSummaries(runtime)).toBe(0);
     expect(
       readStoryFeedSources(report.output.users, {
-        appleVision: new AppleVisionRepository(database),
-        userSummary: repository,
-        vision: new VisionRepository(database),
+        appleVision: runtime.appleVision,
+        userSummary: runtime.summaries,
+        vision: runtime.vision,
       }).userSummaryByUserKey.size,
     ).toBe(0);
   });

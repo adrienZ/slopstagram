@@ -108,10 +108,9 @@ test("creates a report by running the whole pipeline over recorded Instagram pay
   }
 
   // User summaries, written from the stored vision analyses.
-  const feed = createStoryFeed(now, { repository: world.stories });
-  const summaries = readUserSummaries(feed, {
-    repository: world.summaries,
-    visionByPreviewUrl: readStoryFeedVision(feed, world.vision),
+  const feed = createStoryFeed({ stories: world.stories }, now);
+  const summaries = readUserSummaries({ summaries: world.summaries }, feed, {
+    visionByPreviewUrl: readStoryFeedVision({ vision: world.vision }, feed),
   });
   expect(Object.fromEntries(summaries)).toStrictEqual({
     user_008: "Summary of user_008",
@@ -143,11 +142,10 @@ test("records a failed vision analysis and still completes the run", async (cont
     "Synthetic caption 1",
     "Synthetic caption 2",
   ]);
-  const feed = createStoryFeed(now, { repository: world.stories });
+  const feed = createStoryFeed({ stories: world.stories }, now);
   expect(
-    readUserSummaries(feed, {
-      repository: world.summaries,
-      visionByPreviewUrl: readStoryFeedVision(feed, world.vision),
+    readUserSummaries({ summaries: world.summaries }, feed, {
+      visionByPreviewUrl: readStoryFeedVision({ vision: world.vision }, feed),
     }).size,
   ).toBe(2);
 });
@@ -172,8 +170,8 @@ test("records an unreachable vision server in the log and completes the run", as
     world.logger.messages.filter((line) => line.startsWith("warn: could not summarize user")),
   ).toHaveLength(2);
   expect(world.summaries.findBySourceHash("unknown")).toBeNull();
-  const feed = createStoryFeed(now, { repository: world.stories });
-  expect(readUserSummaries(feed, { repository: world.summaries }).size).toBe(0);
+  const feed = createStoryFeed({ stories: world.stories }, now);
+  expect(readUserSummaries({ summaries: world.summaries }, feed).size).toBe(0);
 });
 
 test("skips the remaining captions when Apple OCR is unavailable", async (context) => {

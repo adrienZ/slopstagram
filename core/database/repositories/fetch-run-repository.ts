@@ -1,5 +1,5 @@
 import { desc, eq } from "drizzle-orm";
-import { useDrizzle, type DrizzleDatabase } from "../client.ts";
+import type { DrizzleDatabase } from "../client.ts";
 import { fetchRuns, type FetchRun } from "../entities/fetch-run.ts";
 import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
 
@@ -47,5 +47,3 @@ export class FetchRunRepository {
       .all();
   }
 }
-
-export const fetchRunRepository = new FetchRunRepository(useDrizzle());

@@ -3,9 +3,8 @@ import {
   hydrateReportInstagramUsers,
   persistReportInstagramUsers,
 } from "@@/core/accounts/instagram-user.ts";
-import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
 import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
-import { createTestDatabase } from "./test-database.ts";
+import { createTestRuntime } from "./setup/test-runtime.ts";
 
 function createReportWithInstagramUser(): StoriesManifestReport {
   return {
@@ -55,11 +54,11 @@ function createReportWithInstagramUser(): StoriesManifestReport {
 describe("Instagram user report persistence", () => {
   test("persists user data outside a report and hydrates it when read", async (context) => {
     const report = createReportWithInstagramUser();
-    const repository = new InstagramUserRepository(createTestDatabase(context));
+    const runtime = await createTestRuntime(context);
 
-    await persistReportInstagramUsers(report, repository);
+    await persistReportInstagramUsers(runtime, report);
 
-    expect(repository.findByUsername("fixture-user")).toStrictEqual({
+    expect(runtime.users.findByUsername("fixture-user")).toStrictEqual({
       full_name: "Fixture User",
       id: "instagram-id-1",
       pk: "instagram-pk-1",
@@ -72,7 +71,7 @@ describe("Instagram user report persistence", () => {
     expect("pk" in report.manifest.users[0]).toBe(false);
     expect("profile_pic_url" in report.manifest.users[0]).toBe(false);
 
-    hydrateReportInstagramUsers(report, repository);
+    hydrateReportInstagramUsers(runtime, report);
 
     expect(report.output.users[0]?.full_name).toBe("Fixture User");
     expect(report.output.users[0]?.profile_pic_url).toBe("images/avatars/instagram-pk-1.jpg");
@@ -80,15 +79,15 @@ describe("Instagram user report persistence", () => {
 
   test("hydrates reports whose nullable user columns were read as null", async (context) => {
     const report = createReportWithInstagramUser();
-    const repository = new InstagramUserRepository(createTestDatabase(context));
+    const runtime = await createTestRuntime(context);
 
-    await persistReportInstagramUsers(report, repository);
+    await persistReportInstagramUsers(runtime, report);
     report.manifest.users[0].full_name = null;
     report.manifest.users[0].profile_pic_url = null;
     report.output.users[0].full_name = null;
     report.output.users[0].profile_pic_url = null;
 
-    hydrateReportInstagramUsers(report, repository);
+    hydrateReportInstagramUsers(runtime, report);
 
     expect(report.output.users[0]?.full_name).toBe("Fixture User");
     expect(report.output.users[0]?.profile_pic_url).toBe("images/avatars/instagram-pk-1.jpg");

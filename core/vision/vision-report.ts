@@ -1,11 +1,10 @@
 import path from "node:path";
 import type { Ollama as VisionSdk } from "ollama";
 import { getOllamaClient } from "./ollama.ts";
-import {
-  type VisionRepository,
-  visionRepository,
-} from "@@/core/database/repositories/vision-repository.ts";
-import type { CachedReportImages } from "@@/core/media-store/image-cache.ts";
+import type { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
+import type { ImageCacheStorage } from "@@/core/media-store/cache-storage.ts";
+import { readCachedImage, type CachedReportImages } from "@@/core/media-store/image-cache.ts";
+import type { Runtime } from "@@/core/runtime/runtime.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
 import type { VisionResult } from "@@/core/database/entities/vision.ts";
@@ -16,16 +15,10 @@ import {
   VISION_PROMPT,
 } from "./vision-analysis.ts";
 
-type VisionFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
-
 interface VisionOptions {
-  cacheDirectory: string;
   endpoint?: string;
-  fetchVision?: VisionFetch;
-  logger: Logger;
   model?: string;
   prompt?: string;
-  repository?: Pick<VisionRepository, "findByMediaPk" | "save">;
 }
 
 interface PreviewEntry {
@@ -46,7 +39,7 @@ interface ResolvePreviewEntryOptions {
   logger: Logger;
   model: string;
   prompt: string;
-  cacheDirectory: string;
+  images: ImageCacheStorage;
   resultByPreviewUrl: Map<string, VisionResult>;
   sourcesByMediaPk: Map<string, Array<string>>;
   repository: Pick<VisionRepository, "findByMediaPk" | "save">;
@@ -56,10 +49,6 @@ interface ResolvePreviewEntryOptions {
 type PreviewValidation =
   | { cachedPath: string; itemLabel: string; ok: true }
   | { itemLabel: string; message: string; ok: false; warning: string };
-
-function resolveCachedImagePath(cacheDirectory: string, imagePath: string): string {
-  return path.isAbsolute(imagePath) ? imagePath : path.resolve(cacheDirectory, imagePath);
-}
 
 function getPreviewEntries(report: StoriesManifestReport): Array<PreviewEntry> {
   return report.output.users
@@ -158,7 +147,13 @@ async function resolvePreviewEntry(options: ResolvePreviewEntryOptions): Promise
   });
   const result = await analyzeImage(
     preview.itemLabel,
-    resolveCachedImagePath(options.cacheDirectory, preview.cachedPath),
+    async () => {
+      const image = await readCachedImage(options.images, preview.cachedPath);
+      if (image === null) {
+        throw new Error("cached preview is missing");
+      }
+      return image;
+    },
     {
       client: options.client,
       logger: options.logger,
@@ -177,15 +172,18 @@ async function resolvePreviewEntry(options: ResolvePreviewEntryOptions): Promise
 }
 
 export async function resolveVisionForReport(
+  runtime: Pick<Runtime, "fetchOllama" | "logger" | "storage"> & {
+    vision: Pick<VisionRepository, "findByMediaPk" | "save">;
+  },
   report: StoriesManifestReport,
   cachedImages: CachedReportImages,
-  options: VisionOptions,
+  options: VisionOptions = {},
 ): Promise<Map<string, VisionResult>> {
   const client = getOllamaClient({
-    fetch: options.fetchVision,
+    fetch: runtime.fetchOllama,
     host: options.endpoint,
   });
-  const { logger } = options;
+  const { logger } = runtime;
   const entrySet = createPreviewEntrySet(report);
   const resultByPreviewUrl = new Map<string, VisionResult>();
 
@@ -199,10 +197,10 @@ export async function resolveVisionForReport(
       logger,
       model: options.model ?? VISION_MODEL,
       prompt: options.prompt ?? VISION_PROMPT,
-      cacheDirectory: options.cacheDirectory,
+      images: runtime.storage.images,
       resultByPreviewUrl,
       sourcesByMediaPk: entrySet.sourcesByMediaPk,
-      repository: options.repository ?? visionRepository,
+      repository: runtime.vision,
       total: entrySet.uniquePreviewEntries.length,
     });
   }

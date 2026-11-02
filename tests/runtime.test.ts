@@ -4,7 +4,7 @@ import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { storyRepository } from "@@/core/database/repositories/story-repository.ts";
 import { fetchStories } from "@@/core/fetch-run/stories.ts";
 import { getProductionRuntime } from "@@/core/runtime/production-runtime.ts";
-import { createCapturingLogger, createMockLogger, noSleep } from "./mock-helpers.ts";
+import { createCapturingLogger, noSleep } from "./mock-helpers.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 
 const recordedStoryPk = "700000000000079";
@@ -17,14 +17,7 @@ test("a test runtime ingests recorded stories into its own database", async (con
   migrateDatabase(useDrizzle());
   const runtime = await createTestRuntime(context);
 
-  const report = await fetchStories({
-    client: runtime.client,
-    logger: createMockLogger(),
-    maxAttempts: 1,
-    sleep: noSleep,
-    storyRepository: runtime.stories,
-    storyStorage: runtime.storage.stories,
-  });
+  const report = await fetchStories(runtime, { maxAttempts: 1, sleep: noSleep });
 
   expect(report.failures).toEqual([]);
   expect(runtime.stories.findByMediaPk(recordedStoryPk)).not.toBeNull();
@@ -35,14 +28,7 @@ test("two test runtimes do not share a database", async (context) => {
   const first = await createTestRuntime(context);
   const second = await createTestRuntime(context);
 
-  await fetchStories({
-    client: first.client,
-    logger: createMockLogger(),
-    maxAttempts: 1,
-    sleep: noSleep,
-    storyRepository: first.stories,
-    storyStorage: first.storage.stories,
-  });
+  await fetchStories(first, { maxAttempts: 1, sleep: noSleep });
 
   expect(first.stories.findByMediaPk(recordedStoryPk)).not.toBeNull();
   expect(second.stories.findByMediaPk(recordedStoryPk)).toBeNull();

@@ -109,10 +109,9 @@ export function readStoryFeedSources(
   repositories: FeedRepositories = defaultFeedRepositories,
 ): StoryFeedSources {
   const cachedImages = readCachedImages(users);
-  const visionByPreviewUrl = readStoryFeedVision(users, repositories.vision);
-  const userSummaryByUserKey = readUserSummaries(users, {
+  const visionByPreviewUrl = readStoryFeedVision({ vision: repositories.vision }, users);
+  const userSummaryByUserKey = readUserSummaries({ summaries: repositories.userSummary }, users, {
     visionByPreviewUrl,
-    repository: repositories.userSummary,
   });
   const appleCaptionByMediaPk = readAppleCaptions(users, repositories.appleVision);
 
@@ -134,7 +133,9 @@ export function loadStoryFeed(
     selectedDate: day,
     availableDates,
     users: feedUsers,
-  } = createReportFeed(now, selectedDate, { selectedStory });
+  } = createReportFeed({ stories: storyRepository }, now, selectedDate, {
+    selectedStory,
+  });
   const sources = readStoryFeedSources(feedUsers);
   const sidebarUsers = loadSidebarUsers();
   const storedStories = feedUsers.flatMap((user) =>

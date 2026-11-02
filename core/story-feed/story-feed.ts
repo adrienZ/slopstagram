@@ -1,14 +1,10 @@
-import {
-  storyRepository,
-  type StoryRepository,
-  type UserTimelineStory,
+import type {
+  StoryRepository,
+  UserTimelineStory,
 } from "@@/core/database/repositories/story-repository.ts";
-import {
-  visionRepository,
-  type VisionRepository,
-} from "@@/core/database/repositories/vision-repository.ts";
 import type { StoryOutputUser } from "@@/core/fetch-run/report-types.ts";
 import type { VisionResult } from "@@/core/database/entities/vision.ts";
+import type { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
 import { readCurrentVisionResult } from "@@/core/vision/vision-analysis.ts";
 import { getStoryDate, getStoryDayRange, storyDateSchema } from "./story-days.ts";
 
@@ -41,7 +37,6 @@ export function createStoredStoryUser(
 }
 
 interface StoryFeedOptions {
-  repository?: Pick<StoryRepository, "listActive">;
   hasPreview?: (mediaPk: string) => boolean;
 }
 
@@ -74,47 +69,39 @@ function groupStoryFeed(
   );
 }
 
-export function createStoryFeed(now: Date, options: StoryFeedOptions = {}): Array<StoryOutputUser> {
-  return groupStoryFeed(
-    (options.repository ?? storyRepository).listActive(now),
-    options.hasPreview,
-  );
+export function createStoryFeed(
+  runtime: { stories: Pick<StoryRepository, "listActive"> },
+  now: Date,
+  options: StoryFeedOptions = {},
+): Array<StoryOutputUser> {
+  return groupStoryFeed(runtime.stories.listActive(now), options.hasPreview);
 }
 
 export function createStoryDayFeed(
+  runtime: { stories: Pick<StoryRepository, "listPublishedBetween"> },
   day: string,
-  options: {
-    repository?: Pick<StoryRepository, "listPublishedBetween">;
-    hasPreview?: (mediaPk: string) => boolean;
-  } = {},
+  options: StoryFeedOptions = {},
 ): Array<StoryOutputUser> {
   const { start, end } = getStoryDayRange(day);
-  return groupStoryFeed(
-    (options.repository ?? storyRepository).listPublishedBetween(start, end),
-    options.hasPreview,
-  );
+  return groupStoryFeed(runtime.stories.listPublishedBetween(start, end), options.hasPreview);
 }
 
 export function createReportFeed(
+  runtime: {
+    stories: Pick<StoryRepository, "listActive" | "listPublishedBetween" | "listPublicationTimes">;
+  },
   now: Date,
   requestedDate?: string,
-  options: {
-    repository?: Pick<
-      StoryRepository,
-      "listActive" | "listPublishedBetween" | "listPublicationTimes"
-    >;
-    hasPreview?: (mediaPk: string) => boolean;
-    selectedStory?: string;
-  } = {},
+  options: StoryFeedOptions & { selectedStory?: string } = {},
 ) {
   const today = getStoryDate(now);
   const parsedDate = storyDateSchema.safeParse(requestedDate).data ?? today;
   let selectedDate = parsedDate > today ? today : parsedDate;
   let users =
     selectedDate === today
-      ? createStoryFeed(now, options)
-      : createStoryDayFeed(selectedDate, options);
-  const publications = (options.repository ?? storyRepository)
+      ? createStoryFeed(runtime, now, options)
+      : createStoryDayFeed(runtime, selectedDate, options);
+  const publications = runtime.stories
     .listPublicationTimes(now)
     .filter(({ mediaPk }) => options.hasPreview?.(mediaPk) ?? true);
   const availableDates = new Set(
@@ -133,8 +120,8 @@ export function createReportFeed(
       selectedDate = getStoryDate(new Date(selectedStory.takenAt * 1000));
       users =
         selectedDate === today
-          ? createStoryFeed(now, options)
-          : createStoryDayFeed(selectedDate, options);
+          ? createStoryFeed(runtime, now, options)
+          : createStoryDayFeed(runtime, selectedDate, options);
     }
   }
   return {
@@ -146,8 +133,8 @@ export function createReportFeed(
 }
 
 export function readStoryFeedVision(
+  { vision: repository }: { vision: Pick<VisionRepository, "findByMediaPk"> },
   users: Array<StoryOutputUser>,
-  repository: Pick<VisionRepository, "findByMediaPk"> = visionRepository,
 ): Map<string, VisionResult> {
   const visionByPreviewUrl = new Map<string, VisionResult>();
   for (const story of users.flatMap((user) => user.stories)) {

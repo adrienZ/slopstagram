@@ -14,7 +14,7 @@ import { enrichCurrentMusicAssets } from "@@/core/music/music-asset-enrichment.t
 import { JsonValueSchema } from "@@/core/utils/json-value.ts";
 import { createMediaResponse } from "../server/routes/media/[...path].ts";
 import { startMediaServer } from "./media-server.ts";
-import { createMemoryStorage } from "./memory-storage.ts";
+import { createMemoryCacheStorage } from "./memory-storage.ts";
 import {
   createCapturingLogger,
   createClient,
@@ -88,13 +88,11 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
     return { ok: result.ok, status: result.status, headers: {}, json: () => body };
   };
   const repository = new StoryRepository(database);
-  const report = await fetchStoriesManifest(client, {
-    storyRepository: repository,
-    storyStorage: createMemoryStorage(),
-    logger: createCapturingLogger(),
-    now: fixedNow,
-    sleep: noSleep,
-  });
+  const report = await fetchStoriesManifest(
+    { logger: createCapturingLogger(), stories: repository, storage: createMemoryCacheStorage() },
+    client,
+    { now: fixedNow, sleep: noSleep },
+  );
   expect(server.requests).toStrictEqual([`/lookup/${audioId}`]);
   const before = repository.findByMediaPk("first")?.annotations;
   assert.ok(before);

@@ -11,7 +11,7 @@ import { StoryRepository } from "@@/core/database/repositories/story-repository.
 import { fetchStories } from "@@/core/fetch-run/stories.ts";
 import { GalleryPageSchema } from "@@/core/instagram/story-client.ts";
 import { createRecordedClient } from "./recorded-client.ts";
-import { createMemoryStorage } from "../memory-storage.ts";
+import { createMemoryCacheStorage } from "../memory-storage.ts";
 import { createMockLogger, noSleep } from "../mock-helpers.ts";
 
 const fixturesDirectory = path.join(import.meta.dirname, "../fixtures");
@@ -225,15 +225,15 @@ export async function seedRecordedStories(recorded?: RecordedPayloads, options: 
 
   const now = options.publishedBefore?.now;
   const logger = createMockLogger();
-  const report = await fetchStories({
-    client: await createRecordedInstagramClient(recorded, options),
-    logger,
-    maxAttempts: 1,
-    now: now === undefined ? undefined : () => now,
-    sleep: noSleep,
-    storyRepository: new StoryRepository(database, logger),
-    storyStorage: createMemoryStorage(),
-  });
+  const report = await fetchStories(
+    {
+      client: await createRecordedInstagramClient(recorded, options),
+      logger,
+      storage: createMemoryCacheStorage(),
+      stories: new StoryRepository(database, logger),
+    },
+    { maxAttempts: 1, now: now === undefined ? undefined : () => now, sleep: noSleep },
+  );
   if (report.failures.length > 0) {
     throw new Error(
       `Seeding failed for ${report.failures.length} recorded stories: ${report.failures
@@ -242,8 +242,8 @@ export async function seedRecordedStories(recorded?: RecordedPayloads, options: 
     );
   }
   await persistReportInstagramUsers(
+    { users: new InstagramUserRepository(database) },
     globalThis.structuredClone(report),
-    new InstagramUserRepository(database),
   );
   return report;
 }

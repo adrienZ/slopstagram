@@ -16,7 +16,7 @@ import { musicStickerItems, storyMusicPreviews } from "../app/utils/music-previe
 import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
 import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
 import { fetchStoriesManifest } from "@@/core/fetch-run/stories.ts";
-import { createMemoryStorage } from "./memory-storage.ts";
+import { createMemoryCacheStorage } from "./memory-storage.ts";
 import {
   createCapturingLogger,
   createClient,
@@ -376,12 +376,11 @@ test("fresh story ingestion caches the story excerpt and prefers it over the lon
     [reelsResponse({ reel: { ...reel("reel", [story]), user: owner } })],
   );
   const repository = new StoryRepository(database);
-  const report = await fetchStoriesManifest(client, {
-    storyRepository: repository,
-    storyStorage: createMemoryStorage<StoryItem>(),
-    logger: createCapturingLogger(),
-    now: fixedNow,
-  });
+  const report = await fetchStoriesManifest(
+    { logger: createCapturingLogger(), stories: repository, storage: createMemoryCacheStorage() },
+    client,
+    { now: fixedNow },
+  );
   const storyBytes = await readFile(new globalThis.URL("fixtures/audio-clip.m4a", import.meta.url));
   const musicBytes = wavAudio(70);
   const media = await startMediaServer(context, (request, response) => {
