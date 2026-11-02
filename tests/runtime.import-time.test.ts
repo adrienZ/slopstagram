@@ -4,7 +4,12 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test, vi } from "vitest";
 
-const modules = import.meta.glob(["../core/**/*.ts", "../app/loaders/*.ts", "../server/**/*.ts"]);
+const modules = import.meta.glob([
+  "../core/**/*.ts",
+  "../app/loaders/*.ts",
+  "../app/query-service.ts",
+  "../server/**/*.ts",
+]);
 
 test("importing the modules opens no database and creates no data folder", async (context) => {
   const parent = await mkdtemp(path.join(tmpdir(), "slopstagram-import-"));
