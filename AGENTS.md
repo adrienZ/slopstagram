@@ -48,11 +48,6 @@ A repository is a class built from a database (`new XRepository(db)`, plus a log
 one), with methods named for domain reads and writes. Services take a repository, never a raw
 database or a helper module.
 
-When a repository runs several writes in one transaction, its plain-function helpers (they take the
-database or a transaction handle) sit next to it in `repositories/`, named after it, such as
-`story-repository.audio.ts`. They are private to that repository: only it imports them (lint
-enforces this). Expose what services need as repository methods.
-
 Derive database-shaped validators from `drizzle-orm/zod` and reuse them.
 
 ## playwright
