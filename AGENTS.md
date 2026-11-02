@@ -23,24 +23,8 @@ Keep UI components limited to rendering, local UI behavior, and presentation tra
   loader of each page (it owns the page data type and returns data ready to render), `utils/`
   display helpers shared by components.
 - `server/`: Nitro only, the media route and the plugins.
-- `core/`: domain and ingestion code, with no React and no Nitro. One flat folder per domain,
-  with no subfolders except in `database/`. Inside a domain, import with relative paths; across
-  domains, with `@@/core/<domain>/<module>.ts`. Lint lets a domain import only the domains
-  below it (type-only imports are always allowed); `oxlint.config.ts` lists the exceptions.
-  - `utils/`: domain-free helpers (data paths, JSON values, logging, provider identifiers,
-    caption placeholders). Imports no domain; nothing domain-specific goes here.
-  - `database/`: the client, migrations, `entities/` and `repositories/`. No business rules.
-  - `instagram/`: Instagram payload types, the story client, retry, the Playwright session,
-    the story parser and payload validation. No persistence.
-  - `media-store/`: the local copies of images and audio the app serves. Not the story cache.
-  - `stickers/`: story annotations, sticker and location extraction, story model types.
-  - `places/`: tagged place metadata, observations and place lookups.
-  - `music/`: music assets and media, music observations, story audio, DASH audio.
-  - `vision/`: the Ollama client, vision analysis, Apple OCR and the Apple caption step.
-  - `accounts/`: user summaries, Instagram user persistence and report user keys.
-  - `story-feed/`: the story feed and story days.
-  - `fetch-run/`: the fetch run pipeline, reports, story fetching, the story cache and the
-    hourly job. The top layer: it may import any domain and no other domain imports it.
+- `core/`: domain and ingestion code, with no React and no Nitro. One folder per domain; see
+  `core/AGENTS.md` for the domains and the import rules.
 
 ### Generated UI
 
