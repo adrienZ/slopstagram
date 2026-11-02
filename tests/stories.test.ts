@@ -2,7 +2,6 @@ import { describe, test, expect } from "vitest";
 import { getMediaCacheKey } from "@@/core/media-store/cache-storage.ts";
 import { fetchStoriesManifest } from "@@/core/fetch-run/stories.ts";
 import {
-  createCapturingLogger,
   createClient,
   fixedNow,
   noSleep,
@@ -11,7 +10,7 @@ import {
   storyItemWithStickers,
   reelsResponse,
 } from "./mock-helpers.ts";
-import { createStoryFixtures } from "./test-database.ts";
+import { createTestRuntime } from "./setup/test-runtime.ts";
 
 /** A story as the repository stores it, with the annotations it derives. */
 function storedStory(pk: string) {
@@ -20,9 +19,9 @@ function storedStory(pk: string) {
 
 describe("fetchStoriesManifest", () => {
   test("fetches API media even when story storage has existing entries", async (context) => {
-    const { storyRepository, storyStorage } = createStoryFixtures(context);
-    await storyRepository.save(storyItem("m1"));
-    await storyRepository.save(storyItem("m2"));
+    const runtime = await createTestRuntime(context);
+    await runtime.stories.save(storyItem("m1"));
+    await runtime.stories.save(storyItem("m2"));
 
     const client = createClient(
       [
@@ -46,12 +45,9 @@ describe("fetchStoriesManifest", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(client, {
-      logger: createCapturingLogger(),
+    const report = await fetchStoriesManifest(runtime, client, {
       now: fixedNow,
       sleep: noSleep,
-      storyRepository,
-      storyStorage,
     });
 
     expect(client.reelsCalls).toStrictEqual([["r1", "r2"]]);
@@ -136,12 +132,14 @@ describe("fetchStoriesManifest", () => {
         username: "two",
       },
     ]);
-    expect(await storyStorage.getItem(getMediaCacheKey("m1"))).toStrictEqual(storedStory("m1"));
+    expect(await runtime.storage.stories.getItem(getMediaCacheKey("m1"))).toStrictEqual(
+      storedStory("m1"),
+    );
   });
 
   test("stores every returned media item as a side effect", async (context) => {
-    const { storyRepository, storyStorage } = createStoryFixtures(context);
-    await storyRepository.save(storyItem("m1", "Cached image caption"));
+    const runtime = await createTestRuntime(context);
+    await runtime.stories.save(storyItem("m1", "Cached image caption"));
 
     const client = createClient(
       [
@@ -156,17 +154,16 @@ describe("fetchStoriesManifest", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(client, {
-      logger: createCapturingLogger(),
+    const report = await fetchStoriesManifest(runtime, client, {
       now: fixedNow,
       sleep: noSleep,
-      storyRepository,
-      storyStorage,
     });
 
     expect(client.reelsCalls).toStrictEqual([["r1", "r2"]]);
-    expect(storyRepository.findByMediaPk("m2")).toStrictEqual(storedStory("m2"));
-    expect(await storyStorage.getItem(getMediaCacheKey("m2"))).toStrictEqual(storedStory("m2"));
+    expect(runtime.stories.findByMediaPk("m2")).toStrictEqual(storedStory("m2"));
+    expect(await runtime.storage.stories.getItem(getMediaCacheKey("m2"))).toStrictEqual(
+      storedStory("m2"),
+    );
     expect(
       report.manifest.users.map((user) => ({
         ig_caption: user.stories[0]?.ig_caption,
@@ -192,7 +189,7 @@ describe("fetchStoriesManifest", () => {
   });
 
   test("groups final output by user with story accessibility captions", async (context) => {
-    const { storyRepository, storyStorage } = createStoryFixtures(context);
+    const runtime = await createTestRuntime(context);
     const client = createClient(
       [
         {
@@ -236,12 +233,9 @@ describe("fetchStoriesManifest", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(client, {
-      logger: createCapturingLogger(),
+    const report = await fetchStoriesManifest(runtime, client, {
       now: fixedNow,
       sleep: noSleep,
-      storyRepository,
-      storyStorage,
     });
 
     expect(report.output.users).toStrictEqual([

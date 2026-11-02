@@ -6,7 +6,7 @@ import { StoryRepository } from "@@/core/database/repositories/story-repository.
 import { fetchStoriesManifest } from "@@/core/fetch-run/stories.ts";
 import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
 import type { JsonObject } from "@@/core/utils/json-value.ts";
-import { createMemoryStorage } from "./memory-storage.ts";
+import { createMemoryCacheStorage } from "./memory-storage.ts";
 import {
   createCapturingLogger,
   createClient,
@@ -123,16 +123,12 @@ test("external-only observations do not block other location updates during live
     ],
   };
   const report = await fetchStoriesManifest(
+    { logger, stories: repository, storage: createMemoryCacheStorage() },
     createClient(
       [{ id: "r1", media_ids: ["m1"], user: owner }],
       [reelsResponse({ r1: { ...reel("r1", [item]), user: owner } })],
     ),
-    {
-      logger,
-      now: fixedNow,
-      storyRepository: repository,
-      storyStorage: createMemoryStorage<StoryItem>(),
-    },
+    { now: fixedNow },
   );
   expect(report.manifest.users[0].stories[0].locations).toStrictEqual(["Updated"]);
   const [history] = new StoryRepository(database).listByUsername("one");
@@ -233,16 +229,16 @@ test("live ingestion shares tagged places and exposes exact metadata with occurr
     },
   ];
   const report = await fetchStoriesManifest(
+    {
+      logger: createCapturingLogger(),
+      stories: new StoryRepository(database, createCapturingLogger()),
+      storage: createMemoryCacheStorage(),
+    },
     createClient(
       [{ id: "r1", media_ids: items.map(({ pk }) => pk), user: owner }],
       [reelsResponse({ r1: { ...reel("r1", items), user: owner } })],
     ),
-    {
-      logger: createCapturingLogger(),
-      now: fixedNow,
-      storyRepository: new StoryRepository(database, createCapturingLogger()),
-      storyStorage: createMemoryStorage<StoryItem>(),
-    },
+    { now: fixedNow },
   );
   expect(report.manifest.users[0].stories[0].locations).toStrictEqual([
     "Paris, Paris",

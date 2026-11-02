@@ -95,23 +95,21 @@ export async function createReport(options: CreateReportOptions): Promise<Create
   const vision = new VisionRepository(database);
   const appleVision = new AppleVisionRepository(database);
   const summaries = new UserSummaryRepository(database);
+  const fetchRuns = new FetchRunRepository(database);
   const cacheDirectory = boundaries.cacheDirectory ?? BASE_CACHE_DIR;
   const storage = createFileCacheStorage(cacheDirectory);
   const now = options.now ?? (() => new Date());
   return await recordFetchRun(
+    { fetchRuns },
     async (run) => {
       const timestamp = formatFilenameTimestamp(run.startedAt);
       const outputFileName = `stories-report-${timestamp}-${run.id}.json`;
       const { logger } = options;
       logger.box(`${pkg.name} - report ${outputFileName}`);
-      const report = await fetchStories({
-        client: boundaries.client,
-        logger,
-        now,
-        reportName: outputFileName,
-        storyRepository: stories,
-        storyStorage: storage.stories,
-      });
+      const report = await fetchStories(
+        { client: boundaries.client, logger, storage, stories },
+        { now, reportName: outputFileName },
+      );
       run.report = report;
       // Keep the observation and failures even if enrichment or every media fetch fails.
       await reports.save(outputFileName, report);
@@ -162,6 +160,6 @@ export async function createReport(options: CreateReportOptions): Promise<Create
 
       return { outputFileName, reportKey: outputFileName, report };
     },
-    { repository: new FetchRunRepository(database), now },
+    { now },
   );
 }
