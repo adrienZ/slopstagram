@@ -3,10 +3,12 @@ import type { RuleTester } from "oxlint/plugins-dev";
 
 type Rule = Parameters<RuleTester["run"]>[1];
 
-// The helper modules of a repository live in a folder named after it, next to the repository:
-// `repositories/story-repository.ts` owns `repositories/story-repository/*`. They take either the
-// database or a transaction handle, so they stay functions, but only the owner may import them.
-const HELPERS = /\/core\/database\/repositories\/(?<owner>[^/]+)\/[^/]+$/u;
+// The helper modules of a repository are named after it, next to the repository:
+// `repositories/story-repository.ts` owns `repositories/story-repository.<aspect>.ts`. They take
+// either the database or a transaction handle, so they stay functions, but only the owner may
+// import them.
+const REPOSITORIES = "/core/database/repositories/";
+const HELPERS = /\/core\/database\/repositories\/(?<owner>[^/.]+)\.[^/]+\.ts$/u;
 
 function resolveTarget(file: string, source: string): string | null {
   if (source.startsWith("@@/")) {
@@ -25,7 +27,7 @@ const privateRepositoryHelpers = {
     schema: [],
     messages: {
       private:
-        "{{owner}}/ holds helpers private to {{owner}}.ts. Call the repository method instead of importing the helper.",
+        "{{owner}}.*.ts holds helpers private to {{owner}}.ts. Call the repository method instead of importing the helper.",
     },
   },
   create(context) {
@@ -36,9 +38,8 @@ const privateRepositoryHelpers = {
         if (owner === undefined) {
           return;
         }
-        const ownerFile = `/core/database/repositories/${owner}.ts`;
-        const ownFolder = `/core/database/repositories/${owner}/`;
-        if (context.filename.endsWith(ownerFile) || context.filename.includes(ownFolder)) {
+        const importer = HELPERS.exec(context.filename)?.groups?.owner;
+        if (context.filename.endsWith(`${REPOSITORIES}${owner}.ts`) || importer === owner) {
           return;
         }
         context.report({ messageId: "private", node, data: { owner } });
