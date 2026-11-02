@@ -22,18 +22,20 @@ const dependencies = new Map<string, Array<string>>([
 ]);
 
 // Violations that exist today, per importing module. The list can only shrink: a new violation
-// fails lint. The repository shape spec (#157) and the composition root spec (#159) remove them.
+// fails lint. The repository shape spec (https://github.com/adrienZ/slopstagram/issues/157)
+// removed none of them: repositories still call the planners of the domains they persist.
 const baseline = new Map<string, Array<string>>([
-  // #157: the report entity imports the story media types, which belong to stickers.
+  // The report entity imports the story media types, which belong to stickers.
   ["database/entities/report.ts", ["stickers"]],
-  // #157: repositories call the planners of the domains they persist.
-  ["database/repositories/location-metadata-repository.ts", ["places"]],
-  ["database/repositories/music-metadata-repository.ts", ["music"]],
-  // #157: the report repository validates payloads and reads story output.
+  // The story repository helpers call the planners of the domains they persist.
+  ["database/repositories/story-repository.location-metadata.ts", ["places"]],
+  ["database/repositories/story-repository.music-metadata.ts", ["music"]],
+  // The report repository validates payloads and reads story output.
   ["database/repositories/report-repository.ts", ["fetch-run", "instagram"]],
-  // #157: the story repository calls the annotation, audio and payload planners.
+  // The story repository calls the annotation, audio and payload planners.
   ["database/repositories/story-repository.ts", ["instagram", "music", "stickers"]],
-  // #159: stickers, places and music import each other through sticker and location extraction.
+  // https://github.com/adrienZ/slopstagram/issues/159: stickers, places and music import each other
+  // through sticker and location extraction.
   ["places/location-metadata.ts", ["stickers"]],
   ["stickers/story-sticker-location.ts", ["music", "places"]],
 ]);

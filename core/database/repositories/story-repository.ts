@@ -1,6 +1,10 @@
 import { planStoryAnnotations } from "@@/core/stickers/story-annotation.ts";
 import { planStoryAudio } from "@@/core/music/story-audio.ts";
-import { findStoryAudio, saveStoryAudio } from "./story-audio-repository.ts";
+import {
+  findStoryAudio,
+  saveStoryAudio,
+  saveStoryAudioMedia,
+} from "@@/core/database/repositories/story-repository.audio.ts";
 import { and, asc, desc, eq, gt, gte, lt, lte, notInArray } from "drizzle-orm";
 import { useDrizzle, type DrizzleDatabase } from "../client.ts";
 import { instagramUsers } from "../entities/instagram-user.ts";
@@ -10,13 +14,17 @@ import {
   readPlaceDetails,
   recordFailedPlaceLookup,
   recordPlaceLookup,
-} from "./location-metadata-repository.ts";
+} from "@@/core/database/repositories/story-repository.location-metadata.ts";
 import type { PlaceLookupInput } from "@@/core/places/location-metadata.ts";
 import {
   enrichStoryMusic,
+  findMusicMetadata,
   readMusicObservations,
   refreshMusicAsset,
-} from "./music-metadata-repository.ts";
+  saveMusicMedia,
+} from "@@/core/database/repositories/story-repository.music-metadata.ts";
+import type { MusicMediaState, MusicMetadataReference } from "../entities/music-metadata.ts";
+import type { StoryAudio } from "../entities/story-audio.ts";
 import type { MusicObservationInput } from "@@/core/music/music-observation.ts";
 import {
   stories,
@@ -301,6 +309,42 @@ export class StoryRepository {
       if (previous !== undefined && previous.metadata.instagramAudioAssetId !== null) {
         refreshMusicAsset(database, previous, observation);
       }
+    });
+  }
+
+  findMusicMetadata(reference: MusicMetadataReference) {
+    return findMusicMetadata(this.database, reference);
+  }
+
+  listMusicObservations(mediaPk: string) {
+    return readMusicObservations(this.database, mediaPk);
+  }
+
+  saveMusicMedia(
+    reference: MusicMetadataReference,
+    kind: "audio" | "artwork",
+    source: string | null,
+    cachePath: string | null,
+    state: MusicMediaState,
+    durationMs: number | null = null,
+  ) {
+    this.database.transaction((transaction) => {
+      saveMusicMedia(transaction, reference, kind, source, cachePath, state, durationMs);
+    });
+  }
+
+  findStoryAudio(mediaPk: string) {
+    return findStoryAudio(this.database, mediaPk);
+  }
+
+  saveStoryAudioMedia(
+    current: StoryAudio,
+    cachePath: string | null,
+    state: StoryAudio["state"],
+    durationMs: number | null = null,
+  ) {
+    this.database.transaction((transaction) => {
+      saveStoryAudioMedia(transaction, current, cachePath, state, durationMs);
     });
   }
 

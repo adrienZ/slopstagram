@@ -1,4 +1,3 @@
-import { useDrizzle } from "@@/core/database/client.ts";
 import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
 import {
   cacheReceivedAudio,
@@ -6,14 +5,25 @@ import {
   processMusicArtwork,
   type MusicMediaOptions,
 } from "@@/core/music/music-media.ts";
-import { readMusicObservations } from "@@/core/database/repositories/music-metadata-repository.ts";
 import {
-  findStoryAudio,
-  saveStoryAudioMedia,
-} from "@@/core/database/repositories/story-audio-repository.ts";
+  type StoryRepository,
+  storyRepository,
+} from "@@/core/database/repositories/story-repository.ts";
 
-export async function processStoryAudio(mediaPk: string, options: MusicMediaOptions) {
-  const current = findStoryAudio(options.database, mediaPk);
+interface StoryAudioOptions extends Omit<MusicMediaOptions, "storyRepository"> {
+  storyRepository?: Pick<
+    StoryRepository,
+    | "findMusicMetadata"
+    | "findStoryAudio"
+    | "listMusicObservations"
+    | "saveMusicMedia"
+    | "saveStoryAudioMedia"
+  >;
+}
+
+export async function processStoryAudio(mediaPk: string, options: StoryAudioOptions = {}) {
+  const repository = options.storyRepository ?? storyRepository;
+  const current = repository.findStoryAudio(mediaPk);
   if (!current) {
     return null;
   }
@@ -24,16 +34,17 @@ export async function processStoryAudio(mediaPk: string, options: MusicMediaOpti
     options,
     current.mimeType,
   );
-  saveStoryAudioMedia(options.database, current, result.cachePath, result.state, result.durationMs);
-  return findStoryAudio(options.database, mediaPk) ?? null;
+  repository.saveStoryAudioMedia(current, result.cachePath, result.state, result.durationMs);
+  return repository.findStoryAudio(mediaPk) ?? null;
 }
 
 // Enrich the current report; historical cache recovery remains a local one-time operation.
 export async function cacheReportAudio(
   report: StoriesManifestReport,
-  options: Omit<MusicMediaOptions, "database"> & { database?: MusicMediaOptions["database"] } = {},
+  options: StoryAudioOptions = {},
 ) {
-  const settings = { ...options, database: options.database ?? useDrizzle() };
+  const repository = options.storyRepository ?? storyRepository;
+  const settings = { ...options, storyRepository: repository };
   const mediaPks = new Set(
     report.output.users.flatMap(({ stories }) =>
       stories.filter(({ status }) => status === "ok").map(({ media_pk }) => media_pk),
@@ -41,7 +52,7 @@ export async function cacheReportAudio(
   );
   const assets = new Set<string>();
   for (const mediaPk of mediaPks) {
-    for (const { metadata } of readMusicObservations(settings.database, mediaPk)) {
+    for (const { metadata } of repository.listMusicObservations(mediaPk)) {
       if (assets.has(metadata.id)) {
         continue;
       }

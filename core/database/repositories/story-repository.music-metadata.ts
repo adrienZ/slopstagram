@@ -1,5 +1,5 @@
 import { and, asc, eq, isNull } from "drizzle-orm";
-import type { DrizzleDatabase } from "../client.ts";
+import type { DrizzleDatabase } from "@@/core/database/client.ts";
 import {
   metadataMusic,
   storyMusicObservations,
@@ -7,7 +7,7 @@ import {
   type MusicMetadataReference,
   type MusicMediaState,
   type StoryMusicObservation,
-} from "../entities/music-metadata.ts";
+} from "@@/core/database/entities/music-metadata.ts";
 import type { StoryAnnotations } from "@@/core/stickers/story-types.ts";
 import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
 import type { MusicObservationInput } from "@@/core/music/music-observation.ts";

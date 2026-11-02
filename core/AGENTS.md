@@ -19,3 +19,9 @@ subfolders except in `database/`.
 - `story-feed/`: the story feed and story days.
 - `fetch-run/`: the fetch run pipeline, reports, story fetching, the story cache and the hourly
   job.
+
+## Repositories
+
+A repository is a class built from a database (`new XRepository(db)`, plus a logger where it has
+one), with methods named for domain reads and writes. Services take a repository, never a raw
+database or a helper module.

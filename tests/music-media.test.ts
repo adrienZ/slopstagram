@@ -42,7 +42,7 @@ test("music processing publishes audio only and reuses it without provider reque
   const result = await processMusicMedia(
     { id: metadata.id, status: metadata.status },
     {
-      database,
+      storyRepository: repository,
       directory: root,
       fetchMedia: media.fetchMedia,
     },
@@ -56,7 +56,7 @@ test("music processing publishes audio only and reuses it without provider reque
   const retry = await processMusicMedia(
     { id: metadata.id, status: metadata.status },
     {
-      database,
+      storyRepository: repository,
       directory: root,
       fetchMedia: media.fetchMedia,
     },
@@ -101,7 +101,7 @@ test("partial audio stays separate and promotion preserves its source and proces
     response.end(contentType === "audio/wav" ? wavAudio() : "not audio");
   });
   const result = await processMusicMedia(reference, {
-    database,
+    storyRepository: repository,
     directory: root,
     fetchMedia: media.fetchMedia,
   });
@@ -126,7 +126,7 @@ test("partial audio stays separate and promotion preserves its source and proces
   expect(promoted.audioState).toBe("unsupported");
   contentType = "audio/wav";
   const recovered = await processMusicMedia(promoted, {
-    database,
+    storyRepository: repository,
     directory: root,
     fetchMedia: media.fetchMedia,
   });
@@ -136,7 +136,7 @@ test("partial audio stays separate and promotion preserves its source and proces
   await rm(path.join(root, recovered.audioCachePath));
   status = 403;
   const missing = await processMusicMedia(promoted, {
-    database,
+    storyRepository: repository,
     directory: root,
     fetchMedia: media.fetchMedia,
   });
@@ -168,7 +168,7 @@ test("missing sources do not fetch and failed transfers never publish partial fi
     response.destroy();
   });
   const empty = await processMusicMedia(metadata, {
-    database,
+    storyRepository: repository,
     directory: root,
     fetchMedia: media.fetchMedia,
   });
@@ -183,7 +183,7 @@ test("missing sources do not fetch and failed transfers never publish partial fi
     ],
   });
   const failed = await processMusicMedia(metadata, {
-    database,
+    storyRepository: repository,
     directory: root,
     fetchMedia: media.fetchMedia,
   });
@@ -224,7 +224,7 @@ test("the cached file duration survives partial promotion and remains distinct f
     response.end(wav);
   });
   const result = await processMusicMedia(metadata, {
-    database,
+    storyRepository: repository,
     directory: root,
     fetchMedia: media.fetchMedia,
   });

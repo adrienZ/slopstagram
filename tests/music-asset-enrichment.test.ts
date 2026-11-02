@@ -101,7 +101,11 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
   expect(before.musicObservations?.[0].metadata.status).toBe("usable");
   assert.ok(before.musicObservations);
   expect(before.musicObservations[0].occurrenceId).not.toBe(null);
-  await cacheReportAudio(report, { database, directory, fetchMedia: server.fetchMedia });
+  await cacheReportAudio(report, {
+    storyRepository: repository,
+    directory,
+    fetchMedia: server.fetchMedia,
+  });
   const first = repository.findByMediaPk("first")?.annotations?.musicObservations?.[0].metadata;
   const second = repository.findByMediaPk("second")?.annotations?.musicObservations?.[0].metadata;
   assert.ok(first);
@@ -115,7 +119,11 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
   const artwork = await createMediaResponse(first.artworkCachePath, directory);
   expect(artwork.status).toBe(200);
   expect(artwork.headers.get("content-type")).toBe("image/jpeg");
-  await cacheReportAudio(report, { database, directory, fetchMedia: server.fetchMedia });
+  await cacheReportAudio(report, {
+    storyRepository: repository,
+    directory,
+    fetchMedia: server.fetchMedia,
+  });
   expect(server.requests).toStrictEqual([`/lookup/${audioId}`, "/audio.m4a", "/cover.png"]);
 });
 
@@ -202,7 +210,6 @@ test("generic video/mp4 responses with a video track are never cached as music",
     result.end(video);
   });
   const cached = await cacheReceivedAudio("asset", "https://example.com/video", null, {
-    database,
     directory,
     fetchMedia: server.fetchMedia,
   });
