@@ -14,7 +14,7 @@ import {
   createFailureResult,
   VISION_MODEL,
   VISION_PROMPT,
-} from "./vision-analysis-service.ts";
+} from "./vision-analysis.ts";
 
 type VisionFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 

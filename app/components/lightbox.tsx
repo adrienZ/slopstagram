@@ -15,7 +15,7 @@ import {
   DialogTrigger,
 } from "../shadcn/ui/dialog.tsx";
 import { InfoIcon } from "lucide-react";
-import type { OutdatedVision } from "@@/core/vision/vision-analysis-service.ts";
+import type { OutdatedVision } from "@@/core/vision/vision-analysis.ts";
 
 const detailsCellClassName =
   "tw:border tw:border-border tw:px-3 tw:py-2.75 tw:text-left tw:text-xs tw:align-top tw:wrap-anywhere tw:whitespace-pre-wrap tw:max-[760px]:block tw:max-[760px]:w-auto tw:max-[760px]:border-0 tw:max-[760px]:px-2.5 tw:max-[760px]:py-2";
