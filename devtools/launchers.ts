@@ -1,22 +1,19 @@
 /// <reference types="@vitejs/devtools-kit" />
-import { spawn } from "node:child_process";
 import process from "node:process";
 import type { Plugin } from "vite";
 
-// Neither tool can be embedded: the bunqueue dashboard sends `frame-ancestors 'none'` and
-// Drizzle Studio cannot reach its local server from inside an iframe. Each dock starts the
-// tool in a DevTools terminal and opens it in its own browser tab.
+// Each tool runs in a DevTools terminal started with the dev server and is shown in an iframe dock.
 const DASHBOARD_PORT = 8080;
-const STUDIO_URL = "https://local.drizzle.studio";
+const DASHBOARD_PROXY_PATH = "/__bunqueue";
 
 interface Tool {
   id: string;
   title: string;
   icon: string;
-  description: string;
-  url: string;
   command: Array<string>;
   env?: Record<string, string>;
+  /** Address shown in the iframe dock. */
+  frameUrl: string;
 }
 
 const TOOLS: Array<Tool> = [
@@ -24,50 +21,63 @@ const TOOLS: Array<Tool> = [
     id: "drizzle-studio",
     title: "Drizzle Studio",
     icon: "simple-icons:drizzle",
-    description: "Browse the SQLite database",
-    url: STUDIO_URL,
     command: ["drizzle-kit", "studio"],
+    frameUrl: "https://local.drizzle.studio",
   },
   {
     id: "bunqueue-dashboard",
     title: "bunqueue",
     icon: "ph:queue-duotone",
-    description: "Inspect queues and jobs of the bunqueue server started by Nitro",
-    url: `http://127.0.0.1:${DASHBOARD_PORT}`,
     command: ["bunqueue-dashboard"],
-    // The bunqueue server is already started by the Nitro plugin; do not let the dashboard spawn another.
-    env: { BUNQUEUE_MANAGED: "0", PORT: String(DASHBOARD_PORT) },
+    env: {
+      // The bunqueue server is already started by the Nitro plugin; do not let the dashboard spawn another.
+      BUNQUEUE_MANAGED: "0",
+      PORT: String(DASHBOARD_PORT),
+      BASE_PATH: DASHBOARD_PROXY_PATH,
+    },
+    frameUrl: `${DASHBOARD_PROXY_PATH}/`,
   },
 ];
-
-function browserCommand(url: string): Array<string> {
-  if (process.platform === "darwin") {
-    return ["open", url];
-  }
-  if (process.platform === "win32") {
-    return ["cmd", "/c", "start", "", url];
-  }
-  return ["xdg-open", url];
-}
-
-function openInBrowser(url: string): void {
-  const [command, ...args] = browserCommand(url);
-  spawn(command, args, { detached: true, stdio: "ignore" }).unref();
-}
 
 export function devtoolsLaunchers(): Plugin {
   return {
     name: "slopstagram:devtools-launchers",
+    config() {
+      return {
+        server: {
+          proxy: {
+            // The dashboard refuses to be framed, so serve it from the dev server's own origin and
+            // allow that origin only.
+            [DASHBOARD_PROXY_PATH]: {
+              target: `http://127.0.0.1:${DASHBOARD_PORT}`,
+              ws: true,
+              configure(proxy) {
+                proxy.on("proxyRes", (response) => {
+                  response.headers["x-frame-options"] = "SAMEORIGIN";
+                  const policy = response.headers["content-security-policy"]?.toString();
+                  if (policy !== undefined) {
+                    response.headers["content-security-policy"] = policy.replace(
+                      "frame-ancestors 'none'",
+                      "frame-ancestors 'self'",
+                    );
+                  }
+                });
+              },
+            },
+          },
+        },
+      };
+    },
     devtools: {
-      setup(ctx) {
-        for (const tool of TOOLS) {
-          // The browser viewer cannot call a function on the dock entry, so the launch button is
-          // bound to a registered command instead.
-          const commandId = `${tool.id}:launch`;
-          ctx.commands.register({
-            id: commandId,
-            title: `Start ${tool.title}`,
-            async handler() {
+      async setup(ctx) {
+        if (ctx.mode !== "dev") {
+          return;
+        }
+
+        await Promise.all(
+          TOOLS.map(async (tool) => {
+            const terminalId = `${tool.id}:process`;
+            if (!ctx.terminals.sessions.has(terminalId)) {
               await ctx.terminals.startChildProcess(
                 {
                   command: "npm",
@@ -75,25 +85,18 @@ export function devtoolsLaunchers(): Plugin {
                   cwd: process.cwd(),
                   env: tool.env,
                 },
-                { id: `${tool.id}:process`, title: tool.title },
+                { id: terminalId, title: tool.title },
               );
-              openInBrowser(tool.url);
-            },
-          });
-          ctx.docks.register({
-            id: tool.id,
-            title: tool.title,
-            icon: tool.icon,
-            type: "launcher",
-            launcher: {
-              title: `Start ${tool.title}`,
-              description: `${tool.description}. Opens in a new tab.`,
-              buttonStart: "Start and open",
-              buttonLoading: "Starting...",
-              command: commandId,
-            },
-          });
-        }
+            }
+            ctx.docks.register({
+              id: tool.id,
+              title: tool.title,
+              icon: tool.icon,
+              type: "iframe",
+              url: tool.frameUrl,
+            });
+          }),
+        );
       },
     },
   };
