@@ -4,8 +4,9 @@ import { setTimeout as delay } from "node:timers/promises";
 import { z } from "zod";
 import { readUserSummaries, resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
 import { getReportUserKey } from "@@/core/accounts/report-user-key.ts";
-import { createMockLogger, createSummaryReport } from "./mock-helpers.ts";
-import { createSummaryFixtures } from "./test-database.ts";
+import { createSummaryReport } from "./mock-helpers.ts";
+import { createTestRuntime } from "./setup/test-runtime.ts";
+import { countSummaries, saveSummaryUsers } from "./test-database.ts";
 
 const UserSummaryRequestSchema = z.object({
   format: z
@@ -41,14 +42,7 @@ describe("resolveUserSummariesForReport", () => {
   ] as const) {
     test(`generates and reuses summaries with ${expectedModel} on ${platform}/${architecture}`, async (context) => {
       const report = createSummaryReport();
-      const { repository } = await createSummaryFixtures(context);
-      const logger = createMockLogger();
-      vi.spyOn(process, "platform", "get").mockImplementation(() => platform);
-      vi.spyOn(process, "arch", "get").mockImplementation(() => architecture);
-
-      const summaries = await resolveUserSummariesForReport(report, {
-        logger,
-        repository,
+      const runtime = await createTestRuntime(context, {
         fetchOllama: async (_url, init) => {
           const body = UserSummaryRequestSchema.parse(JSON.parse(requestBodyToString(init?.body)));
           expect(body.model).toBe(expectedModel);
@@ -57,14 +51,20 @@ describe("resolveUserSummariesForReport", () => {
           );
         },
       });
+      await saveSummaryUsers(runtime);
+      vi.spyOn(process, "platform", "get").mockImplementation(() => platform);
+      vi.spyOn(process, "arch", "get").mockImplementation(() => architecture);
+
+      const summaries = await resolveUserSummariesForReport(runtime, report);
 
       expect(summaries.get("summaryuser")).toBe("Platform summary.");
-      expect(readUserSummaries(report.output.users, { repository })).toStrictEqual(summaries);
+      expect(readUserSummaries(runtime, report.output.users)).toStrictEqual(summaries);
     });
   }
 
   test("reuses successful user summaries from the repository", async (context) => {
-    const { repository } = await createSummaryFixtures(context);
+    const runtime = await createTestRuntime(context);
+    await saveSummaryUsers(runtime);
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
     expect(userKey).toBe("summaryuser");
@@ -79,8 +79,7 @@ describe("resolveUserSummariesForReport", () => {
     ]);
     let runCount = 0;
 
-    const first = await resolveUserSummariesForReport(report, {
-      logger: createMockLogger(),
+    const first = await resolveUserSummariesForReport(runtime, report, {
       visionByPreviewUrl,
       runUserSummary: async (prompt) => {
         runCount += 1;
@@ -99,16 +98,13 @@ describe("resolveUserSummariesForReport", () => {
             "Summary User shared a Paris food story with a visible menu. The post centers on street food and readable prices.",
         });
       },
-      repository,
     });
-    const second = await resolveUserSummariesForReport(report, {
-      logger: createMockLogger(),
+    const second = await resolveUserSummariesForReport(runtime, report, {
       visionByPreviewUrl,
       runUserSummary: async () => {
         runCount += 1;
         return "should not be used";
       },
-      repository,
     });
 
     expect(first.get(userKey)).toBe(
@@ -121,27 +117,24 @@ describe("resolveUserSummariesForReport", () => {
   });
 
   test("uses the Ollama model in the repository identity", async (context) => {
-    const { repository } = await createSummaryFixtures(context);
+    const runtime = await createTestRuntime(context);
+    await saveSummaryUsers(runtime);
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
     let runCount = 0;
 
-    const first = await resolveUserSummariesForReport(report, {
-      logger: createMockLogger(),
+    const first = await resolveUserSummariesForReport(runtime, report, {
       runUserSummary: async () => {
         runCount += 1;
         return JSON.stringify({ summary: "default model summary" });
       },
-      repository,
     });
-    const second = await resolveUserSummariesForReport(report, {
-      logger: createMockLogger(),
+    const second = await resolveUserSummariesForReport(runtime, report, {
       model: "different-model",
       runUserSummary: async () => {
         runCount += 1;
         return JSON.stringify({ summary: "custom model summary" });
       },
-      repository,
     });
 
     expect(first.get(userKey)).toBe("default model summary");
@@ -151,12 +144,7 @@ describe("resolveUserSummariesForReport", () => {
 
   test("runs the default Ollama client with qwen3.5 and OLLAMA_HOST", async (context) => {
     vi.stubEnv("OLLAMA_HOST", "http://summary.example:11434/api/generate");
-    const { repository } = await createSummaryFixtures(context);
-    const report = createSummaryReport();
-    const userKey = getReportUserKey(report.output.users[0]);
-
-    const summaries = await resolveUserSummariesForReport(report, {
-      logger: createMockLogger(),
+    const runtime = await createTestRuntime(context, {
       fetchOllama: async (url, init) => {
         expect(url).toBe("http://summary.example:11434/api/generate");
         const body = UserSummaryRequestSchema.parse(JSON.parse(requestBodyToString(init?.body)));
@@ -181,8 +169,12 @@ describe("resolveUserSummariesForReport", () => {
           { status: 200 },
         );
       },
-      repository,
     });
+    await saveSummaryUsers(runtime);
+    const report = createSummaryReport();
+    const userKey = getReportUserKey(report.output.users[0]);
+
+    const summaries = await resolveUserSummariesForReport(runtime, report);
 
     expect(summaries.get(userKey)).toBe("sdk summary");
   });
@@ -191,12 +183,8 @@ describe("resolveUserSummariesForReport", () => {
     "honors a custom timeout for a blocked summary request",
     { timeout: 1000 },
     async (context) => {
-      const { countSummaries, repository } = await createSummaryFixtures(context);
       let requestSignal: AbortSignal | null | undefined;
-      const result = resolveUserSummariesForReport(createSummaryReport(), {
-        logger: createMockLogger(),
-        repository,
-        timeoutMs: 5,
+      const runtime = await createTestRuntime(context, {
         fetchOllama: async (_url, init) => {
           requestSignal = init?.signal;
           assert.ok(requestSignal);
@@ -204,58 +192,58 @@ describe("resolveUserSummariesForReport", () => {
           return globalThis.Response.json({ response: "too late" });
         },
       });
+      await saveSummaryUsers(runtime);
 
-      const summaries = await result;
+      const summaries = await resolveUserSummariesForReport(runtime, createSummaryReport(), {
+        timeoutMs: 5,
+      });
       expect(summaries.get("summaryuser")).toBe("résumé indisponible");
       assert.ok(requestSignal);
       expect(requestSignal.aborted).toBe(true);
-      expect(countSummaries()).toBe(0);
+      expect(countSummaries(runtime)).toBe(0);
     },
   );
 
   test("returns fallback text when user summary fails", async (context) => {
-    const { repository } = await createSummaryFixtures(context);
+    const runtime = await createTestRuntime(context);
+    await saveSummaryUsers(runtime);
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
 
-    const summaries = await resolveUserSummariesForReport(report, {
-      logger: createMockLogger(),
+    const summaries = await resolveUserSummariesForReport(runtime, report, {
       runUserSummary: async () => {
         throw new Error("not signed in");
       },
-      repository,
     });
 
     expect(summaries.get(userKey)).toBe("résumé indisponible");
   });
 
   test("uses report fallback and does not store a missing Ollama response", async (context) => {
-    const { countSummaries, repository } = await createSummaryFixtures(context);
-    const summaries = await resolveUserSummariesForReport(createSummaryReport(), {
-      logger: createMockLogger(),
+    const runtime = await createTestRuntime(context, {
       fetchOllama: async () => globalThis.Response.json({ done: true }),
-      repository,
     });
+    await saveSummaryUsers(runtime);
+    const summaries = await resolveUserSummariesForReport(runtime, createSummaryReport());
 
     expect(summaries.get("summaryuser")).toBe(
       "Summary User a partagé 1 story. Éléments visibles: location:Paris; Paris Market, 10 Rue Food, Paris.",
     );
-    expect(countSummaries()).toBe(0);
+    expect(countSummaries(runtime)).toBe(0);
   });
 
   test("uses report fallback and does not store empty user summary responses", async (context) => {
-    const { countSummaries, repository } = await createSummaryFixtures(context);
+    const runtime = await createTestRuntime(context);
+    await saveSummaryUsers(runtime);
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
 
-    const summaries = await resolveUserSummariesForReport(report, {
-      logger: createMockLogger(),
+    const summaries = await resolveUserSummariesForReport(runtime, report, {
       runUserSummary: async () => "",
-      repository,
     });
     expect(summaries.get(userKey)).toBe(
       "Summary User a partagé 1 story. Éléments visibles: location:Paris; Paris Market, 10 Rue Food, Paris.",
     );
-    expect(countSummaries()).toBe(0);
+    expect(countSummaries(runtime)).toBe(0);
   });
 });

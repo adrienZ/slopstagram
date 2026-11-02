@@ -192,15 +192,14 @@ test("hides a summary after stories expire until a matching summary is generated
   const { feed, repositories } = await createFixture(context);
   const users = feed("2026-10-22T10:00:00Z");
   let generations = 0;
+  const runtime = { logger: createLogger("test-summary"), summaries: repositories.userSummary };
   const options = {
-    logger: createLogger("test-summary"),
-    repository: repositories.userSummary,
     runUserSummary: async () => {
       generations += 1;
       return JSON.stringify({ summary: "Activités des stories visibles." });
     },
   };
-  await resolveUserSummariesForReport({ output: { users } }, options);
+  await resolveUserSummariesForReport(runtime, { output: { users } }, options);
   expect(readStoryFeedSources(users, repositories).userSummaryByUserKey.get("alice")).toBe(
     "Activités des stories visibles.",
   );
@@ -209,7 +208,7 @@ test("hides a summary after stories expire until a matching summary is generated
   expect(laterView.userSummaryByUserKey.has("alice")).toBe(false);
   expect(laterView.userSummaryByUserKey.has("bob")).toBe(true);
   expect(generations).toBe(2);
-  await resolveUserSummariesForReport({ output: { users: laterUsers } }, options);
+  await resolveUserSummariesForReport(runtime, { output: { users: laterUsers } }, options);
   expect(generations).toBe(3);
   expect(readStoryFeedSources(laterUsers, repositories).userSummaryByUserKey.get("alice")).toBe(
     "Activités des stories visibles.",

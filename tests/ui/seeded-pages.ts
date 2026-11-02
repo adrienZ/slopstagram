@@ -4,6 +4,7 @@ import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { stories } from "@@/core/database/entities/story.ts";
 import { appleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
 import { instagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
+import { userSummaryRepository } from "@@/core/database/repositories/user-summary-repository.ts";
 import { createReportFeed } from "@@/core/story-feed/story-feed.ts";
 import { resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
 import type { SidebarUser } from "../../app/loaders/sidebar-users.ts";
@@ -80,11 +81,9 @@ export async function seedPageDatabase(): Promise<void> {
     });
   }
   await resolveUserSummariesForReport(
+    { logger: createMockLogger(), summaries: userSummaryRepository },
     { output: { users: createReportFeed(pageNow).users } },
-    {
-      logger: createMockLogger(),
-      runUserSummary: async () => await Promise.resolve(JSON.stringify({ summary: userSummary })),
-    },
+    { runUserSummary: async () => await Promise.resolve(JSON.stringify({ summary: userSummary })) },
   );
 }
 

@@ -152,17 +152,13 @@ export async function createReport(options: CreateReportOptions): Promise<Create
         logger,
         repository: vision,
       });
-      await persistReportInstagramUsers(report, users);
+      await persistReportInstagramUsers({ users }, report);
       // Generate from the same canonical, active story set used by the user app.
       const feedUsers = createStoryFeed(now(), { repository: stories });
       await resolveUserSummariesForReport(
+        { fetchOllama: boundaries.fetchOllama, logger, summaries },
         { output: { users: feedUsers } },
-        {
-          fetchOllama: boundaries.fetchOllama,
-          logger,
-          repository: summaries,
-          visionByPreviewUrl: readStoryFeedVision(feedUsers, vision),
-        },
+        { visionByPreviewUrl: readStoryFeedVision(feedUsers, vision) },
       );
       await reports.save(outputFileName, report);
       logger.info(

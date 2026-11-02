@@ -4,10 +4,8 @@ import { clearTimeout, setTimeout } from "node:timers";
 import type { Fetch as OllamaFetch } from "ollama";
 import { z } from "zod";
 import { getOllamaClient } from "@@/core/vision/ollama.ts";
-import {
-  userSummaryRepository,
-  type UserSummaryRepository,
-} from "@@/core/database/repositories/user-summary-repository.ts";
+import type { UserSummaryRepository } from "@@/core/database/repositories/user-summary-repository.ts";
+import type { Runtime } from "@@/core/runtime/runtime.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
 import { getReportUserKey } from "./report-user-key.ts";
 import type { StoriesManifestReport, StoryOutputUser } from "@@/core/fetch-run/report-types.ts";
@@ -42,12 +40,9 @@ type RunUserSummary = (prompt: string) => Promise<string>;
 
 interface ResolveUserSummariesOptions {
   endpoint?: string;
-  fetchOllama?: HttpFetch;
-  logger: Logger;
   model?: string;
   visionByPreviewUrl?: Map<string, VisionResult>;
   runUserSummary?: RunUserSummary;
-  repository?: Pick<UserSummaryRepository, "findBySourceHash" | "save">;
   timeoutMs?: number;
 }
 
@@ -229,7 +224,7 @@ function createDefaultOllamaRunner(options: {
 }
 
 interface ResolvedUserSummaryOptions {
-  logger: NonNullable<ResolveUserSummariesOptions["logger"]>;
+  logger: Logger;
   model: string;
   runUserSummary: RunUserSummary;
   repository: Pick<UserSummaryRepository, "findBySourceHash" | "save">;
@@ -240,7 +235,6 @@ const USER_SUMMARY_PROMPT_HASH = getUserSummaryPromptHash(USER_SUMMARY_PROMPT);
 
 interface ReadUserSummariesOptions {
   model?: string;
-  repository?: Pick<UserSummaryRepository, "findBySourceHash">;
   visionByPreviewUrl?: Map<string, VisionResult>;
 }
 
@@ -255,22 +249,25 @@ function createUserSummarySource(
   return { prompt, sourceHash, userKey };
 }
 
-function resolveOptions(options: ResolveUserSummariesOptions): ResolvedUserSummaryOptions {
+function resolveOptions(
+  runtime: Pick<Runtime, "fetchOllama" | "logger" | "summaries">,
+  options: ResolveUserSummariesOptions,
+): ResolvedUserSummaryOptions {
   const model = options.model ?? getUserSummaryModel();
   const timeoutMs = options.timeoutMs ?? USER_SUMMARY_TIMEOUT_MS;
 
   return {
-    logger: options.logger,
+    logger: runtime.logger,
     model,
     runUserSummary:
       options.runUserSummary ??
       createDefaultOllamaRunner({
         endpoint: options.endpoint,
-        fetchOllama: options.fetchOllama,
+        fetchOllama: runtime.fetchOllama,
         model,
         timeoutMs,
       }),
-    repository: options.repository ?? userSummaryRepository,
+    repository: runtime.summaries,
     visionByPreviewUrl: options.visionByPreviewUrl,
   };
 }
@@ -294,10 +291,10 @@ function getStoredSummary(options: {
 }
 
 export function readUserSummaries(
+  { summaries: repository }: Pick<Runtime, "summaries">,
   users: Array<StoryOutputUser>,
   options: ReadUserSummariesOptions = {},
 ): Map<string, string> {
-  const repository = options.repository ?? userSummaryRepository;
   const model = options.model ?? getUserSummaryModel();
   const summaries = new Map<string, string>();
 
@@ -383,10 +380,11 @@ async function resolveUserSummary(
 }
 
 export async function resolveUserSummariesForReport(
+  runtime: Pick<Runtime, "fetchOllama" | "logger" | "summaries">,
   report: Pick<StoriesManifestReport, "output">,
-  options: ResolveUserSummariesOptions,
+  options: ResolveUserSummariesOptions = {},
 ): Promise<Map<string, string>> {
-  const resolved = resolveOptions(options);
+  const resolved = resolveOptions(runtime, options);
   const summaryByUserKey = new Map<string, string>();
 
   for (const [index, user] of report.output.users.entries()) {

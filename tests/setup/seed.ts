@@ -242,8 +242,8 @@ export async function seedRecordedStories(recorded?: RecordedPayloads, options: 
     );
   }
   await persistReportInstagramUsers(
+    { users: new InstagramUserRepository(database) },
     globalThis.structuredClone(report),
-    new InstagramUserRepository(database),
   );
   return report;
 }

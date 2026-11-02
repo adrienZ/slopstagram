@@ -24,7 +24,7 @@ import { loadSidebarUsers } from "./sidebar-users.ts";
 
 interface FeedRepositories {
   appleVision: Pick<AppleVisionRepository, "findByMediaPk">;
-  userSummary: Pick<UserSummaryRepository, "findBySourceHash">;
+  userSummary: UserSummaryRepository;
   vision: Pick<VisionRepository, "findByMediaPk">;
 }
 
@@ -110,9 +110,8 @@ export function readStoryFeedSources(
 ): StoryFeedSources {
   const cachedImages = readCachedImages(users);
   const visionByPreviewUrl = readStoryFeedVision(users, repositories.vision);
-  const userSummaryByUserKey = readUserSummaries(users, {
+  const userSummaryByUserKey = readUserSummaries({ summaries: repositories.userSummary }, users, {
     visionByPreviewUrl,
-    repository: repositories.userSummary,
   });
   const appleCaptionByMediaPk = readAppleCaptions(users, repositories.appleVision);
 
