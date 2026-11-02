@@ -24,9 +24,6 @@ Keep UI components limited to rendering, local UI behavior, and presentation tra
   display helpers shared by components.
 - `server/`: Nitro only, the media route and the plugins.
 - `core/`: domain and ingestion code, with no React and no Nitro.
-- Import across areas with the `@/` alias (app) and the `@@/` alias (repository root), for
-  example `@@/core/...`. Pages and components import types from repositories and the database
-  client, never values (lint enforces it).
 
 ### Generated UI
 
