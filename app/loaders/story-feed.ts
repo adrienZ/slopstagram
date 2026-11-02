@@ -17,7 +17,7 @@ import { getReportUserKey } from "@@/core/accounts/report-user-key.ts";
 import { readUserSummaries } from "@@/core/accounts/user-summary.ts";
 import type { StoryOutputUser } from "@@/core/report-types.ts";
 import type { VisionResult } from "@@/core/database/entities/vision.ts";
-import { createReportFeed, readStoryFeedVision } from "@@/core/story-feed.ts";
+import { createReportFeed, readStoryFeedVision } from "@@/core/story-feed/story-feed.ts";
 import { createStoryCards, withStoryStickers } from "../utils/story-cards.ts";
 import { formatReportDate } from "../utils/helper.ts";
 import { loadSidebarUsers } from "./sidebar-users.ts";

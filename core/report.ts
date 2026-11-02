@@ -15,7 +15,7 @@ import { InstagramUserRepository } from "@@/core/database/repositories/instagram
 import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
 import { UserSummaryRepository } from "@@/core/database/repositories/user-summary-repository.ts";
 import { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
-import { createStoryFeed, readStoryFeedVision } from "./story-feed.ts";
+import { createStoryFeed, readStoryFeedVision } from "@@/core/story-feed/story-feed.ts";
 import {
   cacheReportImages,
   type CacheReportImagesOptions,
