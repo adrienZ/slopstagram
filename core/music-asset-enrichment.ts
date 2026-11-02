@@ -2,7 +2,7 @@ import { z } from "zod";
 import { isJsonObject, JsonValueSchema } from "@@/core/utils/json-value.ts";
 import type { StoryItem, InstagramClient } from "./instagram-types.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
-import type { StoryRepository } from "./repositories/story-repository.ts";
+import type { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
 import { getMusicObservation } from "./music-observation-service.ts";
 
 type MusicAssetRepository = Pick<StoryRepository, "findByMediaPk"> &

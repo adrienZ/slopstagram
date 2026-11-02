@@ -2,8 +2,11 @@ import {
   storyRepository,
   type StoryRepository,
   type UserTimelineStory,
-} from "./repositories/story-repository.ts";
-import { visionRepository, type VisionRepository } from "./repositories/vision-repository.ts";
+} from "@@/core/database/repositories/story-repository.ts";
+import {
+  visionRepository,
+  type VisionRepository,
+} from "@@/core/database/repositories/vision-repository.ts";
 import type { StoryOutputUser } from "./report-types.ts";
 import type { VisionResult } from "@@/core/database/entities/vision.ts";
 import { readCurrentVisionResult } from "./lib/vision-analysis-service.ts";

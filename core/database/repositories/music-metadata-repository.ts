@@ -1,5 +1,5 @@
 import { and, asc, eq, isNull } from "drizzle-orm";
-import type { DrizzleDatabase } from "../database/client.ts";
+import type { DrizzleDatabase } from "../client.ts";
 import {
   metadataMusic,
   storyMusicObservations,
@@ -7,11 +7,11 @@ import {
   type MusicMetadataReference,
   type MusicMediaState,
   type StoryMusicObservation,
-} from "@@/core/database/entities/music-metadata.ts";
-import type { StoryAnnotations } from "../story-types.ts";
-import type { StoryItem } from "../instagram-types.ts";
-import type { MusicObservationInput } from "../music-observation-service.ts";
-import { planMusicMetadataWrite, planStoryMusicUpdates } from "../music-metadata-service.ts";
+} from "../entities/music-metadata.ts";
+import type { StoryAnnotations } from "@@/core/story-types.ts";
+import type { StoryItem } from "@@/core/instagram-types.ts";
+import type { MusicObservationInput } from "@@/core/music-observation-service.ts";
+import { planMusicMetadataWrite, planStoryMusicUpdates } from "@@/core/music-metadata-service.ts";
 
 type MusicDatabase = Pick<DrizzleDatabase, "select" | "insert" | "update" | "delete">;
 

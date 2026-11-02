@@ -2,19 +2,19 @@ import { resolveAppleCaptionsForReport } from "./apple-caption-report-service.ts
 import { type DrizzleDatabase, useDrizzle } from "./database/client.ts";
 import { recordFetchRun } from "./fetch-run.ts";
 import type { InstagramClient } from "./instagram-types.ts";
-import { ReportRepository } from "./repositories/report-repository.ts";
+import { ReportRepository } from "@@/core/database/repositories/report-repository.ts";
 import {
   BASE_CACHE_DIR,
   createFileStorage,
   createImageCacheStorage,
   createStoryStorage,
 } from "./lib/cache-service.ts";
-import { AppleVisionRepository } from "./repositories/apple-vision-repository.ts";
-import { FetchRunRepository } from "./repositories/fetch-run-repository.ts";
-import { InstagramUserRepository } from "./repositories/instagram-user-repository.ts";
-import { StoryRepository } from "./repositories/story-repository.ts";
-import { UserSummaryRepository } from "./repositories/user-summary-repository.ts";
-import { VisionRepository } from "./repositories/vision-repository.ts";
+import { AppleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
+import { FetchRunRepository } from "@@/core/database/repositories/fetch-run-repository.ts";
+import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
+import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
+import { UserSummaryRepository } from "@@/core/database/repositories/user-summary-repository.ts";
+import { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
 import { createStoryFeed, readStoryFeedVision } from "./story-feed.ts";
 import { cacheReportImages, type CacheReportImagesOptions } from "./lib/image-cache-service.ts";
 import {

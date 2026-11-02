@@ -4,7 +4,7 @@ import path from "node:path";
 import { assert, test, expect } from "vitest";
 import { createDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
-import { StoryRepository } from "@@/core/repositories/story-repository.ts";
+import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
 import { processMusicMedia } from "@@/core/music-media-service.ts";
 import { startMediaServer, wavAudio } from "./media-server.ts";
 

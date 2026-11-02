@@ -1,9 +1,9 @@
 import { describe, test, expect } from "vitest";
 import { createDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
-import { InstagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
+import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
 import { instagramUsers } from "@@/core/database/entities/instagram-user.ts";
-import { UserSummaryRepository } from "@@/core/repositories/user-summary-repository.ts";
+import { UserSummaryRepository } from "@@/core/database/repositories/user-summary-repository.ts";
 import { userSummaries } from "@@/core/database/entities/user-summary.ts";
 
 const entry = {

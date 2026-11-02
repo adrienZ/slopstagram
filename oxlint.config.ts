@@ -94,7 +94,7 @@ export default defineConfig({
       rules: {
         "no-restricted-imports": restrictImports([
           {
-            group: ["@@/core/repositories/*", "@@/core/database/*"],
+            group: ["@@/core/database/repositories/*", "@@/core/database/*"],
             allowTypeImports: true,
             message:
               "Pages and components get their data from a loader. Import types only, not repositories or the database client.",

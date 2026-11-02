@@ -1,4 +1,4 @@
-import type { StoryRepository } from "./repositories/story-repository.ts";
+import type { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
 import { getMediaCacheKey, type StoryStorage } from "./lib/cache-service.ts";
 import type { StoryItem, StoryReel } from "./instagram-types.ts";
 

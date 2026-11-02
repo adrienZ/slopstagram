@@ -1,5 +1,5 @@
 import { and, asc, eq, isNull } from "drizzle-orm";
-import type { DrizzleDatabase } from "../database/client.ts";
+import type { DrizzleDatabase } from "../client.ts";
 import {
   metadataLocationDetails,
   metadataLocations,
@@ -7,11 +7,11 @@ import {
   classifyLocation,
   type PlaceDetails,
   type StoryLocationObservation,
-} from "@@/core/database/entities/location-metadata.ts";
-import { storyStickers } from "@@/core/database/entities/story.ts";
-import type { StoryAnnotations } from "../story-types.ts";
-import type { StoryItem } from "../instagram-types.ts";
-import type { LocationObservationInput } from "../location-observation-service.ts";
+} from "../entities/location-metadata.ts";
+import { storyStickers } from "../entities/story.ts";
+import type { StoryAnnotations } from "@@/core/story-types.ts";
+import type { StoryItem } from "@@/core/instagram-types.ts";
+import type { LocationObservationInput } from "@@/core/location-observation-service.ts";
 import {
   planLocationMetadataWrite,
   boundLookupFailure,
@@ -21,7 +21,7 @@ import {
   planStoryLocationUpdates,
   type PlaceFillInput,
   type PlaceLookupInput,
-} from "../location-metadata-service.ts";
+} from "@@/core/location-metadata-service.ts";
 
 type LocationDatabase = Pick<DrizzleDatabase, "select" | "insert" | "update" | "delete">;
 

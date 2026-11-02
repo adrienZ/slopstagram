@@ -6,8 +6,11 @@ import {
   processMusicArtwork,
   type MusicMediaOptions,
 } from "./music-media-service.ts";
-import { readMusicObservations } from "./repositories/music-metadata-repository.ts";
-import { findStoryAudio, saveStoryAudioMedia } from "./repositories/story-audio-repository.ts";
+import { readMusicObservations } from "@@/core/database/repositories/music-metadata-repository.ts";
+import {
+  findStoryAudio,
+  saveStoryAudioMedia,
+} from "@@/core/database/repositories/story-audio-repository.ts";
 
 export async function processStoryAudio(mediaPk: string, options: MusicMediaOptions) {
   const current = findStoryAudio(options.database, mediaPk);

@@ -3,7 +3,7 @@ import { startMediaServer, wavAudio } from "./media-server.ts";
 import { assert, test, expect } from "vitest";
 import { createDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
-import { StoryRepository } from "@@/core/repositories/story-repository.ts";
+import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
 import { dashAudioSource } from "@@/core/lib/dash-audio.ts";
 import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";

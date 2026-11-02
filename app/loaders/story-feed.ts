@@ -2,13 +2,16 @@ import "@tanstack/react-start/server-only";
 import {
   appleVisionRepository,
   type AppleVisionRepository,
-} from "@@/core/repositories/apple-vision-repository.ts";
+} from "@@/core/database/repositories/apple-vision-repository.ts";
 import {
   userSummaryRepository,
   type UserSummaryRepository,
-} from "@@/core/repositories/user-summary-repository.ts";
-import { visionRepository, type VisionRepository } from "@@/core/repositories/vision-repository.ts";
-import { storyRepository } from "@@/core/repositories/story-repository.ts";
+} from "@@/core/database/repositories/user-summary-repository.ts";
+import {
+  visionRepository,
+  type VisionRepository,
+} from "@@/core/database/repositories/vision-repository.ts";
+import { storyRepository } from "@@/core/database/repositories/story-repository.ts";
 import type { CachedReportImages } from "@@/core/lib/image-cache-service.ts";
 import { getReportUserKey } from "@@/core/lib/report-user-key-service.ts";
 import { readUserSummaries } from "@@/core/user-summary.ts";

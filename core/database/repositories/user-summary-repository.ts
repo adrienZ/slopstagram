@@ -1,11 +1,11 @@
 import { eq } from "drizzle-orm";
-import { useDrizzle, type DrizzleDatabase } from "../database/client.ts";
+import { useDrizzle, type DrizzleDatabase } from "../client.ts";
 import {
   userSummaries,
   NewUserSummarySchema,
   type UserSummaryEntry,
-} from "@@/core/database/entities/user-summary.ts";
-import { instagramUsers } from "@@/core/database/entities/instagram-user.ts";
+} from "../entities/user-summary.ts";
+import { instagramUsers } from "../entities/instagram-user.ts";
 
 export class UserSummaryRepository {
   private readonly database: DrizzleDatabase;

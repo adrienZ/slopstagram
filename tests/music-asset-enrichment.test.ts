@@ -5,7 +5,7 @@ import { assert, test, expect } from "vitest";
 import sharp from "sharp";
 import { createDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
-import { StoryRepository } from "@@/core/repositories/story-repository.ts";
+import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
 import { fetchStoriesManifest } from "@@/core/stories.ts";
 import { cacheReportAudio } from "@@/core/report-audio-service.ts";
 import { cacheReceivedAudio } from "@@/core/music-media-service.ts";

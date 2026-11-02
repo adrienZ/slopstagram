@@ -5,11 +5,11 @@ import {
   type UserTimelineStory,
   type StoryRepository,
   storyRepository,
-} from "@@/core/repositories/story-repository.ts";
+} from "@@/core/database/repositories/story-repository.ts";
 import type { VisionResult } from "@@/core/database/entities/vision.ts";
 import { createStoredStoryUser } from "@@/core/story-feed.ts";
-import { appleVisionRepository } from "@@/core/repositories/apple-vision-repository.ts";
-import { visionRepository } from "@@/core/repositories/vision-repository.ts";
+import { appleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
+import { visionRepository } from "@@/core/database/repositories/vision-repository.ts";
 import {
   describeOutdatedVision,
   type OutdatedVision,
@@ -17,7 +17,7 @@ import {
 import {
   instagramUserRepository,
   type InstagramUserRepository,
-} from "@@/core/repositories/instagram-user-repository.ts";
+} from "@@/core/database/repositories/instagram-user-repository.ts";
 
 import { getStoryDate } from "@@/core/lib/story-date-service.ts";
 import { createStoryCards, withStoryStickers } from "../utils/story-cards.ts";

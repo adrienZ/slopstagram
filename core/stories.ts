@@ -1,5 +1,8 @@
 import { storiesStorage, type StoryStorage } from "./lib/cache-service.ts";
-import { storyRepository, type StoryRepository } from "./repositories/story-repository.ts";
+import {
+  storyRepository,
+  type StoryRepository,
+} from "@@/core/database/repositories/story-repository.ts";
 import { type Logger, createLogger } from "@@/core/utils/logging.ts";
 import { closeInstagramSession, openInstagramSession } from "./lib/playwright-service.ts";
 import type { StoriesManifestReport, StoryManifestReel } from "./report-types.ts";

@@ -4,7 +4,7 @@ import type { StoryLocationObservation } from "@@/core/database/entities/locatio
 import type { Logger } from "@@/core/utils/logging.ts";
 import type { PlaceLookupInput } from "./location-metadata-service.ts";
 import type { InstagramClient } from "./instagram-types.ts";
-import type { StoryRepository } from "./repositories/story-repository.ts";
+import type { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
 
 type PlaceLookupRepository = Pick<StoryRepository, "findByMediaPk"> &
   Partial<Pick<StoryRepository, "recordFailedPlaceLookup" | "recordPlaceLookup">>;
