@@ -155,6 +155,6 @@ report with its reason.
 Raw Instagram story payloads kept locally as observed. They are used to enrich
 stories already stored, not to build the story feed.
 
-**Media cache**:
-Local copies of Instagram images and audio (preview images, profile pictures, music
-artwork, audio) made because Instagram's URLs expire.
+**Media store**:
+The local copies of images and audio the app serves (preview images, profile pictures,
+music artwork, audio), kept because Instagram's URLs expire.

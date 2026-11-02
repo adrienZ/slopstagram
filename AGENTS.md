@@ -23,7 +23,24 @@ Keep UI components limited to rendering, local UI behavior, and presentation tra
   loader of each page (it owns the page data type and returns data ready to render), `utils/`
   display helpers shared by components.
 - `server/`: Nitro only, the media route and the plugins.
-- `core/`: domain and ingestion code, with no React and no Nitro.
+- `core/`: domain and ingestion code, with no React and no Nitro. One flat folder per domain,
+  with no subfolders except in `database/`. Inside a domain, import with relative paths; across
+  domains, with `@@/core/<domain>/<module>.ts`. Lint lets a domain import only the domains
+  below it (type-only imports are always allowed); `oxlint.config.ts` lists the exceptions.
+  - `utils/`: domain-free helpers (data paths, JSON values, logging, provider identifiers,
+    caption placeholders). Imports no domain; nothing domain-specific goes here.
+  - `database/`: the client, migrations, `entities/` and `repositories/`. No business rules.
+  - `instagram/`: Instagram payload types, the story client, retry, the Playwright session,
+    the story parser and payload validation. No persistence.
+  - `media-store/`: the local copies of images and audio the app serves. Not the story cache.
+  - `stickers/`: story annotations, sticker and location extraction, story model types.
+  - `places/`: tagged place metadata, observations and place lookups.
+  - `music/`: music assets and media, music observations, story audio, DASH audio.
+  - `vision/`: the Ollama client, vision analysis, Apple OCR and the Apple caption step.
+  - `accounts/`: user summaries, Instagram user persistence and report user keys.
+  - `story-feed/`: the story feed and story days.
+  - `fetch-run/`: the fetch run pipeline, reports, story fetching, the story cache and the
+    hourly job. The top layer: it may import any domain and no other domain imports it.
 
 ### Generated UI
 
@@ -80,7 +97,7 @@ Tests go through production code paths (`docs/adr/0006-test-through-production-c
   route and answers only its loader. jsdom tests under `tests/ui/` seed the page database
   with `seedPageDatabase()` from `tests/ui/seeded-pages.ts`.
 - Fixtures in `tests/fixtures/` come from `npm run fixtures:capture`, which anonymizes a live
-  session. Never copy them from `data/cache` or the media cache, and never run the command in
+  session. Never copy them from `data/cache` or the media store, and never run the command in
   CI. Never write personal data into source, fixtures, tests, docs, commits, PRs or issues:
   usernames, ids, names, captions, places, CDN URLs. Use synthetic values. Only public audio
   metadata (titles, artists) may stay. `tests/fixtures.privacy.test.ts` fails on any other
