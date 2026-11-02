@@ -1,4 +1,5 @@
 import { Buffer } from "node:buffer";
+import { createFileCacheStorage } from "@@/core/media-store/cache-storage.ts";
 import { startMediaServer, wavAudio } from "./media-server.ts";
 import { assert, test, expect } from "vitest";
 import { createDrizzle } from "@@/core/database/client.ts";
@@ -202,6 +203,7 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
   await cacheReportAudio(report, {
     storyRepository: repository,
     directory,
+    storage: createFileCacheStorage(directory),
     fetchMedia: media.fetchMedia,
   });
   expect(media.requests).toStrictEqual(["/story.mp4?a=1&b=2"]);
@@ -231,6 +233,7 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
   const reused = await processStoryAudio("story", {
     storyRepository: repository,
     directory,
+    storage: createFileCacheStorage(directory),
     fetchMedia: media.fetchMedia,
   });
   expect(reused?.cachePath).toBe(saved.cachePath);
@@ -274,6 +277,7 @@ test("expired and interrupted DASH downloads fail silently without publishing in
   const failed = await processStoryAudio("story", {
     storyRepository: repository,
     directory,
+    storage: createFileCacheStorage(directory),
     fetchMedia: media.fetchMedia,
   });
   expect(failed?.state).toBe("failed");
@@ -301,6 +305,7 @@ test("expired and interrupted DASH downloads fail silently without publishing in
   const interruptedResult = await processStoryAudio("story", {
     storyRepository: repository,
     directory,
+    storage: createFileCacheStorage(directory),
     fetchMedia: media.fetchMedia,
   });
   expect(interruptedResult?.state).toBe("failed");
@@ -391,6 +396,7 @@ test("fresh story ingestion caches the story excerpt and prefers it over the lon
   await cacheReportAudio(report, {
     storyRepository: repository,
     directory,
+    storage: createFileCacheStorage(directory),
     fetchMedia: media.fetchMedia,
   });
   const annotations = new StoryRepository(database).findByMediaPk(story.pk)?.annotations;

@@ -1,4 +1,5 @@
 import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { createFileCacheStorage } from "@@/core/media-store/cache-storage.ts";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { assert, test, expect } from "vitest";
@@ -44,6 +45,7 @@ test("music processing publishes audio only and reuses it without provider reque
     {
       storyRepository: repository,
       directory: root,
+      storage: createFileCacheStorage(root),
       fetchMedia: media.fetchMedia,
     },
   );
@@ -58,6 +60,7 @@ test("music processing publishes audio only and reuses it without provider reque
     {
       storyRepository: repository,
       directory: root,
+      storage: createFileCacheStorage(root),
       fetchMedia: media.fetchMedia,
     },
   );
@@ -103,6 +106,7 @@ test("partial audio stays separate and promotion preserves its source and proces
   const result = await processMusicMedia(reference, {
     storyRepository: repository,
     directory: root,
+    storage: createFileCacheStorage(root),
     fetchMedia: media.fetchMedia,
   });
   assert.ok(result);
@@ -128,6 +132,7 @@ test("partial audio stays separate and promotion preserves its source and proces
   const recovered = await processMusicMedia(promoted, {
     storyRepository: repository,
     directory: root,
+    storage: createFileCacheStorage(root),
     fetchMedia: media.fetchMedia,
   });
   assert.ok(recovered);
@@ -138,6 +143,7 @@ test("partial audio stays separate and promotion preserves its source and proces
   const missing = await processMusicMedia(promoted, {
     storyRepository: repository,
     directory: root,
+    storage: createFileCacheStorage(root),
     fetchMedia: media.fetchMedia,
   });
   expect(missing?.audioState).toBe("failed");
@@ -170,6 +176,7 @@ test("missing sources do not fetch and failed transfers never publish partial fi
   const empty = await processMusicMedia(metadata, {
     storyRepository: repository,
     directory: root,
+    storage: createFileCacheStorage(root),
     fetchMedia: media.fetchMedia,
   });
   expect(empty?.audioState).toBe("unavailable");
@@ -185,6 +192,7 @@ test("missing sources do not fetch and failed transfers never publish partial fi
   const failed = await processMusicMedia(metadata, {
     storyRepository: repository,
     directory: root,
+    storage: createFileCacheStorage(root),
     fetchMedia: media.fetchMedia,
   });
   expect(failed?.audioState).toBe("failed");
@@ -226,6 +234,7 @@ test("the cached file duration survives partial promotion and remains distinct f
   const result = await processMusicMedia(metadata, {
     storyRepository: repository,
     directory: root,
+    storage: createFileCacheStorage(root),
     fetchMedia: media.fetchMedia,
   });
   expect(result?.audioDurationMs).toBe(1000);

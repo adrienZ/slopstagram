@@ -82,4 +82,5 @@ test("the production runtime is created once and reused", () => {
 
   expect(getProductionRuntime()).toBe(runtime);
   expect(runtime.client).toBeUndefined();
+  expect(Object.keys(runtime.storage).toSorted()).toStrictEqual(["audio", "images", "stories"]);
 });

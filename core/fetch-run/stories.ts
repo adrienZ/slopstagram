@@ -1,4 +1,4 @@
-import { storiesStorage, type StoryStorage } from "@@/core/media-store/cache-storage.ts";
+import type { StoryStorage } from "@@/core/media-store/cache-storage.ts";
 import {
   storyRepository,
   type StoryRepository,
@@ -36,7 +36,7 @@ export interface FetchStoriesManifestOptions {
     Partial<
       Pick<StoryRepository, "recordFailedPlaceLookup" | "recordPlaceLookup" | "refreshMusicAsset">
     >;
-  storyStorage?: StoryStorage;
+  storyStorage: StoryStorage;
 }
 
 export type FetchStoriesOptions = FetchStoriesManifestOptions & {
@@ -156,10 +156,10 @@ async function fetchMissingStoriesForReport(options: {
 
 export async function fetchStoriesManifest(
   client: InstagramClient,
-  options: FetchStoriesManifestOptions = {},
+  options: FetchStoriesManifestOptions,
 ): Promise<StoriesManifestReport> {
   const reportName = options.reportName ?? DEFAULT_REPORT_NAME;
-  const storage = options.storyStorage ?? storiesStorage;
+  const storage = options.storyStorage;
   const now = options.now ?? (() => new Date());
   const logger = options.logger ?? createLogger("fetch-stories");
 
@@ -203,9 +203,7 @@ export async function fetchStoriesManifest(
   });
 }
 
-export async function fetchStories(
-  options: FetchStoriesOptions = {},
-): Promise<StoriesManifestReport> {
+export async function fetchStories(options: FetchStoriesOptions): Promise<StoriesManifestReport> {
   const reportName = options.reportName ?? DEFAULT_REPORT_NAME;
 
   if (options.client) {

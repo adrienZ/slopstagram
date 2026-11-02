@@ -2,6 +2,7 @@ import type { TestContext } from "vitest";
 import type { RuntimeBoundaries } from "@@/core/runtime/runtime.ts";
 import { createRuntime } from "@@/core/runtime/runtime.ts";
 import { createRecordedInstagramClient } from "./seed.ts";
+import { createMemoryCacheStorage } from "../memory-storage.ts";
 import { createTestDatabase } from "../test-database.ts";
 
 function unexpected(boundary: string) {
@@ -11,7 +12,7 @@ function unexpected(boundary: string) {
   };
 }
 
-/** A runtime over a fresh in-memory database; other boundaries fail on use unless overridden. */
+/** A runtime over a fresh in-memory database and stores; other boundaries fail on use unless overridden. */
 export async function createTestRuntime(
   context: Pick<TestContext, "onTestFinished">,
   boundaries: RuntimeBoundaries = {},
@@ -22,6 +23,7 @@ export async function createTestRuntime(
     fetchMedia: unexpected("fetchMedia"),
     fetchOllama: unexpected("fetchOllama"),
     runAppleOcr: unexpected("runAppleOcr"),
+    storage: createMemoryCacheStorage(),
     ...boundaries,
   });
 }

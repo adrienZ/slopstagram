@@ -12,11 +12,8 @@ import { audioFileDurationMs } from "./audio-duration.ts";
 import {
   AUDIO_STORAGE_DIR,
   BASE_CACHE_DIR,
-  artworkCacheStorage,
-  audioCacheStorage,
-  createArtworkCacheStorage,
-  createAudioCacheStorage,
   type AudioCacheStorage,
+  type CacheStorage,
   type ImageCacheStorage,
 } from "@@/core/media-store/cache-storage.ts";
 import { audioFileExtension } from "./music-media-types.ts";
@@ -37,8 +34,7 @@ export interface MusicMediaOptions {
   storyRepository?: Pick<StoryRepository, "findMusicMetadata" | "saveMusicMedia">;
   directory?: string;
   fetchMedia?: (url: string) => Promise<Response>;
-  audioStorage?: AudioCacheStorage;
-  artworkStorage?: ImageCacheStorage;
+  storage: Pick<CacheStorage, "audio" | "images">;
 }
 
 async function fileExists(storage: AudioCacheStorage, key: string | null) {
@@ -138,11 +134,7 @@ export async function cacheReceivedAudio(
   declaredAudioType?: "audio/mp4",
 ): Promise<CachedMusicMedia> {
   const directory = options.directory ?? BASE_CACHE_DIR;
-  const storage =
-    options.audioStorage ??
-    (options.directory === undefined
-      ? audioCacheStorage
-      : createAudioCacheStorage(path.join(directory, AUDIO_STORAGE_DIR)));
+  const storage = options.storage.audio;
   if (cached !== null && (await fileExists(storage, cached))) {
     return {
       cachePath: cached,
@@ -245,11 +237,7 @@ export async function processMusicArtwork(
   if (!current || current.artworkSourceUrl === null) {
     return current ?? null;
   }
-  const storage =
-    options.artworkStorage ??
-    (options.directory === undefined
-      ? artworkCacheStorage
-      : createArtworkCacheStorage(options.directory));
+  const storage = options.storage.images;
   if (await cachedArtworkExists(storage, current.artworkCachePath)) {
     return current;
   }

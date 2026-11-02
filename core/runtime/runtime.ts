@@ -7,6 +7,11 @@ import { StoryRepository } from "@@/core/database/repositories/story-repository.
 import { UserSummaryRepository } from "@@/core/database/repositories/user-summary-repository.ts";
 import { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
 import type { InstagramClient } from "@@/core/instagram/instagram-types.ts";
+import {
+  BASE_CACHE_DIR,
+  createFileCacheStorage,
+  type CacheStorage,
+} from "@@/core/media-store/cache-storage.ts";
 import type { CacheReportImagesOptions } from "@@/core/media-store/image-cache.ts";
 import type { MusicMediaOptions } from "@@/core/music/music-media.ts";
 import type { RecognizeAppleCaptionOptions } from "@@/core/vision/apple-ocr.ts";
@@ -19,6 +24,7 @@ export interface RuntimeBoundaries {
   fetchMedia?: MusicMediaOptions["fetchMedia"];
   fetchOllama?: HttpFetch;
   runAppleOcr?: RecognizeAppleCaptionOptions["runAppleOcr"];
+  storage?: CacheStorage;
 }
 
 export interface Runtime extends RuntimeBoundaries {
@@ -29,6 +35,7 @@ export interface Runtime extends RuntimeBoundaries {
   stories: StoryRepository;
   summaries: UserSummaryRepository;
   users: InstagramUserRepository;
+  storage: CacheStorage;
   vision: VisionRepository;
 }
 
@@ -43,6 +50,7 @@ export function createRuntime(
     fetchRuns: new FetchRunRepository(database),
     reports: new ReportRepository(database),
     stories: new StoryRepository(database),
+    storage: boundaries.storage ?? createFileCacheStorage(BASE_CACHE_DIR),
     summaries: new UserSummaryRepository(database),
     users: new InstagramUserRepository(database),
     vision: new VisionRepository(database),

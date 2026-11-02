@@ -1,10 +1,10 @@
 import { Buffer } from "node:buffer";
 import { describe, test, expect } from "vitest";
 import { TextEncoder } from "node:util";
-import { BASE_CACHE_DIR, createImageCacheStorage } from "@@/core/media-store/cache-storage.ts";
+import { BASE_CACHE_DIR } from "@@/core/media-store/cache-storage.ts";
 import { cacheReportImages } from "@@/core/media-store/image-cache.ts";
 import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
-import { createMemoryStorage } from "./memory-storage.ts";
+import { createMemoryCacheStorage } from "./memory-storage.ts";
 import { createMockLogger } from "./mock-helpers.ts";
 
 const PROFILE_PK = "avatar-pk";
@@ -72,7 +72,7 @@ describe("cacheReportImages", () => {
     const source = "https://example.com/avatar?id=1";
     const previewSource = "https://example.com/story-preview.webp";
     const previewKey = "story-pk";
-    const imageCacheStorage = createImageCacheStorage(createMemoryStorage());
+    const imageCacheStorage = createMemoryCacheStorage().images;
     let fetchCount = 0;
     let convertCount = 0;
 
@@ -124,7 +124,7 @@ describe("cacheReportImages", () => {
 
   test("refreshes cached profile pictures from the latest API response", async () => {
     const source = "https://example.com/avatar.webp";
-    const imageCacheStorage = createImageCacheStorage(createMemoryStorage());
+    const imageCacheStorage = createMemoryCacheStorage().images;
     await imageCacheStorage.setItemRaw(`avatars/${PROFILE_PK}.jpg`, Buffer.from("jpeg-avatar"));
 
     const cachedImages = await cacheReportImages(createReport(source), {
@@ -156,7 +156,7 @@ describe("cacheReportImages", () => {
     const source = "https://example.com/avatar.jpg";
     const previewSource = "https://example.com/story-preview.webp";
     const previewKey = "story-pk";
-    const imageCacheStorage = createImageCacheStorage(createMemoryStorage());
+    const imageCacheStorage = createMemoryCacheStorage().images;
     await imageCacheStorage.setItemRaw(`avatars/${PROFILE_PK}.jpg`, Buffer.from("jpeg-avatar"));
     await imageCacheStorage.setItemRaw(
       `story-previews/${previewKey}.jpg`,
@@ -185,7 +185,7 @@ describe("cacheReportImages", () => {
     const firstPreviewSource = "https://example.com/story-preview.webp?signature=old";
     const secondPreviewSource = "https://example.com/story-preview.webp?signature=new";
     const previewKey = "story-pk";
-    const imageCacheStorage = createImageCacheStorage(createMemoryStorage());
+    const imageCacheStorage = createMemoryCacheStorage().images;
     let fetchCount = 0;
 
     const options = {
