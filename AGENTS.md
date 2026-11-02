@@ -17,6 +17,17 @@ Make sure to run `npm run check` to validate your code changes.
 
 Keep UI components limited to rendering, local UI behavior, and presentation transformations; place business rules and application orchestration in hooks/composables or dedicated modules.
 
+### Where code goes
+
+- `app/`: the TanStack Start app. `routes/` holds only route files, `loaders/` the server-only
+  loader of each page (it owns the page data type and returns data ready to render), `utils/`
+  display helpers shared by components.
+- `server/`: Nitro only, the media route and the plugins.
+- `core/`: domain and ingestion code, with no React and no Nitro.
+- Import across areas with the `@/` alias (app) and the `@@/` alias (repository root), for
+  example `@@/core/...`. Pages and components import types from repositories and the database
+  client, never values (lint enforces it).
+
 ### Generated UI
 
 Treat `app/shadcn/**` as generated shadcn/ui code. Never hand-edit these files,

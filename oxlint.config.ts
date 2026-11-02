@@ -87,6 +87,25 @@ export default defineConfig({
       },
     },
     {
+      files: ["app/routes/**", "app/components/**", "app/hooks/**", "app/utils/**"],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            ...restrictedReactImports.rules["no-restricted-imports"][1],
+            patterns: [
+              {
+                group: ["@@/core/repositories/*", "@@/core/database/*"],
+                allowTypeImports: true,
+                message:
+                  "Pages and components get their data from a loader. Import types only, not repositories or the database client.",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
       files: [
         "tests/**/*.test.ts",
         "tests/**/*.test.tsx",
