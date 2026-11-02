@@ -1,5 +1,4 @@
-import { randomUUID, createHash } from "node:crypto";
-import { mkdir, rename, rm, stat, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import path from "node:path";
 import { Buffer } from "node:buffer";
 import sharp from "sharp";
@@ -13,10 +12,12 @@ import { audioFileDurationMs } from "./audio-duration.ts";
 import {
   AUDIO_STORAGE_DIR,
   BASE_CACHE_DIR,
-  IMAGES_STORAGE_DIR,
+  artworkCacheStorage,
   audioCacheStorage,
+  createArtworkCacheStorage,
   createAudioCacheStorage,
   type AudioCacheStorage,
+  type ImageCacheStorage,
 } from "@@/core/media-store/cache-storage.ts";
 import { audioFileExtension } from "./music-media-types.ts";
 import {
@@ -37,6 +38,7 @@ export interface MusicMediaOptions {
   directory?: string;
   fetchMedia?: (url: string) => Promise<Response>;
   audioStorage?: AudioCacheStorage;
+  artworkStorage?: ImageCacheStorage;
 }
 
 async function fileExists(storage: AudioCacheStorage, key: string | null) {
@@ -185,13 +187,13 @@ export async function processMusicMedia(
   return repository.findMusicMetadata(reference) ?? null;
 }
 
-async function cachedArtworkExists(directory: string, key: string | null) {
+async function cachedArtworkExists(storage: ImageCacheStorage, key: string | null) {
   if (key === null || !/^music\/[a-f0-9]{64}\.jpg$/u.test(key)) {
     return false;
   }
   try {
-    const info = await stat(path.join(directory, key));
-    return info.isFile() && info.size > 0;
+    const info = await storage.getMeta(key);
+    return z.number().positive().safeParse(info.size).success;
   } catch {
     return false;
   }
@@ -200,7 +202,7 @@ async function cachedArtworkExists(directory: string, key: string | null) {
 async function downloadArtwork(
   source: string,
   id: string,
-  directory: string,
+  storage: ImageCacheStorage,
   options: MusicMediaOptions,
 ) {
   try {
@@ -227,15 +229,7 @@ async function downloadArtwork(
       .jpeg()
       .toBuffer();
     const key = `music/${createHash("sha256").update(`${id}:artwork`).digest("hex")}.jpg`;
-    const destination = path.join(directory, key);
-    const temporary = `${destination}.${randomUUID()}.tmp`;
-    await mkdir(path.dirname(destination), { recursive: true });
-    try {
-      await writeFile(temporary, jpeg, { flag: "wx" });
-      await rename(temporary, destination);
-    } finally {
-      await rm(temporary, { force: true });
-    }
+    await storage.setItemRaw(key, jpeg);
     return { cachePath: key, state: "available" as const };
   } catch {
     return { cachePath: null, state: "failed" as const };
@@ -251,11 +245,15 @@ export async function processMusicArtwork(
   if (!current || current.artworkSourceUrl === null) {
     return current ?? null;
   }
-  const directory = options.directory ?? path.resolve(BASE_CACHE_DIR, IMAGES_STORAGE_DIR);
-  if (await cachedArtworkExists(directory, current.artworkCachePath)) {
+  const storage =
+    options.artworkStorage ??
+    (options.directory === undefined
+      ? artworkCacheStorage
+      : createArtworkCacheStorage(options.directory));
+  if (await cachedArtworkExists(storage, current.artworkCachePath)) {
     return current;
   }
-  const result = await downloadArtwork(current.artworkSourceUrl, current.id, directory, options);
+  const result = await downloadArtwork(current.artworkSourceUrl, current.id, storage, options);
   repository.saveMusicMedia(
     reference,
     "artwork",

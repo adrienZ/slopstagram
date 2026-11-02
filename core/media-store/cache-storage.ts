@@ -38,6 +38,16 @@ export function createAudioCacheStorage(
   });
 }
 
+/** Music artwork, rooted at the images directory. Files appear whole or not at all. */
+export function createArtworkCacheStorage(
+  directory = path.join(BASE_CACHE_DIR, IMAGES_STORAGE_DIR),
+): ImageCacheStorage {
+  return createStorage({
+    // oxlint-disable-next-line typescript/no-unsafe-assignment -- unstorage drivers use any.
+    driver: fsDriver({ base: directory, atomic: true }),
+  });
+}
+
 export function createStoryStorage(storage: Storage = baseStorage): StoryStorage {
   return prefixStorage<StoryItem>(storage, STORIES_STORAGE_DIR);
 }
@@ -48,4 +58,5 @@ export function getMediaCacheKey(mediaPk: string): string {
 
 export const imageCacheStorage = createImageCacheStorage();
 export const audioCacheStorage = createAudioCacheStorage();
+export const artworkCacheStorage = createArtworkCacheStorage();
 export const storiesStorage = createStoryStorage();
