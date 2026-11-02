@@ -8,9 +8,8 @@ export const getReport = createServerFn({ method: "GET" })
   .validator(z.object({ date: storyDateSchema.optional(), story: z.string().optional() }))
   .handler(async ({ data }) => {
     const { loadStoryFeed } = await import("./loaders/story-feed.ts");
-    const { getProductionRuntime } = await import("@@/core/runtime/production-runtime.ts");
     try {
-      return loadStoryFeed(getProductionRuntime(), new Date(), data.date, data.story);
+      return loadStoryFeed(await loadProductionRuntime(), new Date(), data.date, data.story);
     } catch (error) {
       if (error instanceof Error && "status" in error && error.status === 404) {
         notFound({ throw: true });
