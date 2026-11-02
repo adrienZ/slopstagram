@@ -1,8 +1,8 @@
 import { Buffer } from "node:buffer";
 import { describe, test, expect } from "vitest";
 import { TextEncoder } from "node:util";
-import { BASE_CACHE_DIR, createImageCacheStorage } from "@@/core/media-store/cache-service.ts";
-import { cacheReportImages } from "@@/core/media-store/image-cache-service.ts";
+import { BASE_CACHE_DIR, createImageCacheStorage } from "@@/core/media-store/cache-storage.ts";
+import { cacheReportImages } from "@@/core/media-store/image-cache.ts";
 import type { StoriesManifestReport } from "@@/core/report-types.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 import { createMockLogger } from "./mock-helpers.ts";

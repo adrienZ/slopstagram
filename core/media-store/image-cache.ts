@@ -5,8 +5,8 @@ import {
   IMAGES_STORAGE_DIR,
   imageCacheStorage,
   type ImageCacheStorage,
-} from "./cache-service.ts";
-import { convertImageToJpeg } from "./image-conversion-service.ts";
+} from "./cache-storage.ts";
+import { convertImageToJpeg } from "./image-conversion.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoriesManifestReport } from "@@/core/report-types.ts";
 

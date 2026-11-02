@@ -12,7 +12,7 @@ import {
   type VisionRepository,
 } from "@@/core/database/repositories/vision-repository.ts";
 import { storyRepository } from "@@/core/database/repositories/story-repository.ts";
-import type { CachedReportImages } from "@@/core/media-store/image-cache-service.ts";
+import type { CachedReportImages } from "@@/core/media-store/image-cache.ts";
 import { getReportUserKey } from "@@/core/lib/report-user-key-service.ts";
 import { readUserSummaries } from "@@/core/user-summary.ts";
 import type { StoryOutputUser } from "@@/core/report-types.ts";

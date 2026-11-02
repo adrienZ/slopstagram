@@ -1,6 +1,6 @@
 import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
-import type { StoryStorage } from "@@/core/media-store/cache-service.ts";
+import type { StoryStorage } from "@@/core/media-store/cache-storage.ts";
 import { extractReels } from "@@/core/instagram/story-client.ts";
 import { storeReturnedReels } from "./story-cache-service.ts";
 import {

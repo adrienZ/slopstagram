@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createConsola } from "consola";
-import type { CachedReportImages } from "@@/core/media-store/image-cache-service.ts";
+import type { CachedReportImages } from "@@/core/media-store/image-cache.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
 import type {
   StoryItem,

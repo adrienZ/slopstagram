@@ -7,7 +7,7 @@ import {
   AUDIO_STORAGE_DIR,
   BASE_CACHE_DIR,
   IMAGES_STORAGE_DIR,
-} from "@@/core/media-store/cache-service.ts";
+} from "@@/core/media-store/cache-storage.ts";
 
 export const mediaDirectory = path.resolve(BASE_CACHE_DIR, IMAGES_STORAGE_DIR);
 export const audioDirectory = path.resolve(BASE_CACHE_DIR, AUDIO_STORAGE_DIR);

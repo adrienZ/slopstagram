@@ -7,7 +7,7 @@ import type { SidebarUser } from "../loaders/sidebar-users.ts";
 import { stickerPlace, stickerPlaces } from "./timeline-stickers.ts";
 import { musicStickerItems, type MusicStickerItem } from "./music-preview.ts";
 import { formatUserName, getStoryUrl } from "./helper.ts";
-import type { CachedReportImages } from "@@/core/media-store/image-cache-service.ts";
+import type { CachedReportImages } from "@@/core/media-store/image-cache.ts";
 import type { VisionResult } from "@@/core/database/entities/vision.ts";
 
 export interface StoryCardSources {
