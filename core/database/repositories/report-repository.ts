@@ -13,7 +13,7 @@ import {
 import { stories } from "../entities/story.ts";
 import { NO_ACCESSIBILITY_CAPTION } from "@@/core/utils/report-constants.ts";
 import { StoriesManifestReportSchema } from "@@/core/instagram/story-schemas.ts";
-import { createOutputUsers } from "@@/core/fetch-run/story-output-service.ts";
+import { createOutputUsers } from "@@/core/fetch-run/story-output.ts";
 import type {
   StoriesManifestReport,
   StoryFetchFailure,

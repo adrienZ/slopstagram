@@ -10,7 +10,7 @@ import { InstagramUserRepository } from "@@/core/database/repositories/instagram
 import { ReportRepository } from "@@/core/database/repositories/report-repository.ts";
 import { storyStickers } from "@@/core/database/entities/story.ts";
 import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
-import { createManifestUsers, createOutputUsers } from "@@/core/fetch-run/story-output-service.ts";
+import { createManifestUsers, createOutputUsers } from "@@/core/fetch-run/story-output.ts";
 import { fetchStoriesManifest } from "@@/core/fetch-run/stories.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 import {
