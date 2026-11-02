@@ -9,7 +9,7 @@ export const getReport = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { loadStoryFeed } = await import("./loaders/story-feed.ts");
     try {
-      return loadStoryFeed(await loadProductionRuntime(), new Date(), data.date, data.story);
+      return loadStoryFeed(getProductionRuntime(), new Date(), data.date, data.story);
     } catch (error) {
       if (error instanceof Error && "status" in error && error.status === 404) {
         notFound({ throw: true });
