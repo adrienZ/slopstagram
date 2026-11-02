@@ -2,29 +2,38 @@ import { defineConfig } from "oxlint";
 import ultracite from "ultracite/oxlint/core";
 import antiSlop from "ultracite/oxlint/anti-slop";
 
-const restrictedReactImports = defineConfig({
-  rules: {
-    "no-restricted-imports": [
-      "error",
-      {
-        paths: [
-          {
-            // frontend-side-effects
-            name: "react",
-            importNames: ["useEffect", "useLayoutEffect", "useInsertionEffect", "useCallback"],
-            allowTypeImports: false,
-            message: "useEffect is forbidden. Use derived state or explicit event subscriptions.",
-          },
-          {
-            name: "react",
-            importNames: ["*"],
-            allowTypeImports: false,
-            message: "Use named React imports instead of namespace imports.",
-          },
-        ],
-      },
-    ],
+interface RestrictedPattern {
+  group: Array<string>;
+  message: string;
+  allowTypeImports?: boolean;
+}
+
+const restrictedReactPaths = [
+  {
+    // frontend-side-effects
+    name: "react",
+    importNames: ["useEffect", "useLayoutEffect", "useInsertionEffect", "useCallback"],
+    allowTypeImports: false,
+    message: "useEffect is forbidden. Use derived state or explicit event subscriptions.",
   },
+  {
+    name: "react",
+    importNames: ["*"],
+    allowTypeImports: false,
+    message: "Use named React imports instead of namespace imports.",
+  },
+];
+
+// Oxlint replaces a rule's options instead of merging them, so every
+// `no-restricted-imports` entry must carry the react paths itself.
+function restrictImports(
+  patterns: Array<RestrictedPattern> = [],
+): ["error", { paths: typeof restrictedReactPaths; patterns: Array<RestrictedPattern> }] {
+  return ["error", { paths: restrictedReactPaths, patterns }];
+}
+
+const restrictedReactImports = defineConfig({
+  rules: { "no-restricted-imports": restrictImports() },
 });
 
 const ultraciteSoftenerConfig = defineConfig({
@@ -71,19 +80,26 @@ export default defineConfig({
     {
       files: ["scripts/**/*.ts"],
       rules: {
-        "no-restricted-imports": [
-          "error",
+        "no-restricted-imports": restrictImports([
           {
-            ...restrictedReactImports.rules["no-restricted-imports"][1],
-            patterns: [
-              {
-                group: ["**/database/migrate*", "drizzle-orm/**/migrator"],
-                message:
-                  "Scripts require an initialized database. Run migrations at server startup in server/plugins/database.ts.",
-              },
-            ],
+            group: ["**/database/migrate*", "drizzle-orm/**/migrator"],
+            message:
+              "Scripts require an initialized database. Run migrations at server startup in server/plugins/database.ts.",
           },
-        ],
+        ]),
+      },
+    },
+    {
+      files: ["app/routes/**", "app/components/**", "app/hooks/**", "app/utils/**"],
+      rules: {
+        "no-restricted-imports": restrictImports([
+          {
+            group: ["@@/core/repositories/*", "@@/core/database/*"],
+            allowTypeImports: true,
+            message:
+              "Pages and components get their data from a loader. Import types only, not repositories or the database client.",
+          },
+        ]),
       },
     },
     {
