@@ -141,29 +141,28 @@ async function resolvePreviewEntry(options: ResolvePreviewEntryOptions): Promise
     return;
   }
 
-  const image = await readCachedImage(options.images, preview.cachedPath);
-  if (image === null) {
-    skipPreviewEntry({
-      ...options,
-      itemLabel: preview.itemLabel,
-      message: "missing",
-      warning: "cached preview is missing",
-    });
-    return;
-  }
-
   options.logger.progress(options.index, options.total, {
     prefix: "vision",
     suffix: `resolving ${preview.itemLabel}`,
   });
-  const result = await analyzeImage(preview.itemLabel, image, {
-    client: options.client,
-    logger: options.logger,
-    mediaPk: options.entry.mediaPk,
-    model: options.model,
-    prompt: options.prompt,
-    repository: options.repository,
-  });
+  const result = await analyzeImage(
+    preview.itemLabel,
+    async () => {
+      const image = await readCachedImage(options.images, preview.cachedPath);
+      if (image === null) {
+        throw new Error("cached preview is missing");
+      }
+      return image;
+    },
+    {
+      client: options.client,
+      logger: options.logger,
+      mediaPk: options.entry.mediaPk,
+      model: options.model,
+      prompt: options.prompt,
+      repository: options.repository,
+    },
+  );
   setResultForPreviewSources(
     options.resultByPreviewUrl,
     options.sourcesByMediaPk,

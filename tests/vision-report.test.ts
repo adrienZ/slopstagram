@@ -178,6 +178,26 @@ describe("resolveVisionForReport", () => {
     expect(fetchCount).toBe(1);
   });
 
+  test("returns a stored response without reading the cached preview", async (context) => {
+    let fetchCount = 0;
+    const runtime = await createTestRuntime(context, {
+      fetchOllama: async () => {
+        fetchCount += 1;
+        return globalThis.Response.json({
+          response: JSON.stringify({ description: "stored scene", ocrText: [] }),
+        });
+      },
+    });
+    const cachedImages = await cachePreview(runtime);
+    await resolveVisionForReport(runtime, createVisionReport(), cachedImages);
+    await runtime.storage.images.removeItem("story.jpg");
+
+    const result = await resolveVisionForReport(runtime, createVisionReport(), cachedImages);
+
+    expect(result.get(previewSource)).toStrictEqual({ text: "", visual: "stored scene" });
+    expect(fetchCount).toBe(1);
+  });
+
   test("returns server-down text when vision is unavailable", async (context) => {
     const runtime = await createTestRuntime(context, {
       fetchOllama: async () => {
