@@ -8,7 +8,7 @@ import { getMusicObservation, getMusicSourceUpdate } from "@@/core/music-observa
 import {
   getLocationObservation,
   getLocationSourceUpdates,
-} from "@@/core/location-observation-service.ts";
+} from "@@/core/places/location-observation-service.ts";
 
 function getNestedRecord(value: JsonValue, key: string): JsonObject | null {
   if (!isJsonObject(value)) {

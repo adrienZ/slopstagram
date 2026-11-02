@@ -11,7 +11,7 @@ import {
 import { storyStickers } from "../entities/story.ts";
 import type { StoryAnnotations } from "@@/core/stickers/story-types.ts";
 import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
-import type { LocationObservationInput } from "@@/core/location-observation-service.ts";
+import type { LocationObservationInput } from "@@/core/places/location-observation-service.ts";
 import {
   planLocationMetadataWrite,
   boundLookupFailure,
@@ -21,7 +21,7 @@ import {
   planStoryLocationUpdates,
   type PlaceFillInput,
   type PlaceLookupInput,
-} from "@@/core/location-metadata-service.ts";
+} from "@@/core/places/location-metadata-service.ts";
 
 type LocationDatabase = Pick<DrizzleDatabase, "select" | "insert" | "update" | "delete">;
 
