@@ -26,10 +26,10 @@ import {
 } from "@@/core/vision/apple-ocr.ts";
 import { cacheReportAudio } from "@@/core/music/report-audio.ts";
 import type { MusicMediaOptions } from "@@/core/music/music-media.ts";
-import { persistReportInstagramUsers } from "./lib/instagram-user-service.ts";
+import { persistReportInstagramUsers } from "@@/core/accounts/instagram-user-service.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoriesManifestReport } from "./report-types.ts";
-import { resolveUserSummariesForReport } from "./user-summary.ts";
+import { resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
 import { resolveVisionForReport } from "@@/core/vision/vision-report.ts";
 import { fetchStories } from "./stories.ts";
 import pkg from "../package.json" with { type: "json" };
