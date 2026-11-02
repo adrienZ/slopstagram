@@ -16,7 +16,7 @@ import {
   type InstagramUserRepository,
 } from "@@/core/database/repositories/instagram-user-repository.ts";
 
-import { getStoryDate } from "@@/core/story-feed/story-date-service.ts";
+import { getStoryDate } from "@@/core/story-feed/story-days.ts";
 import { createStoryCards, withStoryStickers } from "../utils/story-cards.ts";
 import type { StoryCardSources } from "../utils/story-cards.ts";
 import { groupTimelineLocations } from "../utils/timeline-locations.ts";

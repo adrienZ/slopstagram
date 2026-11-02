@@ -11,7 +11,7 @@ import {
   createStoryDayFeed,
   createReportFeed,
 } from "@@/core/story-feed/story-feed.ts";
-import { getStoryDate, getStoryDayRange } from "@@/core/story-feed/story-date-service.ts";
+import { getStoryDate, getStoryDayRange } from "@@/core/story-feed/story-days.ts";
 import { readStoryFeedSources } from "../app/loaders/story-feed.ts";
 import { resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
 import { createLogger } from "@@/core/utils/logging.ts";

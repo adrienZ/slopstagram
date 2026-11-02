@@ -1,4 +1,4 @@
-import { getReportDateUrl, getStoryDate } from "@@/core/story-feed/story-date-service.ts";
+import { getReportDateUrl, getStoryDate } from "@@/core/story-feed/story-days.ts";
 
 export function navigateToReportDate(date: Date): void {
   globalThis.location.assign(getReportDateUrl(getStoryDate(date)));
