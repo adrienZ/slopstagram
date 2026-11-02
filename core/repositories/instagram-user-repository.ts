@@ -4,7 +4,7 @@ import {
   instagramUsers,
   NewInstagramUserSchema,
   type InstagramUserEntry,
-} from "../entities/instagram-user.ts";
+} from "@@/core/database/entities/instagram-user.ts";
 
 export class InstagramUserRepository {
   private readonly database: DrizzleDatabase;

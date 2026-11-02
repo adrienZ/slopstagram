@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { useDrizzle, type DrizzleDatabase } from "../database/client.ts";
-import { vision, NewVisionSchema, type VisionEntry } from "../entities/vision.ts";
+import { vision, NewVisionSchema, type VisionEntry } from "@@/core/database/entities/vision.ts";
 
 export class VisionRepository {
   private readonly database: DrizzleDatabase;

@@ -11,7 +11,7 @@ import {
 import type { Logger } from "@@/core/utils/logging.ts";
 import { getReportUserKey } from "./lib/report-user-key-service.ts";
 import type { StoriesManifestReport, StoryOutputUser } from "./report-types.ts";
-import type { VisionResult } from "./entities/vision.ts";
+import type { VisionResult } from "@@/core/database/entities/vision.ts";
 
 type HttpFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 

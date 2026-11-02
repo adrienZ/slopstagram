@@ -4,8 +4,8 @@ import {
   userSummaries,
   NewUserSummarySchema,
   type UserSummaryEntry,
-} from "../entities/user-summary.ts";
-import { instagramUsers } from "../entities/instagram-user.ts";
+} from "@@/core/database/entities/user-summary.ts";
+import { instagramUsers } from "@@/core/database/entities/instagram-user.ts";
 
 export class UserSummaryRepository {
   private readonly database: DrizzleDatabase;

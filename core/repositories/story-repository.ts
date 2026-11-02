@@ -3,7 +3,7 @@ import { planStoryAudio } from "../story-audio-service.ts";
 import { findStoryAudio, saveStoryAudio } from "./story-audio-repository.ts";
 import { and, asc, desc, eq, gt, gte, lt, lte, notInArray } from "drizzle-orm";
 import { useDrizzle, type DrizzleDatabase } from "../database/client.ts";
-import { instagramUsers } from "../entities/instagram-user.ts";
+import { instagramUsers } from "@@/core/database/entities/instagram-user.ts";
 import {
   enrichStoryLocations,
   readLocationObservations,
@@ -24,7 +24,7 @@ import {
   storyImageVersions,
   storyVideoVersions,
   storyStickers,
-} from "../entities/story.ts";
+} from "@@/core/database/entities/story.ts";
 import { createLogger, type Logger } from "@@/core/utils/logging.ts";
 import { StoryItemSchema } from "../lib/story-schemas.ts";
 import type { StoryAnnotations } from "../story-types.ts";

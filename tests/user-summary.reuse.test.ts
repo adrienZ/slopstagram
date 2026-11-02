@@ -1,6 +1,6 @@
 import { assert, test, expect, type TestContext } from "vitest";
 import { readStoryFeedSources } from "../app/loaders/story-feed.ts";
-import { userSummaries } from "@@/core/entities/user-summary.ts";
+import { userSummaries } from "@@/core/database/entities/user-summary.ts";
 import { AppleVisionRepository } from "@@/core/repositories/apple-vision-repository.ts";
 import { VisionRepository } from "@@/core/repositories/vision-repository.ts";
 import { readUserSummaries, resolveUserSummariesForReport } from "@@/core/user-summary.ts";

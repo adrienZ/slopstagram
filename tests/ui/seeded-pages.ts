@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { useDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
-import { stories } from "@@/core/entities/story.ts";
+import { stories } from "@@/core/database/entities/story.ts";
 import { appleVisionRepository } from "@@/core/repositories/apple-vision-repository.ts";
 import { instagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
 import { createReportFeed } from "@@/core/story-feed.ts";

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { MusicFields } from "./entities/music-metadata.ts";
+import type { MusicFields } from "@@/core/database/entities/music-metadata.ts";
 import { isJsonObject, type JsonValue } from "@@/core/utils/json-value.ts";
 import type { StoryItem } from "./instagram-types.ts";
 import { getProviderIdentifier } from "@@/core/utils/provider-identifier.ts";

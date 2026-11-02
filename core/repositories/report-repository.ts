@@ -9,8 +9,8 @@ import {
   reportStoryGroups,
   reportStories,
   reportFailures,
-} from "../entities/report.ts";
-import { stories } from "../entities/story.ts";
+} from "@@/core/database/entities/report.ts";
+import { stories } from "@@/core/database/entities/story.ts";
 import { NO_ACCESSIBILITY_CAPTION } from "@@/core/utils/report-constants.ts";
 import { StoriesManifestReportSchema } from "../lib/story-schemas.ts";
 import { createOutputUsers } from "../story-output-service.ts";

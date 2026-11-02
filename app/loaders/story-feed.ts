@@ -13,7 +13,7 @@ import type { CachedReportImages } from "@@/core/lib/image-cache-service.ts";
 import { getReportUserKey } from "@@/core/lib/report-user-key-service.ts";
 import { readUserSummaries } from "@@/core/user-summary.ts";
 import type { StoryOutputUser } from "@@/core/report-types.ts";
-import type { VisionResult } from "@@/core/entities/vision.ts";
+import type { VisionResult } from "@@/core/database/entities/vision.ts";
 import { createReportFeed, readStoryFeedVision } from "@@/core/story-feed.ts";
 import { createStoryCards, withStoryStickers } from "../utils/story-cards.ts";
 import { formatReportDate } from "../utils/helper.ts";
