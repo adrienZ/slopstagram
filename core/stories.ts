@@ -1,4 +1,4 @@
-import { storiesStorage, type StoryStorage } from "./lib/cache-service.ts";
+import { storiesStorage, type StoryStorage } from "@@/core/media-store/cache-service.ts";
 import {
   storyRepository,
   type StoryRepository,

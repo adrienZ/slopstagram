@@ -8,7 +8,7 @@ import {
   createFileStorage,
   createImageCacheStorage,
   createStoryStorage,
-} from "./lib/cache-service.ts";
+} from "@@/core/media-store/cache-service.ts";
 import { AppleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
 import { FetchRunRepository } from "@@/core/database/repositories/fetch-run-repository.ts";
 import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
@@ -16,7 +16,10 @@ import { StoryRepository } from "@@/core/database/repositories/story-repository.
 import { UserSummaryRepository } from "@@/core/database/repositories/user-summary-repository.ts";
 import { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
 import { createStoryFeed, readStoryFeedVision } from "./story-feed.ts";
-import { cacheReportImages, type CacheReportImagesOptions } from "./lib/image-cache-service.ts";
+import {
+  cacheReportImages,
+  type CacheReportImagesOptions,
+} from "@@/core/media-store/image-cache-service.ts";
 import {
   type RecognizeAppleCaptionOptions,
   recognizeAppleCaption,
