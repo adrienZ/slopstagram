@@ -70,9 +70,11 @@ test("creates a report by running the whole pipeline over recorded Instagram pay
     title: "Synthetic Song",
   });
   assert.ok(music.metadata.audioCachePath !== null);
-  expect(
-    await world.storage.audio.hasItem(music.metadata.audioCachePath.slice("audio/".length)),
-  ).toBe(true);
+  const audioFile: unknown = await world.storage.audio.getItemRaw(
+    music.metadata.audioCachePath.slice("audio/".length),
+  );
+  assert.ok(audioFile instanceof Uint8Array);
+  expect(audioFile.byteLength).toBeGreaterThan(0);
 
   // Image caching: every preview and avatar lands in the cache and the report points at it.
   const saved = world.reports.findByKey(result.reportKey);
@@ -82,14 +84,14 @@ test("creates a report by running the whole pipeline over recorded Instagram pay
   await Promise.all(
     savedStories.map(async (story) => {
       expect(story.preview_image_url).toBe(`images/story-previews/${story.media_pk}.jpg`);
-      expect(
-        await readCachedImage(world.storage.images, story.preview_image_url ?? ""),
-      ).toBeTruthy();
+      const file = await readCachedImage(world.storage.images, story.preview_image_url ?? "");
+      expect(file?.length).toBeGreaterThan(0);
     }),
   );
   await Promise.all(
     world.users.listAll().map(async ({ pk }) => {
-      expect(await readCachedImage(world.storage.images, `images/avatars/${pk}.jpg`)).toBeTruthy();
+      const avatar = await readCachedImage(world.storage.images, `images/avatars/${pk}.jpg`);
+      expect(avatar?.length).toBeGreaterThan(0);
     }),
   );
 

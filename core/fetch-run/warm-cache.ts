@@ -1,4 +1,3 @@
-import type { Runtime } from "@@/core/runtime/runtime.ts";
 import { createReport, type CreateReportResult } from "./report.ts";
 
 export interface WarmCacheJobResult {
@@ -7,7 +6,9 @@ export interface WarmCacheJobResult {
   counts: CreateReportResult["report"]["metadata"]["counts"];
 }
 
-export async function runWarmCacheJob(runtime: Runtime): Promise<WarmCacheJobResult> {
+export async function runWarmCacheJob(
+  runtime: Parameters<typeof createReport>[0],
+): Promise<WarmCacheJobResult> {
   const report = await createReport(runtime);
 
   return {

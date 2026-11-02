@@ -50,15 +50,16 @@ export function createRuntime(
   database: DrizzleDatabase,
   boundaries: RuntimeBoundaries = {},
 ): Runtime {
+  const logger = boundaries.logger ?? createLogger("runtime");
   return {
     ...boundaries,
     appleVision: new AppleVisionRepository(database),
     database,
     fetchRuns: new FetchRunRepository(database),
-    logger: boundaries.logger ?? createLogger("runtime"),
+    logger,
     queue: boundaries.queue ?? createBunqueue,
     reports: new ReportRepository(database),
-    stories: new StoryRepository(database),
+    stories: new StoryRepository(database, logger),
     storage: boundaries.storage ?? createFileCacheStorage(BASE_CACHE_DIR),
     summaries: new UserSummaryRepository(database),
     users: new InstagramUserRepository(database),
