@@ -4,8 +4,7 @@ import { z } from "zod";
 import { storyDateSchema } from "@@/core/story-feed/story-days.ts";
 
 async function loadProductionRuntime() {
-  const { getProductionRuntime } = await import("@@/core/runtime/production-runtime.ts");
-  return getProductionRuntime();
+  return (await import("@@/core/runtime/production-runtime.ts")).getProductionRuntime();
 }
 
 export const getReport = createServerFn({ method: "GET" })
