@@ -85,6 +85,7 @@ export default defineConfig({
     perf: "error",
   },
   rules: {
+    "slopstagram/composition-root": "error",
     "slopstagram/no-barrel-files": "error",
     "slopstagram/domain-layering": "error",
   },
@@ -120,6 +121,11 @@ export default defineConfig({
           },
         ]),
       },
+    },
+    {
+      // Tests build their own repositories, databases and stores.
+      files: ["tests/**"],
+      rules: { "slopstagram/composition-root": "off" },
     },
     {
       files: [
