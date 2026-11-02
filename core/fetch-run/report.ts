@@ -146,7 +146,7 @@ export async function createReport(options: CreateReportOptions): Promise<Create
       );
       await persistReportInstagramUsers({ users }, report);
       // Generate from the same canonical, active story set used by the user app.
-      const feedUsers = createStoryFeed(now(), { repository: stories });
+      const feedUsers = createStoryFeed({ stories }, now());
       await resolveUserSummariesForReport(
         { fetchOllama: boundaries.fetchOllama, logger, summaries },
         { output: { users: feedUsers } },

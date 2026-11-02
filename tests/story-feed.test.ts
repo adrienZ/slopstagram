@@ -1,11 +1,4 @@
 import { test, type TestContext, expect } from "vitest";
-import { createDrizzle } from "@@/core/database/client.ts";
-import { migrateDatabase } from "@@/core/database/migrate.ts";
-import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
-import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
-import { UserSummaryRepository } from "@@/core/database/repositories/user-summary-repository.ts";
-import { AppleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
-import { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
 import {
   createStoryFeed,
   createStoryDayFeed,
@@ -14,16 +7,11 @@ import {
 import { getStoryDate, getStoryDayRange } from "@@/core/story-feed/story-days.ts";
 import { readStoryFeedSources } from "../app/loaders/story-feed.ts";
 import { resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
-import { createLogger } from "@@/core/utils/logging.ts";
+import { createTestRuntime } from "./setup/test-runtime.ts";
 
 async function createFixture(context: TestContext) {
-  const database = createDrizzle(":memory:");
-  migrateDatabase(database);
-  context.onTestFinished(() => {
-    database.$client.close();
-  });
-  const stories = new StoryRepository(database);
-  const users = new InstagramUserRepository(database);
+  const runtime = await createTestRuntime(context);
+  const { stories, users } = runtime;
   await Promise.all(
     ["alice", "bob", "missing-preview"].map(async (username) => {
       await users.save({ full_name: username, id: username, pk: username, username });
@@ -44,18 +32,15 @@ async function createFixture(context: TestContext) {
     }),
   );
   return {
+    runtime,
     stories,
-    dayFeed: (day: string) =>
-      createStoryDayFeed(day, { repository: stories, hasPreview: () => true }),
+    dayFeed: (day: string) => createStoryDayFeed(runtime, day, { hasPreview: () => true }),
     feed: (now: string) =>
-      createStoryFeed(new Date(now), {
-        repository: stories,
-        hasPreview: (pk) => pk !== "no-image",
-      }),
+      createStoryFeed(runtime, new Date(now), { hasPreview: (pk) => pk !== "no-image" }),
     repositories: {
-      userSummary: new UserSummaryRepository(database),
-      appleVision: new AppleVisionRepository(database),
-      vision: new VisionRepository(database),
+      userSummary: runtime.summaries,
+      appleVision: runtime.appleVision,
+      vision: runtime.vision,
     },
   };
 }
@@ -102,26 +87,26 @@ test("combines stored stories without a selected report, ranks accounts by recen
 });
 
 test("the default feed includes stored stories without checking the preview file", async (context) => {
-  const { stories } = await createFixture(context);
-  const users = createStoryFeed(new Date("2026-10-22T10:00:00Z"), { repository: stories });
+  const { runtime } = await createFixture(context);
+  const users = createStoryFeed(runtime, new Date("2026-10-22T10:00:00Z"));
   expect(
     users.some((user) => user.stories.some((story) => story.media_pk === "no-image")),
   ).toBeTruthy();
 });
 
 test("today uses the rolling feed, including yesterday's recent stories; past dates use calendar days", async (context) => {
-  const { stories } = await createFixture(context);
+  const { runtime } = await createFixture(context);
   const now = new Date("2026-10-22T10:00:00Z");
-  const options = { repository: stories, hasPreview: (pk: string) => pk !== "no-image" };
+  const options = { hasPreview: (pk: string) => pk !== "no-image" };
   for (const selectedDate of [undefined, "2026-10-22", "2026-10-23"]) {
-    const feed = createReportFeed(now, selectedDate, options);
+    const feed = createReportFeed(runtime, now, selectedDate, options);
     expect(feed.selectedDate).toBe("2026-10-22");
     expect(feed.today).toBe("2026-10-22");
     expect(feed.users.flatMap((user) => user.stories.map((story) => story.media_pk))).toStrictEqual(
       ["bob-newest", "alice-older", "alice-newer"],
     );
   }
-  const past = createReportFeed(now, "2026-10-21", options);
+  const past = createReportFeed(runtime, now, "2026-10-21", options);
   expect(past.selectedDate).toBe("2026-10-21");
   expect(past.users.flatMap((user) => user.stories.map((story) => story.media_pk))).toStrictEqual([
     "alice-older",
@@ -130,18 +115,22 @@ test("today uses the rolling feed, including yesterday's recent stories; past da
 });
 
 test("available report dates require visible stories and include today for a rolling result from yesterday", async (context) => {
-  const { stories } = await createFixture(context);
+  const { runtime, stories } = await createFixture(context);
   await stories.save(
     { pk: "no-preview", taken_at: Date.parse("2026-10-20T10:00:00Z") / 1000 },
     { pk: "alice", username: "alice" },
   );
   const options = {
-    repository: stories,
     hasPreview: (pk: string) => pk !== "no-preview" && pk !== "no-image",
   };
-  const feed = createReportFeed(new Date("2026-10-24T10:00:00Z"), undefined, options);
+  const feed = createReportFeed(runtime, new Date("2026-10-24T10:00:00Z"), undefined, options);
   expect(feed.availableDates).toStrictEqual(["2026-10-21", "2026-10-22"]);
-  const afterMidnight = createReportFeed(new Date("2026-10-22T00:00:00Z"), undefined, options);
+  const afterMidnight = createReportFeed(
+    runtime,
+    new Date("2026-10-22T00:00:00Z"),
+    undefined,
+    options,
+  );
   expect(afterMidnight.availableDates).toStrictEqual(["2026-10-21", "2026-10-22"]);
   expect(
     afterMidnight.users
@@ -151,32 +140,38 @@ test("available report dates require visible stories and include today for a rol
 });
 
 test("story deep links retrieve historical stories with exact IDs and select their publication day", async (context) => {
-  const { stories } = await createFixture(context);
+  const { runtime, stories } = await createFixture(context);
   const mediaPk = "3222222222222222229";
   await stories.save(
     { pk: mediaPk, taken_at: Date.parse("2026-09-07T22:30:00Z") / 1000 },
     { pk: "alice", username: "alice" },
   );
   const now = new Date("2026-10-22T10:00:00Z");
-  const options = { repository: stories, hasPreview: () => true, selectedStory: mediaPk };
+  const options = { hasPreview: () => true, selectedStory: mediaPk };
   for (const requestedDate of [undefined, "2026-10-21"]) {
-    const feed = createReportFeed(now, requestedDate, options);
+    const feed = createReportFeed(runtime, now, requestedDate, options);
     expect(feed.selectedDate).toBe("2026-09-08");
     expect(
       feed.users.flatMap((user) => user.stories).some((story) => story.media_pk === mediaPk),
     ).toBeTruthy();
   }
-  const unknown = createReportFeed(now, undefined, { ...options, selectedStory: "missing" });
+  const unknown = createReportFeed(runtime, now, undefined, {
+    ...options,
+    selectedStory: "missing",
+  });
   expect(unknown.selectedDate).toBe("2026-10-22");
 });
 
 test("deep links to recent stories retain the rolling feed even when the story was published yesterday", async (context) => {
-  const { stories } = await createFixture(context);
+  const { runtime } = await createFixture(context);
   const now = new Date("2026-10-22T10:00:00Z");
-  const options = { repository: stories, hasPreview: () => true };
-  const yesterday = createReportFeed(now, undefined, { ...options, selectedStory: "alice-older" });
+  const options = { hasPreview: () => true };
+  const yesterday = createReportFeed(runtime, now, undefined, {
+    ...options,
+    selectedStory: "alice-older",
+  });
   expect(yesterday.selectedDate).toBe("2026-10-22");
-  const mismatchedDate = createReportFeed(now, "2026-10-20", {
+  const mismatchedDate = createReportFeed(runtime, now, "2026-10-20", {
     ...options,
     selectedStory: "alice-newer",
   });
@@ -189,10 +184,9 @@ test("deep links to recent stories retain the rolling feed even when the story w
 });
 
 test("hides a summary after stories expire until a matching summary is generated by a later collection", async (context) => {
-  const { feed, repositories } = await createFixture(context);
+  const { feed, repositories, runtime } = await createFixture(context);
   const users = feed("2026-10-22T10:00:00Z");
   let generations = 0;
-  const runtime = { logger: createLogger("test-summary"), summaries: repositories.userSummary };
   const options = {
     runUserSummary: async () => {
       generations += 1;

@@ -133,7 +133,9 @@ export function loadStoryFeed(
     selectedDate: day,
     availableDates,
     users: feedUsers,
-  } = createReportFeed(now, selectedDate, { selectedStory });
+  } = createReportFeed({ stories: storyRepository }, now, selectedDate, {
+    selectedStory,
+  });
   const sources = readStoryFeedSources(feedUsers);
   const sidebarUsers = loadSidebarUsers();
   const storedStories = feedUsers.flatMap((user) =>

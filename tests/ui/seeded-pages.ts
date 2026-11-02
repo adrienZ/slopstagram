@@ -3,6 +3,7 @@ import { useDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { stories } from "@@/core/database/entities/story.ts";
 import { appleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
+import { storyRepository } from "@@/core/database/repositories/story-repository.ts";
 import { instagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
 import { userSummaryRepository } from "@@/core/database/repositories/user-summary-repository.ts";
 import { createReportFeed } from "@@/core/story-feed/story-feed.ts";
@@ -82,7 +83,7 @@ export async function seedPageDatabase(): Promise<void> {
   }
   await resolveUserSummariesForReport(
     { logger: createMockLogger(), summaries: userSummaryRepository },
-    { output: { users: createReportFeed(pageNow).users } },
+    { output: { users: createReportFeed({ stories: storyRepository }, pageNow).users } },
     { runUserSummary: async () => await Promise.resolve(JSON.stringify({ summary: userSummary })) },
   );
 }
