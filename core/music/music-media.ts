@@ -184,12 +184,7 @@ async function cachedArtworkExists(storage: ImageCacheStorage, key: string | nul
   }
 }
 
-async function downloadArtwork(
-  source: string,
-  id: string,
-  storage: ImageCacheStorage,
-  runtime: MusicStorageRuntime,
-) {
+async function downloadArtwork(source: string, id: string, runtime: MusicStorageRuntime) {
   try {
     const url = new globalThis.URL(source);
     if (url.protocol !== "https:" || url.username || url.password) {
@@ -214,7 +209,7 @@ async function downloadArtwork(
       .jpeg()
       .toBuffer();
     const key = `music/${createHash("sha256").update(`${id}:artwork`).digest("hex")}.jpg`;
-    await storage.setItemRaw(key, jpeg);
+    await runtime.storage.images.setItemRaw(key, jpeg);
     return { cachePath: key, state: "available" as const };
   } catch {
     return { cachePath: null, state: "failed" as const };
@@ -234,7 +229,7 @@ export async function processMusicArtwork(
   if (await cachedArtworkExists(storage, current.artworkCachePath)) {
     return current;
   }
-  const result = await downloadArtwork(current.artworkSourceUrl, current.id, storage, runtime);
+  const result = await downloadArtwork(current.artworkSourceUrl, current.id, runtime);
   repository.saveMusicMedia(
     reference,
     "artwork",
