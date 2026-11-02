@@ -1,13 +1,13 @@
 import path from "node:path";
 import type { Ollama as VisionSdk } from "ollama";
-import { getOllamaClient } from "../ollama.ts";
+import { getOllamaClient } from "./ollama.ts";
 import {
   type VisionRepository,
   visionRepository,
 } from "@@/core/database/repositories/vision-repository.ts";
 import type { CachedReportImages } from "@@/core/media-store/image-cache.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
-import type { StoriesManifestReport } from "../report-types.ts";
+import type { StoriesManifestReport } from "@@/core/report-types.ts";
 import type { VisionResult } from "@@/core/database/entities/vision.ts";
 import {
   analyzeImage,

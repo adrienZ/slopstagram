@@ -1,4 +1,4 @@
-import { resolveAppleCaptionsForReport } from "./apple-caption-report-service.ts";
+import { resolveAppleCaptionsForReport } from "@@/core/vision/apple-caption-report-service.ts";
 import { type DrizzleDatabase, useDrizzle } from "./database/client.ts";
 import { recordFetchRun } from "./fetch-run.ts";
 import type { InstagramClient } from "@@/core/instagram/instagram-types.ts";
@@ -23,14 +23,14 @@ import {
 import {
   type RecognizeAppleCaptionOptions,
   recognizeAppleCaption,
-} from "./lib/apple-ocr-service.ts";
+} from "@@/core/vision/apple-ocr-service.ts";
 import { cacheReportAudio } from "@@/core/music/report-audio.ts";
 import type { MusicMediaOptions } from "@@/core/music/music-media.ts";
 import { persistReportInstagramUsers } from "./lib/instagram-user-service.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoriesManifestReport } from "./report-types.ts";
 import { resolveUserSummariesForReport } from "./user-summary.ts";
-import { resolveVisionForReport } from "./lib/vision-report-service.ts";
+import { resolveVisionForReport } from "@@/core/vision/vision-report-service.ts";
 import { fetchStories } from "./stories.ts";
 import pkg from "../package.json" with { type: "json" };
 

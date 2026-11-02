@@ -13,7 +13,7 @@ import { visionRepository } from "@@/core/database/repositories/vision-repositor
 import {
   describeOutdatedVision,
   type OutdatedVision,
-} from "@@/core/lib/vision-analysis-service.ts";
+} from "@@/core/vision/vision-analysis-service.ts";
 import {
   instagramUserRepository,
   type InstagramUserRepository,
