@@ -27,8 +27,8 @@ const baseline = new Map<string, Array<string>>([
   // #157: the report entity imports the story media types, which belong to stickers.
   ["database/entities/report.ts", ["stickers"]],
   // #157: repositories call the planners of the domains they persist.
-  ["database/repositories/location-metadata-repository.ts", ["places"]],
-  ["database/repositories/music-metadata-repository.ts", ["music"]],
+  ["database/repositories/story-repository/location-metadata-repository.ts", ["places"]],
+  ["database/repositories/story-repository/music-metadata-repository.ts", ["music"]],
   // #157: the report repository validates payloads and reads story output.
   ["database/repositories/report-repository.ts", ["fetch-run", "instagram"]],
   // #157: the story repository calls the annotation, audio and payload planners.
