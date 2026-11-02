@@ -6,9 +6,8 @@ type RuleVisitor = ReturnType<NonNullable<Rule["create"]>>;
 type ImportNode = Parameters<NonNullable<RuleVisitor["ImportDeclaration"]>>[0];
 
 // Value imports between core domains must point down this table. fetch-run sits on top: it may
-// import any domain and no domain imports it. runtime, the composition root, sits beside the
-// domains: it may import any domain, and only entry points import it. Type-only imports are
-// always allowed.
+// import any domain and no domain imports it. runtime, the composition root, may import any domain
+// and only entry points import it. Type-only imports are always allowed.
 const dependencies = new Map<string, Array<string>>([
   ["utils", []],
   ["database", ["utils"]],
@@ -24,7 +23,6 @@ const dependencies = new Map<string, Array<string>>([
   ["runtime", ["*"]],
 ]);
 
-// The domains that "*" does not reach: nothing in core imports them as a value.
 const entryPointOnly = new Set(["runtime"]);
 
 // Violations that exist today, per importing module. The list can only shrink: a new violation

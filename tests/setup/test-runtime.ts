@@ -4,7 +4,6 @@ import { createRuntime } from "@@/core/runtime/runtime.ts";
 import { createRecordedInstagramClient } from "./seed.ts";
 import { createTestDatabase } from "../test-database.ts";
 
-/** A boundary no test is meant to reach: it fails loudly instead of calling the network. */
 function unexpected(boundary: string) {
   return async (): Promise<never> => {
     await Promise.resolve();
@@ -12,11 +11,7 @@ function unexpected(boundary: string) {
   };
 }
 
-/**
- * A runtime over a fresh migrated in-memory database, closed when the test ends. The Instagram
- * client answers from the recorded payloads and every other external boundary fails on use, so
- * a test overrides only the boundary it needs.
- */
+/** A runtime over a fresh in-memory database; other boundaries fail on use unless overridden. */
 export async function createTestRuntime(
   context: Pick<TestContext, "onTestFinished">,
   boundaries: RuntimeBoundaries = {},
