@@ -34,6 +34,7 @@ loaders or routers. Fakes are allowed only at external boundaries:
 - Apple OCR
 - the Playwright browser session
 - media downloads
+- the `writeFile` and `rename` calls of `node:fs/promises`, which publish cached media
 - browser visual and media APIs that jsdom lacks (map rendering, canvas, audio playback)
 
 A test seeds the database by running real ingestion over recorded payloads. The fake
