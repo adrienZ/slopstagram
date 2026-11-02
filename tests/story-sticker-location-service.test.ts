@@ -1,8 +1,8 @@
 import { assert, test, expect } from "vitest";
-import { createDrizzle } from "../sdk/database/client.ts";
-import { migrateDatabase } from "../sdk/database/migrate.ts";
-import { StoryRepository } from "../sdk/repositories/story-repository.ts";
-import { getStoryAnnotations } from "../sdk/story-sticker-location-service.ts";
+import { createDrizzle } from "@@/core/database/client.ts";
+import { migrateDatabase } from "@@/core/database/migrate.ts";
+import { StoryRepository } from "@@/core/repositories/story-repository.ts";
+import { getStoryAnnotations } from "@@/core/story-sticker-location-service.ts";
 
 test("extracts content-only labels including fallback forms and literal colons", () => {
   const { stickers } = getStoryAnnotations({

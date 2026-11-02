@@ -1,18 +1,21 @@
-import type { StoryOutputUser } from "../sdk/report-types.ts";
+import type { StoryOutputUser } from "@@/core/report-types.ts";
 import {
   type UserTimelineStory,
   type StoryRepository,
   storyRepository,
-} from "../sdk/repositories/story-repository.ts";
-import type { VisionResult } from "../sdk/entities/vision.ts";
-import { createStoredStoryUser } from "../sdk/story-feed.ts";
-import { appleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
-import { visionRepository } from "../sdk/repositories/vision-repository.ts";
-import { describeOutdatedVision, type OutdatedVision } from "../sdk/lib/vision-analysis-service.ts";
+} from "@@/core/repositories/story-repository.ts";
+import type { VisionResult } from "@@/core/entities/vision.ts";
+import { createStoredStoryUser } from "@@/core/story-feed.ts";
+import { appleVisionRepository } from "@@/core/repositories/apple-vision-repository.ts";
+import { visionRepository } from "@@/core/repositories/vision-repository.ts";
+import {
+  describeOutdatedVision,
+  type OutdatedVision,
+} from "@@/core/lib/vision-analysis-service.ts";
 import {
   instagramUserRepository,
   type InstagramUserRepository,
-} from "../sdk/repositories/instagram-user-repository.ts";
+} from "@@/core/repositories/instagram-user-repository.ts";
 
 const PARIS_TIME_ZONE = "Europe/Paris";
 

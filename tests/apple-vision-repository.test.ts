@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
-import { createDrizzle } from "../sdk/database/client.ts";
-import { migrateDatabase } from "../sdk/database/migrate.ts";
-import { AppleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
+import { createDrizzle } from "@@/core/database/client.ts";
+import { migrateDatabase } from "@@/core/database/migrate.ts";
+import { AppleVisionRepository } from "@@/core/repositories/apple-vision-repository.ts";
 
 describe("AppleVisionRepository", () => {
   test("stores and updates captions in SQLite", async (context) => {

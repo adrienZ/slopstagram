@@ -1,10 +1,10 @@
 import { readdirSync } from "node:fs";
 import { fileURLToPath, URL } from "node:url";
 import { expect, test } from "vitest";
-import { migrateDatabase } from "../sdk/database/migrate.ts";
+import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { createTestDatabase } from "./test-database.ts";
 
-const migrationsFolder = fileURLToPath(new URL("../sdk/database/migrations", import.meta.url));
+const migrationsFolder = fileURLToPath(new URL("../core/database/migrations", import.meta.url));
 // Each migration is a folder, so loose files next to them are not counted.
 const migrationCount = readdirSync(migrationsFolder, { withFileTypes: true }).filter((entry) =>
   entry.isDirectory(),

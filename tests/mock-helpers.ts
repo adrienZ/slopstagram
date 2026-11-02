@@ -3,8 +3,8 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createConsola } from "consola";
-import type { CachedReportImages } from "../sdk/lib/image-cache-service.ts";
-import type { Logger } from "../sdk/lib/logging-service.ts";
+import type { CachedReportImages } from "@@/core/lib/image-cache-service.ts";
+import type { Logger } from "@@/core/lib/logging-service.ts";
 import type {
   StoryItem,
   StoryReel,
@@ -12,8 +12,8 @@ import type {
   InstagramClient,
   InstagramClientResponse,
   ReelsMediaResponse,
-} from "../sdk/instagram-types.ts";
-import type { StoriesManifestReport } from "../sdk/report-types.ts";
+} from "@@/core/instagram-types.ts";
+import type { StoriesManifestReport } from "@@/core/report-types.ts";
 
 export const previewSource = "https://example.com/story-preview.webp";
 

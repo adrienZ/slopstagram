@@ -1,9 +1,9 @@
 import { beforeAll, expect, test } from "vitest";
 import { within } from "@testing-library/dom";
 import { JSDOM } from "jsdom";
-import { migrateDatabase } from "../sdk/database/migrate.ts";
-import { instagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
-import { storyRepository } from "../sdk/repositories/story-repository.ts";
+import { migrateDatabase } from "@@/core/database/migrate.ts";
+import { instagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
+import { storyRepository } from "@@/core/repositories/story-repository.ts";
 import { Route } from "../app/routes/report.tsx";
 import { loadReport } from "../app/report-handler.tsx";
 import { storyItem } from "./mock-helpers.ts";

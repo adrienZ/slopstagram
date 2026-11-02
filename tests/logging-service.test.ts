@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { LogLevels, type LogObject } from "consola";
-import { createLogger } from "../sdk/lib/logging-service.ts";
+import { createLogger } from "@@/core/lib/logging-service.ts";
 
 test("logger messages carry the logger prefix as their tag", () => {
   const logger = createLogger("fetch-stories");

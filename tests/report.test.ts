@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { assert, expect, test } from "vitest";
-import { AppleOcrUnavailableError } from "../sdk/lib/apple-ocr-service.ts";
-import { createStoryFeed, readStoryFeedVision } from "../sdk/story-feed.ts";
-import { readUserSummaries } from "../sdk/user-summary.ts";
+import { AppleOcrUnavailableError } from "@@/core/lib/apple-ocr-service.ts";
+import { createStoryFeed, readStoryFeedVision } from "@@/core/story-feed.ts";
+import { readUserSummaries } from "@@/core/user-summary.ts";
 import { createFailingClient, createRecordedClient } from "./setup/recorded-client.ts";
 import { createRecordedInstagramClient } from "./setup/seed.ts";
 import {

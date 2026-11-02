@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
-import { createDrizzle } from "../sdk/database/client.ts";
-import { migrateDatabase } from "../sdk/database/migrate.ts";
-import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
+import { createDrizzle } from "@@/core/database/client.ts";
+import { migrateDatabase } from "@@/core/database/migrate.ts";
+import { InstagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
 
 describe("InstagramUserRepository", () => {
   test("lists all accounts alphabetically, including accounts without stories", async (context) => {

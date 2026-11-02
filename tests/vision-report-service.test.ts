@@ -1,15 +1,15 @@
 import { Buffer } from "node:buffer";
 import { describe, test, vi, expect } from "vitest";
 import { z } from "zod";
-import { VISION_SERVER_NOT_RUNNING } from "../sdk/lib/vision-analysis-service.ts";
-import { resolveVisionForReport } from "../sdk/lib/vision-report-service.ts";
+import { VISION_SERVER_NOT_RUNNING } from "@@/core/lib/vision-analysis-service.ts";
+import { resolveVisionForReport } from "@@/core/lib/vision-report-service.ts";
 import {
   createMockLogger,
   createVisionReport,
   previewSource,
   withReportImage,
 } from "./mock-helpers.ts";
-import { VisionRepository } from "../sdk/repositories/vision-repository.ts";
+import { VisionRepository } from "@@/core/repositories/vision-repository.ts";
 import { createTestDatabase } from "./test-database.ts";
 
 const VisionJsonSchemaPropertySchema = z.object({

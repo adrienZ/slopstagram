@@ -33,7 +33,7 @@ generated files. Keep generated files excluded from linting and formatting.
 ### Persistence layout
 
 Put Drizzle tables, entity types, and table-derived validation schemas in
-`sdk/entities/`. Keep `sdk/repositories/` focused on database access; put business
+`core/entities/`. Keep `core/repositories/` focused on database access; put business
 logic in domain modules. Import repositories directly from their modules.
 
 Derive database-shaped validators from `drizzle-orm/zod` and reuse them.

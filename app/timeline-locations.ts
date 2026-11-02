@@ -1,4 +1,4 @@
-import type { UserTimelineStory } from "../sdk/repositories/story-repository.ts";
+import type { UserTimelineStory } from "@@/core/repositories/story-repository.ts";
 
 export interface TimelinePlace {
   id: string;

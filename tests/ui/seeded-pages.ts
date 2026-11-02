@@ -1,11 +1,11 @@
 import { eq, sql } from "drizzle-orm";
-import { useDrizzle } from "../../sdk/database/client.ts";
-import { migrateDatabase } from "../../sdk/database/migrate.ts";
-import { stories } from "../../sdk/entities/story.ts";
-import { appleVisionRepository } from "../../sdk/repositories/apple-vision-repository.ts";
-import { instagramUserRepository } from "../../sdk/repositories/instagram-user-repository.ts";
-import { createReportFeed } from "../../sdk/story-feed.ts";
-import { resolveUserSummariesForReport } from "../../sdk/user-summary.ts";
+import { useDrizzle } from "@@/core/database/client.ts";
+import { migrateDatabase } from "@@/core/database/migrate.ts";
+import { stories } from "@@/core/entities/story.ts";
+import { appleVisionRepository } from "@@/core/repositories/apple-vision-repository.ts";
+import { instagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
+import { createReportFeed } from "@@/core/story-feed.ts";
+import { resolveUserSummariesForReport } from "@@/core/user-summary.ts";
 import { createMockLogger } from "../mock-helpers.ts";
 import { readRecordedPayloads, seedRecordedStories } from "../setup/seed.ts";
 

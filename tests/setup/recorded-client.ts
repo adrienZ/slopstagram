@@ -3,9 +3,9 @@ import type {
   InstagramClientResponse,
   ReelTrayResponse,
   StoryReel,
-} from "../../sdk/instagram-types.ts";
-import type { JsonValue } from "../../sdk/lib/json-value.ts";
-import { parseGalleryPage, parseTrayResponse } from "../../sdk/story-client-service.ts";
+} from "@@/core/instagram-types.ts";
+import type { JsonValue } from "@@/core/lib/json-value.ts";
+import { parseGalleryPage, parseTrayResponse } from "@@/core/story-client-service.ts";
 import type { RecordedPayloads } from "./seed.ts";
 
 const JSON_HEADERS = { "content-type": "application/json" };

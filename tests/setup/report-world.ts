@@ -4,17 +4,17 @@ import path from "node:path";
 import { expect, type TestContext } from "vitest";
 import sharp from "sharp";
 import { z } from "zod";
-import { createDrizzle } from "../../sdk/database/client.ts";
-import { migrateDatabase } from "../../sdk/database/migrate.ts";
-import type { JsonValue } from "../../sdk/lib/json-value.ts";
-import { createReport, type CreateReportBoundaries } from "../../sdk/report.ts";
-import { AppleVisionRepository } from "../../sdk/repositories/apple-vision-repository.ts";
-import { FetchRunRepository } from "../../sdk/repositories/fetch-run-repository.ts";
-import { InstagramUserRepository } from "../../sdk/repositories/instagram-user-repository.ts";
-import { ReportRepository } from "../../sdk/repositories/report-repository.ts";
-import { StoryRepository } from "../../sdk/repositories/story-repository.ts";
-import { UserSummaryRepository } from "../../sdk/repositories/user-summary-repository.ts";
-import { VisionRepository } from "../../sdk/repositories/vision-repository.ts";
+import { createDrizzle } from "@@/core/database/client.ts";
+import { migrateDatabase } from "@@/core/database/migrate.ts";
+import type { JsonValue } from "@@/core/lib/json-value.ts";
+import { createReport, type CreateReportBoundaries } from "@@/core/report.ts";
+import { AppleVisionRepository } from "@@/core/repositories/apple-vision-repository.ts";
+import { FetchRunRepository } from "@@/core/repositories/fetch-run-repository.ts";
+import { InstagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
+import { ReportRepository } from "@@/core/repositories/report-repository.ts";
+import { StoryRepository } from "@@/core/repositories/story-repository.ts";
+import { UserSummaryRepository } from "@@/core/repositories/user-summary-repository.ts";
+import { VisionRepository } from "@@/core/repositories/vision-repository.ts";
 import { createCapturingLogger } from "../mock-helpers.ts";
 import {
   createRecordedInstagramClient,

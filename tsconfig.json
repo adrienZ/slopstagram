@@ -17,7 +17,7 @@
     "types": ["node", "vite/client"]
   },
   "include": [
-    "sdk/**/*.ts",
+    "core/**/*.ts",
     "scripts/**/*.ts",
     "scripts/**/*.tsx",
     "oxlint/**/*.ts",
