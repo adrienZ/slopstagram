@@ -7,11 +7,13 @@ import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { StoryRepository } from "@@/core/repositories/story-repository.ts";
 import { processMusicMedia } from "@@/core/music-media-service.ts";
 import { startMediaServer, wavAudio } from "./media-server.ts";
+import { useFileCache } from "./file-cache.ts";
 
 test("music processing publishes audio only and reuses it without provider requests", async (context) => {
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
   const root = await mkdtemp(path.join(tmpdir(), "music-media-"));
+  await useFileCache(root);
   context.onTestFinished(async () => {
     database.$client.close();
     await rm(root, { recursive: true, force: true });
@@ -73,6 +75,7 @@ test("partial audio stays separate and promotion preserves its source and proces
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
   const root = await mkdtemp(path.join(tmpdir(), "music-partial-"));
+  await useFileCache(root);
   context.onTestFinished(async () => {
     database.$client.close();
     await rm(root, { recursive: true, force: true });
@@ -150,6 +153,7 @@ test("missing sources do not fetch and failed transfers never publish partial fi
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
   const root = await mkdtemp(path.join(tmpdir(), "music-transfer-"));
+  await useFileCache(root);
   context.onTestFinished(async () => {
     database.$client.close();
     await rm(root, { recursive: true, force: true });
@@ -198,6 +202,7 @@ test("the cached file duration survives partial promotion and remains distinct f
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
   const root = await mkdtemp(path.join(tmpdir(), "music-duration-"));
+  await useFileCache(root);
   context.onTestFinished(async () => {
     database.$client.close();
     await rm(root, { recursive: true, force: true });

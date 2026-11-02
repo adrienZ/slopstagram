@@ -1,10 +1,12 @@
 import process from "node:process";
 import { pathToFileURL } from "node:url";
 import { createReport } from "@@/core/report.ts";
+import { mountFileCache } from "@@/core/lib/cache-service.ts";
 import { createLogger } from "@@/core/lib/logging-service.ts";
 
 async function main(): Promise<void> {
   const logger = createLogger("create-report");
+  mountFileCache();
   await createReport({ logger });
 }
 

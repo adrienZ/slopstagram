@@ -22,11 +22,13 @@ import {
   reel,
   reelsResponse,
 } from "./mock-helpers.ts";
+import { useFileCache } from "./file-cache.ts";
 
 test("ingestion looks up one shared audio ID and caches validated audio and artwork", async (context) => {
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
   const directory = await mkdtemp(path.join(tmpdir(), "music-lookup-"));
+  await useFileCache(directory);
   context.onTestFinished(async () => {
     database.$client.close();
     await rm(directory, { recursive: true, force: true });
@@ -192,6 +194,7 @@ test("generic video/mp4 responses with a video track are never cached as music",
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
   const directory = await mkdtemp(path.join(tmpdir(), "music-video-"));
+  await useFileCache(directory);
   context.onTestFinished(async () => {
     database.$client.close();
     await rm(directory, { recursive: true, force: true });

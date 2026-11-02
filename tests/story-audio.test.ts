@@ -23,6 +23,7 @@ import {
   reel,
   reelsResponse,
 } from "./mock-helpers.ts";
+import { useFileCache } from "./file-cache.ts";
 
 function manifest(name: string) {
   return `<MPD xmlns="urn:mpeg:dash:schema:mpd:2011" type="static">
@@ -153,6 +154,7 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
   const directory = await mkdtemp(path.join(tmpdir(), "story-audio-"));
+  await useFileCache(directory);
   context.onTestFinished(async () => {
     database.$client.close();
     await rm(directory, { force: true, recursive: true });
@@ -249,6 +251,7 @@ test("expired and interrupted DASH downloads fail silently without publishing in
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
   const directory = await mkdtemp(path.join(tmpdir(), "story-audio-failed-"));
+  await useFileCache(directory);
   context.onTestFinished(async () => {
     database.$client.close();
     await rm(directory, { force: true, recursive: true });
@@ -345,6 +348,7 @@ test("fresh story ingestion caches the story excerpt and prefers it over the lon
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
   const directory = await mkdtemp(path.join(tmpdir(), "future-story-audio-"));
+  await useFileCache(directory);
   context.onTestFinished(async () => {
     database.$client.close();
     await rm(directory, { recursive: true, force: true });

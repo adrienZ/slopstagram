@@ -8,14 +8,8 @@ import { parseBuffer } from "music-metadata";
 import type { DrizzleDatabase } from "./database/client.ts";
 import type { MusicMediaState, MusicMetadataReference } from "./entities/music-metadata.ts";
 import { audioFileDurationMs } from "./lib/audio-duration.ts";
-import {
-  AUDIO_STORAGE_DIR,
-  BASE_CACHE_DIR,
-  IMAGES_STORAGE_DIR,
-  audioCacheStorage,
-  createAudioCacheStorage,
-  type AudioCacheStorage,
-} from "./lib/cache-service.ts";
+import { AUDIO_STORAGE_DIR, BASE_CACHE_DIR, IMAGES_STORAGE_DIR } from "./lib/cache-mounts.ts";
+import { audioCacheStorage, type AudioCacheStorage } from "./lib/cache-service.ts";
 import { audioFileExtension } from "./lib/music-media-types.ts";
 import { findMusicMetadata, saveMusicMedia } from "./repositories/music-metadata-repository.ts";
 
@@ -131,11 +125,7 @@ export async function cacheReceivedAudio(
   declaredAudioType?: "audio/mp4",
 ): Promise<CachedMusicMedia> {
   const directory = options.directory ?? BASE_CACHE_DIR;
-  const storage =
-    options.audioStorage ??
-    (options.directory === undefined
-      ? audioCacheStorage
-      : createAudioCacheStorage(path.join(directory, AUDIO_STORAGE_DIR)));
+  const storage = options.audioStorage ?? audioCacheStorage;
   if (cached !== null && (await fileExists(storage, cached))) {
     return {
       cachePath: cached,

@@ -1,6 +1,7 @@
-import { createStorage, type Storage, type StorageValue } from "unstorage";
+import { randomUUID } from "node:crypto";
+import { useKV } from "nitro/kv";
 
-export function createMemoryStorage<T extends StorageValue>(): Storage<T> {
-  // memoryDriver by default
-  return createStorage<T>();
+/** A storage of its own on Nitro's in-memory default, isolated from every other test's. */
+export function createMemoryStorage<T extends object = Record<string, never>>() {
+  return useKV<T>(`memory-${randomUUID()}`);
 }
