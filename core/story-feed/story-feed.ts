@@ -7,7 +7,7 @@ import {
   visionRepository,
   type VisionRepository,
 } from "@@/core/database/repositories/vision-repository.ts";
-import type { StoryOutputUser } from "@@/core/report-types.ts";
+import type { StoryOutputUser } from "@@/core/fetch-run/report-types.ts";
 import type { VisionResult } from "@@/core/database/entities/vision.ts";
 import { readCurrentVisionResult } from "@@/core/vision/vision-analysis.ts";
 import { getStoryDate, getStoryDayRange, storyDateSchema } from "./story-days.ts";

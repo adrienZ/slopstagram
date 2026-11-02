@@ -1,7 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import { useDrizzle, type DrizzleDatabase } from "../client.ts";
 import { fetchRuns, type FetchRun } from "../entities/fetch-run.ts";
-import type { StoriesManifestReport } from "@@/core/report-types.ts";
+import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
 
 interface FinishedFetchRun {
   finishedAt: string;

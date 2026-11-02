@@ -7,7 +7,7 @@ import { z } from "zod";
 import { createDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
-import { createReport, type CreateReportBoundaries } from "@@/core/report.ts";
+import { createReport, type CreateReportBoundaries } from "@@/core/fetch-run/report.ts";
 import { AppleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
 import { FetchRunRepository } from "@@/core/database/repositories/fetch-run-repository.ts";
 import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";

@@ -7,7 +7,7 @@ import {
 } from "@@/core/database/repositories/vision-repository.ts";
 import type { CachedReportImages } from "@@/core/media-store/image-cache.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
-import type { StoriesManifestReport } from "@@/core/report-types.ts";
+import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
 import type { VisionResult } from "@@/core/database/entities/vision.ts";
 import {
   analyzeImage,

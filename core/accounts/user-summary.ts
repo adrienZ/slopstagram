@@ -10,7 +10,7 @@ import {
 } from "@@/core/database/repositories/user-summary-repository.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
 import { getReportUserKey } from "./report-user-key.ts";
-import type { StoriesManifestReport, StoryOutputUser } from "@@/core/report-types.ts";
+import type { StoriesManifestReport, StoryOutputUser } from "@@/core/fetch-run/report-types.ts";
 import type { VisionResult } from "@@/core/database/entities/vision.ts";
 
 type HttpFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;

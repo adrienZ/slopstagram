@@ -1,5 +1,5 @@
 import { resolveAppleCaptionsForReport } from "@@/core/vision/apple-caption.ts";
-import { type DrizzleDatabase, useDrizzle } from "./database/client.ts";
+import { type DrizzleDatabase, useDrizzle } from "@@/core/database/client.ts";
 import { recordFetchRun } from "./fetch-run.ts";
 import type { InstagramClient } from "@@/core/instagram/instagram-types.ts";
 import { ReportRepository } from "@@/core/database/repositories/report-repository.ts";
@@ -31,8 +31,8 @@ import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoriesManifestReport } from "./report-types.ts";
 import { resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
 import { resolveVisionForReport } from "@@/core/vision/vision-report.ts";
-import { fetchStories } from "./stories.ts";
-import pkg from "../package.json" with { type: "json" };
+import { fetchStories } from "@@/core/stories.ts";
+import pkg from "../../package.json" with { type: "json" };
 
 type HttpFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 

@@ -13,7 +13,7 @@ import type {
   InstagramClientResponse,
   ReelsMediaResponse,
 } from "@@/core/instagram/instagram-types.ts";
-import type { StoriesManifestReport } from "@@/core/report-types.ts";
+import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
 
 export const previewSource = "https://example.com/story-preview.webp";
 
