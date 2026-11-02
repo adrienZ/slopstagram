@@ -5,7 +5,6 @@ import { storyRepository } from "@@/core/database/repositories/story-repository.
 import { fetchStories } from "@@/core/fetch-run/stories.ts";
 import { getProductionRuntime } from "@@/core/runtime/production-runtime.ts";
 import { createMockLogger, noSleep } from "./mock-helpers.ts";
-import { createMemoryStorage } from "./memory-storage.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 
 const recordedStoryPk = "700000000000079";
@@ -24,7 +23,7 @@ test("a test runtime ingests recorded stories into its own database", async (con
     maxAttempts: 1,
     sleep: noSleep,
     storyRepository: runtime.stories,
-    storyStorage: createMemoryStorage(),
+    storyStorage: runtime.storage.stories,
   });
 
   expect(report.failures).toEqual([]);
@@ -42,7 +41,7 @@ test("two test runtimes do not share a database", async (context) => {
     maxAttempts: 1,
     sleep: noSleep,
     storyRepository: first.stories,
-    storyStorage: createMemoryStorage(),
+    storyStorage: first.storage.stories,
   });
 
   expect(first.stories.findByMediaPk(recordedStoryPk)).not.toBeNull();
