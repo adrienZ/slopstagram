@@ -1,5 +1,4 @@
 import type { Runtime } from "@@/core/runtime/runtime.ts";
-import type { Logger } from "@@/core/utils/logging.ts";
 import { extractReels } from "@@/core/instagram/story-client.ts";
 import { storeReturnedReels } from "./story-cache.ts";
 import {
