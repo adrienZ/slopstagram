@@ -24,7 +24,7 @@ import { loadSidebarUsers } from "./sidebar-users.ts";
 
 interface FeedRepositories {
   appleVision: Pick<AppleVisionRepository, "findByMediaPk">;
-  userSummary: UserSummaryRepository;
+  userSummary: Pick<UserSummaryRepository, "findBySourceHash">;
   vision: Pick<VisionRepository, "findByMediaPk">;
 }
 

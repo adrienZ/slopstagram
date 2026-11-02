@@ -1,6 +1,6 @@
+import type { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
 import type { InstagramUserEntry } from "@@/core/database/entities/instagram-user.ts";
 import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
-import type { Runtime } from "@@/core/runtime/runtime.ts";
 
 interface InstagramUserFields {
   full_name?: string | null;
@@ -9,6 +9,8 @@ interface InstagramUserFields {
   profile_pic_url?: string | null;
   username: string;
 }
+
+type InstagramUserStore = Pick<InstagramUserRepository, "findByUsername" | "save">;
 
 function hasEmbeddedUser(user: InstagramUserFields): boolean {
   return (
@@ -42,7 +44,7 @@ function removeEmbeddedUser(user: InstagramUserFields): void {
 }
 
 export async function persistReportInstagramUsers(
-  { users: repository }: Pick<Runtime, "users">,
+  { users: repository }: { users: InstagramUserStore },
   report: StoriesManifestReport,
 ): Promise<void> {
   const usersByUsername = new Map<string, InstagramUserEntry>();
@@ -70,7 +72,7 @@ export async function persistReportInstagramUsers(
 }
 
 export function hydrateReportInstagramUsers(
-  { users: repository }: Pick<Runtime, "users">,
+  { users: repository }: { users: InstagramUserStore },
   report: StoriesManifestReport,
 ): void {
   const usersByUsername = new Map<string, InstagramUserEntry | null>();

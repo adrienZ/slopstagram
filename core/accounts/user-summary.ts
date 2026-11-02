@@ -38,6 +38,10 @@ const USER_SUMMARY_OUTPUT_SCHEMA = z.toJSONSchema(UserSummaryResponseSchema);
 
 type RunUserSummary = (prompt: string) => Promise<string>;
 
+type ResolveUserSummariesRuntime = Pick<Runtime, "fetchOllama" | "logger"> & {
+  summaries: Pick<UserSummaryRepository, "findBySourceHash" | "save">;
+};
+
 interface ResolveUserSummariesOptions {
   endpoint?: string;
   model?: string;
@@ -250,7 +254,7 @@ function createUserSummarySource(
 }
 
 function resolveOptions(
-  runtime: Pick<Runtime, "fetchOllama" | "logger" | "summaries">,
+  runtime: ResolveUserSummariesRuntime,
   options: ResolveUserSummariesOptions,
 ): ResolvedUserSummaryOptions {
   const model = options.model ?? getUserSummaryModel();
@@ -291,7 +295,7 @@ function getStoredSummary(options: {
 }
 
 export function readUserSummaries(
-  { summaries: repository }: Pick<Runtime, "summaries">,
+  { summaries: repository }: { summaries: Pick<UserSummaryRepository, "findBySourceHash"> },
   users: Array<StoryOutputUser>,
   options: ReadUserSummariesOptions = {},
 ): Map<string, string> {
@@ -380,7 +384,7 @@ async function resolveUserSummary(
 }
 
 export async function resolveUserSummariesForReport(
-  runtime: Pick<Runtime, "fetchOllama" | "logger" | "summaries">,
+  runtime: ResolveUserSummariesRuntime,
   report: Pick<StoriesManifestReport, "output">,
   options: ResolveUserSummariesOptions = {},
 ): Promise<Map<string, string>> {
