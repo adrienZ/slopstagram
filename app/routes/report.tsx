@@ -9,7 +9,7 @@ import {
   getOldestStoryDate,
   navigateToReportDate,
 } from "../utils/story-navigation.ts";
-import { formatStoryViewTitle, storyDateSchema } from "@@/core/lib/story-date-service.ts";
+import { formatStoryViewTitle, storyDateSchema } from "@@/core/story-feed/story-days.ts";
 import { UserSection } from "../components/user-section.tsx";
 import type { StoryFeedPageData } from "../loaders/story-feed.ts";
 

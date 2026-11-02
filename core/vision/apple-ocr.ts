@@ -1,0 +1,69 @@
+import { readFile } from "node:fs/promises";
+import process from "node:process";
+import type { AppleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
+import { appleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
+import { NO_APPLE_CAPTION } from "@@/core/utils/report-constants.ts";
+
+type AppleOcrRunner = (image: Uint8Array) => Promise<string>;
+type ReadImage = (imagePath: string) => Promise<Uint8Array>;
+
+export class AppleOcrUnavailableError extends Error {
+  override readonly name = "AppleOcrUnavailableError";
+  readonly kind = "unavailable";
+}
+
+export interface RecognizeAppleCaptionOptions {
+  platform?: NodeJS.Platform;
+  readImage?: ReadImage;
+  runAppleOcr?: AppleOcrRunner;
+  repository?: Pick<AppleVisionRepository, "findByMediaPk" | "save">;
+}
+
+function normalizeOcrText(value: string): string {
+  const normalized = value.normalize("NFC").replaceAll("\r\n", "\n").trim();
+
+  return normalized.length > 0 ? normalized : NO_APPLE_CAPTION;
+}
+
+export function isAppleOcrUnavailable(error: Error): error is AppleOcrUnavailableError {
+  return error instanceof AppleOcrUnavailableError;
+}
+
+async function runAppleOcr(image: Uint8Array, platform: NodeJS.Platform): Promise<string> {
+  if (platform !== "darwin") {
+    throw new AppleOcrUnavailableError(`unsupported platform ${platform}`);
+  }
+
+  // oxlint-disable-next-line typescript/consistent-type-imports keep it async for non macOS platforms
+  let macOcr: typeof import("mac-ocr");
+  try {
+    macOcr = await import("mac-ocr");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown import failure";
+    throw new AppleOcrUnavailableError(`mac-ocr package is unavailable: ${message}`);
+  }
+
+  const result = await macOcr.ocr(image);
+  return result.text;
+}
+
+export async function recognizeAppleCaption(
+  mediaPk: string,
+  imagePath: string,
+  {
+    platform = process.platform,
+    readImage: read = async (path) => await readFile(path),
+    runAppleOcr: runOcr = async (image) => await runAppleOcr(image, platform),
+    repository = appleVisionRepository,
+  }: RecognizeAppleCaptionOptions = {},
+): Promise<string> {
+  const storedCaption = repository.findByMediaPk(mediaPk);
+
+  if (storedCaption !== null && storedCaption.length > 0) {
+    return storedCaption;
+  }
+
+  const caption = normalizeOcrText(await runOcr(await read(imagePath)));
+  await repository.save(mediaPk, caption);
+  return caption;
+}

@@ -1,14 +1,14 @@
-import { STORY_MEDIA_TYPES } from "@@/core/story-types.ts";
-import type { OutdatedVision } from "@@/core/lib/vision-analysis-service.ts";
-import type { StoryOutputUser } from "@@/core/report-types.ts";
-import type { UserTimelineStory } from "@@/core/repositories/story-repository.ts";
+import { STORY_MEDIA_TYPES } from "@@/core/stickers/story-types.ts";
+import type { OutdatedVision } from "@@/core/vision/vision-analysis.ts";
+import type { StoryOutputUser } from "@@/core/fetch-run/report-types.ts";
+import type { UserTimelineStory } from "@@/core/database/repositories/story-repository.ts";
 import { presentSticker, type StickerPresentation } from "./sticker-presentation.ts";
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
 import { stickerPlace, stickerPlaces } from "./timeline-stickers.ts";
 import { musicStickerItems, type MusicStickerItem } from "./music-preview.ts";
 import { formatUserName, getStoryUrl } from "./helper.ts";
-import type { CachedReportImages } from "@@/core/lib/image-cache-service.ts";
-import type { VisionResult } from "@@/core/entities/vision.ts";
+import type { CachedReportImages } from "@@/core/media-store/image-cache.ts";
+import type { VisionResult } from "@@/core/database/entities/vision.ts";
 
 export interface StoryCardSources {
   appleCaptionByMediaPk: Map<string, string>;

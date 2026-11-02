@@ -2,19 +2,22 @@ import "@tanstack/react-start/server-only";
 import {
   appleVisionRepository,
   type AppleVisionRepository,
-} from "@@/core/repositories/apple-vision-repository.ts";
+} from "@@/core/database/repositories/apple-vision-repository.ts";
 import {
   userSummaryRepository,
   type UserSummaryRepository,
-} from "@@/core/repositories/user-summary-repository.ts";
-import { visionRepository, type VisionRepository } from "@@/core/repositories/vision-repository.ts";
-import { storyRepository } from "@@/core/repositories/story-repository.ts";
-import type { CachedReportImages } from "@@/core/lib/image-cache-service.ts";
-import { getReportUserKey } from "@@/core/lib/report-user-key-service.ts";
-import { readUserSummaries } from "@@/core/user-summary.ts";
-import type { StoryOutputUser } from "@@/core/report-types.ts";
-import type { VisionResult } from "@@/core/entities/vision.ts";
-import { createReportFeed, readStoryFeedVision } from "@@/core/story-feed.ts";
+} from "@@/core/database/repositories/user-summary-repository.ts";
+import {
+  visionRepository,
+  type VisionRepository,
+} from "@@/core/database/repositories/vision-repository.ts";
+import { storyRepository } from "@@/core/database/repositories/story-repository.ts";
+import type { CachedReportImages } from "@@/core/media-store/image-cache.ts";
+import { getReportUserKey } from "@@/core/accounts/report-user-key.ts";
+import { readUserSummaries } from "@@/core/accounts/user-summary.ts";
+import type { StoryOutputUser } from "@@/core/fetch-run/report-types.ts";
+import type { VisionResult } from "@@/core/database/entities/vision.ts";
+import { createReportFeed, readStoryFeedVision } from "@@/core/story-feed/story-feed.ts";
 import { createStoryCards, withStoryStickers } from "../utils/story-cards.ts";
 import { formatReportDate } from "../utils/helper.ts";
 import { loadSidebarUsers } from "./sidebar-users.ts";

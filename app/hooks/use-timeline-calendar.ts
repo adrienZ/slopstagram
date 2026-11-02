@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMedia } from "react-use";
-import { getStoryDate } from "@@/core/lib/story-date-service.ts";
+import { getStoryDate } from "@@/core/story-feed/story-days.ts";
 import { getOldestStoryDate, getTimelineDayId } from "../utils/story-navigation.ts";
 
 export function useTimelineCalendar(days: Array<string>, today: string) {

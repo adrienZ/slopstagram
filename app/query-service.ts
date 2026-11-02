@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { notFound } from "@tanstack/react-router";
 import { z } from "zod";
-import { storyDateSchema } from "@@/core/lib/story-date-service.ts";
+import { storyDateSchema } from "@@/core/story-feed/story-days.ts";
 
 export const getReport = createServerFn({ method: "GET" })
   .validator(z.object({ date: storyDateSchema.optional(), story: z.string().optional() }))

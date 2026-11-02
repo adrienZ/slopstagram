@@ -60,7 +60,7 @@ export default defineConfig({
     "app/routeTree.gen.ts",
     "app/shadcn/**",
   ],
-  jsPlugins: ["./oxlint/plugins/rules/no-barrel-files.ts"],
+  jsPlugins: ["./oxlint/plugins/slopstagram.ts"],
   options: {
     maxWarnings: 0,
     typeAware: true,
@@ -75,6 +75,7 @@ export default defineConfig({
   },
   rules: {
     "slopstagram/no-barrel-files": "error",
+    "slopstagram/domain-layering": "error",
   },
   overrides: [
     {
@@ -94,7 +95,7 @@ export default defineConfig({
       rules: {
         "no-restricted-imports": restrictImports([
           {
-            group: ["@@/core/repositories/*", "@@/core/database/*"],
+            group: ["@@/core/database/repositories/*", "@@/core/database/*"],
             allowTypeImports: true,
             message:
               "Pages and components get their data from a loader. Import types only, not repositories or the database client.",

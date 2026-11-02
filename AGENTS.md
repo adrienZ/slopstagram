@@ -41,7 +41,7 @@ generated files. Keep generated files excluded from linting and formatting.
 ### Persistence layout
 
 Put Drizzle tables, entity types, and table-derived validation schemas in
-`core/entities/`. Keep `core/repositories/` focused on database access; put business
+`core/database/entities/`. Keep `core/database/repositories/` focused on database access; put business
 logic in domain modules. Import repositories directly from their modules.
 
 Derive database-shaped validators from `drizzle-orm/zod` and reuse them.
@@ -80,7 +80,7 @@ Tests go through production code paths (`docs/adr/0006-test-through-production-c
   route and answers only its loader. jsdom tests under `tests/ui/` seed the page database
   with `seedPageDatabase()` from `tests/ui/seeded-pages.ts`.
 - Fixtures in `tests/fixtures/` come from `npm run fixtures:capture`, which anonymizes a live
-  session. Never copy them from `data/cache` or the media cache, and never run the command in
+  session. Never copy them from `data/cache` or the media store, and never run the command in
   CI. Never write personal data into source, fixtures, tests, docs, commits, PRs or issues:
   usernames, ids, names, captions, places, CDN URLs. Use synthetic values. Only public audio
   metadata (titles, artists) may stay. `tests/fixtures.privacy.test.ts` fails on any other

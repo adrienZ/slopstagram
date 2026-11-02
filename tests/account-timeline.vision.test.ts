@@ -1,10 +1,10 @@
 import { createHash } from "node:crypto";
 import { assert, beforeAll, expect, test } from "vitest";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
-import { instagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
-import { storyRepository } from "@@/core/repositories/story-repository.ts";
-import { visionRepository } from "@@/core/repositories/vision-repository.ts";
-import { VISION_MODEL, VISION_PROMPT } from "@@/core/lib/vision-analysis-service.ts";
+import { instagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
+import { storyRepository } from "@@/core/database/repositories/story-repository.ts";
+import { visionRepository } from "@@/core/database/repositories/vision-repository.ts";
+import { VISION_MODEL, VISION_PROMPT } from "@@/core/vision/vision-analysis.ts";
 import { createUserTimeline } from "../app/loaders/account-timeline.ts";
 
 const promptHash = createHash("sha256").update(VISION_PROMPT).digest("hex");

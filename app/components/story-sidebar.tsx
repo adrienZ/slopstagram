@@ -2,7 +2,7 @@ import type { Matcher } from "react-day-picker";
 import { useState } from "react";
 import { fr } from "react-day-picker/locale";
 import { CalendarDaysIcon, ChevronRightIcon } from "lucide-react";
-import { formatStoryDay, STORY_TIME_ZONE } from "@@/core/lib/story-date-service.ts";
+import { formatStoryDay, STORY_TIME_ZONE } from "@@/core/story-feed/story-days.ts";
 import { Button } from "../shadcn/ui/button.tsx";
 import { Calendar } from "../shadcn/ui/calendar.tsx";
 import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/ui/avatar.tsx";

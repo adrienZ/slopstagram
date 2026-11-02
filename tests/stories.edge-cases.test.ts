@@ -1,5 +1,5 @@
 import { assert, describe, test, expect } from "vitest";
-import { fetchStoriesManifest } from "@@/core/stories.ts";
+import { fetchStoriesManifest } from "@@/core/fetch-run/stories.ts";
 import {
   createCapturingLogger,
   createClient,
