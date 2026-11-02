@@ -1,4 +1,7 @@
-import type { UserTimelineStory } from "@@/core/database/repositories/story-repository.ts";
+import type {
+  StoryRepository,
+  UserTimelineStory,
+} from "@@/core/database/repositories/story-repository.ts";
 import type { StoryOutputUser } from "@@/core/fetch-run/report-types.ts";
 import type { VisionResult } from "@@/core/database/entities/vision.ts";
 import type { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
@@ -67,7 +70,7 @@ function groupStoryFeed(
 }
 
 export function createStoryFeed(
-  runtime: Pick<Runtime, "stories">,
+  runtime: { stories: Pick<StoryRepository, "listActive"> },
   now: Date,
   options: StoryFeedOptions = {},
 ): Array<StoryOutputUser> {
@@ -75,7 +78,7 @@ export function createStoryFeed(
 }
 
 export function createStoryDayFeed(
-  runtime: Pick<Runtime, "stories">,
+  runtime: { stories: Pick<StoryRepository, "listPublishedBetween"> },
   day: string,
   options: StoryFeedOptions = {},
 ): Array<StoryOutputUser> {
@@ -84,7 +87,9 @@ export function createStoryDayFeed(
 }
 
 export function createReportFeed(
-  runtime: Pick<Runtime, "stories">,
+  runtime: {
+    stories: Pick<StoryRepository, "listActive" | "listPublishedBetween" | "listPublicationTimes">;
+  },
   now: Date,
   requestedDate?: string,
   options: StoryFeedOptions & { selectedStory?: string } = {},
