@@ -3,11 +3,6 @@
 Domain and ingestion code, with no React and no Nitro. One flat folder per domain, with no
 subfolders except in `database/`.
 
-## Imports
-
-- Inside a domain, import with relative paths. Across domains, import with
-  `@@/core/<domain>/<module>.ts`.
-
 ## Domains
 
 - `utils/`: domain-free helpers (data paths, JSON values, logging, provider identifiers, caption
