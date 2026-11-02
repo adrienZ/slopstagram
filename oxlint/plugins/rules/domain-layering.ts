@@ -22,8 +22,8 @@ const dependencies = new Map<string, Array<string>>([
 ]);
 
 // Violations that exist today, per importing module. The list can only shrink: a new violation
-// fails lint. The repository shape spec (#157) removed none of them: repositories still call the
-// planners of the domains they persist.
+// fails lint. The repository shape spec (https://github.com/adrienZ/slopstagram/issues/157)
+// removed none of them: repositories still call the planners of the domains they persist.
 const baseline = new Map<string, Array<string>>([
   // The report entity imports the story media types, which belong to stickers.
   ["database/entities/report.ts", ["stickers"]],
@@ -34,7 +34,8 @@ const baseline = new Map<string, Array<string>>([
   ["database/repositories/report-repository.ts", ["fetch-run", "instagram"]],
   // The story repository calls the annotation, audio and payload planners.
   ["database/repositories/story-repository.ts", ["instagram", "music", "stickers"]],
-  // #159: stickers, places and music import each other through sticker and location extraction.
+  // https://github.com/adrienZ/slopstagram/issues/159: stickers, places and music import each other
+  // through sticker and location extraction.
   ["places/location-metadata.ts", ["stickers"]],
   ["stickers/story-sticker-location.ts", ["music", "places"]],
 ]);
