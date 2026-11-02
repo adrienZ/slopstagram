@@ -1,8 +1,8 @@
 import { assert, expect, test } from "vitest";
-import type { StoryItem } from "../sdk/instagram-types.ts";
-import type { DrizzleDatabase } from "../sdk/database/client.ts";
-import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
-import { StoryRepository } from "../sdk/repositories/story-repository.ts";
+import type { StoryItem } from "@@/core/instagram-types.ts";
+import type { DrizzleDatabase } from "@@/core/database/client.ts";
+import { InstagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
+import { StoryRepository } from "@@/core/repositories/story-repository.ts";
 import { createTestDatabase } from "./test-database.ts";
 
 const owner = { id: "u1", pk: "u1", username: "one", full_name: "One" };

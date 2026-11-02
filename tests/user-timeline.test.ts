@@ -5,13 +5,13 @@ import {
   getTimelinePreviewPaths,
   groupStoriesByPublishedDate,
 } from "../app/user-timeline.ts";
-import { appleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
-import { migrateDatabase } from "../sdk/database/migrate.ts";
-import { instagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
-import { storyRepository } from "../sdk/repositories/story-repository.ts";
-import { visionRepository } from "../sdk/repositories/vision-repository.ts";
-import { VISION_MODEL, VISION_PROMPT } from "../sdk/lib/vision-analysis-service.ts";
-import type { UserTimelineStory } from "../sdk/repositories/story-repository.ts";
+import { appleVisionRepository } from "@@/core/repositories/apple-vision-repository.ts";
+import { migrateDatabase } from "@@/core/database/migrate.ts";
+import { instagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
+import { storyRepository } from "@@/core/repositories/story-repository.ts";
+import { visionRepository } from "@@/core/repositories/vision-repository.ts";
+import { VISION_MODEL, VISION_PROMPT } from "@@/core/lib/vision-analysis-service.ts";
+import type { UserTimelineStory } from "@@/core/repositories/story-repository.ts";
 
 beforeAll(() => {
   migrateDatabase();

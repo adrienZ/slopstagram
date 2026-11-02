@@ -1,11 +1,11 @@
 import type { TestContext } from "vitest";
-import { createDrizzle } from "../sdk/database/client.ts";
-import { migrateDatabase } from "../sdk/database/migrate.ts";
-import type { StoryItem } from "../sdk/instagram-types.ts";
-import { userSummaries } from "../sdk/entities/user-summary.ts";
-import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
-import { UserSummaryRepository } from "../sdk/repositories/user-summary-repository.ts";
-import { StoryRepository } from "../sdk/repositories/story-repository.ts";
+import { createDrizzle } from "@@/core/database/client.ts";
+import { migrateDatabase } from "@@/core/database/migrate.ts";
+import type { StoryItem } from "@@/core/instagram-types.ts";
+import { userSummaries } from "@@/core/entities/user-summary.ts";
+import { InstagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
+import { UserSummaryRepository } from "@@/core/repositories/user-summary-repository.ts";
+import { StoryRepository } from "@@/core/repositories/story-repository.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 
 /** A migrated in-memory database, closed when the test ends. */

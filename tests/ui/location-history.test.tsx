@@ -3,7 +3,7 @@ import { beforeAll, expect, test } from "vitest";
 import { screen, within } from "@testing-library/react";
 import { Route } from "../../app/routes/users/$username.tsx";
 import type { TimelineContentProps } from "../../app/routes/users/$username.tsx";
-import type { StoryLocationObservation } from "../../sdk/entities/location-metadata.ts";
+import type { StoryLocationObservation } from "@@/core/entities/location-metadata.ts";
 import { pageNow, stickerKindsOf, timelineAccount, seedPageDatabase } from "./seeded-pages.ts";
 import { loadUserTimeline } from "../../app/user-timeline-handler.tsx";
 import { createPageRenderer } from "../render-page.ts";

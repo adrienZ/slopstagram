@@ -1,7 +1,7 @@
 import process from "node:process";
 import { pathToFileURL } from "node:url";
-import { createReport } from "../sdk/report.ts";
-import { createLogger } from "../sdk/lib/logging-service.ts";
+import { createReport } from "@@/core/report.ts";
+import { createLogger } from "@@/core/lib/logging-service.ts";
 
 async function main(): Promise<void> {
   const logger = createLogger("create-report");

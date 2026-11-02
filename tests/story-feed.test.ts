@@ -1,16 +1,16 @@
 import { test, type TestContext, expect } from "vitest";
-import { createDrizzle } from "../sdk/database/client.ts";
-import { migrateDatabase } from "../sdk/database/migrate.ts";
-import { StoryRepository } from "../sdk/repositories/story-repository.ts";
-import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
-import { UserSummaryRepository } from "../sdk/repositories/user-summary-repository.ts";
-import { AppleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
-import { VisionRepository } from "../sdk/repositories/vision-repository.ts";
-import { createStoryFeed, createStoryDayFeed, createReportFeed } from "../sdk/story-feed.ts";
-import { getStoryDate, getStoryDayRange } from "../sdk/lib/story-date-service.ts";
+import { createDrizzle } from "@@/core/database/client.ts";
+import { migrateDatabase } from "@@/core/database/migrate.ts";
+import { StoryRepository } from "@@/core/repositories/story-repository.ts";
+import { InstagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
+import { UserSummaryRepository } from "@@/core/repositories/user-summary-repository.ts";
+import { AppleVisionRepository } from "@@/core/repositories/apple-vision-repository.ts";
+import { VisionRepository } from "@@/core/repositories/vision-repository.ts";
+import { createStoryFeed, createStoryDayFeed, createReportFeed } from "@@/core/story-feed.ts";
+import { getStoryDate, getStoryDayRange } from "@@/core/lib/story-date-service.ts";
 import { createReportViewModel } from "../app/report-view-model.ts";
-import { resolveUserSummariesForReport } from "../sdk/user-summary.ts";
-import { createLogger } from "../sdk/lib/logging-service.ts";
+import { resolveUserSummariesForReport } from "@@/core/user-summary.ts";
+import { createLogger } from "@@/core/lib/logging-service.ts";
 
 async function createFixture(context: TestContext) {
   const database = createDrizzle(":memory:");

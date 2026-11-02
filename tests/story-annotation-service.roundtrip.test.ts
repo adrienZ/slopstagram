@@ -4,14 +4,14 @@ import path from "node:path";
 import { URL, fileURLToPath } from "node:url";
 import { migrate } from "drizzle-orm/node-sqlite/migrator";
 import { assert, test, expect } from "vitest";
-import { createDrizzle } from "../sdk/database/client.ts";
-import { migrateDatabase } from "../sdk/database/migrate.ts";
-import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
-import { ReportRepository } from "../sdk/repositories/report-repository.ts";
-import { storyStickers } from "../sdk/entities/story.ts";
-import { StoryRepository } from "../sdk/repositories/story-repository.ts";
-import { createManifestUsers, createOutputUsers } from "../sdk/story-output-service.ts";
-import { fetchStoriesManifest } from "../sdk/stories.ts";
+import { createDrizzle } from "@@/core/database/client.ts";
+import { migrateDatabase } from "@@/core/database/migrate.ts";
+import { InstagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
+import { ReportRepository } from "@@/core/repositories/report-repository.ts";
+import { storyStickers } from "@@/core/entities/story.ts";
+import { StoryRepository } from "@@/core/repositories/story-repository.ts";
+import { createManifestUsers, createOutputUsers } from "@@/core/story-output-service.ts";
+import { fetchStoriesManifest } from "@@/core/stories.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 import {
   createCapturingLogger,
@@ -21,7 +21,7 @@ import {
   storyItemWithStickers,
   reelsResponse,
 } from "./mock-helpers.ts";
-import type { StoryItem } from "../sdk/instagram-types.ts";
+import type { StoryItem } from "@@/core/instagram-types.ts";
 
 function readStoredStory(repository: StoryRepository, mediaPk = "m1") {
   const stored = repository.findByMediaPk(mediaPk);
@@ -37,7 +37,7 @@ test("upgrading existing occurrences preserves duplicates, order and provenance"
     database.$client.close();
     rmSync(staging, { recursive: true, force: true });
   });
-  const migrations = fileURLToPath(new URL("../sdk/database/migrations", import.meta.url));
+  const migrations = fileURLToPath(new URL("../core/database/migrations", import.meta.url));
   for (const name of readdirSync(migrations)) {
     if (name < "20261024001923") {
       cpSync(path.join(migrations, name), path.join(staging, name), { recursive: true });

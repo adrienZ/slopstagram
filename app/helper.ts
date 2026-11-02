@@ -1,4 +1,4 @@
-import type { StoryOutputUser } from "../sdk/report-types.ts";
+import type { StoryOutputUser } from "@@/core/report-types.ts";
 
 export function formatReportDate(value: string): string {
   const date = new Date(value);

@@ -1,9 +1,9 @@
 import { assert, test, expect, type TestContext } from "vitest";
 import { createReportViewModel } from "../app/report-view-model.ts";
-import { userSummaries } from "../sdk/entities/user-summary.ts";
-import { AppleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
-import { VisionRepository } from "../sdk/repositories/vision-repository.ts";
-import { readUserSummaries, resolveUserSummariesForReport } from "../sdk/user-summary.ts";
+import { userSummaries } from "@@/core/entities/user-summary.ts";
+import { AppleVisionRepository } from "@@/core/repositories/apple-vision-repository.ts";
+import { VisionRepository } from "@@/core/repositories/vision-repository.ts";
+import { readUserSummaries, resolveUserSummariesForReport } from "@@/core/user-summary.ts";
 import { createMockLogger, createSummaryReport } from "./mock-helpers.ts";
 import { createSummaryFixtures } from "./test-database.ts";
 

@@ -1,8 +1,8 @@
 import path from "node:path";
 import { test, expect } from "vitest";
-import { resolveAppleCaptionsForReport } from "../sdk/apple-caption-report-service.ts";
-import { AppleOcrUnavailableError } from "../sdk/lib/apple-ocr-service.ts";
-import { fetchStoriesManifest } from "../sdk/stories.ts";
+import { resolveAppleCaptionsForReport } from "@@/core/apple-caption-report-service.ts";
+import { AppleOcrUnavailableError } from "@@/core/lib/apple-ocr-service.ts";
+import { fetchStoriesManifest } from "@@/core/stories.ts";
 import {
   createCapturingLogger,
   createClient,

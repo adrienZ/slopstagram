@@ -1,16 +1,16 @@
 import { assert, test, expect } from "vitest";
 import { eq } from "drizzle-orm";
-import { createDrizzle } from "../sdk/database/client.ts";
+import { createDrizzle } from "@@/core/database/client.ts";
 import {
   metadataLocationDetails,
   metadataLocations,
   storyLocationObservations,
-} from "../sdk/entities/location-metadata.ts";
-import { migrateDatabase } from "../sdk/database/migrate.ts";
-import type { JsonObject, JsonValue } from "../sdk/lib/json-value.ts";
-import type { StoryItem } from "../sdk/instagram-types.ts";
-import { StoryRepository } from "../sdk/repositories/story-repository.ts";
-import { fetchStoriesManifest } from "../sdk/stories.ts";
+} from "@@/core/entities/location-metadata.ts";
+import { migrateDatabase } from "@@/core/database/migrate.ts";
+import type { JsonObject, JsonValue } from "@@/core/lib/json-value.ts";
+import type { StoryItem } from "@@/core/instagram-types.ts";
+import { StoryRepository } from "@@/core/repositories/story-repository.ts";
+import { fetchStoriesManifest } from "@@/core/stories.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 import {
   createCapturingLogger,

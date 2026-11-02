@@ -3,15 +3,15 @@ import path from "node:path";
 import { fileURLToPath, URL } from "node:url";
 import { expect, test, type TestContext } from "vitest";
 import type { z } from "zod";
-import { createDrizzle } from "../../sdk/database/client.ts";
-import { type JsonValue, JsonValueSchema } from "../../sdk/lib/json-value.ts";
-import { InstagramUserRepository } from "../../sdk/repositories/instagram-user-repository.ts";
-import { StoryRepository, storyRepository } from "../../sdk/repositories/story-repository.ts";
+import { createDrizzle } from "@@/core/database/client.ts";
+import { type JsonValue, JsonValueSchema } from "@@/core/lib/json-value.ts";
+import { InstagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
+import { StoryRepository, storyRepository } from "@@/core/repositories/story-repository.ts";
 import {
   GalleryPageSchema,
   parseGalleryPage,
   parseTrayResponse,
-} from "../../sdk/story-client-service.ts";
+} from "@@/core/story-client-service.ts";
 import { readRecordedPayloads, seedRecordedStories } from "./seed.ts";
 
 const now = new Date("2026-10-29T12:00:00.000Z");

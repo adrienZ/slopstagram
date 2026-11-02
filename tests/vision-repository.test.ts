@@ -1,7 +1,7 @@
 import { assert, describe, test, expect } from "vitest";
-import { createDrizzle } from "../sdk/database/client.ts";
-import { migrateDatabase } from "../sdk/database/migrate.ts";
-import { VisionRepository } from "../sdk/repositories/vision-repository.ts";
+import { createDrizzle } from "@@/core/database/client.ts";
+import { migrateDatabase } from "@@/core/database/migrate.ts";
+import { VisionRepository } from "@@/core/repositories/vision-repository.ts";
 
 describe("VisionRepository", () => {
   test("stores scalar result columns in SQLite", async (context) => {

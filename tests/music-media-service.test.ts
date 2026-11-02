@@ -2,10 +2,10 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { assert, test, expect } from "vitest";
-import { createDrizzle } from "../sdk/database/client.ts";
-import { migrateDatabase } from "../sdk/database/migrate.ts";
-import { StoryRepository } from "../sdk/repositories/story-repository.ts";
-import { processMusicMedia } from "../sdk/music-media-service.ts";
+import { createDrizzle } from "@@/core/database/client.ts";
+import { migrateDatabase } from "@@/core/database/migrate.ts";
+import { StoryRepository } from "@@/core/repositories/story-repository.ts";
+import { processMusicMedia } from "@@/core/music-media-service.ts";
 import { startMediaServer, wavAudio } from "./media-server.ts";
 
 test("music processing publishes audio only and reuses it without provider requests", async (context) => {

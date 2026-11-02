@@ -3,10 +3,10 @@ import path from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
 import { z } from "zod";
-import { closeInstagramSession, openInstagramSession } from "../sdk/lib/playwright-service.ts";
-import { isJsonObject, JsonValueSchema } from "../sdk/lib/json-value.ts";
-import type { JsonObject, JsonValue } from "../sdk/lib/json-value.ts";
-import { createInstagramClient } from "../sdk/story-client-service.ts";
+import { closeInstagramSession, openInstagramSession } from "@@/core/lib/playwright-service.ts";
+import { isJsonObject, JsonValueSchema } from "@@/core/lib/json-value.ts";
+import type { JsonObject, JsonValue } from "@@/core/lib/json-value.ts";
+import { createInstagramClient } from "@@/core/story-client-service.ts";
 
 // Keys whose values identify a person, a story, a place or a request; each distinct value gets a
 // stable synthetic one. Any key ending in id, ids, pk or fbid is treated the same way.

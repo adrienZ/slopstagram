@@ -8,13 +8,13 @@ export default defineConfig({
     execArgv: ["--disable-warning=ExperimentalWarning"],
     coverage: {
       // Count files no test loads, so untested modules lower the figure instead of vanishing.
-      include: ["sdk/**", "app/**", "server/**"],
-      exclude: ["app/shadcn/**", "app/routeTree.gen.ts", "sdk/database/migrations/**"],
+      include: ["core/**", "app/**", "server/**"],
+      exclude: ["app/shadcn/**", "app/routeTree.gen.ts", "core/database/migrations/**"],
       // Thresholds rewrite themselves upward when coverage improves, so the bar never drops.
       thresholds: {
         // Floor to whole percents: just under the measured value, so tiny fluctuations never fail.
         autoUpdate: (value) => Math.floor(value),
-        statements: 90,
+        statements: 91,
         branches: 85,
         functions: 90,
         lines: 90,

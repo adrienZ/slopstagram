@@ -1,5 +1,5 @@
 import "@tanstack/react-start/server-only";
-import { instagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
+import { instagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
 
 export interface SidebarUser {
   username: string;

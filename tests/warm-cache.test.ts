@@ -6,8 +6,8 @@ import {
   WARM_CACHE_CRON_PATTERN,
   WARM_CACHE_QUEUE_NAME,
   type WarmCacheQueueDependencies,
-} from "../sdk/warm-cache-queue.ts";
-import { runWarmCacheJob } from "../sdk/warm-cache.ts";
+} from "@@/core/warm-cache-queue.ts";
+import { runWarmCacheJob } from "@@/core/warm-cache.ts";
 import { audioUrl, createWorld, musicStoryPk, now, storyPks } from "./setup/report-world.ts";
 import { createFailingClient } from "./setup/recorded-client.ts";
 

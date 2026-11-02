@@ -10,7 +10,7 @@ import {
   getOldestStoryDate,
   navigateToReportDate,
 } from "../story-navigation.ts";
-import { formatStoryViewTitle, storyDateSchema } from "../../sdk/lib/story-date-service.ts";
+import { formatStoryViewTitle, storyDateSchema } from "@@/core/lib/story-date-service.ts";
 import { UserSection } from "../components/user-section.tsx";
 import type { SidebarUser } from "../sidebar-users.ts";
 
