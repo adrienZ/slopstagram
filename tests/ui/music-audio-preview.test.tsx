@@ -1,13 +1,13 @@
 import { beforeAll, expect, test, vi, type TestContext } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Route } from "../../server/pages/users/$username.tsx";
-import { loadUserTimeline } from "../../server/user-timeline-handler.tsx";
+import { Route } from "../../app/routes/users/$username.tsx";
+import { loadUserTimeline } from "../../app/user-timeline-handler.tsx";
 import { createPageRenderer } from "../render-page.ts";
-import { MusicAudioPreview } from "../../server/components/music-audio-preview.tsx";
-import { MusicSticker } from "../../server/components/music-sticker.tsx";
+import { MusicAudioPreview } from "../../app/components/music-audio-preview.tsx";
+import { MusicSticker } from "../../app/components/music-sticker.tsx";
 import { pageNow, seedPageDatabase, timelineAccount } from "./seeded-pages.ts";
-import type { MusicPreview } from "../../server/music-preview.ts";
+import type { MusicPreview } from "../../app/music-preview.ts";
 
 // The detail modal is tested through the timeline page that hosts it.
 const renderer = createPageRenderer(

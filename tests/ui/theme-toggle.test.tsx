@@ -1,7 +1,7 @@
 import { beforeAll, expect, test, vi } from "vitest";
 import { act, screen, within } from "@testing-library/react";
-import { Route } from "../../server/pages/report.tsx";
-import { loadReport } from "../../server/report-handler.tsx";
+import { Route } from "../../app/routes/report.tsx";
+import { loadReport } from "../../app/report-handler.tsx";
 import { createPageRenderer } from "../render-page.ts";
 import { pageNow, seedPageDatabase } from "./seeded-pages.ts";
 

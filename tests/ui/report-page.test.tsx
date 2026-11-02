@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, expect, test } from "vitest";
 import { screen, within, waitFor } from "@testing-library/react";
-import { Route } from "../../server/pages/report.tsx";
+import { Route } from "../../app/routes/report.tsx";
 import {
   appleCaption,
   captionedStoryPk,
@@ -16,7 +16,7 @@ import {
   today,
   userSummary,
 } from "./seeded-pages.ts";
-import { loadReport } from "../../server/report-handler.tsx";
+import { loadReport } from "../../app/report-handler.tsx";
 import { createPageRenderer } from "../render-page.ts";
 
 // The report the real loader would build, with the arguments it receives, at the test's "now".

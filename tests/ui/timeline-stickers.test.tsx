@@ -1,7 +1,7 @@
 import { beforeAll, expect, test } from "vitest";
 import { fireEvent, screen, within } from "@testing-library/react";
-import { Route } from "../../server/pages/users/$username.tsx";
-import type { TimelineContentProps } from "../../server/pages/users/$username.tsx";
+import { Route } from "../../app/routes/users/$username.tsx";
+import type { TimelineContentProps } from "../../app/routes/users/$username.tsx";
 import {
   mentionedAccount,
   pageNow,
@@ -9,7 +9,7 @@ import {
   timelineAccount,
   seedPageDatabase,
 } from "./seeded-pages.ts";
-import { loadUserTimeline } from "../../server/user-timeline-handler.tsx";
+import { loadUserTimeline } from "../../app/user-timeline-handler.tsx";
 import { createPageRenderer } from "../render-page.ts";
 
 const renderer = createPageRenderer(

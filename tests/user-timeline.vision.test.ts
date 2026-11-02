@@ -5,7 +5,7 @@ import { instagramUserRepository } from "../sdk/repositories/instagram-user-repo
 import { storyRepository } from "../sdk/repositories/story-repository.ts";
 import { visionRepository } from "../sdk/repositories/vision-repository.ts";
 import { VISION_MODEL, VISION_PROMPT } from "../sdk/lib/vision-analysis-service.ts";
-import { createUserTimeline } from "../server/user-timeline.ts";
+import { createUserTimeline } from "../app/user-timeline.ts";
 
 const promptHash = createHash("sha256").update(VISION_PROMPT).digest("hex");
 

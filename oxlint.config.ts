@@ -48,8 +48,8 @@ export default defineConfig({
     ...(ultracite.ignorePatterns ?? []),
     ".agents/**",
     ".claude/**",
-    "server/routeTree.gen.ts",
-    "server/shadcn/**",
+    "app/routeTree.gen.ts",
+    "app/shadcn/**",
   ],
   jsPlugins: ["./oxlint/plugins/rules/no-barrel-files.ts"],
   options: {

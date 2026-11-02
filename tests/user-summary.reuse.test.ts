@@ -1,5 +1,5 @@
 import { assert, test, expect, type TestContext } from "vitest";
-import { createReportViewModel } from "../server/report-view-model.ts";
+import { createReportViewModel } from "../app/report-view-model.ts";
 import { userSummaries } from "../sdk/entities/user-summary.ts";
 import { AppleVisionRepository } from "../sdk/repositories/apple-vision-repository.ts";
 import { VisionRepository } from "../sdk/repositories/vision-repository.ts";

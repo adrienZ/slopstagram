@@ -19,8 +19,8 @@ test("Vite SSR loads both react-use application hooks", async (context) => {
     server: { middlewareMode: true, hmr: false, ws: false, watch: null },
   });
   try {
-    const audioPreview = await server.ssrLoadModule("/server/hooks/use-audio-preview.ts");
-    const timelineCalendar = await server.ssrLoadModule("/server/hooks/use-timeline-calendar.ts");
+    const audioPreview = await server.ssrLoadModule("/app/hooks/use-audio-preview.ts");
+    const timelineCalendar = await server.ssrLoadModule("/app/hooks/use-timeline-calendar.ts");
     expect(Object.keys(audioPreview)).toStrictEqual(["useAudioPreview"]);
     expect(Object.keys(timelineCalendar)).toStrictEqual(["useTimelineCalendar"]);
   } finally {

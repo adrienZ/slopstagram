@@ -1,14 +1,14 @@
 import type { ReactNode } from "react";
 import { beforeAll, expect, test } from "vitest";
 import { screen, within } from "@testing-library/react";
-import { Route } from "../../server/pages/users/$username.tsx";
-import type { TimelineContentProps } from "../../server/pages/users/$username.tsx";
+import { Route } from "../../app/routes/users/$username.tsx";
+import type { TimelineContentProps } from "../../app/routes/users/$username.tsx";
 import type { StoryLocationObservation } from "../../sdk/entities/location-metadata.ts";
 import { pageNow, stickerKindsOf, timelineAccount, seedPageDatabase } from "./seeded-pages.ts";
-import { loadUserTimeline } from "../../server/user-timeline-handler.tsx";
+import { loadUserTimeline } from "../../app/user-timeline-handler.tsx";
 import { createPageRenderer } from "../render-page.ts";
-import { LocationMapContext } from "../../server/components/location-history.tsx";
-import type { LocationMapCanvasProps } from "../../server/components/location-map-canvas.tsx";
+import { LocationMapContext } from "../../app/components/location-history.tsx";
+import type { LocationMapCanvasProps } from "../../app/components/location-map-canvas.tsx";
 
 const renderer = createPageRenderer(
   Route,

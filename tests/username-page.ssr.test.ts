@@ -8,8 +8,8 @@ import { appleVisionRepository } from "../sdk/repositories/apple-vision-reposito
 import { instagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
 import { storyRepository } from "../sdk/repositories/story-repository.ts";
 import { visionRepository } from "../sdk/repositories/vision-repository.ts";
-import { Route } from "../server/pages/users/$username.tsx";
-import { loadUserTimeline } from "../server/user-timeline-handler.tsx";
+import { Route } from "../app/routes/users/$username.tsx";
+import { loadUserTimeline } from "../app/user-timeline-handler.tsx";
 import { storyItem } from "./mock-helpers.ts";
 import { createPageRenderer } from "./render-page.ts";
 
