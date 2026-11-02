@@ -13,7 +13,7 @@ import {
 } from "@@/core/database/repositories/vision-repository.ts";
 import { storyRepository } from "@@/core/database/repositories/story-repository.ts";
 import type { CachedReportImages } from "@@/core/media-store/image-cache.ts";
-import { getReportUserKey } from "@@/core/accounts/report-user-key-service.ts";
+import { getReportUserKey } from "@@/core/accounts/report-user-key.ts";
 import { readUserSummaries } from "@@/core/accounts/user-summary.ts";
 import type { StoryOutputUser } from "@@/core/report-types.ts";
 import type { VisionResult } from "@@/core/database/entities/vision.ts";

@@ -3,7 +3,7 @@ import { assert, describe, test, vi, expect } from "vitest";
 import { setTimeout as delay } from "node:timers/promises";
 import { z } from "zod";
 import { readUserSummaries, resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
-import { getReportUserKey } from "@@/core/accounts/report-user-key-service.ts";
+import { getReportUserKey } from "@@/core/accounts/report-user-key.ts";
 import { createMockLogger, createSummaryReport } from "./mock-helpers.ts";
 import { createSummaryFixtures } from "./test-database.ts";
 
