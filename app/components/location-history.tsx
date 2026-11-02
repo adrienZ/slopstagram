@@ -1,5 +1,5 @@
 import { createContext, lazy, Suspense, useContext, useId, useRef, useState } from "react";
-import type { ComponentType, KeyboardEvent } from "react";
+import type { ComponentType } from "react";
 import { ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
 import type { LocationMapCanvasProps } from "./location-map-canvas.tsx";
 import { adjacentPlaceId, type TimelineLocations } from "../timeline-locations.ts";
@@ -44,11 +44,20 @@ export function LocationHistory({
       ?.focus({ preventScroll: true });
     return true;
   }
-  function navigateMarkers(event: KeyboardEvent<HTMLDivElement>) {
+  function navigateMarkers(event: KeyboardEvent) {
     const step: 1 | -1 | undefined = { ArrowRight: 1 as const, ArrowLeft: -1 as const }[event.key];
     if (step !== undefined && selectAdjacent(step)) {
       event.preventDefault();
     }
+  }
+  // Arrow keys step through markers from the map and its popup, not the place select.
+  // A native listener keeps the wrapper a plain container instead of a non-native interactive element.
+  function bindMapContainer(container: HTMLDivElement) {
+    mapRef.current = container;
+    container.addEventListener("keydown", navigateMarkers);
+    return () => {
+      container.removeEventListener("keydown", navigateMarkers);
+    };
   }
   return (
     <section aria-label="Lieux de l’historique" className="tw:min-w-0 tw:space-y-3">
@@ -94,8 +103,7 @@ export function LocationHistory({
               ))}
             </select>
           </div>
-          {/* Arrow keys step through markers from the map and its popup, not the place select. */}
-          <div ref={mapRef} onKeyDown={navigateMarkers}>
+          <div ref={bindMapContainer}>
             <Suspense fallback={<p role="status">Chargement de la carte…</p>}>
               <LocationMapCanvas
                 places={locations.places}
