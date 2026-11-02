@@ -8,7 +8,7 @@ import { dashAudioSource } from "@@/core/music/dash-audio.ts";
 import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { processStoryAudio, cacheReportAudio } from "@@/core/music/report-audio-service.ts";
+import { processStoryAudio, cacheReportAudio } from "@@/core/music/report-audio.ts";
 import { createMediaResponse } from "../server/routes/media/[...path].ts";
 import { groupTimelineStickers } from "../app/utils/timeline-stickers.ts";
 import { musicStickerItems, storyMusicPreviews } from "../app/utils/music-preview.ts";

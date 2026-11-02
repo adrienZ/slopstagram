@@ -7,7 +7,7 @@ import { createDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
 import { fetchStoriesManifest } from "@@/core/stories.ts";
-import { cacheReportAudio } from "@@/core/music/report-audio-service.ts";
+import { cacheReportAudio } from "@@/core/music/report-audio.ts";
 import { cacheReceivedAudio } from "@@/core/music/music-media.ts";
 import { enrichCurrentMusicAssets } from "@@/core/music/music-asset-enrichment.ts";
 import { JsonValueSchema } from "@@/core/utils/json-value.ts";
