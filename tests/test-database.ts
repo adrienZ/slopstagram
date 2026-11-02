@@ -2,7 +2,7 @@ import type { TestContext } from "vitest";
 import { createDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
 import type { StoryItem } from "@@/core/instagram-types.ts";
-import { userSummaries } from "@@/core/entities/user-summary.ts";
+import { userSummaries } from "@@/core/database/entities/user-summary.ts";
 import { InstagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
 import { UserSummaryRepository } from "@@/core/repositories/user-summary-repository.ts";
 import { StoryRepository } from "@@/core/repositories/story-repository.ts";

@@ -7,7 +7,7 @@ import {
   type MusicMetadataReference,
   type MusicMediaState,
   type StoryMusicObservation,
-} from "../entities/music-metadata.ts";
+} from "@@/core/database/entities/music-metadata.ts";
 import type { StoryAnnotations } from "../story-types.ts";
 import type { StoryItem } from "../instagram-types.ts";
 import type { MusicObservationInput } from "../music-observation-service.ts";

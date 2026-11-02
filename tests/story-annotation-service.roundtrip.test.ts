@@ -8,7 +8,7 @@ import { createDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { InstagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
 import { ReportRepository } from "@@/core/repositories/report-repository.ts";
-import { storyStickers } from "@@/core/entities/story.ts";
+import { storyStickers } from "@@/core/database/entities/story.ts";
 import { StoryRepository } from "@@/core/repositories/story-repository.ts";
 import { createManifestUsers, createOutputUsers } from "@@/core/story-output-service.ts";
 import { fetchStoriesManifest } from "@@/core/stories.ts";

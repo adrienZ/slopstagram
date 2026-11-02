@@ -7,8 +7,8 @@ import {
   classifyLocation,
   type PlaceDetails,
   type StoryLocationObservation,
-} from "../entities/location-metadata.ts";
-import { storyStickers } from "../entities/story.ts";
+} from "@@/core/database/entities/location-metadata.ts";
+import { storyStickers } from "@@/core/database/entities/story.ts";
 import type { StoryAnnotations } from "../story-types.ts";
 import type { StoryItem } from "../instagram-types.ts";
 import type { LocationObservationInput } from "../location-observation-service.ts";

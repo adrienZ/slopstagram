@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { DrizzleDatabase } from "../database/client.ts";
-import { storyAudio, type StoryAudio } from "../entities/story-audio.ts";
+import { storyAudio, type StoryAudio } from "@@/core/database/entities/story-audio.ts";
 
 type AudioDatabase = Pick<DrizzleDatabase, "select" | "insert" | "update" | "delete">;
 

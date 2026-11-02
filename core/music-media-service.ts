@@ -6,7 +6,10 @@ import sharp from "sharp";
 import { z } from "zod";
 import { parseBuffer } from "music-metadata";
 import type { DrizzleDatabase } from "./database/client.ts";
-import type { MusicMediaState, MusicMetadataReference } from "./entities/music-metadata.ts";
+import type {
+  MusicMediaState,
+  MusicMetadataReference,
+} from "@@/core/database/entities/music-metadata.ts";
 import { audioFileDurationMs } from "./lib/audio-duration.ts";
 import {
   AUDIO_STORAGE_DIR,

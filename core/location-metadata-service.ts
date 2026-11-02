@@ -5,7 +5,7 @@ import {
   type LocationFields,
   type PlaceDetails,
   type StoryLocationObservation,
-} from "./entities/location-metadata.ts";
+} from "@@/core/database/entities/location-metadata.ts";
 import type { StoryAnnotations } from "./story-types.ts";
 import type { StoryItem } from "./instagram-types.ts";
 import {

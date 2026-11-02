@@ -5,7 +5,7 @@ import { type VisionRepository, visionRepository } from "../repositories/vision-
 import type { CachedReportImages } from "./image-cache-service.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoriesManifestReport } from "../report-types.ts";
-import type { VisionResult } from "../entities/vision.ts";
+import type { VisionResult } from "@@/core/database/entities/vision.ts";
 import {
   analyzeImage,
   createFailureResult,

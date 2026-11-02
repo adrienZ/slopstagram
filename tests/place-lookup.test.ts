@@ -5,7 +5,7 @@ import {
   metadataLocationDetails,
   metadataLocations,
   storyLocationObservations,
-} from "@@/core/entities/location-metadata.ts";
+} from "@@/core/database/entities/location-metadata.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
 import type { JsonObject, JsonValue } from "@@/core/utils/json-value.ts";
 import type { StoryItem } from "@@/core/instagram-types.ts";

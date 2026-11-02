@@ -2,9 +2,9 @@ import { describe, test, expect } from "vitest";
 import { createDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { InstagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
-import { instagramUsers } from "@@/core/entities/instagram-user.ts";
+import { instagramUsers } from "@@/core/database/entities/instagram-user.ts";
 import { UserSummaryRepository } from "@@/core/repositories/user-summary-repository.ts";
-import { userSummaries } from "@@/core/entities/user-summary.ts";
+import { userSummaries } from "@@/core/database/entities/user-summary.ts";
 
 const entry = {
   prompt_hash: "prompt-hash",

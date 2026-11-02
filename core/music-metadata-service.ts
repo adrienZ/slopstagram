@@ -4,7 +4,7 @@ import type {
   metadataMusic,
   MusicFields,
   StoryMusicObservation,
-} from "./entities/music-metadata.ts";
+} from "@@/core/database/entities/music-metadata.ts";
 import type { StoryAnnotations } from "./story-types.ts";
 import type { StoryItem } from "./instagram-types.ts";
 import { getMusicSourceUpdate, type MusicObservationInput } from "./music-observation-service.ts";

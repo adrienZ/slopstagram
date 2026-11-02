@@ -6,7 +6,7 @@ import {
   type StoryRepository,
   storyRepository,
 } from "@@/core/repositories/story-repository.ts";
-import type { VisionResult } from "@@/core/entities/vision.ts";
+import type { VisionResult } from "@@/core/database/entities/vision.ts";
 import { createStoredStoryUser } from "@@/core/story-feed.ts";
 import { appleVisionRepository } from "@@/core/repositories/apple-vision-repository.ts";
 import { visionRepository } from "@@/core/repositories/vision-repository.ts";
