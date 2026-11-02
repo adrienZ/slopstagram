@@ -18,7 +18,7 @@ import {
   audioCacheStorage,
   createAudioCacheStorage,
   type AudioCacheStorage,
-} from "./lib/cache-service.ts";
+} from "@@/core/media-store/cache-storage.ts";
 import { audioFileExtension } from "./lib/music-media-types.ts";
 import {
   findMusicMetadata,

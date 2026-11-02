@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { getMediaCacheKey } from "@@/core/lib/cache-service.ts";
+import { getMediaCacheKey } from "@@/core/media-store/cache-storage.ts";
 import { fetchStoriesManifest } from "@@/core/stories.ts";
 import {
   createCapturingLogger,
