@@ -135,16 +135,14 @@ export async function createReport(options: CreateReportOptions): Promise<Create
         storage: storage.images,
       });
       await resolveAppleCaptionsForReport(
-        { appleVision, logger, runAppleOcr: boundaries.runAppleOcr },
+        { appleVision, logger, runAppleOcr: boundaries.runAppleOcr, storage },
         report,
         cachedImages,
-        { cacheDirectory },
       );
       await resolveVisionForReport(
-        { fetchOllama: boundaries.fetchOllama, logger, vision },
+        { fetchOllama: boundaries.fetchOllama, logger, storage, vision },
         report,
         cachedImages,
-        { cacheDirectory },
       );
       await persistReportInstagramUsers({ users }, report);
       // Generate from the same canonical, active story set used by the user app.

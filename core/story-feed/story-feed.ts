@@ -5,7 +5,7 @@ import {
 } from "@@/core/database/repositories/story-repository.ts";
 import type { StoryOutputUser } from "@@/core/fetch-run/report-types.ts";
 import type { VisionResult } from "@@/core/database/entities/vision.ts";
-import type { Runtime } from "@@/core/runtime/runtime.ts";
+import type { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
 import { readCurrentVisionResult } from "@@/core/vision/vision-analysis.ts";
 import { getStoryDate, getStoryDayRange, storyDateSchema } from "./story-days.ts";
 
@@ -143,7 +143,7 @@ export function createReportFeed(
 }
 
 export function readStoryFeedVision(
-  { vision: repository }: Pick<Runtime, "vision">,
+  { vision: repository }: { vision: Pick<VisionRepository, "findByMediaPk"> },
   users: Array<StoryOutputUser>,
 ): Map<string, VisionResult> {
   const visionByPreviewUrl = new Map<string, VisionResult>();

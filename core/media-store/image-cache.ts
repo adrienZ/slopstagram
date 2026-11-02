@@ -53,6 +53,16 @@ function getRelativeCacheImagePath(cacheDirectory: string, rawKey: string): stri
     .join("/");
 }
 
+export async function readCachedImage(
+  images: ImageCacheStorage,
+  cachedPath: string,
+): Promise<Uint8Array | null> {
+  const bytes: unknown = await images.getItemRaw(
+    path.posix.relative(IMAGES_STORAGE_DIR, cachedPath),
+  );
+  return bytes instanceof Uint8Array ? bytes : null;
+}
+
 function isPresent(value: string | null | undefined): value is string {
   return Boolean(value);
 }

@@ -14,11 +14,7 @@ describe("recognizeAppleCaption", () => {
     });
     await runtime.appleVision.save("story-1", "stored caption");
 
-    const caption = await recognizeAppleCaption(runtime, "story-1", "/cache/story-1.jpg", {
-      readImage: async () => {
-        throw new Error("should not read");
-      },
-    });
+    const caption = await recognizeAppleCaption(runtime, "story-1", "images/story-1.jpg");
 
     expect(caption).toBe("stored caption");
     expect(runCount).toBe(0);
@@ -32,10 +28,9 @@ describe("recognizeAppleCaption", () => {
         return "fresh caption";
       },
     });
+    await runtime.storage.images.setItemRaw("story-2.jpg", Buffer.from("local-image"));
 
-    const caption = await recognizeAppleCaption(runtime, "story-2", "/cache/story-2.jpg", {
-      readImage: async () => Buffer.from("local-image"),
-    });
+    const caption = await recognizeAppleCaption(runtime, "story-2", "images/story-2.jpg");
 
     expect(caption).toBe("fresh caption");
     expect(receivedImage).toStrictEqual(Buffer.from("local-image"));
@@ -46,23 +41,29 @@ describe("recognizeAppleCaption", () => {
     const runtime = await createTestRuntime(context, {
       runAppleOcr: async () => "\r\n  fresh caption  \n",
     });
+    await runtime.storage.images.setItemRaw("story-3.jpg", Buffer.from("local-image"));
 
-    const caption = await recognizeAppleCaption(runtime, "story-3", "/cache/story-3.jpg", {
-      readImage: async () => Buffer.from("local-image"),
-    });
+    const caption = await recognizeAppleCaption(runtime, "story-3", "images/story-3.jpg");
 
     expect(caption).toBe("fresh caption");
     expect(runtime.appleVision.findByMediaPk("story-3")).toBe("fresh caption");
   });
 
+  test("fails when the cached image is missing", async (context) => {
+    const runtime = await createTestRuntime(context, { runAppleOcr: async () => "unused" });
+
+    await expect(recognizeAppleCaption(runtime, "story-5", "images/story-5.jpg")).rejects.toThrow(
+      "cached image images/story-5.jpg is missing",
+    );
+    expect(runtime.appleVision.findByMediaPk("story-5")).toBeNull();
+  });
+
   test("reports OCR as unavailable without loading it on Windows", async (context) => {
     const runtime = await createTestRuntime(context, { runAppleOcr: undefined });
+    await runtime.storage.images.setItemRaw("story-4.jpg", Buffer.from("local-image"));
 
     await expect(
-      recognizeAppleCaption(runtime, "story-4", "/cache/story-4.jpg", {
-        platform: "win32",
-        readImage: async () => Buffer.from("local-image"),
-      }),
+      recognizeAppleCaption(runtime, "story-4", "images/story-4.jpg", { platform: "win32" }),
     ).rejects.toMatchObject({ kind: "unavailable", message: "unsupported platform win32" });
   });
 });

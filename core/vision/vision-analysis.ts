@@ -169,13 +169,13 @@ function getStoredVisionResult(
 }
 
 async function runVisionRequest(
-  imagePath: string,
+  image: Uint8Array,
   promptHash: string,
   options: ResolvedVisionOptions,
 ): Promise<VisionResult> {
   const payload = await options.client.generate({
     format: VISION_OUTPUT_SCHEMA,
-    images: [imagePath],
+    images: [image],
     model: options.model,
     options: {
       temperature: 0.1,
@@ -219,7 +219,7 @@ function handleVisionError(
 
 export async function analyzeImage(
   itemLabel: string,
-  imagePath: string,
+  image: Uint8Array,
   options: ResolvedVisionOptions,
 ): Promise<VisionResult> {
   const promptHash = getPromptHash(options.prompt);
@@ -230,7 +230,7 @@ export async function analyzeImage(
   }
 
   try {
-    return await runVisionRequest(imagePath, promptHash, options);
+    return await runVisionRequest(image, promptHash, options);
   } catch (error) {
     const httpError = VisionHttpErrorSchema.safeParse(error);
     let requestError: VisionRequestError;
