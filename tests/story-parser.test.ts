@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { getLargestVersion } from "@@/core/instagram/parser-service.ts";
+import { getLargestVersion } from "@@/core/instagram/story-parser.ts";
 import type { StoryVersion } from "@@/core/instagram/instagram-types.ts";
 
 describe("getLargestVersion", () => {

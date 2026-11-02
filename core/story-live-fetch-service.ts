@@ -1,7 +1,7 @@
 import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
 import type { StoryStorage } from "./lib/cache-service.ts";
-import { extractReels } from "@@/core/instagram/story-client-service.ts";
+import { extractReels } from "@@/core/instagram/story-client.ts";
 import { storeReturnedReels } from "./story-cache-service.ts";
 import {
   addFailuresForPendingReelStories,
@@ -15,7 +15,7 @@ import {
   requestWithRetry,
   type RequestFailure,
   type RetryOptions,
-} from "@@/core/instagram/story-retry-service.ts";
+} from "@@/core/instagram/story-retry.ts";
 import type { InstagramClient } from "@@/core/instagram/instagram-types.ts";
 
 export interface FetchMissingStoriesOptions {

@@ -1,7 +1,7 @@
 import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoryFetchFailure, StoryFetchFailureReason } from "./report-types.ts";
 import type { StoryItem, StoryTrayEntry } from "@@/core/instagram/instagram-types.ts";
-import type { RequestFailure } from "@@/core/instagram/story-retry-service.ts";
+import type { RequestFailure } from "@@/core/instagram/story-retry.ts";
 
 export interface FetchState {
   cachedItems: Map<string, StoryItem>;

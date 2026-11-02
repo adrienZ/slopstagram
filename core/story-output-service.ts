@@ -1,4 +1,4 @@
-import { getLargestVersion } from "@@/core/instagram/parser-service.ts";
+import { getLargestVersion } from "@@/core/instagram/story-parser.ts";
 import { NO_ACCESSIBILITY_CAPTION } from "@@/core/utils/report-constants.ts";
 import { STORY_MEDIA_TYPES, type StoryMediaType } from "./story-types.ts";
 import type { StoryItem, StoryTrayEntry } from "@@/core/instagram/instagram-types.ts";
