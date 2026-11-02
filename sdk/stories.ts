@@ -40,15 +40,6 @@ const DEFAULT_REEL_IDS_PER_REQUEST = 25;
 const DEFAULT_MAX_ATTEMPTS = 3;
 const DEFAULT_BASE_DELAY_MS = 500;
 const DEFAULT_MAX_RATE_LIMIT_DELAY_MS = 10_000;
-function getArgValue(args: Array<string>, flag: string): string | undefined {
-  const index = args.indexOf(flag);
-  if (index === -1) {
-    return undefined;
-  }
-
-  return args[index + 1];
-}
-
 function createRetryOptions(options: FetchStoriesManifestOptions, logger: Logger) {
   return {
     baseDelayMs: options.baseDelayMs ?? DEFAULT_BASE_DELAY_MS,
@@ -69,13 +60,11 @@ function createReportMetadata(
     state: ReturnType<typeof createFetchState>;
   },
 ): StoriesManifestReport["metadata"] {
-  const { expectedMediaPks, cacheHitPks, fetchedMediaPks, failureByMediaPk } = options.state;
+  const { expectedMediaPks, fetchedMediaPks, failureByMediaPk } = options.state;
 
   return {
     broadcasts_count: trayJson.broadcasts.length,
     counts: {
-      cache_hits: expectedMediaPks.filter((mediaPk) => cacheHitPks.has(mediaPk)).length,
-      cache_misses: expectedMediaPks.filter((mediaPk) => !cacheHitPks.has(mediaPk)).length,
       failed: expectedMediaPks.filter((mediaPk) => failureByMediaPk.has(mediaPk)).length,
       fetched: expectedMediaPks.filter((mediaPk) => fetchedMediaPks.has(mediaPk)).length,
       reels: trayJson.tray.length,
@@ -192,7 +181,7 @@ export async function fetchStoriesManifest(
     state.failureByMediaPk,
   );
   logger.info(
-    `manifest complete: cached=${state.cacheHitPks.size} fetched=${state.fetchedMediaPks.size} failed=${state.failureByMediaPk.size}`,
+    `manifest complete: fetched=${state.fetchedMediaPks.size} failed=${state.failureByMediaPk.size}`,
   );
 
   return createStoriesReport({
@@ -205,11 +194,9 @@ export async function fetchStoriesManifest(
 }
 
 export async function fetchStories(
-  args: Array<string> = [],
   options: FetchStoriesOptions = {},
 ): Promise<StoriesManifestReport> {
-  const reportName =
-    options.reportName ?? getArgValue(args, "--report-name") ?? DEFAULT_REPORT_NAME;
+  const reportName = options.reportName ?? DEFAULT_REPORT_NAME;
 
   if (options.client) {
     return await fetchStoriesManifest(options.client, {

@@ -28,8 +28,7 @@ export async function recordFetchRun<T>(
   try {
     const result = await perform(run);
     const counts = run.report?.metadata.counts;
-    const totalFailure =
-      counts !== undefined && counts.stories > 0 && counts.fetched + counts.cache_hits === 0;
+    const totalFailure = counts !== undefined && counts.stories > 0 && counts.fetched === 0;
     let status: "failed" | "partial" | "succeeded" = "succeeded";
     if (totalFailure) {
       status = "failed";

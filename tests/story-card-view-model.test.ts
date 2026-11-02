@@ -1,6 +1,6 @@
 import { test, expect } from "vitest";
 import type { StoryOutputUser } from "../sdk/report-types.ts";
-import { createStoryCards, type StoryCardSources } from "../server/story-card-view-model.ts";
+import { createStoryCards, type StoryCardSources } from "../app/story-card-view-model.ts";
 
 function createUser(): StoryOutputUser {
   return {
@@ -46,6 +46,20 @@ test("story cards exclude unavailable previews and preserve source order and use
     { mediaPk: "first", position: 1, count: 5, preview: "/media/first.jpg" },
     { mediaPk: "last", position: 5, count: 5, preview: "/media/last.jpg" },
   ]);
+});
+
+test("story cards carry how their vision analysis is outdated", () => {
+  const sources = createSources();
+  const outdated = {
+    currentModel: "new-model",
+    currentPromptHash: "new-hash",
+    model: "old-model",
+    promptHash: "old-hash",
+  };
+  sources.outdatedVisionByPreviewUrl = new Map([["first.jpg", outdated]]);
+  const [first, ...others] = createStoryCards(createUser(), sources);
+  expect(first.visionOutdated).toStrictEqual(outdated);
+  expect(others.every((card) => !("visionOutdated" in card))).toBe(true);
 });
 
 test("story cards supply complete lightbox details and normalize absent values", () => {

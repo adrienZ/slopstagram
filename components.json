@@ -5,7 +5,7 @@
   "tsx": true,
   "tailwind": {
     "config": "",
-    "css": "server/shadcn/styles.css",
+    "css": "app/shadcn/styles.css",
     "baseColor": "mist",
     "cssVariables": true,
     "prefix": "tw"

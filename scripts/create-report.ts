@@ -5,10 +5,7 @@ import { createLogger } from "../sdk/lib/logging-service.ts";
 
 async function main(): Promise<void> {
   const logger = createLogger("create-report");
-  await createReport({
-    args: process.argv.slice(2),
-    logger,
-  });
+  await createReport({ logger });
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

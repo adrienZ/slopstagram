@@ -1,23 +1,25 @@
 import { test, expect } from "vitest";
-import { groupTimelineStickers, formatStickerLabel } from "../server/timeline-stickers.ts";
-import { presentSticker } from "../server/sticker-presentation.ts";
+import { groupTimelineStickers, formatStickerLabel } from "../app/timeline-stickers.ts";
+import { presentSticker } from "../app/sticker-presentation.ts";
 import type { UserTimelineStory } from "../sdk/repositories/story-repository.ts";
 
 test("links mentions only to saved accounts and preserves the canonical username in URLs", () => {
   expect(
     presentSticker("mention", " @ALICE ", [
       { username: "alice", avatarPath: "/media/avatars/alice.jpg" },
-      { username: "bob", avatarPath: null },
+      { username: "bob", avatarPath: "/media/avatars/unused.jpg" },
     ]).profileUrl,
   ).toBe("/users/alice");
   expect(
     presentSticker("mention", "@charlie", [
-      { username: "alice", avatarPath: null },
-      { username: "bob", avatarPath: null },
+      { username: "alice", avatarPath: "/media/avatars/unused.jpg" },
+      { username: "bob", avatarPath: "/media/avatars/unused.jpg" },
     ]).profileUrl,
   ).toBe(undefined);
   expect(
-    presentSticker("music", "@alice", [{ username: "alice", avatarPath: null }]).profileUrl,
+    presentSticker("music", "@alice", [
+      { username: "alice", avatarPath: "/media/avatars/unused.jpg" },
+    ]).profileUrl,
   ).toBe(undefined);
   expect(
     presentSticker("mention", "@ALICE", [

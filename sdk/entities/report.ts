@@ -4,8 +4,6 @@ import { STORY_MEDIA_TYPES } from "../story-types.ts";
 
 export const reports = sqliteTable("reports", {
   broadcastsCount: integer().notNull(),
-  cacheHits: integer().notNull(),
-  cacheMisses: integer().notNull(),
   createdAt: text().notNull(),
   failedCount: integer().notNull(),
   fetchedCount: integer().notNull(),

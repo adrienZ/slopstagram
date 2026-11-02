@@ -8,7 +8,7 @@ import { AppleVisionRepository } from "../sdk/repositories/apple-vision-reposito
 import { VisionRepository } from "../sdk/repositories/vision-repository.ts";
 import { createStoryFeed, createStoryDayFeed, createReportFeed } from "../sdk/story-feed.ts";
 import { getStoryDate, getStoryDayRange } from "../sdk/lib/story-date-service.ts";
-import { createReportViewModel } from "../server/report-view-model.ts";
+import { createReportViewModel } from "../app/report-view-model.ts";
 import { resolveUserSummariesForReport } from "../sdk/user-summary.ts";
 import { createLogger } from "../sdk/lib/logging-service.ts";
 
@@ -148,7 +148,7 @@ test("available report dates require visible stories and include today for a rol
 
 test("story deep links retrieve historical stories with exact IDs and select their publication day", async (context) => {
   const { stories } = await createFixture(context);
-  const mediaPk = "3976144362696633423";
+  const mediaPk = "3222222222222222229";
   await stories.save(
     { pk: mediaPk, taken_at: Date.parse("2026-09-07T22:30:00Z") / 1000 },
     { pk: "alice", username: "alice" },

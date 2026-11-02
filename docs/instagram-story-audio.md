@@ -71,7 +71,7 @@ pendant la navigation ne fournissaient pas de métadonnées musicales.
 ## Exemple réel de `video_dash_manifest`, expurgé
 
 Extrait dérivé du cache de la story associée à **Divine — MPM Beats**, publiée par
-`@ripped1taliano` : `data/cache/stories/4015864497029948181.json`. Après décodage de
+`@fixture_user_1` : `data/cache/stories/700000000000105.json`. Après décodage de
 la chaîne JSON, le champ contient un document de cette forme. L'extrait conserve
 une représentation vidéo et la représentation audio du cache ; les autres
 représentations et les extensions propriétaires sont omises. Tous les identifiants
@@ -130,7 +130,7 @@ documente les paramètres MIME des flux ISO BMFF ; son registre AAC associe
 Le cache ci-dessus contient des variantes vidéo H.264 ; la réponse live examinée
 pour cette même story contenait des variantes VP9 et une représentation audio
 `mp4a.40.5`. Il ne faut donc pas figer un codec vidéo d'après un seul cache.
-[Source live](/private/tmp/instagram-ripped-audio-stream.log).
+[Source live](/private/tmp/instagram-fixture-audio-stream.log).
 
 ## Diagnostic initial : accès audio vérifié avant le correctif
 
@@ -142,8 +142,8 @@ native dans cette session, pas une vérification à l'oreille du contenu.
 
 | Story et association déclarée par le sticker | Durée audio chargée | Lecture depuis l'origine de l'application | Déplacement obtenu |
 | -------------------------------------------- | ------------------- | ----------------------------------------- | ------------------ |
-| `@menez_yoann`, Clocks — Coldplay            | 20,040227 s         | Réussie                                   | 10 s               |
-| `@ripped1taliano`, Divine — MPM Beats        | 20,015601 s         | Réussie                                   | 10,017136 s        |
+| `@fixture_user_2`, Clocks — Coldplay         | 20,040227 s         | Réussie                                   | 10 s               |
+| `@fixture_user_1`, Divine — MPM Beats        | 20,015601 s         | Réussie                                   | 10,017136 s        |
 
 Un `fetch` de diagnostic côté serveur, avec `Range: bytes=0-1023`, a reçu pour
 chacun HTTP 206 et 1 024 octets. Le serveur CDN annonçait `Content-Type: video/mp4`
@@ -151,7 +151,7 @@ pour ces URL, malgré `mimeType="audio/mp4"` dans le manifeste. Le seul en-tête
 ne suffit donc pas à sélectionner une piste audio. Les plages HTTP sont un
 mécanisme d'accès aux octets ; elles ne constituent pas une nouvelle requête de
 métadonnées Instagram. [Sources : essai Clocks](/private/tmp/instagram-audio-access.log),
-[essai Divine](/private/tmp/instagram-ripped-audio-access.log),
+[essai Divine](/private/tmp/instagram-fixture-audio-access.log),
 [HTTP Range et 206, RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#section-14).
 
 Ces éléments temporaires ont été retirés après le diagnostic. Ces premiers tests
@@ -258,11 +258,11 @@ pas de l'ouverture de la page ; le job bunqueue horaire existant relance déjà 
 
 L'essai réel du correctif a récupéré **122 stories** et mis en cache **61 pistes
 audio de stories**, toutes disponibles, sans appel supplémentaire pour obtenir
-un manifeste. Le rapport s'est terminé avec succès. Les pages de `menez_yoann`
-et `ripped1taliano` ont lu les fichiers locaux et permis un déplacement dans la
-lecture depuis le navigateur. Le fichier de la story `4016307915417510030`
+un manifeste. Le rapport s'est terminé avec succès. Les pages de `fixture_user_2`
+et `fixture_user_1` ont lu les fichiers locaux et permis un déplacement dans la
+lecture depuis le navigateur. Le fichier de la story `700000000000101`
 contient une seule piste HE-AAC audio, sans vidéo, pour 20,040227 secondes ; celui
-de `4015864497029948181` est également disponible localement. Ces vérifications
+de `700000000000105` est également disponible localement. Ces vérifications
 techniques ne prétendent pas classifier leur contenu comme musique seule.
 
 Les tests de régression utilisent SQLite isolée, des réponses HTTP déterministes,

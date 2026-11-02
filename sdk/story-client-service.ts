@@ -25,26 +25,26 @@ class InstagramApiResponseError extends Error {
   readonly nonRetryable = true;
 }
 
-const GalleryResponseSchema = z
-  .object({
-    data: z
-      .object({
-        xdt_api__v1__feed__reels_media__connection: z.object({
-          edges: z.array(z.object({ node: StoryReelSchema })),
-          page_info: z.object({ has_next_page: z.boolean(), end_cursor: z.string().nullish() }),
-        }),
-      })
-      .nullish(),
-    errors: z.array(z.object({ message: z.string() })).optional(),
-  })
-  .transform((response) => {
-    if ((response.errors?.length ?? 0) > 0 || !response.data) {
-      throw new InstagramApiResponseError(
-        `Instagram story media query failed: ${response.errors?.[0]?.message ?? "missing media data"}`,
-      );
-    }
-    return response.data.xdt_api__v1__feed__reels_media__connection;
-  });
+export const GalleryPageSchema = z.object({
+  data: z
+    .object({
+      xdt_api__v1__feed__reels_media__connection: z.object({
+        edges: z.array(z.object({ node: StoryReelSchema })),
+        page_info: z.object({ has_next_page: z.boolean(), end_cursor: z.string().nullish() }),
+      }),
+    })
+    .nullish(),
+  errors: z.array(z.object({ message: z.string() })).optional(),
+});
+
+const GalleryResponseSchema = GalleryPageSchema.transform((response) => {
+  if ((response.errors?.length ?? 0) > 0 || !response.data) {
+    throw new InstagramApiResponseError(
+      `Instagram story media query failed: ${response.errors?.[0]?.message ?? "missing media data"}`,
+    );
+  }
+  return response.data.xdt_api__v1__feed__reels_media__connection;
+});
 
 function quoteNumericIdentifiers(body: string): string {
   // Instagram sometimes emits IDs as JSON numbers. Its media IDs exceed
@@ -85,6 +85,14 @@ function parseInstagramResponse<T>(
 
     throw error;
   }
+}
+
+export function parseTrayResponse(body: string, headers: Record<string, string>) {
+  return parseInstagramResponse(body, headers, ReelTrayResponseSchema);
+}
+
+export function parseGalleryPage(body: string, headers: Record<string, string>) {
+  return parseInstagramResponse(body, headers, GalleryResponseSchema);
 }
 
 interface BrowserFetchResponse {
@@ -265,7 +273,7 @@ export function createInstagramClient(session: InstagramClientSession): Instagra
             })),
           );
         }
-        const page = parseInstagramResponse(response.body, response.headers, GalleryResponseSchema);
+        const page = parseGalleryPage(response.body, response.headers);
         reels.push(...page.edges.map(({ node }) => node));
         if (!page.page_info.has_next_page) {
           return {
@@ -300,17 +308,9 @@ export function createInstagramClient(session: InstagramClientSession): Instagra
 }
 
 export function extractReels(response: ReelsMediaResponse): Record<string, StoryReel> {
-  if (response.reels !== undefined) {
-    return response.reels;
-  }
-
-  if (Array.isArray(response.reels_media)) {
-    return Object.fromEntries(
-      response.reels_media
-        .filter((reel): reel is StoryReel & { id: string } => reel.id !== undefined)
-        .map((reel) => [reel.id, reel]),
-    );
-  }
-
-  return response.reels_media ?? {};
+  return Object.fromEntries(
+    response.reels_media
+      .filter((reel): reel is StoryReel & { id: string } => reel.id !== undefined)
+      .map((reel) => [reel.id, reel]),
+  );
 }

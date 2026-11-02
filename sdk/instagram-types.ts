@@ -20,15 +20,6 @@ export interface StoryTrayEntry {
   user: StoryTrayUser;
 }
 
-export interface StoriesReport {
-  xdt_api__v1__feed__reels_tray: {
-    broadcasts: Array<JsonValue>;
-    status: string;
-    story_ranking_token: string;
-    tray: Array<StoryTrayEntry>;
-  };
-}
-
 export interface StoryVersion {
   height?: number;
   url?: string;
@@ -80,19 +71,6 @@ export interface StoryReel {
   user?: StoryTrayUser;
 }
 
-export interface StoriesMediaReport {
-  reels?: Record<string, StoryReel>;
-  data?: {
-    xdt_api__v1__feed__reels_media__connection?: {
-      edges?: Array<{
-        node?: {
-          items?: Array<StoryItem>;
-        };
-      }>;
-    };
-  };
-}
-
 export interface ReelTrayResponse {
   broadcasts: Array<unknown>;
   story_ranking_token: string;
@@ -101,9 +79,7 @@ export interface ReelTrayResponse {
 }
 
 export interface ReelsMediaResponse {
-  reels?: Record<string, StoryReel>;
-  reels_media?: Record<string, StoryReel> | Array<StoryReel>;
-  status?: string | null;
+  reels_media: Array<StoryReel>;
 }
 
 export interface InstagramClientResponse<T> {

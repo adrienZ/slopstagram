@@ -1,6 +1,7 @@
 import { setTimeout as sleep } from "node:timers/promises";
 import { createLogger, type Logger } from "./lib/logging-service.ts";
-import { runWarmCacheJob, type WarmCacheJobResult, type WarmCachePayload } from "./warm-cache.ts";
+import type { CreateReportBoundaries } from "./report.ts";
+import { runWarmCacheJob, type WarmCacheJobResult } from "./warm-cache.ts";
 
 export const WARM_CACHE_QUEUE_NAME = "warm-cache";
 const EVERY_HOUR = "0 * * * *";
@@ -15,7 +16,7 @@ interface WarmCacheQueue {
     repeat: { pattern: string },
     job: {
       name: string;
-      data: WarmCachePayload;
+      data: Record<string, never>;
       opts: {
         attempts: number;
         backoff: { type: "exponential"; delay: number };
@@ -31,10 +32,6 @@ interface WarmCacheWorker {
   waitUntilReady: () => Promise<void>;
 }
 
-interface WarmCacheJob {
-  data: WarmCachePayload;
-}
-
 interface WorkerOptions {
   autorun: false;
   concurrency: number;
@@ -44,16 +41,17 @@ export interface WarmCacheQueueDependencies {
   createQueue: (name: string) => WarmCacheQueue;
   createWorker: (
     name: string,
-    processor: (job: WarmCacheJob) => Promise<WarmCacheJobResult>,
+    processor: () => Promise<WarmCacheJobResult>,
     options: WorkerOptions,
   ) => WarmCacheWorker;
 }
 
 export interface StartWarmCacheQueueOptions {
+  /** The external systems each job's report talks to; see {@link CreateReportBoundaries}. */
+  boundaries?: CreateReportBoundaries;
   dependencies: WarmCacheQueueDependencies;
   logger?: Logger;
   onError?: (error: Error) => void;
-  runJob?: typeof runWarmCacheJob;
 }
 
 export interface WarmCacheQueueRuntime {
@@ -82,16 +80,16 @@ async function waitForServer(queue: WarmCacheQueue): Promise<void> {
 }
 
 export function startWarmCacheQueue({
+  boundaries,
   dependencies,
   logger = createLogger(WARM_CACHE_QUEUE_NAME),
   onError,
-  runJob = runWarmCacheJob,
 }: StartWarmCacheQueueOptions): WarmCacheQueueRuntime {
   const queue = dependencies.createQueue(WARM_CACHE_QUEUE_NAME);
 
   const worker = dependencies.createWorker(
     WARM_CACHE_QUEUE_NAME,
-    async (job) => await runJob({ payload: job.data, logger }),
+    async () => await runWarmCacheJob({ boundaries, logger }),
     { autorun: false, concurrency: 1 },
   );
 

@@ -3,8 +3,9 @@ import {
   hydrateReportInstagramUsers,
   persistReportInstagramUsers,
 } from "../sdk/lib/instagram-user-service.ts";
-import type { InstagramUserEntry } from "../sdk/entities/instagram-user.ts";
+import { InstagramUserRepository } from "../sdk/repositories/instagram-user-repository.ts";
 import type { StoriesManifestReport } from "../sdk/report-types.ts";
+import { createTestDatabase } from "./test-database.ts";
 
 function createReportWithInstagramUser(): StoriesManifestReport {
   return {
@@ -27,8 +28,6 @@ function createReportWithInstagramUser(): StoriesManifestReport {
     metadata: {
       broadcasts_count: 0,
       counts: {
-        cache_hits: 0,
-        cache_misses: 0,
         failed: 0,
         fetched: 0,
         reels: 1,
@@ -53,25 +52,14 @@ function createReportWithInstagramUser(): StoriesManifestReport {
   };
 }
 
-function createRepository() {
-  const entries = new Map<string, InstagramUserEntry>();
-  return {
-    entries,
-    findByUsername: (username: string) => entries.get(username) ?? null,
-    save: async (value: InstagramUserEntry) => {
-      entries.set(value.username, value);
-    },
-  };
-}
-
 describe("Instagram user report persistence", () => {
-  test("persists user data outside a report and hydrates it when read", async () => {
+  test("persists user data outside a report and hydrates it when read", async (context) => {
     const report = createReportWithInstagramUser();
-    const repository = createRepository();
+    const repository = new InstagramUserRepository(createTestDatabase(context));
 
     await persistReportInstagramUsers(report, repository);
 
-    expect(repository.entries.get("fixture-user")).toStrictEqual({
+    expect(repository.findByUsername("fixture-user")).toStrictEqual({
       full_name: "Fixture User",
       id: "instagram-id-1",
       pk: "instagram-pk-1",
@@ -90,9 +78,9 @@ describe("Instagram user report persistence", () => {
     expect(report.output.users[0]?.profile_pic_url).toBe("images/avatars/instagram-pk-1.jpg");
   });
 
-  test("hydrates reports whose nullable user columns were read as null", async () => {
+  test("hydrates reports whose nullable user columns were read as null", async (context) => {
     const report = createReportWithInstagramUser();
-    const repository = createRepository();
+    const repository = new InstagramUserRepository(createTestDatabase(context));
 
     await persistReportInstagramUsers(report, repository);
     report.manifest.users[0].full_name = null;

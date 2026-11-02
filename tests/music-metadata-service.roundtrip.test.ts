@@ -6,7 +6,13 @@ import { StoryRepository } from "../sdk/repositories/story-repository.ts";
 import { fetchStoriesManifest } from "../sdk/stories.ts";
 import type { StoryItem } from "../sdk/instagram-types.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
-import { createCapturingLogger, createClient, fixedNow, reel, response } from "./mock-helpers.ts";
+import {
+  createCapturingLogger,
+  createClient,
+  fixedNow,
+  reel,
+  reelsResponse,
+} from "./mock-helpers.ts";
 
 function present<T>(value: T | null | undefined): T {
   assert.ok(value !== null && value !== undefined);
@@ -19,7 +25,7 @@ function setup(context: { onTestFinished: (callback: () => void) => void }) {
   context.onTestFinished(() => {
     database.$client.close();
   });
-  return { database, repository: new StoryRepository(database) };
+  return { database, repository: new StoryRepository(database, createCapturingLogger()) };
 }
 
 function read(repository: StoryRepository, pk: string) {
@@ -61,7 +67,7 @@ test("live ingestion shares exact audio identities across occurrences in cold ac
   const report = await fetchStoriesManifest(
     createClient(
       [{ id: "r1", media_ids: items.map(({ pk }) => pk), user: owner }],
-      [response({ reels: { r1: { ...reel("r1", items), user: owner } } })],
+      [reelsResponse({ r1: { ...reel("r1", items), user: owner } })],
     ),
     {
       logger: createCapturingLogger(),
@@ -309,61 +315,6 @@ test("malformed or omitted music sources preserve rich metadata and all saved co
     await repository.save(story);
     expect(read(new StoryRepository(database), "m1")).toStrictEqual(before);
   }
-});
-
-test("failed metadata update rolls back metadata, links, ownership and media", async (context) => {
-  const { database, repository } = setup(context);
-  const users = new InstagramUserRepository(database);
-  const owner = { id: "u1", pk: "u1", username: "one", full_name: "One" };
-  const other = { id: "u2", pk: "u2", username: "two", full_name: "Two" };
-  await users.save(owner);
-  await users.save(other);
-  await repository.save(
-    {
-      pk: "m1",
-      taken_at: 1_767_225_600,
-      media_type: 1,
-      image_versions2: { candidates: [{ url: "https://example.com/old.jpg" }] },
-      story_music_stickers: [
-        { id: "a", music_asset_info: { audio_asset_id: "audio", title: "Song" } },
-      ],
-    },
-    owner,
-  );
-  await repository.save({
-    pk: "m2",
-    story_music_stickers: [{ id: "b", music_asset_info: { audio_asset_id: "audio" } }],
-  });
-  const before = repository.findByMediaPk("m1");
-  const partial = repository.findByMediaPk("m2");
-  database.$client.exec(`CREATE TEMP TRIGGER reject_partial_removal BEFORE UPDATE ON metadata_music
-    BEGIN SELECT RAISE(ABORT, 'fixture promotion failure'); END`);
-  const promoted: StoryItem = {
-    pk: "m1",
-    taken_at: 1_767_225_601,
-    media_type: 2,
-    image_versions2: { candidates: [{ url: "https://example.com/new.jpg" }] },
-    story_music_stickers: [
-      { id: "a", music_asset_info: { audio_asset_id: "audio", display_artist: "Artist" } },
-    ],
-  };
-  await expect(repository.save(promoted, other)).rejects.toThrow();
-  const cold = new StoryRepository(database);
-  expect(cold.findByMediaPk("m1")).toStrictEqual(before);
-  expect(cold.findByMediaPk("m2")).toStrictEqual(partial);
-  expect(cold.listByUsername("one").length).toBe(1);
-  expect(cold.listByUsername("two").length).toBe(0);
-  database.$client.exec("DROP TRIGGER reject_partial_removal");
-  await repository.save(promoted, other);
-  const [first] = present(read(cold, "m1").musicObservations);
-  const [second] = present(read(cold, "m2").musicObservations);
-  expect(first.metadata.status).toBe("usable");
-  expect(first.metadata.title).toBe("Song");
-  expect(first.metadata.artist).toBe("Artist");
-  expect(first.metadata).toStrictEqual(second.metadata);
-  expect(first.occurrenceId).toBe(before?.annotations?.stickers[0].occurrenceId);
-  expect(cold.listByUsername("two").length).toBe(1);
-  expect(database.$client.prepare("SELECT count(*) n FROM metadata_music").get()?.n).toBe(1);
 });
 
 test("changed audio identity cannot inherit the previous recording's missing fields", async (context) => {

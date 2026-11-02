@@ -53,7 +53,7 @@ interface ProfilePicEntry {
 
 function getRelativeCacheImagePath(cacheDirectory: string, rawKey: string): string {
   return path
-    .relative(cacheDirectory, path.resolve(BASE_CACHE_DIR, IMAGES_STORAGE_DIR, rawKey))
+    .relative(cacheDirectory, path.resolve(cacheDirectory, IMAGES_STORAGE_DIR, rawKey))
     .split(path.sep)
     .join("/");
 }

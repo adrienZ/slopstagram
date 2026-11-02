@@ -10,8 +10,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { processStoryAudio, cacheReportAudio } from "../sdk/report-audio-service.ts";
 import { createMediaResponse } from "../server/routes/media/[...path].ts";
-import { groupTimelineStickers } from "../server/timeline-stickers.ts";
-import { musicStickerItems, storyMusicPreviews } from "../server/music-preview.ts";
+import { groupTimelineStickers } from "../app/timeline-stickers.ts";
+import { musicStickerItems, storyMusicPreviews } from "../app/music-preview.ts";
 import type { StoriesManifestReport } from "../sdk/report-types.ts";
 import type { StoryItem } from "../sdk/instagram-types.ts";
 import { fetchStoriesManifest } from "../sdk/stories.ts";
@@ -21,7 +21,7 @@ import {
   createClient,
   fixedNow,
   reel,
-  response as mockResponse,
+  reelsResponse,
 } from "./mock-helpers.ts";
 
 function manifest(name: string) {
@@ -176,7 +176,7 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
     manifest: { users: [] },
     metadata: {
       broadcasts_count: 0,
-      counts: { cache_hits: 0, cache_misses: 1, failed: 0, fetched: 1, reels: 1, stories: 1 },
+      counts: { failed: 0, fetched: 1, reels: 1, stories: 1 },
       created_at: "2026-10-26T12:00:00Z",
       report_name: "audio",
       status: "ok",
@@ -368,7 +368,7 @@ test("fresh story ingestion caches the story excerpt and prefers it over the lon
   const owner = { id: "user", pk: "user", username: "one" };
   const client = createClient(
     [{ id: "reel", media_ids: [story.pk], user: owner }],
-    [mockResponse({ reels: { reel: { ...reel("reel", [story]), user: owner } } })],
+    [reelsResponse({ reel: { ...reel("reel", [story]), user: owner } })],
   );
   const repository = new StoryRepository(database);
   const report = await fetchStoriesManifest(client, {

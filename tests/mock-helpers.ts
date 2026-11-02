@@ -3,7 +3,6 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createConsola } from "consola";
-import type { StoryRepository } from "../sdk/repositories/story-repository.ts";
 import type { CachedReportImages } from "../sdk/lib/image-cache-service.ts";
 import type { Logger } from "../sdk/lib/logging-service.ts";
 import type {
@@ -12,10 +11,9 @@ import type {
   StoryTrayEntry,
   InstagramClient,
   InstagramClientResponse,
+  ReelsMediaResponse,
 } from "../sdk/instagram-types.ts";
 import type { StoriesManifestReport } from "../sdk/report-types.ts";
-import type { StoryStorage } from "../sdk/lib/cache-service.ts";
-import { createMemoryStorage } from "./memory-storage.ts";
 
 export const previewSource = "https://example.com/story-preview.webp";
 
@@ -23,8 +21,6 @@ function createReportMetadata(): StoriesManifestReport["metadata"] {
   return {
     broadcasts_count: 0,
     counts: {
-      cache_hits: 0,
-      cache_misses: 0,
       failed: 0,
       fetched: 0,
       reels: 0,
@@ -116,23 +112,6 @@ export function createCapturingLogger(): Logger & { messages: Array<string> } {
     messages,
     progress,
   });
-}
-
-export function createMemoryStoryRepository(): Pick<StoryRepository, "findByMediaPk" | "save"> & {
-  entries: Map<string, StoryItem>;
-  storyStorage: StoryStorage;
-} {
-  const entries = new Map<string, StoryItem>();
-  const storyStorage = createMemoryStorage<StoryItem>();
-
-  return {
-    entries,
-    storyStorage,
-    findByMediaPk: (mediaPk) => entries.get(mediaPk) ?? null,
-    save: async (story) => {
-      entries.set(story.pk, story);
-    },
-  };
 }
 
 export function createVisionReport(source: string = previewSource): StoriesManifestReport {
@@ -233,9 +212,22 @@ export function response<T>(
   };
 }
 
+/** Builds a reels response in the shape Instagram's GraphQL gallery returns: one reel per entry, keyed by id. */
+export function reelsResponse(
+  reels: Record<string, StoryReel>,
+  status = 200,
+  headers: Record<string, string> = {},
+): InstagramClientResponse<ReelsMediaResponse> {
+  return response(
+    { reels_media: Object.entries(reels).map(([id, value]) => ({ id, ...value })) },
+    status,
+    headers,
+  );
+}
+
 export function createClient(
   tray: Array<StoryTrayEntry>,
-  reelsResponses: Array<InstagramClientResponse<{ reels?: Record<string, StoryReel> }>>,
+  reelsResponses: Array<InstagramClientResponse<ReelsMediaResponse>>,
 ): InstagramClient & { reelsCalls: Array<Array<string>> } {
   const reelsCalls: Array<Array<string>> = [];
 

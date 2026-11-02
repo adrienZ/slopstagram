@@ -20,14 +20,13 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     tanstackStart({
-      srcDirectory: "server",
-      router: { routesDirectory: "pages" },
+      srcDirectory: "app",
       server: { entry: "entry-server.tsx" },
     }),
     react(),
     nitro(),
   ],
   environments: {
-    ssr: { build: { rolldownOptions: { input: "./server/entry-server.tsx" } } },
+    ssr: { build: { rolldownOptions: { input: "./app/entry-server.tsx" } } },
   },
 });

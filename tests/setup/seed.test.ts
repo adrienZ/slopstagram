@@ -1,0 +1,227 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath, URL } from "node:url";
+import { expect, test, type TestContext } from "vitest";
+import type { z } from "zod";
+import { createDrizzle } from "../../sdk/database/client.ts";
+import { type JsonValue, JsonValueSchema } from "../../sdk/lib/json-value.ts";
+import { InstagramUserRepository } from "../../sdk/repositories/instagram-user-repository.ts";
+import { StoryRepository, storyRepository } from "../../sdk/repositories/story-repository.ts";
+import {
+  GalleryPageSchema,
+  parseGalleryPage,
+  parseTrayResponse,
+} from "../../sdk/story-client-service.ts";
+import { readRecordedPayloads, seedRecordedStories } from "./seed.ts";
+
+const now = new Date("2026-10-29T12:00:00.000Z");
+const HOUR = 3600;
+const imageStoryPk = "700000000000079";
+const videoStoryPk = "700000000000100";
+const musicStoryPk = "700000000000900";
+const locationStoryPk = "700000000000903";
+const secondReelStoryPk = "700000000000090";
+const storyPks = [
+  imageStoryPk,
+  secondReelStoryPk,
+  videoStoryPk,
+  "700000000000107",
+  "700000000000116",
+  "700000000000122",
+  "700000000000129",
+  musicStoryPk,
+  locationStoryPk,
+  "700000000000906",
+];
+
+/** A fresh copy of the recorded gallery page, typed enough to edit what a test needs. */
+async function recordedGalleryPage() {
+  const { galleryPages } = await readRecordedPayloads(["instagram-story-data.json"]);
+  return GalleryPageSchema.parse(galleryPages[0]);
+}
+
+function connectionOf(page: z.output<typeof GalleryPageSchema>) {
+  const connection = page.data?.xdt_api__v1__feed__reels_media__connection;
+  if (connection === undefined) {
+    throw new Error("The recorded gallery page has no reels connection");
+  }
+  return connection;
+}
+
+function toPayload(page: z.output<typeof GalleryPageSchema>): JsonValue {
+  return JsonValueSchema.parse(page);
+}
+
+function createDatabase(context: TestContext) {
+  const database = createDrizzle(":memory:");
+  context.onTestFinished(() => {
+    database.$client.close();
+  });
+  return {
+    database,
+    stories: new StoryRepository(database),
+    users: new InstagramUserRepository(database),
+  };
+}
+
+test("seeding stores the recorded stories, users, stickers and previews like a fetch run", async (context) => {
+  const { database, stories, users } = createDatabase(context);
+
+  const report = await seedRecordedStories(undefined, { database });
+
+  expect(report.metadata.counts).toMatchObject({ failed: 0, fetched: 10, reels: 3, stories: 10 });
+  expect(users.listAll().map(({ username }) => username)).toEqual([
+    "user_008",
+    "user_066",
+    "user_072",
+  ]);
+  const image = stories.findByMediaPk(imageStoryPk);
+  expect(image?.media_type).toBe(1);
+  expect(image?.image_versions2?.candidates?.[0]?.url).toBeTypeOf("string");
+  expect(stories.findByMediaPk(musicStoryPk)?.annotations?.stickers.length).toBeGreaterThan(0);
+  expect(stories.listStickerKinds().length).toBeGreaterThan(0);
+  expect(stories.findByMediaPk(videoStoryPk)?.media_type).toBe(2);
+  expect(stories.findByMediaPk(musicStoryPk)?.annotations?.musicObservations).not.toEqual([]);
+  expect(stories.findByMediaPk(locationStoryPk)?.annotations?.locationObservations).not.toEqual([]);
+});
+
+test("seeding a chosen set of recorded payloads stores only that set", async (context) => {
+  const { database, stories } = createDatabase(context);
+  const galleryPage = await recordedGalleryPage();
+  connectionOf(galleryPage).edges.pop();
+
+  await seedRecordedStories({ galleryPages: [toPayload(galleryPage)] }, { database });
+
+  expect(stories.findByMediaPk(imageStoryPk)).not.toBeNull();
+  expect(stories.findByMediaPk(videoStoryPk)).toBeNull();
+});
+
+test("seeding stores the reels of every recorded gallery page", async (context) => {
+  const { database, stories } = createDatabase(context);
+  const pages = await Promise.all([recordedGalleryPage(), recordedGalleryPage()]);
+  const [pageOne, pageTwo] = pages.map((page, index) => {
+    const connection = connectionOf(page);
+    connection.edges = [connection.edges[index]];
+    return toPayload(page);
+  });
+
+  await seedRecordedStories({ galleryPages: [pageOne, pageTwo] }, { database });
+
+  expect(stories.findByMediaPk(imageStoryPk)).not.toBeNull();
+  expect(stories.findByMediaPk(secondReelStoryPk)).not.toBeNull();
+});
+
+test("seeding a recorded tray fetches only the reels it lists", async (context) => {
+  const { database, stories } = createDatabase(context);
+  const { galleryPages } = await readRecordedPayloads(["instagram-story-data.json"]);
+  const tray = {
+    broadcasts: [],
+    status: "ok",
+    story_ranking_token: "recorded",
+    tray: [
+      {
+        id: "700000000000001",
+        media_ids: [imageStoryPk],
+        user: { username: "user_008" },
+      },
+    ],
+  };
+
+  const report = await seedRecordedStories({ galleryPages, tray }, { database });
+
+  expect(report.metadata.counts).toMatchObject({ failed: 0, reels: 1, stories: 1 });
+  expect(stories.findByMediaPk(imageStoryPk)).not.toBeNull();
+  expect(stories.findByMediaPk(videoStoryPk)).toBeNull();
+});
+
+test("seeding fails loudly when a recording no longer matches the validation schemas", async (context) => {
+  const { database, stories } = createDatabase(context);
+  const drifted = await recordedGalleryPage();
+  const [firstItem] = connectionOf(drifted).edges[0].node.items ?? [];
+  Reflect.set(firstItem, "taken_at", "yesterday");
+
+  await expect(
+    seedRecordedStories({ galleryPages: [toPayload(drifted)] }, { database }),
+  ).rejects.toThrow(/taken_at/u);
+  expect(stories.findByMediaPk(imageStoryPk)).toBeNull();
+});
+
+test("seeding fails when a named recording does not exist", async () => {
+  await expect(readRecordedPayloads(["instagram-missing.json"])).rejects.toThrow(
+    "instagram-missing.json",
+  );
+  await expect(readRecordedPayloads(["audio-clip.m4a"])).rejects.toThrow(
+    "No recorded reels media payload selected",
+  );
+});
+
+test("seeded stories can be shifted in time to be active", async (context) => {
+  const { database, stories } = createDatabase(context);
+
+  await seedRecordedStories(undefined, { database, publishedBefore: { now, seconds: HOUR } });
+
+  const active = stories.listActive(now);
+  expect(active.map(({ story }) => story.pk).toSorted()).toEqual(storyPks);
+  const newest = Math.max(...active.map(({ taken_at: takenAt }) => takenAt));
+  expect(newest).toBe(now.getTime() / 1000 - HOUR);
+});
+
+test("seeded stories can be shifted in time to be past", async (context) => {
+  const { database, stories } = createDatabase(context);
+
+  await seedRecordedStories(undefined, { database, publishedBefore: { now, seconds: 26 * HOUR } });
+
+  expect(stories.listActive(now)).toEqual([]);
+  const yesterday = stories.listPublishedBetween(
+    new Date(now.getTime() - 48 * 3_600_000),
+    new Date(now.getTime() - 24 * 3_600_000),
+  );
+  expect(yesterday).toHaveLength(10);
+});
+
+function gaps(repository: StoryRepository): Array<number> {
+  const times = storyPks.map((pk) => repository.findByMediaPk(pk)?.taken_at ?? 0);
+  return times.map((time) => time - times[0]);
+}
+
+test("shifting keeps the gaps between recorded stories", async (context) => {
+  const unshifted = createDatabase(context);
+  const shifted = createDatabase(context);
+
+  await seedRecordedStories(undefined, { database: unshifted.database });
+  await seedRecordedStories(undefined, {
+    database: shifted.database,
+    publishedBefore: { now, seconds: HOUR },
+  });
+
+  expect(gaps(shifted.stories)).toEqual(gaps(unshifted.stories));
+});
+
+test("seeding without a database fills the application database that the repositories read", async () => {
+  await seedRecordedStories(undefined, { publishedBefore: { now, seconds: HOUR } });
+
+  expect(storyRepository.findByMediaPk(imageStoryPk)).not.toBeNull();
+  expect(storyRepository.listActive(now)).toHaveLength(10);
+});
+
+async function readFailure(name: string) {
+  return await readFile(
+    path.join(fileURLToPath(new URL("../fixtures", import.meta.url)), name),
+    "utf-8",
+  );
+}
+
+test("the recorded tray failure is refused by the production tray parser", async () => {
+  const body = await readFailure("instagram-failure-tray.json");
+
+  expect(() => parseTrayResponse(body, {})).toThrow();
+});
+
+test("the recorded failed pagination page announces more pages without a cursor", async () => {
+  const body = await readFailure("instagram-failure-pagination-page.json");
+
+  const page = parseGalleryPage(body, {});
+
+  expect(page.page_info.has_next_page).toBe(true);
+  expect(page.page_info.end_cursor ?? null).toBeNull();
+});

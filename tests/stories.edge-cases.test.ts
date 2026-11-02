@@ -1,31 +1,30 @@
-import { describe, test, expect } from "vitest";
+import { assert, describe, test, expect } from "vitest";
 import { fetchStoriesManifest } from "../sdk/stories.ts";
 import {
   createCapturingLogger,
   createClient,
-  createMemoryStoryRepository,
   fixedNow,
   noSleep,
   reel,
-  response,
   storyItem,
   storyItemWithStickers,
+  reelsResponse,
+  response,
 } from "./mock-helpers.ts";
+import { createStoryFixtures } from "./test-database.ts";
 
 describe("fetchStoriesManifest edge cases", () => {
-  test("preserves tray and media order in the manifest", async () => {
-    const storyRepository = createMemoryStoryRepository();
+  test("preserves tray and media order in the manifest", async (context) => {
+    const { storyRepository, storyStorage } = createStoryFixtures(context);
     const client = createClient(
       [
         { id: "r2", media_ids: ["m2", "m3"], user: { username: "two" } },
         { id: "r1", media_ids: ["m1"], user: { username: "one" } },
       ],
       [
-        response({
-          reels: {
-            r1: reel("r1", [storyItem("m1")]),
-            r2: reel("r2", [storyItem("m3"), storyItem("m2")]),
-          },
+        reelsResponse({
+          r1: reel("r1", [storyItem("m1")]),
+          r2: reel("r2", [storyItem("m3"), storyItem("m2")]),
         }),
       ],
     );
@@ -35,7 +34,7 @@ describe("fetchStoriesManifest edge cases", () => {
       now: fixedNow,
       sleep: noSleep,
       storyRepository,
-      storyStorage: storyRepository.storyStorage,
+      storyStorage,
     });
 
     expect(
@@ -49,63 +48,61 @@ describe("fetchStoriesManifest edge cases", () => {
     ]);
   });
 
-  test("extracts sticker summaries from story payload", async () => {
-    const storyRepository = createMemoryStoryRepository();
+  test("extracts sticker summaries from story payload", async (context) => {
+    const { storyRepository, storyStorage } = createStoryFixtures(context);
     const client = createClient(
       [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
       [
-        response({
-          reels: {
-            r1: reel("r1", [
-              storyItemWithStickers(
-                "m1",
-                {
-                  link: {
-                    url: "https://example.com/a",
-                  },
-                  story_bloks_stickers: [
-                    {
-                      bloks_sticker: {
-                        sticker_data: {
-                          ig_mention: {
-                            username: "friend",
-                          },
-                        },
-                      },
-                    },
-                    {
-                      bloks_sticker: {
-                        sticker_data: {
-                          location: {
-                            address: "1 Rue Example, Paris",
-                            name: "Cafe Example",
-                          },
-                        },
-                      },
-                    },
-                  ],
-                  story_hashtags: [{ hashtag: "summer" }],
-                  story_locations: [
-                    {
-                      location: {
-                        address: "1 Rue Example, Paris",
-                        name: "Cafe Example",
-                      },
-                    },
-                  ],
-                  story_music_stickers: [
-                    {
-                      music_asset_info: {
-                        display_artist: "Artist",
-                        title: "Track",
-                      },
-                    },
-                  ],
+        reelsResponse({
+          r1: reel("r1", [
+            storyItemWithStickers(
+              "m1",
+              {
+                link: {
+                  url: "https://example.com/a",
                 },
-                "caption",
-              ),
-            ]),
-          },
+                story_bloks_stickers: [
+                  {
+                    bloks_sticker: {
+                      sticker_data: {
+                        ig_mention: {
+                          username: "friend",
+                        },
+                      },
+                    },
+                  },
+                  {
+                    bloks_sticker: {
+                      sticker_data: {
+                        location: {
+                          address: "1 Rue Example, Paris",
+                          name: "Cafe Example",
+                        },
+                      },
+                    },
+                  },
+                ],
+                story_hashtags: [{ hashtag: "summer" }],
+                story_locations: [
+                  {
+                    location: {
+                      address: "1 Rue Example, Paris",
+                      name: "Cafe Example",
+                    },
+                  },
+                ],
+                story_music_stickers: [
+                  {
+                    music_asset_info: {
+                      display_artist: "Artist",
+                      title: "Track",
+                    },
+                  },
+                ],
+              },
+              "caption",
+            ),
+          ]),
         }),
       ],
     );
@@ -115,7 +112,7 @@ describe("fetchStoriesManifest edge cases", () => {
       now: fixedNow,
       sleep: noSleep,
       storyRepository,
-      storyStorage: storyRepository.storyStorage,
+      storyStorage,
     });
 
     expect(report.manifest.users[0]?.stories[0]?.stickers).toStrictEqual([
@@ -130,26 +127,24 @@ describe("fetchStoriesManifest edge cases", () => {
     ]);
   });
 
-  test("unwraps instagram redirect links inside sticker summaries", async () => {
-    const storyRepository = createMemoryStoryRepository();
+  test("unwraps instagram redirect links inside sticker summaries", async (context) => {
+    const { storyRepository, storyStorage } = createStoryFixtures(context);
     const client = createClient(
       [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
       [
-        response({
-          reels: {
-            r1: reel("r1", [
-              storyItemWithStickers(
-                "m1",
-                {
-                  link: {
-                    title: "Visit Link",
-                    url: "https://l.instagram.com/?u=https%3A%2F%2Finstallclaw.io%2Ffr%3Ffbclid%3DPAcGRvZgRleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAwyNTYyODEwNDA1NTgAAaees2JVYiKznrVRdrE8jUP0t055Ywo5c27Qe7zZvMdkJw4mRFLCM-_N39601g_aem_zcP2VBsrm0eIv1jimc94uQ&e=AUCmysVsYFdNrKGJp7Q0gcfWAbjsWt8JpZDcBDd_-NHBcUmft9eEQIoVQXv-HKNBFJtz4zRPoRllkQBozb6cDjlBocBjgrb3rEYJr2zjkEG3ODw9GwudH1HSKA",
-                  },
+        reelsResponse({
+          r1: reel("r1", [
+            storyItemWithStickers(
+              "m1",
+              {
+                link: {
+                  title: "Visit Link",
+                  url: "https://l.instagram.com/?u=https%3A%2F%2Flink.example.test%2Ffixture%3Ftoken%3Dfixture-token-1",
                 },
-                "caption",
-              ),
-            ]),
-          },
+              },
+              "caption",
+            ),
+          ]),
         }),
       ],
     );
@@ -159,20 +154,47 @@ describe("fetchStoriesManifest edge cases", () => {
       now: fixedNow,
       sleep: noSleep,
       storyRepository,
-      storyStorage: storyRepository.storyStorage,
+      storyStorage,
     });
 
     expect(report.output.users[0]?.stories[0]?.stickers).toStrictEqual([
-      "Visit Link (https://installclaw.io/fr?fbclid=PAcGRvZgRleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAwyNTYyODEwNDA1NTgAAaees2JVYiKznrVRdrE8jUP0t055Ywo5c27Qe7zZvMdkJw4mRFLCM-_N39601g_aem_zcP2VBsrm0eIv1jimc94uQ)",
+      "Visit Link (https://link.example.test/fixture?token=fixture-token-1)",
     ]);
   });
 
-  test("falls back after chunk failure and records failed stories", async () => {
-    const storyRepository = createMemoryStoryRepository();
+  test("stops when the tray cannot be fetched, without requesting any reel", async (context) => {
+    const { storyRepository, storyStorage } = createStoryFixtures(context);
+    const logger = createCapturingLogger();
+    const client = createClient([], []);
+    client.getTray = async () =>
+      await Promise.resolve(
+        response({ broadcasts: [], story_ranking_token: "", status: "fail", tray: [] }, 429),
+      );
+
+    await expect(
+      fetchStoriesManifest(client, {
+        logger,
+        maxAttempts: 1,
+        now: fixedNow,
+        sleep: noSleep,
+        storyRepository,
+        storyStorage,
+      }),
+    ).rejects.toThrow(/Instagram request failed with HTTP 429/u);
+    expect(client.reelsCalls).toEqual([]);
+    assert.ok(
+      logger.messages.some((message) =>
+        message.includes("error: tray fetch failed: Instagram request failed with HTTP 429"),
+      ),
+    );
+  });
+
+  test("falls back after chunk failure and records failed stories", async (context) => {
+    const { storyRepository, storyStorage } = createStoryFixtures(context);
     const logger = createCapturingLogger();
     const client = createClient(
       [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
-      [response({}, 500), response({}, 500)],
+      [reelsResponse({}, 500), reelsResponse({}, 500)],
     );
 
     const report = await fetchStoriesManifest(client, {
@@ -181,7 +203,7 @@ describe("fetchStoriesManifest edge cases", () => {
       now: fixedNow,
       sleep: noSleep,
       storyRepository,
-      storyStorage: storyRepository.storyStorage,
+      storyStorage,
     });
 
     expect(client.reelsCalls).toStrictEqual([["r1"], ["r1"]]);
@@ -205,15 +227,13 @@ describe("fetchStoriesManifest edge cases", () => {
     ).toBeTruthy();
   });
 
-  test("records missing stories when Instagram omits expected media", async () => {
-    const storyRepository = createMemoryStoryRepository();
+  test("records missing stories when Instagram omits expected media", async (context) => {
+    const { storyRepository, storyStorage } = createStoryFixtures(context);
     const client = createClient(
       [{ id: "r1", media_ids: ["m1", "m2"], user: { username: "one" } }],
       [
-        response({
-          reels: {
-            r1: reel("r1", [storyItem("m1")]),
-          },
+        reelsResponse({
+          r1: reel("r1", [storyItem("m1")]),
         }),
       ],
     );
@@ -223,7 +243,7 @@ describe("fetchStoriesManifest edge cases", () => {
       now: fixedNow,
       sleep: noSleep,
       storyRepository,
-      storyStorage: storyRepository.storyStorage,
+      storyStorage,
     });
 
     expect(report.manifest.users[0]?.stories.map((story) => story.status)).toStrictEqual([
@@ -234,14 +254,14 @@ describe("fetchStoriesManifest edge cases", () => {
     expect(report.failures[0]?.media_pk).toBe("m2");
   });
 
-  test("stops further live fetches after rate limiting", async () => {
-    const storyRepository = createMemoryStoryRepository();
+  test("stops further live fetches after rate limiting", async (context) => {
+    const { storyRepository, storyStorage } = createStoryFixtures(context);
     const client = createClient(
       [
         { id: "r1", media_ids: ["m1"], user: { username: "one" } },
         { id: "r2", media_ids: ["m2"], user: { username: "two" } },
       ],
-      [response({}, 429, { "retry-after": "1" })],
+      [reelsResponse({}, 429, { "retry-after": "1" })],
     );
 
     const report = await fetchStoriesManifest(client, {
@@ -251,7 +271,7 @@ describe("fetchStoriesManifest edge cases", () => {
       reelIdsPerRequest: 1,
       sleep: noSleep,
       storyRepository,
-      storyStorage: storyRepository.storyStorage,
+      storyStorage,
     });
 
     expect(client.reelsCalls).toStrictEqual([["r1"]]);

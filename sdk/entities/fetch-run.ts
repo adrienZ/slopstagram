@@ -11,8 +11,6 @@ export const fetchRuns = sqliteTable("fetch_runs", {
   storiesCount: integer(),
   reelsCount: integer(),
   fetchedCount: integer(),
-  cacheHits: integer(),
-  cacheMisses: integer(),
   failedCount: integer(),
 });
 

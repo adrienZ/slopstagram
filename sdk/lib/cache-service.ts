@@ -13,12 +13,17 @@ export const IMAGES_STORAGE_DIR = "images";
 export const AUDIO_STORAGE_DIR = "audio";
 const STORIES_STORAGE_DIR = "stories";
 
-const baseStorage = createStorage({
-  // oxlint-disable-next-line typescript/no-unsafe-assignment unstorage drivers use any
-  driver: fsDriver({
-    base: BASE_CACHE_DIR,
-  }),
-});
+/** File storage rooted at one cache directory; the app uses BASE_CACHE_DIR, tests a temporary one. */
+export function createFileStorage(directory: string): Storage {
+  return createStorage({
+    // oxlint-disable-next-line typescript/no-unsafe-assignment unstorage drivers use any
+    driver: fsDriver({
+      base: directory,
+    }),
+  });
+}
+
+const baseStorage = createFileStorage(BASE_CACHE_DIR);
 
 export function createImageCacheStorage(storage: Storage = baseStorage): ImageCacheStorage {
   return prefixStorage<Record<string, never>>(storage, IMAGES_STORAGE_DIR);
@@ -33,7 +38,7 @@ export function createAudioCacheStorage(
   });
 }
 
-function createStoryStorage(storage: Storage = baseStorage): StoryStorage {
+export function createStoryStorage(storage: Storage = baseStorage): StoryStorage {
   return prefixStorage<StoryItem>(storage, STORIES_STORAGE_DIR);
 }
 
