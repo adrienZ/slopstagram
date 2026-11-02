@@ -1,5 +1,5 @@
 import { planStoryAnnotations } from "@@/core/stickers/story-annotation.ts";
-import { planStoryAudio } from "@@/core/story-audio-service.ts";
+import { planStoryAudio } from "@@/core/music/story-audio-service.ts";
 import { findStoryAudio, saveStoryAudio } from "./story-audio-repository.ts";
 import { and, asc, desc, eq, gt, gte, lt, lte, notInArray } from "drizzle-orm";
 import { useDrizzle, type DrizzleDatabase } from "../client.ts";
