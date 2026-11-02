@@ -200,7 +200,6 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
     response.end(audio);
   });
   await cacheReportAudio(report, {
-    database,
     storyRepository: repository,
     directory,
     fetchMedia: media.fetchMedia,
@@ -230,7 +229,7 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
     story_music_stickers: [{ music_asset_info: { title: "Song" } }],
   });
   const reused = await processStoryAudio("story", {
-    database,
+    storyRepository: repository,
     directory,
     fetchMedia: media.fetchMedia,
   });
@@ -273,7 +272,7 @@ test("expired and interrupted DASH downloads fail silently without publishing in
     }
   });
   const failed = await processStoryAudio("story", {
-    database,
+    storyRepository: repository,
     directory,
     fetchMedia: media.fetchMedia,
   });
@@ -300,7 +299,7 @@ test("expired and interrupted DASH downloads fail silently without publishing in
   expect(groups[0].stories[0].labels[0].label).toBe("Song");
   interrupted = true;
   const interruptedResult = await processStoryAudio("story", {
-    database,
+    storyRepository: repository,
     directory,
     fetchMedia: media.fetchMedia,
   });
@@ -390,7 +389,6 @@ test("fresh story ingestion caches the story excerpt and prefers it over the lon
     }
   });
   await cacheReportAudio(report, {
-    database,
     storyRepository: repository,
     directory,
     fetchMedia: media.fetchMedia,

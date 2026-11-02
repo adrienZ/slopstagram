@@ -1,5 +1,5 @@
 import { and, asc, eq, isNull } from "drizzle-orm";
-import type { DrizzleDatabase } from "../client.ts";
+import type { DrizzleDatabase } from "@@/core/database/client.ts";
 import {
   metadataLocationDetails,
   metadataLocations,
@@ -7,8 +7,8 @@ import {
   classifyLocation,
   type PlaceDetails,
   type StoryLocationObservation,
-} from "../entities/location-metadata.ts";
-import { storyStickers } from "../entities/story.ts";
+} from "@@/core/database/entities/location-metadata.ts";
+import { storyStickers } from "@@/core/database/entities/story.ts";
 import type { StoryAnnotations } from "@@/core/stickers/story-types.ts";
 import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
 import type { LocationObservationInput } from "@@/core/places/location-observation.ts";

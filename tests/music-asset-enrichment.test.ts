@@ -102,7 +102,6 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
   assert.ok(before.musicObservations);
   expect(before.musicObservations[0].occurrenceId).not.toBe(null);
   await cacheReportAudio(report, {
-    database,
     storyRepository: repository,
     directory,
     fetchMedia: server.fetchMedia,
@@ -121,7 +120,6 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
   expect(artwork.status).toBe(200);
   expect(artwork.headers.get("content-type")).toBe("image/jpeg");
   await cacheReportAudio(report, {
-    database,
     storyRepository: repository,
     directory,
     fetchMedia: server.fetchMedia,
