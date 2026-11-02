@@ -3,6 +3,7 @@ import type { RuntimeBoundaries } from "@@/core/runtime/runtime.ts";
 import { createRuntime } from "@@/core/runtime/runtime.ts";
 import { createRecordedInstagramClient } from "./seed.ts";
 import { createMemoryCacheStorage } from "../memory-storage.ts";
+import { createMockLogger } from "../mock-helpers.ts";
 import { createTestDatabase } from "../test-database.ts";
 
 function unexpected(boundary: string) {
@@ -22,6 +23,7 @@ export async function createTestRuntime(
     fetchImage: unexpected("fetchImage"),
     fetchMedia: unexpected("fetchMedia"),
     fetchOllama: unexpected("fetchOllama"),
+    logger: createMockLogger(),
     runAppleOcr: unexpected("runAppleOcr"),
     storage: createMemoryCacheStorage(),
     ...boundaries,

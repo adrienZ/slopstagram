@@ -14,6 +14,7 @@ import {
 } from "@@/core/media-store/cache-storage.ts";
 import type { CacheReportImagesOptions } from "@@/core/media-store/image-cache.ts";
 import type { MusicMediaOptions } from "@@/core/music/music-media.ts";
+import { createLogger, type Logger } from "@@/core/utils/logging.ts";
 import type { RecognizeAppleCaptionOptions } from "@@/core/vision/apple-ocr.ts";
 
 type HttpFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
@@ -23,6 +24,7 @@ export interface RuntimeBoundaries {
   fetchImage?: CacheReportImagesOptions["fetchImage"];
   fetchMedia?: MusicMediaOptions["fetchMedia"];
   fetchOllama?: HttpFetch;
+  logger?: Logger;
   runAppleOcr?: RecognizeAppleCaptionOptions["runAppleOcr"];
   storage?: CacheStorage;
 }
@@ -31,6 +33,7 @@ export interface Runtime extends RuntimeBoundaries {
   appleVision: AppleVisionRepository;
   database: DrizzleDatabase;
   fetchRuns: FetchRunRepository;
+  logger: Logger;
   reports: ReportRepository;
   stories: StoryRepository;
   summaries: UserSummaryRepository;
@@ -48,6 +51,7 @@ export function createRuntime(
     appleVision: new AppleVisionRepository(database),
     database,
     fetchRuns: new FetchRunRepository(database),
+    logger: boundaries.logger ?? createLogger("runtime"),
     reports: new ReportRepository(database),
     stories: new StoryRepository(database),
     storage: boundaries.storage ?? createFileCacheStorage(BASE_CACHE_DIR),
