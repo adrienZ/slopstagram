@@ -28,7 +28,7 @@ export async function createTestRuntime(
     fetchMedia: unexpected("fetchMedia"),
     fetchOllama: unexpected("fetchOllama"),
     logger: createMockLogger(),
-    queue: { createQueue: noQueue, createWorker: noQueue },
+    queue: noQueue,
     runAppleOcr: unexpected("runAppleOcr"),
     storage: createMemoryCacheStorage(),
     ...boundaries,

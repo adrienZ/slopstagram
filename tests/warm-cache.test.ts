@@ -107,50 +107,31 @@ test("runWarmCacheJob stores nothing in the cache when Instagram refuses the req
   expect(await listCacheFiles(world.cacheDirectory)).toStrictEqual([]);
 });
 
-test("startWarmCacheQueue schedules and processes warm-cache jobs", async (context) => {
+test("startWarmCacheQueue schedules the hourly job, runs it and forwards errors", async (context) => {
   const world = await createWorld(context);
-  const calls: Array<{ arguments: Array<unknown>; name: string }> = [];
-  let processor: Parameters<FetchRunQueue["createWorker"]>[1] | undefined;
-  let workerErrorListener: ((error: Error) => void) | undefined;
-  const workerError = new Error("worker failed");
+  const calls: Array<string> = [];
+  let processor: Parameters<FetchRunQueue>[1] | undefined;
+  let errorListener: ((error: Error) => void) | undefined;
+  const queueError = new Error("queue failed");
   const capturedErrors: Array<Error> = [];
 
-  const runtime = startWarmCacheQueue(
+  const started = startWarmCacheQueue(
     await createTestRuntime(context, {
-      queue: {
-        createQueue(name) {
-          calls.push({ arguments: [], name: `queue:${name}` });
-          return {
-            close() {
-              calls.push({ arguments: [], name: "queue:close" });
-            },
-            async waitUntilReady() {
-              calls.push({ arguments: [], name: "queue:ready" });
-            },
-            async upsertJobScheduler(...arguments_) {
-              calls.push({ arguments: arguments_, name: "queue:schedule" });
-            },
-          };
-        },
-        createWorker(name, nextProcessor, options) {
-          calls.push({ arguments: [options], name: `worker:${name}` });
-          processor = nextProcessor;
-          return {
-            async close() {
-              calls.push({ arguments: [], name: "worker:close" });
-            },
-            on(_event, listener) {
-              workerErrorListener = listener;
-              return this;
-            },
-            run() {
-              calls.push({ arguments: [], name: "worker:run" });
-            },
-            async waitUntilReady() {
-              calls.push({ arguments: [], name: "worker:ready" });
-            },
-          };
-        },
+      queue(name, nextProcessor) {
+        processor = nextProcessor;
+        calls.push(`queue:${name}`);
+        return {
+          async close() {
+            calls.push("close");
+          },
+          async cron(id, pattern) {
+            calls.push(`cron:${id}:${pattern}`);
+            return null;
+          },
+          on(_event, listener) {
+            errorListener = listener;
+          },
+        };
       },
     }),
     {
@@ -162,7 +143,7 @@ test("startWarmCacheQueue schedules and processes warm-cache jobs", async (conte
     },
   );
 
-  await runtime.ready;
+  await started.ready;
   assert.ok(processor);
   const result = await processor();
   expect(result).toStrictEqual({
@@ -171,156 +152,29 @@ test("startWarmCacheQueue schedules and processes warm-cache jobs", async (conte
     reportKey: result.reportKey,
   });
 
-  workerErrorListener?.(workerError);
-  expect(capturedErrors).toStrictEqual([workerError]);
+  errorListener?.(queueError);
+  expect(capturedErrors).toStrictEqual([queueError]);
 
-  await runtime.close();
+  await started.close();
   expect(calls).toStrictEqual([
-    {
-      arguments: [],
-      name: `queue:${WARM_CACHE_QUEUE_NAME}`,
-    },
-    {
-      arguments: [{ autorun: false, concurrency: 1 }],
-      name: `worker:${WARM_CACHE_QUEUE_NAME}`,
-    },
-    { arguments: [], name: "queue:ready" },
-    {
-      arguments: [
-        WARM_CACHE_QUEUE_NAME,
-        { pattern: WARM_CACHE_CRON_PATTERN },
-        {
-          data: {},
-          name: WARM_CACHE_QUEUE_NAME,
-          opts: {
-            attempts: 3,
-            backoff: { delay: 1000, type: "exponential" },
-          },
-        },
-      ],
-      name: "queue:schedule",
-    },
-    { arguments: [], name: "worker:run" },
-    { arguments: [], name: "worker:ready" },
-    { arguments: [], name: "worker:close" },
-    { arguments: [], name: "queue:close" },
+    `queue:${WARM_CACHE_QUEUE_NAME}`,
+    `cron:${WARM_CACHE_QUEUE_NAME}:${WARM_CACHE_CRON_PATTERN}`,
+    "close",
   ]);
 });
 
-test("startWarmCacheQueue retries while the standalone server starts", async (context) => {
-  vi.useFakeTimers({ now });
-  let readyAttempts = 0;
-  const calls: Array<string> = [];
-
-  const runtime = startWarmCacheQueue(
+test("startWarmCacheQueue reports a failure to schedule the job", async (context) => {
+  const started = startWarmCacheQueue(
     await createTestRuntime(context, {
-      queue: {
-        createQueue() {
-          return {
-            close() {},
-            async waitUntilReady() {
-              readyAttempts += 1;
-              if (readyAttempts === 1) {
-                throw new Error("server is starting");
-              }
-            },
-            async upsertJobScheduler() {
-              calls.push("schedule");
-            },
-          };
+      queue: () => ({
+        close: async () => {},
+        cron: async () => {
+          throw new Error("schedule failed");
         },
-        createWorker() {
-          return {
-            close: async () => {},
-            on() {
-              return this;
-            },
-            run() {
-              calls.push("worker:run");
-            },
-            async waitUntilReady() {
-              calls.push("worker:ready");
-            },
-          };
-        },
-      },
+        on() {},
+      }),
     }),
   );
 
-  await vi.advanceTimersByTimeAsync(50);
-  await runtime.ready;
-  expect(readyAttempts).toBe(2);
-  expect(calls).toStrictEqual(["schedule", "worker:run", "worker:ready"]);
-  await runtime.close();
-});
-
-test("startWarmCacheQueue cleans up when its worker fails to close", async (context) => {
-  const calls: Array<string> = [];
-  const closeFailure = new Error("close failed");
-
-  const runtime = startWarmCacheQueue(
-    await createTestRuntime(context, {
-      queue: {
-        createQueue() {
-          return {
-            close() {
-              calls.push("queue:close");
-            },
-            waitUntilReady: async () => {},
-            upsertJobScheduler: async () => {},
-          };
-        },
-        createWorker() {
-          return {
-            async close() {
-              calls.push("worker:close");
-              throw closeFailure;
-            },
-            on() {
-              return this;
-            },
-            run() {},
-            waitUntilReady: async () => {},
-          };
-        },
-      },
-    }),
-  );
-
-  await runtime.ready;
-  await expect(runtime.close()).rejects.toThrow(closeFailure);
-  expect(calls).toStrictEqual(["worker:close", "queue:close"]);
-});
-
-test("startWarmCacheQueue gives up when the standalone server never starts", async (context) => {
-  vi.useFakeTimers({ now });
-  const runtime = startWarmCacheQueue(
-    await createTestRuntime(context, {
-      queue: {
-        createQueue() {
-          return {
-            close() {},
-            waitUntilReady: async () => {
-              throw new Error("server is starting");
-            },
-            upsertJobScheduler: async () => {},
-          };
-        },
-        createWorker() {
-          return {
-            close: async () => {},
-            on() {
-              return this;
-            },
-            run() {},
-            waitUntilReady: async () => {},
-          };
-        },
-      },
-    }),
-  );
-
-  const outcome = expect(runtime.ready).rejects.toThrow("server is starting");
-  await vi.advanceTimersByTimeAsync(20_000);
-  await outcome;
+  await expect(started.ready).rejects.toThrow("schedule failed");
 });

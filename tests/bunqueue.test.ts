@@ -1,12 +1,8 @@
 import { expect, test } from "vitest";
 import { createBunqueue } from "@@/core/fetch-run/bunqueue.ts";
 
-test("the bunqueue adapter creates a queue and a worker without connecting", async () => {
-  const bunqueue = createBunqueue();
-
-  const queue = bunqueue.createQueue("unit-test");
-  queue.close();
-  const worker = bunqueue.createWorker(
+test("the bunqueue adapter creates a closable queue without a server", async () => {
+  const queue = createBunqueue(
     "unit-test",
     async () =>
       await Promise.resolve({
@@ -14,9 +10,10 @@ test("the bunqueue adapter creates a queue and a worker without connecting", asy
         outputFileName: "",
         reportKey: "",
       }),
-    { autorun: false, concurrency: 1 },
   );
-  await worker.close();
+  queue.on("error", () => {});
 
-  expect(worker.run).toBeTypeOf("function");
+  await queue.close();
+
+  expect(queue.isClosed()).toBe(true);
 });

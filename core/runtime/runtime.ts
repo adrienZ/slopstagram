@@ -56,7 +56,7 @@ export function createRuntime(
     database,
     fetchRuns: new FetchRunRepository(database),
     logger: boundaries.logger ?? createLogger("runtime"),
-    queue: boundaries.queue ?? createBunqueue(),
+    queue: boundaries.queue ?? createBunqueue,
     reports: new ReportRepository(database),
     stories: new StoryRepository(database),
     storage: boundaries.storage ?? createFileCacheStorage(BASE_CACHE_DIR),
