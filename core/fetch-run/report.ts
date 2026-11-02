@@ -133,6 +133,7 @@ export async function createReport(options: CreateReportOptions): Promise<Create
       }
       await cacheReportAudio(report, {
         database,
+        storyRepository: stories,
         directory: boundaries.cacheDirectory,
         fetchMedia: boundaries.fetchMedia,
       });

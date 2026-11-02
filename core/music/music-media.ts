@@ -5,7 +5,6 @@ import { Buffer } from "node:buffer";
 import sharp from "sharp";
 import { z } from "zod";
 import { parseBuffer } from "music-metadata";
-import type { DrizzleDatabase } from "@@/core/database/client.ts";
 import type {
   MusicMediaState,
   MusicMetadataReference,
@@ -21,9 +20,9 @@ import {
 } from "@@/core/media-store/cache-storage.ts";
 import { audioFileExtension } from "./music-media-types.ts";
 import {
-  findMusicMetadata,
-  saveMusicMedia,
-} from "@@/core/database/repositories/music-metadata-repository.ts";
+  type StoryRepository,
+  storyRepository,
+} from "@@/core/database/repositories/story-repository.ts";
 
 const MAX_MEDIA_BYTES = 60 * 1024 * 1024;
 
@@ -34,7 +33,7 @@ interface CachedMusicMedia {
 }
 
 export interface MusicMediaOptions {
-  database: DrizzleDatabase;
+  storyRepository?: Pick<StoryRepository, "findMusicMetadata" | "saveMusicMedia">;
   directory?: string;
   fetchMedia?: (url: string) => Promise<Response>;
   audioStorage?: AudioCacheStorage;
@@ -164,7 +163,8 @@ export async function processMusicMedia(
   reference: MusicMetadataReference,
   options: MusicMediaOptions,
 ) {
-  const current = findMusicMetadata(options.database, reference);
+  const repository = options.storyRepository ?? storyRepository;
+  const current = repository.findMusicMetadata(reference);
   if (!current) {
     return null;
   }
@@ -174,8 +174,7 @@ export async function processMusicMedia(
     current.audioCachePath,
     options,
   );
-  saveMusicMedia(
-    options.database,
+  repository.saveMusicMedia(
     reference,
     "audio",
     current.audioSourceUrl,
@@ -183,7 +182,7 @@ export async function processMusicMedia(
     result.state,
     result.durationMs,
   );
-  return findMusicMetadata(options.database, reference) ?? null;
+  return repository.findMusicMetadata(reference) ?? null;
 }
 
 async function cachedArtworkExists(directory: string, key: string | null) {
@@ -247,7 +246,8 @@ export async function processMusicArtwork(
   reference: MusicMetadataReference,
   options: MusicMediaOptions,
 ) {
-  const current = findMusicMetadata(options.database, reference);
+  const repository = options.storyRepository ?? storyRepository;
+  const current = repository.findMusicMetadata(reference);
   if (!current || current.artworkSourceUrl === null) {
     return current ?? null;
   }
@@ -256,13 +256,12 @@ export async function processMusicArtwork(
     return current;
   }
   const result = await downloadArtwork(current.artworkSourceUrl, current.id, directory, options);
-  saveMusicMedia(
-    options.database,
+  repository.saveMusicMedia(
     reference,
     "artwork",
     current.artworkSourceUrl,
     result.cachePath,
     result.state,
   );
-  return findMusicMetadata(options.database, reference) ?? null;
+  return repository.findMusicMetadata(reference) ?? null;
 }

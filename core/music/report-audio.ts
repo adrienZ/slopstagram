@@ -1,4 +1,4 @@
-import { useDrizzle } from "@@/core/database/client.ts";
+import { type DrizzleDatabase, useDrizzle } from "@@/core/database/client.ts";
 import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
 import {
   cacheReceivedAudio,
@@ -12,7 +12,11 @@ import {
   saveStoryAudioMedia,
 } from "@@/core/database/repositories/story-audio-repository.ts";
 
-export async function processStoryAudio(mediaPk: string, options: MusicMediaOptions) {
+interface StoryAudioOptions extends MusicMediaOptions {
+  database: DrizzleDatabase;
+}
+
+export async function processStoryAudio(mediaPk: string, options: StoryAudioOptions) {
   const current = findStoryAudio(options.database, mediaPk);
   if (!current) {
     return null;
@@ -31,7 +35,7 @@ export async function processStoryAudio(mediaPk: string, options: MusicMediaOpti
 // Enrich the current report; historical cache recovery remains a local one-time operation.
 export async function cacheReportAudio(
   report: StoriesManifestReport,
-  options: Omit<MusicMediaOptions, "database"> & { database?: MusicMediaOptions["database"] } = {},
+  options: MusicMediaOptions & { database?: DrizzleDatabase } = {},
 ) {
   const settings = { ...options, database: options.database ?? useDrizzle() };
   const mediaPks = new Set(
