@@ -5,7 +5,7 @@ import type {
   StoryManifestItemSchema,
   StoryManifestReelSchema,
   StoryOutputUserSchema,
-} from "./lib/story-schemas.ts";
+} from "@@/core/instagram/story-schemas.ts";
 
 export type StoryFetchFailure = z.infer<typeof StoryFetchFailureSchema>;
 export type StoryFetchFailureReason = StoryFetchFailure["reason"];

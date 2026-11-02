@@ -12,7 +12,7 @@ import type {
   InstagramClient,
   InstagramClientResponse,
   ReelsMediaResponse,
-} from "@@/core/instagram-types.ts";
+} from "@@/core/instagram/instagram-types.ts";
 import type { StoriesManifestReport } from "@@/core/report-types.ts";
 
 export const previewSource = "https://example.com/story-preview.webp";

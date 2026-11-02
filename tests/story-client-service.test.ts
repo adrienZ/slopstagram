@@ -1,7 +1,7 @@
 import { test, vi, expect } from "vitest";
 import { z } from "zod";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
-import { createInstagramClient } from "@@/core/story-client-service.ts";
+import { createInstagramClient } from "@@/core/instagram/story-client-service.ts";
 
 interface BrowserFetchCall {
   appId: string;

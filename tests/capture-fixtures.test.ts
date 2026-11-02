@@ -8,7 +8,7 @@ import {
   redactPayloads,
 } from "../scripts/capture-fixtures.ts";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
-import { createInstagramClient } from "@@/core/story-client-service.ts";
+import { createInstagramClient } from "@@/core/instagram/story-client-service.ts";
 
 type Session = Parameters<typeof createInstagramClient>[0];
 

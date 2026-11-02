@@ -2,7 +2,7 @@ import { URL } from "node:url";
 import { z } from "zod";
 import { isJsonObject, type JsonObject, type JsonValue } from "@@/core/utils/json-value.ts";
 import type { StoryAnnotations } from "./story-types.ts";
-import type { StoryItem } from "./instagram-types.ts";
+import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
 import { ProviderIdentifierSchema } from "@@/core/utils/provider-identifier.ts";
 import { getMusicObservation, getMusicSourceUpdate } from "./music-observation-service.ts";
 import {

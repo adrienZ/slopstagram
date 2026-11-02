@@ -26,9 +26,9 @@ import {
   storyStickers,
 } from "../entities/story.ts";
 import { createLogger, type Logger } from "@@/core/utils/logging.ts";
-import { StoryItemSchema } from "@@/core/lib/story-schemas.ts";
+import { StoryItemSchema } from "@@/core/instagram/story-schemas.ts";
 import type { StoryAnnotations } from "@@/core/story-types.ts";
-import type { StoryItem } from "@@/core/instagram-types.ts";
+import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
 import {
   getStoryAnnotations,
   getStoryAnnotationUpdates,

@@ -7,7 +7,7 @@ import {
   type StoryLocationObservation,
 } from "@@/core/database/entities/location-metadata.ts";
 import type { StoryAnnotations } from "./story-types.ts";
-import type { StoryItem } from "./instagram-types.ts";
+import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
 import {
   getLocationSourceUpdates,
   type LocationObservationInput,

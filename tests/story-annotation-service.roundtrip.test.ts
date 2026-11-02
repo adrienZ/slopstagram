@@ -21,7 +21,7 @@ import {
   storyItemWithStickers,
   reelsResponse,
 } from "./mock-helpers.ts";
-import type { StoryItem } from "@@/core/instagram-types.ts";
+import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
 
 function readStoredStory(repository: StoryRepository, mediaPk = "m1") {
   const stored = repository.findByMediaPk(mediaPk);

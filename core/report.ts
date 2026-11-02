@@ -1,7 +1,7 @@
 import { resolveAppleCaptionsForReport } from "./apple-caption-report-service.ts";
 import { type DrizzleDatabase, useDrizzle } from "./database/client.ts";
 import { recordFetchRun } from "./fetch-run.ts";
-import type { InstagramClient } from "./instagram-types.ts";
+import type { InstagramClient } from "@@/core/instagram/instagram-types.ts";
 import { ReportRepository } from "@@/core/database/repositories/report-repository.ts";
 import {
   BASE_CACHE_DIR,

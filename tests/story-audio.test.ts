@@ -13,7 +13,7 @@ import { createMediaResponse } from "../server/routes/media/[...path].ts";
 import { groupTimelineStickers } from "../app/utils/timeline-stickers.ts";
 import { musicStickerItems, storyMusicPreviews } from "../app/utils/music-preview.ts";
 import type { StoriesManifestReport } from "@@/core/report-types.ts";
-import type { StoryItem } from "@@/core/instagram-types.ts";
+import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
 import { fetchStoriesManifest } from "@@/core/stories.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 import {

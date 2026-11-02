@@ -2,7 +2,7 @@ import { createStorage, prefixStorage, type Storage } from "unstorage";
 import fsDriver from "unstorage/drivers/fs-lite";
 import path from "node:path";
 import { APP_CACHE_DIR } from "@@/core/utils/app-data-paths.ts";
-import type { StoryItem } from "../instagram-types.ts";
+import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
 
 export type ImageCacheStorage = Storage<Record<string, never>>;
 export type AudioCacheStorage = Storage<Record<string, never>>;

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { StoryAnnotations } from "./story-types.ts";
-import type { StoryItem } from "./instagram-types.ts";
+import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
 import {
   annotationSources,
   getStoryAnnotations,
