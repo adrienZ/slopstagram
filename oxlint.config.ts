@@ -24,12 +24,23 @@ const restrictedReactPaths = [
   },
 ];
 
+// The helpers of a repository are named `<repository>.<aspect>.ts` next to it. They take the database
+// or a transaction handle, and only their repository may import them.
+const privateRepositoryHelpers: RestrictedPattern = {
+  group: ["**/story-repository.*.ts"],
+  message:
+    "story-repository.<aspect>.ts holds helpers private to story-repository.ts. Call the repository method instead of importing the helper.",
+};
+
 // Oxlint replaces a rule's options instead of merging them, so every
-// `no-restricted-imports` entry must carry the react paths itself.
+// `no-restricted-imports` entry must carry the react paths and the private helpers itself.
 function restrictImports(
   patterns: Array<RestrictedPattern> = [],
 ): ["error", { paths: typeof restrictedReactPaths; patterns: Array<RestrictedPattern> }] {
-  return ["error", { paths: restrictedReactPaths, patterns }];
+  return [
+    "error",
+    { paths: restrictedReactPaths, patterns: [...patterns, privateRepositoryHelpers] },
+  ];
 }
 
 const restrictedReactImports = defineConfig({
@@ -76,9 +87,15 @@ export default defineConfig({
   rules: {
     "slopstagram/no-barrel-files": "error",
     "slopstagram/domain-layering": "error",
-    "slopstagram/private-repository-helpers": "error",
   },
   overrides: [
+    {
+      // The only importer of its helpers.
+      files: ["core/database/repositories/story-repository.ts"],
+      rules: {
+        "no-restricted-imports": ["error", { paths: restrictedReactPaths }],
+      },
+    },
     {
       files: ["scripts/**/*.ts"],
       rules: {
