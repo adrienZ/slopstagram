@@ -5,7 +5,7 @@ import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { storyRepository } from "@@/core/database/repositories/story-repository.ts";
 import { processMusicArtwork, processMusicMedia } from "@@/core/music/music-media.ts";
 import { startMediaServer, wavAudio } from "./media-server.ts";
-import { createMemoryStorage } from "./memory-storage.ts";
+import { createMemoryCacheStorage } from "./memory-storage.ts";
 
 // Without a story repository option, music media caching reads and writes the application's.
 test("music media caching defaults to the application's story repository", async (context) => {
@@ -44,18 +44,18 @@ test("music media caching defaults to the application's story repository", async
   });
   const reference = { id: metadata.id, status: metadata.status };
 
-  const artworkStorage = createMemoryStorage<Record<string, never>>();
+  const storage = createMemoryCacheStorage();
   const artwork = await processMusicArtwork(reference, {
-    artworkStorage,
     fetchMedia: media.fetchMedia,
+    storage,
   });
   const audio = await processMusicMedia(reference, {
-    audioStorage: createMemoryStorage<Record<string, never>>(),
     fetchMedia: media.fetchMedia,
+    storage,
   });
 
   expect(artwork?.artworkState).toBe("available");
-  expect(await artworkStorage.getKeys()).toHaveLength(1);
+  expect(await storage.images.getKeys()).toHaveLength(1);
   expect(audio?.audioState).toBe("available");
   expect(storyRepository.findMusicMetadata(reference)?.audioState).toBe("available");
 });

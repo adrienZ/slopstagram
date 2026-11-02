@@ -3,12 +3,7 @@ import { type DrizzleDatabase, useDrizzle } from "@@/core/database/client.ts";
 import { recordFetchRun } from "./fetch-run.ts";
 import type { InstagramClient } from "@@/core/instagram/instagram-types.ts";
 import { ReportRepository } from "@@/core/database/repositories/report-repository.ts";
-import {
-  BASE_CACHE_DIR,
-  createFileStorage,
-  createImageCacheStorage,
-  createStoryStorage,
-} from "@@/core/media-store/cache-storage.ts";
+import { BASE_CACHE_DIR, createFileCacheStorage } from "@@/core/media-store/cache-storage.ts";
 import { AppleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
 import { FetchRunRepository } from "@@/core/database/repositories/fetch-run-repository.ts";
 import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
@@ -104,8 +99,7 @@ export async function createReport(options: CreateReportOptions): Promise<Create
   const appleVision = new AppleVisionRepository(database);
   const summaries = new UserSummaryRepository(database);
   const cacheDirectory = boundaries.cacheDirectory ?? BASE_CACHE_DIR;
-  const files =
-    boundaries.cacheDirectory === undefined ? undefined : createFileStorage(cacheDirectory);
+  const storage = createFileCacheStorage(cacheDirectory);
   const now = options.now ?? (() => new Date());
   return await recordFetchRun(
     async (run) => {
@@ -119,7 +113,7 @@ export async function createReport(options: CreateReportOptions): Promise<Create
         now,
         reportName: outputFileName,
         storyRepository: stories,
-        storyStorage: files === undefined ? undefined : createStoryStorage(files),
+        storyStorage: storage.stories,
       });
       run.report = report;
       // Keep the observation and failures even if enrichment or every media fetch fails.
@@ -135,12 +129,13 @@ export async function createReport(options: CreateReportOptions): Promise<Create
         storyRepository: stories,
         directory: boundaries.cacheDirectory,
         fetchMedia: boundaries.fetchMedia,
+        storage,
       });
       const cachedImages = await cacheReportImages(report, {
         cacheDirectory,
         fetchImage: boundaries.fetchImage,
         logger,
-        storage: files === undefined ? undefined : createImageCacheStorage(files),
+        storage: storage.images,
       });
       await resolveAppleCaptionsForReport(report, cachedImages, {
         cacheDirectory,

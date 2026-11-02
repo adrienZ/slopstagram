@@ -21,7 +21,7 @@ interface StoryAudioOptions extends Omit<MusicMediaOptions, "storyRepository"> {
   >;
 }
 
-export async function processStoryAudio(mediaPk: string, options: StoryAudioOptions = {}) {
+export async function processStoryAudio(mediaPk: string, options: StoryAudioOptions) {
   const repository = options.storyRepository ?? storyRepository;
   const current = repository.findStoryAudio(mediaPk);
   if (!current) {
@@ -39,10 +39,7 @@ export async function processStoryAudio(mediaPk: string, options: StoryAudioOpti
 }
 
 // Enrich the current report; historical cache recovery remains a local one-time operation.
-export async function cacheReportAudio(
-  report: StoriesManifestReport,
-  options: StoryAudioOptions = {},
-) {
+export async function cacheReportAudio(report: StoriesManifestReport, options: StoryAudioOptions) {
   const repository = options.storyRepository ?? storyRepository;
   const settings = { ...options, storyRepository: repository };
   const mediaPks = new Set(

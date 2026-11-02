@@ -1,4 +1,5 @@
 import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { createFileCacheStorage } from "@@/core/media-store/cache-storage.ts";
 import path from "node:path";
 import { tmpdir } from "node:os";
 import { assert, test, expect } from "vitest";
@@ -104,6 +105,7 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
   await cacheReportAudio(report, {
     storyRepository: repository,
     directory,
+    storage: createFileCacheStorage(directory),
     fetchMedia: server.fetchMedia,
   });
   const first = repository.findByMediaPk("first")?.annotations?.musicObservations?.[0].metadata;
@@ -116,12 +118,13 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
   assert.ok(first.audioCachePath !== null);
   assert.ok(first.artworkCachePath !== null);
   expect(await readFile(path.join(directory, first.audioCachePath))).toStrictEqual(audio);
-  const artwork = await createMediaResponse(first.artworkCachePath, directory);
+  const artwork = await createMediaResponse(first.artworkCachePath, path.join(directory, "images"));
   expect(artwork.status).toBe(200);
   expect(artwork.headers.get("content-type")).toBe("image/jpeg");
   await cacheReportAudio(report, {
     storyRepository: repository,
     directory,
+    storage: createFileCacheStorage(directory),
     fetchMedia: server.fetchMedia,
   });
   expect(server.requests).toStrictEqual([`/lookup/${audioId}`, "/audio.m4a", "/cover.png"]);
@@ -211,6 +214,7 @@ test("generic video/mp4 responses with a video track are never cached as music",
   });
   const cached = await cacheReceivedAudio("asset", "https://example.com/video", null, {
     directory,
+    storage: createFileCacheStorage(directory),
     fetchMedia: server.fetchMedia,
   });
   expect(cached.state).toBe("unsupported");

@@ -1,11 +1,6 @@
 import { Buffer } from "node:buffer";
 import path from "node:path";
-import {
-  BASE_CACHE_DIR,
-  IMAGES_STORAGE_DIR,
-  imageCacheStorage,
-  type ImageCacheStorage,
-} from "./cache-storage.ts";
+import { BASE_CACHE_DIR, IMAGES_STORAGE_DIR, type ImageCacheStorage } from "./cache-storage.ts";
 import { convertImageToJpeg } from "./image-conversion.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
@@ -26,7 +21,7 @@ export interface CacheReportImagesOptions {
   convertToJpeg?: typeof convertImageToJpeg;
   fetchImage?: FetchImage;
   logger: Logger;
-  storage?: ImageCacheStorage;
+  storage: ImageCacheStorage;
 }
 
 export interface CachedReportImages {
@@ -105,7 +100,7 @@ function resolveCacheOptions(options: CacheReportImagesOptions): ResolvedCacheRe
     convertToJpeg: options.convertToJpeg ?? convertImageToJpeg,
     fetchImage: options.fetchImage ?? globalThis.fetch,
     logger: options.logger,
-    storage: options.storage ?? imageCacheStorage,
+    storage: options.storage,
   };
 }
 
