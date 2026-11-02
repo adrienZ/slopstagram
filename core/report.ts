@@ -25,7 +25,7 @@ import {
   recognizeAppleCaption,
 } from "./lib/apple-ocr-service.ts";
 import { cacheReportAudio } from "./report-audio-service.ts";
-import type { MusicMediaOptions } from "@@/core/music/music-media-service.ts";
+import type { MusicMediaOptions } from "@@/core/music/music-media.ts";
 import { persistReportInstagramUsers } from "./lib/instagram-user-service.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoriesManifestReport } from "./report-types.ts";

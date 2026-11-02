@@ -8,7 +8,7 @@ import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
 import { fetchStoriesManifest } from "@@/core/stories.ts";
 import { cacheReportAudio } from "@@/core/report-audio-service.ts";
-import { cacheReceivedAudio } from "@@/core/music/music-media-service.ts";
+import { cacheReceivedAudio } from "@@/core/music/music-media.ts";
 import { enrichCurrentMusicAssets } from "@@/core/music/music-asset-enrichment.ts";
 import { JsonValueSchema } from "@@/core/utils/json-value.ts";
 import { createMediaResponse } from "../server/routes/media/[...path].ts";

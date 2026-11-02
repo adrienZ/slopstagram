@@ -5,7 +5,7 @@ import {
   processMusicMedia,
   processMusicArtwork,
   type MusicMediaOptions,
-} from "@@/core/music/music-media-service.ts";
+} from "@@/core/music/music-media.ts";
 import { readMusicObservations } from "@@/core/database/repositories/music-metadata-repository.ts";
 import {
   findStoryAudio,
