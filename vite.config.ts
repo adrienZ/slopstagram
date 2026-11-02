@@ -3,6 +3,7 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react from "@vitejs/plugin-react";
 import { nitro } from "nitro/vite";
 import tailwindcss from "@tailwindcss/vite";
+import { devtoolsLaunchers } from "./devtools/launchers.ts";
 
 export default defineConfig({
   devtools: { apply: "serve" },
@@ -24,5 +25,6 @@ export default defineConfig({
     }),
     react(),
     nitro(),
+    devtoolsLaunchers(),
   ],
 });

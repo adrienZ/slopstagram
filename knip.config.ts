@@ -22,6 +22,8 @@ const config: KnipConfig = {
   ignoreDependencies: [
     // Used by agents.
     "@playwright/cli",
+    // Launched by the DevTools dock in devtools/launchers.ts.
+    "bunqueue-dashboard",
   ],
 };
 

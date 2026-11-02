@@ -18,6 +18,7 @@
   },
   "include": [
     "core/**/*.ts",
+    "devtools/**/*.ts",
     "scripts/**/*.ts",
     "scripts/**/*.tsx",
     "oxlint/**/*.ts",
