@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { assert, expect, test } from "vitest";
 import { AppleOcrUnavailableError } from "@@/core/vision/apple-ocr.ts";
-import { createStoryFeed, readStoryFeedVision } from "@@/core/story-feed.ts";
+import { createStoryFeed, readStoryFeedVision } from "@@/core/story-feed/story-feed.ts";
 import { readUserSummaries } from "@@/core/accounts/user-summary.ts";
 import { createFailingClient, createRecordedClient } from "./setup/recorded-client.ts";
 import { createRecordedInstagramClient } from "./setup/seed.ts";
