@@ -3,6 +3,11 @@ import { notFound } from "@tanstack/react-router";
 import { z } from "zod";
 import { storyDateSchema } from "@@/core/story-feed/story-days.ts";
 
+async function loadProductionRuntime() {
+  const { getProductionRuntime } = await import("@@/core/runtime/production-runtime.ts");
+  return getProductionRuntime();
+}
+
 export const getReport = createServerFn({ method: "GET" })
   .validator(z.object({ date: storyDateSchema.optional(), story: z.string().optional() }))
   .handler(async ({ data }) => {
@@ -21,9 +26,8 @@ export const getUserTimeline = createServerFn({ method: "GET" })
   .validator(z.string())
   .handler(async ({ data }) => {
     const { loadAccountTimeline } = await import("./loaders/account-timeline.ts");
-    const { getProductionRuntime } = await import("@@/core/runtime/production-runtime.ts");
     try {
-      return loadAccountTimeline(getProductionRuntime(), data);
+      return loadAccountTimeline(await loadProductionRuntime(), data);
     } catch (error) {
       if (error instanceof Error && "status" in error && error.status === 404) {
         notFound({ throw: true });
