@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { cn } from "cn";
-import type { StoryCardViewModel } from "../story-card-view-model.ts";
+import type { StoryCardData } from "../utils/story-cards.ts";
 
 const previewSizes = {
   timeline:
@@ -14,7 +14,7 @@ export function StoryCard({
   story,
   size = "timeline",
 }: {
-  story: StoryCardViewModel;
+  story: StoryCardData;
   size?: "timeline" | "feed" | "sticker" | "gallery";
 }) {
   const navigate = useNavigate();

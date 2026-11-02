@@ -2,16 +2,16 @@ import { beforeAll, expect, test } from "vitest";
 import { screen, within } from "@testing-library/react";
 import { Route as ReportRoute } from "../../app/routes/report.tsx";
 import { Route as TimelineRoute } from "../../app/routes/users/$username.tsx";
-import { loadReport } from "../../app/report-handler.tsx";
-import { loadUserTimeline } from "../../app/user-timeline-handler.tsx";
+import { loadStoryFeed } from "../../app/loaders/story-feed.ts";
+import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
 import { createPageRenderer } from "../render-page.ts";
 import { pageNow, seedPageDatabase, timelineAccount, today } from "./seeded-pages.ts";
 
 // The lightbox keeps its state in the search parameters, so it is tested through the pages that host it.
-const reportRenderer = createPageRenderer(ReportRoute, () => loadReport(pageNow), "/report");
+const reportRenderer = createPageRenderer(ReportRoute, () => loadStoryFeed(pageNow), "/report");
 const timelineRenderer = createPageRenderer(
   TimelineRoute,
-  ({ params }) => loadUserTimeline(params.username, pageNow),
+  ({ params }) => loadAccountTimeline(params.username, pageNow),
   "/users/$username",
 );
 
@@ -20,7 +20,7 @@ let stories: Array<{ mediaPk: string; alt: string; preview: string }>;
 
 beforeAll(async () => {
   await seedPageDatabase();
-  stories = loadReport(pageNow).users.flatMap((section) => section.stories);
+  stories = loadStoryFeed(pageNow).users.flatMap((section) => section.stories);
 });
 
 test("buttons and arrow keys wrap through the gallery while preserving other search parameters", async () => {

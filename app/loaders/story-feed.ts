@@ -1,3 +1,4 @@
+import "@tanstack/react-start/server-only";
 import {
   appleVisionRepository,
   type AppleVisionRepository,
@@ -7,11 +8,16 @@ import {
   type UserSummaryRepository,
 } from "@@/core/repositories/user-summary-repository.ts";
 import { visionRepository, type VisionRepository } from "@@/core/repositories/vision-repository.ts";
+import { storyRepository } from "@@/core/repositories/story-repository.ts";
 import type { CachedReportImages } from "@@/core/lib/image-cache-service.ts";
+import { getReportUserKey } from "@@/core/lib/report-user-key-service.ts";
 import { readUserSummaries } from "@@/core/user-summary.ts";
 import type { StoryOutputUser } from "@@/core/report-types.ts";
 import type { VisionResult } from "@@/core/entities/vision.ts";
-import { readStoryFeedVision } from "@@/core/story-feed.ts";
+import { createReportFeed, readStoryFeedVision } from "@@/core/story-feed.ts";
+import { createStoryCards, withStoryStickers } from "../utils/story-cards.ts";
+import { formatReportDate } from "../utils/helper.ts";
+import { loadSidebarUsers } from "./sidebar-users.ts";
 
 interface FeedRepositories {
   appleVision: Pick<AppleVisionRepository, "findByMediaPk">;
@@ -19,7 +25,7 @@ interface FeedRepositories {
   vision: Pick<VisionRepository, "findByMediaPk">;
 }
 
-export interface ReportViewModel {
+export interface StoryFeedSources {
   appleCaptionByMediaPk: Map<string, string>;
   cachedImages: CachedReportImages;
   userSummaryByUserKey: Map<string, string>;
@@ -95,10 +101,10 @@ const defaultFeedRepositories: FeedRepositories = {
   vision: visionRepository,
 };
 
-export function createReportViewModel(
+export function readStoryFeedSources(
   users: Array<StoryOutputUser>,
   repositories: FeedRepositories = defaultFeedRepositories,
-): ReportViewModel {
+): StoryFeedSources {
   const cachedImages = readCachedImages(users);
   const visionByPreviewUrl = readStoryFeedVision(users, repositories.vision);
   const userSummaryByUserKey = readUserSummaries(users, {
@@ -114,3 +120,40 @@ export function createReportViewModel(
     visionByPreviewUrl,
   };
 }
+
+export function loadStoryFeed(
+  now: Date = new Date(),
+  selectedDate?: string,
+  selectedStory?: string,
+) {
+  const {
+    today,
+    selectedDate: day,
+    availableDates,
+    users: feedUsers,
+  } = createReportFeed(now, selectedDate, { selectedStory });
+  const sources = readStoryFeedSources(feedUsers);
+  const sidebarUsers = loadSidebarUsers();
+  const storedStories = feedUsers.flatMap((user) =>
+    user.stories.flatMap(({ media_pk }) => {
+      const story = storyRepository.findByMediaPk(media_pk);
+      return story === null ? [] : [{ story }];
+    }),
+  );
+  const users = feedUsers.map((user) => ({
+    user,
+    avatar: sources.cachedImages.profilePicPathByUrl.get(user.profile_pic_url?.trim() ?? ""),
+    summary: sources.userSummaryByUserKey.get(getReportUserKey(user)),
+    stories: withStoryStickers(createStoryCards(user, sources), storedStories, sidebarUsers),
+  }));
+  return {
+    date: formatReportDate(now.toISOString()),
+    selectedDate: day,
+    today,
+    availableDates,
+    sidebarUsers,
+    users,
+  };
+}
+
+export type StoryFeedPageData = ReturnType<typeof loadStoryFeed>;

@@ -2,9 +2,9 @@ import { createContext, lazy, Suspense, useContext, useId, useRef, useState } fr
 import type { ComponentType, KeyboardEvent } from "react";
 import { ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
 import type { LocationMapCanvasProps } from "./location-map-canvas.tsx";
-import { adjacentPlaceId, type TimelineLocations } from "../timeline-locations.ts";
-import type { StoryCardViewModel } from "../story-card-view-model.ts";
-import { formatStickerStoryDate } from "../timeline-stickers.ts";
+import { adjacentPlaceId, type TimelineLocations } from "../utils/timeline-locations.ts";
+import type { StoryCardData } from "../utils/story-cards.ts";
+import { formatStickerStoryDate } from "../utils/timeline-stickers.ts";
 import { StoryCard } from "./story-card.tsx";
 
 const footerButtonClassName =
@@ -19,7 +19,7 @@ export function LocationHistory({
   storyByMediaPk,
 }: {
   locations: TimelineLocations;
-  storyByMediaPk: Map<string, StoryCardViewModel>;
+  storyByMediaPk: Map<string, StoryCardData>;
 }) {
   const [selectedId, setSelectedId] = useState<string>();
   const selectId = useId();

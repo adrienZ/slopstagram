@@ -2,15 +2,15 @@ import { MusicSticker } from "./music-sticker.tsx";
 import { useState } from "react";
 import { cn } from "cn";
 import { ChevronLeftIcon, ChevronRightIcon, ExpandIcon } from "lucide-react";
-import type { StoryCardViewModel } from "../story-card-view-model.ts";
+import type { StoryCardData } from "../utils/story-cards.ts";
 import {
   formatStickerStoryDate,
   type StickerKindGroup,
   type StoryStickerGroup,
-} from "../timeline-stickers.ts";
+} from "../utils/timeline-stickers.ts";
 import { Sticker } from "./sticker.tsx";
-import { presentSticker } from "../sticker-presentation.ts";
-import type { SidebarUser } from "../sidebar-users.ts";
+import { presentSticker } from "../utils/sticker-presentation.ts";
+import type { SidebarUser } from "../loaders/sidebar-users.ts";
 import { Button } from "../shadcn/ui/button.tsx";
 import {
   Card,
@@ -41,14 +41,14 @@ import {
 } from "../shadcn/ui/table.tsx";
 import { StoryCard } from "./story-card.tsx";
 import { LocationHistory } from "./location-history.tsx";
-import type { TimelineLocations } from "../timeline-locations.ts";
+import type { TimelineLocations } from "../utils/timeline-locations.ts";
 
 const STICKER_PAGE_SIZE = 3;
 
 interface StickerTableProps {
   kind: string;
   stories: Array<StoryStickerGroup>;
-  storyByMediaPk: Map<string, StoryCardViewModel>;
+  storyByMediaPk: Map<string, StoryCardData>;
   users: Array<SidebarUser>;
   expanded?: boolean;
 }
@@ -145,7 +145,7 @@ function StickerKindCard({
 }: {
   group: StickerKindGroup;
   locations: TimelineLocations;
-  storyByMediaPk: Map<string, StoryCardViewModel>;
+  storyByMediaPk: Map<string, StoryCardData>;
   users: Array<SidebarUser>;
 }) {
   const [page, setPage] = useState(1);
@@ -264,7 +264,7 @@ export function TimelineStickers({
 }: {
   groups: Array<StickerKindGroup>;
   locations: TimelineLocations;
-  storyByMediaPk: Map<string, StoryCardViewModel>;
+  storyByMediaPk: Map<string, StoryCardData>;
   users: Array<SidebarUser>;
 }) {
   return (

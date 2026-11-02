@@ -1,5 +1,5 @@
 import { assert, test, expect, type TestContext } from "vitest";
-import { createReportViewModel } from "../app/report-view-model.ts";
+import { readStoryFeedSources } from "../app/loaders/story-feed.ts";
 import { userSummaries } from "@@/core/entities/user-summary.ts";
 import { AppleVisionRepository } from "@@/core/repositories/apple-vision-repository.ts";
 import { VisionRepository } from "@@/core/repositories/vision-repository.ts";
@@ -25,7 +25,7 @@ async function createStoredSummary(context: TestContext) {
   return {
     entry,
     feed: () =>
-      createReportViewModel(report.output.users, {
+      readStoryFeedSources(report.output.users, {
         appleVision: new AppleVisionRepository(database),
         userSummary: repository,
         vision: new VisionRepository(database),
@@ -148,7 +148,7 @@ for (const outcome of ["empty", "error"] as const) {
     expect(summaries.size).toBe(1);
     expect(countSummaries()).toBe(0);
     expect(
-      createReportViewModel(report.output.users, {
+      readStoryFeedSources(report.output.users, {
         appleVision: new AppleVisionRepository(database),
         userSummary: repository,
         vision: new VisionRepository(database),

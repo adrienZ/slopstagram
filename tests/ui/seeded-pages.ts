@@ -6,6 +6,10 @@ import { appleVisionRepository } from "@@/core/repositories/apple-vision-reposit
 import { instagramUserRepository } from "@@/core/repositories/instagram-user-repository.ts";
 import { createReportFeed } from "@@/core/story-feed.ts";
 import { resolveUserSummariesForReport } from "@@/core/user-summary.ts";
+import type { SidebarUser } from "../../app/loaders/sidebar-users.ts";
+import { withStoryStickers, type StoryCardData } from "../../app/utils/story-cards.ts";
+import { groupTimelineLocations } from "../../app/utils/timeline-locations.ts";
+import { groupTimelineStickers } from "../../app/utils/timeline-stickers.ts";
 import { createMockLogger } from "../mock-helpers.ts";
 import { readRecordedPayloads, seedRecordedStories } from "../setup/seed.ts";
 
@@ -95,4 +99,20 @@ export function stickerKindsOf(
       entries.flatMap(({ story }) => story.annotations?.stickers.map(({ kind }) => kind) ?? []),
     ),
   ].toSorted();
+}
+
+/** Recomputes what the loader derives from a timeline's stories, after a test changed them. */
+export function regroupTimeline<
+  Props extends {
+    sidebarUsers: Array<SidebarUser>;
+    stories: Array<StoryCardData>;
+    timeline: { stories: Array<Parameters<typeof groupTimelineLocations>[0][number]> };
+  },
+>(props: Props, kinds: Array<string> = stickerKindsOf(props.timeline.stories)) {
+  return {
+    ...props,
+    stories: withStoryStickers(props.stories, props.timeline.stories, props.sidebarUsers),
+    stickerGroups: groupTimelineStickers(props.timeline.stories, kinds),
+    locations: groupTimelineLocations(props.timeline.stories),
+  };
 }

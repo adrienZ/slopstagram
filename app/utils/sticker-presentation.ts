@@ -1,4 +1,4 @@
-import type { SidebarUser } from "./sidebar-users.ts";
+import type { SidebarUser } from "../loaders/sidebar-users.ts";
 import { formatStickerLabel, type StickerPlace } from "./timeline-stickers.ts";
 import { getUserTimelineUrl } from "./helper.ts";
 

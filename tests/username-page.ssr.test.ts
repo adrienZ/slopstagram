@@ -9,7 +9,7 @@ import { instagramUserRepository } from "@@/core/repositories/instagram-user-rep
 import { storyRepository } from "@@/core/repositories/story-repository.ts";
 import { visionRepository } from "@@/core/repositories/vision-repository.ts";
 import { Route } from "../app/routes/users/$username.tsx";
-import { loadUserTimeline } from "../app/user-timeline-handler.tsx";
+import { loadAccountTimeline } from "../app/loaders/account-timeline.ts";
 import { storyItem } from "./mock-helpers.ts";
 import { createPageRenderer } from "./render-page.ts";
 
@@ -23,7 +23,7 @@ const promptHash = createHash("sha256").update(VISION_PROMPT).digest("hex");
 // The timeline the handler loads from the seeded database, with the username the real loader receives.
 const renderer = createPageRenderer(
   Route,
-  ({ params }) => loadUserTimeline(params.username, now),
+  ({ params }) => loadAccountTimeline(params.username, now),
   "/users/$username",
 );
 
@@ -105,7 +105,7 @@ test("an account without stories renders an empty timeline", async () => {
 });
 
 test("an account the application has never seen has no timeline", () => {
-  expect(() => loadUserTimeline("unknown_account", now)).toThrow(
+  expect(() => loadAccountTimeline("unknown_account", now)).toThrow(
     "no published stories found for unknown_account",
   );
 });

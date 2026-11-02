@@ -7,7 +7,7 @@ import {
   subscribeTheme,
   themeScript,
   type Theme,
-} from "../theme.ts";
+} from "./theme.ts";
 
 const ThemeContext = createContext<{ theme: Theme; setTheme: typeof setTheme } | null>(null);
 

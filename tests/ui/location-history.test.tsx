@@ -2,26 +2,32 @@ import type { ReactNode } from "react";
 import { beforeAll, expect, test } from "vitest";
 import { screen, within } from "@testing-library/react";
 import { Route } from "../../app/routes/users/$username.tsx";
-import type { TimelineContentProps } from "../../app/routes/users/$username.tsx";
+import type { AccountTimelinePageData } from "../../app/loaders/account-timeline.ts";
 import type { StoryLocationObservation } from "@@/core/entities/location-metadata.ts";
-import { pageNow, stickerKindsOf, timelineAccount, seedPageDatabase } from "./seeded-pages.ts";
-import { loadUserTimeline } from "../../app/user-timeline-handler.tsx";
+import {
+  pageNow,
+  regroupTimeline,
+  stickerKindsOf,
+  timelineAccount,
+  seedPageDatabase,
+} from "./seeded-pages.ts";
+import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
 import { createPageRenderer } from "../render-page.ts";
 import { LocationMapContext } from "../../app/components/location-history.tsx";
 import type { LocationMapCanvasProps } from "../../app/components/location-map-canvas.tsx";
 
 const renderer = createPageRenderer(
   Route,
-  ({ params }) => loadUserTimeline(params.username, pageNow),
+  ({ params }) => loadAccountTimeline(params.username, pageNow),
   "/users/$username",
 );
 
-let timelineProps: ReturnType<typeof loadUserTimeline>;
+let timelineProps: ReturnType<typeof loadAccountTimeline>;
 let timelineEntry: (typeof timelineProps)["timeline"]["stories"][number];
 
 beforeAll(async () => {
   await seedPageDatabase();
-  timelineProps = loadUserTimeline(timelineAccount, pageNow);
+  timelineProps = loadAccountTimeline(timelineAccount, pageNow);
   [timelineEntry] = timelineProps.timeline.stories;
 });
 
@@ -52,13 +58,16 @@ function MapWrapper({ children }: { children: ReactNode }) {
 }
 
 /** Props whose sticker kinds also cover the kinds of the stories a test adds. */
-function withObservedKinds(props: TimelineContentProps): TimelineContentProps {
-  return {
-    ...props,
-    stickerKinds: [
-      ...new Set([...props.stickerKinds, ...stickerKindsOf(props.timeline.stories)]),
+function withObservedKinds(props: AccountTimelinePageData): AccountTimelinePageData {
+  return regroupTimeline(
+    props,
+    [
+      ...new Set([
+        ...props.stickerGroups.map(({ kind }) => kind),
+        ...stickerKindsOf(props.timeline.stories),
+      ]),
     ].toSorted(),
-  };
+  );
 }
 
 function observation(
@@ -111,7 +120,7 @@ function observation(
 
 function locationTimeline(
   observations: Array<Array<StoryLocationObservation>>,
-): TimelineContentProps {
+): AccountTimelinePageData {
   return {
     ...timelineProps,
     stories: observations.map((_, index) => ({
@@ -219,10 +228,7 @@ test("a location history without coordinates keeps every label and preview avail
 });
 
 test("metadata without a displayable sticker remains mappable through its story provenance", async () => {
-  const props = {
-    ...locationTimeline([[{ ...observation("unlabelled", "place"), occurrenceId: null }]]),
-    stickerKinds: ["location"],
-  };
+  const props = locationTimeline([[{ ...observation("unlabelled", "place"), occurrenceId: null }]]);
   const { annotations } = props.timeline.stories[0].story;
   if (annotations !== undefined) {
     annotations.stickers = [];

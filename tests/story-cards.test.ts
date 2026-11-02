@@ -1,6 +1,6 @@
 import { test, expect } from "vitest";
 import type { StoryOutputUser } from "@@/core/report-types.ts";
-import { createStoryCards, type StoryCardSources } from "../app/story-card-view-model.ts";
+import { createStoryCards, type StoryCardSources } from "../app/utils/story-cards.ts";
 
 function createUser(): StoryOutputUser {
   return {

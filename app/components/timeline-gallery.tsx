@@ -1,7 +1,7 @@
-import type { StoryCardViewModel } from "../story-card-view-model.ts";
-import type { UserTimeline } from "../user-timeline.ts";
+import type { StoryCardData } from "../utils/story-cards.ts";
+import type { UserTimeline } from "../loaders/account-timeline.ts";
 import { formatStoryDay } from "@@/core/lib/story-date-service.ts";
-import { getTimelineDayId } from "../story-navigation.ts";
+import { getTimelineDayId } from "../utils/story-navigation.ts";
 import { StoryCard } from "./story-card.tsx";
 
 export function TimelineGallery({
@@ -9,7 +9,7 @@ export function TimelineGallery({
   storyByMediaPk,
 }: {
   years: UserTimeline["years"];
-  storyByMediaPk: Map<string, StoryCardViewModel>;
+  storyByMediaPk: Map<string, StoryCardData>;
 }) {
   return (
     <section aria-label="Galerie des stories">
