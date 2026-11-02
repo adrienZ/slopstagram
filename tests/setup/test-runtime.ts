@@ -13,6 +13,10 @@ function unexpected(boundary: string) {
   };
 }
 
+function noQueue(): never {
+  throw new Error("The test runtime has no fake for queue. Pass one to createTestRuntime.");
+}
+
 /** A runtime over a fresh in-memory database and stores; other boundaries fail on use unless overridden. */
 export async function createTestRuntime(
   context: Pick<TestContext, "onTestFinished">,
@@ -24,6 +28,7 @@ export async function createTestRuntime(
     fetchMedia: unexpected("fetchMedia"),
     fetchOllama: unexpected("fetchOllama"),
     logger: createMockLogger(),
+    queue: { createQueue: noQueue, createWorker: noQueue },
     runAppleOcr: unexpected("runAppleOcr"),
     storage: createMemoryCacheStorage(),
     ...boundaries,

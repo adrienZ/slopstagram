@@ -1,4 +1,5 @@
 import { setTimeout as sleep } from "node:timers/promises";
+import type { Runtime } from "@@/core/runtime/runtime.ts";
 import { createLogger, type Logger } from "@@/core/utils/logging.ts";
 import type { CreateReportBoundaries } from "./report.ts";
 import { runWarmCacheJob, type WarmCacheJobResult } from "./warm-cache.ts";
@@ -37,7 +38,7 @@ interface WorkerOptions {
   concurrency: number;
 }
 
-export interface WarmCacheQueueDependencies {
+export interface FetchRunQueue {
   createQueue: (name: string) => WarmCacheQueue;
   createWorker: (
     name: string,
@@ -49,7 +50,6 @@ export interface WarmCacheQueueDependencies {
 export interface StartWarmCacheQueueOptions {
   /** The external systems each job's report talks to; see {@link CreateReportBoundaries}. */
   boundaries?: CreateReportBoundaries;
-  dependencies: WarmCacheQueueDependencies;
   logger?: Logger;
   onError?: (error: Error) => void;
 }
@@ -79,15 +79,17 @@ async function waitForServer(queue: WarmCacheQueue): Promise<void> {
   }
 }
 
-export function startWarmCacheQueue({
-  boundaries,
-  dependencies,
-  logger = createLogger(WARM_CACHE_QUEUE_NAME),
-  onError,
-}: StartWarmCacheQueueOptions): WarmCacheQueueRuntime {
-  const queue = dependencies.createQueue(WARM_CACHE_QUEUE_NAME);
+export function startWarmCacheQueue(
+  runtime: Pick<Runtime, "queue">,
+  {
+    boundaries,
+    logger = createLogger(WARM_CACHE_QUEUE_NAME),
+    onError,
+  }: StartWarmCacheQueueOptions = {},
+): WarmCacheQueueRuntime {
+  const queue = runtime.queue.createQueue(WARM_CACHE_QUEUE_NAME);
 
-  const worker = dependencies.createWorker(
+  const worker = runtime.queue.createWorker(
     WARM_CACHE_QUEUE_NAME,
     async () => await runWarmCacheJob({ boundaries, logger }),
     { autorun: false, concurrency: 1 },

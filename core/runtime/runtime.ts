@@ -6,6 +6,8 @@ import { ReportRepository } from "@@/core/database/repositories/report-repositor
 import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
 import { UserSummaryRepository } from "@@/core/database/repositories/user-summary-repository.ts";
 import { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
+import { createBunqueue } from "@@/core/fetch-run/bunqueue.ts";
+import type { FetchRunQueue } from "@@/core/fetch-run/warm-cache-queue.ts";
 import type { InstagramClient } from "@@/core/instagram/instagram-types.ts";
 import {
   BASE_CACHE_DIR,
@@ -25,6 +27,7 @@ export interface RuntimeBoundaries {
   fetchMedia?: MusicMediaOptions["fetchMedia"];
   fetchOllama?: HttpFetch;
   logger?: Logger;
+  queue?: FetchRunQueue;
   runAppleOcr?: RecognizeAppleCaptionOptions["runAppleOcr"];
   storage?: CacheStorage;
 }
@@ -34,6 +37,7 @@ export interface Runtime extends RuntimeBoundaries {
   database: DrizzleDatabase;
   fetchRuns: FetchRunRepository;
   logger: Logger;
+  queue: FetchRunQueue;
   reports: ReportRepository;
   stories: StoryRepository;
   summaries: UserSummaryRepository;
@@ -52,6 +56,7 @@ export function createRuntime(
     database,
     fetchRuns: new FetchRunRepository(database),
     logger: boundaries.logger ?? createLogger("runtime"),
+    queue: boundaries.queue ?? createBunqueue(),
     reports: new ReportRepository(database),
     stories: new StoryRepository(database),
     storage: boundaries.storage ?? createFileCacheStorage(BASE_CACHE_DIR),
