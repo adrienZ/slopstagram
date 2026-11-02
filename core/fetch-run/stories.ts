@@ -17,9 +17,9 @@ import type {
 import { createInstagramClient } from "@@/core/instagram/story-client.ts";
 import { enrichCurrentMusicAssets } from "@@/core/music/music-asset-enrichment.ts";
 import { lookUpTaggedPlaces } from "@@/core/places/place-lookup.ts";
-import { createFetchState } from "./story-failure-service.ts";
-import { fetchMissingStories } from "./story-live-fetch-service.ts";
-import { createManifestUsers, createOutputUsers } from "./story-output-service.ts";
+import { createFetchState } from "./story-failure.ts";
+import { fetchMissingStories } from "./story-live-fetch.ts";
+import { createManifestUsers, createOutputUsers } from "./story-output.ts";
 import { requestWithRetry, sleep } from "@@/core/instagram/story-retry.ts";
 
 export interface FetchStoriesManifestOptions {

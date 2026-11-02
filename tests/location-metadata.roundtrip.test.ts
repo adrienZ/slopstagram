@@ -3,7 +3,7 @@ import { createDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
 import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
-import { fetchStoriesManifest } from "@@/core/stories.ts";
+import { fetchStoriesManifest } from "@@/core/fetch-run/stories.ts";
 import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
 import type { JsonObject } from "@@/core/utils/json-value.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
