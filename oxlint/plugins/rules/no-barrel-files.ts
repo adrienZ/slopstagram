@@ -35,14 +35,4 @@ const noBarrelFiles = {
   },
 } satisfies Rule;
 
-const plugin = {
-  meta: {
-    name: "slopstagram",
-    version: "1.0.0",
-  },
-  rules: {
-    "no-barrel-files": noBarrelFiles,
-  },
-};
-
-export default plugin;
+export default noBarrelFiles;

@@ -60,7 +60,7 @@ export default defineConfig({
     "app/routeTree.gen.ts",
     "app/shadcn/**",
   ],
-  jsPlugins: ["./oxlint/plugins/rules/no-barrel-files.ts"],
+  jsPlugins: ["./oxlint/plugins/slopstagram.ts"],
   options: {
     maxWarnings: 0,
     typeAware: true,
@@ -75,6 +75,7 @@ export default defineConfig({
   },
   rules: {
     "slopstagram/no-barrel-files": "error",
+    "slopstagram/domain-layering": "error",
   },
   overrides: [
     {
