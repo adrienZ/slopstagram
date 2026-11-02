@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { Runtime } from "@@/core/runtime/runtime.ts";
+import type { FetchRunRepository } from "@@/core/database/repositories/fetch-run-repository.ts";
 import type { StoriesManifestReport } from "./report-types.ts";
 
 interface FetchRunContext {
@@ -14,7 +14,7 @@ interface FetchRunOptions {
 }
 
 export async function recordFetchRun<T>(
-  { fetchRuns: repository }: Pick<Runtime, "fetchRuns">,
+  { fetchRuns: repository }: { fetchRuns: Pick<FetchRunRepository, "start" | "finish"> },
   perform: (run: FetchRunContext) => Promise<T>,
   options: FetchRunOptions = {},
 ): Promise<T> {

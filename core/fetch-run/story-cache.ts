@@ -1,9 +1,13 @@
 import { getMediaCacheKey } from "@@/core/media-store/cache-storage.ts";
 import type { StoryItem, StoryReel } from "@@/core/instagram/instagram-types.ts";
+import type { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
 import type { Runtime } from "@@/core/runtime/runtime.ts";
 
 export async function storeReturnedReels(
-  { stories: storyRepository, storage }: Pick<Runtime, "stories" | "storage">,
+  {
+    stories: storyRepository,
+    storage,
+  }: Pick<Runtime, "storage"> & { stories: Pick<StoryRepository, "findByMediaPk" | "save"> },
   reels: Record<string, StoryReel>,
   cachedItems: Map<string, StoryItem>,
   fetchedMediaPks: Set<string>,

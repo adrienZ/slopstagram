@@ -1,3 +1,4 @@
+import type { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
 import type { Runtime } from "@@/core/runtime/runtime.ts";
 import { extractReels } from "@@/core/instagram/story-client.ts";
 import { storeReturnedReels } from "./story-cache.ts";
@@ -27,11 +28,12 @@ interface FetchMissingStoriesOptions {
   retryOptions: RetryOptions;
 }
 
+type LiveFetchRuntime = Pick<Runtime, "logger" | "storage"> & {
+  stories: Pick<StoryRepository, "findByMediaPk" | "save">;
+};
+
 interface MissingStoriesContext
-  extends
-    Pick<Runtime, "logger" | "stories" | "storage">,
-    FetchMissingStoriesInput,
-    FetchMissingStoriesOptions {}
+  extends LiveFetchRuntime, FetchMissingStoriesInput, FetchMissingStoriesOptions {}
 
 function getReelIdsToFetch(options: Pick<MissingStoriesContext, "state" | "trayReelIds">) {
   return options.trayReelIds.filter((reelId) =>
@@ -42,7 +44,7 @@ function getReelIdsToFetch(options: Pick<MissingStoriesContext, "state" | "trayR
 }
 
 async function cacheSuccessfulResponse(
-  runtime: Pick<Runtime, "logger" | "stories" | "storage">,
+  runtime: LiveFetchRuntime,
   reels: ReturnType<typeof extractReels>,
   idChunk: Array<string>,
   state: FetchState,
@@ -204,7 +206,7 @@ function handleChunkFailure(
 }
 
 export async function fetchMissingStories(
-  runtime: Pick<Runtime, "logger" | "stories" | "storage">,
+  runtime: LiveFetchRuntime,
   input: FetchMissingStoriesInput,
   options: FetchMissingStoriesOptions,
 ): Promise<void> {

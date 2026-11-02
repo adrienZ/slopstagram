@@ -1,3 +1,4 @@
+import type { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
 import type { Runtime } from "@@/core/runtime/runtime.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
 import {
@@ -17,6 +18,13 @@ import { createFetchState } from "./story-failure.ts";
 import { fetchMissingStories } from "./story-live-fetch.ts";
 import { createManifestUsers, createOutputUsers } from "./story-output.ts";
 import { requestWithRetry, sleep } from "@@/core/instagram/story-retry.ts";
+
+type FetchStoriesRuntime = Pick<Runtime, "logger" | "storage"> & {
+  stories: Pick<StoryRepository, "findByMediaPk" | "save"> &
+    Partial<
+      Pick<StoryRepository, "recordFailedPlaceLookup" | "recordPlaceLookup" | "refreshMusicAsset">
+    >;
+};
 
 export interface FetchStoriesManifestOptions {
   baseDelayMs?: number;
@@ -119,7 +127,7 @@ async function fetchTray(
 }
 
 async function fetchMissingStoriesForReport(
-  runtime: Pick<Runtime, "logger" | "stories" | "storage">,
+  runtime: FetchStoriesRuntime,
   options: {
     client: InstagramClient;
     manifestOptions: FetchStoriesManifestOptions;
@@ -146,7 +154,7 @@ async function fetchMissingStoriesForReport(
 }
 
 export async function fetchStoriesManifest(
-  runtime: Pick<Runtime, "logger" | "stories" | "storage">,
+  runtime: FetchStoriesRuntime,
   client: InstagramClient,
   options: FetchStoriesManifestOptions = {},
 ): Promise<StoriesManifestReport> {
@@ -191,7 +199,7 @@ export async function fetchStoriesManifest(
 }
 
 export async function fetchStories(
-  runtime: Pick<Runtime, "client" | "logger" | "stories" | "storage">,
+  runtime: FetchStoriesRuntime & Pick<Runtime, "client">,
   options: FetchStoriesOptions = {},
 ): Promise<StoriesManifestReport> {
   const reportName = options.reportName ?? DEFAULT_REPORT_NAME;
