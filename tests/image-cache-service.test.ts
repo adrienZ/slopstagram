@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import { describe, test, expect } from "vitest";
 import { TextEncoder } from "node:util";
-import { BASE_CACHE_DIR } from "@@/core/lib/cache-mounts.ts";
+import { BASE_CACHE_DIR } from "@@/core/lib/cache-service.ts";
 import { cacheReportImages } from "@@/core/lib/image-cache-service.ts";
 import type { StoriesManifestReport } from "@@/core/report-types.ts";
 import { createMemoryStorage } from "./memory-storage.ts";

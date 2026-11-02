@@ -3,7 +3,11 @@ import path from "node:path";
 import { defineEventHandler } from "nitro/h3";
 import { cachedMediaContentType } from "@@/core/lib/music-media-types.ts";
 import { z } from "zod";
-import { AUDIO_STORAGE_DIR, BASE_CACHE_DIR, IMAGES_STORAGE_DIR } from "@@/core/lib/cache-mounts.ts";
+import {
+  AUDIO_STORAGE_DIR,
+  BASE_CACHE_DIR,
+  IMAGES_STORAGE_DIR,
+} from "@@/core/lib/cache-service.ts";
 
 export const mediaDirectory = path.resolve(BASE_CACHE_DIR, IMAGES_STORAGE_DIR);
 export const audioDirectory = path.resolve(BASE_CACHE_DIR, AUDIO_STORAGE_DIR);

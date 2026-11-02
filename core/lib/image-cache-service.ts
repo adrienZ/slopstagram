@@ -1,7 +1,11 @@
 import { Buffer } from "node:buffer";
 import path from "node:path";
-import { BASE_CACHE_DIR, IMAGES_STORAGE_DIR } from "./cache-mounts.ts";
-import { imageCacheStorage, type ImageCacheStorage } from "./cache-service.ts";
+import {
+  BASE_CACHE_DIR,
+  IMAGES_STORAGE_DIR,
+  imageCacheStorage,
+  type ImageCacheStorage,
+} from "./cache-service.ts";
 import { convertImageToJpeg } from "./image-conversion-service.ts";
 import type { Logger } from "./logging-service.ts";
 import type { StoriesManifestReport } from "../report-types.ts";
