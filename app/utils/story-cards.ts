@@ -1,4 +1,4 @@
-import { STORY_MEDIA_TYPES } from "@@/core/story-types.ts";
+import { STORY_MEDIA_TYPES } from "@@/core/stickers/story-types.ts";
 import type { OutdatedVision } from "@@/core/lib/vision-analysis-service.ts";
 import type { StoryOutputUser } from "@@/core/report-types.ts";
 import type { UserTimelineStory } from "@@/core/database/repositories/story-repository.ts";

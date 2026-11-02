@@ -5,7 +5,7 @@ import {
   annotationSources,
   getStoryAnnotations,
   type getStoryAnnotationUpdates,
-} from "./story-sticker-location-service.ts";
+} from "./story-sticker-location.ts";
 
 function mergeAnnotationUpdates(
   previous: StoryAnnotations,

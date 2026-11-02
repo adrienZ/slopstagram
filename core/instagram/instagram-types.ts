@@ -1,5 +1,5 @@
 import type { JsonValue } from "@@/core/utils/json-value.ts";
-import type { StoryAnnotations } from "@@/core/story-types.ts";
+import type { StoryAnnotations } from "@@/core/stickers/story-types.ts";
 
 // Shapes of the Instagram web API payloads and of the client that requests them.
 

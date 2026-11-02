@@ -4,11 +4,11 @@ import { isJsonObject, type JsonObject, type JsonValue } from "@@/core/utils/jso
 import type { StoryAnnotations } from "./story-types.ts";
 import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
 import { ProviderIdentifierSchema } from "@@/core/utils/provider-identifier.ts";
-import { getMusicObservation, getMusicSourceUpdate } from "./music-observation-service.ts";
+import { getMusicObservation, getMusicSourceUpdate } from "@@/core/music-observation-service.ts";
 import {
   getLocationObservation,
   getLocationSourceUpdates,
-} from "./location-observation-service.ts";
+} from "@@/core/location-observation-service.ts";
 
 function getNestedRecord(value: JsonValue, key: string): JsonObject | null {
   if (!isJsonObject(value)) {

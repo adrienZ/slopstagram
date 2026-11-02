@@ -1,4 +1,4 @@
-import { planStoryAnnotations } from "@@/core/story-annotation-service.ts";
+import { planStoryAnnotations } from "@@/core/stickers/story-annotation.ts";
 import { planStoryAudio } from "@@/core/story-audio-service.ts";
 import { findStoryAudio, saveStoryAudio } from "./story-audio-repository.ts";
 import { and, asc, desc, eq, gt, gte, lt, lte, notInArray } from "drizzle-orm";
@@ -27,14 +27,14 @@ import {
 } from "../entities/story.ts";
 import { createLogger, type Logger } from "@@/core/utils/logging.ts";
 import { StoryItemSchema } from "@@/core/instagram/story-schemas.ts";
-import type { StoryAnnotations } from "@@/core/story-types.ts";
+import type { StoryAnnotations } from "@@/core/stickers/story-types.ts";
 import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
 import {
   getStoryAnnotations,
   getStoryAnnotationUpdates,
   getStoryLocations,
   getStoryStickers,
-} from "@@/core/story-sticker-location-service.ts";
+} from "@@/core/stickers/story-sticker-location.ts";
 
 export interface StoryOwner {
   full_name?: string;
