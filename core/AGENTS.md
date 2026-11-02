@@ -25,5 +25,3 @@ subfolders except in `database/`.
 A repository is a class built from a database (`new XRepository(db)`, plus a logger where it has
 one), with methods named for domain reads and writes. Services take a repository, never a raw
 database or a helper module.
-- `runtime/`: the composition root. It builds the repositories and holds the external boundaries
-  once. It may import any domain; only entry points import it.

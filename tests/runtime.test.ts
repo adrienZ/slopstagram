@@ -1,16 +1,14 @@
-import { expect, test } from "vitest";
+import { expect, test, type OnTestFinishedHandler } from "vitest";
 import { useDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { storyRepository } from "@@/core/database/repositories/story-repository.ts";
 import { fetchStories } from "@@/core/fetch-run/stories.ts";
-import type { Runtime } from "@@/core/runtime/runtime.ts";
 import { getProductionRuntime } from "@@/core/runtime/production-runtime.ts";
 import { createMockLogger, noSleep } from "./mock-helpers.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 
 const recordedStoryPk = "700000000000079";
-const endedRuntimes: Array<Runtime> = [];
 
 async function answerOllama() {
   return await Promise.resolve(new globalThis.Response("{}"));
@@ -19,7 +17,6 @@ async function answerOllama() {
 test("a test runtime ingests recorded stories into its own database", async (context) => {
   migrateDatabase(useDrizzle());
   const runtime = await createTestRuntime(context);
-  endedRuntimes.push(runtime);
 
   const report = await fetchStories({
     client: runtime.client,
@@ -52,9 +49,21 @@ test("two test runtimes do not share a database", async (context) => {
   expect(second.stories.findByMediaPk(recordedStoryPk)).toBeNull();
 });
 
-test("a test runtime has closed its database once its test ended", () => {
-  expect(endedRuntimes).toHaveLength(1);
-  const [runtime] = endedRuntimes;
+test("a test runtime closes its database when its test ends", async (context) => {
+  const handlers: Array<OnTestFinishedHandler> = [];
+  const runtime = await createTestRuntime({
+    onTestFinished: (handler) => {
+      handlers.push(handler);
+    },
+  });
+
+  expect(runtime.stories.findByMediaPk(recordedStoryPk)).toBeNull();
+
+  await Promise.all(
+    handlers.map(async (handler) => {
+      await handler(context);
+    }),
+  );
 
   expect(() => runtime.stories.findByMediaPk(recordedStoryPk)).toThrow();
 });
