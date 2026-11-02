@@ -110,7 +110,7 @@ test("creates a report by running the whole pipeline over recorded Instagram pay
   // User summaries, written from the stored vision analyses.
   const feed = createStoryFeed(now, { repository: world.stories });
   const summaries = readUserSummaries({ summaries: world.summaries }, feed, {
-    visionByPreviewUrl: readStoryFeedVision(feed, world.vision),
+    visionByPreviewUrl: readStoryFeedVision({ vision: world.vision }, feed),
   });
   expect(Object.fromEntries(summaries)).toStrictEqual({
     user_008: "Summary of user_008",
@@ -145,7 +145,7 @@ test("records a failed vision analysis and still completes the run", async (cont
   const feed = createStoryFeed(now, { repository: world.stories });
   expect(
     readUserSummaries({ summaries: world.summaries }, feed, {
-      visionByPreviewUrl: readStoryFeedVision(feed, world.vision),
+      visionByPreviewUrl: readStoryFeedVision({ vision: world.vision }, feed),
     }).size,
   ).toBe(2);
 });

@@ -1,10 +1,9 @@
 import { readFile } from "node:fs/promises";
 import process from "node:process";
-import type { AppleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
-import { appleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
+import type { Runtime } from "@@/core/runtime/runtime.ts";
 import { NO_APPLE_CAPTION } from "@@/core/utils/report-constants.ts";
 
-type AppleOcrRunner = (image: Uint8Array) => Promise<string>;
+export type AppleOcrRunner = (image: Uint8Array) => Promise<string>;
 type ReadImage = (imagePath: string) => Promise<Uint8Array>;
 
 export class AppleOcrUnavailableError extends Error {
@@ -15,8 +14,6 @@ export class AppleOcrUnavailableError extends Error {
 export interface RecognizeAppleCaptionOptions {
   platform?: NodeJS.Platform;
   readImage?: ReadImage;
-  runAppleOcr?: AppleOcrRunner;
-  repository?: Pick<AppleVisionRepository, "findByMediaPk" | "save">;
 }
 
 function normalizeOcrText(value: string): string {
@@ -48,15 +45,16 @@ async function runAppleOcr(image: Uint8Array, platform: NodeJS.Platform): Promis
 }
 
 export async function recognizeAppleCaption(
+  runtime: Pick<Runtime, "appleVision" | "runAppleOcr">,
   mediaPk: string,
   imagePath: string,
   {
     platform = process.platform,
     readImage: read = async (path) => await readFile(path),
-    runAppleOcr: runOcr = async (image) => await runAppleOcr(image, platform),
-    repository = appleVisionRepository,
   }: RecognizeAppleCaptionOptions = {},
 ): Promise<string> {
+  const repository = runtime.appleVision;
+  const runOcr = runtime.runAppleOcr ?? (async (image) => await runAppleOcr(image, platform));
   const storedCaption = repository.findByMediaPk(mediaPk);
 
   if (storedCaption !== null && storedCaption.length > 0) {

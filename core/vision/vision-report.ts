@@ -1,11 +1,9 @@
 import path from "node:path";
 import type { Ollama as VisionSdk } from "ollama";
 import { getOllamaClient } from "./ollama.ts";
-import {
-  type VisionRepository,
-  visionRepository,
-} from "@@/core/database/repositories/vision-repository.ts";
+import type { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
 import type { CachedReportImages } from "@@/core/media-store/image-cache.ts";
+import type { Runtime } from "@@/core/runtime/runtime.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
 import type { VisionResult } from "@@/core/database/entities/vision.ts";
@@ -16,16 +14,11 @@ import {
   VISION_PROMPT,
 } from "./vision-analysis.ts";
 
-type VisionFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
-
 interface VisionOptions {
   cacheDirectory: string;
   endpoint?: string;
-  fetchVision?: VisionFetch;
-  logger: Logger;
   model?: string;
   prompt?: string;
-  repository?: Pick<VisionRepository, "findByMediaPk" | "save">;
 }
 
 interface PreviewEntry {
@@ -177,15 +170,16 @@ async function resolvePreviewEntry(options: ResolvePreviewEntryOptions): Promise
 }
 
 export async function resolveVisionForReport(
+  runtime: Pick<Runtime, "fetchOllama" | "logger" | "vision">,
   report: StoriesManifestReport,
   cachedImages: CachedReportImages,
   options: VisionOptions,
 ): Promise<Map<string, VisionResult>> {
   const client = getOllamaClient({
-    fetch: options.fetchVision,
+    fetch: runtime.fetchOllama,
     host: options.endpoint,
   });
-  const { logger } = options;
+  const { logger } = runtime;
   const entrySet = createPreviewEntrySet(report);
   const resultByPreviewUrl = new Map<string, VisionResult>();
 
@@ -202,7 +196,7 @@ export async function resolveVisionForReport(
       cacheDirectory: options.cacheDirectory,
       resultByPreviewUrl,
       sourcesByMediaPk: entrySet.sourcesByMediaPk,
-      repository: options.repository ?? visionRepository,
+      repository: runtime.vision,
       total: entrySet.uniquePreviewEntries.length,
     });
   }

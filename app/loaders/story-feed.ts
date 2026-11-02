@@ -109,7 +109,7 @@ export function readStoryFeedSources(
   repositories: FeedRepositories = defaultFeedRepositories,
 ): StoryFeedSources {
   const cachedImages = readCachedImages(users);
-  const visionByPreviewUrl = readStoryFeedVision(users, repositories.vision);
+  const visionByPreviewUrl = readStoryFeedVision({ vision: repositories.vision }, users);
   const userSummaryByUserKey = readUserSummaries({ summaries: repositories.userSummary }, users, {
     visionByPreviewUrl,
   });

@@ -3,12 +3,9 @@ import {
   type StoryRepository,
   type UserTimelineStory,
 } from "@@/core/database/repositories/story-repository.ts";
-import {
-  visionRepository,
-  type VisionRepository,
-} from "@@/core/database/repositories/vision-repository.ts";
 import type { StoryOutputUser } from "@@/core/fetch-run/report-types.ts";
 import type { VisionResult } from "@@/core/database/entities/vision.ts";
+import type { Runtime } from "@@/core/runtime/runtime.ts";
 import { readCurrentVisionResult } from "@@/core/vision/vision-analysis.ts";
 import { getStoryDate, getStoryDayRange, storyDateSchema } from "./story-days.ts";
 
@@ -146,8 +143,8 @@ export function createReportFeed(
 }
 
 export function readStoryFeedVision(
+  { vision: repository }: Pick<Runtime, "vision">,
   users: Array<StoryOutputUser>,
-  repository: Pick<VisionRepository, "findByMediaPk"> = visionRepository,
 ): Map<string, VisionResult> {
   const visionByPreviewUrl = new Map<string, VisionResult>();
   for (const story of users.flatMap((user) => user.stories)) {

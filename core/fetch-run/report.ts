@@ -15,10 +15,7 @@ import {
   cacheReportImages,
   type CacheReportImagesOptions,
 } from "@@/core/media-store/image-cache.ts";
-import {
-  type RecognizeAppleCaptionOptions,
-  recognizeAppleCaption,
-} from "@@/core/vision/apple-ocr.ts";
+import type { AppleOcrRunner } from "@@/core/vision/apple-ocr.ts";
 import { cacheReportAudio } from "@@/core/music/report-audio.ts";
 import type { MusicMediaOptions } from "@@/core/music/music-media.ts";
 import { persistReportInstagramUsers } from "@@/core/accounts/instagram-user.ts";
@@ -49,7 +46,7 @@ export interface CreateReportBoundaries {
   /** HTTP calls to Ollama, for vision analysis and user summaries. */
   fetchOllama?: HttpFetch;
   /** Runs Apple OCR on an image. */
-  runAppleOcr?: RecognizeAppleCaptionOptions["runAppleOcr"];
+  runAppleOcr?: AppleOcrRunner;
 }
 
 export interface CreateReportOptions {
@@ -137,28 +134,25 @@ export async function createReport(options: CreateReportOptions): Promise<Create
         logger,
         storage: storage.images,
       });
-      await resolveAppleCaptionsForReport(report, cachedImages, {
-        cacheDirectory,
-        logger,
-        resolver: async (mediaPk, imagePath) =>
-          await recognizeAppleCaption(mediaPk, imagePath, {
-            repository: appleVision,
-            runAppleOcr: boundaries.runAppleOcr,
-          }),
-      });
-      await resolveVisionForReport(report, cachedImages, {
-        cacheDirectory,
-        fetchVision: boundaries.fetchOllama,
-        logger,
-        repository: vision,
-      });
+      await resolveAppleCaptionsForReport(
+        { appleVision, logger, runAppleOcr: boundaries.runAppleOcr },
+        report,
+        cachedImages,
+        { cacheDirectory },
+      );
+      await resolveVisionForReport(
+        { fetchOllama: boundaries.fetchOllama, logger, vision },
+        report,
+        cachedImages,
+        { cacheDirectory },
+      );
       await persistReportInstagramUsers({ users }, report);
       // Generate from the same canonical, active story set used by the user app.
       const feedUsers = createStoryFeed(now(), { repository: stories });
       await resolveUserSummariesForReport(
         { fetchOllama: boundaries.fetchOllama, logger, summaries },
         { output: { users: feedUsers } },
-        { visionByPreviewUrl: readStoryFeedVision(feedUsers, vision) },
+        { visionByPreviewUrl: readStoryFeedVision({ vision }, feedUsers) },
       );
       await reports.save(outputFileName, report);
       logger.info(

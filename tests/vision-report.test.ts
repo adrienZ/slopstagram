@@ -3,14 +3,8 @@ import { describe, test, vi, expect } from "vitest";
 import { z } from "zod";
 import { VISION_SERVER_NOT_RUNNING } from "@@/core/vision/vision-analysis.ts";
 import { resolveVisionForReport } from "@@/core/vision/vision-report.ts";
-import {
-  createMockLogger,
-  createVisionReport,
-  previewSource,
-  withReportImage,
-} from "./mock-helpers.ts";
-import { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
-import { createTestDatabase } from "./test-database.ts";
+import { createVisionReport, previewSource, withReportImage } from "./mock-helpers.ts";
+import { createTestRuntime } from "./setup/test-runtime.ts";
 
 const VisionJsonSchemaPropertySchema = z.object({
   description: z.string().optional(),
@@ -41,24 +35,22 @@ describe("resolveVisionForReport", () => {
     { name: "non-JPEG", cachedPath: "story.webp", warning: "preview is not JPEG" },
   ]) {
     test(`skips ${entry.name} cached previews without contacting vision`, async (context) => {
-      const repository = new VisionRepository(createTestDatabase(context));
       let fetchCount = 0;
+      const runtime = await createTestRuntime(context, {
+        fetchOllama: async () => {
+          fetchCount += 1;
+          throw new Error("vision must not be called for invalid previews");
+        },
+      });
       const paths = new Map<string, string>();
       if (entry.cachedPath !== undefined) {
         paths.set(previewSource, entry.cachedPath);
       }
       const result = await resolveVisionForReport(
+        runtime,
         createVisionReport(),
         { profilePicPathByUrl: new Map(), storyPreviewPathByUrl: paths },
-        {
-          cacheDirectory: "/unused-vision-cache",
-          repository,
-          logger: createMockLogger(),
-          fetchVision: async () => {
-            fetchCount += 1;
-            throw new Error("vision must not be called for invalid previews");
-          },
-        },
+        { cacheDirectory: "/unused-vision-cache" },
       );
 
       expect(result.get(previewSource)).toStrictEqual({
@@ -66,17 +58,16 @@ describe("resolveVisionForReport", () => {
         visual: `vision failed: ${entry.warning}`,
       });
       expect(fetchCount).toBe(0);
-      expect(repository.findByMediaPk("story-pk")).toBeNull();
+      expect(runtime.vision.findByMediaPk("story-pk")).toBeNull();
     });
   }
 
   test("uses OLLAMA_HOST and reuses successful vision responses from the repository", async (context) => {
     vi.stubEnv("OLLAMA_HOST", "http://vision.example:11434/api/generate/");
-    const repository = new VisionRepository(createTestDatabase(context));
     let fetchCount = 0;
 
     await withReportImage(async (cacheDirectory, cachedImages) => {
-      async function fetchVision(url: string | URL | Request, init?: RequestInit) {
+      async function fetchOllama(url: string | URL | Request, init?: RequestInit) {
         expect(url).toBe("http://vision.example:11434/api/generate");
         fetchCount += 1;
         const body = VisionRequestBodySchema.parse(JSON.parse(requestBodyToString(init?.body)));
@@ -111,17 +102,13 @@ describe("resolveVisionForReport", () => {
         );
       }
 
-      const first = await resolveVisionForReport(createVisionReport(), cachedImages, {
-        fetchVision,
-        logger: createMockLogger(),
+      const runtime = await createTestRuntime(context, { fetchOllama });
+
+      const first = await resolveVisionForReport(runtime, createVisionReport(), cachedImages, {
         cacheDirectory,
-        repository,
       });
-      const second = await resolveVisionForReport(createVisionReport(), cachedImages, {
-        fetchVision,
-        logger: createMockLogger(),
+      const second = await resolveVisionForReport(runtime, createVisionReport(), cachedImages, {
         cacheDirectory,
-        repository,
       });
 
       expect(first.get(previewSource)).toStrictEqual({
@@ -132,7 +119,7 @@ describe("resolveVisionForReport", () => {
         text: "readable text",
         visual: "cat on a counter\nwith a cup",
       });
-      const entry = repository.findByMediaPk("story-pk");
+      const entry = runtime.vision.findByMediaPk("story-pk");
       expect(entry).not.toBeNull();
       expect("prompt" in (entry ?? {})).toBe(false);
       expect(entry?.prompt_hash.length).toBe(64);
@@ -141,14 +128,13 @@ describe("resolveVisionForReport", () => {
   });
 
   test("reuses stored responses for the same story when the signed CDN URL changes", async (context) => {
-    const repository = new VisionRepository(createTestDatabase(context));
     const firstPreviewSource = "https://example.com/story-preview.webp?signature=old";
     const secondPreviewSource = "https://example.com/story-preview.webp?signature=new";
     let fetchCount = 0;
 
     await withReportImage(
       async (cacheDirectory, cachedImages) => {
-        async function fetchVision() {
+        async function fetchOllama() {
           fetchCount += 1;
 
           return new globalThis.Response(
@@ -164,25 +150,19 @@ describe("resolveVisionForReport", () => {
           );
         }
 
+        const runtime = await createTestRuntime(context, { fetchOllama });
+
         const first = await resolveVisionForReport(
+          runtime,
           createVisionReport(firstPreviewSource),
           cachedImages,
-          {
-            fetchVision,
-            logger: createMockLogger(),
-            cacheDirectory,
-            repository,
-          },
+          { cacheDirectory },
         );
         const second = await resolveVisionForReport(
+          runtime,
           createVisionReport(secondPreviewSource),
           cachedImages,
-          {
-            fetchVision,
-            logger: createMockLogger(),
-            cacheDirectory,
-            repository,
-          },
+          { cacheDirectory },
         );
 
         expect(first.get(firstPreviewSource)).toStrictEqual({
@@ -203,16 +183,14 @@ describe("resolveVisionForReport", () => {
   });
 
   test("returns server-down text when vision is unavailable", async (context) => {
-    const repository = new VisionRepository(createTestDatabase(context));
-
     await withReportImage(async (cacheDirectory, cachedImages) => {
-      const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
-        fetchVision: async () => {
+      const runtime = await createTestRuntime(context, {
+        fetchOllama: async () => {
           throw new TypeError("fetch failed");
         },
-        logger: createMockLogger(),
+      });
+      const result = await resolveVisionForReport(runtime, createVisionReport(), cachedImages, {
         cacheDirectory,
-        repository,
       });
 
       expect(result.get(previewSource)).toStrictEqual({
@@ -223,11 +201,9 @@ describe("resolveVisionForReport", () => {
   });
 
   test("normalizes missing OCR text to an empty string", async (context) => {
-    const repository = new VisionRepository(createTestDatabase(context));
-
     await withReportImage(async (cacheDirectory, cachedImages) => {
-      const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
-        fetchVision: async () =>
+      const runtime = await createTestRuntime(context, {
+        fetchOllama: async () =>
           new globalThis.Response(
             JSON.stringify({
               response: JSON.stringify({
@@ -239,9 +215,9 @@ describe("resolveVisionForReport", () => {
               status: 200,
             },
           ),
-        logger: createMockLogger(),
+      });
+      const result = await resolveVisionForReport(runtime, createVisionReport(), cachedImages, {
         cacheDirectory,
-        repository,
       });
 
       expect(result.get(previewSource)).toStrictEqual({
@@ -252,11 +228,9 @@ describe("resolveVisionForReport", () => {
   });
 
   test("joins multiple OCR text entries", async (context) => {
-    const repository = new VisionRepository(createTestDatabase(context));
-
     await withReportImage(async (cacheDirectory, cachedImages) => {
-      const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
-        fetchVision: async () =>
+      const runtime = await createTestRuntime(context, {
+        fetchOllama: async () =>
           new globalThis.Response(
             JSON.stringify({
               response: JSON.stringify({
@@ -268,9 +242,9 @@ describe("resolveVisionForReport", () => {
               status: 200,
             },
           ),
-        logger: createMockLogger(),
+      });
+      const result = await resolveVisionForReport(runtime, createVisionReport(), cachedImages, {
         cacheDirectory,
-        repository,
       });
 
       expect(result.get(previewSource)).toStrictEqual({
@@ -281,14 +255,12 @@ describe("resolveVisionForReport", () => {
   });
 
   test("treats a missing Ollama response as an empty vision result", async (context) => {
-    const repository = new VisionRepository(createTestDatabase(context));
-
     await withReportImage(async (cacheDirectory, cachedImages) => {
-      const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
-        fetchVision: async () => globalThis.Response.json({ done: true }),
-        logger: createMockLogger(),
+      const runtime = await createTestRuntime(context, {
+        fetchOllama: async () => globalThis.Response.json({ done: true }),
+      });
+      const result = await resolveVisionForReport(runtime, createVisionReport(), cachedImages, {
         cacheDirectory,
-        repository,
       });
 
       expect(result.get(previewSource)).toStrictEqual({ text: "", visual: "" });
@@ -296,18 +268,16 @@ describe("resolveVisionForReport", () => {
   });
 
   test("returns short per-image text for non-server failures", async (context) => {
-    const repository = new VisionRepository(createTestDatabase(context));
-
     await withReportImage(async (cacheDirectory, cachedImages) => {
-      const result = await resolveVisionForReport(createVisionReport(), cachedImages, {
-        fetchVision: async () =>
+      const runtime = await createTestRuntime(context, {
+        fetchOllama: async () =>
           new globalThis.Response(JSON.stringify({ error: "bad request" }), {
             headers: { "content-type": "application/json" },
             status: 400,
           }),
-        logger: createMockLogger(),
+      });
+      const result = await resolveVisionForReport(runtime, createVisionReport(), cachedImages, {
         cacheDirectory,
-        repository,
       });
 
       expect(result.get(previewSource)).toStrictEqual({
