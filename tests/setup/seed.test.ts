@@ -1,21 +1,17 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, URL } from "node:url";
-import { expect, test, type TestContext } from "vitest";
+import { expect, test } from "vitest";
 import type { z } from "zod";
-import { createDrizzle } from "@@/core/database/client.ts";
 import { type JsonValue, JsonValueSchema } from "@@/core/utils/json-value.ts";
-import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
-import {
-  StoryRepository,
-  storyRepository,
-} from "@@/core/database/repositories/story-repository.ts";
+import type { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
 import {
   GalleryPageSchema,
   parseGalleryPage,
   parseTrayResponse,
 } from "@@/core/instagram/story-client.ts";
 import { readRecordedPayloads, seedRecordedStories } from "./seed.ts";
+import { createTestRuntime } from "./test-runtime.ts";
 
 const now = new Date("2026-10-29T12:00:00.000Z");
 const HOUR = 3600;
@@ -55,22 +51,11 @@ function toPayload(page: z.output<typeof GalleryPageSchema>): JsonValue {
   return JsonValueSchema.parse(page);
 }
 
-function createDatabase(context: TestContext) {
-  const database = createDrizzle(":memory:");
-  context.onTestFinished(() => {
-    database.$client.close();
-  });
-  return {
-    database,
-    stories: new StoryRepository(database),
-    users: new InstagramUserRepository(database),
-  };
-}
-
 test("seeding stores the recorded stories, users, stickers and previews like a fetch run", async (context) => {
-  const { database, stories, users } = createDatabase(context);
+  const runtime = await createTestRuntime(context);
+  const { stories, users } = runtime;
 
-  const report = await seedRecordedStories(undefined, { database });
+  const report = await seedRecordedStories(runtime);
 
   expect(report.metadata.counts).toMatchObject({ failed: 0, fetched: 10, reels: 3, stories: 10 });
   expect(users.listAll().map(({ username }) => username)).toEqual([
@@ -89,18 +74,20 @@ test("seeding stores the recorded stories, users, stickers and previews like a f
 });
 
 test("seeding a chosen set of recorded payloads stores only that set", async (context) => {
-  const { database, stories } = createDatabase(context);
+  const runtime = await createTestRuntime(context);
+  const { stories } = runtime;
   const galleryPage = await recordedGalleryPage();
   connectionOf(galleryPage).edges.pop();
 
-  await seedRecordedStories({ galleryPages: [toPayload(galleryPage)] }, { database });
+  await seedRecordedStories(runtime, { galleryPages: [toPayload(galleryPage)] });
 
   expect(stories.findByMediaPk(imageStoryPk)).not.toBeNull();
   expect(stories.findByMediaPk(videoStoryPk)).toBeNull();
 });
 
 test("seeding stores the reels of every recorded gallery page", async (context) => {
-  const { database, stories } = createDatabase(context);
+  const runtime = await createTestRuntime(context);
+  const { stories } = runtime;
   const pages = await Promise.all([recordedGalleryPage(), recordedGalleryPage()]);
   const [pageOne, pageTwo] = pages.map((page, index) => {
     const connection = connectionOf(page);
@@ -108,14 +95,15 @@ test("seeding stores the reels of every recorded gallery page", async (context) 
     return toPayload(page);
   });
 
-  await seedRecordedStories({ galleryPages: [pageOne, pageTwo] }, { database });
+  await seedRecordedStories(runtime, { galleryPages: [pageOne, pageTwo] });
 
   expect(stories.findByMediaPk(imageStoryPk)).not.toBeNull();
   expect(stories.findByMediaPk(secondReelStoryPk)).not.toBeNull();
 });
 
 test("seeding a recorded tray fetches only the reels it lists", async (context) => {
-  const { database, stories } = createDatabase(context);
+  const runtime = await createTestRuntime(context);
+  const { stories } = runtime;
   const { galleryPages } = await readRecordedPayloads(["instagram-story-data.json"]);
   const tray = {
     broadcasts: [],
@@ -130,7 +118,7 @@ test("seeding a recorded tray fetches only the reels it lists", async (context) 
     ],
   };
 
-  const report = await seedRecordedStories({ galleryPages, tray }, { database });
+  const report = await seedRecordedStories(runtime, { galleryPages, tray });
 
   expect(report.metadata.counts).toMatchObject({ failed: 0, reels: 1, stories: 1 });
   expect(stories.findByMediaPk(imageStoryPk)).not.toBeNull();
@@ -138,13 +126,14 @@ test("seeding a recorded tray fetches only the reels it lists", async (context) 
 });
 
 test("seeding fails loudly when a recording no longer matches the validation schemas", async (context) => {
-  const { database, stories } = createDatabase(context);
+  const runtime = await createTestRuntime(context);
+  const { stories } = runtime;
   const drifted = await recordedGalleryPage();
   const [firstItem] = connectionOf(drifted).edges[0].node.items ?? [];
   Reflect.set(firstItem, "taken_at", "yesterday");
 
   await expect(
-    seedRecordedStories({ galleryPages: [toPayload(drifted)] }, { database }),
+    seedRecordedStories(runtime, { galleryPages: [toPayload(drifted)] }),
   ).rejects.toThrow(/taken_at/u);
   expect(stories.findByMediaPk(imageStoryPk)).toBeNull();
 });
@@ -159,9 +148,10 @@ test("seeding fails when a named recording does not exist", async () => {
 });
 
 test("seeded stories can be shifted in time to be active", async (context) => {
-  const { database, stories } = createDatabase(context);
+  const runtime = await createTestRuntime(context);
+  const { stories } = runtime;
 
-  await seedRecordedStories(undefined, { database, publishedBefore: { now, seconds: HOUR } });
+  await seedRecordedStories(runtime, undefined, { publishedBefore: { now, seconds: HOUR } });
 
   const active = stories.listActive(now);
   expect(active.map(({ story }) => story.pk).toSorted()).toEqual(storyPks);
@@ -170,9 +160,10 @@ test("seeded stories can be shifted in time to be active", async (context) => {
 });
 
 test("seeded stories can be shifted in time to be past", async (context) => {
-  const { database, stories } = createDatabase(context);
+  const runtime = await createTestRuntime(context);
+  const { stories } = runtime;
 
-  await seedRecordedStories(undefined, { database, publishedBefore: { now, seconds: 26 * HOUR } });
+  await seedRecordedStories(runtime, undefined, { publishedBefore: { now, seconds: 26 * HOUR } });
 
   expect(stories.listActive(now)).toEqual([]);
   const yesterday = stories.listPublishedBetween(
@@ -188,23 +179,13 @@ function gaps(repository: StoryRepository): Array<number> {
 }
 
 test("shifting keeps the gaps between recorded stories", async (context) => {
-  const unshifted = createDatabase(context);
-  const shifted = createDatabase(context);
+  const unshifted = await createTestRuntime(context);
+  const shifted = await createTestRuntime(context);
 
-  await seedRecordedStories(undefined, { database: unshifted.database });
-  await seedRecordedStories(undefined, {
-    database: shifted.database,
-    publishedBefore: { now, seconds: HOUR },
-  });
+  await seedRecordedStories(unshifted);
+  await seedRecordedStories(shifted, undefined, { publishedBefore: { now, seconds: HOUR } });
 
   expect(gaps(shifted.stories)).toEqual(gaps(unshifted.stories));
-});
-
-test("seeding without a database fills the application database that the repositories read", async () => {
-  await seedRecordedStories(undefined, { publishedBefore: { now, seconds: HOUR } });
-
-  expect(storyRepository.findByMediaPk(imageStoryPk)).not.toBeNull();
-  expect(storyRepository.listActive(now)).toHaveLength(10);
 });
 
 async function readFailure(name: string) {

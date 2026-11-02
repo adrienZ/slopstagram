@@ -1,16 +1,12 @@
 import { eq, sql } from "drizzle-orm";
-import { useDrizzle } from "@@/core/database/client.ts";
-import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { stories } from "@@/core/database/entities/story.ts";
-import { createRuntime, type Runtime } from "@@/core/runtime/runtime.ts";
+import type { Runtime } from "@@/core/runtime/runtime.ts";
 import { createReportFeed } from "@@/core/story-feed/story-feed.ts";
 import { resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
 import type { SidebarUser } from "../../app/loaders/sidebar-users.ts";
 import { withStoryStickers, type StoryCardData } from "../../app/utils/story-cards.ts";
 import { groupTimelineLocations } from "../../app/utils/timeline-locations.ts";
 import { groupTimelineStickers } from "../../app/utils/timeline-stickers.ts";
-import { createMemoryCacheStorage } from "../memory-storage.ts";
-import { createMockLogger } from "../mock-helpers.ts";
 import { readRecordedPayloads, seedRecordedStories } from "../setup/seed.ts";
 
 export const pageNow = new Date("2026-07-26T12:00:00.000Z");
@@ -19,8 +15,6 @@ const PUBLISHED_BEFORE_SECONDS = 3600;
 /** Moves a recorded story out of the rolling 24 hour feed, onto the previous day. */
 const PAST_STORY_AGE_SECONDS = 26 * 3600;
 export const today = "2026-07-26";
-/** Three days on, when nothing is left in the rolling 24 hour feed. */
-export const emptyTodayNow = new Date(pageNow.getTime() + 3 * 24 * 3600 * 1000);
 export const pastDay = "2026-07-25";
 export const emptyDay = "2026-07-24";
 
@@ -44,22 +38,13 @@ export const hostileCaption = "</script><script>caption</script>";
 export const appleCaption = "apple <text>";
 export const userSummary = "A synthetic summary of the recorded stories.";
 
-function applicationRuntime(): Runtime {
-  migrateDatabase();
-  return createRuntime(useDrizzle(), {
-    logger: createMockLogger(),
-    storage: createMemoryCacheStorage(),
-  });
-}
-
 /**
  * Seeds a runtime's database with what the page tests render: the recorded stories through
  * production ingestion, plus the accounts, captions and summaries that ingestion does not
- * produce. Without a runtime it seeds the application database (in memory under vitest).
+ * produce.
  */
-export async function seedPageDatabase(runtime: Runtime = applicationRuntime()): Promise<void> {
-  await seedRecordedStories(await readRecordedPayloads(), {
-    database: runtime.database,
+export async function seedPageDatabase(runtime: Runtime): Promise<void> {
+  await seedRecordedStories(runtime, await readRecordedPayloads(), {
     publishedBefore: { now: pageNow, seconds: PUBLISHED_BEFORE_SECONDS },
   });
   // The recording has neither a markup-laden caption nor a story outside the rolling 24 hours.

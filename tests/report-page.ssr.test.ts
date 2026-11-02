@@ -14,9 +14,8 @@ const HOUR = 3600;
 const emptyDay = "2026-10-28";
 const emptyDayText = "Aucune story publiée ce jour-là.";
 
-const shared = useSharedTestRuntime(async ({ database }) => {
-  await seedRecordedStories(await readRecordedPayloads(), {
-    database,
+const shared = useSharedTestRuntime(async (runtime) => {
+  await seedRecordedStories(runtime, await readRecordedPayloads(), {
     publishedBefore: { now, seconds: HOUR },
   });
 });

@@ -1,18 +1,13 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
-import type { DrizzleDatabase } from "@@/core/database/client.ts";
-import { useDrizzle } from "@@/core/database/client.ts";
-import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { type JsonObject, type JsonValue, JsonValueSchema } from "@@/core/utils/json-value.ts";
 import { persistReportInstagramUsers } from "@@/core/accounts/instagram-user.ts";
-import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
-import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
+import type { Runtime } from "@@/core/runtime/runtime.ts";
 import { fetchStories } from "@@/core/fetch-run/stories.ts";
 import { GalleryPageSchema } from "@@/core/instagram/story-client.ts";
 import { createRecordedClient } from "./recorded-client.ts";
-import { createMemoryCacheStorage } from "../memory-storage.ts";
-import { createMockLogger, noSleep } from "../mock-helpers.ts";
+import { noSleep } from "../mock-helpers.ts";
 
 const fixturesDirectory = path.join(import.meta.dirname, "../fixtures");
 const TRAY_FILE = "instagram-reels-tray.json";
@@ -32,8 +27,6 @@ export interface RecordedPayloads {
 }
 
 export interface SeedOptions {
-  /** Database to ingest into. Defaults to the application database, which is in memory under vitest. */
-  database?: DrizzleDatabase;
   /** Shift every recorded timestamp so the newest recorded story was published this long before `now`. */
   publishedBefore?: { now: Date; seconds: number };
 }
@@ -219,19 +212,14 @@ export async function createRecordedInstagramClient(
  * Media caching, captions, vision and summaries are not run: they need the network or
  * local models. Returns the report the fetch produced.
  */
-export async function seedRecordedStories(recorded?: RecordedPayloads, options: SeedOptions = {}) {
-  const database = options.database ?? useDrizzle();
-  migrateDatabase(database);
-
+export async function seedRecordedStories(
+  runtime: Pick<Runtime, "logger" | "storage" | "stories" | "users">,
+  recorded?: RecordedPayloads,
+  options: SeedOptions = {},
+) {
   const now = options.publishedBefore?.now;
-  const logger = createMockLogger();
   const report = await fetchStories(
-    {
-      client: await createRecordedInstagramClient(recorded, options),
-      logger,
-      storage: createMemoryCacheStorage(),
-      stories: new StoryRepository(database, logger),
-    },
+    { ...runtime, client: await createRecordedInstagramClient(recorded, options) },
     { maxAttempts: 1, now: now === undefined ? undefined : () => now, sleep: noSleep },
   );
   if (report.failures.length > 0) {
@@ -241,9 +229,6 @@ export async function seedRecordedStories(recorded?: RecordedPayloads, options: 
         .join("; ")}`,
     );
   }
-  await persistReportInstagramUsers(
-    { users: new InstagramUserRepository(database) },
-    globalThis.structuredClone(report),
-  );
+  await persistReportInstagramUsers(runtime, globalThis.structuredClone(report));
   return report;
 }

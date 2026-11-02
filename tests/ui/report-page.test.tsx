@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, expect, test } from "vitest";
+import { beforeAll, expect, test } from "vitest";
 import { screen, within, waitFor } from "@testing-library/react";
 import { Route } from "../../app/routes/report.tsx";
 import {
@@ -9,7 +9,6 @@ import {
   mentionedAccount,
   namedAccount,
   outsideFeedAccount,
-  emptyTodayNow,
   pageNow,
   pastDay,
   seedPageDatabase,
@@ -22,10 +21,15 @@ import { useSharedTestRuntime } from "../setup/test-runtime.ts";
 
 // The report the real loader would build, with the arguments it receives, at the test's "now".
 const shared = useSharedTestRuntime(seedPageDatabase);
-let now = pageNow;
+const empty = useSharedTestRuntime(async () => {});
+const emptyRenderer = createPageRenderer(
+  Route,
+  ({ deps, context }) => loadStoryFeed(empty.runtime, pageNow, deps.date, context.selectedStory),
+  "/report",
+);
 const renderer = createPageRenderer(
   Route,
-  ({ deps, context }) => loadStoryFeed(shared.runtime, now, deps.date, context.selectedStory),
+  ({ deps, context }) => loadStoryFeed(shared.runtime, pageNow, deps.date, context.selectedStory),
   "/report",
 );
 
@@ -34,11 +38,7 @@ let emptyTodayReportProps: ReturnType<typeof loadStoryFeed>;
 
 beforeAll(() => {
   reportProps = loadStoryFeed(shared.runtime, pageNow);
-  emptyTodayReportProps = loadStoryFeed(shared.runtime, emptyTodayNow);
-});
-
-beforeEach(() => {
-  now = pageNow;
+  emptyTodayReportProps = loadStoryFeed(empty.runtime, pageNow);
 });
 
 function getPreviousMonthButton() {
@@ -69,11 +69,10 @@ test("the feed renders ranked users, separate handles, summaries, and local prev
 });
 
 test("today and historical empty states describe their different time windows", async () => {
-  now = emptyTodayNow;
-  const todayPage = await renderer.mountRoute("/report");
+  const todayPage = await emptyRenderer.mountRoute("/report");
   expect(screen.getByText("Aucune story publiée dans les dernières 24 heures.")).toBeVisible();
   todayPage.unmount();
-  await renderer.mountRoute(`/report?date=${emptyDay}`);
+  await emptyRenderer.mountRoute(`/report?date=${emptyDay}`);
   expect(screen.getByRole("heading", { name: "Stories du 24 juillet 2026" })).toBeVisible();
   expect(screen.getByText("Aucune story publiée ce jour-là.")).toBeVisible();
   expect(screen.queryByText(/Fil chargé le/u)).not.toBeInTheDocument();
