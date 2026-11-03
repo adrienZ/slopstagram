@@ -6,7 +6,8 @@
 
 Install [Node.js](https://nodejs.org/) 24 or newer. The application runs on Node.js,
 but its standalone [bunqueue](https://bunqueue.dev/) server still requires
-[Bun](https://bun.sh/) 1.3.14 or newer.
+[Bun](https://bun.sh/). Use exactly 1.4.4: the bunqueue dashboard shown in Vite
+DevTools refuses to start on any other version.
 
 Install [Ollama](https://ollama.com/).
 
