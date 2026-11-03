@@ -278,7 +278,7 @@ test("createInstagramClient fetches reels media with the web viewer GraphQL quer
   expect(calls).toStrictEqual([
     {
       appId: "936619743392459",
-      requestUrl: "https://www.instagram.com/graphql/query",
+      requestUrl: "https://www.instagram.com/api/graphql",
       mediaQuery: { documentId: "29306733562261201", reelIds: ["reel 1", "reel/2"] },
     },
   ]);

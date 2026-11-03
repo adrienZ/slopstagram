@@ -12,7 +12,7 @@ const ReelTrayResponseSchema = z.object({
 
 const IG_APP_ID = "936619743392459";
 const REELS_TRAY_URL = "https://www.instagram.com/api/v1/feed/reels_tray/";
-const REELS_MEDIA_URL = "https://www.instagram.com/graphql/query";
+const REELS_MEDIA_URL = "https://www.instagram.com/api/graphql";
 const MUSIC_ASSET_URL = "https://www.instagram.com/api/v1/clips/music/";
 const PLACE_URL = "https://www.instagram.com/api/graphql";
 // PolarisExploreLocationsContainerQuery, verified against the web location page.
@@ -124,50 +124,77 @@ interface InstagramClientSession {
 async function fetchFromInstagramPage(
   session: InstagramClientSession,
   url: string,
-  mediaQuery?: BrowserFetchInput["mediaQuery"],
   musicAssetId?: string,
 ): Promise<BrowserFetchResponse> {
   const input: BrowserFetchInput = { appId: IG_APP_ID, requestUrl: url };
-  if (mediaQuery) {
-    input.mediaQuery = mediaQuery;
-  }
   if (musicAssetId !== undefined) {
     input.musicAssetId = musicAssetId;
   }
+  return await session.page.evaluate(async ({ appId, requestUrl, musicAssetId: audioId }) => {
+    const headers = new globalThis.Headers({ "x-ig-app-id": appId });
+    let body: string | undefined;
+    if (audioId !== undefined) {
+      headers.set("content-type", "application/x-www-form-urlencoded");
+      headers.set(
+        "x-csrftoken",
+        /(?:^|;\s*)csrftoken=(?<token>[^;]+)/u.exec(globalThis.document.cookie)?.groups?.token ??
+          "",
+      );
+      body = new globalThis.URLSearchParams({
+        audio_cluster_id: audioId,
+        original_sound_audio_asset_id: audioId,
+        max_id: "",
+      }).toString();
+    }
+    const response = await globalThis.fetch(requestUrl, {
+      body,
+      headers,
+      method: audioId === undefined ? "GET" : "POST",
+      signal: audioId === undefined ? undefined : globalThis.AbortSignal.timeout(20_000),
+    });
+
+    return {
+      body: await response.text(),
+      headers: Object.fromEntries(response.headers.entries()),
+      ok: response.ok,
+      status: response.status,
+    };
+  }, input);
+}
+
+async function fetchGalleryFromInstagramPage(
+  session: InstagramClientSession,
+  mediaQuery: NonNullable<BrowserFetchInput["mediaQuery"]>,
+): Promise<BrowserFetchResponse> {
   return await session.page.evaluate(
-    async ({ appId, requestUrl, mediaQuery: query, musicAssetId: audioId }) => {
-      const headers = new globalThis.Headers({ "x-ig-app-id": appId });
-      let body: string | undefined;
-      if (query || audioId !== undefined) {
-        headers.set("content-type", "application/x-www-form-urlencoded");
-        headers.set(
-          "x-csrftoken",
-          /(?:^|;\s*)csrftoken=(?<token>[^;]+)/u.exec(globalThis.document.cookie)?.groups?.token ??
-            "",
-        );
-        body = query
-          ? new globalThis.URLSearchParams({
-              doc_id: query.documentId,
-              variables: JSON.stringify({
-                initial_reel_id: query.reelIds[0],
-                reel_ids: query.reelIds,
-                first: Math.min(10, query.reelIds.length),
-                last: 0,
-                after: query.after ?? null,
-                __relay_internal__pv__PolarisCommunityNoteStoriesLabelEnabledrelayprovider: false,
-              }),
-            }).toString()
-          : new globalThis.URLSearchParams({
-              audio_cluster_id: audioId ?? "",
-              original_sound_audio_asset_id: audioId ?? "",
-              max_id: "",
-            }).toString();
-      }
+    async ({ appId, requestUrl, mediaQuery: query }) => {
+      // Without the page's own anti-forgery tokens Instagram answers with its HTML shell.
+      // Avoid inner named functions here: tsx injects a __name helper the browser lacks.
+      const pageRequire: (name: string) => Record<string, string | undefined> | undefined =
+        globalThis.require;
+      const lsd = pageRequire("LSD")?.token ?? "";
+      const user = pageRequire("CurrentUserInitialData");
       const response = await globalThis.fetch(requestUrl, {
-        body,
-        headers,
-        method: query || audioId !== undefined ? "POST" : "GET",
-        signal: audioId === undefined ? undefined : globalThis.AbortSignal.timeout(20_000),
+        body: new globalThis.URLSearchParams({
+          doc_id: query?.documentId ?? "",
+          variables: JSON.stringify({
+            initial_reel_id: query?.reelIds[0],
+            reel_ids: query?.reelIds,
+            first: Math.min(10, query?.reelIds.length ?? 0),
+            last: 0,
+            after: query?.after ?? null,
+            __relay_internal__pv__PolarisCommunityNoteStoriesLabelEnabledrelayprovider: false,
+          }),
+          fb_dtsg: pageRequire("DTSGInitialData")?.token ?? "",
+          lsd,
+          av: user?.NON_FACEBOOK_USER_ID ?? user?.ACCOUNT_ID ?? "",
+        }).toString(),
+        headers: new globalThis.Headers({
+          "content-type": "application/x-www-form-urlencoded",
+          "x-fb-lsd": lsd,
+          "x-ig-app-id": appId,
+        }),
+        method: "POST",
       });
 
       return {
@@ -177,7 +204,7 @@ async function fetchFromInstagramPage(
         status: response.status,
       };
     },
-    input,
+    { appId: IG_APP_ID, requestUrl: REELS_MEDIA_URL, mediaQuery },
   );
 }
 
@@ -238,7 +265,7 @@ export function createInstagramClient(session: InstagramClientSession): Instagra
   return {
     async getMusicAsset(audioId) {
       return toClientResponse(
-        await fetchFromInstagramPage(session, MUSIC_ASSET_URL, undefined, audioId),
+        await fetchFromInstagramPage(session, MUSIC_ASSET_URL, audioId),
         JsonValueSchema,
       );
     },
@@ -264,7 +291,7 @@ export function createInstagramClient(session: InstagramClientSession): Instagra
           query.after = after;
         }
         // oxlint-disable-next-line no-await-in-loop -- Each cursor depends on the previous page.
-        const response = await fetchFromInstagramPage(session, REELS_MEDIA_URL, query);
+        const response = await fetchGalleryFromInstagramPage(session, query);
         if (!response.ok) {
           return toClientResponse(
             response,
