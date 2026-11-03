@@ -69,8 +69,8 @@
         "node_modules/deepmerge"
       ],
       "fixAvailable": {
-        "name": "shadcn",
-        "version": "1.0.0",
+        "name": "ultracite",
+        "version": "4.2.13",
         "isSemVerMajor": true
       }
     },
@@ -168,12 +168,12 @@
       "total": 7
     },
     "dependencies": {
-      "prod": 605,
+      "prod": 529,
       "dev": 307,
       "optional": 246,
       "peer": 0,
       "peerOptional": 0,
-      "total": 1001
+      "total": 925
     }
   }
 }
