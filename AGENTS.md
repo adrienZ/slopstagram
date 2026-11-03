@@ -42,10 +42,10 @@ calls, for example `{ stories: Pick<StoryRepository, "listActive"> }`, or
 `Pick<Runtime, "logger">` for the other parts. The real runtime and the test runtime satisfy it
 without a cast. Each collaborator has one name across the code base (`fetchOllama`, `storage`).
 
-No module opens the database or a store, or builds a repository, when it is imported. The
-`slopstagram/composition-root` lint rule only lets `core/runtime` construct repositories or call
-`createDrizzle` and `createFileCacheStorage`, and forbids repositories, databases and stores at
-module level anywhere else in the code; tests are exempt.
+No module opens the database or a store, or builds a repository, when it is imported. A
+`no-restricted-imports` override in `oxlint.config.ts` only lets `core/runtime` import repository
+classes, `createDrizzle` and `createFileCacheStorage` (and `core/database` and `core/media-store`
+the drivers behind them); tests are exempt.
 
 ### Generated UI
 
