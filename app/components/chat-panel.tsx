@@ -1,6 +1,7 @@
 import { fetchServerSentEvents, useChat } from "@tanstack/ai-react";
 import type { UIMessage } from "@tanstack/ai-react";
 import { SendIcon } from "lucide-react";
+import { z } from "zod";
 import type { SyntheticEvent } from "react";
 import { useChatComposer } from "../hooks/use-chat-composer.ts";
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
@@ -10,6 +11,7 @@ import { Bubble, BubbleContent } from "../shadcn/ui/bubble.tsx";
 import { Button } from "../shadcn/ui/button.tsx";
 import { Message, MessageContent, MessageGroup } from "../shadcn/ui/message.tsx";
 import { Textarea } from "../shadcn/ui/textarea.tsx";
+import { AccountList, MentionBackdrop, MentionedText } from "./chat-mentions.tsx";
 
 const connection = fetchServerSentEvents("/api/chat");
 
@@ -20,11 +22,34 @@ function describeTool(name: string): string {
   return name === "listUsers" ? "Liste des comptes" : name;
 }
 
-function MessageParts({ message }: { message: UIMessage }) {
+const ListedAccountsSchema = z.array(z.object({ username: z.string() }));
+
+/** The accounts the `listUsers` call returned, read from the tool result that answers it. */
+function readListedAccounts(message: UIMessage, callId: string): Array<string> {
+  const result = message.parts.find(
+    (part) => part.type === "tool-result" && part.toolCallId === callId,
+  );
+  const content = z.string().safeParse(result?.type === "tool-result" ? result.content : null);
+  if (!content.success) {
+    return [];
+  }
+  try {
+    const accounts = ListedAccountsSchema.safeParse(JSON.parse(content.data));
+    return accounts.success ? accounts.data.map(({ username }) => username) : [];
+  } catch {
+    return [];
+  }
+}
+
+function MessageParts({ message, users }: { message: UIMessage; users: Array<SidebarUser> }) {
   return message.parts.map((part, index) => {
     const key = `${message.id}-${index}`;
     if (part.type === "text") {
-      return <p key={key}>{part.content}</p>;
+      return message.role === "user" ? (
+        <MentionedText key={key} text={part.content} users={users} />
+      ) : (
+        <p key={key}>{part.content}</p>
+      );
     }
     if (part.type === "thinking") {
       return (
@@ -35,10 +60,14 @@ function MessageParts({ message }: { message: UIMessage }) {
       );
     }
     if (part.type === "tool-call") {
+      const usernames = part.name === "listUsers" ? readListedAccounts(message, part.id) : [];
       return (
-        <p key={key} className="tw:text-xs tw:text-muted-foreground">
-          {`Outil : ${describeTool(part.name)}`}
-        </p>
+        <div key={key} className="tw:grid tw:gap-1">
+          <p className="tw:text-xs tw:text-muted-foreground">
+            {`Outil : ${describeTool(part.name)}`}
+          </p>
+          {usernames.length > 0 && <AccountList usernames={usernames} users={users} />}
+        </div>
       );
     }
     return null;
@@ -79,7 +108,7 @@ export function ChatPanel({ users }: { users: Array<SidebarUser> }) {
               <MessageContent>
                 <Bubble variant={own ? "default" : "muted"} align={own ? "end" : "start"}>
                   <BubbleContent className="tw:grid tw:gap-1">
-                    <MessageParts message={message} />
+                    <MessageParts message={message} users={users} />
                   </BubbleContent>
                 </Bubble>
               </MessageContent>
@@ -121,19 +150,23 @@ export function ChatPanel({ users }: { users: Array<SidebarUser> }) {
             ))}
           </ul>
         )}
-        <Textarea
-          ref={composer.textarea}
-          aria-label="Message"
-          placeholder="Écris un message, @ pour mentionner un compte"
-          value={composer.text}
-          onChange={composer.onChange}
-          onSelect={composer.onSelect}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              onSubmit(event);
-            }
-          }}
-        />
+        <div className="tw:relative tw:rounded-lg tw:dark:bg-input/30">
+          <MentionBackdrop text={composer.text} users={users} />
+          <Textarea
+            ref={composer.textarea}
+            aria-label="Message"
+            placeholder="Écris un message, @ pour mentionner un compte"
+            value={composer.text}
+            onChange={composer.onChange}
+            onSelect={composer.onSelect}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                onSubmit(event);
+              }
+            }}
+            className="tw:relative tw:text-transparent tw:caret-foreground tw:dark:bg-transparent"
+          />
+        </div>
         <Button type="submit" disabled={busy} className="tw:justify-self-end">
           <SendIcon />
           Envoyer
