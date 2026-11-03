@@ -10,8 +10,21 @@ import { formatUserHandle } from "../utils/helper.ts";
 import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/ui/avatar.tsx";
 import { Bubble, BubbleContent } from "../shadcn/ui/bubble.tsx";
 import { Button } from "../shadcn/ui/button.tsx";
-import { Message, MessageContent, MessageGroup } from "../shadcn/ui/message.tsx";
-import { Textarea } from "../shadcn/ui/textarea.tsx";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupTextarea,
+} from "../shadcn/ui/input-group.tsx";
+import { Message, MessageContent } from "../shadcn/ui/message.tsx";
+import {
+  MessageScroller,
+  MessageScrollerButton,
+  MessageScrollerContent,
+  MessageScrollerItem,
+  MessageScrollerProvider,
+  MessageScrollerViewport,
+} from "../shadcn/ui/message-scroller.tsx";
 import { AccountList, MentionBackdrop, MentionedText } from "./chat-mentions.tsx";
 
 const transport = new DefaultChatTransport({ api: "/api/chat" });
@@ -79,36 +92,45 @@ export function ChatPanel({ users }: { users: Array<SidebarUser> }) {
   }
 
   return (
-    <div className="tw:mx-auto tw:flex tw:min-h-[calc(100svh-3.5rem)] tw:w-full tw:max-w-3xl tw:flex-col tw:gap-4 tw:px-4 tw:py-6">
-      <MessageGroup className="tw:flex-1 tw:gap-4" aria-live="polite">
-        {messages.length === 0 && (
-          <p className="tw:text-sm tw:text-muted-foreground">
-            Demande la liste des comptes, ou mentionne-en un avec @ pour lire son résumé des
-            dernières 24 heures.
-          </p>
-        )}
-        {messages.map((message) => {
-          const own = message.role === "user";
-          return (
-            <Message key={message.id} align={own ? "end" : "start"}>
-              <MessageContent>
-                <Bubble variant={own ? "default" : "muted"} align={own ? "end" : "start"}>
-                  <BubbleContent className="tw:grid tw:gap-1">
-                    <MessageParts message={message} users={users} />
-                  </BubbleContent>
-                </Bubble>
-              </MessageContent>
-            </Message>
-          );
-        })}
-        {status === "submitted" && <p className="tw:text-sm tw:text-muted-foreground">…</p>}
-        {error !== undefined && (
-          <p role="alert" className="tw:text-sm tw:text-destructive">
-            Le modèle n’a pas répondu.
-          </p>
-        )}
-      </MessageGroup>
-      <form onSubmit={onSubmit} className="tw:relative tw:grid tw:gap-2">
+    <div className="tw:mx-auto tw:flex tw:h-[calc(100svh-3.5rem)] tw:w-full tw:max-w-3xl tw:flex-col tw:gap-4 tw:px-4 tw:pt-6 tw:pb-4">
+      <MessageScrollerProvider autoScroll>
+        <MessageScroller className="tw:flex-1" aria-live="polite">
+          <MessageScrollerViewport>
+            <MessageScrollerContent>
+              {messages.length === 0 && (
+                <p className="tw:text-sm tw:text-muted-foreground">
+                  Demande la liste des comptes, ou mentionne-en un avec @ pour lire son résumé des
+                  dernières 24 heures.
+                </p>
+              )}
+              {messages.map((message) => {
+                const own = message.role === "user";
+                return (
+                  <MessageScrollerItem key={message.id} messageId={message.id} scrollAnchor={own}>
+                    <Message align={own ? "end" : "start"}>
+                      <MessageContent>
+                        <Bubble variant={own ? "default" : "muted"} align={own ? "end" : "start"}>
+                          <BubbleContent className="tw:grid tw:gap-1">
+                            <MessageParts message={message} users={users} />
+                          </BubbleContent>
+                        </Bubble>
+                      </MessageContent>
+                    </Message>
+                  </MessageScrollerItem>
+                );
+              })}
+              {status === "submitted" && <p className="tw:text-sm tw:text-muted-foreground">…</p>}
+              {error !== undefined && (
+                <p role="alert" className="tw:text-sm tw:text-destructive">
+                  Le modèle n’a pas répondu.
+                </p>
+              )}
+            </MessageScrollerContent>
+          </MessageScrollerViewport>
+          <MessageScrollerButton />
+        </MessageScroller>
+      </MessageScrollerProvider>
+      <form onSubmit={onSubmit} className="tw:relative">
         {composer.suggestions.length > 0 && (
           <ul
             aria-label="Suggestions de mentions"
@@ -134,27 +156,36 @@ export function ChatPanel({ users }: { users: Array<SidebarUser> }) {
             ))}
           </ul>
         )}
-        <div className="tw:relative tw:rounded-lg tw:dark:bg-input/30">
-          <MentionBackdrop text={composer.text} users={users} />
-          <Textarea
-            ref={composer.textarea}
-            aria-label="Message"
-            placeholder="Écris un message, @ pour mentionner un compte"
-            value={composer.text}
-            onChange={composer.onChange}
-            onSelect={composer.onSelect}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
-                onSubmit(event);
-              }
-            }}
-            className="tw:relative tw:text-transparent tw:caret-foreground tw:dark:bg-transparent"
-          />
-        </div>
-        <Button type="submit" disabled={busy} className="tw:justify-self-end">
-          <SendIcon />
-          Envoyer
-        </Button>
+        <InputGroup>
+          <div className="tw:relative tw:w-full">
+            <MentionBackdrop text={composer.text} users={users} />
+            <InputGroupTextarea
+              ref={composer.textarea}
+              aria-label="Message"
+              placeholder="Écris un message, @ pour mentionner un compte"
+              value={composer.text}
+              onChange={composer.onChange}
+              onSelect={composer.onSelect}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  onSubmit(event);
+                }
+              }}
+              className="tw:relative tw:text-transparent tw:caret-foreground"
+            />
+          </div>
+          <InputGroupAddon align="block-end">
+            <InputGroupButton
+              type="submit"
+              variant="default"
+              disabled={busy}
+              className="tw:ml-auto"
+            >
+              <SendIcon />
+              Envoyer
+            </InputGroupButton>
+          </InputGroupAddon>
+        </InputGroup>
       </form>
     </div>
   );

@@ -56,7 +56,7 @@ export function MentionBackdrop({ text, users }: { text: string; users: Array<Si
   return (
     <div
       aria-hidden="true"
-      className="tw:pointer-events-none tw:absolute tw:inset-0 tw:overflow-hidden tw:rounded-lg tw:border tw:border-transparent tw:px-2.5 tw:py-2 tw:text-base tw:wrap-break-word tw:whitespace-pre-wrap tw:md:text-sm"
+      className="tw:pointer-events-none tw:absolute tw:inset-0 tw:overflow-hidden tw:px-2.5 tw:py-2 tw:text-base tw:wrap-break-word tw:whitespace-pre-wrap tw:md:text-sm"
     >
       {splitMentions(text, users).map((segment, index) =>
         segment.type === "text" ? (
@@ -64,7 +64,7 @@ export function MentionBackdrop({ text, users }: { text: string; users: Array<Si
         ) : (
           <mark
             key={`${index}-${segment.username}`}
-            className="tw:rounded-sm tw:bg-secondary tw:text-secondary-foreground tw:ring-2 tw:ring-secondary"
+            className="tw:rounded-sm tw:bg-primary/15 tw:text-foreground tw:ring-2 tw:ring-primary/15"
           >
             {`@${segment.username}`}
           </mark>
