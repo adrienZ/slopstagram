@@ -17,6 +17,8 @@ subfolders except in `database/`.
 - `vision/`: the Ollama client, vision analysis, Apple OCR and the Apple caption step.
 - `accounts/`: user summaries, Instagram user persistence and report user keys.
 - `story-feed/`: the story feed and story days.
+- `assistant/`: what the chat assistant reads: the saved accounts and the user summary of an
+  account's last 24 hours.
 - `fetch-run/`: the fetch run pipeline, reports, story fetching, the story cache and the hourly
   job.
 - `runtime/`: the composition root, and the types of the external boundaries it exposes (`fetch-boundaries.ts`). It imports every domain; only entry points import its values, other modules import its types.
