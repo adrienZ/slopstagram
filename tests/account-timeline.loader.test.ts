@@ -1,5 +1,6 @@
-import { beforeAll, expect, test } from "vitest";
+import { expect, test } from "vitest";
 import { loadAccountTimeline } from "../app/loaders/account-timeline.ts";
+import { useSharedTestRuntime } from "./setup/test-runtime.ts";
 import {
   captionedStoryPk,
   mentionedAccount,
@@ -8,12 +9,10 @@ import {
   timelineAccount,
 } from "./ui/seeded-pages.ts";
 
-beforeAll(async () => {
-  await seedPageDatabase();
-});
+const shared = useSharedTestRuntime(seedPageDatabase);
 
 test("returns the sticker groups of the account's stories, one per kind", () => {
-  const { stickerGroups } = loadAccountTimeline(timelineAccount, pageNow);
+  const { stickerGroups } = loadAccountTimeline(shared.runtime, timelineAccount, pageNow);
 
   expect(stickerGroups.map(({ kind, stories }) => [kind, stories.length])).toStrictEqual([
     ["location", 1],
@@ -23,7 +22,7 @@ test("returns the sticker groups of the account's stories, one per kind", () => 
 });
 
 test("returns the tagged places that have a position, with the stories that tag them", () => {
-  const { locations } = loadAccountTimeline(timelineAccount, pageNow);
+  const { locations } = loadAccountTimeline(shared.runtime, timelineAccount, pageNow);
 
   expect(locations.places).toMatchObject([
     {
@@ -37,7 +36,7 @@ test("returns the tagged places that have a position, with the stories that tag 
 });
 
 test("returns story cards, newest first, with their stickers already presented", () => {
-  const { stories } = loadAccountTimeline(timelineAccount, pageNow);
+  const { stories } = loadAccountTimeline(shared.runtime, timelineAccount, pageNow);
 
   expect(stories.map(({ mediaPk }) => mediaPk)).toStrictEqual([
     "700000000000906",

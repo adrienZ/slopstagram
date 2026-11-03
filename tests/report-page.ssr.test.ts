@@ -1,40 +1,41 @@
-import { beforeAll, expect, test } from "vitest";
+import { expect, test } from "vitest";
 import { within } from "@testing-library/dom";
 import { JSDOM } from "jsdom";
-import { migrateDatabase } from "@@/core/database/migrate.ts";
-import { instagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
-import { storyRepository } from "@@/core/database/repositories/story-repository.ts";
+import type { Runtime } from "@@/core/runtime/runtime.ts";
 import { Route } from "../app/routes/report.tsx";
 import { loadStoryFeed } from "../app/loaders/story-feed.ts";
 import { storyItem } from "./mock-helpers.ts";
 import { createPageRenderer } from "./render-page.ts";
 import { readRecordedPayloads, seedRecordedStories } from "./setup/seed.ts";
+import { createTestRuntime, useSharedTestRuntime } from "./setup/test-runtime.ts";
 
 const now = new Date("2026-10-29T12:00:00.000Z");
 const HOUR = 3600;
 const emptyDay = "2026-10-28";
 const emptyDayText = "Aucune story publiée ce jour-là.";
 
-// The report the handler loads from the seeded database, with the arguments the real loader receives.
-const renderer = createPageRenderer(
-  Route,
-  ({ deps, context }) => loadStoryFeed(now, deps.date, context.selectedStory),
-  "/report",
-);
+const shared = useSharedTestRuntime(async (runtime) => {
+  await seedRecordedStories(runtime, await readRecordedPayloads(), {
+    publishedBefore: { now, seconds: HOUR },
+  });
+});
+
+// The report the handler loads from the runtime's database, with the arguments the real loader receives.
+async function renderFeed(runtime: Runtime, url: string) {
+  const renderer = createPageRenderer(
+    Route,
+    ({ deps, context }) => loadStoryFeed(runtime, now, deps.date, context.selectedStory),
+    "/report",
+  );
+  return await renderer.renderRoute(url);
+}
 
 function readDocument(html: string) {
   return new JSDOM(html).window.document;
 }
 
-beforeAll(async () => {
-  migrateDatabase();
-  await seedRecordedStories(await readRecordedPayloads(), {
-    publishedBefore: { now, seconds: HOUR },
-  });
-});
-
 test("today's feed lists the seeded accounts with their story previews and sidebar", async () => {
-  const html = await renderer.renderRoute("/report");
+  const html = await renderFeed(shared.runtime, "/report");
   const document = readDocument(html);
   const page = within(document.body);
 
@@ -64,8 +65,8 @@ test("today's feed lists the seeded accounts with their story previews and sideb
 
 test("report SSR isolates loader data between concurrent requests", async () => {
   const [today, empty] = await Promise.all([
-    renderer.renderRoute("/report"),
-    renderer.renderRoute(`/report?date=${emptyDay}`),
+    renderFeed(shared.runtime, "/report"),
+    renderFeed(shared.runtime, `/report?date=${emptyDay}`),
   ]);
   const todayPage = within(readDocument(today).body);
   const emptyPage = within(readDocument(empty).body);
@@ -89,13 +90,14 @@ test("invalid report dates preserve story IDs while falling back to today", () =
 });
 
 for (const mediaPk of ["12345", "12345678901234568000", "12345678901234567890"]) {
-  test(`SSR preserves numeric Instagram ID ${mediaPk} without precision loss`, async () => {
+  test(`SSR preserves numeric Instagram ID ${mediaPk} without precision loss`, async (context) => {
+    const runtime = await createTestRuntime(context);
     const takenAt = Date.parse("2026-01-15T10:00:00Z") / 1000;
     const owner = { pk: "700000000000900", username: "user_900" };
-    await instagramUserRepository.save({ ...owner, full_name: null, id: owner.pk });
-    await storyRepository.save({ ...storyItem(mediaPk), taken_at: takenAt }, owner);
+    await runtime.users.save({ ...owner, full_name: null, id: owner.pk });
+    await runtime.stories.save({ ...storyItem(mediaPk), taken_at: takenAt }, owner);
 
-    const html = await renderer.renderRoute(`/report?date=2026-01-15&story=${mediaPk}`);
+    const html = await renderFeed(runtime, `/report?date=2026-01-15&story=${mediaPk}`);
 
     expect(
       within(readDocument(html).body).getByRole("button", { name: `Ouvrir aperçu ${mediaPk}` }),

@@ -1,11 +1,10 @@
 import process from "node:process";
 import { pathToFileURL } from "node:url";
 import { createReport } from "@@/core/fetch-run/report.ts";
-import { createLogger } from "@@/core/utils/logging.ts";
+import { getProductionRuntime } from "@@/core/runtime/production-runtime.ts";
 
 async function main(): Promise<void> {
-  const logger = createLogger("create-report");
-  await createReport({ logger });
+  await createReport(getProductionRuntime());
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

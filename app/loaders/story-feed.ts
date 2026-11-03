@@ -1,17 +1,9 @@
 import "@tanstack/react-start/server-only";
-import {
-  appleVisionRepository,
-  type AppleVisionRepository,
-} from "@@/core/database/repositories/apple-vision-repository.ts";
-import {
-  userSummaryRepository,
-  type UserSummaryRepository,
-} from "@@/core/database/repositories/user-summary-repository.ts";
-import {
-  visionRepository,
-  type VisionRepository,
-} from "@@/core/database/repositories/vision-repository.ts";
-import { storyRepository } from "@@/core/database/repositories/story-repository.ts";
+import type { AppleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
+import type { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
+import type { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
+import type { UserSummaryRepository } from "@@/core/database/repositories/user-summary-repository.ts";
+import type { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
 import type { CachedReportImages } from "@@/core/media-store/image-cache.ts";
 import { getReportUserKey } from "@@/core/accounts/report-user-key.ts";
 import { readUserSummaries } from "@@/core/accounts/user-summary.ts";
@@ -22,10 +14,18 @@ import { createStoryCards, withStoryStickers } from "../utils/story-cards.ts";
 import { formatReportDate } from "../utils/helper.ts";
 import { loadSidebarUsers } from "./sidebar-users.ts";
 
-interface FeedRepositories {
+interface StoryFeedSourcesRuntime {
   appleVision: Pick<AppleVisionRepository, "findByMediaPk">;
-  userSummary: Pick<UserSummaryRepository, "findBySourceHash">;
+  summaries: Pick<UserSummaryRepository, "findBySourceHash">;
   vision: Pick<VisionRepository, "findByMediaPk">;
+}
+
+interface StoryFeedRuntime extends StoryFeedSourcesRuntime {
+  stories: Pick<
+    StoryRepository,
+    "findByMediaPk" | "listActive" | "listPublicationTimes" | "listPublishedBetween"
+  >;
+  users: Pick<InstagramUserRepository, "listAll">;
 }
 
 export interface StoryFeedSources {
@@ -79,7 +79,7 @@ function readCachedImages(users: Array<StoryOutputUser>): CachedReportImages {
 
 function readAppleCaptions(
   users: Array<StoryOutputUser>,
-  repository: FeedRepositories["appleVision"],
+  repository: StoryFeedSourcesRuntime["appleVision"],
 ): Map<string, string> {
   const captionByMediaPk = new Map<string, string>();
   const mediaPks = new Set(users.flatMap((user) => user.stories.map((story) => story.media_pk)));
@@ -98,22 +98,14 @@ function readAppleCaptions(
   return captionByMediaPk;
 }
 
-const defaultFeedRepositories: FeedRepositories = {
-  appleVision: appleVisionRepository,
-  userSummary: userSummaryRepository,
-  vision: visionRepository,
-};
-
 export function readStoryFeedSources(
+  runtime: StoryFeedSourcesRuntime,
   users: Array<StoryOutputUser>,
-  repositories: FeedRepositories = defaultFeedRepositories,
 ): StoryFeedSources {
   const cachedImages = readCachedImages(users);
-  const visionByPreviewUrl = readStoryFeedVision({ vision: repositories.vision }, users);
-  const userSummaryByUserKey = readUserSummaries({ summaries: repositories.userSummary }, users, {
-    visionByPreviewUrl,
-  });
-  const appleCaptionByMediaPk = readAppleCaptions(users, repositories.appleVision);
+  const visionByPreviewUrl = readStoryFeedVision(runtime, users);
+  const userSummaryByUserKey = readUserSummaries(runtime, users, { visionByPreviewUrl });
+  const appleCaptionByMediaPk = readAppleCaptions(users, runtime.appleVision);
 
   return {
     appleCaptionByMediaPk,
@@ -124,6 +116,7 @@ export function readStoryFeedSources(
 }
 
 export function loadStoryFeed(
+  runtime: StoryFeedRuntime,
   now: Date = new Date(),
   selectedDate?: string,
   selectedStory?: string,
@@ -133,14 +126,14 @@ export function loadStoryFeed(
     selectedDate: day,
     availableDates,
     users: feedUsers,
-  } = createReportFeed({ stories: storyRepository }, now, selectedDate, {
+  } = createReportFeed(runtime, now, selectedDate, {
     selectedStory,
   });
-  const sources = readStoryFeedSources(feedUsers);
-  const sidebarUsers = loadSidebarUsers();
+  const sources = readStoryFeedSources(runtime, feedUsers);
+  const sidebarUsers = loadSidebarUsers(runtime);
   const storedStories = feedUsers.flatMap((user) =>
     user.stories.flatMap(({ media_pk }) => {
-      const story = storyRepository.findByMediaPk(media_pk);
+      const story = runtime.stories.findByMediaPk(media_pk);
       return story === null ? [] : [{ story }];
     }),
   );

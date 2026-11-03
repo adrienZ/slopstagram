@@ -1,5 +1,3 @@
-import { readdir } from "node:fs/promises";
-import path from "node:path";
 import { afterEach, assert, beforeEach, test, expect, vi } from "vitest";
 import {
   startWarmCacheQueue,
@@ -11,6 +9,7 @@ import { runWarmCacheJob } from "@@/core/fetch-run/warm-cache.ts";
 import { audioUrl, createWorld, musicStoryPk, now, storyPks } from "./setup/report-world.ts";
 import { createFailingClient } from "./setup/recorded-client.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
+import type { Runtime } from "@@/core/runtime/runtime.ts";
 
 // The job reads the clock itself. The recorded stories are dated around `now`, so the feed
 // that the user summaries are written from only holds them when the clock reads `now` too.
@@ -23,22 +22,19 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-/** Every file the job cached, relative to the cache directory. */
-async function listCacheFiles(directory: string): Promise<Array<string>> {
-  const entries = await readdir(directory, { recursive: true, withFileTypes: true });
-  return entries
-    .filter((entry) => entry.isFile())
-    .map((entry) => path.relative(directory, path.join(entry.parentPath, entry.name)))
-    .toSorted();
+/** Every media file the job cached, as the paths the report points at. */
+async function listCacheFiles(storage: Runtime["storage"]): Promise<Array<string>> {
+  const [images, audio] = await Promise.all([storage.images.getKeys(), storage.audio.getKeys()]);
+  return [
+    ...images.map((key) => `images/${key.replaceAll(":", "/")}`),
+    ...audio.map((key) => `audio/${key}`),
+  ].toSorted();
 }
 
 test("runWarmCacheJob runs the whole pipeline and stores the report, database rows and cached media", async (context) => {
   const world = await createWorld(context);
 
-  const result = await runWarmCacheJob({
-    boundaries: world.boundaries,
-    logger: world.logger,
-  });
+  const result = await runWarmCacheJob(world.runtime);
 
   expect(result).toStrictEqual({
     counts: { failed: 0, fetched: 3, reels: 2, stories: 3 },
@@ -72,7 +68,7 @@ test("runWarmCacheJob runs the whole pipeline and stores the report, database ro
   expect(world.ollama.requests.filter(({ kind }) => kind === "vision")).toHaveLength(3);
 
   // The media output: warming the cache downloaded every preview, avatar and the audio.
-  const files = await listCacheFiles(world.cacheDirectory);
+  const files = await listCacheFiles(world.storage);
   expect(files).toStrictEqual(
     expect.arrayContaining([
       ...mediaPks.map((mediaPk) => `images/story-previews/${mediaPk}.jpg`),
@@ -89,7 +85,7 @@ test("runWarmCacheJob runs the whole pipeline and stores the report, database ro
 test("runWarmCacheJob accepts an empty payload", async (context) => {
   const world = await createWorld(context);
 
-  const result = await runWarmCacheJob({ boundaries: world.boundaries, logger: world.logger });
+  const result = await runWarmCacheJob(world.runtime);
 
   expect(world.reports.listKeys()).toStrictEqual([result.reportKey]);
   expect(result.counts.fetched).toBe(3);
@@ -98,50 +94,43 @@ test("runWarmCacheJob accepts an empty payload", async (context) => {
 test("runWarmCacheJob stores nothing in the cache when Instagram refuses the request", async (context) => {
   const world = await createWorld(context, { client: createFailingClient(401) });
 
-  await expect(
-    runWarmCacheJob({ boundaries: world.boundaries, logger: world.logger }),
-  ).rejects.toThrow(/HTTP 401/u);
+  await expect(runWarmCacheJob(world.runtime)).rejects.toThrow(/HTTP 401/u);
 
   expect(world.runs.list()).toMatchObject([{ reportKey: null, status: "failed" }]);
   expect(world.reports.listKeys()).toStrictEqual([]);
-  expect(await listCacheFiles(world.cacheDirectory)).toStrictEqual([]);
+  expect(await listCacheFiles(world.storage)).toStrictEqual([]);
 });
 
 test("startWarmCacheQueue schedules the hourly job, runs it and forwards errors", async (context) => {
-  const world = await createWorld(context);
   const calls: Array<string> = [];
   let processor: Parameters<FetchRunQueue>[1] | undefined;
   let errorListener: ((error: Error) => void) | undefined;
   const queueError = new Error("queue failed");
   const capturedErrors: Array<Error> = [];
-
-  const started = startWarmCacheQueue(
-    await createTestRuntime(context, {
-      queue(name, nextProcessor) {
-        processor = nextProcessor;
-        calls.push(`queue:${name}`);
-        return {
-          async close() {
-            calls.push("close");
-          },
-          async cron(id, pattern) {
-            calls.push(`cron:${id}:${pattern}`);
-            return null;
-          },
-          on(_event, listener) {
-            errorListener = listener;
-          },
-        };
-      },
-    }),
-    {
-      boundaries: world.boundaries,
-      logger: world.logger,
-      onError(error) {
-        capturedErrors.push(error);
-      },
+  const world = await createWorld(context, {
+    queue(name, nextProcessor) {
+      processor = nextProcessor;
+      calls.push(`queue:${name}`);
+      return {
+        async close() {
+          calls.push("close");
+        },
+        async cron(id, pattern) {
+          calls.push(`cron:${id}:${pattern}`);
+          return null;
+        },
+        on(_event, listener) {
+          errorListener = listener;
+        },
+      };
     },
-  );
+  });
+
+  const started = startWarmCacheQueue(world.runtime, {
+    onError(error) {
+      capturedErrors.push(error);
+    },
+  });
 
   await started.ready;
   assert.ok(processor);

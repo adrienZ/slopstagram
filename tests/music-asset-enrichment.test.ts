@@ -100,12 +100,14 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
   expect(before.musicObservations?.[0].metadata.status).toBe("usable");
   assert.ok(before.musicObservations);
   expect(before.musicObservations[0].occurrenceId).not.toBe(null);
-  await cacheReportAudio(report, {
-    storyRepository: repository,
-    directory,
-    storage: createFileCacheStorage(directory),
-    fetchMedia: server.fetchMedia,
-  });
+  await cacheReportAudio(
+    {
+      stories: repository,
+      storage: createFileCacheStorage(directory),
+      fetchMedia: server.fetchMedia,
+    },
+    report,
+  );
   const first = repository.findByMediaPk("first")?.annotations?.musicObservations?.[0].metadata;
   const second = repository.findByMediaPk("second")?.annotations?.musicObservations?.[0].metadata;
   assert.ok(first);
@@ -119,12 +121,14 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
   const artwork = await createMediaResponse(first.artworkCachePath, path.join(directory, "images"));
   expect(artwork.status).toBe(200);
   expect(artwork.headers.get("content-type")).toBe("image/jpeg");
-  await cacheReportAudio(report, {
-    storyRepository: repository,
-    directory,
-    storage: createFileCacheStorage(directory),
-    fetchMedia: server.fetchMedia,
-  });
+  await cacheReportAudio(
+    {
+      stories: repository,
+      storage: createFileCacheStorage(directory),
+      fetchMedia: server.fetchMedia,
+    },
+    report,
+  );
   expect(server.requests).toStrictEqual([`/lookup/${audioId}`, "/audio.m4a", "/cover.png"]);
 });
 
@@ -210,11 +214,15 @@ test("generic video/mp4 responses with a video track are never cached as music",
     result.writeHead(200, { "content-type": "video/mp4" });
     result.end(video);
   });
-  const cached = await cacheReceivedAudio("asset", "https://example.com/video", null, {
-    directory,
-    storage: createFileCacheStorage(directory),
-    fetchMedia: server.fetchMedia,
-  });
+  const cached = await cacheReceivedAudio(
+    {
+      storage: createFileCacheStorage(directory),
+      fetchMedia: server.fetchMedia,
+    },
+    "asset",
+    "https://example.com/video",
+    null,
+  );
   expect(cached.state).toBe("unsupported");
   expect(cached.cachePath).toBe(null);
 });

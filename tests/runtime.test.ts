@@ -1,7 +1,4 @@
 import { expect, test, type OnTestFinishedHandler } from "vitest";
-import { useDrizzle } from "@@/core/database/client.ts";
-import { migrateDatabase } from "@@/core/database/migrate.ts";
-import { storyRepository } from "@@/core/database/repositories/story-repository.ts";
 import { fetchStories } from "@@/core/fetch-run/stories.ts";
 import { getProductionRuntime } from "@@/core/runtime/production-runtime.ts";
 import { createCapturingLogger, noSleep } from "./mock-helpers.ts";
@@ -14,14 +11,12 @@ async function answerOllama() {
 }
 
 test("a test runtime ingests recorded stories into its own database", async (context) => {
-  migrateDatabase(useDrizzle());
   const runtime = await createTestRuntime(context);
 
   const report = await fetchStories(runtime, { maxAttempts: 1, sleep: noSleep });
 
   expect(report.failures).toEqual([]);
   expect(runtime.stories.findByMediaPk(recordedStoryPk)).not.toBeNull();
-  expect(storyRepository.findByMediaPk(recordedStoryPk)).toBeNull();
 });
 
 test("two test runtimes do not share a database", async (context) => {
@@ -88,4 +83,10 @@ test("the production runtime is created once and reused", () => {
   expect(runtime.logger.options.defaults.tag).toBe("runtime");
   expect(runtime.queue).toBeTypeOf("function");
   expect(Object.keys(runtime.storage).toSorted()).toStrictEqual(["audio", "images", "stories"]);
+});
+
+test("the production runtime does not migrate its database", () => {
+  expect(() => getProductionRuntime().stories.findByMediaPk(recordedStoryPk)).toThrow(
+    "Failed query",
+  );
 });

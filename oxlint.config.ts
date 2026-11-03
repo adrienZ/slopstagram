@@ -2,13 +2,21 @@ import { defineConfig } from "oxlint";
 import ultracite from "ultracite/oxlint/core";
 import antiSlop from "ultracite/oxlint/anti-slop";
 
+interface RestrictedPath {
+  name: string;
+  message: string;
+  allowTypeImports?: boolean;
+  importNames?: Array<string>;
+}
+
 interface RestrictedPattern {
   group: Array<string>;
   message: string;
   allowTypeImports?: boolean;
+  importNames?: Array<string>;
 }
 
-const restrictedReactPaths = [
+const restrictedReactPaths: Array<RestrictedPath> = [
   {
     // frontend-side-effects
     name: "react",
@@ -32,14 +40,52 @@ const privateRepositoryHelpers: RestrictedPattern = {
     "story-repository.<aspect>.ts holds helpers private to story-repository.ts. Call the repository method instead of importing the helper.",
 };
 
-// Oxlint replaces a rule's options instead of merging them, so every
-// `no-restricted-imports` entry must carry the react paths and the private helpers itself.
+// Only the composition root, core/runtime, builds what holds state: the repositories, the database and the stores.
+const compositionRootPaths: Array<RestrictedPath> = [
+  {
+    name: "node:sqlite",
+    message: "Only the composition root opens the database. Take the runtime as a parameter.",
+  },
+  {
+    name: "unstorage",
+    importNames: ["createStorage"],
+    message: "Only the composition root opens a store. Take the runtime as a parameter.",
+  },
+];
+
+const compositionRootPatterns: Array<RestrictedPattern> = [
+  {
+    group: ["**/database/repositories/*-repository.ts"],
+    allowTypeImports: true,
+    message:
+      "Only the composition root (core/runtime) constructs repositories. Take the runtime as a parameter and import the type only.",
+  },
+  {
+    group: ["**/database/client.ts"],
+    importNames: ["createDrizzle"],
+    message:
+      "Only the composition root (core/runtime) opens the database. Take the runtime as a parameter.",
+  },
+  {
+    group: ["**/media-store/cache-storage.ts"],
+    importNames: ["createFileCacheStorage"],
+    message:
+      "Only the composition root (core/runtime) opens the stores. Take the runtime as a parameter.",
+  },
+];
+
+// Oxlint replaces a rule's options instead of merging them, so every `no-restricted-imports`
+// entry must carry the react paths, the composition root restrictions and the private helpers itself.
 function restrictImports(
   patterns: Array<RestrictedPattern> = [],
-): ["error", { paths: typeof restrictedReactPaths; patterns: Array<RestrictedPattern> }] {
+  { root = false }: { root?: boolean } = {},
+): ["error", { paths: Array<RestrictedPath>; patterns: Array<RestrictedPattern> }] {
   return [
     "error",
-    { paths: restrictedReactPaths, patterns: [...patterns, privateRepositoryHelpers] },
+    {
+      paths: root ? restrictedReactPaths : [...restrictedReactPaths, ...compositionRootPaths],
+      patterns: [...patterns, ...(root ? [] : compositionRootPatterns), privateRepositoryHelpers],
+    },
   ];
 }
 
@@ -89,6 +135,16 @@ export default defineConfig({
     "slopstagram/domain-layering": "error",
   },
   overrides: [
+    {
+      // The composition root, and what it builds from; tests build their own repositories, databases and stores.
+      files: [
+        "core/runtime/**",
+        "core/database/**",
+        "core/media-store/cache-storage.ts",
+        "tests/**",
+      ],
+      rules: { "no-restricted-imports": restrictImports([], { root: true }) },
+    },
     {
       // The only importer of its helpers.
       files: ["core/database/repositories/story-repository.ts"],

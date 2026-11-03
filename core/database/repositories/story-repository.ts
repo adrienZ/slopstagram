@@ -6,7 +6,7 @@ import {
   saveStoryAudioMedia,
 } from "@@/core/database/repositories/story-repository.audio.ts";
 import { and, asc, desc, eq, gt, gte, lt, lte, notInArray } from "drizzle-orm";
-import { useDrizzle, type DrizzleDatabase } from "../client.ts";
+import type { DrizzleDatabase } from "../client.ts";
 import { instagramUsers } from "../entities/instagram-user.ts";
 import {
   enrichStoryLocations,
@@ -456,5 +456,3 @@ export class StoryRepository {
     });
   }
 }
-
-export const storyRepository = new StoryRepository(useDrizzle());

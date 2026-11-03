@@ -1,8 +1,8 @@
 import { Buffer } from "node:buffer";
 import path from "node:path";
-import { BASE_CACHE_DIR, IMAGES_STORAGE_DIR, type ImageCacheStorage } from "./cache-storage.ts";
+import { IMAGES_STORAGE_DIR, type ImageCacheStorage } from "./cache-storage.ts";
 import { convertImageToJpeg } from "./image-conversion.ts";
-import type { Logger } from "@@/core/utils/logging.ts";
+import type { Runtime } from "@@/core/runtime/runtime.ts";
 import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
 
 interface FetchResponse {
@@ -16,12 +16,12 @@ interface FetchResponse {
 
 type FetchImage = (url: string) => Promise<FetchResponse>;
 
-export interface CacheReportImagesOptions {
-  cacheDirectory?: string;
+export type { FetchImage };
+
+type ImageCacheRuntime = Pick<Runtime, "fetchImage" | "logger" | "storage">;
+
+interface CacheReportImagesOptions {
   convertToJpeg?: typeof convertImageToJpeg;
-  fetchImage?: FetchImage;
-  logger: Logger;
-  storage: ImageCacheStorage;
 }
 
 export interface CachedReportImages {
@@ -29,12 +29,12 @@ export interface CachedReportImages {
   storyPreviewPathByUrl: Map<string, string>;
 }
 
-type ResolvedCacheReportImagesOptions = Required<
-  Pick<
-    CacheReportImagesOptions,
-    "cacheDirectory" | "convertToJpeg" | "fetchImage" | "logger" | "storage"
-  >
->;
+interface ResolvedCacheReportImagesOptions {
+  convertToJpeg: typeof convertImageToJpeg;
+  fetchImage: FetchImage;
+  logger: Runtime["logger"];
+  storage: ImageCacheStorage;
+}
 
 interface StoryPreviewEntry {
   mediaPk: string;
@@ -46,11 +46,8 @@ interface ProfilePicEntry {
   source: string;
 }
 
-function getRelativeCacheImagePath(cacheDirectory: string, rawKey: string): string {
-  return path
-    .relative(cacheDirectory, path.resolve(cacheDirectory, IMAGES_STORAGE_DIR, rawKey))
-    .split(path.sep)
-    .join("/");
+function getRelativeCacheImagePath(rawKey: string): string {
+  return path.posix.join(IMAGES_STORAGE_DIR, rawKey);
 }
 
 export async function readCachedImage(
@@ -78,7 +75,7 @@ async function cacheImage(
 ): Promise<string | null> {
   const rawKey = getJpegRawKey(namespace, options.imageKey);
   const cachedPath = (await options.storage.hasItem(rawKey))
-    ? getRelativeCacheImagePath(options.cacheDirectory, rawKey)
+    ? getRelativeCacheImagePath(rawKey)
     : null;
 
   if (cachedPath !== null && options.refresh !== true) {
@@ -101,16 +98,18 @@ async function cacheImage(
     return cachedPath;
   }
 
-  return getRelativeCacheImagePath(options.cacheDirectory, rawKey);
+  return getRelativeCacheImagePath(rawKey);
 }
 
-function resolveCacheOptions(options: CacheReportImagesOptions): ResolvedCacheReportImagesOptions {
+function resolveCacheOptions(
+  runtime: ImageCacheRuntime,
+  options: CacheReportImagesOptions,
+): ResolvedCacheReportImagesOptions {
   return {
-    cacheDirectory: options.cacheDirectory ?? BASE_CACHE_DIR,
     convertToJpeg: options.convertToJpeg ?? convertImageToJpeg,
-    fetchImage: options.fetchImage ?? globalThis.fetch,
-    logger: options.logger,
-    storage: options.storage,
+    fetchImage: runtime.fetchImage ?? globalThis.fetch,
+    logger: runtime.logger,
+    storage: runtime.storage.images,
   };
 }
 
@@ -231,10 +230,11 @@ function addLocalPathAliases(cachedImages: CachedReportImages): void {
 }
 
 export async function cacheReportImages(
+  runtime: ImageCacheRuntime,
   report: StoriesManifestReport,
-  options: CacheReportImagesOptions,
+  options: CacheReportImagesOptions = {},
 ): Promise<CachedReportImages> {
-  const resolvedOptions = resolveCacheOptions(options);
+  const resolvedOptions = resolveCacheOptions(runtime, options);
   const profilePicPathByUrl = await cacheProfilePics(report, resolvedOptions);
   const storyPreviewEntries = getStoryPreviewEntries(report);
   const storyPreviewPathByMediaPk = await cacheStoryPreviewByMediaPk(

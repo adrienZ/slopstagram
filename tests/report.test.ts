@@ -1,6 +1,5 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { assert, expect, test } from "vitest";
+import { readCachedImage } from "@@/core/media-store/image-cache.ts";
 import { AppleOcrUnavailableError } from "@@/core/vision/apple-ocr.ts";
 import { createStoryFeed, readStoryFeedVision } from "@@/core/story-feed/story-feed.ts";
 import { readUserSummaries } from "@@/core/accounts/user-summary.ts";
@@ -71,7 +70,10 @@ test("creates a report by running the whole pipeline over recorded Instagram pay
     title: "Synthetic Song",
   });
   assert.ok(music.metadata.audioCachePath !== null);
-  const audioFile = await readFile(path.join(world.cacheDirectory, music.metadata.audioCachePath));
+  const audioFile: unknown = await world.storage.audio.getItemRaw(
+    music.metadata.audioCachePath.slice("audio/".length),
+  );
+  assert.ok(audioFile instanceof Uint8Array);
   expect(audioFile.byteLength).toBeGreaterThan(0);
 
   // Image caching: every preview and avatar lands in the cache and the report points at it.
@@ -82,14 +84,14 @@ test("creates a report by running the whole pipeline over recorded Instagram pay
   await Promise.all(
     savedStories.map(async (story) => {
       expect(story.preview_image_url).toBe(`images/story-previews/${story.media_pk}.jpg`);
-      const file = await readFile(path.join(world.cacheDirectory, story.preview_image_url ?? ""));
-      expect(file.length).toBeGreaterThan(0);
+      const file = await readCachedImage(world.storage.images, story.preview_image_url ?? "");
+      expect(file?.length).toBeGreaterThan(0);
     }),
   );
   await Promise.all(
     world.users.listAll().map(async ({ pk }) => {
-      const avatar = await readFile(path.join(world.cacheDirectory, `images/avatars/${pk}.jpg`));
-      expect(avatar.length).toBeGreaterThan(0);
+      const avatar = await readCachedImage(world.storage.images, `images/avatars/${pk}.jpg`);
+      expect(avatar?.length).toBeGreaterThan(0);
     }),
   );
 
@@ -240,7 +242,7 @@ test("records a failed fetch attempt even when Instagram returns no tray", async
     }),
   });
 
-  await expect(world.run({}, () => time)).rejects.toThrow(/HTTP 401/u);
+  await expect(world.run(() => time)).rejects.toThrow(/HTTP 401/u);
 
   const [run] = world.runs.list();
   expect(run.status).toBe("failed");
