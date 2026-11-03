@@ -2,6 +2,7 @@
 import { once } from "node:events";
 import { createServer } from "node:net";
 import process from "node:process";
+import { fileURLToPath, URL } from "node:url";
 import type { Plugin } from "vite";
 import { z } from "zod";
 
@@ -17,7 +18,11 @@ interface Tool {
   env?: Record<string, string>;
   /** Address shown in the iframe dock. */
   frameUrl: string;
+  /** Lets the frame reach localhost; needed by hosted pages that talk to a local server. */
+  localNetwork?: boolean;
 }
+
+const ALLOW_LOCAL_NETWORK_SCRIPT = `/@fs${fileURLToPath(new URL("allow-local-network.ts", import.meta.url))}`;
 
 const TOOLS: Array<Tool> = [
   {
@@ -55,6 +60,7 @@ async function drizzleStudio(): Promise<Tool> {
     icon: "simple-icons:drizzle",
     command: ["drizzle-kit", "studio", `--port=${port}`],
     frameUrl: `https://local.drizzle.studio?port=${port}`,
+    localNetwork: true,
   };
 }
 
@@ -113,6 +119,10 @@ export function devtoolsLaunchers(): Plugin {
               icon: tool.icon,
               type: "iframe",
               url: tool.frameUrl,
+              clientScript:
+                tool.localNetwork === true
+                  ? { eager: true, importFrom: ALLOW_LOCAL_NETWORK_SCRIPT }
+                  : undefined,
             });
           }),
         );
