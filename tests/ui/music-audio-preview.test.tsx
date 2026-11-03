@@ -4,23 +4,25 @@ import userEvent from "@testing-library/user-event";
 import { Route } from "../../app/routes/users/$username.tsx";
 import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
 import { createPageRenderer } from "../render-page.ts";
+import { useSharedTestRuntime } from "../setup/test-runtime.ts";
 import { MusicAudioPreview } from "../../app/components/music-audio-preview.tsx";
 import { MusicSticker } from "../../app/components/music-sticker.tsx";
 import { pageNow, regroupTimeline, seedPageDatabase, timelineAccount } from "./seeded-pages.ts";
 import type { MusicPreview } from "../../app/utils/music-preview.ts";
 
+const shared = useSharedTestRuntime(seedPageDatabase);
+
 // The detail modal is tested through the timeline page that hosts it.
 const renderer = createPageRenderer(
   Route,
-  ({ params }) => loadAccountTimeline(params.username, pageNow),
+  ({ params }) => loadAccountTimeline(shared.runtime, params.username, pageNow),
   "/users/$username",
 );
 
 let timelineProps: ReturnType<typeof loadAccountTimeline>;
 
-beforeAll(async () => {
-  await seedPageDatabase();
-  timelineProps = loadAccountTimeline(timelineAccount, pageNow);
+beforeAll(() => {
+  timelineProps = loadAccountTimeline(shared.runtime, timelineAccount, pageNow);
 });
 
 const preview: MusicPreview = {

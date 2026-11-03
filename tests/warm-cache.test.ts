@@ -1,15 +1,15 @@
-import { readdir } from "node:fs/promises";
-import path from "node:path";
 import { afterEach, assert, beforeEach, test, expect, vi } from "vitest";
 import {
   startWarmCacheQueue,
   WARM_CACHE_CRON_PATTERN,
   WARM_CACHE_QUEUE_NAME,
-  type WarmCacheQueueDependencies,
+  type FetchRunQueue,
 } from "@@/core/fetch-run/warm-cache-queue.ts";
 import { runWarmCacheJob } from "@@/core/fetch-run/warm-cache.ts";
 import { audioUrl, createWorld, musicStoryPk, now, storyPks } from "./setup/report-world.ts";
 import { createFailingClient } from "./setup/recorded-client.ts";
+import { createTestRuntime } from "./setup/test-runtime.ts";
+import type { Runtime } from "@@/core/runtime/runtime.ts";
 
 // The job reads the clock itself. The recorded stories are dated around `now`, so the feed
 // that the user summaries are written from only holds them when the clock reads `now` too.
@@ -22,22 +22,19 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-/** Every file the job cached, relative to the cache directory. */
-async function listCacheFiles(directory: string): Promise<Array<string>> {
-  const entries = await readdir(directory, { recursive: true, withFileTypes: true });
-  return entries
-    .filter((entry) => entry.isFile())
-    .map((entry) => path.relative(directory, path.join(entry.parentPath, entry.name)))
-    .toSorted();
+/** Every media file the job cached, as the paths the report points at. */
+async function listCacheFiles(storage: Runtime["storage"]): Promise<Array<string>> {
+  const [images, audio] = await Promise.all([storage.images.getKeys(), storage.audio.getKeys()]);
+  return [
+    ...images.map((key) => `images/${key.replaceAll(":", "/")}`),
+    ...audio.map((key) => `audio/${key}`),
+  ].toSorted();
 }
 
 test("runWarmCacheJob runs the whole pipeline and stores the report, database rows and cached media", async (context) => {
   const world = await createWorld(context);
 
-  const result = await runWarmCacheJob({
-    boundaries: world.boundaries,
-    logger: world.logger,
-  });
+  const result = await runWarmCacheJob(world.runtime);
 
   expect(result).toStrictEqual({
     counts: { failed: 0, fetched: 3, reels: 2, stories: 3 },
@@ -71,7 +68,7 @@ test("runWarmCacheJob runs the whole pipeline and stores the report, database ro
   expect(world.ollama.requests.filter(({ kind }) => kind === "vision")).toHaveLength(3);
 
   // The media output: warming the cache downloaded every preview, avatar and the audio.
-  const files = await listCacheFiles(world.cacheDirectory);
+  const files = await listCacheFiles(world.storage);
   expect(files).toStrictEqual(
     expect.arrayContaining([
       ...mediaPks.map((mediaPk) => `images/story-previews/${mediaPk}.jpg`),
@@ -88,7 +85,7 @@ test("runWarmCacheJob runs the whole pipeline and stores the report, database ro
 test("runWarmCacheJob accepts an empty payload", async (context) => {
   const world = await createWorld(context);
 
-  const result = await runWarmCacheJob({ boundaries: world.boundaries, logger: world.logger });
+  const result = await runWarmCacheJob(world.runtime);
 
   expect(world.reports.listKeys()).toStrictEqual([result.reportKey]);
   expect(result.counts.fetched).toBe(3);
@@ -97,67 +94,45 @@ test("runWarmCacheJob accepts an empty payload", async (context) => {
 test("runWarmCacheJob stores nothing in the cache when Instagram refuses the request", async (context) => {
   const world = await createWorld(context, { client: createFailingClient(401) });
 
-  await expect(
-    runWarmCacheJob({ boundaries: world.boundaries, logger: world.logger }),
-  ).rejects.toThrow(/HTTP 401/u);
+  await expect(runWarmCacheJob(world.runtime)).rejects.toThrow(/HTTP 401/u);
 
   expect(world.runs.list()).toMatchObject([{ reportKey: null, status: "failed" }]);
   expect(world.reports.listKeys()).toStrictEqual([]);
-  expect(await listCacheFiles(world.cacheDirectory)).toStrictEqual([]);
+  expect(await listCacheFiles(world.storage)).toStrictEqual([]);
 });
 
-test("startWarmCacheQueue schedules and processes warm-cache jobs", async (context) => {
-  const world = await createWorld(context);
-  const calls: Array<{ arguments: Array<unknown>; name: string }> = [];
-  let processor: Parameters<WarmCacheQueueDependencies["createWorker"]>[1] | undefined;
-  let workerErrorListener: ((error: Error) => void) | undefined;
-  const workerError = new Error("worker failed");
+test("startWarmCacheQueue schedules the hourly job, runs it and forwards errors", async (context) => {
+  const calls: Array<string> = [];
+  let processor: Parameters<FetchRunQueue>[1] | undefined;
+  let errorListener: ((error: Error) => void) | undefined;
+  const queueError = new Error("queue failed");
   const capturedErrors: Array<Error> = [];
-
-  const runtime = startWarmCacheQueue({
-    boundaries: world.boundaries,
-    dependencies: {
-      createQueue(name) {
-        calls.push({ arguments: [], name: `queue:${name}` });
-        return {
-          close() {
-            calls.push({ arguments: [], name: "queue:close" });
-          },
-          async waitUntilReady() {
-            calls.push({ arguments: [], name: "queue:ready" });
-          },
-          async upsertJobScheduler(...arguments_) {
-            calls.push({ arguments: arguments_, name: "queue:schedule" });
-          },
-        };
-      },
-      createWorker(name, nextProcessor, options) {
-        calls.push({ arguments: [options], name: `worker:${name}` });
-        processor = nextProcessor;
-        return {
-          async close() {
-            calls.push({ arguments: [], name: "worker:close" });
-          },
-          on(_event, listener) {
-            workerErrorListener = listener;
-            return this;
-          },
-          run() {
-            calls.push({ arguments: [], name: "worker:run" });
-          },
-          async waitUntilReady() {
-            calls.push({ arguments: [], name: "worker:ready" });
-          },
-        };
-      },
+  const world = await createWorld(context, {
+    queue(name, nextProcessor) {
+      processor = nextProcessor;
+      calls.push(`queue:${name}`);
+      return {
+        async close() {
+          calls.push("close");
+        },
+        async cron(id, pattern) {
+          calls.push(`cron:${id}:${pattern}`);
+          return null;
+        },
+        on(_event, listener) {
+          errorListener = listener;
+        },
+      };
     },
-    logger: world.logger,
+  });
+
+  const started = startWarmCacheQueue(world.runtime, {
     onError(error) {
       capturedErrors.push(error);
     },
   });
 
-  await runtime.ready;
+  await started.ready;
   assert.ok(processor);
   const result = await processor();
   expect(result).toStrictEqual({
@@ -166,117 +141,29 @@ test("startWarmCacheQueue schedules and processes warm-cache jobs", async (conte
     reportKey: result.reportKey,
   });
 
-  workerErrorListener?.(workerError);
-  expect(capturedErrors).toStrictEqual([workerError]);
+  errorListener?.(queueError);
+  expect(capturedErrors).toStrictEqual([queueError]);
 
-  await runtime.close();
+  await started.close();
   expect(calls).toStrictEqual([
-    {
-      arguments: [],
-      name: `queue:${WARM_CACHE_QUEUE_NAME}`,
-    },
-    {
-      arguments: [{ autorun: false, concurrency: 1 }],
-      name: `worker:${WARM_CACHE_QUEUE_NAME}`,
-    },
-    { arguments: [], name: "queue:ready" },
-    {
-      arguments: [
-        WARM_CACHE_QUEUE_NAME,
-        { pattern: WARM_CACHE_CRON_PATTERN },
-        {
-          data: {},
-          name: WARM_CACHE_QUEUE_NAME,
-          opts: {
-            attempts: 3,
-            backoff: { delay: 1000, type: "exponential" },
-          },
-        },
-      ],
-      name: "queue:schedule",
-    },
-    { arguments: [], name: "worker:run" },
-    { arguments: [], name: "worker:ready" },
-    { arguments: [], name: "worker:close" },
-    { arguments: [], name: "queue:close" },
+    `queue:${WARM_CACHE_QUEUE_NAME}`,
+    `cron:${WARM_CACHE_QUEUE_NAME}:${WARM_CACHE_CRON_PATTERN}`,
+    "close",
   ]);
 });
 
-test("startWarmCacheQueue retries while the standalone server starts", async () => {
-  let readyAttempts = 0;
-  const calls: Array<string> = [];
+test("startWarmCacheQueue reports a failure to schedule the job", async (context) => {
+  const started = startWarmCacheQueue(
+    await createTestRuntime(context, {
+      queue: () => ({
+        close: async () => {},
+        cron: async () => {
+          throw new Error("schedule failed");
+        },
+        on() {},
+      }),
+    }),
+  );
 
-  const runtime = startWarmCacheQueue({
-    dependencies: {
-      createQueue() {
-        return {
-          close() {},
-          async waitUntilReady() {
-            readyAttempts += 1;
-            if (readyAttempts === 1) {
-              throw new Error("server is starting");
-            }
-          },
-          async upsertJobScheduler() {
-            calls.push("schedule");
-          },
-        };
-      },
-      createWorker() {
-        return {
-          close: async () => {},
-          on() {
-            return this;
-          },
-          run() {
-            calls.push("worker:run");
-          },
-          async waitUntilReady() {
-            calls.push("worker:ready");
-          },
-        };
-      },
-    },
-  });
-
-  await runtime.ready;
-  expect(readyAttempts).toBe(2);
-  expect(calls).toStrictEqual(["schedule", "worker:run", "worker:ready"]);
-  await runtime.close();
-});
-
-test("startWarmCacheQueue cleans up when its worker fails to close", async () => {
-  const calls: Array<string> = [];
-  const closeFailure = new Error("close failed");
-
-  const runtime = startWarmCacheQueue({
-    dependencies: {
-      createQueue() {
-        return {
-          close() {
-            calls.push("queue:close");
-          },
-          waitUntilReady: async () => {},
-          upsertJobScheduler: async () => {},
-        };
-      },
-      createWorker() {
-        return {
-          async close() {
-            calls.push("worker:close");
-            throw closeFailure;
-          },
-          on() {
-            return this;
-          },
-          run() {},
-          waitUntilReady: async () => {},
-        };
-      },
-    },
-  });
-
-  await runtime.ready;
-  await expect(runtime.close()).rejects.toThrow(closeFailure);
-  expect(calls).toStrictEqual(["worker:close", "queue:close"]);
+  await expect(started.ready).rejects.toThrow("schedule failed");
 });

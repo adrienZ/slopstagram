@@ -1,20 +1,10 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import path from "node:path";
+import { readFile } from "node:fs/promises";
 import { expect, type TestContext } from "vitest";
 import sharp from "sharp";
 import { z } from "zod";
-import { createDrizzle } from "@@/core/database/client.ts";
-import { migrateDatabase } from "@@/core/database/migrate.ts";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
-import { createReport, type CreateReportBoundaries } from "@@/core/fetch-run/report.ts";
-import { AppleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
-import { FetchRunRepository } from "@@/core/database/repositories/fetch-run-repository.ts";
-import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
-import { ReportRepository } from "@@/core/database/repositories/report-repository.ts";
-import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
-import { UserSummaryRepository } from "@@/core/database/repositories/user-summary-repository.ts";
-import { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
+import { createReport } from "@@/core/fetch-run/report.ts";
+import type { RuntimeBoundaries } from "@@/core/runtime/runtime.ts";
 import { createCapturingLogger } from "../mock-helpers.ts";
 import {
   createRecordedInstagramClient,
@@ -23,10 +13,11 @@ import {
   readRecordedPayloads,
   type RecordedPayloads,
 } from "./seed.ts";
+import { createTestRuntime } from "./test-runtime.ts";
 
 /**
- * A pipeline world for tests: an in-memory database, a temporary cache directory and fakes for
- * the external systems only (Instagram, Ollama, Apple OCR, media downloads).
+ * A pipeline world for tests: a test runtime with fakes for the external systems only
+ * (Instagram, Ollama, Apple OCR, media downloads).
  */
 export const now = new Date("2026-10-29T12:00:00.000Z");
 const HOUR = 3600;
@@ -191,18 +182,12 @@ function createOllama(behavior: OllamaBehavior = {}) {
 export async function createWorld(
   context: TestContext,
   options: {
-    client?: CreateReportBoundaries["client"];
+    client?: RuntimeBoundaries["client"];
     ollama?: OllamaBehavior;
     ocr?: (position: number) => string | Error;
+    queue?: RuntimeBoundaries["queue"];
   } = {},
 ) {
-  const database = createDrizzle(":memory:");
-  migrateDatabase(database);
-  const cacheDirectory = await mkdtemp(path.join(tmpdir(), "slopstagram-report-"));
-  context.onTestFinished(async () => {
-    database.$client.close();
-    await rm(cacheDirectory, { force: true, recursive: true });
-  });
   const logger = createCapturingLogger();
   // What the pipeline asked the outside world for, in order.
   const calls: Array<string> = [];
@@ -212,12 +197,10 @@ export async function createWorld(
   const audio = await readFile(new globalThis.URL("../fixtures/audio-clip.m4a", import.meta.url));
   const ollama = createOllama(options.ollama);
   let ocrCalls = 0;
-  const boundaries: CreateReportBoundaries = {
-    cacheDirectory,
+  const runtime = await createTestRuntime(context, {
     client:
       options.client ??
       (await createRecordedInstagramClient(await recordedPayloads(), { publishedBefore })),
-    database,
     fetchImage: async (url) => {
       calls.push(`image ${url}`);
       return await Promise.resolve({
@@ -236,6 +219,8 @@ export async function createWorld(
       );
     },
     fetchOllama: ollama.fetchOllama,
+    logger,
+    queue: options.queue,
     runAppleOcr: async () => {
       calls.push("ocr");
       const outcome = options.ocr?.(ocrCalls) ?? `Synthetic caption ${ocrCalls}`;
@@ -245,28 +230,14 @@ export async function createWorld(
       }
       return await Promise.resolve(outcome);
     },
-  };
-  const stories = new StoryRepository(database);
-  const vision = new VisionRepository(database);
+  });
   return {
-    appleVision: new AppleVisionRepository(database),
-    boundaries,
-    cacheDirectory,
+    ...runtime,
     calls,
-    database,
     logger,
     ollama,
-    reports: new ReportRepository(database),
-    run: async (overrides: Partial<CreateReportBoundaries> = {}, clock = () => now) =>
-      await createReport({
-        boundaries: { ...boundaries, ...overrides },
-        logger,
-        now: clock,
-      }),
-    runs: new FetchRunRepository(database),
-    stories,
-    summaries: new UserSummaryRepository(database),
-    users: new InstagramUserRepository(database),
-    vision,
+    run: async (clock = () => now) => await createReport(runtime, { now: clock }),
+    runs: runtime.fetchRuns,
+    runtime,
   };
 }

@@ -6,7 +6,8 @@ type RuleVisitor = ReturnType<NonNullable<Rule["create"]>>;
 type ImportNode = Parameters<NonNullable<RuleVisitor["ImportDeclaration"]>>[0];
 
 // Value imports between core domains must point down this table. fetch-run sits on top: it may
-// import any domain and no domain imports it. Type-only imports are always allowed.
+// import any domain and no domain imports it. runtime, the composition root, may import any domain
+// and only entry points import it. Type-only imports are always allowed.
 const dependencies = new Map<string, Array<string>>([
   ["utils", []],
   ["database", ["utils"]],
@@ -19,7 +20,10 @@ const dependencies = new Map<string, Array<string>>([
   ["accounts", ["database", "vision", "utils"]],
   ["story-feed", ["database", "vision", "utils"]],
   ["fetch-run", ["*"]],
+  ["runtime", ["*"]],
 ]);
+
+const entryPointOnly = new Set(["runtime"]);
 
 // Violations that exist today, per importing module. The list can only shrink: a new violation
 // fails lint. The repository shape spec (https://github.com/adrienZ/slopstagram/issues/157)
@@ -93,7 +97,7 @@ const domainLayering = {
         const allowed = dependencies.get(importer) ?? [];
         if (
           imported === importer ||
-          allowed.includes("*") ||
+          (allowed.includes("*") && !entryPointOnly.has(imported)) ||
           allowed.includes(imported) ||
           baseline.get(module)?.includes(imported) === true
         ) {

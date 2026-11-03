@@ -1,65 +1,17 @@
 import { resolveAppleCaptionsForReport } from "@@/core/vision/apple-caption.ts";
-import { type DrizzleDatabase, useDrizzle } from "@@/core/database/client.ts";
 import { recordFetchRun } from "./fetch-run.ts";
-import type { InstagramClient } from "@@/core/instagram/instagram-types.ts";
-import { ReportRepository } from "@@/core/database/repositories/report-repository.ts";
-import {
-  BASE_CACHE_DIR,
-  createFileStorage,
-  createImageCacheStorage,
-  createStoryStorage,
-} from "@@/core/media-store/cache-storage.ts";
-import { AppleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
-import { FetchRunRepository } from "@@/core/database/repositories/fetch-run-repository.ts";
-import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
-import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
-import { UserSummaryRepository } from "@@/core/database/repositories/user-summary-repository.ts";
-import { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
 import { createStoryFeed, readStoryFeedVision } from "@@/core/story-feed/story-feed.ts";
-import {
-  cacheReportImages,
-  type CacheReportImagesOptions,
-} from "@@/core/media-store/image-cache.ts";
-import {
-  type RecognizeAppleCaptionOptions,
-  recognizeAppleCaption,
-} from "@@/core/vision/apple-ocr.ts";
+import { cacheReportImages } from "@@/core/media-store/image-cache.ts";
 import { cacheReportAudio } from "@@/core/music/report-audio.ts";
-import type { MusicMediaOptions } from "@@/core/music/music-media.ts";
 import { persistReportInstagramUsers } from "@@/core/accounts/instagram-user.ts";
-import type { Logger } from "@@/core/utils/logging.ts";
+import type { ReportRepository } from "@@/core/database/repositories/report-repository.ts";
 import type { StoriesManifestReport } from "./report-types.ts";
 import { resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
 import { resolveVisionForReport } from "@@/core/vision/vision-report.ts";
 import { fetchStories } from "./stories.ts";
 import pkg from "../../package.json" with { type: "json" };
 
-type HttpFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
-
-/**
- * The external systems report creation talks to. Each one defaults to the real thing, so
- * production passes none of them; tests replace only these and run every pipeline step.
- */
-export interface CreateReportBoundaries {
-  /** Where story, image and audio files are cached. Defaults to the application cache. */
-  cacheDirectory?: string;
-  /** The Instagram client. Without it, a browser session is opened. */
-  client?: InstagramClient;
-  /** The database every step reads and writes. Defaults to the application database. */
-  database?: DrizzleDatabase;
-  /** Downloads story previews and profile pictures. */
-  fetchImage?: CacheReportImagesOptions["fetchImage"];
-  /** Downloads music audio and artwork. */
-  fetchMedia?: MusicMediaOptions["fetchMedia"];
-  /** HTTP calls to Ollama, for vision analysis and user summaries. */
-  fetchOllama?: HttpFetch;
-  /** Runs Apple OCR on an image. */
-  runAppleOcr?: RecognizeAppleCaptionOptions["runAppleOcr"];
-}
-
 export interface CreateReportOptions {
-  boundaries?: CreateReportBoundaries;
-  logger: Logger;
   now?: () => Date;
 }
 
@@ -94,36 +46,34 @@ function formatFilenameTimestamp(date: Date): string {
   return `${year}-${month}-${day}T${hours}-${minutes}-${seconds}${formatTimezoneOffset(date)}`;
 }
 
-export async function createReport(options: CreateReportOptions): Promise<CreateReportResult> {
-  const boundaries = options.boundaries ?? {};
-  const database = boundaries.database ?? useDrizzle();
-  const stories = new StoryRepository(database, options.logger);
-  const reports = new ReportRepository(database);
-  const users = new InstagramUserRepository(database);
-  const vision = new VisionRepository(database);
-  const appleVision = new AppleVisionRepository(database);
-  const summaries = new UserSummaryRepository(database);
-  const cacheDirectory = boundaries.cacheDirectory ?? BASE_CACHE_DIR;
-  const files =
-    boundaries.cacheDirectory === undefined ? undefined : createFileStorage(cacheDirectory);
+type CreateReportRuntime = { reports: Pick<ReportRepository, "save"> } & Parameters<
+  typeof recordFetchRun
+>[0] &
+  Parameters<typeof fetchStories>[0] &
+  Parameters<typeof cacheReportAudio>[0] &
+  Parameters<typeof cacheReportImages>[0] &
+  Parameters<typeof resolveAppleCaptionsForReport>[0] &
+  Parameters<typeof resolveVisionForReport>[0] &
+  Parameters<typeof persistReportInstagramUsers>[0] &
+  Parameters<typeof createStoryFeed>[0] &
+  Parameters<typeof readStoryFeedVision>[0] &
+  Parameters<typeof resolveUserSummariesForReport>[0];
+
+export async function createReport(
+  runtime: CreateReportRuntime,
+  options: CreateReportOptions = {},
+): Promise<CreateReportResult> {
   const now = options.now ?? (() => new Date());
   return await recordFetchRun(
+    runtime,
     async (run) => {
       const timestamp = formatFilenameTimestamp(run.startedAt);
       const outputFileName = `stories-report-${timestamp}-${run.id}.json`;
-      const { logger } = options;
-      logger.box(`${pkg.name} - report ${outputFileName}`);
-      const report = await fetchStories({
-        client: boundaries.client,
-        logger,
-        now,
-        reportName: outputFileName,
-        storyRepository: stories,
-        storyStorage: files === undefined ? undefined : createStoryStorage(files),
-      });
+      runtime.logger.box(`${pkg.name} - report ${outputFileName}`);
+      const report = await fetchStories(runtime, { now, reportName: outputFileName });
       run.report = report;
       // Keep the observation and failures even if enrichment or every media fetch fails.
-      await reports.save(outputFileName, report);
+      await runtime.reports.save(outputFileName, report);
       run.reportKey = outputFileName;
       const { counts } = report.metadata;
       if (counts.stories > 0 && counts.fetched === 0) {
@@ -131,54 +81,28 @@ export async function createReport(options: CreateReportOptions): Promise<Create
           `No story media could be fetched (${counts.failed}/${counts.stories} failed). ${report.failures[0]?.message ?? "Instagram returned no story media"}`,
         );
       }
-      await cacheReportAudio(report, {
-        storyRepository: stories,
-        directory: boundaries.cacheDirectory,
-        fetchMedia: boundaries.fetchMedia,
-      });
-      const cachedImages = await cacheReportImages(report, {
-        cacheDirectory,
-        fetchImage: boundaries.fetchImage,
-        logger,
-        storage: files === undefined ? undefined : createImageCacheStorage(files),
-      });
-      await resolveAppleCaptionsForReport(report, cachedImages, {
-        cacheDirectory,
-        logger,
-        resolver: async (mediaPk, imagePath) =>
-          await recognizeAppleCaption(mediaPk, imagePath, {
-            repository: appleVision,
-            runAppleOcr: boundaries.runAppleOcr,
-          }),
-      });
-      await resolveVisionForReport(report, cachedImages, {
-        cacheDirectory,
-        fetchVision: boundaries.fetchOllama,
-        logger,
-        repository: vision,
-      });
-      await persistReportInstagramUsers(report, users);
+      await cacheReportAudio(runtime, report);
+      const cachedImages = await cacheReportImages(runtime, report);
+      await resolveAppleCaptionsForReport(runtime, report, cachedImages);
+      await resolveVisionForReport(runtime, report, cachedImages);
+      await persistReportInstagramUsers(runtime, report);
       // Generate from the same canonical, active story set used by the user app.
-      const feedUsers = createStoryFeed(now(), { repository: stories });
+      const feedUsers = createStoryFeed(runtime, now());
       await resolveUserSummariesForReport(
+        runtime,
         { output: { users: feedUsers } },
-        {
-          fetchOllama: boundaries.fetchOllama,
-          logger,
-          repository: summaries,
-          visionByPreviewUrl: readStoryFeedVision(feedUsers, vision),
-        },
+        { visionByPreviewUrl: readStoryFeedVision(runtime, feedUsers) },
       );
-      await reports.save(outputFileName, report);
-      logger.info(
+      await runtime.reports.save(outputFileName, report);
+      runtime.logger.info(
         [`stories=${counts.stories}`, `fetched=${counts.fetched}`, `failed=${counts.failed}`].join(
           " ",
         ),
       );
-      logger.success(`saved report ${outputFileName} to the database`);
+      runtime.logger.success(`saved report ${outputFileName} to the database`);
 
       return { outputFileName, reportKey: outputFileName, report };
     },
-    { repository: new FetchRunRepository(database), now },
+    { now },
   );
 }

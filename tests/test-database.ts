@@ -3,15 +3,19 @@ import { createDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
 import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
 import { userSummaries } from "@@/core/database/entities/user-summary.ts";
-import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
-import { UserSummaryRepository } from "@@/core/database/repositories/user-summary-repository.ts";
+import type { Runtime } from "@@/core/runtime/runtime.ts";
 import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 
-/** A migrated in-memory database, closed when the test ends. */
-export function createTestDatabase(context: Pick<TestContext, "onTestFinished">) {
+export function createMigratedDatabase() {
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
+  return database;
+}
+
+/** A migrated in-memory database, closed when the test ends. */
+export function createTestDatabase(context: Pick<TestContext, "onTestFinished">) {
+  const database = createMigratedDatabase();
   context.onTestFinished(() => {
     database.$client.close();
   });
@@ -26,22 +30,17 @@ export function createStoryFixtures(context: Pick<TestContext, "onTestFinished">
   };
 }
 
-/** The real user summary repository, with the Instagram users it needs to own summaries. */
-export async function createSummaryFixtures(
-  context: Pick<TestContext, "onTestFinished">,
+export async function saveSummaryUsers(
+  runtime: Pick<Runtime, "users">,
   usernames: Array<string> = ["summaryuser"],
 ) {
-  const database = createTestDatabase(context);
-  const users = new InstagramUserRepository(database);
   await Promise.all(
     usernames.map(async (username) => {
-      await users.save({ full_name: username, id: username, pk: username, username });
+      await runtime.users.save({ full_name: username, id: username, pk: username, username });
     }),
   );
-  return {
-    countSummaries: () => database.select().from(userSummaries).all().length,
-    database,
-    repository: new UserSummaryRepository(database),
-    users,
-  };
+}
+
+export function countSummaries(runtime: Pick<Runtime, "database">) {
+  return runtime.database.select().from(userSummaries).all().length;
 }

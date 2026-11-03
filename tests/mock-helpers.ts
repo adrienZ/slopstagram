@@ -1,9 +1,4 @@
-import { Buffer } from "node:buffer";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import path from "node:path";
 import { createConsola } from "consola";
-import type { CachedReportImages } from "@@/core/media-store/image-cache.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
 import type {
   StoryItem,
@@ -136,26 +131,6 @@ export function createSummaryReport(): StoriesManifestReport {
     stickers: ["location:Paris"],
     username: "summaryuser",
   });
-}
-
-export async function withReportImage<T>(
-  run: (cacheDirectory: string, cachedImages: CachedReportImages) => Promise<T>,
-  storyPreviewPathByUrl: Map<string, string> = new Map<string, string>([
-    [previewSource, "story.jpg"],
-  ]),
-): Promise<T> {
-  const directory = await mkdtemp(path.join(tmpdir(), "slopstagram-vision-test-"));
-  const imagePath = path.join(directory, "story.jpg");
-
-  try {
-    await writeFile(imagePath, Buffer.from("jpeg-bytes"));
-    return await run(directory, {
-      profilePicPathByUrl: new Map(),
-      storyPreviewPathByUrl,
-    });
-  } finally {
-    await rm(directory, { force: true, recursive: true });
-  }
 }
 
 export function storyItem(pk: string, accessibilityCaption?: string | null): StoryItem {

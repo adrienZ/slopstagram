@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { useDrizzle, type DrizzleDatabase } from "../client.ts";
+import type { DrizzleDatabase } from "../client.ts";
 import { appleVision, NewAppleVisionSchema } from "../entities/apple-vision.ts";
 
 export class AppleVisionRepository {
@@ -30,5 +30,3 @@ export class AppleVisionRepository {
       });
   }
 }
-
-export const appleVisionRepository = new AppleVisionRepository(useDrizzle());

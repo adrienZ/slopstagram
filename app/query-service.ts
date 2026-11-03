@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { notFound } from "@tanstack/react-router";
 import { z } from "zod";
+import { getProductionRuntime } from "@@/core/runtime/production-runtime.ts";
 import { storyDateSchema } from "@@/core/story-feed/story-days.ts";
 
 export const getReport = createServerFn({ method: "GET" })
@@ -8,7 +9,7 @@ export const getReport = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { loadStoryFeed } = await import("./loaders/story-feed.ts");
     try {
-      return loadStoryFeed(new Date(), data.date, data.story);
+      return loadStoryFeed(getProductionRuntime(), new Date(), data.date, data.story);
     } catch (error) {
       if (error instanceof Error && "status" in error && error.status === 404) {
         notFound({ throw: true });
@@ -22,7 +23,7 @@ export const getUserTimeline = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { loadAccountTimeline } = await import("./loaders/account-timeline.ts");
     try {
-      return loadAccountTimeline(data);
+      return loadAccountTimeline(getProductionRuntime(), data);
     } catch (error) {
       if (error instanceof Error && "status" in error && error.status === 404) {
         notFound({ throw: true });

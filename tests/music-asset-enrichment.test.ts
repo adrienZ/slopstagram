@@ -1,4 +1,5 @@
 import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { createFileCacheStorage } from "@@/core/media-store/cache-storage.ts";
 import path from "node:path";
 import { tmpdir } from "node:os";
 import { assert, test, expect } from "vitest";
@@ -13,7 +14,7 @@ import { enrichCurrentMusicAssets } from "@@/core/music/music-asset-enrichment.t
 import { JsonValueSchema } from "@@/core/utils/json-value.ts";
 import { createMediaResponse } from "../server/routes/media/[...path].ts";
 import { startMediaServer } from "./media-server.ts";
-import { createMemoryStorage } from "./memory-storage.ts";
+import { createMemoryCacheStorage } from "./memory-storage.ts";
 import {
   createCapturingLogger,
   createClient,
@@ -87,13 +88,11 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
     return { ok: result.ok, status: result.status, headers: {}, json: () => body };
   };
   const repository = new StoryRepository(database);
-  const report = await fetchStoriesManifest(client, {
-    storyRepository: repository,
-    storyStorage: createMemoryStorage(),
-    logger: createCapturingLogger(),
-    now: fixedNow,
-    sleep: noSleep,
-  });
+  const report = await fetchStoriesManifest(
+    { logger: createCapturingLogger(), stories: repository, storage: createMemoryCacheStorage() },
+    client,
+    { now: fixedNow, sleep: noSleep },
+  );
   expect(server.requests).toStrictEqual([`/lookup/${audioId}`]);
   const before = repository.findByMediaPk("first")?.annotations;
   assert.ok(before);
@@ -101,11 +100,14 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
   expect(before.musicObservations?.[0].metadata.status).toBe("usable");
   assert.ok(before.musicObservations);
   expect(before.musicObservations[0].occurrenceId).not.toBe(null);
-  await cacheReportAudio(report, {
-    storyRepository: repository,
-    directory,
-    fetchMedia: server.fetchMedia,
-  });
+  await cacheReportAudio(
+    {
+      stories: repository,
+      storage: createFileCacheStorage(directory),
+      fetchMedia: server.fetchMedia,
+    },
+    report,
+  );
   const first = repository.findByMediaPk("first")?.annotations?.musicObservations?.[0].metadata;
   const second = repository.findByMediaPk("second")?.annotations?.musicObservations?.[0].metadata;
   assert.ok(first);
@@ -116,14 +118,17 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
   assert.ok(first.audioCachePath !== null);
   assert.ok(first.artworkCachePath !== null);
   expect(await readFile(path.join(directory, first.audioCachePath))).toStrictEqual(audio);
-  const artwork = await createMediaResponse(first.artworkCachePath, directory);
+  const artwork = await createMediaResponse(first.artworkCachePath, path.join(directory, "images"));
   expect(artwork.status).toBe(200);
   expect(artwork.headers.get("content-type")).toBe("image/jpeg");
-  await cacheReportAudio(report, {
-    storyRepository: repository,
-    directory,
-    fetchMedia: server.fetchMedia,
-  });
+  await cacheReportAudio(
+    {
+      stories: repository,
+      storage: createFileCacheStorage(directory),
+      fetchMedia: server.fetchMedia,
+    },
+    report,
+  );
   expect(server.requests).toStrictEqual([`/lookup/${audioId}`, "/audio.m4a", "/cover.png"]);
 });
 
@@ -209,10 +214,15 @@ test("generic video/mp4 responses with a video track are never cached as music",
     result.writeHead(200, { "content-type": "video/mp4" });
     result.end(video);
   });
-  const cached = await cacheReceivedAudio("asset", "https://example.com/video", null, {
-    directory,
-    fetchMedia: server.fetchMedia,
-  });
+  const cached = await cacheReceivedAudio(
+    {
+      storage: createFileCacheStorage(directory),
+      fetchMedia: server.fetchMedia,
+    },
+    "asset",
+    "https://example.com/video",
+    null,
+  );
   expect(cached.state).toBe("unsupported");
   expect(cached.cachePath).toBe(null);
 });

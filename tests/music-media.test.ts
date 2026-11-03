@@ -1,4 +1,5 @@
 import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { createFileCacheStorage } from "@@/core/media-store/cache-storage.ts";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { assert, test, expect } from "vitest";
@@ -40,12 +41,12 @@ test("music processing publishes audio only and reuses it without provider reque
     response.end(wavAudio());
   });
   const result = await processMusicMedia(
-    { id: metadata.id, status: metadata.status },
     {
-      storyRepository: repository,
-      directory: root,
+      stories: repository,
+      storage: createFileCacheStorage(root),
       fetchMedia: media.fetchMedia,
     },
+    { id: metadata.id, status: metadata.status },
   );
   expect(result?.audioState).toBe("available");
   assert.ok(result);
@@ -54,12 +55,12 @@ test("music processing publishes audio only and reuses it without provider reque
   expect(await readFile(path.join(root, result.audioCachePath))).toStrictEqual(wavAudio());
   expect(result.audioDurationMs).toBe(1000);
   const retry = await processMusicMedia(
-    { id: metadata.id, status: metadata.status },
     {
-      storyRepository: repository,
-      directory: root,
+      stories: repository,
+      storage: createFileCacheStorage(root),
       fetchMedia: media.fetchMedia,
     },
+    { id: metadata.id, status: metadata.status },
   );
   expect(retry?.audioCachePath).toBe(result.audioCachePath);
   expect(media.requests).toStrictEqual(["/audio"]);
@@ -100,11 +101,14 @@ test("partial audio stays separate and promotion preserves its source and proces
     response.writeHead(status, { "content-type": contentType });
     response.end(contentType === "audio/wav" ? wavAudio() : "not audio");
   });
-  const result = await processMusicMedia(reference, {
-    storyRepository: repository,
-    directory: root,
-    fetchMedia: media.fetchMedia,
-  });
+  const result = await processMusicMedia(
+    {
+      stories: repository,
+      storage: createFileCacheStorage(root),
+      fetchMedia: media.fetchMedia,
+    },
+    reference,
+  );
   assert.ok(result);
   expect(result.audioState).toBe("unsupported");
   expect(result.audioCachePath).toBe(null);
@@ -125,21 +129,27 @@ test("partial audio stays separate and promotion preserves its source and proces
   expect(promoted.artworkCachePath).toBe(result.artworkCachePath);
   expect(promoted.audioState).toBe("unsupported");
   contentType = "audio/wav";
-  const recovered = await processMusicMedia(promoted, {
-    storyRepository: repository,
-    directory: root,
-    fetchMedia: media.fetchMedia,
-  });
+  const recovered = await processMusicMedia(
+    {
+      stories: repository,
+      storage: createFileCacheStorage(root),
+      fetchMedia: media.fetchMedia,
+    },
+    promoted,
+  );
   assert.ok(recovered);
   expect(recovered.audioCachePath).not.toBe(null);
   assert.ok(recovered.audioCachePath !== null);
   await rm(path.join(root, recovered.audioCachePath));
   status = 403;
-  const missing = await processMusicMedia(promoted, {
-    storyRepository: repository,
-    directory: root,
-    fetchMedia: media.fetchMedia,
-  });
+  const missing = await processMusicMedia(
+    {
+      stories: repository,
+      storage: createFileCacheStorage(root),
+      fetchMedia: media.fetchMedia,
+    },
+    promoted,
+  );
   expect(missing?.audioState).toBe("failed");
   assert.ok(missing);
   expect(missing.audioCachePath).toBe(null);
@@ -167,11 +177,14 @@ test("missing sources do not fetch and failed transfers never publish partial fi
     response.write(new Uint8Array([1, 2]));
     response.destroy();
   });
-  const empty = await processMusicMedia(metadata, {
-    storyRepository: repository,
-    directory: root,
-    fetchMedia: media.fetchMedia,
-  });
+  const empty = await processMusicMedia(
+    {
+      stories: repository,
+      storage: createFileCacheStorage(root),
+      fetchMedia: media.fetchMedia,
+    },
+    metadata,
+  );
   expect(empty?.audioState).toBe("unavailable");
   assert.ok(empty);
   expect(empty.artworkState).toBe("unavailable");
@@ -182,11 +195,14 @@ test("missing sources do not fetch and failed transfers never publish partial fi
       { id: "a", music_asset_info: { progressive_download_url: "https://example.com/audio" } },
     ],
   });
-  const failed = await processMusicMedia(metadata, {
-    storyRepository: repository,
-    directory: root,
-    fetchMedia: media.fetchMedia,
-  });
+  const failed = await processMusicMedia(
+    {
+      stories: repository,
+      storage: createFileCacheStorage(root),
+      fetchMedia: media.fetchMedia,
+    },
+    metadata,
+  );
   expect(failed?.audioState).toBe("failed");
   assert.ok(failed);
   expect(failed.audioCachePath).toBe(null);
@@ -223,11 +239,14 @@ test("the cached file duration survives partial promotion and remains distinct f
     response.writeHead(200, { "content-type": "audio/wav" });
     response.end(wav);
   });
-  const result = await processMusicMedia(metadata, {
-    storyRepository: repository,
-    directory: root,
-    fetchMedia: media.fetchMedia,
-  });
+  const result = await processMusicMedia(
+    {
+      stories: repository,
+      storage: createFileCacheStorage(root),
+      fetchMedia: media.fetchMedia,
+    },
+    metadata,
+  );
   expect(result?.audioDurationMs).toBe(1000);
   assert.ok(result);
   expect(result.durationMs).toBe(999_999);

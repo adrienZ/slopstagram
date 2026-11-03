@@ -11,11 +11,11 @@ import {
   reelsResponse,
   response,
 } from "./mock-helpers.ts";
-import { createStoryFixtures } from "./test-database.ts";
+import { createTestRuntime } from "./setup/test-runtime.ts";
 
 describe("fetchStoriesManifest edge cases", () => {
   test("preserves tray and media order in the manifest", async (context) => {
-    const { storyRepository, storyStorage } = createStoryFixtures(context);
+    const runtime = await createTestRuntime(context);
     const client = createClient(
       [
         { id: "r2", media_ids: ["m2", "m3"], user: { username: "two" } },
@@ -29,12 +29,9 @@ describe("fetchStoriesManifest edge cases", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(client, {
-      logger: createCapturingLogger(),
+    const report = await fetchStoriesManifest(runtime, client, {
       now: fixedNow,
       sleep: noSleep,
-      storyRepository,
-      storyStorage,
     });
 
     expect(
@@ -49,7 +46,7 @@ describe("fetchStoriesManifest edge cases", () => {
   });
 
   test("extracts sticker summaries from story payload", async (context) => {
-    const { storyRepository, storyStorage } = createStoryFixtures(context);
+    const runtime = await createTestRuntime(context);
     const client = createClient(
       [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
       [
@@ -107,12 +104,9 @@ describe("fetchStoriesManifest edge cases", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(client, {
-      logger: createCapturingLogger(),
+    const report = await fetchStoriesManifest(runtime, client, {
       now: fixedNow,
       sleep: noSleep,
-      storyRepository,
-      storyStorage,
     });
 
     expect(report.manifest.users[0]?.stories[0]?.stickers).toStrictEqual([
@@ -128,7 +122,7 @@ describe("fetchStoriesManifest edge cases", () => {
   });
 
   test("unwraps instagram redirect links inside sticker summaries", async (context) => {
-    const { storyRepository, storyStorage } = createStoryFixtures(context);
+    const runtime = await createTestRuntime(context);
     const client = createClient(
       [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
       [
@@ -149,12 +143,9 @@ describe("fetchStoriesManifest edge cases", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(client, {
-      logger: createCapturingLogger(),
+    const report = await fetchStoriesManifest(runtime, client, {
       now: fixedNow,
       sleep: noSleep,
-      storyRepository,
-      storyStorage,
     });
 
     expect(report.output.users[0]?.stories[0]?.stickers).toStrictEqual([
@@ -163,8 +154,8 @@ describe("fetchStoriesManifest edge cases", () => {
   });
 
   test("stops when the tray cannot be fetched, without requesting any reel", async (context) => {
-    const { storyRepository, storyStorage } = createStoryFixtures(context);
     const logger = createCapturingLogger();
+    const runtime = await createTestRuntime(context, { logger });
     const client = createClient([], []);
     client.getTray = async () =>
       await Promise.resolve(
@@ -172,13 +163,10 @@ describe("fetchStoriesManifest edge cases", () => {
       );
 
     await expect(
-      fetchStoriesManifest(client, {
-        logger,
+      fetchStoriesManifest(runtime, client, {
         maxAttempts: 1,
         now: fixedNow,
         sleep: noSleep,
-        storyRepository,
-        storyStorage,
       }),
     ).rejects.toThrow(/Instagram request failed with HTTP 429/u);
     expect(client.reelsCalls).toEqual([]);
@@ -190,20 +178,17 @@ describe("fetchStoriesManifest edge cases", () => {
   });
 
   test("falls back after chunk failure and records failed stories", async (context) => {
-    const { storyRepository, storyStorage } = createStoryFixtures(context);
     const logger = createCapturingLogger();
+    const runtime = await createTestRuntime(context, { logger });
     const client = createClient(
       [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
       [reelsResponse({}, 500), reelsResponse({}, 500)],
     );
 
-    const report = await fetchStoriesManifest(client, {
-      logger,
+    const report = await fetchStoriesManifest(runtime, client, {
       maxAttempts: 1,
       now: fixedNow,
       sleep: noSleep,
-      storyRepository,
-      storyStorage,
     });
 
     expect(client.reelsCalls).toStrictEqual([["r1"], ["r1"]]);
@@ -228,7 +213,7 @@ describe("fetchStoriesManifest edge cases", () => {
   });
 
   test("records missing stories when Instagram omits expected media", async (context) => {
-    const { storyRepository, storyStorage } = createStoryFixtures(context);
+    const runtime = await createTestRuntime(context);
     const client = createClient(
       [{ id: "r1", media_ids: ["m1", "m2"], user: { username: "one" } }],
       [
@@ -238,12 +223,9 @@ describe("fetchStoriesManifest edge cases", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(client, {
-      logger: createCapturingLogger(),
+    const report = await fetchStoriesManifest(runtime, client, {
       now: fixedNow,
       sleep: noSleep,
-      storyRepository,
-      storyStorage,
     });
 
     expect(report.manifest.users[0]?.stories.map((story) => story.status)).toStrictEqual([
@@ -255,7 +237,7 @@ describe("fetchStoriesManifest edge cases", () => {
   });
 
   test("stops further live fetches after rate limiting", async (context) => {
-    const { storyRepository, storyStorage } = createStoryFixtures(context);
+    const runtime = await createTestRuntime(context);
     const client = createClient(
       [
         { id: "r1", media_ids: ["m1"], user: { username: "one" } },
@@ -264,14 +246,11 @@ describe("fetchStoriesManifest edge cases", () => {
       [reelsResponse({}, 429, { "retry-after": "1" })],
     );
 
-    const report = await fetchStoriesManifest(client, {
-      logger: createCapturingLogger(),
+    const report = await fetchStoriesManifest(runtime, client, {
       maxAttempts: 1,
       now: fixedNow,
       reelIdsPerRequest: 1,
       sleep: noSleep,
-      storyRepository,
-      storyStorage,
     });
 
     expect(client.reelsCalls).toStrictEqual([["r1"]]);

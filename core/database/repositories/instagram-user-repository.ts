@@ -1,5 +1,5 @@
 import { asc, eq } from "drizzle-orm";
-import { useDrizzle, type DrizzleDatabase } from "../client.ts";
+import type { DrizzleDatabase } from "../client.ts";
 import {
   instagramUsers,
   NewInstagramUserSchema,
@@ -67,5 +67,3 @@ export class InstagramUserRepository {
       });
   }
 }
-
-export const instagramUserRepository = new InstagramUserRepository(useDrizzle());

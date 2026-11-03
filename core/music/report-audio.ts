@@ -3,15 +3,12 @@ import {
   cacheReceivedAudio,
   processMusicMedia,
   processMusicArtwork,
-  type MusicMediaOptions,
 } from "@@/core/music/music-media.ts";
-import {
-  type StoryRepository,
-  storyRepository,
-} from "@@/core/database/repositories/story-repository.ts";
+import type { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
+import type { Runtime } from "@@/core/runtime/runtime.ts";
 
-interface StoryAudioOptions extends Omit<MusicMediaOptions, "storyRepository"> {
-  storyRepository?: Pick<
+type StoryAudioRuntime = Pick<Runtime, "fetchMedia" | "storage"> & {
+  stories: Pick<
     StoryRepository,
     | "findMusicMetadata"
     | "findStoryAudio"
@@ -19,19 +16,19 @@ interface StoryAudioOptions extends Omit<MusicMediaOptions, "storyRepository"> {
     | "saveMusicMedia"
     | "saveStoryAudioMedia"
   >;
-}
+};
 
-export async function processStoryAudio(mediaPk: string, options: StoryAudioOptions = {}) {
-  const repository = options.storyRepository ?? storyRepository;
+export async function processStoryAudio(runtime: StoryAudioRuntime, mediaPk: string) {
+  const repository = runtime.stories;
   const current = repository.findStoryAudio(mediaPk);
   if (!current) {
     return null;
   }
   const result = await cacheReceivedAudio(
+    runtime,
     `story:${mediaPk}`,
     current.sourceUrl,
     current.cachePath,
-    options,
     current.mimeType,
   );
   repository.saveStoryAudioMedia(current, result.cachePath, result.state, result.durationMs);
@@ -39,12 +36,8 @@ export async function processStoryAudio(mediaPk: string, options: StoryAudioOpti
 }
 
 // Enrich the current report; historical cache recovery remains a local one-time operation.
-export async function cacheReportAudio(
-  report: StoriesManifestReport,
-  options: StoryAudioOptions = {},
-) {
-  const repository = options.storyRepository ?? storyRepository;
-  const settings = { ...options, storyRepository: repository };
+export async function cacheReportAudio(runtime: StoryAudioRuntime, report: StoriesManifestReport) {
+  const repository = runtime.stories;
   const mediaPks = new Set(
     report.output.users.flatMap(({ stories }) =>
       stories.filter(({ status }) => status === "ok").map(({ media_pk }) => media_pk),
@@ -58,11 +51,11 @@ export async function cacheReportAudio(
       }
       assets.add(metadata.id);
       // oxlint-disable-next-line no-await-in-loop -- Bound memory and network pressure per audio source.
-      await processMusicMedia(metadata, settings);
+      await processMusicMedia(runtime, metadata);
       // oxlint-disable-next-line no-await-in-loop -- Process each asset's cover with bounded memory.
-      await processMusicArtwork(metadata, settings);
+      await processMusicArtwork(runtime, metadata);
     }
     // oxlint-disable-next-line no-await-in-loop -- Publish each story's independent soundtrack before the next download.
-    await processStoryAudio(mediaPk, settings);
+    await processStoryAudio(runtime, mediaPk);
   }
 }

@@ -1,3 +1,4 @@
+import process from "node:process";
 import { expect, test } from "vitest";
 import { LogLevels, type LogObject } from "consola";
 import { createLogger } from "@@/core/utils/logging.ts";
@@ -19,4 +20,29 @@ test("logger messages carry the logger prefix as their tag", () => {
   expect(messages.map(({ tag, args }) => ({ tag, args }))).toEqual([
     { tag: "fetch-stories", args: ["tray fetched"] },
   ]);
+});
+
+test("progress stays silent when stderr is not a terminal", (context) => {
+  const previous = Object.getOwnPropertyDescriptor(process.stderr, "isTTY");
+  Object.defineProperty(process.stderr, "isTTY", { configurable: true, value: false });
+  context.onTestFinished(() => {
+    if (previous === undefined) {
+      Reflect.deleteProperty(process.stderr, "isTTY");
+    } else {
+      Object.defineProperty(process.stderr, "isTTY", previous);
+    }
+  });
+  const logger = createLogger("fetch-stories");
+  const messages: Array<LogObject> = [];
+  logger.setReporters([
+    {
+      log: (message) => {
+        messages.push(message);
+      },
+    },
+  ]);
+
+  logger.progress(1, 2, { prefix: "vision", suffix: "story" });
+
+  expect(messages).toStrictEqual([]);
 });

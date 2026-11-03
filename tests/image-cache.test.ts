@@ -1,14 +1,12 @@
 import { Buffer } from "node:buffer";
 import { describe, test, expect } from "vitest";
 import { TextEncoder } from "node:util";
-import { BASE_CACHE_DIR, createImageCacheStorage } from "@@/core/media-store/cache-storage.ts";
 import { cacheReportImages } from "@@/core/media-store/image-cache.ts";
 import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
-import { createMemoryStorage } from "./memory-storage.ts";
+import { createMemoryCacheStorage } from "./memory-storage.ts";
 import { createMockLogger } from "./mock-helpers.ts";
 
 const PROFILE_PK = "avatar-pk";
-const cacheDirectory = BASE_CACHE_DIR;
 
 function createReport(
   profilePicUrl: string,
@@ -67,17 +65,28 @@ function createReport(
   };
 }
 
+async function cacheImages(
+  report: StoriesManifestReport,
+  {
+    convertToJpeg,
+    ...runtime
+  }: Parameters<typeof cacheReportImages>[0] & NonNullable<Parameters<typeof cacheReportImages>[2]>,
+) {
+  return await cacheReportImages(runtime, report, { convertToJpeg });
+}
+
 describe("cacheReportImages", () => {
   test("caches profile pictures as local report-relative files", async () => {
     const source = "https://example.com/avatar?id=1";
     const previewSource = "https://example.com/story-preview.webp";
     const previewKey = "story-pk";
-    const imageCacheStorage = createImageCacheStorage(createMemoryStorage());
+    const storage = createMemoryCacheStorage();
+    const imageCacheStorage = storage.images;
     let fetchCount = 0;
     let convertCount = 0;
 
     const report = createReport(source, previewSource);
-    const cachedImages = await cacheReportImages(report, {
+    const cachedImages = await cacheImages(report, {
       convertToJpeg: async (body) => {
         convertCount += 1;
         return Buffer.from(`jpeg:${body.toString()}`);
@@ -98,8 +107,7 @@ describe("cacheReportImages", () => {
         };
       },
       logger: createMockLogger(),
-      cacheDirectory,
-      storage: imageCacheStorage,
+      storage,
     });
 
     expect(fetchCount).toBe(2);
@@ -124,10 +132,11 @@ describe("cacheReportImages", () => {
 
   test("refreshes cached profile pictures from the latest API response", async () => {
     const source = "https://example.com/avatar.webp";
-    const imageCacheStorage = createImageCacheStorage(createMemoryStorage());
+    const storage = createMemoryCacheStorage();
+    const imageCacheStorage = storage.images;
     await imageCacheStorage.setItemRaw(`avatars/${PROFILE_PK}.jpg`, Buffer.from("jpeg-avatar"));
 
-    const cachedImages = await cacheReportImages(createReport(source), {
+    const cachedImages = await cacheImages(createReport(source), {
       convertToJpeg: async (body) => Buffer.from(`jpeg:${body.toString()}`),
       fetchImage: async () => {
         const body = new TextEncoder().encode("updated-avatar");
@@ -142,8 +151,7 @@ describe("cacheReportImages", () => {
         };
       },
       logger: createMockLogger(),
-      cacheDirectory,
-      storage: imageCacheStorage,
+      storage,
     });
 
     expect(cachedImages.profilePicPathByUrl.get(source)).toBe(`images/avatars/${PROFILE_PK}.jpg`);
@@ -156,20 +164,20 @@ describe("cacheReportImages", () => {
     const source = "https://example.com/avatar.jpg";
     const previewSource = "https://example.com/story-preview.webp";
     const previewKey = "story-pk";
-    const imageCacheStorage = createImageCacheStorage(createMemoryStorage());
+    const storage = createMemoryCacheStorage();
+    const imageCacheStorage = storage.images;
     await imageCacheStorage.setItemRaw(`avatars/${PROFILE_PK}.jpg`, Buffer.from("jpeg-avatar"));
     await imageCacheStorage.setItemRaw(
       `story-previews/${previewKey}.jpg`,
       Buffer.from("jpeg-story"),
     );
 
-    const cachedImages = await cacheReportImages(createReport(source, previewSource), {
+    const cachedImages = await cacheImages(createReport(source, previewSource), {
       fetchImage: async () => {
         throw new Error("should not fetch");
       },
       logger: createMockLogger(),
-      cacheDirectory,
-      storage: imageCacheStorage,
+      storage,
     });
 
     expect(cachedImages.storyPreviewPathByUrl.get(previewSource)).toBe(
@@ -185,7 +193,8 @@ describe("cacheReportImages", () => {
     const firstPreviewSource = "https://example.com/story-preview.webp?signature=old";
     const secondPreviewSource = "https://example.com/story-preview.webp?signature=new";
     const previewKey = "story-pk";
-    const imageCacheStorage = createImageCacheStorage(createMemoryStorage());
+    const storage = createMemoryCacheStorage();
+    const imageCacheStorage = storage.images;
     let fetchCount = 0;
 
     const options = {
@@ -206,12 +215,11 @@ describe("cacheReportImages", () => {
         };
       },
       logger: createMockLogger(),
-      cacheDirectory,
-      storage: imageCacheStorage,
+      storage,
     };
 
-    const first = await cacheReportImages(createReport(source, firstPreviewSource), options);
-    const second = await cacheReportImages(createReport(source, secondPreviewSource), options);
+    const first = await cacheImages(createReport(source, firstPreviewSource), options);
+    const second = await cacheImages(createReport(source, secondPreviewSource), options);
 
     expect(fetchCount).toBe(3);
     expect(first.storyPreviewPathByUrl.get(firstPreviewSource)).toBe(

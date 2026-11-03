@@ -1,39 +1,34 @@
 import { createHash } from "node:crypto";
-import { assert, beforeAll, expect, test } from "vitest";
-import { migrateDatabase } from "@@/core/database/migrate.ts";
-import { instagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
-import { storyRepository } from "@@/core/database/repositories/story-repository.ts";
-import { visionRepository } from "@@/core/database/repositories/vision-repository.ts";
+import { assert, expect, test } from "vitest";
 import { VISION_MODEL, VISION_PROMPT } from "@@/core/vision/vision-analysis.ts";
 import { createUserTimeline } from "../app/loaders/account-timeline.ts";
+import { createTestRuntime } from "./setup/test-runtime.ts";
 
 const promptHash = createHash("sha256").update(VISION_PROMPT).digest("hex");
 
-beforeAll(async () => {
-  migrateDatabase();
-  await instagramUserRepository.save({
+test("the account timeline keeps outdated vision results and reports how they are outdated", async (context) => {
+  const runtime = await createTestRuntime(context);
+  await runtime.users.save({
     full_name: "Vision User",
     id: "vision-id",
     pk: "vision-pk",
     username: "vision-user",
   });
   const owner = { pk: "vision-pk", username: "vision-user" };
-  await storyRepository.save({ media_type: 1, pk: "current", taken_at: 1_767_225_600 }, owner);
-  await storyRepository.save({ media_type: 1, pk: "outdated", taken_at: 1_767_225_500 }, owner);
-  await visionRepository.save("current", {
+  await runtime.stories.save({ media_type: 1, pk: "current", taken_at: 1_767_225_600 }, owner);
+  await runtime.stories.save({ media_type: 1, pk: "outdated", taken_at: 1_767_225_500 }, owner);
+  await runtime.vision.save("current", {
     model: VISION_MODEL,
     prompt_hash: promptHash,
     result: { text: "current text", visual: "current description" },
   });
-  await visionRepository.save("outdated", {
+  await runtime.vision.save("outdated", {
     model: "retired-model",
     prompt_hash: promptHash,
     result: { text: "outdated text", visual: "outdated description" },
   });
-});
 
-test("the account timeline keeps outdated vision results and reports how they are outdated", () => {
-  const timeline = createUserTimeline("vision-user");
+  const timeline = createUserTimeline(runtime, "vision-user");
 
   assert.ok(timeline);
   expect(timeline.visionByPreviewUrl).toStrictEqual(

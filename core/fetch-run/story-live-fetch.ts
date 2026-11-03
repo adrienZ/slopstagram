@@ -1,6 +1,5 @@
-import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
-import type { StoryStorage } from "@@/core/media-store/cache-storage.ts";
+import type { Runtime } from "@@/core/runtime/runtime.ts";
 import { extractReels } from "@@/core/instagram/story-client.ts";
 import { storeReturnedReels } from "./story-cache.ts";
 import {
@@ -18,18 +17,25 @@ import {
 } from "@@/core/instagram/story-retry.ts";
 import type { InstagramClient } from "@@/core/instagram/instagram-types.ts";
 
-export interface FetchMissingStoriesOptions {
+interface FetchMissingStoriesInput {
   client: InstagramClient;
-  logger: Logger;
-  reelIdsPerRequest: number;
-  retryOptions: RetryOptions;
   state: FetchState;
-  storyRepository: Pick<StoryRepository, "findByMediaPk" | "save">;
-  storyStorage: StoryStorage;
   trayReelIds: Array<string>;
 }
 
-function getReelIdsToFetch(options: Pick<FetchMissingStoriesOptions, "state" | "trayReelIds">) {
+interface FetchMissingStoriesOptions {
+  reelIdsPerRequest: number;
+  retryOptions: RetryOptions;
+}
+
+type LiveFetchRuntime = Pick<Runtime, "logger" | "storage"> & {
+  stories: Pick<StoryRepository, "findByMediaPk" | "save">;
+};
+
+interface MissingStoriesContext
+  extends LiveFetchRuntime, FetchMissingStoriesInput, FetchMissingStoriesOptions {}
+
+function getReelIdsToFetch(options: Pick<MissingStoriesContext, "state" | "trayReelIds">) {
   return options.trayReelIds.filter((reelId) =>
     (options.state.expectedMediaIdsByReel.get(reelId) ?? []).some(
       (mediaPk) => !options.state.cachedItems.has(mediaPk),
@@ -38,25 +44,17 @@ function getReelIdsToFetch(options: Pick<FetchMissingStoriesOptions, "state" | "
 }
 
 async function cacheSuccessfulResponse(
+  runtime: LiveFetchRuntime,
   reels: ReturnType<typeof extractReels>,
   idChunk: Array<string>,
-  logger: Logger,
   state: FetchState,
-  storyRepository: Pick<StoryRepository, "findByMediaPk" | "save">,
-  storyStorage: StoryStorage,
 ): Promise<number> {
   const fetchedBefore = state.fetchedMediaPks.size;
-  await storeReturnedReels(
-    reels,
-    state.cachedItems,
-    state.fetchedMediaPks,
-    storyStorage,
-    storyRepository,
-  );
+  await storeReturnedReels(runtime, reels, state.cachedItems, state.fetchedMediaPks);
   addFailuresForPendingReelStories(
     idChunk,
     state,
-    logger,
+    runtime.logger,
     createMissingResponseFailure(),
     "missing_from_response",
   );
@@ -68,7 +66,7 @@ async function fetchSingleReel(
   reelId: string,
   reelIdsToFetch: Array<string>,
   reelIndex: number,
-  options: FetchMissingStoriesOptions,
+  options: MissingStoriesContext,
 ): Promise<"continue" | "stop"> {
   logStoryProgress(options.logger, options.state, `fetching reel ${reelId}`);
   const singleResult = await requestWithRetry(
@@ -79,11 +77,10 @@ async function fetchSingleReel(
 
   if (singleResult.ok) {
     await storeReturnedReels(
+      options,
       extractReels(singleResult.value),
       options.state.cachedItems,
       options.state.fetchedMediaPks,
-      options.storyStorage,
-      options.storyRepository,
     );
     addFailuresForPendingReelStories(
       [reelId],
@@ -118,7 +115,7 @@ async function fetchSingleReelsAfterChunkFailure(
   idChunk: Array<string>,
   reelIdsToFetch: Array<string>,
   reelIndex: number,
-  options: FetchMissingStoriesOptions,
+  options: MissingStoriesContext,
 ): Promise<{ reelIndex: number; stopped: boolean }> {
   let nextReelIndex = reelIndex;
 
@@ -140,7 +137,7 @@ function handleChunkRateLimit(
   chunkIndex: number,
   reelIdsToFetch: Array<string>,
   reelIndex: number,
-  options: FetchMissingStoriesOptions,
+  options: MissingStoriesContext,
   failure: RequestFailure,
 ): void {
   options.logger.warn(
@@ -160,7 +157,7 @@ async function fetchReelChunk(
   idChunk: Array<string>,
   chunkIndex: number,
   reelChunksLength: number,
-  options: FetchMissingStoriesOptions,
+  options: MissingStoriesContext,
 ): Promise<"continue" | { failure: RequestFailure }> {
   logStoryProgress(
     options.logger,
@@ -178,12 +175,10 @@ async function fetchReelChunk(
   }
 
   const cachedCount = await cacheSuccessfulResponse(
+    options,
     extractReels(chunkResult.value),
     idChunk,
-    options.logger,
     options.state,
-    options.storyRepository,
-    options.storyStorage,
   );
   logStoryProgress(
     options.logger,
@@ -198,7 +193,7 @@ function handleChunkFailure(
   reelIdsToFetch: Array<string>,
   reelIndex: number,
   chunkIndex: number,
-  options: FetchMissingStoriesOptions,
+  options: MissingStoriesContext,
   failure: RequestFailure,
 ): Promise<{ reelIndex: number; stopped: boolean }> | { reelIndex: number; stopped: boolean } {
   if (failure.reason === "rate_limited") {
@@ -210,21 +205,26 @@ function handleChunkFailure(
   return fetchSingleReelsAfterChunkFailure(idChunk, reelIdsToFetch, reelIndex, options);
 }
 
-export async function fetchMissingStories(options: FetchMissingStoriesOptions): Promise<void> {
-  const reelIdsToFetch = getReelIdsToFetch(options);
+export async function fetchMissingStories(
+  runtime: LiveFetchRuntime,
+  input: FetchMissingStoriesInput,
+  options: FetchMissingStoriesOptions,
+): Promise<void> {
+  const context: MissingStoriesContext = { ...runtime, ...input, ...options };
+  const reelIdsToFetch = getReelIdsToFetch(context);
 
   if (reelIdsToFetch.length === 0) {
-    options.logger.info("all expected stories were found in cache");
+    context.logger.info("all expected stories were found in cache");
     return;
   }
 
-  options.logger.info(`fetching missing stories from ${reelIdsToFetch.length} reel(s)`);
+  context.logger.info(`fetching missing stories from ${reelIdsToFetch.length} reel(s)`);
   let reelIndex = 0;
-  const reelChunks = chunk(reelIdsToFetch, options.reelIdsPerRequest);
+  const reelChunks = chunk(reelIdsToFetch, context.reelIdsPerRequest);
 
   for (const [chunkIndex, idChunk] of reelChunks.entries()) {
     // oxlint-disable-next-line no-await-in-loop -- Process chunks in order so rate-limit handling prevents later requests.
-    const result = await fetchReelChunk(idChunk, chunkIndex, reelChunks.length, options);
+    const result = await fetchReelChunk(idChunk, chunkIndex, reelChunks.length, context);
     const next =
       result === "continue"
         ? { reelIndex: reelIndex + idChunk.length, stopped: false }
@@ -234,7 +234,7 @@ export async function fetchMissingStories(options: FetchMissingStoriesOptions): 
             reelIdsToFetch,
             reelIndex,
             chunkIndex,
-            options,
+            context,
             result.failure,
           );
     const { reelIndex: nextReelIndex, stopped } = next;

@@ -1,16 +1,16 @@
-import { beforeAll, expect, test, vi } from "vitest";
+import { expect, test, vi } from "vitest";
 import { act, screen, within } from "@testing-library/react";
 import { Route } from "../../app/routes/report.tsx";
 import { loadStoryFeed } from "../../app/loaders/story-feed.ts";
 import { createPageRenderer } from "../render-page.ts";
+import { useSharedTestRuntime } from "../setup/test-runtime.ts";
 import { pageNow, seedPageDatabase } from "./seeded-pages.ts";
 
 // The toggle lives in the page's sidebar, so it is tested through the report page.
-const renderer = createPageRenderer(Route, () => loadStoryFeed(pageNow), "/report");
+const shared = useSharedTestRuntime(seedPageDatabase);
+const renderer = createPageRenderer(Route, () => loadStoryFeed(shared.runtime, pageNow), "/report");
 
 const storageKey = "slopstagram-theme";
-
-beforeAll(seedPageDatabase);
 
 test("theme choices persist, apply document colors, and update the trigger icon", async () => {
   const { user } = await renderer.mountRoute("/report");

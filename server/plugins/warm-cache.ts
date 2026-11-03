@@ -1,9 +1,9 @@
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import process from "node:process";
-import { Queue, Worker } from "bunqueue-client";
 import { definePlugin } from "nitro";
 import { startWarmCacheQueue, WARM_CACHE_QUEUE_NAME } from "@@/core/fetch-run/warm-cache-queue.ts";
+import { getProductionRuntime } from "@@/core/runtime/production-runtime.ts";
 
 function spawnBunqueueServer(onError: (error: Error) => void) {
   const server = spawn("npm", ["run", "bunqueue:server"], {
@@ -41,26 +41,7 @@ export default definePlugin((nitroApp) => {
   }
 
   const server = spawnBunqueueServer(capturePluginError);
-  const runtime = startWarmCacheQueue({
-    dependencies: {
-      createQueue(name) {
-        const queue = new Queue(name);
-        return {
-          close() {
-            queue.close();
-          },
-          async waitUntilReady() {
-            await queue.waitUntilReady();
-          },
-          async upsertJobScheduler(...args) {
-            await queue.upsertJobScheduler(...args);
-          },
-        };
-      },
-      createWorker: (name, processor, options) => new Worker(name, processor, options),
-    },
-    onError: capturePluginError,
-  });
+  const runtime = startWarmCacheQueue(getProductionRuntime(), { onError: capturePluginError });
 
   void (async () => {
     try {

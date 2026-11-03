@@ -1,6 +1,5 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { assert, expect, test } from "vitest";
+import { readCachedImage } from "@@/core/media-store/image-cache.ts";
 import { AppleOcrUnavailableError } from "@@/core/vision/apple-ocr.ts";
 import { createStoryFeed, readStoryFeedVision } from "@@/core/story-feed/story-feed.ts";
 import { readUserSummaries } from "@@/core/accounts/user-summary.ts";
@@ -71,7 +70,10 @@ test("creates a report by running the whole pipeline over recorded Instagram pay
     title: "Synthetic Song",
   });
   assert.ok(music.metadata.audioCachePath !== null);
-  const audioFile = await readFile(path.join(world.cacheDirectory, music.metadata.audioCachePath));
+  const audioFile: unknown = await world.storage.audio.getItemRaw(
+    music.metadata.audioCachePath.slice("audio/".length),
+  );
+  assert.ok(audioFile instanceof Uint8Array);
   expect(audioFile.byteLength).toBeGreaterThan(0);
 
   // Image caching: every preview and avatar lands in the cache and the report points at it.
@@ -82,14 +84,14 @@ test("creates a report by running the whole pipeline over recorded Instagram pay
   await Promise.all(
     savedStories.map(async (story) => {
       expect(story.preview_image_url).toBe(`images/story-previews/${story.media_pk}.jpg`);
-      const file = await readFile(path.join(world.cacheDirectory, story.preview_image_url ?? ""));
-      expect(file.length).toBeGreaterThan(0);
+      const file = await readCachedImage(world.storage.images, story.preview_image_url ?? "");
+      expect(file?.length).toBeGreaterThan(0);
     }),
   );
   await Promise.all(
     world.users.listAll().map(async ({ pk }) => {
-      const avatar = await readFile(path.join(world.cacheDirectory, `images/avatars/${pk}.jpg`));
-      expect(avatar.length).toBeGreaterThan(0);
+      const avatar = await readCachedImage(world.storage.images, `images/avatars/${pk}.jpg`);
+      expect(avatar?.length).toBeGreaterThan(0);
     }),
   );
 
@@ -108,10 +110,9 @@ test("creates a report by running the whole pipeline over recorded Instagram pay
   }
 
   // User summaries, written from the stored vision analyses.
-  const feed = createStoryFeed(now, { repository: world.stories });
-  const summaries = readUserSummaries(feed, {
-    repository: world.summaries,
-    visionByPreviewUrl: readStoryFeedVision(feed, world.vision),
+  const feed = createStoryFeed({ stories: world.stories }, now);
+  const summaries = readUserSummaries({ summaries: world.summaries }, feed, {
+    visionByPreviewUrl: readStoryFeedVision({ vision: world.vision }, feed),
   });
   expect(Object.fromEntries(summaries)).toStrictEqual({
     user_008: "Summary of user_008",
@@ -143,11 +144,10 @@ test("records a failed vision analysis and still completes the run", async (cont
     "Synthetic caption 1",
     "Synthetic caption 2",
   ]);
-  const feed = createStoryFeed(now, { repository: world.stories });
+  const feed = createStoryFeed({ stories: world.stories }, now);
   expect(
-    readUserSummaries(feed, {
-      repository: world.summaries,
-      visionByPreviewUrl: readStoryFeedVision(feed, world.vision),
+    readUserSummaries({ summaries: world.summaries }, feed, {
+      visionByPreviewUrl: readStoryFeedVision({ vision: world.vision }, feed),
     }).size,
   ).toBe(2);
 });
@@ -172,8 +172,8 @@ test("records an unreachable vision server in the log and completes the run", as
     world.logger.messages.filter((line) => line.startsWith("warn: could not summarize user")),
   ).toHaveLength(2);
   expect(world.summaries.findBySourceHash("unknown")).toBeNull();
-  const feed = createStoryFeed(now, { repository: world.stories });
-  expect(readUserSummaries(feed, { repository: world.summaries }).size).toBe(0);
+  const feed = createStoryFeed({ stories: world.stories }, now);
+  expect(readUserSummaries({ summaries: world.summaries }, feed).size).toBe(0);
 });
 
 test("skips the remaining captions when Apple OCR is unavailable", async (context) => {
@@ -242,7 +242,7 @@ test("records a failed fetch attempt even when Instagram returns no tray", async
     }),
   });
 
-  await expect(world.run({}, () => time)).rejects.toThrow(/HTTP 401/u);
+  await expect(world.run(() => time)).rejects.toThrow(/HTTP 401/u);
 
   const [run] = world.runs.list();
   expect(run.status).toBe("failed");
