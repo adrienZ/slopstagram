@@ -13,9 +13,12 @@ import {
   createFileCacheStorage,
   type CacheStorage,
 } from "@@/core/media-store/cache-storage.ts";
+import { createDatabaseBackup } from "@@/core/database/backup.ts";
+import { APP_BACKUPS_DIR } from "@@/core/utils/app-data-paths.ts";
 import { createLogger, type Logger } from "@@/core/utils/logging.ts";
 import type {
   AppleOcrRunner,
+  DatabaseBackup,
   FetchImage,
   FetchMedia,
   FetchRunQueue,
@@ -24,8 +27,7 @@ import type {
 type HttpFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
 export interface RuntimeBoundaries {
-  /** Where a copy of the database is written after each fetch run; none is written when unset. */
-  backupDirectory?: string;
+  backup?: DatabaseBackup;
   client?: InstagramClient;
   fetchImage?: FetchImage;
   fetchMedia?: FetchMedia;
@@ -37,6 +39,7 @@ export interface RuntimeBoundaries {
 }
 
 export interface Runtime extends RuntimeBoundaries {
+  backup: DatabaseBackup;
   appleVision: AppleVisionRepository;
   database: DrizzleDatabase;
   fetchRuns: FetchRunRepository;
@@ -58,6 +61,7 @@ export function createRuntime(
   return {
     ...boundaries,
     appleVision: new AppleVisionRepository(database),
+    backup: boundaries.backup ?? createDatabaseBackup(database, APP_BACKUPS_DIR),
     database,
     fetchRuns: new FetchRunRepository(database),
     logger,

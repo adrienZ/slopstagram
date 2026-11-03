@@ -16,6 +16,8 @@ export type FetchImage = (url: string) => Promise<FetchImageResponse>;
 
 export type FetchMedia = (url: string) => Promise<Response>;
 
+export type DatabaseBackup = (at: Date) => void;
+
 export type AppleOcrRunner = (image: Uint8Array) => Promise<string>;
 
 interface ScheduledQueue {
