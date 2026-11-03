@@ -443,10 +443,14 @@ function findFirst(value: JsonValue, key: string): string | null {
  * so other people in the tray never reach the recording.
  */
 export async function captureInstagramPayloads(session: Session): Promise<CapturedPayloads> {
-  const bodies: Array<{ requestUrl: string; body: string }> = [];
+  const bodies: Array<{ requestUrl: string; body: string; isGalleryPage: boolean }> = [];
   async function recording(...args: Parameters<Evaluate>): Promise<Awaited<ReturnType<Evaluate>>> {
     const response = await session.page.evaluate(...args);
-    bodies.push({ requestUrl: args[1].requestUrl, body: response.body });
+    bodies.push({
+      requestUrl: args[1].requestUrl,
+      body: response.body,
+      isGalleryPage: args[1].mediaQuery !== undefined,
+    });
     return response;
   }
   const client = createInstagramClient({ page: { evaluate: recording } });
@@ -464,7 +468,7 @@ export async function captureInstagramPayloads(session: Session): Promise<Captur
     ),
   );
   const galleryPages = bodies
-    .filter(({ requestUrl }) => requestUrl.endsWith("/graphql/query"))
+    .filter(({ isGalleryPage }) => isGalleryPage)
     .map(({ body }) => JsonValueSchema.parse(JSON.parse(body)));
   const placeId = findFirst(JsonValueSchema.parse(galleryPages), "pk");
   const audioId = findFirst(JsonValueSchema.parse(galleryPages), "audio_asset_id");
