@@ -240,10 +240,10 @@ export async function noSleep(): Promise<void> {
 }
 
 /** The same runtime with the Ollama boundary answering each summary prompt with `respond`; a throw is a failed request. */
-export function withOllamaSummaries<T extends Pick<Runtime, "fetchOllama">>(
-  runtime: T,
+export function withOllamaSummaries(
+  runtime: Runtime,
   respond: (prompt: string) => string | Promise<string>,
-): T {
+): Runtime {
   return {
     ...runtime,
     fetchOllama: async (_url, init) => {

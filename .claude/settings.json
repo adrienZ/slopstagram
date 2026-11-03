@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(prettier:*)",
+      "Bash(npx prettier:*)",
+      "Bash(npx --no-install prettier:*)",
+      "Bash(npm exec prettier:*)",
+      "Bash(npm exec --no-install prettier:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_response.filePath // .tool_input.file_path' | { read -r f; npx --no-install oxfmt --no-error-on-unmatched-pattern \"$f\"; } >/dev/null 2>&1 || true",
+            "statusMessage": "Formatting with oxfmt"
+          }
+        ]
+      }
+    ]
+  }
+}
