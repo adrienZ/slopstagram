@@ -31,6 +31,8 @@ test("typing @ suggests saved accounts and picking one completes the mention", a
   ).not.toBeInTheDocument();
   await user.click(suggestions.getByRole("button", { name: `@${outsideFeedAccount}` }));
   expect(input).toHaveValue(`Que fait @${outsideFeedAccount} `);
+  // The picked account is painted like a sticker behind the field.
+  expect(screen.getByText(`@${outsideFeedAccount}`, { selector: "mark" })).toBeInTheDocument();
   expect(screen.queryByRole("list", { name: "Suggestions de mentions" })).not.toBeInTheDocument();
 });
 
@@ -48,9 +50,29 @@ test("a message with a mention goes through the chat route and shows the reasoni
   await user.click(screen.getByRole("button", { name: "Envoyer" }));
   expect(await screen.findByText(chatAnswer)).toBeVisible();
   expect(screen.getByText("Outil : Résumé des dernières 24 heures")).toBeVisible();
+  // The mention in the sent message is a sticker linking to the account.
+  expect(screen.getByRole("link", { name: `@${namedAccount.username}` })).toHaveAttribute(
+    "href",
+    `/users/${namedAccount.username}`,
+  );
   expect(screen.getByText("Je dois lire le résumé du compte.")).toBeInTheDocument();
   expect(screen.queryByText(userSummary)).not.toBeInTheDocument();
   expect(screen.getByRole("textbox", { name: "Message" })).toHaveValue("");
+});
+
+test("listing the accounts shows every saved account as a sticker", async () => {
+  vi.stubGlobal("fetch", async (input: string, init?: RequestInit) => {
+    const url = new globalThis.URL(input, "http://localhost");
+    return await createChatResponse(shared.runtime, new globalThis.Request(url, init), pageNow);
+  });
+  const { user } = await renderer.mountRoute("/chat");
+  await user.type(screen.getByRole("textbox", { name: "Message" }), "Liste les comptes{Enter}");
+  const accounts = within(await screen.findByRole("list", { name: "Comptes" }));
+  expect(accounts.getAllByRole("listitem")).toHaveLength(loadChatPage(shared.runtime).users.length);
+  expect(accounts.getByRole("link", { name: `@${outsideFeedAccount}` })).toHaveAttribute(
+    "href",
+    `/users/${outsideFeedAccount}`,
+  );
 });
 
 test("an unreachable chat route is reported and an empty message is not sent", async () => {

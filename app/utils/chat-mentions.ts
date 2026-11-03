@@ -43,3 +43,28 @@ export function completeMention(
   const completed = `${text.slice(0, mention.start)}@${username} `;
   return { caret: completed.length, text: `${completed}${text.slice(caret)}` };
 }
+
+export type MentionSegment = { text: string; type: "text" } | { type: "mention"; username: string };
+
+const MENTION = /@(?<username>[\w.]*\w)/gu;
+
+/** Splits a message into plain text and the mentions of saved accounts, keeping the saved spelling. */
+export function splitMentions(text: string, users: Array<SidebarUser>): Array<MentionSegment> {
+  const segments: Array<MentionSegment> = [];
+  let end = 0;
+  for (const match of text.matchAll(MENTION)) {
+    const wanted = (match.groups?.username ?? "").toLowerCase();
+    const user = users.find(({ username }) => username.toLowerCase() === wanted);
+    if (user !== undefined) {
+      if (match.index > end) {
+        segments.push({ text: text.slice(end, match.index), type: "text" });
+      }
+      segments.push({ type: "mention", username: user.username });
+      end = match.index + match[0].length;
+    }
+  }
+  if (end < text.length) {
+    segments.push({ text: text.slice(end), type: "text" });
+  }
+  return segments;
+}

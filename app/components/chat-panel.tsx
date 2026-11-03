@@ -2,6 +2,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, getToolName, isToolUIPart } from "ai";
 import type { UIMessage } from "ai";
 import { SendIcon } from "lucide-react";
+import { z } from "zod";
 import type { SyntheticEvent } from "react";
 import { useChatComposer } from "../hooks/use-chat-composer.ts";
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
@@ -11,6 +12,7 @@ import { Bubble, BubbleContent } from "../shadcn/ui/bubble.tsx";
 import { Button } from "../shadcn/ui/button.tsx";
 import { Message, MessageContent, MessageGroup } from "../shadcn/ui/message.tsx";
 import { Textarea } from "../shadcn/ui/textarea.tsx";
+import { AccountList, MentionBackdrop, MentionedText } from "./chat-mentions.tsx";
 
 const transport = new DefaultChatTransport({ api: "/api/chat" });
 
@@ -21,11 +23,17 @@ function describeTool(name: string): string {
   return name === "listUsers" ? "Liste des comptes" : name;
 }
 
-function MessageParts({ message }: { message: UIMessage }) {
+const AccountsOutputSchema = z.array(z.object({ username: z.string() }));
+
+function MessageParts({ message, users }: { message: UIMessage; users: Array<SidebarUser> }) {
   return message.parts.map((part, index) => {
     const key = `${message.id}-${index}`;
     if (part.type === "text") {
-      return <p key={key}>{part.text}</p>;
+      return message.role === "user" ? (
+        <MentionedText key={key} text={part.text} users={users} />
+      ) : (
+        <p key={key}>{part.text}</p>
+      );
     }
     if (part.type === "reasoning") {
       return (
@@ -36,10 +44,19 @@ function MessageParts({ message }: { message: UIMessage }) {
       );
     }
     if (isToolUIPart(part)) {
+      const accounts =
+        getToolName(part) === "listUsers" && part.state === "output-available"
+          ? AccountsOutputSchema.safeParse(part.output)
+          : null;
       return (
-        <p key={key} className="tw:text-xs tw:text-muted-foreground">
-          {`Outil : ${describeTool(getToolName(part))}`}
-        </p>
+        <div key={key} className="tw:grid tw:gap-1">
+          <p className="tw:text-xs tw:text-muted-foreground">
+            {`Outil : ${describeTool(getToolName(part))}`}
+          </p>
+          {accounts?.success === true && (
+            <AccountList usernames={accounts.data.map(({ username }) => username)} users={users} />
+          )}
+        </div>
       );
     }
     return null;
@@ -77,7 +94,7 @@ export function ChatPanel({ users }: { users: Array<SidebarUser> }) {
               <MessageContent>
                 <Bubble variant={own ? "default" : "muted"} align={own ? "end" : "start"}>
                   <BubbleContent className="tw:grid tw:gap-1">
-                    <MessageParts message={message} />
+                    <MessageParts message={message} users={users} />
                   </BubbleContent>
                 </Bubble>
               </MessageContent>
@@ -117,19 +134,23 @@ export function ChatPanel({ users }: { users: Array<SidebarUser> }) {
             ))}
           </ul>
         )}
-        <Textarea
-          ref={composer.textarea}
-          aria-label="Message"
-          placeholder="Écris un message, @ pour mentionner un compte"
-          value={composer.text}
-          onChange={composer.onChange}
-          onSelect={composer.onSelect}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              onSubmit(event);
-            }
-          }}
-        />
+        <div className="tw:relative tw:rounded-lg tw:dark:bg-input/30">
+          <MentionBackdrop text={composer.text} users={users} />
+          <Textarea
+            ref={composer.textarea}
+            aria-label="Message"
+            placeholder="Écris un message, @ pour mentionner un compte"
+            value={composer.text}
+            onChange={composer.onChange}
+            onSelect={composer.onSelect}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                onSubmit(event);
+              }
+            }}
+            className="tw:relative tw:text-transparent tw:caret-foreground tw:dark:bg-transparent"
+          />
+        </div>
         <Button type="submit" disabled={busy} className="tw:justify-self-end">
           <SendIcon />
           Envoyer

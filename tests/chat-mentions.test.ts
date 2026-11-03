@@ -1,5 +1,10 @@
 import { expect, test } from "vitest";
-import { completeMention, findActiveMention, suggestMentions } from "../app/utils/chat-mentions.ts";
+import {
+  completeMention,
+  findActiveMention,
+  splitMentions,
+  suggestMentions,
+} from "../app/utils/chat-mentions.ts";
 
 const users = ["alice", "alina", "bob"].map((username) => ({ avatarPath: "", username }));
 
@@ -29,4 +34,16 @@ test("completing a mention keeps the text around it", () => {
       text: "Que fait @alice  aujourd’hui",
     });
   }
+});
+
+test("only mentions of saved accounts are split out, with their saved spelling", () => {
+  expect(splitMentions("Que font @ALICE, @bob. et @zed ?", users)).toEqual([
+    { text: "Que font ", type: "text" },
+    { type: "mention", username: "alice" },
+    { text: ", ", type: "text" },
+    { type: "mention", username: "bob" },
+    { text: ". et @zed ?", type: "text" },
+  ]);
+  expect(splitMentions("Bonjour", users)).toEqual([{ text: "Bonjour", type: "text" }]);
+  expect(splitMentions("", users)).toEqual([]);
 });
