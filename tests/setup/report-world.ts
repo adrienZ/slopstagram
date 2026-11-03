@@ -182,6 +182,7 @@ function createOllama(behavior: OllamaBehavior = {}) {
 export async function createWorld(
   context: TestContext,
   options: {
+    backupDirectory?: RuntimeBoundaries["backupDirectory"];
     client?: RuntimeBoundaries["client"];
     ollama?: OllamaBehavior;
     ocr?: (position: number) => string | Error;
@@ -198,6 +199,7 @@ export async function createWorld(
   const ollama = createOllama(options.ollama);
   let ocrCalls = 0;
   const runtime = await createTestRuntime(context, {
+    backupDirectory: options.backupDirectory,
     client:
       options.client ??
       (await createRecordedInstagramClient(await recordedPayloads(), { publishedBefore })),
