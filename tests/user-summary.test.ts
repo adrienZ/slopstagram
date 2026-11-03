@@ -4,7 +4,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { z } from "zod";
 import { readUserSummaries, resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
 import { getReportUserKey } from "@@/core/accounts/report-user-key.ts";
-import { createSummaryReport } from "./mock-helpers.ts";
+import { createSummaryReport, withOllamaSummaries } from "./mock-helpers.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 import { countSummaries, saveSummaryUsers } from "./test-database.ts";
 
@@ -79,9 +79,8 @@ describe("resolveUserSummariesForReport", () => {
     ]);
     let runCount = 0;
 
-    const first = await resolveUserSummariesForReport(runtime, report, {
-      visionByPreviewUrl,
-      runUserSummary: async (prompt) => {
+    const first = await resolveUserSummariesForReport(
+      withOllamaSummaries(runtime, (prompt) => {
         runCount += 1;
         expect(prompt).toMatch(/A food stall with readable prices\./u);
         expect(prompt).toMatch(/Paris Market/u);
@@ -97,15 +96,18 @@ describe("resolveUserSummariesForReport", () => {
           summary:
             "Summary User shared a Paris food story with a visible menu. The post centers on street food and readable prices.",
         });
-      },
-    });
-    const second = await resolveUserSummariesForReport(runtime, report, {
-      visionByPreviewUrl,
-      runUserSummary: async () => {
+      }),
+      report,
+      { visionByPreviewUrl },
+    );
+    const second = await resolveUserSummariesForReport(
+      withOllamaSummaries(runtime, () => {
         runCount += 1;
         return "should not be used";
-      },
-    });
+      }),
+      report,
+      { visionByPreviewUrl },
+    );
 
     expect(first.get(userKey)).toBe(
       "Summary User shared a Paris food story with a visible menu. The post centers on street food and readable prices.",
@@ -123,19 +125,21 @@ describe("resolveUserSummariesForReport", () => {
     const userKey = getReportUserKey(report.output.users[0]);
     let runCount = 0;
 
-    const first = await resolveUserSummariesForReport(runtime, report, {
-      runUserSummary: async () => {
+    const first = await resolveUserSummariesForReport(
+      withOllamaSummaries(runtime, () => {
         runCount += 1;
         return JSON.stringify({ summary: "default model summary" });
-      },
-    });
-    const second = await resolveUserSummariesForReport(runtime, report, {
-      model: "different-model",
-      runUserSummary: async () => {
+      }),
+      report,
+    );
+    const second = await resolveUserSummariesForReport(
+      withOllamaSummaries(runtime, () => {
         runCount += 1;
         return JSON.stringify({ summary: "custom model summary" });
-      },
-    });
+      }),
+      report,
+      { model: "different-model" },
+    );
 
     expect(first.get(userKey)).toBe("default model summary");
     expect(second.get(userKey)).toBe("custom model summary");
@@ -210,11 +214,12 @@ describe("resolveUserSummariesForReport", () => {
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
 
-    const summaries = await resolveUserSummariesForReport(runtime, report, {
-      runUserSummary: async () => {
+    const summaries = await resolveUserSummariesForReport(
+      withOllamaSummaries(runtime, () => {
         throw new Error("not signed in");
-      },
-    });
+      }),
+      report,
+    );
 
     expect(summaries.get(userKey)).toBe("résumé indisponible");
   });
@@ -238,9 +243,10 @@ describe("resolveUserSummariesForReport", () => {
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
 
-    const summaries = await resolveUserSummariesForReport(runtime, report, {
-      runUserSummary: async () => "",
-    });
+    const summaries = await resolveUserSummariesForReport(
+      withOllamaSummaries(runtime, () => ""),
+      report,
+    );
     expect(summaries.get(userKey)).toBe(
       "Summary User a partagé 1 story. Éléments visibles: location:Paris; Paris Market, 10 Rue Food, Paris.",
     );

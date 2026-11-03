@@ -20,17 +20,12 @@ export type { FetchImage };
 
 type ImageCacheRuntime = Pick<Runtime, "fetchImage" | "logger" | "storage">;
 
-interface CacheReportImagesOptions {
-  convertToJpeg?: typeof convertImageToJpeg;
-}
-
 export interface CachedReportImages {
   profilePicPathByUrl: Map<string, string>;
   storyPreviewPathByUrl: Map<string, string>;
 }
 
 interface ResolvedCacheReportImagesOptions {
-  convertToJpeg: typeof convertImageToJpeg;
   fetchImage: FetchImage;
   logger: Runtime["logger"];
   storage: ImageCacheStorage;
@@ -91,7 +86,7 @@ async function cacheImage(
   const body = Buffer.from(await response.arrayBuffer());
 
   try {
-    await options.storage.setItemRaw(rawKey, await options.convertToJpeg(body));
+    await options.storage.setItemRaw(rawKey, await convertImageToJpeg(body));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     options.logger.warn(`could not convert image ${source} to JPEG: ${message}`);
@@ -101,12 +96,8 @@ async function cacheImage(
   return getRelativeCacheImagePath(rawKey);
 }
 
-function resolveCacheOptions(
-  runtime: ImageCacheRuntime,
-  options: CacheReportImagesOptions,
-): ResolvedCacheReportImagesOptions {
+function resolveCacheOptions(runtime: ImageCacheRuntime): ResolvedCacheReportImagesOptions {
   return {
-    convertToJpeg: options.convertToJpeg ?? convertImageToJpeg,
     fetchImage: runtime.fetchImage ?? globalThis.fetch,
     logger: runtime.logger,
     storage: runtime.storage.images,
@@ -232,9 +223,8 @@ function addLocalPathAliases(cachedImages: CachedReportImages): void {
 export async function cacheReportImages(
   runtime: ImageCacheRuntime,
   report: StoriesManifestReport,
-  options: CacheReportImagesOptions = {},
 ): Promise<CachedReportImages> {
-  const resolvedOptions = resolveCacheOptions(runtime, options);
+  const resolvedOptions = resolveCacheOptions(runtime);
   const profilePicPathByUrl = await cacheProfilePics(report, resolvedOptions);
   const storyPreviewEntries = getStoryPreviewEntries(report);
   const storyPreviewPathByMediaPk = await cacheStoryPreviewByMediaPk(

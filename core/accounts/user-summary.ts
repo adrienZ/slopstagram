@@ -46,7 +46,6 @@ interface ResolveUserSummariesOptions {
   endpoint?: string;
   model?: string;
   visionByPreviewUrl?: Map<string, VisionResult>;
-  runUserSummary?: RunUserSummary;
   timeoutMs?: number;
 }
 
@@ -199,7 +198,7 @@ function createTimeoutFetch(fetchOllama: HttpFetch, timeoutMs: number): OllamaFe
   return timeoutFetch;
 }
 
-function createDefaultOllamaRunner(options: {
+function createOllamaRunner(options: {
   endpoint?: string;
   fetchOllama?: HttpFetch;
   model: string;
@@ -263,14 +262,12 @@ function resolveOptions(
   return {
     logger: runtime.logger,
     model,
-    runUserSummary:
-      options.runUserSummary ??
-      createDefaultOllamaRunner({
-        endpoint: options.endpoint,
-        fetchOllama: runtime.fetchOllama,
-        model,
-        timeoutMs,
-      }),
+    runUserSummary: createOllamaRunner({
+      endpoint: options.endpoint,
+      fetchOllama: runtime.fetchOllama,
+      model,
+      timeoutMs,
+    }),
     repository: runtime.summaries,
     visionByPreviewUrl: options.visionByPreviewUrl,
   };

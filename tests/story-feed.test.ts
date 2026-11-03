@@ -7,6 +7,7 @@ import {
 import { getStoryDate, getStoryDayRange } from "@@/core/story-feed/story-days.ts";
 import { readStoryFeedSources } from "../app/loaders/story-feed.ts";
 import { resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
+import { withOllamaSummaries } from "./mock-helpers.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 
 async function createFixture(context: TestContext) {
@@ -182,13 +183,11 @@ test("hides a summary after stories expire until a matching summary is generated
   const { feed, runtime } = await createFixture(context);
   const users = feed("2026-10-22T10:00:00Z");
   let generations = 0;
-  const options = {
-    runUserSummary: async () => {
-      generations += 1;
-      return JSON.stringify({ summary: "Activités des stories visibles." });
-    },
-  };
-  await resolveUserSummariesForReport(runtime, { output: { users } }, options);
+  const summarizing = withOllamaSummaries(runtime, () => {
+    generations += 1;
+    return JSON.stringify({ summary: "Activités des stories visibles." });
+  });
+  await resolveUserSummariesForReport(summarizing, { output: { users } });
   expect(readStoryFeedSources(runtime, users).userSummaryByUserKey.get("alice")).toBe(
     "Activités des stories visibles.",
   );
@@ -197,7 +196,7 @@ test("hides a summary after stories expire until a matching summary is generated
   expect(laterView.userSummaryByUserKey.has("alice")).toBe(false);
   expect(laterView.userSummaryByUserKey.has("bob")).toBe(true);
   expect(generations).toBe(2);
-  await resolveUserSummariesForReport(runtime, { output: { users: laterUsers } }, options);
+  await resolveUserSummariesForReport(summarizing, { output: { users: laterUsers } });
   expect(generations).toBe(3);
   expect(readStoryFeedSources(runtime, laterUsers).userSummaryByUserKey.get("alice")).toBe(
     "Activités des stories visibles.",

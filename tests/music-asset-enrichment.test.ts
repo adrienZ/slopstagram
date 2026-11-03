@@ -180,6 +180,7 @@ test("lookup rejects mismatched and original-sound results and stops on rate lim
   });
   const logger = createCapturingLogger();
   await enrichCurrentMusicAssets(
+    { logger, stories: repository },
     {
       getMusicAsset: async (id) => {
         const result = await server.fetchMedia(`https://example.com/${id}`);
@@ -188,8 +189,6 @@ test("lookup rejects mismatched and original-sound results and stops on rate lim
       },
     },
     stories,
-    repository,
-    logger,
   );
   expect(server.requests).toStrictEqual(["/mismatch", "/original", "/limited"]);
   for (const story of stories) {
@@ -262,6 +261,7 @@ test("lookup skips stories without an audio ID, muted stories, and shared reels"
     result.end("{}");
   });
   await enrichCurrentMusicAssets(
+    { logger: createCapturingLogger(), stories: repository },
     {
       getMusicAsset: async (id) => {
         const result = await server.fetchMedia(`https://example.com/${id}`);
@@ -270,8 +270,6 @@ test("lookup skips stories without an audio ID, muted stories, and shared reels"
       },
     },
     stories,
-    repository,
-    createCapturingLogger(),
   );
   expect(server.requests).toStrictEqual([]);
 });

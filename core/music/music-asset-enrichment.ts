@@ -3,10 +3,12 @@ import { isJsonObject, JsonValueSchema } from "@@/core/utils/json-value.ts";
 import type { StoryItem, InstagramClient } from "@@/core/instagram/instagram-types.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
+import type { Runtime } from "@@/core/runtime/runtime.ts";
 import { getMusicObservation } from "./music-observation.ts";
 
-type MusicAssetRepository = Pick<StoryRepository, "findByMediaPk"> &
-  Partial<Pick<StoryRepository, "refreshMusicAsset">>;
+type MusicAssetEnrichmentRuntime = Pick<Runtime, "logger"> & {
+  stories: Pick<StoryRepository, "findByMediaPk" | "refreshMusicAsset">;
+};
 
 const metadataSchema = z.object({
   music_info: z.object({ music_asset_info: JsonValueSchema.optional() }).nullish(),
@@ -64,12 +66,11 @@ async function lookupAsset(
 }
 
 export async function enrichCurrentMusicAssets(
+  { logger, stories: repository }: MusicAssetEnrichmentRuntime,
   client: Pick<InstagramClient, "getMusicAsset">,
   stories: Iterable<StoryItem>,
-  repository: MusicAssetRepository | undefined,
-  logger: Pick<Logger, "warn">,
 ) {
-  if (client.getMusicAsset === undefined || repository?.refreshMusicAsset === undefined) {
+  if (client.getMusicAsset === undefined) {
     return;
   }
   const seen = new Set<string>();

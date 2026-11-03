@@ -9,6 +9,8 @@ import type {
   ReelsMediaResponse,
 } from "@@/core/instagram/instagram-types.ts";
 import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
+import type { Runtime } from "@@/core/runtime/runtime.ts";
+import { z } from "zod";
 
 export const previewSource = "https://example.com/story-preview.webp";
 
@@ -235,4 +237,20 @@ export function fixedNow(): Date {
 
 export async function noSleep(): Promise<void> {
   await Promise.resolve();
+}
+
+/** The same runtime with the Ollama boundary answering each summary prompt with `respond`; a throw is a failed request. */
+export function withOllamaSummaries<T extends Pick<Runtime, "fetchOllama">>(
+  runtime: T,
+  respond: (prompt: string) => string | Promise<string>,
+): T {
+  return {
+    ...runtime,
+    fetchOllama: async (_url, init) => {
+      const { prompt } = z
+        .object({ prompt: z.string() })
+        .parse(JSON.parse(z.string().parse(init?.body)));
+      return globalThis.Response.json({ response: await respond(prompt) });
+    },
+  };
 }

@@ -2,7 +2,7 @@ import { assert, test, expect, type TestContext } from "vitest";
 import { readStoryFeedSources } from "../app/loaders/story-feed.ts";
 import { userSummaries } from "@@/core/database/entities/user-summary.ts";
 import { readUserSummaries, resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
-import { createSummaryReport } from "./mock-helpers.ts";
+import { createSummaryReport, withOllamaSummaries } from "./mock-helpers.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 import { countSummaries, saveSummaryUsers } from "./test-database.ts";
 
@@ -10,9 +10,10 @@ async function createStoredSummary(context: TestContext) {
   const report = createSummaryReport();
   const runtime = await createTestRuntime(context);
   await saveSummaryUsers(runtime, ["summaryuser", "mismatched"]);
-  await resolveUserSummariesForReport(runtime, report, {
-    runUserSummary: async () => JSON.stringify({ summary: "Résumé initial." }),
-  });
+  await resolveUserSummariesForReport(
+    withOllamaSummaries(runtime, () => JSON.stringify({ summary: "Résumé initial." })),
+    report,
+  );
   const stored = runtime.database.select().from(userSummaries).get();
   assert.ok(stored);
   const entry = runtime.summaries.findBySourceHash(stored.sourceHash);
@@ -30,11 +31,12 @@ test("feed and collection normalize stored summaries identically without rewriti
   const storedResult = "  Cafe\u0301\n  et\tmarche\u0301.  ";
   await runtime.summaries.save({ ...entry, result: storedResult });
   const feedSummaries = feed();
-  const collectionSummaries = await resolveUserSummariesForReport(runtime, report, {
-    runUserSummary: async () => {
+  const collectionSummaries = await resolveUserSummariesForReport(
+    withOllamaSummaries(runtime, () => {
       expect.unreachable("a usable stored summary must not be regenerated");
-    },
-  });
+    }),
+    report,
+  );
 
   expect(feedSummaries.get(entry.user_key)).toBe("Café et marché.");
   expect(collectionSummaries).toStrictEqual(feedSummaries);
@@ -52,12 +54,13 @@ for (const [name, result] of [
     await runtime.summaries.save({ ...entry, result });
     expect(feed().size).toBe(0);
     let generations = 0;
-    const summaries = await resolveUserSummariesForReport(runtime, report, {
-      runUserSummary: async () => {
+    const summaries = await resolveUserSummariesForReport(
+      withOllamaSummaries(runtime, () => {
         generations += 1;
         return JSON.stringify({ summary: "Résumé régénéré." });
-      },
-    });
+      }),
+      report,
+    );
 
     expect(generations).toBe(1);
     expect(summaries.get(entry.user_key)).toBe("Résumé régénéré.");
@@ -72,12 +75,13 @@ for (const field of ["prompt_hash", "user_key"] as const) {
     await runtime.summaries.save({ ...entry, [field]: "mismatched" });
     expect(feed().size).toBe(0);
     let generations = 0;
-    const summaries = await resolveUserSummariesForReport(runtime, report, {
-      runUserSummary: async () => {
+    const summaries = await resolveUserSummariesForReport(
+      withOllamaSummaries(runtime, () => {
         generations += 1;
         return JSON.stringify({ summary: "Résumé corrigé." });
-      },
-    });
+      }),
+      report,
+    );
 
     expect(generations).toBe(1);
     expect(summaries.get(entry.user_key)).toBe("Résumé corrigé.");
@@ -89,9 +93,10 @@ test("changed story content hides the old summary until collection regenerates i
   const { entry, feed, report, runtime } = await createStoredSummary(context);
   report.output.users[0].stories[0].stickers.push("#food");
   expect(feed().size).toBe(0);
-  const summaries = await resolveUserSummariesForReport(runtime, report, {
-    runUserSummary: async () => JSON.stringify({ summary: "Une story de cuisine." }),
-  });
+  const summaries = await resolveUserSummariesForReport(
+    withOllamaSummaries(runtime, () => JSON.stringify({ summary: "Une story de cuisine." })),
+    report,
+  );
 
   expect(summaries.get(entry.user_key)).toBe("Une story de cuisine.");
   expect(feed()).toStrictEqual(summaries);
@@ -101,10 +106,11 @@ test("a changed model requires its own summary for both reading and generation",
   const { entry, feed, report, runtime } = await createStoredSummary(context);
   const options = { model: "new-model" };
   expect(readUserSummaries(runtime, report.output.users, options).size).toBe(0);
-  const summaries = await resolveUserSummariesForReport(runtime, report, {
-    ...options,
-    runUserSummary: async () => JSON.stringify({ summary: "Résumé du nouveau modèle." }),
-  });
+  const summaries = await resolveUserSummariesForReport(
+    withOllamaSummaries(runtime, () => JSON.stringify({ summary: "Résumé du nouveau modèle." })),
+    report,
+    options,
+  );
 
   expect(summaries.get(entry.user_key)).toBe("Résumé du nouveau modèle.");
   expect(readUserSummaries(runtime, report.output.users, options)).toStrictEqual(summaries);
@@ -116,14 +122,15 @@ for (const outcome of ["empty", "error"] as const) {
     const report = createSummaryReport();
     const runtime = await createTestRuntime(context);
     await saveSummaryUsers(runtime);
-    const summaries = await resolveUserSummariesForReport(runtime, report, {
-      runUserSummary: async () => {
+    const summaries = await resolveUserSummariesForReport(
+      withOllamaSummaries(runtime, () => {
         if (outcome === "error") {
           throw new Error("model unavailable");
         }
         return "";
-      },
-    });
+      }),
+      report,
+    );
 
     expect(summaries.size).toBe(1);
     expect(countSummaries(runtime)).toBe(0);

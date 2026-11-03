@@ -7,6 +7,7 @@ import type { SidebarUser } from "../../app/loaders/sidebar-users.ts";
 import { withStoryStickers, type StoryCardData } from "../../app/utils/story-cards.ts";
 import { groupTimelineLocations } from "../../app/utils/timeline-locations.ts";
 import { groupTimelineStickers } from "../../app/utils/timeline-stickers.ts";
+import { withOllamaSummaries } from "../mock-helpers.ts";
 import { readRecordedPayloads, seedRecordedStories } from "../setup/seed.ts";
 
 export const pageNow = new Date("2026-07-26T12:00:00.000Z");
@@ -73,9 +74,8 @@ export async function seedPageDatabase(runtime: Runtime): Promise<void> {
     });
   }
   await resolveUserSummariesForReport(
-    runtime,
+    withOllamaSummaries(runtime, () => JSON.stringify({ summary: userSummary })),
     { output: { users: createReportFeed(runtime, pageNow).users } },
-    { runUserSummary: async () => await Promise.resolve(JSON.stringify({ summary: userSummary })) },
   );
 }
 

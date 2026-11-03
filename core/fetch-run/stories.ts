@@ -20,10 +20,10 @@ import { createManifestUsers, createOutputUsers } from "./story-output.ts";
 import { requestWithRetry, sleep } from "@@/core/instagram/story-retry.ts";
 
 type FetchStoriesRuntime = Pick<Runtime, "logger" | "storage"> & {
-  stories: Pick<StoryRepository, "findByMediaPk" | "save"> &
-    Partial<
-      Pick<StoryRepository, "recordFailedPlaceLookup" | "recordPlaceLookup" | "refreshMusicAsset">
-    >;
+  stories: Pick<
+    StoryRepository,
+    "findByMediaPk" | "recordFailedPlaceLookup" | "recordPlaceLookup" | "refreshMusicAsset" | "save"
+  >;
 };
 
 export interface FetchStoriesManifestOptions {
@@ -177,8 +177,8 @@ export async function fetchStoriesManifest(
     tray: trayJson.tray,
   });
 
-  await enrichCurrentMusicAssets(client, state.cachedItems.values(), runtime.stories, logger);
-  await lookUpTaggedPlaces(client, state.fetchedMediaPks, runtime.stories, logger, now);
+  await enrichCurrentMusicAssets(runtime, client, state.cachedItems.values());
+  await lookUpTaggedPlaces(runtime, client, state.fetchedMediaPks, { now });
 
   const manifestUsers = createManifestUsers(
     trayJson.tray,
