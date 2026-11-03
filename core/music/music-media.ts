@@ -25,8 +25,6 @@ interface CachedMusicMedia {
   durationMs: number | null;
 }
 
-export type FetchMedia = (url: string) => Promise<Response>;
-
 type MusicStorageRuntime = Pick<Runtime, "fetchMedia" | "storage">;
 
 type MusicMediaRuntime = MusicStorageRuntime & {

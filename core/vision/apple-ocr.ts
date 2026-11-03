@@ -4,8 +4,6 @@ import { readCachedImage } from "@@/core/media-store/image-cache.ts";
 import type { Runtime } from "@@/core/runtime/runtime.ts";
 import { NO_APPLE_CAPTION } from "@@/core/utils/report-constants.ts";
 
-export type AppleOcrRunner = (image: Uint8Array) => Promise<string>;
-
 export class AppleOcrUnavailableError extends Error {
   override readonly name = "AppleOcrUnavailableError";
   readonly kind = "unavailable";

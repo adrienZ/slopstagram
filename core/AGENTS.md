@@ -19,7 +19,7 @@ subfolders except in `database/`.
 - `story-feed/`: the story feed and story days.
 - `fetch-run/`: the fetch run pipeline, reports, story fetching, the story cache and the hourly
   job.
-- `runtime/`: the composition root. It imports every domain; only entry points import its values, other modules import its types.
+- `runtime/`: the composition root, and the types of the external boundaries it exposes (`fetch-boundaries.ts`). It imports every domain; only entry points import its values, other modules import its types.
 
 ## Repositories
 

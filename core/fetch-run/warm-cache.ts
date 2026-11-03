@@ -1,10 +1,5 @@
-import { createReport, type CreateReportResult } from "./report.ts";
-
-export interface WarmCacheJobResult {
-  outputFileName: string;
-  reportKey: string;
-  counts: CreateReportResult["report"]["metadata"]["counts"];
-}
+import type { WarmCacheJobResult } from "@@/core/runtime/fetch-boundaries.ts";
+import { createReport } from "./report.ts";
 
 export async function runWarmCacheJob(
   runtime: Parameters<typeof createReport>[0],
