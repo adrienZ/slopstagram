@@ -25,17 +25,6 @@ Keep UI components limited to rendering, local UI behavior, and presentation tra
 - `server/`: Nitro only, the media route and the plugins.
 - `core/`: domain and ingestion code, with no React and no Nitro.
 
-### Dependencies and options
-
-A step takes its dependencies first, its input next and its options last. Dependencies are who
-the step talks to; options are tunables with defaults, and never hold a collaborator.
-
-Dependencies are a view of the runtime narrowed to the repository methods the step calls, for
-example `{ stories: Pick<StoryRepository, "listActive"> }`, or `Pick<Runtime, "logger">`. Only the
-server functions, the Nitro plugins, the fetch-run job and the scripts call `getProductionRuntime`.
-A `no-restricted-imports` override in `oxlint.config.ts` keeps repositories, the database and the
-stores out of everything but `core/runtime`, `core/database`, `core/media-store` and the tests.
-
 ### Generated UI
 
 Treat `app/shadcn/**` as generated shadcn/ui code. Never hand-edit these files,
