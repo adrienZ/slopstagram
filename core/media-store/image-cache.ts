@@ -2,21 +2,9 @@ import { Buffer } from "node:buffer";
 import path from "node:path";
 import { IMAGES_STORAGE_DIR, type ImageCacheStorage } from "./cache-storage.ts";
 import { convertImageToJpeg } from "./image-conversion.ts";
+import type { FetchImage } from "@@/core/runtime/fetch-boundaries.ts";
 import type { Runtime } from "@@/core/runtime/runtime.ts";
 import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
-
-interface FetchResponse {
-  arrayBuffer: () => Promise<ArrayBuffer>;
-  headers: {
-    get: (name: string) => string | null;
-  };
-  ok: boolean;
-  status: number;
-}
-
-type FetchImage = (url: string) => Promise<FetchResponse>;
-
-export type { FetchImage };
 
 type ImageCacheRuntime = Pick<Runtime, "fetchImage" | "logger" | "storage">;
 
