@@ -22,6 +22,7 @@ describe("app data paths", () => {
     const paths = await loadPaths({ dataDir: "/tmp/slopstagram-main-data" });
 
     expect(paths.APP_DATABASE_PATH).toBe("/tmp/slopstagram-main-data/slopstagram.sqlite");
+    expect(paths.APP_BACKUPS_DIR).toBe("/tmp/slopstagram-main-data/backups");
     expect(paths.APP_SNAPSHOT_PATH).toBe("/tmp/slopstagram-main-data/slopstagram.snapshot.sqlite");
     expect(paths.APP_CACHE_DIR).toBe("/tmp/slopstagram-main-data/cache");
     expect(paths.PLAYWRIGHT_PROFILE_DIR).toBe("/tmp/slopstagram-main-data/playwright/user-data");
