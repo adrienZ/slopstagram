@@ -24,28 +24,17 @@ Keep UI components limited to rendering, local UI behavior, and presentation tra
   display helpers shared by components.
 - `server/`: Nitro only, the media route and the plugins.
 - `core/`: domain and ingestion code, with no React and no Nitro.
-- `core/runtime/`: the composition root. `createRuntime` builds the repositories once from a
-  database and the external boundaries (Instagram client, image and media downloads, Ollama,
-  Apple OCR, storage, logger, queue). `getProductionRuntime` creates the production one on first
-  use, and that call is what opens the database. Only the server function behind each page, the
-  Nitro plugins, the fetch-run job and the scripts call it. Time (the clock and the retry sleep)
-  is not a boundary.
 
 ### Dependencies and options
 
-A step is called with its dependencies first, its input next and its options last. Dependencies
-are who the step talks to, options are how: tunables with defaults, such as retry attempts or the
-clock. An options object never holds a collaborator.
+A step takes its dependencies first, its input next and its options last. Dependencies are who
+the step talks to; options are tunables with defaults, and never hold a collaborator.
 
-The dependencies argument is a view of the runtime narrowed to the repository methods the step
-calls, for example `{ stories: Pick<StoryRepository, "listActive"> }`, or
-`Pick<Runtime, "logger">` for the other parts. The real runtime and the test runtime satisfy it
-without a cast. Each collaborator has one name across the code base (`fetchOllama`, `storage`).
-
-No module opens the database or a store, or builds a repository, when it is imported. A
-`no-restricted-imports` override in `oxlint.config.ts` only lets `core/runtime` import repository
-classes, `createDrizzle` and `createFileCacheStorage` (and `core/database` and `core/media-store`
-the drivers behind them); tests are exempt.
+Dependencies are a view of the runtime narrowed to the repository methods the step calls, for
+example `{ stories: Pick<StoryRepository, "listActive"> }`, or `Pick<Runtime, "logger">`. Only the
+server functions, the Nitro plugins, the fetch-run job and the scripts call `getProductionRuntime`.
+A `no-restricted-imports` override in `oxlint.config.ts` keeps repositories, the database and the
+stores out of everything but `core/runtime`, `core/database`, `core/media-store` and the tests.
 
 ### Generated UI
 
