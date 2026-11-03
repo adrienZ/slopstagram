@@ -17,8 +17,13 @@ function noQueue(): never {
   throw new Error("The test runtime has no fake for queue. Pass one to createTestRuntime.");
 }
 
+function noBackup(): void {
+  // The test runtime copies nothing; a test that cares passes a fake.
+}
+
 async function createRuntimeOver(database: DrizzleDatabase, boundaries: RuntimeBoundaries) {
   return createRuntime(database, {
+    backup: noBackup,
     client: await createRecordedInstagramClient(),
     fetchImage: unexpected("fetchImage"),
     fetchMedia: unexpected("fetchMedia"),

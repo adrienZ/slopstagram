@@ -9,6 +9,7 @@ import type { StoriesManifestReport } from "./report-types.ts";
 import { resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
 import { resolveVisionForReport } from "@@/core/vision/vision-report.ts";
 import { fetchStories } from "./stories.ts";
+import type { Runtime } from "@@/core/runtime/runtime.ts";
 import pkg from "../../package.json" with { type: "json" };
 
 export interface CreateReportOptions {
@@ -46,9 +47,8 @@ function formatFilenameTimestamp(date: Date): string {
   return `${year}-${month}-${day}T${hours}-${minutes}-${seconds}${formatTimezoneOffset(date)}`;
 }
 
-type CreateReportRuntime = { reports: Pick<ReportRepository, "save"> } & Parameters<
-  typeof recordFetchRun
->[0] &
+type CreateReportRuntime = { reports: Pick<ReportRepository, "save"> } & Pick<Runtime, "backup"> &
+  Parameters<typeof recordFetchRun>[0] &
   Parameters<typeof fetchStories>[0] &
   Parameters<typeof cacheReportAudio>[0] &
   Parameters<typeof cacheReportImages>[0] &
@@ -59,12 +59,22 @@ type CreateReportRuntime = { reports: Pick<ReportRepository, "save"> } & Paramet
   Parameters<typeof readStoryFeedVision>[0] &
   Parameters<typeof resolveUserSummariesForReport>[0];
 
+function backUpAfterFetchRun(runtime: CreateReportRuntime, at: Date): void {
+  try {
+    runtime.backup(at);
+  } catch (error) {
+    runtime.logger.warn(
+      `database backup failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+}
+
 export async function createReport(
   runtime: CreateReportRuntime,
   options: CreateReportOptions = {},
 ): Promise<CreateReportResult> {
   const now = options.now ?? (() => new Date());
-  return await recordFetchRun(
+  const result = await recordFetchRun(
     runtime,
     async (run) => {
       const timestamp = formatFilenameTimestamp(run.startedAt);
@@ -105,4 +115,6 @@ export async function createReport(
     },
     { now },
   );
+  backUpAfterFetchRun(runtime, now());
+  return result;
 }

@@ -182,6 +182,7 @@ function createOllama(behavior: OllamaBehavior = {}) {
 export async function createWorld(
   context: TestContext,
   options: {
+    backup?: RuntimeBoundaries["backup"];
     client?: RuntimeBoundaries["client"];
     ollama?: OllamaBehavior;
     ocr?: (position: number) => string | Error;
@@ -191,6 +192,7 @@ export async function createWorld(
   const logger = createCapturingLogger();
   // What the pipeline asked the outside world for, in order.
   const calls: Array<string> = [];
+  const backups: Array<Date> = [];
   const png = await sharp({ create: { background: "teal", channels: 3, height: 8, width: 8 } })
     .png()
     .toBuffer();
@@ -198,6 +200,10 @@ export async function createWorld(
   const ollama = createOllama(options.ollama);
   let ocrCalls = 0;
   const runtime = await createTestRuntime(context, {
+    backup: (at) => {
+      backups.push(at);
+      options.backup?.(at);
+    },
     client:
       options.client ??
       (await createRecordedInstagramClient(await recordedPayloads(), { publishedBefore })),
@@ -233,6 +239,7 @@ export async function createWorld(
   });
   return {
     ...runtime,
+    backups,
     calls,
     logger,
     ollama,
