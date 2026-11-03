@@ -19,9 +19,11 @@ subfolders except in `database/`.
 - `story-feed/`: the story feed and story days.
 - `fetch-run/`: the fetch run pipeline, reports, story fetching, the story cache and the hourly
   job.
+- `runtime/`: the composition root. It imports every domain; only entry points import its values, other modules import its types.
 
 ## Repositories
 
 A repository is a class built from a database (`new XRepository(db)`, plus a logger where it has
-one), with methods named for domain reads and writes. Services take a repository, never a raw
-database or a helper module.
+one), with methods named for domain reads and writes. Only `runtime/` builds repositories.
+Services take the runtime, narrowed to the repository methods they call, never a raw database or
+a helper module.
