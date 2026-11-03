@@ -1,7 +1,11 @@
 import { Buffer } from "node:buffer";
 import { describe, test, vi, expect } from "vitest";
 import { z } from "zod";
-import { VISION_SERVER_NOT_RUNNING } from "@@/core/vision/vision-analysis.ts";
+import {
+  VISION_MAX_OUTPUT_TOKENS,
+  VISION_REPEAT_PENALTY,
+  VISION_SERVER_NOT_RUNNING,
+} from "@@/core/vision/vision-analysis.ts";
 import { resolveVisionForReport } from "@@/core/vision/vision-report.ts";
 import { createVisionReport, previewSource } from "./mock-helpers.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
@@ -21,6 +25,7 @@ const VisionRequestBodySchema = z.object({
     type: z.string().optional(),
   }),
   images: z.array(z.string()),
+  options: z.object({ num_predict: z.number(), repeat_penalty: z.number() }),
   prompt: z.string().optional(),
 });
 
@@ -83,6 +88,8 @@ describe("resolveVisionForReport", () => {
       const { images } = body;
 
       expect(images.length).toBe(1);
+      expect(body.options.num_predict).toBe(VISION_MAX_OUTPUT_TOKENS);
+      expect(body.options.repeat_penalty).toBe(VISION_REPEAT_PENALTY);
       expect(Buffer.from(images[0] ?? "", "base64").toString()).toBe("jpeg-bytes");
       expect(String(body.prompt)).toMatch(
         /Provide a list of all visible text\. Only if there is text\./u,
