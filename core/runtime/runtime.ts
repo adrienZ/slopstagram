@@ -24,6 +24,8 @@ import type {
 type HttpFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
 export interface RuntimeBoundaries {
+  /** Where a copy of the database is written after each fetch run; none is written when unset. */
+  backupDirectory?: string;
   client?: InstagramClient;
   fetchImage?: FetchImage;
   fetchMedia?: FetchMedia;
