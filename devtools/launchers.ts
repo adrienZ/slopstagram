@@ -1,6 +1,9 @@
 /// <reference types="@vitejs/devtools-kit" />
+import { once } from "node:events";
+import { createServer } from "node:net";
 import process from "node:process";
 import type { Plugin } from "vite";
+import { z } from "zod";
 
 // Each tool runs in a DevTools terminal started with the dev server and is shown in an iframe dock.
 const DASHBOARD_PORT = 8080;
@@ -18,13 +21,6 @@ interface Tool {
 
 const TOOLS: Array<Tool> = [
   {
-    id: "drizzle-studio",
-    title: "Drizzle Studio",
-    icon: "simple-icons:drizzle",
-    command: ["drizzle-kit", "studio"],
-    frameUrl: "https://local.drizzle.studio",
-  },
-  {
     id: "bunqueue-dashboard",
     title: "bunqueue",
     icon: "ph:queue-duotone",
@@ -38,6 +34,29 @@ const TOOLS: Array<Tool> = [
     frameUrl: `${DASHBOARD_PROXY_PATH}/`,
   },
 ];
+
+// Studio defaults to port 4983, which a Studio started by another checkout may already hold; the
+// hosted page would then connect to that one. Ask the OS for a free port and tell the page about it.
+async function findFreePort(): Promise<number> {
+  const server = createServer();
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const { port } = z.object({ port: z.number() }).parse(server.address());
+  server.close();
+  await once(server, "close");
+  return port;
+}
+
+async function drizzleStudio(): Promise<Tool> {
+  const port = await findFreePort();
+  return {
+    id: "drizzle-studio",
+    title: "Drizzle Studio",
+    icon: "simple-icons:drizzle",
+    command: ["drizzle-kit", "studio", `--port=${port}`],
+    frameUrl: `https://local.drizzle.studio?port=${port}`,
+  };
+}
 
 export function devtoolsLaunchers(): Plugin {
   return {
@@ -75,7 +94,7 @@ export function devtoolsLaunchers(): Plugin {
         }
 
         await Promise.all(
-          TOOLS.map(async (tool) => {
+          [await drizzleStudio(), ...TOOLS].map(async (tool) => {
             const terminalId = `${tool.id}:process`;
             if (!ctx.terminals.sessions.has(terminalId)) {
               await ctx.terminals.startChildProcess(
