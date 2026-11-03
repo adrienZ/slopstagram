@@ -12,6 +12,10 @@ export const VISION_PROMPT = `
     Then, provide a short description of the visual elements of the image. ignore all texts.
     \`\`\`json
   `;
+// A normal answer is a short description plus a few OCR lines. The cap and the penalty stop the
+// model from looping on one word (for example "WITH") until the JSON is cut off.
+export const VISION_MAX_OUTPUT_TOKENS = 1024;
+export const VISION_REPEAT_PENALTY = 1.15;
 export const VISION_SERVER_NOT_RUNNING = "vision server not running";
 
 const VisionResponseSchema = z
@@ -178,6 +182,8 @@ async function runVisionRequest(
     images: [await readImage()],
     model: options.model,
     options: {
+      num_predict: VISION_MAX_OUTPUT_TOKENS,
+      repeat_penalty: VISION_REPEAT_PENALTY,
       temperature: 0.1,
     },
     prompt: options.prompt,
