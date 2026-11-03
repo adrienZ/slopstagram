@@ -284,6 +284,129 @@ test("createInstagramClient fetches reels media with the web viewer GraphQL quer
   ]);
 });
 
+interface PageRequest {
+  url: string;
+  body?: string;
+  headers: Headers;
+  method: string;
+  signal?: AbortSignal;
+}
+
+function stubBrowserPage(
+  context: { onTestFinished: (callback: () => void) => void },
+  responseBody: string,
+  modules: Array<[string, Record<string, string>]> = [],
+): Array<PageRequest> {
+  const requests: Array<PageRequest> = [];
+  const pageModules = new Map(modules);
+  vi.stubGlobal("require", (name: string) => pageModules.get(name));
+  vi.stubGlobal("fetch", async (url: string, init: Omit<PageRequest, "url">) => {
+    requests.push({ url, ...init });
+    return await Promise.resolve(
+      new globalThis.Response(responseBody, { headers: { "content-type": "text/javascript" } }),
+    );
+  });
+  context.onTestFinished(() => {
+    vi.unstubAllGlobals();
+  });
+  return requests;
+}
+
+const runInPage: Parameters<typeof createInstagramClient>[0] = {
+  page: { evaluate: async (pageFunction, input) => await pageFunction(input) },
+};
+
+test("sends the reels media query from the page with the page's own tokens", async (context) => {
+  const requests = stubBrowserPage(
+    context,
+    JSON.stringify({
+      data: {
+        xdt_api__v1__feed__reels_media__connection: {
+          edges: [{ node: { id: "r1", items: [] } }],
+          page_info: { has_next_page: false, end_cursor: null },
+        },
+      },
+    }),
+    [
+      ["LSD", { token: "lsd-token" }],
+      ["DTSGInitialData", { token: "dtsg-token" }],
+      ["CurrentUserInitialData", { ACCOUNT_ID: "account-1" }],
+    ],
+  );
+
+  const response = await createInstagramClient(runInPage).getReelsMedia(["r1", "r2"]);
+
+  expect(response.json()).toStrictEqual({ reels_media: [{ id: "r1", items: [] }] });
+  const [request] = requests;
+  expect(request.url).toBe("https://www.instagram.com/api/graphql");
+  expect(request.method).toBe("POST");
+  expect(request.headers.get("x-fb-lsd")).toBe("lsd-token");
+  expect(request.headers.get("x-ig-app-id")).toBe("936619743392459");
+  expect(Object.fromEntries(new globalThis.URLSearchParams(request.body))).toStrictEqual({
+    doc_id: "29306733562261201",
+    variables: JSON.stringify({
+      initial_reel_id: "r1",
+      reel_ids: ["r1", "r2"],
+      first: 2,
+      last: 0,
+      after: null,
+      __relay_internal__pv__PolarisCommunityNoteStoriesLabelEnabledrelayprovider: false,
+    }),
+    fb_dtsg: "dtsg-token",
+    lsd: "lsd-token",
+    av: "account-1",
+  });
+});
+
+test("sends empty reels media query tokens when the page has none", async (context) => {
+  const requests = stubBrowserPage(context, "{}");
+
+  await expect(createInstagramClient(runInPage).getReelsMedia(["r1"])).rejects.toThrow(
+    /Instagram returned/u,
+  );
+
+  const params = Object.fromEntries(new globalThis.URLSearchParams(requests[0].body));
+  expect([params.fb_dtsg, params.lsd, params.av]).toStrictEqual(["", "", ""]);
+});
+
+test("fetches the tray with a plain GET from the page", async (context) => {
+  const requests = stubBrowserPage(
+    context,
+    JSON.stringify({ broadcasts: [], status: "ok", story_ranking_token: "token", tray: [] }),
+  );
+
+  const response = await createInstagramClient(runInPage).getTray();
+
+  expect(response.ok).toBe(true);
+  expect(requests[0].url).toBe("https://www.instagram.com/api/v1/feed/reels_tray/");
+  expect(requests[0].method).toBe("GET");
+  expect(requests[0].body).toBe(undefined);
+  expect(requests[0].signal).toBe(undefined);
+});
+
+test("posts the music asset lookup from the page with the csrf token", async (context) => {
+  const requests = stubBrowserPage(context, "{}");
+  vi.stubGlobal("document", { cookie: "mid=1; csrftoken=csrf-token; other=2" });
+
+  const { getMusicAsset } = createInstagramClient(runInPage);
+  if (getMusicAsset === undefined) {
+    throw new Error("Music asset lookup unavailable");
+  }
+  const response = await getMusicAsset("audio-1");
+
+  expect(response.json()).toStrictEqual({});
+  const [request] = requests;
+  expect(request.url).toBe("https://www.instagram.com/api/v1/clips/music/");
+  expect(request.method).toBe("POST");
+  expect(request.headers.get("x-csrftoken")).toBe("csrf-token");
+  expect(Object.fromEntries(new globalThis.URLSearchParams(request.body))).toStrictEqual({
+    audio_cluster_id: "audio-1",
+    original_sound_audio_asset_id: "audio-1",
+    max_id: "",
+  });
+  expect(request.signal).toBeInstanceOf(globalThis.AbortSignal);
+});
+
 test("preserves large numeric media identifiers in GraphQL responses", async () => {
   const session = createSession(`{
     "data": { "xdt_api__v1__feed__reels_media__connection": { "edges": [{ "node": {
