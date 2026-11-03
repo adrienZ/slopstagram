@@ -7,7 +7,6 @@ import { StoryRepository } from "@@/core/database/repositories/story-repository.
 import { UserSummaryRepository } from "@@/core/database/repositories/user-summary-repository.ts";
 import { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
 import { createBunqueue } from "@@/core/fetch-run/bunqueue.ts";
-import type { FetchRunQueue } from "@@/core/fetch-run/warm-cache-queue.ts";
 import type { InstagramClient } from "@@/core/instagram/instagram-types.ts";
 import {
   BASE_CACHE_DIR,
@@ -15,8 +14,12 @@ import {
   type CacheStorage,
 } from "@@/core/media-store/cache-storage.ts";
 import { createLogger, type Logger } from "@@/core/utils/logging.ts";
-import type { AppleOcrRunner } from "@@/core/vision/apple-ocr.ts";
-import type { FetchImage, FetchMedia } from "@@/core/runtime/fetch-boundaries.ts";
+import type {
+  AppleOcrRunner,
+  FetchImage,
+  FetchMedia,
+  FetchRunQueue,
+} from "@@/core/runtime/fetch-boundaries.ts";
 
 type HttpFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
