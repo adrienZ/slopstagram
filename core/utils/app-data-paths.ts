@@ -5,4 +5,5 @@ const APP_DATA_DIR = path.resolve(process.env.SLOPSTAGRAM_DATA_DIR ?? "data");
 export const APP_CACHE_DIR = path.join(APP_DATA_DIR, "cache");
 export const APP_DATABASE_PATH =
   process.env.SLOPSTAGRAM_DATABASE_PATH ?? path.join(APP_DATA_DIR, "slopstagram.sqlite");
+export const APP_SNAPSHOT_PATH = path.join(APP_DATA_DIR, "slopstagram.snapshot.sqlite");
 export const PLAYWRIGHT_PROFILE_DIR = path.join(APP_DATA_DIR, "playwright", "user-data");
