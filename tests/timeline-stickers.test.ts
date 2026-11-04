@@ -1,7 +1,7 @@
 import { test, expect } from "vitest";
 import { groupTimelineStickers, formatStickerLabel } from "../app/utils/timeline-stickers.ts";
 import { presentSticker } from "../app/utils/sticker-presentation.ts";
-import type { UserTimelineStory } from "@@/core/database/repositories/story-repository.ts";
+import type { UserTimelineStory } from "@@/core/domains/database/repositories/story-repository.ts";
 
 test("links mentions only to saved accounts and preserves the canonical username in URLs", () => {
   expect(

@@ -1,4 +1,4 @@
-import type { StoryOutputUser } from "@@/core/fetch-run/report-types.ts";
+import type { StoryOutputUser } from "@@/core/domains/fetch-run/report-types.ts";
 
 export function formatReportDate(value: string): string {
   const date = new Date(value);

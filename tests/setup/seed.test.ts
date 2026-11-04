@@ -4,12 +4,12 @@ import { fileURLToPath, URL } from "node:url";
 import { expect, test } from "vitest";
 import type { z } from "zod";
 import { type JsonValue, JsonValueSchema } from "@@/core/utils/json-value.ts";
-import type { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
+import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 import {
   GalleryPageSchema,
   parseGalleryPage,
   parseTrayResponse,
-} from "@@/core/instagram/story-client.ts";
+} from "@@/core/domains/instagram/story-client.ts";
 import { readRecordedPayloads, seedRecordedStories } from "./seed.ts";
 import { createTestRuntime } from "./test-runtime.ts";
 

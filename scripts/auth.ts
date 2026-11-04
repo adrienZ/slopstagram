@@ -1,5 +1,5 @@
 import process from "node:process";
-import { openInstagramSession } from "@@/core/instagram/playwright-session.ts";
+import { openInstagramSession } from "@@/core/domains/instagram/playwright-session.ts";
 
 try {
   await openInstagramSession({ headless: false });

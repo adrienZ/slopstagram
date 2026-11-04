@@ -3,8 +3,8 @@ import { expect, type TestContext } from "vitest";
 import sharp from "sharp";
 import { z } from "zod";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
-import { createReport } from "@@/core/fetch-run/report.ts";
-import type { RuntimeBoundaries } from "@@/core/runtime/runtime.ts";
+import { createReport } from "@@/core/domains/fetch-run/report.ts";
+import type { RuntimeBoundaries } from "@@/core/domains/runtime/runtime.ts";
 import { createCapturingLogger } from "../mock-helpers.ts";
 import {
   createRecordedInstagramClient,

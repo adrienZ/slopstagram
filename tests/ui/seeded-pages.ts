@@ -1,8 +1,8 @@
 import { eq, sql } from "drizzle-orm";
-import { stories } from "@@/core/database/entities/story.ts";
-import type { Runtime } from "@@/core/runtime/runtime.ts";
-import { createReportFeed } from "@@/core/story-feed/story-feed.ts";
-import { resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
+import { stories } from "@@/core/domains/database/entities/story.ts";
+import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
+import { createReportFeed } from "@@/core/domains/story-feed/story-feed.ts";
+import { resolveUserSummariesForReport } from "@@/core/domains/accounts/user-summary.ts";
 import type { SidebarUser } from "../../app/loaders/sidebar-users.ts";
 import { withStoryStickers, type StoryCardData } from "../../app/utils/story-cards.ts";
 import { groupTimelineLocations } from "../../app/utils/timeline-locations.ts";

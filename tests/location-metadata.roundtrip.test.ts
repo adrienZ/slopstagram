@@ -1,10 +1,10 @@
 import { assert, test, expect } from "vitest";
-import { createDrizzle } from "@@/core/database/client.ts";
-import { migrateDatabase } from "@@/core/database/migrate.ts";
-import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
-import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
-import { fetchStoriesManifest } from "@@/core/fetch-run/stories.ts";
-import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
+import { createDrizzle } from "@@/core/domains/database/client.ts";
+import { migrateDatabase } from "@@/core/domains/database/migrate.ts";
+import { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
+import { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
+import { fetchStoriesManifest } from "@@/core/domains/fetch-run/stories.ts";
+import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
 import type { JsonObject } from "@@/core/utils/json-value.ts";
 import { createMemoryCacheStorage } from "./memory-storage.ts";
 import {

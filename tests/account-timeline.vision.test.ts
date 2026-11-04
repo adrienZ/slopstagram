@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { assert, expect, test } from "vitest";
-import { VISION_MODEL, VISION_PROMPT } from "@@/core/vision/vision-analysis.ts";
+import { VISION_MODEL, VISION_PROMPT } from "@@/core/domains/vision/vision-analysis.ts";
 import { createUserTimeline } from "../app/loaders/account-timeline.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 

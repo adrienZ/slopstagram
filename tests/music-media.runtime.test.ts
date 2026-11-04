@@ -1,6 +1,6 @@
 import sharp from "sharp";
 import { assert, expect, test } from "vitest";
-import { processMusicArtwork, processMusicMedia } from "@@/core/music/music-media.ts";
+import { processMusicArtwork, processMusicMedia } from "@@/core/domains/music/music-media.ts";
 import { startMediaServer, wavAudio } from "./media-server.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 

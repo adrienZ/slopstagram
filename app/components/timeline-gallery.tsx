@@ -1,6 +1,6 @@
 import type { StoryCardData } from "../utils/story-cards.ts";
 import type { UserTimeline } from "../loaders/account-timeline.ts";
-import { formatStoryDay } from "@@/core/story-feed/story-days.ts";
+import { formatStoryDay } from "@@/core/domains/story-feed/story-days.ts";
 import { getTimelineDayId } from "../utils/story-navigation.ts";
 import { StoryCard } from "./story-card.tsx";
 

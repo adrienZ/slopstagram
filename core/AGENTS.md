@@ -1,13 +1,20 @@
 # core
 
-Domain and ingestion code, with no React and no Nitro. One flat folder per domain, with no
-subfolders except in `database/`.
+Domain and ingestion code, with no React and no Nitro. Each domain is one flat folder under
+`domains/`, with no subfolders, except `database/`, which has subfolders. Outside `domains/`, only
+`utils/` remains.
+
+## Shared helpers
+
+- `utils/`: domain-free helpers (data paths, JSON values, logging, provider identifiers, caption
+  placeholders). It is not a domain. Imports no domain; nothing domain-specific goes here.
 
 ## Domains
 
-- `utils/`: domain-free helpers (data paths, JSON values, logging, provider identifiers, caption
-  placeholders). Imports no domain; nothing domain-specific goes here.
+Every folder below lives in `domains/`.
+
 - `database/`: the client, migrations, `entities/` and `repositories/`. No business rules.
+- `runtime/`: the composition root, and the types of the external boundaries it exposes (`fetch-boundaries.ts`). It imports every domain; only entry points import its values, other modules import its types.
 - `instagram/`: Instagram payload types, the story client, retry, the Playwright session, the
   story parser and payload validation. No persistence.
 - `media-store/`: the local copies of images and audio the app serves. Not the story cache.
@@ -19,7 +26,6 @@ subfolders except in `database/`.
 - `story-feed/`: the story feed and story days.
 - `fetch-run/`: the fetch run pipeline, reports, story fetching, the story cache and the hourly
   job.
-- `runtime/`: the composition root, and the types of the external boundaries it exposes (`fetch-boundaries.ts`). It imports every domain; only entry points import its values, other modules import its types.
 
 ## Repositories
 

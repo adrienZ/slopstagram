@@ -1,0 +1,106 @@
+import type { Logger } from "@@/core/utils/logging.ts";
+import type {
+  StoryFetchFailure,
+  StoryFetchFailureReason,
+} from "@@/core/domains/fetch-run/report-types.ts";
+import type { StoryItem, StoryTrayEntry } from "@@/core/domains/instagram/instagram-types.ts";
+import type { RequestFailure } from "@@/core/domains/instagram/story-retry.ts";
+
+export interface FetchState {
+  cachedItems: Map<string, StoryItem>;
+  expectedMediaIdsByReel: Map<string, Array<string>>;
+  expectedMediaPks: Array<string>;
+  failureByMediaPk: Map<string, number>;
+  failures: Array<StoryFetchFailure>;
+  fetchedMediaPks: Set<string>;
+}
+
+export function createFetchState(tray: Array<StoryTrayEntry>): FetchState {
+  return {
+    cachedItems: new Map(),
+    expectedMediaIdsByReel: new Map(tray.map((entry) => [entry.id, entry.media_ids])),
+    expectedMediaPks: tray.flatMap((entry) => entry.media_ids),
+    failureByMediaPk: new Map(),
+    failures: [],
+    fetchedMediaPks: new Set(),
+  };
+}
+
+function createFailure(
+  reelId: string,
+  mediaPk: string | null,
+  failure: RequestFailure,
+  reason: StoryFetchFailureReason = failure.reason,
+): StoryFetchFailure {
+  return {
+    attempt_count: failure.attemptCount,
+    http_status: failure.status,
+    media_pk: mediaPk,
+    message: failure.message,
+    reason,
+    reel_id: reelId,
+  };
+}
+
+function getPendingMediaIds(
+  reelId: string,
+  expectedMediaIdsByReel: Map<string, Array<string>>,
+  cachedItems: Map<string, StoryItem>,
+): Array<string> {
+  return (expectedMediaIdsByReel.get(reelId) ?? []).filter((mediaPk) => !cachedItems.has(mediaPk));
+}
+
+export function addFailuresForPendingReelStories(
+  reelIds: Array<string>,
+  state: FetchState,
+  logger: Logger,
+  failure: RequestFailure,
+  reason: StoryFetchFailureReason = failure.reason,
+): void {
+  for (const reelId of reelIds) {
+    for (const mediaPk of getPendingMediaIds(
+      reelId,
+      state.expectedMediaIdsByReel,
+      state.cachedItems,
+    )) {
+      if (state.failureByMediaPk.has(mediaPk)) {
+        continue;
+      }
+
+      const failureIndex = state.failures.length;
+      const storyFailure = createFailure(reelId, mediaPk, failure, reason);
+      state.failures.push(storyFailure);
+      state.failureByMediaPk.set(mediaPk, failureIndex);
+      logger.error(
+        `story failed: reel_id=${storyFailure.reel_id} media_pk=${storyFailure.media_pk} reason=${storyFailure.reason} status=${storyFailure.http_status ?? "none"} attempts=${storyFailure.attempt_count} message=${storyFailure.message}`,
+      );
+    }
+  }
+}
+
+function getResolvedStoryCount(state: FetchState): number {
+  return state.fetchedMediaPks.size + state.failureByMediaPk.size;
+}
+
+export function logStoryProgress(logger: Logger, state: FetchState, suffix: string): void {
+  logger.progress(getResolvedStoryCount(state), state.expectedMediaPks.length, {
+    prefix: "stories",
+    suffix,
+  });
+}
+
+export function getRemainingReelIds(
+  reelIdsToFetch: Array<string>,
+  currentIndex: number,
+): Array<string> {
+  return reelIdsToFetch.slice(currentIndex);
+}
+
+export function createMissingResponseFailure(): RequestFailure {
+  return {
+    attemptCount: 1,
+    message: "Expected story was missing from Instagram reels response",
+    reason: "request_failed",
+    status: null,
+  };
+}

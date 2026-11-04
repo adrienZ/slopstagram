@@ -33,7 +33,7 @@ test("asking for the production runtime is what opens the database", async (cont
   const databasePath = path.join(parent, "data", "slopstagram.sqlite");
   vi.stubEnv("SLOPSTAGRAM_DATABASE_PATH", databasePath);
   vi.resetModules();
-  const { getProductionRuntime } = await import("@@/core/runtime/production-runtime.ts");
+  const { getProductionRuntime } = await import("@@/core/domains/runtime/production-runtime.ts");
   context.onTestFinished(async () => {
     vi.unstubAllEnvs();
     getProductionRuntime().database.$client.close();

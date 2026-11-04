@@ -2,9 +2,9 @@ import { mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "vitest";
-import { createDrizzle } from "@@/core/database/client.ts";
-import { createDatabaseBackup } from "@@/core/database/backup.ts";
-import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
+import { createDrizzle } from "@@/core/domains/database/client.ts";
+import { createDatabaseBackup } from "@@/core/domains/database/backup.ts";
+import { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
 import { createTestDatabase } from "./test-database.ts";
 
 test("copies the database into the backup folder under a name ending with the time", async (context) => {

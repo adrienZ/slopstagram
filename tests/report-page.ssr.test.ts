@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { within } from "@testing-library/dom";
 import { JSDOM } from "jsdom";
-import type { Runtime } from "@@/core/runtime/runtime.ts";
+import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { Route } from "../app/routes/report.tsx";
 import { loadStoryFeed } from "../app/loaders/story-feed.ts";
 import { storyItem } from "./mock-helpers.ts";
