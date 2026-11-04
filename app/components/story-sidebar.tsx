@@ -1,7 +1,7 @@
 import type { Matcher } from "react-day-picker";
 import { useState } from "react";
 import { fr } from "react-day-picker/locale";
-import { CalendarDaysIcon, ChevronRightIcon } from "lucide-react";
+import { CalendarDaysIcon, ChevronRightIcon, MessageCircleIcon } from "lucide-react";
 import { formatStoryDay, STORY_TIME_ZONE } from "@@/core/domains/story-feed/story-days.ts";
 import { Button } from "../shadcn/ui/button.tsx";
 import { Calendar } from "../shadcn/ui/calendar.tsx";
@@ -101,6 +101,23 @@ export function StorySidebar({
           >
             {`Aujourd’hui · ${formatStoryDay(today)}`}
           </Button>
+        </SidebarGroup>
+        <SidebarSeparator />
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <nav aria-label="Pages">
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <a href="/chat">
+                      <MessageCircleIcon aria-hidden="true" />
+                      <span>Assistant</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </nav>
+          </SidebarGroupContent>
         </SidebarGroup>
         <SidebarSeparator />
         <SidebarGroup>

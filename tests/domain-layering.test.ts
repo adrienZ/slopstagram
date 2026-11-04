@@ -31,8 +31,19 @@ new RuleTester().run("domain-layering", domainLayering, {
       code: 'import type { StoryOutputUser } from "@@/core/domains/fetch-run/report-types.ts";',
       filename: inDomain("story-feed/story-feed.ts"),
     },
+    {
+      name: "the Assistant domain imports the domains whose tools it composes",
+      code: 'import { createGetFeedUserSummaryTool } from "@@/core/domains/story-feed/feed-user-summary.tool.ts";',
+      filename: inDomain("assistant/assistant.ts"),
+    },
   ],
   invalid: [
+    {
+      name: "no tool-owning domain imports the Assistant domain",
+      code: 'import { streamAssistantReply } from "@@/core/domains/assistant/assistant.ts";',
+      filename: inDomain("story-feed/feed-user-summary.tool.ts"),
+      errors: [{ messageId: "upward", data: { importer: "story-feed", imported: "assistant" } }],
+    },
     {
       name: "the accounts domain never imports the story feed",
       code: 'import { createStoryFeed } from "@@/core/domains/story-feed/story-feed.ts";',

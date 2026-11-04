@@ -31,3 +31,8 @@ export const getUserTimeline = createServerFn({ method: "GET" })
       throw error;
     }
   });
+
+export const getChatPage = createServerFn({ method: "GET" }).handler(async () => {
+  const { loadChatPage } = await import("./loaders/chat.ts");
+  return loadChatPage(getProductionRuntime());
+});

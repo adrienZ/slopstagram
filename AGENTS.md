@@ -27,6 +27,19 @@ Keep UI components limited to rendering, local UI behavior, and presentation tra
   Start equivalent. No routes: every route lives in `app/routes/`.
 - `core/`: domain and ingestion code, with no React and no Nitro.
 
+### Chat Assistant
+
+- The chat page is `app/routes/chat.tsx`; its endpoint is the server route `app/routes/api/chat.ts`,
+  which only validates the POSTed UI messages and returns the Assistant's UI message stream from
+  `core/domains/assistant/`. Tests drive that handler with only Ollama faked.
+- An Assistant tool lives in the domain whose data it reads, as `<module>.tool.ts` exporting a
+  factory over the narrowed runtime (`docs/adr/0007-assistant-tools-live-in-their-domain.md`).
+- Only `*.tool.ts` modules, `core/domains/assistant/` and the chat hook
+  `app/hooks/use-assistant-chat.ts` may import the AI SDK (`ai`, `@ai-sdk/*`, `ai-sdk-ollama`).
+  The `slopstagram/ai-sdk-imports` lint rule enforces it. Components import the Assistant's
+  message types from `core/domains/assistant/` instead.
+- The chat model is `OLLAMA_CHAT_MODEL`, defaulting to the user summary model.
+
 ### Generated UI
 
 Treat `app/shadcn/**` as generated shadcn/ui code. Never hand-edit these files,
