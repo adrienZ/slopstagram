@@ -158,3 +158,19 @@ stories already stored, not to build the story feed.
 **Media store**:
 The local copies of images and audio the app serves (preview images, profile pictures,
 music artwork, audio), kept because Instagram's URLs expire.
+
+**Assistant**:
+The agent of the chat page that answers questions in plain language using only the
+application's data, which it reads through Assistant tools and never changes.
+_Avoid_: Chatbot, bot, AI
+
+**Assistant tool**:
+One read-only capability the Assistant can call to get data from the domain that owns
+it, such as the saved accounts or an account's user summary.
+_Avoid_: Function, action, skill
+
+**Mention**:
+An `@username` of an account written in a chat message. It is not a sticker: the
+mention sticker kind is a sticker on a story, although both are shown with the same
+sticker look.
+_Avoid_: Tag, mention sticker
