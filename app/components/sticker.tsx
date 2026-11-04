@@ -6,7 +6,7 @@ import type { StickerPlace } from "../utils/timeline-stickers.ts";
 
 const badgeClass = "tw:h-auto tw:max-w-full tw:gap-1 tw:py-1 tw:whitespace-normal";
 
-function MentionAvatar({ src }: { src: string }) {
+export function MentionAvatar({ src }: { src: string }) {
   const [failed, setFailed] = useState(false);
   return failed ? null : (
     <img
