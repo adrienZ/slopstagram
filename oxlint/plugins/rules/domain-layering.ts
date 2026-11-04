@@ -18,7 +18,6 @@ const dependencies = new Map<string, Array<string>>([
   ["music", ["database", "media-store", "utils"]],
   ["vision", ["database", "media-store", "utils"]],
   ["accounts", ["database", "vision", "utils"]],
-  // The story feed reads the user summaries of its accounts (docs/adr/0007-assistant-tools-live-in-their-domain.md).
   ["story-feed", ["accounts", "database", "vision", "utils"]],
   ["fetch-run", ["*"]],
   ["runtime", ["*"]],
