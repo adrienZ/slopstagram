@@ -26,6 +26,7 @@ Keep UI components limited to rendering, local UI behavior, and presentation tra
 - `nitro/`: Nitro plugins only (startup migrations, the bunqueue server), for what has no TanStack
   Start equivalent. No routes: every route lives in `app/routes/`.
 - `core/`: domain and ingestion code, with no React and no Nitro.
+- `evals/`: the local Assistant evaluations (see "Evals" below).
 
 ### Chat Assistant
 
@@ -34,8 +35,9 @@ Keep UI components limited to rendering, local UI behavior, and presentation tra
   `core/domains/assistant/`. Tests drive that handler with only Ollama faked.
 - An Assistant tool lives in the domain whose data it reads, as `<module>.tool.ts` exporting a
   factory over the narrowed runtime (`docs/adr/0007-assistant-tools-live-in-their-domain.md`).
-- Only `*.tool.ts` modules, `core/domains/assistant/` and the chat hook
-  `app/hooks/use-assistant-chat.ts` may import the AI SDK (`ai`, `@ai-sdk/*`, `ai-sdk-ollama`).
+- Only `*.tool.ts` modules, `core/domains/assistant/`, the chat hook
+  `app/hooks/use-assistant-chat.ts`, tests and `evals/` may import the AI SDK (`ai`, `@ai-sdk/*`,
+  `ai-sdk-ollama`, `ai-sdk-provider-*`).
   The `slopstagram/ai-sdk-imports` lint rule enforces it. Components import the Assistant's
   message types from `core/domains/assistant/` instead.
 - The chat model is `OLLAMA_CHAT_MODEL`, defaulting to the user summary model.
@@ -81,6 +83,27 @@ directly or through SDK calls. Tests may migrate their isolated databases.
 ## Testing
 
 Test rules live in `tests/AGENTS.md`.
+
+## Evals
+
+`npm run eval` runs the [Evalite](https://evalite.dev) suites in `evals/*.eval.ts` once and exits:
+the real chat model answers the target prompts through the chat route handler, over the synthetic
+report world of the tests (`evals/assistant-world.ts`, report creation with a fake Ollama). Each
+case runs 5 times; the deterministic scorers of `evals/assistant-scorers.ts` decide whether a run
+passed, and the run fails when a case's pass rate is under its threshold. Configuration lives in
+`evalite.config.ts`; results stay in memory.
+
+- Prerequisites: the Ollama server running (`curl localhost:11434/api/version`) with the chat model
+  pulled (`OLLAMA_CHAT_MODEL`, defaulting to the user summary model, e.g. `ollama pull qwen3.5:0.8b`).
+- Optional LLM judge: set `EVAL_JUDGE_MODEL` to a Codex model id and install the `codex` CLI. Without
+  either, the judge is skipped. It runs Codex in an empty temporary directory, read-only, never
+  approving an action.
+- Evals are not tests: `npm run check`, `npm test`, coverage and CI never run them, and they need
+  no model to pass. Do not run `evalite watch` or `evalite serve` in an agent session: they keep
+  a server running.
+- Only synthetic data may reach the chat model and the judge: cases and seeded data come from the
+  synthetic report world, never from `data/`, the application database or real accounts. Never
+  add personal data to a case.
 
 ## Agent skills
 

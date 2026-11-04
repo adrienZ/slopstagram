@@ -14,3 +14,6 @@ coverage/
 # data
 data/*
 !data/.gitkeep
+
+# evalite
+evalite-export/
