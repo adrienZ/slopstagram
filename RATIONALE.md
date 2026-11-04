@@ -25,3 +25,18 @@ you can find migration steps on this [commit](https://github.com/adrienZ/slopsta
 
 Collecting biographies would add a separate authenticated profile request for each
 account because the story tray does not reliably include them. We dropped [PR #10](https://github.com/adrienZ/slopstagram/pull/10) for that reason.
+
+## Why does the chat use the Vercel AI SDK rather than TanStack AI?
+
+The chat page is built from the official shadcn chat components, the successor of
+[AI Elements](https://ui.shadcn.com/docs/ai-elements). They are designed around the
+Vercel AI SDK message format and its `useChat` hook, so the AI SDK lets us render
+streamed text, reasoning and tool parts without an adapter layer. The AI SDK also has an
+Ollama provider, and Ollama stays the only model server.
+
+TanStack AI would fit the TanStack Start app, and we prototyped both
+([PR #270](https://github.com/adrienZ/slopstagram/pull/270) with the AI SDK,
+[PR #271](https://github.com/adrienZ/slopstagram/pull/271) with TanStack AI). The choice is
+cheap to revisit: TanStack AI documents a
+[migration path from the Vercel AI SDK](https://tanstack.com/ai/latest/docs/migration/migration-from-vercel-ai),
+and only Assistant tool modules and the Assistant domain import the AI SDK (ADR 0007).
