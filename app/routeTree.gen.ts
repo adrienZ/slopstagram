@@ -9,13 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ChatRouteImport } from './routes/chat'
 import { Route as ReportRouteImport } from './routes/report'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as MediaSplatRouteImport } from './routes/media/$'
 import { Route as UsersUsernameRouteImport } from './routes/users/$username'
 
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReportRoute = ReportRouteImport.update({
   id: '/report',
   path: '/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MediaSplatRoute = MediaSplatRouteImport.update({
@@ -30,42 +42,70 @@ const UsersUsernameRoute = UsersUsernameRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/chat': typeof ChatRoute
   '/report': typeof ReportRoute
+  '/api/chat': typeof ApiChatRoute
   '/media/$': typeof MediaSplatRoute
   '/users/$username': typeof UsersUsernameRoute
 }
 export interface FileRoutesByTo {
+  '/chat': typeof ChatRoute
   '/report': typeof ReportRoute
+  '/api/chat': typeof ApiChatRoute
   '/media/$': typeof MediaSplatRoute
   '/users/$username': typeof UsersUsernameRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/chat': typeof ChatRoute
   '/report': typeof ReportRoute
+  '/api/chat': typeof ApiChatRoute
   '/media/$': typeof MediaSplatRoute
   '/users/$username': typeof UsersUsernameRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/report' | '/media/$' | '/users/$username'
+  fullPaths: '/chat' | '/report' | '/api/chat' | '/media/$' | '/users/$username'
   fileRoutesByTo: FileRoutesByTo
-  to: '/report' | '/media/$' | '/users/$username'
-  id: '__root__' | '/report' | '/media/$' | '/users/$username'
+  to: '/chat' | '/report' | '/api/chat' | '/media/$' | '/users/$username'
+  id:
+    | '__root__'
+    | '/chat'
+    | '/report'
+    | '/api/chat'
+    | '/media/$'
+    | '/users/$username'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  ChatRoute: typeof ChatRoute
   ReportRoute: typeof ReportRoute
+  ApiChatRoute: typeof ApiChatRoute
   MediaSplatRoute: typeof MediaSplatRoute
   UsersUsernameRoute: typeof UsersUsernameRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/report': {
       id: '/report'
       path: '/report'
       fullPath: '/report'
       preLoaderRoute: typeof ReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/media/$': {
@@ -86,7 +126,9 @@ declare module '@tanstack/react-router' {
 }
 
 const rootRouteChildren: RootRouteChildren = {
+  ChatRoute: ChatRoute,
   ReportRoute: ReportRoute,
+  ApiChatRoute: ApiChatRoute,
   MediaSplatRoute: MediaSplatRoute,
   UsersUsernameRoute: UsersUsernameRoute,
 }

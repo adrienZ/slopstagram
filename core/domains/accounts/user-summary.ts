@@ -19,7 +19,7 @@ type HttpFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Respo
 const USER_SUMMARY_MLX_MODEL = "qwen3.5:0.8b-mlx";
 const USER_SUMMARY_PORTABLE_MODEL = "qwen3.5:0.8b";
 
-function getUserSummaryModel(
+export function getUserSummaryModel(
   platform: NodeJS.Platform = process.platform,
   architecture: string = process.arch,
 ): string {

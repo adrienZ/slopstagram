@@ -12,7 +12,7 @@ interface FeedUserSummariesRuntime {
   vision: Pick<VisionRepository, "findByMediaPk">;
 }
 
-interface FeedUserSummaryRuntime extends FeedUserSummariesRuntime {
+export interface FeedUserSummaryRuntime extends FeedUserSummariesRuntime {
   stories: Pick<StoryRepository, "listActive">;
   users: Pick<InstagramUserRepository, "listAll">;
 }
