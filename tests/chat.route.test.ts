@@ -151,6 +151,29 @@ test("an unreachable chat model streams an error", async (context) => {
   expect(chunks.text).toBe("");
 });
 
+test.for([
+  "server-error",
+  "malformed-tool-call-before-streaming",
+  "malformed-tool-call-while-streaming",
+] as const)(
+  "a chat model failing with %s ends the stream with the error",
+  async (failure, context) => {
+    const world = await createWorld(context, { ollama: { chat: failure } });
+
+    const response = await handleChatRequest(
+      world.runtime,
+      chatRequest(userMessage("What about @user_072?")),
+    );
+
+    const chunks = await readChunks(response);
+    expect(chunks.events.at(-1)).toStrictEqual({
+      errorText: "The chat model did not answer.",
+      type: "error",
+    });
+    expect(chunks.text).toBe("");
+  },
+);
+
 test("a request that is not a conversation of UI messages is rejected", async (context) => {
   const world = await createWorld(context);
   const bodies = [

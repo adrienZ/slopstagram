@@ -121,11 +121,21 @@ export function trayBody(options: { withMissingReel?: boolean } = {}): JsonValue
 
 type OllamaFailure = "server-error" | "unreachable";
 
+/**
+ * How the chat model fails. A malformed tool call fails Ollama's tool call parser: before any
+ * chunk, Ollama answers with an error status; once it has streamed chunks, it ends the stream
+ * with an `error` line.
+ */
+type OllamaChatFailure =
+  | OllamaFailure
+  | "malformed-tool-call-before-streaming"
+  | "malformed-tool-call-while-streaming";
+
 interface OllamaBehavior {
   /** Fails the vision request of the story at this position in the run. */
   vision?: (position: number) => OllamaFailure | undefined;
   summary?: OllamaFailure;
-  chat?: OllamaFailure;
+  chat?: OllamaChatFailure;
 }
 
 function jsonResponse(body: JsonValue, status = 200) {
@@ -170,6 +180,27 @@ function chatMessage(message: JsonValue) {
   return ndjsonResponse({ done: false, message, model: "synthetic" }, chatDone);
 }
 
+/** Ollama's error when the chat model's tool call is not well-formed XML. */
+const malformedToolCallError =
+  "XML syntax error on line 3: element <function> closed by </parameter>";
+
+function failChat(failure: OllamaChatFailure) {
+  if (failure === "malformed-tool-call-before-streaming") {
+    return jsonResponse({ error: malformedToolCallError }, 500);
+  }
+  if (failure === "malformed-tool-call-while-streaming") {
+    return ndjsonResponse(
+      {
+        done: false,
+        message: { content: "", role: "assistant", thinking: assistantThinking },
+        model: "synthetic",
+      },
+      { error: malformedToolCallError },
+    );
+  }
+  return fail(failure);
+}
+
 /**
  * The chat model, in Ollama's streamed wire format: it reads the user summary of the first
  * `@username` of the last user message, answers once it has the tool result, and greets a
@@ -205,7 +236,7 @@ function createOllama(behavior: OllamaBehavior = {}) {
     if (chat.success) {
       requests.push({ kind: "chat", prompt: chat.data.messages.at(-1)?.content ?? "" });
       return await Promise.resolve(
-        behavior.chat === undefined ? answerChat(chat.data.messages) : fail(behavior.chat),
+        behavior.chat === undefined ? answerChat(chat.data.messages) : failChat(behavior.chat),
       );
     }
     const body = OllamaRequestSchema.parse(json);

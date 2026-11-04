@@ -1,6 +1,7 @@
 import process from "node:process";
 import {
   convertToModelMessages,
+  createUIMessageStream,
   createUIMessageStreamResponse,
   safeValidateUIMessages,
   stepCountIs,
@@ -9,6 +10,7 @@ import {
   type InferUITools,
   type UIDataTypes,
   type UIMessage,
+  type UIMessageStreamOptions,
 } from "ai";
 import { createOllama } from "ai-sdk-ollama";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
@@ -61,6 +63,18 @@ export async function validateAssistantMessages(
   return validated.success ? validated.data : null;
 }
 
+/** Logs why the chat model did not answer, and gives the error text the chat shows. */
+function createFailureDescriber(
+  logger: AssistantRuntime["logger"],
+): NonNullable<UIMessageStreamOptions<AssistantUIMessage>["onError"]> {
+  return (error) => {
+    logger.warn(
+      `the chat model did not answer: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    return "The chat model did not answer.";
+  };
+}
+
 /** Streams the Assistant's reply to a conversation, as a UI message stream response. */
 export async function streamAssistantReply(
   runtime: AssistantRuntime,
@@ -76,17 +90,22 @@ export async function streamAssistantReply(
     stopWhen: stepCountIs(MAX_STEPS),
     tools,
   });
+  const describeFailure = createFailureDescriber(runtime.logger);
   return createUIMessageStreamResponse({
-    stream: toUIMessageStream<typeof tools, AssistantUIMessage>({
-      stream: result.stream,
-      tools,
-      originalMessages: messages,
-      onError: (error) => {
-        runtime.logger.warn(
-          `the chat model did not answer: ${error instanceof Error ? error.message : String(error)}`,
+    // The merged stream turns a model stream that breaks mid-answer, such as Ollama ending
+    // with an error line on a malformed tool call, into the same error part.
+    stream: createUIMessageStream<AssistantUIMessage>({
+      execute: ({ writer }) => {
+        writer.merge(
+          toUIMessageStream<typeof tools, AssistantUIMessage>({
+            stream: result.stream,
+            tools,
+            originalMessages: messages,
+            onError: describeFailure,
+          }),
         );
-        return "The chat model did not answer.";
       },
+      onError: describeFailure,
     }),
   });
 }
