@@ -6,9 +6,9 @@ import type { UserSummaryRepository } from "@@/core/domains/database/repositorie
 import type { VisionRepository } from "@@/core/domains/database/repositories/vision-repository.ts";
 import type { CachedReportImages } from "@@/core/domains/media-store/image-cache.ts";
 import { getReportUserKey } from "@@/core/domains/accounts/report-user-key.ts";
-import { readUserSummaries } from "@@/core/domains/accounts/user-summary.ts";
 import type { StoryOutputUser } from "@@/core/domains/fetch-run/report-types.ts";
 import type { VisionResult } from "@@/core/domains/database/entities/vision.ts";
+import { readFeedUserSummaries } from "@@/core/domains/story-feed/feed-user-summary.ts";
 import { createReportFeed, readStoryFeedVision } from "@@/core/domains/story-feed/story-feed.ts";
 import { createStoryCards, withStoryStickers } from "../utils/story-cards.ts";
 import { formatReportDate } from "../utils/helper.ts";
@@ -104,7 +104,7 @@ export function readStoryFeedSources(
 ): StoryFeedSources {
   const cachedImages = readCachedImages(users);
   const visionByPreviewUrl = readStoryFeedVision(runtime, users);
-  const userSummaryByUserKey = readUserSummaries(runtime, users, { visionByPreviewUrl });
+  const userSummaryByUserKey = readFeedUserSummaries(runtime, users);
   const appleCaptionByMediaPk = readAppleCaptions(users, runtime.appleVision);
 
   return {
