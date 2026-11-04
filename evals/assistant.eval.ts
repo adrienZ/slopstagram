@@ -20,36 +20,55 @@ interface AssistantCase {
   passRateThreshold: number;
 }
 
+/**
+ * 3 runs out of 5: the baseline of the default chat model (qwen3.5:0.8b), which does not pass
+ * every run. The suite measures that model and catches regressions from prompt, tool description
+ * or model changes; it does not demand perfection. Raise it when the model improves.
+ */
+const BASELINE_PASS_RATE = 0.6;
+
 const cases: Array<AssistantCase> = [
   {
     name: "last 24 hours of a mentioned account",
     question: `Qu'a publié @${worldAccounts.withSummary} ces dernières 24 heures ?`,
-    expected: { tool: "getFeedUserSummary", username: worldAccounts.withSummary },
-    passRateThreshold: 0.6,
+    expected: {
+      outcome: "found",
+      tool: "getFeedUserSummary",
+      username: worldAccounts.withSummary,
+    },
+    passRateThreshold: BASELINE_PASS_RATE,
   },
   {
     name: "saved accounts",
     question: "Quels comptes sont enregistrés ?",
     expected: { tool: "listAccounts" },
-    passRateThreshold: 0.6,
+    passRateThreshold: BASELINE_PASS_RATE,
   },
   {
     name: "unknown account",
     question: `Qu'a publié @${worldAccounts.unknown} ces dernières 24 heures ?`,
-    expected: { tool: "getFeedUserSummary", username: worldAccounts.unknown },
-    passRateThreshold: 0.6,
+    expected: {
+      outcome: "unknown_account",
+      tool: "getFeedUserSummary",
+      username: worldAccounts.unknown,
+    },
+    passRateThreshold: BASELINE_PASS_RATE,
   },
   {
     name: "account without stories in the last 24 hours",
     question: `Qu'a fait @${worldAccounts.withoutRecentStories} aujourd'hui ?`,
-    expected: { tool: "getFeedUserSummary", username: worldAccounts.withoutRecentStories },
-    passRateThreshold: 0.6,
+    expected: {
+      outcome: "no_stories_in_last_24h",
+      tool: "getFeedUserSummary",
+      username: worldAccounts.withoutRecentStories,
+    },
+    passRateThreshold: BASELINE_PASS_RATE,
   },
   {
     name: "greeting",
     question: "Bonjour !",
     expected: { tool: null },
-    passRateThreshold: 0.6,
+    passRateThreshold: BASELINE_PASS_RATE,
   },
 ];
 

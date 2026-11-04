@@ -3,13 +3,10 @@ import { JsonValueSchema } from "../core/utils/json-value.ts";
 import { handleChatRequest } from "../app/routes/api/chat.ts";
 import { listSavedAccounts } from "../core/domains/accounts/saved-accounts.ts";
 import type { AssistantRuntime } from "../core/domains/assistant/assistant.ts";
-import {
-  readFeedUserSummary,
-  type FeedUserSummary,
-} from "../core/domains/story-feed/feed-user-summary.ts";
+import { readFeedUserSummary } from "../core/domains/story-feed/feed-user-summary.ts";
 import { createWorld, imageStoryPk, recordedPayloads } from "../tests/setup/report-world.ts";
 import { createRecordedInstagramClient, editRecordedStories } from "../tests/setup/seed.ts";
-import type { AssistantRun, AssistantToolCall } from "./assistant-scorers.ts";
+import { describeOutcome, type AssistantRun, type AssistantToolCall } from "./assistant-scorers.ts";
 
 const HOUR_SECONDS = 3600;
 const DAY_SECONDS = 24 * HOUR_SECONDS;
@@ -28,13 +25,6 @@ export const savedUsernames = [worldAccounts.withoutRecentStories, worldAccounts
 
 function keepDatabaseOpen(): void {
   // The in-memory database lives as long as the eval worker.
-}
-
-function describeOutcome(read: FeedUserSummary): string {
-  if (read.status === "missing") {
-    return read.reason;
-  }
-  return read.status === "error" ? read.error : read.status;
 }
 
 /** Fails when the seeded world no longer gives the outcomes the cases rely on, so a case measures the model and not a seeding change. */

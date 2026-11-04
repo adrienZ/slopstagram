@@ -93,10 +93,17 @@ case runs 5 times; the deterministic scorers of `evals/assistant-scorers.ts` dec
 passed, and the run fails when a case's pass rate is under its threshold. Configuration lives in
 `evalite.config.ts`; results stay in memory.
 
+- Besides the scorers the spec lists (tool, arguments, no invented account, non-empty answer), the
+  "Expected outcome" scorer checks the tool result the stream showed (found, the missing reason or
+  `unknown_account`), and "Answer in French" is a deliberate addition: the Assistant replies in the
+  user's language. Whether the answer says the account is unknown is left to the judge.
+- The threshold (3/5) is the baseline of the default chat model: raise it when the model improves.
 - Prerequisites: the Ollama server running (`curl localhost:11434/api/version`) with the chat model
   pulled (`OLLAMA_CHAT_MODEL`, defaulting to the user summary model, e.g. `ollama pull qwen3.5:0.8b`).
-- Optional LLM judge: set `EVAL_JUDGE_MODEL` to a Codex model id and install the `codex` CLI. Without
-  either, the judge is skipped. It runs Codex in an empty temporary directory, read-only, never
+- Optional LLM judge: set `EVAL_JUDGE_MODEL` to a Codex model id (suggested: `gpt-6.1-terra`,
+  e.g. `EVAL_JUDGE_MODEL=gpt-6.1-terra npm run eval`; `codex debug models` lists the ids) and
+  install the `codex` CLI. The Codex login must have access to that model, or every judged run
+  fails with `model_not_found`. Without either, the judge is skipped. It runs Codex in an empty temporary directory, read-only, never
   approving an action.
 - Evals are not tests: `npm run check`, `npm test`, coverage and CI never run them, and they need
   no model to pass. Do not run `evalite watch` or `evalite serve` in an agent session: they keep

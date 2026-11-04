@@ -6,7 +6,8 @@ import {
   type FeedUserSummaryRuntime,
 } from "./feed-user-summary.ts";
 
-const FeedUserSummaryOutputSchema = z.discriminatedUnion("status", [
+/** The result of the getFeedUserSummary tool. */
+export const FeedUserSummaryOutputSchema = z.discriminatedUnion("status", [
   z.object({
     status: z.literal("found"),
     username: z.string(),

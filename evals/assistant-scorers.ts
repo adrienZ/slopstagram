@@ -1,4 +1,6 @@
 import { z } from "zod";
+import type { FeedUserSummary } from "../core/domains/story-feed/feed-user-summary.ts";
+import { FeedUserSummaryOutputSchema } from "../core/domains/story-feed/feed-user-summary.tool.ts";
 import type { JsonObject, JsonValue } from "../core/utils/json-value.ts";
 
 /** One tool call of an Assistant reply, as the chat stream showed it. */
@@ -18,12 +20,28 @@ export interface AssistantRun {
   errorText?: string;
 }
 
+/** How a getFeedUserSummary call ended: "found", the reason of a missing summary, or the error. */
+export type FeedUserSummaryOutcome =
+  | "found"
+  | Extract<FeedUserSummary, { status: "missing" }>["reason"]
+  | Extract<FeedUserSummary, { status: "error" }>["error"];
+
+/** The outcome of a read of the user summary of one account. */
+export function describeOutcome(read: FeedUserSummary): FeedUserSummaryOutcome {
+  if (read.status === "missing") {
+    return read.reason;
+  }
+  return read.status === "error" ? read.error : read.status;
+}
+
 /** What a case expects from the Assistant. */
 export interface AssistantExpectation {
   /** The tool the Assistant should call, or null when it should answer without a tool. */
   tool: "getFeedUserSummary" | "listAccounts" | null;
   /** The username the tool should be called with. */
   username?: string;
+  /** The outcome every getFeedUserSummary result should have. */
+  outcome?: FeedUserSummaryOutcome;
   /** The saved accounts of the seeded world: the only usernames an answer may name. */
   savedUsernames: Array<string>;
 }
@@ -185,6 +203,23 @@ function expectedArguments(username: string): AssistantCheck {
   };
 }
 
+function expectedOutcome(outcome: FeedUserSummaryOutcome): AssistantCheck {
+  return {
+    name: "Expected outcome",
+    description: `Every getFeedUserSummary call returned ${outcome}, as the stream showed its result.`,
+    check: (run) => {
+      const outcomes = run.toolCalls
+        .filter(({ toolName }) => toolName === "getFeedUserSummary")
+        .map(({ output }) => {
+          const read = FeedUserSummaryOutputSchema.safeParse(output);
+          return read.success ? describeOutcome(read.data) : null;
+        });
+      const passed = outcomes.length > 0 && outcomes.every((seen) => seen === outcome);
+      return result(passed, { outcomes });
+    },
+  };
+}
+
 function knownUsernames(expected: AssistantExpectation): AssistantCheck {
   return {
     name: "No invented account",
@@ -221,6 +256,7 @@ export function createAssistantChecks(expected: AssistantExpectation): Array<Ass
   return [
     expectedTool(expected),
     ...(expected.username === undefined ? [] : [expectedArguments(expected.username)]),
+    ...(expected.outcome === undefined ? [] : [expectedOutcome(expected.outcome)]),
     knownUsernames(expected),
     nonEmptyAnswer,
     frenchAnswer,

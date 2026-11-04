@@ -4,6 +4,7 @@ import {
   type AssistantExpectation,
   type AssistantRun,
 } from "../evals/assistant-scorers.ts";
+import type { JsonValue } from "../core/utils/json-value.ts";
 
 const savedUsernames = ["user_008", "user_072"];
 
@@ -17,24 +18,22 @@ function score(expected: Omit<AssistantExpectation, "savedUsernames">, run: Part
   );
 }
 
-function summaryCall(username: string) {
-  return {
-    input: { username },
-    output: {
-      status: "found",
-      storyCount: 2,
-      summary: "Summary of user_072",
-      username: "user_072",
-    },
-    toolName: "getFeedUserSummary",
-  };
+const found = {
+  status: "found",
+  storyCount: 2,
+  summary: "Summary of user_072",
+  username: "user_072",
+};
+
+function summaryCall(username: string, output: JsonValue = found) {
+  return { input: { username }, output, toolName: "getFeedUserSummary" };
 }
 
 describe("the deterministic scorers of the Assistant evals", () => {
   test("a run calling the expected tool with the mentioned username, answered in French, passes every scorer", () => {
     expect(
       score(
-        { tool: "getFeedUserSummary", username: "user_072" },
+        { outcome: "found", tool: "getFeedUserSummary", username: "user_072" },
         {
           question: "Qu'a publié @user_072 ces dernières 24 heures ?",
           text: "@user_072 a publié deux stories : un résumé de user_072.",
@@ -44,10 +43,46 @@ describe("the deterministic scorers of the Assistant evals", () => {
     ).toStrictEqual({
       "Answer in French": 1,
       "Expected arguments": 1,
+      "Expected outcome": 1,
       "Expected tool": 1,
       "No invented account": 1,
       "Non-empty answer": 1,
     });
+  });
+
+  test("the outcome scorer passes only when every getFeedUserSummary result has the expected status and reason", () => {
+    function outcome(expected: "no_stories_in_last_24h" | "unknown_account", output?: JsonValue) {
+      return score(
+        { outcome: expected, tool: "getFeedUserSummary", username: "user_404" },
+        { toolCalls: output === undefined ? [] : [summaryCall("user_404", output)] },
+      )["Expected outcome"];
+    }
+    const unknown = { error: "unknown_account", status: "error" };
+    const noStories = { reason: "no_stories_in_last_24h", status: "missing", username: "user_008" };
+    const notGenerated = { reason: "not_generated", status: "missing", username: "user_008" };
+
+    expect(outcome("unknown_account", unknown)).toBe(1);
+    expect(outcome("unknown_account", found)).toBe(0);
+    expect(outcome("unknown_account")).toBe(0);
+    expect(outcome("no_stories_in_last_24h", noStories)).toBe(1);
+    expect(outcome("no_stories_in_last_24h", notGenerated)).toBe(0);
+    expect(outcome("no_stories_in_last_24h", "not a tool result")).toBe(0);
+    expect(
+      score(
+        { outcome: "unknown_account", tool: "getFeedUserSummary", username: "user_404" },
+        {
+          // The second call failed: the stream showed no result for it.
+          toolCalls: [
+            summaryCall("user_404", unknown),
+            {
+              errorText: "The tool failed.",
+              input: { username: "user_404" },
+              toolName: "getFeedUserSummary",
+            },
+          ],
+        },
+      )["Expected outcome"],
+    ).toBe(0);
   });
 
   test("another tool, another username, an invented account and an English answer each fail their scorer", () => {
