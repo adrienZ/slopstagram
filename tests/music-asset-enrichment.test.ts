@@ -12,7 +12,7 @@ import { cacheReportAudio } from "@@/core/domains/music/report-audio.ts";
 import { cacheReceivedAudio } from "@@/core/domains/music/music-media.ts";
 import { enrichCurrentMusicAssets } from "@@/core/domains/music/music-asset-enrichment.ts";
 import { JsonValueSchema } from "@@/core/utils/json-value.ts";
-import { createMediaResponse } from "../server/routes/media/[...path].ts";
+import { createMediaResponse } from "@@/core/domains/media-store/media-response.ts";
 import { startMediaServer } from "./media-server.ts";
 import { createMemoryCacheStorage } from "./memory-storage.ts";
 import {

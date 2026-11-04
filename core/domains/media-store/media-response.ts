@@ -1,16 +1,10 @@
 import { open, realpath, type FileHandle } from "node:fs/promises";
 import path from "node:path";
-import { defineEventHandler } from "nitro/h3";
-import { cachedMediaContentType } from "@@/core/domains/music/music-media-types.ts";
-import { z } from "zod";
-import {
-  AUDIO_STORAGE_DIR,
-  BASE_CACHE_DIR,
-  IMAGES_STORAGE_DIR,
-} from "@@/core/domains/media-store/cache-storage.ts";
+import { cachedMediaContentType } from "./media-types.ts";
+import { AUDIO_STORAGE_DIR, BASE_CACHE_DIR, IMAGES_STORAGE_DIR } from "./cache-storage.ts";
 
-export const mediaDirectory = path.resolve(BASE_CACHE_DIR, IMAGES_STORAGE_DIR);
-export const audioDirectory = path.resolve(BASE_CACHE_DIR, AUDIO_STORAGE_DIR);
+const mediaDirectory = path.resolve(BASE_CACHE_DIR, IMAGES_STORAGE_DIR);
+const audioDirectory = path.resolve(BASE_CACHE_DIR, AUDIO_STORAGE_DIR);
 function notFound(): Response {
   return new globalThis.Response("media not found", { status: 404 });
 }
@@ -49,13 +43,6 @@ function resolveMediaTarget(requestPath: string, root: string) {
     return null;
   }
   return { path: resolved, root: resolvedRoot };
-}
-
-export function resolveMediaPath(
-  requestPath: string,
-  root: string = mediaDirectory,
-): string | null {
-  return resolveMediaTarget(requestPath, root)?.path ?? null;
 }
 
 function byteRange(range: string, size: number): { start: number; end: number } | null {
@@ -113,6 +100,11 @@ function mediaHeaders(mediaPath: string) {
   });
 }
 
+/**
+ * Answers a request for a cached image or audio file: `requestPath` is the URL-encoded path under
+ * `/media/`, `root` the images folder of the media store. Anything outside the store, or of the
+ * wrong type for its folder, is a 404.
+ */
 export async function createMediaResponse(
   requestPath: string,
   root: string = mediaDirectory,
@@ -166,13 +158,3 @@ export async function createMediaResponse(
     return notFound();
   }
 }
-
-export default defineEventHandler(async (event) => {
-  const parsedPath = z.string().safeParse(event.context.params?.path);
-  return parsedPath.success
-    ? await createMediaResponse(parsedPath.data, mediaDirectory, {
-        range: event.req.headers.get("range"),
-        method: event.req.method,
-      })
-    : notFound();
-});

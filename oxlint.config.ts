@@ -159,7 +159,7 @@ export default defineConfig({
           {
             group: ["**/database/migrate*", "drizzle-orm/**/migrator"],
             message:
-              "Scripts require an initialized database. Run migrations at server startup in server/plugins/database.ts.",
+              "Scripts require an initialized database. Run migrations at server startup in nitro/plugins/database.ts.",
           },
         ]),
       },

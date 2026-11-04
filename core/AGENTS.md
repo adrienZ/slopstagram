@@ -17,7 +17,8 @@ Every folder below lives in `domains/`.
 - `runtime/`: the composition root, and the types of the external boundaries it exposes (`fetch-boundaries.ts`). It imports every domain; only entry points import its values, other modules import its types.
 - `instagram/`: Instagram payload types, the story client, retry, the Playwright session, the
   story parser and payload validation. No persistence.
-- `media-store/`: the local copies of images and audio the app serves. Not the story cache.
+- `media-store/`: the local copies of images and audio the app serves, their content types, and
+  the responses that serve them. Not the story cache.
 - `stickers/`: story annotations, sticker and location extraction, story model types.
 - `places/`: tagged place metadata, observations and place lookups.
 - `music/`: music assets and media, music observations, story audio, DASH audio.

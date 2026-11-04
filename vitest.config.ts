@@ -8,7 +8,7 @@ export default defineConfig({
     execArgv: ["--disable-warning=ExperimentalWarning"],
     coverage: {
       // Count files no test loads, so untested modules lower the figure instead of vanishing.
-      include: ["core/**", "app/**", "server/**"],
+      include: ["core/**", "app/**", "nitro/**"],
       exclude: ["app/shadcn/**", "app/routeTree.gen.ts", "core/domains/database/migrations/**"],
       // Thresholds rewrite themselves upward when coverage improves, so the bar never drops.
       thresholds: {
