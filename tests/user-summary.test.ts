@@ -2,8 +2,11 @@ import process from "node:process";
 import { assert, describe, test, vi, expect } from "vitest";
 import { setTimeout as delay } from "node:timers/promises";
 import { z } from "zod";
-import { readUserSummaries, resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
-import { getReportUserKey } from "@@/core/accounts/report-user-key.ts";
+import {
+  readUserSummaries,
+  resolveUserSummariesForReport,
+} from "@@/core/domains/accounts/user-summary.ts";
+import { getReportUserKey } from "@@/core/domains/accounts/report-user-key.ts";
 import { createSummaryReport } from "./mock-helpers.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 import { countSummaries, saveSummaryUsers } from "./test-database.ts";

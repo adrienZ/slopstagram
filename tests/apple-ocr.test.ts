@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 import { describe, test, expect } from "vitest";
-import { recognizeAppleCaption } from "@@/core/vision/apple-ocr.ts";
+import { recognizeAppleCaption } from "@@/core/domains/vision/apple-ocr.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 
 describe("recognizeAppleCaption", () => {

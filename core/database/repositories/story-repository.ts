@@ -1,5 +1,5 @@
-import { planStoryAnnotations } from "@@/core/stickers/story-annotation.ts";
-import { planStoryAudio } from "@@/core/music/story-audio.ts";
+import { planStoryAnnotations } from "@@/core/domains/stickers/story-annotation.ts";
+import { planStoryAudio } from "@@/core/domains/music/story-audio.ts";
 import {
   findStoryAudio,
   saveStoryAudio,
@@ -15,7 +15,7 @@ import {
   recordFailedPlaceLookup,
   recordPlaceLookup,
 } from "@@/core/database/repositories/story-repository.location-metadata.ts";
-import type { PlaceLookupInput } from "@@/core/places/location-metadata.ts";
+import type { PlaceLookupInput } from "@@/core/domains/places/location-metadata.ts";
 import {
   enrichStoryMusic,
   findMusicMetadata,
@@ -25,7 +25,7 @@ import {
 } from "@@/core/database/repositories/story-repository.music-metadata.ts";
 import type { MusicMediaState, MusicMetadataReference } from "../entities/music-metadata.ts";
 import type { StoryAudio } from "../entities/story-audio.ts";
-import type { MusicObservationInput } from "@@/core/music/music-observation.ts";
+import type { MusicObservationInput } from "@@/core/domains/music/music-observation.ts";
 import {
   stories,
   type StoryRow,
@@ -34,15 +34,15 @@ import {
   storyStickers,
 } from "../entities/story.ts";
 import { createLogger, type Logger } from "@@/core/utils/logging.ts";
-import { StoryItemSchema } from "@@/core/instagram/story-schemas.ts";
-import type { StoryAnnotations } from "@@/core/stickers/story-types.ts";
-import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
+import { StoryItemSchema } from "@@/core/domains/instagram/story-schemas.ts";
+import type { StoryAnnotations } from "@@/core/domains/stickers/story-types.ts";
+import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
 import {
   getStoryAnnotations,
   getStoryAnnotationUpdates,
   getStoryLocations,
   getStoryStickers,
-} from "@@/core/stickers/story-sticker-location.ts";
+} from "@@/core/domains/stickers/story-sticker-location.ts";
 
 export interface StoryOwner {
   full_name?: string;

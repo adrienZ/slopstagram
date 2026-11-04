@@ -1,4 +1,4 @@
-import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
+import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";
 
 // The shapes of the external boundaries the runtime exposes. They live here, not in the domains
 // that call them, so runtime.ts imports nothing from those domains.

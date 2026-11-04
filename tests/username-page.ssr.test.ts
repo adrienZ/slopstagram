@@ -3,7 +3,7 @@ import { expect, test } from "vitest";
 import { within } from "@testing-library/dom";
 import { JSDOM } from "jsdom";
 import type { Runtime } from "@@/core/runtime/runtime.ts";
-import { VISION_MODEL, VISION_PROMPT } from "@@/core/vision/vision-analysis.ts";
+import { VISION_MODEL, VISION_PROMPT } from "@@/core/domains/vision/vision-analysis.ts";
 import { Route } from "../app/routes/users/$username.tsx";
 import { loadAccountTimeline } from "../app/loaders/account-timeline.ts";
 import { storyItem } from "./mock-helpers.ts";

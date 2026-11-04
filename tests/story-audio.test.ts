@@ -1,21 +1,21 @@
 import { Buffer } from "node:buffer";
-import { createFileCacheStorage } from "@@/core/media-store/cache-storage.ts";
+import { createFileCacheStorage } from "@@/core/domains/media-store/cache-storage.ts";
 import { startMediaServer, wavAudio } from "./media-server.ts";
 import { assert, test, expect } from "vitest";
 import { createDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
-import { dashAudioSource } from "@@/core/music/dash-audio.ts";
+import { dashAudioSource } from "@@/core/domains/music/dash-audio.ts";
 import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { processStoryAudio, cacheReportAudio } from "@@/core/music/report-audio.ts";
+import { processStoryAudio, cacheReportAudio } from "@@/core/domains/music/report-audio.ts";
 import { createMediaResponse } from "../server/routes/media/[...path].ts";
 import { groupTimelineStickers } from "../app/utils/timeline-stickers.ts";
 import { musicStickerItems, storyMusicPreviews } from "../app/utils/music-preview.ts";
-import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
-import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
-import { fetchStoriesManifest } from "@@/core/fetch-run/stories.ts";
+import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";
+import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
+import { fetchStoriesManifest } from "@@/core/domains/fetch-run/stories.ts";
 import { createMemoryCacheStorage } from "./memory-storage.ts";
 import {
   createCapturingLogger,

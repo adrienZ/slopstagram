@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { getLargestVersion } from "@@/core/instagram/story-parser.ts";
-import type { StoryVersion } from "@@/core/instagram/instagram-types.ts";
+import { getLargestVersion } from "@@/core/domains/instagram/story-parser.ts";
+import type { StoryVersion } from "@@/core/domains/instagram/instagram-types.ts";
 
 describe("getLargestVersion", () => {
   test("returns the candidate with the largest area", () => {

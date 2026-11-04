@@ -6,13 +6,13 @@ import { ReportRepository } from "@@/core/database/repositories/report-repositor
 import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
 import { UserSummaryRepository } from "@@/core/database/repositories/user-summary-repository.ts";
 import { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
-import { createBunqueue } from "@@/core/fetch-run/bunqueue.ts";
-import type { InstagramClient } from "@@/core/instagram/instagram-types.ts";
+import { createBunqueue } from "@@/core/domains/fetch-run/bunqueue.ts";
+import type { InstagramClient } from "@@/core/domains/instagram/instagram-types.ts";
 import {
   BASE_CACHE_DIR,
   createFileCacheStorage,
   type CacheStorage,
-} from "@@/core/media-store/cache-storage.ts";
+} from "@@/core/domains/media-store/cache-storage.ts";
 import { createDatabaseBackup } from "@@/core/database/backup.ts";
 import { APP_BACKUPS_DIR } from "@@/core/utils/app-data-paths.ts";
 import { createLogger, type Logger } from "@@/core/utils/logging.ts";

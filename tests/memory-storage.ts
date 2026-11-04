@@ -1,6 +1,6 @@
 import { createStorage, type Storage, type StorageValue } from "unstorage";
-import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
-import type { CacheStorage } from "@@/core/media-store/cache-storage.ts";
+import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
+import type { CacheStorage } from "@@/core/domains/media-store/cache-storage.ts";
 
 export function createMemoryStorage<T extends StorageValue>(): Storage<T> {
   // memoryDriver by default

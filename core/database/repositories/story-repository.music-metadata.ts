@@ -8,10 +8,13 @@ import {
   type MusicMediaState,
   type StoryMusicObservation,
 } from "@@/core/database/entities/music-metadata.ts";
-import type { StoryAnnotations } from "@@/core/stickers/story-types.ts";
-import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
-import type { MusicObservationInput } from "@@/core/music/music-observation.ts";
-import { planMusicMetadataWrite, planStoryMusicUpdates } from "@@/core/music/music-metadata.ts";
+import type { StoryAnnotations } from "@@/core/domains/stickers/story-types.ts";
+import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
+import type { MusicObservationInput } from "@@/core/domains/music/music-observation.ts";
+import {
+  planMusicMetadataWrite,
+  planStoryMusicUpdates,
+} from "@@/core/domains/music/music-metadata.ts";
 
 type MusicDatabase = Pick<DrizzleDatabase, "select" | "insert" | "update" | "delete">;
 

@@ -12,14 +12,14 @@ import {
 } from "../entities/report.ts";
 import { stories } from "../entities/story.ts";
 import { NO_ACCESSIBILITY_CAPTION } from "@@/core/utils/report-constants.ts";
-import { StoriesManifestReportSchema } from "@@/core/instagram/story-schemas.ts";
-import { createOutputUsers } from "@@/core/fetch-run/story-output.ts";
+import { StoriesManifestReportSchema } from "@@/core/domains/instagram/story-schemas.ts";
+import { createOutputUsers } from "@@/core/domains/fetch-run/story-output.ts";
 import type {
   StoriesManifestReport,
   StoryFetchFailure,
   StoryManifestItem,
   StoryManifestReel,
-} from "@@/core/fetch-run/report-types.ts";
+} from "@@/core/domains/fetch-run/report-types.ts";
 
 type ReportStoryRow = typeof reportStories.$inferSelect & { accessibilityCaption: string | null };
 

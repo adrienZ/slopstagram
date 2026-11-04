@@ -1,5 +1,5 @@
 import { musicStickerItems, type MusicStickerItem } from "./music-preview.ts";
-import type { StoryAnnotations } from "@@/core/stickers/story-types.ts";
+import type { StoryAnnotations } from "@@/core/domains/stickers/story-types.ts";
 import type { UserTimelineStory } from "@@/core/database/repositories/story-repository.ts";
 import { formatUserHandle } from "./helper.ts";
 

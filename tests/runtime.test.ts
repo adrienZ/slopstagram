@@ -1,5 +1,5 @@
 import { expect, test, type OnTestFinishedHandler } from "vitest";
-import { fetchStories } from "@@/core/fetch-run/stories.ts";
+import { fetchStories } from "@@/core/domains/fetch-run/stories.ts";
 import { getProductionRuntime } from "@@/core/runtime/production-runtime.ts";
 import { createCapturingLogger, noSleep } from "./mock-helpers.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";

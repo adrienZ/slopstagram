@@ -1,5 +1,5 @@
 import type { StoryMusicObservation } from "@@/core/database/entities/music-metadata.ts";
-import type { StoryAnnotations } from "@@/core/stickers/story-types.ts";
+import type { StoryAnnotations } from "@@/core/domains/stickers/story-types.ts";
 
 export interface MusicPreview {
   id: string;

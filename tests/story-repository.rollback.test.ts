@@ -1,5 +1,5 @@
 import { assert, expect, test } from "vitest";
-import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
+import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
 import type { DrizzleDatabase } from "@@/core/database/client.ts";
 import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
 import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";

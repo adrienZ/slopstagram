@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import { describe, test, expect } from "vitest";
 import sharp from "sharp";
-import { convertImageToJpeg } from "@@/core/media-store/image-conversion.ts";
+import { convertImageToJpeg } from "@@/core/domains/media-store/image-conversion.ts";
 
 describe("convertImageToJpeg", () => {
   test("converts a PNG buffer to a JPEG buffer", async () => {

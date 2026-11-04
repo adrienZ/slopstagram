@@ -6,10 +6,10 @@ import { z } from "zod";
 import {
   closeInstagramSession,
   openInstagramSession,
-} from "@@/core/instagram/playwright-session.ts";
+} from "@@/core/domains/instagram/playwright-session.ts";
 import { isJsonObject, JsonValueSchema } from "@@/core/utils/json-value.ts";
 import type { JsonObject, JsonValue } from "@@/core/utils/json-value.ts";
-import { createInstagramClient } from "@@/core/instagram/story-client.ts";
+import { createInstagramClient } from "@@/core/domains/instagram/story-client.ts";
 
 // Keys whose values identify a person, a story, a place or a request; each distinct value gets a
 // stable synthetic one. Any key ending in id, ids, pk or fbid is treated the same way.

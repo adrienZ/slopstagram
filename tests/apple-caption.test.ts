@@ -1,8 +1,8 @@
 import { Buffer } from "node:buffer";
 import { test, expect } from "vitest";
-import { resolveAppleCaptionsForReport } from "@@/core/vision/apple-caption.ts";
-import { AppleOcrUnavailableError } from "@@/core/vision/apple-ocr.ts";
-import { fetchStoriesManifest } from "@@/core/fetch-run/stories.ts";
+import { resolveAppleCaptionsForReport } from "@@/core/domains/vision/apple-caption.ts";
+import { AppleOcrUnavailableError } from "@@/core/domains/vision/apple-ocr.ts";
+import { fetchStoriesManifest } from "@@/core/domains/fetch-run/stories.ts";
 import {
   createCapturingLogger,
   createClient,

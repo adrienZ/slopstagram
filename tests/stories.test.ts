@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
-import { getMediaCacheKey } from "@@/core/media-store/cache-storage.ts";
-import { fetchStoriesManifest } from "@@/core/fetch-run/stories.ts";
+import { getMediaCacheKey } from "@@/core/domains/media-store/cache-storage.ts";
+import { fetchStoriesManifest } from "@@/core/domains/fetch-run/stories.ts";
 import {
   createClient,
   fixedNow,

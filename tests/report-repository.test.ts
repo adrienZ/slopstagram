@@ -3,7 +3,7 @@ import { createDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { ReportRepository } from "@@/core/database/repositories/report-repository.ts";
 import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
-import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
+import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";
 
 function createReport(name: string): StoriesManifestReport {
   return {

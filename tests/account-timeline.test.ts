@@ -5,7 +5,7 @@ import {
   getTimelinePreviewPaths,
   groupStoriesByPublishedDate,
 } from "../app/loaders/account-timeline.ts";
-import { VISION_MODEL, VISION_PROMPT } from "@@/core/vision/vision-analysis.ts";
+import { VISION_MODEL, VISION_PROMPT } from "@@/core/domains/vision/vision-analysis.ts";
 import type { UserTimelineStory } from "@@/core/database/repositories/story-repository.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 

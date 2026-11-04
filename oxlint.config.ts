@@ -140,7 +140,7 @@ export default defineConfig({
       files: [
         "core/runtime/**",
         "core/database/**",
-        "core/media-store/cache-storage.ts",
+        "core/domains/media-store/cache-storage.ts",
         "tests/**",
       ],
       rules: { "no-restricted-imports": restrictImports([], { root: true }) },

@@ -2,7 +2,7 @@ import { assert, describe, test, expect } from "vitest";
 import { createDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
-import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
+import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
 import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
 
 function withLabelOnlyAnnotations(story: StoryItem): StoryItem {

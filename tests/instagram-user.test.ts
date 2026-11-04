@@ -2,8 +2,8 @@ import { describe, test, expect } from "vitest";
 import {
   hydrateReportInstagramUsers,
   persistReportInstagramUsers,
-} from "@@/core/accounts/instagram-user.ts";
-import type { StoriesManifestReport } from "@@/core/fetch-run/report-types.ts";
+} from "@@/core/domains/accounts/instagram-user.ts";
+import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 
 function createReportWithInstagramUser(): StoriesManifestReport {

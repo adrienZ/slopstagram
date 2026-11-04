@@ -10,8 +10,8 @@ import { InstagramUserRepository } from "@@/core/database/repositories/instagram
 import { ReportRepository } from "@@/core/database/repositories/report-repository.ts";
 import { storyStickers } from "@@/core/database/entities/story.ts";
 import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
-import { createManifestUsers, createOutputUsers } from "@@/core/fetch-run/story-output.ts";
-import { fetchStoriesManifest } from "@@/core/fetch-run/stories.ts";
+import { createManifestUsers, createOutputUsers } from "@@/core/domains/fetch-run/story-output.ts";
+import { fetchStoriesManifest } from "@@/core/domains/fetch-run/stories.ts";
 import { createMemoryCacheStorage, createMemoryStorage } from "./memory-storage.ts";
 import {
   createCapturingLogger,
@@ -21,7 +21,7 @@ import {
   storyItemWithStickers,
   reelsResponse,
 } from "./mock-helpers.ts";
-import type { StoryItem } from "@@/core/instagram/instagram-types.ts";
+import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
 
 function readStoredStory(repository: StoryRepository, mediaPk = "m1") {
   const stored = repository.findByMediaPk(mediaPk);

@@ -2,7 +2,10 @@ import { spawn } from "node:child_process";
 import { once } from "node:events";
 import process from "node:process";
 import { definePlugin } from "nitro";
-import { startWarmCacheQueue, WARM_CACHE_QUEUE_NAME } from "@@/core/fetch-run/warm-cache-queue.ts";
+import {
+  startWarmCacheQueue,
+  WARM_CACHE_QUEUE_NAME,
+} from "@@/core/domains/fetch-run/warm-cache-queue.ts";
 import { getProductionRuntime } from "@@/core/runtime/production-runtime.ts";
 
 function spawnBunqueueServer(onError: (error: Error) => void) {

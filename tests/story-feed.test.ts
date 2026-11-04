@@ -3,10 +3,10 @@ import {
   createStoryFeed,
   createStoryDayFeed,
   createReportFeed,
-} from "@@/core/story-feed/story-feed.ts";
-import { getStoryDate, getStoryDayRange } from "@@/core/story-feed/story-days.ts";
+} from "@@/core/domains/story-feed/story-feed.ts";
+import { getStoryDate, getStoryDayRange } from "@@/core/domains/story-feed/story-days.ts";
 import { readStoryFeedSources } from "../app/loaders/story-feed.ts";
-import { resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
+import { resolveUserSummariesForReport } from "@@/core/domains/accounts/user-summary.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 
 async function createFixture(context: TestContext) {

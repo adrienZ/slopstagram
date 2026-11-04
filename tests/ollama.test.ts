@@ -1,5 +1,5 @@
 import { test, vi, expect } from "vitest";
-import { getOllamaClient } from "@@/core/vision/ollama.ts";
+import { getOllamaClient } from "@@/core/domains/vision/ollama.ts";
 
 test("an explicit host overrides OLLAMA_HOST and accepts a generation endpoint", async () => {
   vi.stubEnv("OLLAMA_HOST", "http://environment.example:11434");

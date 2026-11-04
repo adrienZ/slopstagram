@@ -1,8 +1,8 @@
 import { Buffer } from "node:buffer";
 import { describe, test, vi, expect } from "vitest";
 import { z } from "zod";
-import { VISION_SERVER_NOT_RUNNING } from "@@/core/vision/vision-analysis.ts";
-import { resolveVisionForReport } from "@@/core/vision/vision-report.ts";
+import { VISION_SERVER_NOT_RUNNING } from "@@/core/domains/vision/vision-analysis.ts";
+import { resolveVisionForReport } from "@@/core/domains/vision/vision-report.ts";
 import { createVisionReport, previewSource } from "./mock-helpers.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 

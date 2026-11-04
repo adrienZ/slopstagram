@@ -1,12 +1,12 @@
 import { mkdtemp, readFile, rm } from "node:fs/promises";
-import { createFileCacheStorage } from "@@/core/media-store/cache-storage.ts";
+import { createFileCacheStorage } from "@@/core/domains/media-store/cache-storage.ts";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { assert, test, expect } from "vitest";
 import { createDrizzle } from "@@/core/database/client.ts";
 import { migrateDatabase } from "@@/core/database/migrate.ts";
 import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
-import { processMusicMedia } from "@@/core/music/music-media.ts";
+import { processMusicMedia } from "@@/core/domains/music/music-media.ts";
 import { startMediaServer, wavAudio } from "./media-server.ts";
 
 test("music processing publishes audio only and reuses it without provider requests", async (context) => {

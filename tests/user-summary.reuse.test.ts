@@ -1,7 +1,10 @@
 import { assert, test, expect, type TestContext } from "vitest";
 import { readStoryFeedSources } from "../app/loaders/story-feed.ts";
 import { userSummaries } from "@@/core/database/entities/user-summary.ts";
-import { readUserSummaries, resolveUserSummariesForReport } from "@@/core/accounts/user-summary.ts";
+import {
+  readUserSummaries,
+  resolveUserSummariesForReport,
+} from "@@/core/domains/accounts/user-summary.ts";
 import { createSummaryReport } from "./mock-helpers.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 import { countSummaries, saveSummaryUsers } from "./test-database.ts";

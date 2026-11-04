@@ -9,7 +9,7 @@ import {
   GalleryPageSchema,
   parseGalleryPage,
   parseTrayResponse,
-} from "@@/core/instagram/story-client.ts";
+} from "@@/core/domains/instagram/story-client.ts";
 import { readRecordedPayloads, seedRecordedStories } from "./seed.ts";
 import { createTestRuntime } from "./test-runtime.ts";
 

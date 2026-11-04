@@ -4,7 +4,10 @@ import { mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "vitest";
-import { BASE_CACHE_DIR, createFileCacheStorage } from "@@/core/media-store/cache-storage.ts";
+import {
+  BASE_CACHE_DIR,
+  createFileCacheStorage,
+} from "@@/core/domains/media-store/cache-storage.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 import { storyItem } from "./mock-helpers.ts";
 
