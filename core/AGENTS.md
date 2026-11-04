@@ -24,7 +24,7 @@ Every folder below lives in `domains/`.
 - `music/`: music assets and media, music observations, story audio, DASH audio.
 - `vision/`: the Ollama client, vision analysis, Apple OCR and the Apple caption step.
 - `accounts/`: user summaries, Instagram user persistence and report user keys.
-- `story-feed/`: the story feed and story days.
+- `story-feed/`: the story feed, story days and the feed user summary read.
 - `fetch-run/`: the fetch run pipeline, reports, story fetching, the story cache and the hourly
   job.
 

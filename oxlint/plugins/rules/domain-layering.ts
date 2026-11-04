@@ -18,7 +18,7 @@ const dependencies = new Map<string, Array<string>>([
   ["music", ["database", "media-store", "utils"]],
   ["vision", ["database", "media-store", "utils"]],
   ["accounts", ["database", "vision", "utils"]],
-  ["story-feed", ["database", "vision", "utils"]],
+  ["story-feed", ["accounts", "database", "vision", "utils"]],
   ["fetch-run", ["*"]],
   ["runtime", ["*"]],
 ]);
