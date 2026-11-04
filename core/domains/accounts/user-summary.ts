@@ -4,15 +4,15 @@ import { clearTimeout, setTimeout } from "node:timers";
 import type { Fetch as OllamaFetch } from "ollama";
 import { z } from "zod";
 import { getOllamaClient } from "@@/core/domains/vision/ollama.ts";
-import type { UserSummaryRepository } from "@@/core/database/repositories/user-summary-repository.ts";
-import type { Runtime } from "@@/core/runtime/runtime.ts";
+import type { UserSummaryRepository } from "@@/core/domains/database/repositories/user-summary-repository.ts";
+import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
 import { getReportUserKey } from "./report-user-key.ts";
 import type {
   StoriesManifestReport,
   StoryOutputUser,
 } from "@@/core/domains/fetch-run/report-types.ts";
-import type { VisionResult } from "@@/core/database/entities/vision.ts";
+import type { VisionResult } from "@@/core/domains/database/entities/vision.ts";
 
 type HttpFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 

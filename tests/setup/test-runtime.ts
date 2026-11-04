@@ -1,6 +1,10 @@
 import { afterAll, beforeAll, type TestContext } from "vitest";
-import type { DrizzleDatabase } from "@@/core/database/client.ts";
-import { createRuntime, type Runtime, type RuntimeBoundaries } from "@@/core/runtime/runtime.ts";
+import type { DrizzleDatabase } from "@@/core/domains/database/client.ts";
+import {
+  createRuntime,
+  type Runtime,
+  type RuntimeBoundaries,
+} from "@@/core/domains/runtime/runtime.ts";
 import { createRecordedInstagramClient } from "./seed.ts";
 import { createMemoryCacheStorage } from "../memory-storage.ts";
 import { createMockLogger } from "../mock-helpers.ts";

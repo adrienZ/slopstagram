@@ -3,9 +3,9 @@ import { createFileCacheStorage } from "@@/core/domains/media-store/cache-storag
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { assert, test, expect } from "vitest";
-import { createDrizzle } from "@@/core/database/client.ts";
-import { migrateDatabase } from "@@/core/database/migrate.ts";
-import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
+import { createDrizzle } from "@@/core/domains/database/client.ts";
+import { migrateDatabase } from "@@/core/domains/database/migrate.ts";
+import { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 import { processMusicMedia } from "@@/core/domains/music/music-media.ts";
 import { startMediaServer, wavAudio } from "./media-server.ts";
 

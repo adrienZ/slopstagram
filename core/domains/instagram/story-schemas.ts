@@ -1,14 +1,14 @@
 import { z } from "zod";
-import { StoryLocationObservationSchema } from "@@/core/database/entities/location-metadata.ts";
-import { StoryMusicObservationSchema } from "@@/core/database/entities/music-metadata.ts";
-import { StoryAudioSchema } from "@@/core/database/entities/story-audio.ts";
+import { StoryLocationObservationSchema } from "@@/core/domains/database/entities/location-metadata.ts";
+import { StoryMusicObservationSchema } from "@@/core/domains/database/entities/music-metadata.ts";
+import { StoryAudioSchema } from "@@/core/domains/database/entities/story-audio.ts";
 import {
   ReportFailureSchema,
   ReportSchema,
   ReportStoryGroupSchema,
   ReportStorySchema,
-} from "@@/core/database/entities/report.ts";
-import { StoryStickerSchema } from "@@/core/database/entities/story.ts";
+} from "@@/core/domains/database/entities/report.ts";
+import { StoryStickerSchema } from "@@/core/domains/database/entities/story.ts";
 import { JsonValueSchema } from "@@/core/utils/json-value.ts";
 
 const StoryVersionSchema = z.object({

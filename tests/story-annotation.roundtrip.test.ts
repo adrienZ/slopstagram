@@ -4,12 +4,12 @@ import path from "node:path";
 import { URL, fileURLToPath } from "node:url";
 import { migrate } from "drizzle-orm/node-sqlite/migrator";
 import { assert, test, expect } from "vitest";
-import { createDrizzle } from "@@/core/database/client.ts";
-import { migrateDatabase } from "@@/core/database/migrate.ts";
-import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
-import { ReportRepository } from "@@/core/database/repositories/report-repository.ts";
-import { storyStickers } from "@@/core/database/entities/story.ts";
-import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
+import { createDrizzle } from "@@/core/domains/database/client.ts";
+import { migrateDatabase } from "@@/core/domains/database/migrate.ts";
+import { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
+import { ReportRepository } from "@@/core/domains/database/repositories/report-repository.ts";
+import { storyStickers } from "@@/core/domains/database/entities/story.ts";
+import { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 import { createManifestUsers, createOutputUsers } from "@@/core/domains/fetch-run/story-output.ts";
 import { fetchStoriesManifest } from "@@/core/domains/fetch-run/stories.ts";
 import { createMemoryCacheStorage, createMemoryStorage } from "./memory-storage.ts";
@@ -37,7 +37,7 @@ test("upgrading existing occurrences preserves duplicates, order and provenance"
     database.$client.close();
     rmSync(staging, { recursive: true, force: true });
   });
-  const migrations = fileURLToPath(new URL("../core/database/migrations", import.meta.url));
+  const migrations = fileURLToPath(new URL("../core/domains/database/migrations", import.meta.url));
   for (const name of readdirSync(migrations)) {
     if (name < "20261024001923") {
       cpSync(path.join(migrations, name), path.join(staging, name), { recursive: true });

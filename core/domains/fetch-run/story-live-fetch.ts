@@ -1,5 +1,5 @@
-import type { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
-import type { Runtime } from "@@/core/runtime/runtime.ts";
+import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
+import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { extractReels } from "@@/core/domains/instagram/story-client.ts";
 import { storeReturnedReels } from "./story-cache.ts";
 import {

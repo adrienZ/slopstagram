@@ -4,12 +4,12 @@ import { createStoryFeed, readStoryFeedVision } from "@@/core/domains/story-feed
 import { cacheReportImages } from "@@/core/domains/media-store/image-cache.ts";
 import { cacheReportAudio } from "@@/core/domains/music/report-audio.ts";
 import { persistReportInstagramUsers } from "@@/core/domains/accounts/instagram-user.ts";
-import type { ReportRepository } from "@@/core/database/repositories/report-repository.ts";
+import type { ReportRepository } from "@@/core/domains/database/repositories/report-repository.ts";
 import type { StoriesManifestReport } from "./report-types.ts";
 import { resolveUserSummariesForReport } from "@@/core/domains/accounts/user-summary.ts";
 import { resolveVisionForReport } from "@@/core/domains/vision/vision-report.ts";
 import { fetchStories } from "./stories.ts";
-import type { Runtime } from "@@/core/runtime/runtime.ts";
+import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import pkg from "../../../package.json" with { type: "json" };
 
 export interface CreateReportOptions {

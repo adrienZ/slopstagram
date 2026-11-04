@@ -4,8 +4,8 @@ import {
   processMusicMedia,
   processMusicArtwork,
 } from "@@/core/domains/music/music-media.ts";
-import type { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
-import type { Runtime } from "@@/core/runtime/runtime.ts";
+import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
+import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 
 type StoryAudioRuntime = Pick<Runtime, "fetchMedia" | "storage"> & {
   stories: Pick<

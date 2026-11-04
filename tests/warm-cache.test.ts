@@ -8,8 +8,8 @@ import { runWarmCacheJob } from "@@/core/domains/fetch-run/warm-cache.ts";
 import { audioUrl, createWorld, musicStoryPk, now, storyPks } from "./setup/report-world.ts";
 import { createFailingClient } from "./setup/recorded-client.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
-import type { FetchRunQueue } from "@@/core/runtime/fetch-boundaries.ts";
-import type { Runtime } from "@@/core/runtime/runtime.ts";
+import type { FetchRunQueue } from "@@/core/domains/runtime/fetch-boundaries.ts";
+import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 
 // The job reads the clock itself. The recorded stories are dated around `now`, so the feed
 // that the user summaries are written from only holds them when the clock reads `now` too.

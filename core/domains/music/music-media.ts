@@ -6,7 +6,7 @@ import { parseBuffer } from "music-metadata";
 import type {
   MusicMediaState,
   MusicMetadataReference,
-} from "@@/core/database/entities/music-metadata.ts";
+} from "@@/core/domains/database/entities/music-metadata.ts";
 import { audioDurationMs } from "./audio-duration.ts";
 import {
   AUDIO_STORAGE_DIR,
@@ -14,8 +14,8 @@ import {
   type ImageCacheStorage,
 } from "@@/core/domains/media-store/cache-storage.ts";
 import { audioFileExtension } from "./music-media-types.ts";
-import type { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
-import type { Runtime } from "@@/core/runtime/runtime.ts";
+import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
+import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 
 const MAX_MEDIA_BYTES = 60 * 1024 * 1024;
 

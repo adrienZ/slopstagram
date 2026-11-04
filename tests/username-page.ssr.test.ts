@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { expect, test } from "vitest";
 import { within } from "@testing-library/dom";
 import { JSDOM } from "jsdom";
-import type { Runtime } from "@@/core/runtime/runtime.ts";
+import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { VISION_MODEL, VISION_PROMPT } from "@@/core/domains/vision/vision-analysis.ts";
 import { Route } from "../app/routes/users/$username.tsx";
 import { loadAccountTimeline } from "../app/loaders/account-timeline.ts";

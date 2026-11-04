@@ -1,4 +1,4 @@
-import type { Runtime } from "@@/core/runtime/runtime.ts";
+import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { runWarmCacheJob } from "./warm-cache.ts";
 
 export const WARM_CACHE_QUEUE_NAME = "warm-cache";

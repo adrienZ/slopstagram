@@ -1,10 +1,10 @@
 import { z } from "zod";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
-import type { StoryLocationObservation } from "@@/core/database/entities/location-metadata.ts";
+import type { StoryLocationObservation } from "@@/core/domains/database/entities/location-metadata.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
 import type { PlaceLookupInput } from "./location-metadata.ts";
 import type { InstagramClient } from "@@/core/domains/instagram/instagram-types.ts";
-import type { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
+import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 
 type PlaceLookupRepository = Pick<StoryRepository, "findByMediaPk"> &
   Partial<Pick<StoryRepository, "recordFailedPlaceLookup" | "recordPlaceLookup">>;

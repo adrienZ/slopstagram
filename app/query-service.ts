@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { notFound } from "@tanstack/react-router";
 import { z } from "zod";
-import { getProductionRuntime } from "@@/core/runtime/production-runtime.ts";
+import { getProductionRuntime } from "@@/core/domains/runtime/production-runtime.ts";
 import { storyDateSchema } from "@@/core/domains/story-feed/story-days.ts";
 
 export const getReport = createServerFn({ method: "GET" })

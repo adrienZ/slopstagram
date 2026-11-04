@@ -1,10 +1,10 @@
 import type {
   StoryRepository,
   UserTimelineStory,
-} from "@@/core/database/repositories/story-repository.ts";
+} from "@@/core/domains/database/repositories/story-repository.ts";
 import type { StoryOutputUser } from "@@/core/domains/fetch-run/report-types.ts";
-import type { VisionResult } from "@@/core/database/entities/vision.ts";
-import type { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
+import type { VisionResult } from "@@/core/domains/database/entities/vision.ts";
+import type { VisionRepository } from "@@/core/domains/database/repositories/vision-repository.ts";
 import { readCurrentVisionResult } from "@@/core/domains/vision/vision-analysis.ts";
 import { getStoryDate, getStoryDayRange, storyDateSchema } from "./story-days.ts";
 

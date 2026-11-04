@@ -1,7 +1,7 @@
 import process from "node:process";
 import { pathToFileURL } from "node:url";
 import { createReport } from "@@/core/domains/fetch-run/report.ts";
-import { getProductionRuntime } from "@@/core/runtime/production-runtime.ts";
+import { getProductionRuntime } from "@@/core/domains/runtime/production-runtime.ts";
 
 async function main(): Promise<void> {
   await createReport(getProductionRuntime());

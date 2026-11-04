@@ -44,7 +44,7 @@ const baseline = new Map<string, Array<string>>([
   ["stickers/story-sticker-location.ts", ["music", "places"]],
 ]);
 
-// "core/domains/<domain>/<module>" or "core/<domain>/<module>" (database, runtime, utils) as ["<domain>", "<domain>/<module>"], or null outside core.
+// "core/domains/<domain>/<module>" or "core/utils/<module>" as ["<domain>", "<domain>/<module>"], or null outside core.
 function locate(file: string): [string, string] | null {
   const match = /\/core\/(?:domains\/)?(?<module>(?<domain>[^/]+)\/.+)$/u.exec(file);
   return match?.groups ? [match.groups.domain, match.groups.module] : null;

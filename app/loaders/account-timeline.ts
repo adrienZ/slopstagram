@@ -4,16 +4,16 @@ import type { StoryOutputUser } from "@@/core/domains/fetch-run/report-types.ts"
 import type {
   UserTimelineStory,
   StoryRepository,
-} from "@@/core/database/repositories/story-repository.ts";
-import type { VisionResult } from "@@/core/database/entities/vision.ts";
+} from "@@/core/domains/database/repositories/story-repository.ts";
+import type { VisionResult } from "@@/core/domains/database/entities/vision.ts";
 import { createStoredStoryUser } from "@@/core/domains/story-feed/story-feed.ts";
-import type { AppleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
-import type { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
+import type { AppleVisionRepository } from "@@/core/domains/database/repositories/apple-vision-repository.ts";
+import type { VisionRepository } from "@@/core/domains/database/repositories/vision-repository.ts";
 import {
   describeOutdatedVision,
   type OutdatedVision,
 } from "@@/core/domains/vision/vision-analysis.ts";
-import type { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
+import type { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
 
 import { getStoryDate } from "@@/core/domains/story-feed/story-days.ts";
 import { createStoryCards, withStoryStickers } from "../utils/story-cards.ts";

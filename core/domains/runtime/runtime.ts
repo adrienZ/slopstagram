@@ -1,11 +1,11 @@
-import type { DrizzleDatabase } from "@@/core/database/client.ts";
-import { AppleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
-import { FetchRunRepository } from "@@/core/database/repositories/fetch-run-repository.ts";
-import { InstagramUserRepository } from "@@/core/database/repositories/instagram-user-repository.ts";
-import { ReportRepository } from "@@/core/database/repositories/report-repository.ts";
-import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
-import { UserSummaryRepository } from "@@/core/database/repositories/user-summary-repository.ts";
-import { VisionRepository } from "@@/core/database/repositories/vision-repository.ts";
+import type { DrizzleDatabase } from "@@/core/domains/database/client.ts";
+import { AppleVisionRepository } from "@@/core/domains/database/repositories/apple-vision-repository.ts";
+import { FetchRunRepository } from "@@/core/domains/database/repositories/fetch-run-repository.ts";
+import { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
+import { ReportRepository } from "@@/core/domains/database/repositories/report-repository.ts";
+import { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
+import { UserSummaryRepository } from "@@/core/domains/database/repositories/user-summary-repository.ts";
+import { VisionRepository } from "@@/core/domains/database/repositories/vision-repository.ts";
 import { createBunqueue } from "@@/core/domains/fetch-run/bunqueue.ts";
 import type { InstagramClient } from "@@/core/domains/instagram/instagram-types.ts";
 import {
@@ -13,7 +13,7 @@ import {
   createFileCacheStorage,
   type CacheStorage,
 } from "@@/core/domains/media-store/cache-storage.ts";
-import { createDatabaseBackup } from "@@/core/database/backup.ts";
+import { createDatabaseBackup } from "@@/core/domains/database/backup.ts";
 import { APP_BACKUPS_DIR } from "@@/core/utils/app-data-paths.ts";
 import { createLogger, type Logger } from "@@/core/utils/logging.ts";
 import type {
@@ -22,7 +22,7 @@ import type {
   FetchImage,
   FetchMedia,
   FetchRunQueue,
-} from "@@/core/runtime/fetch-boundaries.ts";
+} from "@@/core/domains/runtime/fetch-boundaries.ts";
 
 type HttpFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 

@@ -3,7 +3,7 @@ import path from "node:path";
 import { z } from "zod";
 import { type JsonObject, type JsonValue, JsonValueSchema } from "@@/core/utils/json-value.ts";
 import { persistReportInstagramUsers } from "@@/core/domains/accounts/instagram-user.ts";
-import type { Runtime } from "@@/core/runtime/runtime.ts";
+import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { fetchStories } from "@@/core/domains/fetch-run/stories.ts";
 import { GalleryPageSchema } from "@@/core/domains/instagram/story-client.ts";
 import { createRecordedClient } from "./recorded-client.ts";

@@ -6,7 +6,7 @@ import {
   groupStoriesByPublishedDate,
 } from "../app/loaders/account-timeline.ts";
 import { VISION_MODEL, VISION_PROMPT } from "@@/core/domains/vision/vision-analysis.ts";
-import type { UserTimelineStory } from "@@/core/database/repositories/story-repository.ts";
+import type { UserTimelineStory } from "@@/core/domains/database/repositories/story-repository.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 
 function timelineStory(pk: string, takenAt: number): UserTimelineStory {

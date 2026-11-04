@@ -1,7 +1,7 @@
 import { isAppleOcrUnavailable, recognizeAppleCaption } from "./apple-ocr.ts";
 import type { CachedReportImages } from "@@/core/domains/media-store/image-cache.ts";
-import type { AppleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
-import type { Runtime } from "@@/core/runtime/runtime.ts";
+import type { AppleVisionRepository } from "@@/core/domains/database/repositories/apple-vision-repository.ts";
+import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";
 
 interface LocalStoryPreview {

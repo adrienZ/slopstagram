@@ -1,7 +1,7 @@
 import process from "node:process";
-import type { AppleVisionRepository } from "@@/core/database/repositories/apple-vision-repository.ts";
+import type { AppleVisionRepository } from "@@/core/domains/database/repositories/apple-vision-repository.ts";
 import { readCachedImage } from "@@/core/domains/media-store/image-cache.ts";
-import type { Runtime } from "@@/core/runtime/runtime.ts";
+import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { NO_APPLE_CAPTION } from "@@/core/utils/report-constants.ts";
 
 export class AppleOcrUnavailableError extends Error {

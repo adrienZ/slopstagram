@@ -1,4 +1,4 @@
-import { StoryMusicObservationSchema } from "@@/core/database/entities/music-metadata.ts";
+import { StoryMusicObservationSchema } from "@@/core/domains/database/entities/music-metadata.ts";
 import { expect, test } from "vitest";
 import { musicStickerItems } from "../app/utils/music-preview.ts";
 import type { StoryAnnotations } from "@@/core/domains/stickers/story-types.ts";

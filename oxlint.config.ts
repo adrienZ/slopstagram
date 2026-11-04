@@ -40,7 +40,7 @@ const privateRepositoryHelpers: RestrictedPattern = {
     "story-repository.<aspect>.ts holds helpers private to story-repository.ts. Call the repository method instead of importing the helper.",
 };
 
-// Only the composition root, core/runtime, builds what holds state: the repositories, the database and the stores.
+// Only the composition root, core/domains/runtime, builds what holds state: the repositories, the database and the stores.
 const compositionRootPaths: Array<RestrictedPath> = [
   {
     name: "node:sqlite",
@@ -58,19 +58,19 @@ const compositionRootPatterns: Array<RestrictedPattern> = [
     group: ["**/database/repositories/*-repository.ts"],
     allowTypeImports: true,
     message:
-      "Only the composition root (core/runtime) constructs repositories. Take the runtime as a parameter and import the type only.",
+      "Only the composition root (core/domains/runtime) constructs repositories. Take the runtime as a parameter and import the type only.",
   },
   {
     group: ["**/database/client.ts"],
     importNames: ["createDrizzle"],
     message:
-      "Only the composition root (core/runtime) opens the database. Take the runtime as a parameter.",
+      "Only the composition root (core/domains/runtime) opens the database. Take the runtime as a parameter.",
   },
   {
     group: ["**/media-store/cache-storage.ts"],
     importNames: ["createFileCacheStorage"],
     message:
-      "Only the composition root (core/runtime) opens the stores. Take the runtime as a parameter.",
+      "Only the composition root (core/domains/runtime) opens the stores. Take the runtime as a parameter.",
   },
 ];
 
@@ -138,8 +138,8 @@ export default defineConfig({
     {
       // The composition root, and what it builds from; tests build their own repositories, databases and stores.
       files: [
-        "core/runtime/**",
-        "core/database/**",
+        "core/domains/runtime/**",
+        "core/domains/database/**",
         "core/domains/media-store/cache-storage.ts",
         "tests/**",
       ],
@@ -147,7 +147,7 @@ export default defineConfig({
     },
     {
       // The only importer of its helpers.
-      files: ["core/database/repositories/story-repository.ts"],
+      files: ["core/domains/database/repositories/story-repository.ts"],
       rules: {
         "no-restricted-imports": ["error", { paths: restrictedReactPaths }],
       },
@@ -169,7 +169,7 @@ export default defineConfig({
       rules: {
         "no-restricted-imports": restrictImports([
           {
-            group: ["@@/core/database/repositories/*", "@@/core/database/*"],
+            group: ["@@/core/domains/database/repositories/*", "@@/core/domains/database/*"],
             allowTypeImports: true,
             message:
               "Pages and components get their data from a loader. Import types only, not repositories or the database client.",

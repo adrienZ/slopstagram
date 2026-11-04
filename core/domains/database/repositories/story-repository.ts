@@ -4,7 +4,7 @@ import {
   findStoryAudio,
   saveStoryAudio,
   saveStoryAudioMedia,
-} from "@@/core/database/repositories/story-repository.audio.ts";
+} from "@@/core/domains/database/repositories/story-repository.audio.ts";
 import { and, asc, desc, eq, gt, gte, lt, lte, notInArray } from "drizzle-orm";
 import type { DrizzleDatabase } from "../client.ts";
 import { instagramUsers } from "../entities/instagram-user.ts";
@@ -14,7 +14,7 @@ import {
   readPlaceDetails,
   recordFailedPlaceLookup,
   recordPlaceLookup,
-} from "@@/core/database/repositories/story-repository.location-metadata.ts";
+} from "@@/core/domains/database/repositories/story-repository.location-metadata.ts";
 import type { PlaceLookupInput } from "@@/core/domains/places/location-metadata.ts";
 import {
   enrichStoryMusic,
@@ -22,7 +22,7 @@ import {
   readMusicObservations,
   refreshMusicAsset,
   saveMusicMedia,
-} from "@@/core/database/repositories/story-repository.music-metadata.ts";
+} from "@@/core/domains/database/repositories/story-repository.music-metadata.ts";
 import type { MusicMediaState, MusicMetadataReference } from "../entities/music-metadata.ts";
 import type { StoryAudio } from "../entities/story-audio.ts";
 import type { MusicObservationInput } from "@@/core/domains/music/music-observation.ts";

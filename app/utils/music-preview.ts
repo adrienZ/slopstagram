@@ -1,4 +1,4 @@
-import type { StoryMusicObservation } from "@@/core/database/entities/music-metadata.ts";
+import type { StoryMusicObservation } from "@@/core/domains/database/entities/music-metadata.ts";
 import type { StoryAnnotations } from "@@/core/domains/stickers/story-types.ts";
 
 export interface MusicPreview {

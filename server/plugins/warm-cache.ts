@@ -6,7 +6,7 @@ import {
   startWarmCacheQueue,
   WARM_CACHE_QUEUE_NAME,
 } from "@@/core/domains/fetch-run/warm-cache-queue.ts";
-import { getProductionRuntime } from "@@/core/runtime/production-runtime.ts";
+import { getProductionRuntime } from "@@/core/domains/runtime/production-runtime.ts";
 
 function spawnBunqueueServer(onError: (error: Error) => void) {
   const server = spawn("npm", ["run", "bunqueue:server"], {

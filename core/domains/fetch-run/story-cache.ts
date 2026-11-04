@@ -1,7 +1,7 @@
 import { getMediaCacheKey } from "@@/core/domains/media-store/cache-storage.ts";
 import type { StoryItem, StoryReel } from "@@/core/domains/instagram/instagram-types.ts";
-import type { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
-import type { Runtime } from "@@/core/runtime/runtime.ts";
+import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
+import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 
 export async function storeReturnedReels(
   {

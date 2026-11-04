@@ -1,10 +1,10 @@
 import type { TestContext } from "vitest";
-import { createDrizzle } from "@@/core/database/client.ts";
-import { migrateDatabase } from "@@/core/database/migrate.ts";
+import { createDrizzle } from "@@/core/domains/database/client.ts";
+import { migrateDatabase } from "@@/core/domains/database/migrate.ts";
 import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
-import { userSummaries } from "@@/core/database/entities/user-summary.ts";
-import type { Runtime } from "@@/core/runtime/runtime.ts";
-import { StoryRepository } from "@@/core/database/repositories/story-repository.ts";
+import { userSummaries } from "@@/core/domains/database/entities/user-summary.ts";
+import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
+import { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 import { createMemoryStorage } from "./memory-storage.ts";
 
 export function createMigratedDatabase() {

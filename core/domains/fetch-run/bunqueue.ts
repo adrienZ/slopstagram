@@ -1,5 +1,5 @@
 import { Bunqueue } from "bunqueue-client";
-import type { FetchRunQueue } from "@@/core/runtime/fetch-boundaries.ts";
+import type { FetchRunQueue } from "@@/core/domains/runtime/fetch-boundaries.ts";
 
 export function createBunqueue(...[name, processor]: Parameters<FetchRunQueue>) {
   return new Bunqueue(name, {

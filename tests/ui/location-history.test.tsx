@@ -3,7 +3,7 @@ import { beforeAll, expect, test } from "vitest";
 import { screen, within } from "@testing-library/react";
 import { Route } from "../../app/routes/users/$username.tsx";
 import type { AccountTimelinePageData } from "../../app/loaders/account-timeline.ts";
-import type { StoryLocationObservation } from "@@/core/database/entities/location-metadata.ts";
+import type { StoryLocationObservation } from "@@/core/domains/database/entities/location-metadata.ts";
 import {
   pageNow,
   regroupTimeline,
