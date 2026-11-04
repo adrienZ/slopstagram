@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ReportRouteImport } from './routes/report'
+import { Route as MediaSplatRouteImport } from './routes/media/$'
 import { Route as UsersUsernameRouteImport } from './routes/users/$username'
 
 const ReportRoute = ReportRouteImport.update({
   id: '/report',
   path: '/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MediaSplatRoute = MediaSplatRouteImport.update({
+  id: '/media/$',
+  path: '/media/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UsersUsernameRoute = UsersUsernameRouteImport.update({
@@ -25,27 +31,31 @@ const UsersUsernameRoute = UsersUsernameRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/report': typeof ReportRoute
+  '/media/$': typeof MediaSplatRoute
   '/users/$username': typeof UsersUsernameRoute
 }
 export interface FileRoutesByTo {
   '/report': typeof ReportRoute
+  '/media/$': typeof MediaSplatRoute
   '/users/$username': typeof UsersUsernameRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/report': typeof ReportRoute
+  '/media/$': typeof MediaSplatRoute
   '/users/$username': typeof UsersUsernameRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/report' | '/users/$username'
+  fullPaths: '/report' | '/media/$' | '/users/$username'
   fileRoutesByTo: FileRoutesByTo
-  to: '/report' | '/users/$username'
-  id: '__root__' | '/report' | '/users/$username'
+  to: '/report' | '/media/$' | '/users/$username'
+  id: '__root__' | '/report' | '/media/$' | '/users/$username'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   ReportRoute: typeof ReportRoute
+  MediaSplatRoute: typeof MediaSplatRoute
   UsersUsernameRoute: typeof UsersUsernameRoute
 }
 
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/report'
       fullPath: '/report'
       preLoaderRoute: typeof ReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/media/$': {
+      id: '/media/$'
+      path: '/media/$'
+      fullPath: '/media/$'
+      preLoaderRoute: typeof MediaSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/users/$username': {
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   ReportRoute: ReportRoute,
+  MediaSplatRoute: MediaSplatRoute,
   UsersUsernameRoute: UsersUsernameRoute,
 }
 export const routeTree = rootRouteImport

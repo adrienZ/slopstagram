@@ -10,7 +10,7 @@ import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { processStoryAudio, cacheReportAudio } from "@@/core/domains/music/report-audio.ts";
-import { createMediaResponse } from "../server/routes/media/[...path].ts";
+import { createMediaResponse } from "@@/core/domains/media-store/media-response.ts";
 import { groupTimelineStickers } from "../app/utils/timeline-stickers.ts";
 import { musicStickerItems, storyMusicPreviews } from "../app/utils/music-preview.ts";
 import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";
