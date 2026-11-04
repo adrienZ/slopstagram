@@ -14,6 +14,8 @@ import {
 } from "ai";
 import { createOllama } from "ai-sdk-ollama";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
+import type { SavedAccountsRuntime } from "@@/core/domains/accounts/saved-accounts.ts";
+import { createListAccountsTool } from "@@/core/domains/accounts/saved-accounts.tool.ts";
 import { getUserSummaryModel } from "@@/core/domains/accounts/user-summary.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import type { FeedUserSummaryRuntime } from "@@/core/domains/story-feed/feed-user-summary.ts";
@@ -24,17 +26,23 @@ const ASSISTANT_INSTRUCTIONS = `You are the Assistant of Slopstagram, an applica
 You know nothing about the accounts yourself. Answer only from the results of your tools, and never invent an account, a story or a summary.
 
 - When the message mentions an account, usually as @username, and asks about what it posted recently, call getFeedUserSummary with that username, then answer in two or three sentences from the tool result.
+- When the message asks which accounts are saved or what it can ask about, and mentions no account, call listAccounts, then answer briefly from its result.
 - When a tool result says the account is unknown, published no story in the last 24 hours, or has no summary yet, say so plainly.
-- For a greeting or a message that is not about the accounts, answer briefly without calling any tool.
+- For a greeting, a thank-you or a message that is not about the accounts, answer briefly without calling any tool.
 - Always answer in the language of the user's last message.`;
 
 /** Bounds one reply: a tool call, its result, then the answer, with room for one retry. */
 const MAX_STEPS = 4;
 
-export type AssistantRuntime = FeedUserSummaryRuntime & Pick<Runtime, "fetchOllama" | "logger">;
+type AssistantToolsRuntime = FeedUserSummaryRuntime & SavedAccountsRuntime;
 
-function createAssistantTools(runtime: FeedUserSummaryRuntime) {
-  return { getFeedUserSummary: createGetFeedUserSummaryTool(runtime) };
+export type AssistantRuntime = AssistantToolsRuntime & Pick<Runtime, "fetchOllama" | "logger">;
+
+function createAssistantTools(runtime: AssistantToolsRuntime) {
+  return {
+    getFeedUserSummary: createGetFeedUserSummaryTool(runtime),
+    listAccounts: createListAccountsTool(runtime),
+  };
 }
 
 export type AssistantUIMessage = UIMessage<
@@ -50,7 +58,7 @@ function getAssistantModel(): string {
 
 /** The UI messages of a chat request, or null when they are not a valid conversation. */
 export async function validateAssistantMessages(
-  runtime: FeedUserSummaryRuntime,
+  runtime: AssistantToolsRuntime,
   messages: Array<JsonValue>,
 ): Promise<Array<AssistantUIMessage> | null> {
   if (messages.length === 0) {

@@ -126,6 +126,27 @@ test("an account whose summary was not generated streams not_generated, without 
   ).toStrictEqual(["summary", "summary", "chat", "chat"]);
 });
 
+test("asking which accounts are saved streams the listAccounts call and every saved account", async (context) => {
+  const world = await createWorld(context);
+  await world.run();
+
+  const chunks = await readChunks(
+    await handleChatRequest(world.runtime, chatRequest(userMessage("Which accounts are saved?"))),
+  );
+
+  expect(chunks.toolInputs).toStrictEqual([{ input: {}, toolName: "listAccounts" }]);
+  // The world's tray carries no full names.
+  expect(chunks.toolOutputs).toStrictEqual([
+    {
+      accounts: [
+        { fullName: null, username: "user_008" },
+        { fullName: null, username: "user_072" },
+      ],
+    },
+  ]);
+  expect(chunks.text).toBe(assistantAnswer);
+});
+
 test("a greeting is answered without any tool call", async (context) => {
   const world = await createWorld(context);
 

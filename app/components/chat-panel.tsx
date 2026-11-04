@@ -1,4 +1,4 @@
-import { BrainIcon, SendIcon, UserSearchIcon } from "lucide-react";
+import { BrainIcon, SendIcon, UserSearchIcon, UsersIcon } from "lucide-react";
 import type { AssistantUIMessage } from "@@/core/domains/assistant/assistant.ts";
 import { useAssistantChat } from "../hooks/use-assistant-chat.ts";
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
@@ -28,9 +28,11 @@ import {
   TraceTitle,
 } from "../shadcn/ui/trace.tsx";
 import { FeedUserSummaryCard } from "./feed-user-summary-card.tsx";
+import { SavedAccountList } from "./saved-account-list.tsx";
 
 type AssistantPart = AssistantUIMessage["parts"][number];
 type FeedUserSummaryPart = Extract<AssistantPart, { type: "tool-getFeedUserSummary" }>;
+type ListAccountsPart = Extract<AssistantPart, { type: "tool-listAccounts" }>;
 
 function FeedUserSummaryPartView({
   accounts,
@@ -53,6 +55,31 @@ function FeedUserSummaryPartView({
         {failed
           ? `Le résumé de ${formatUserHandle(username)} n’a pas pu être lu.`
           : `Lecture du résumé de ${formatUserHandle(username)}`}
+      </TraceTitle>
+    </TraceLine>
+  );
+}
+
+function ListAccountsPartView({
+  accounts,
+  part,
+}: {
+  accounts: Array<SidebarUser>;
+  part: ListAccountsPart;
+}) {
+  if (part.state === "output-available") {
+    return <SavedAccountList accounts={accounts} listed={part.output.accounts} />;
+  }
+  const failed = part.state === "output-error" || part.state === "output-denied";
+  return (
+    <TraceLine status={failed ? "error" : "running"}>
+      <TraceIcon>
+        <UsersIcon />
+      </TraceIcon>
+      <TraceTitle>
+        {failed
+          ? "Les comptes enregistrés n’ont pas pu être lus."
+          : "Lecture des comptes enregistrés"}
       </TraceTitle>
     </TraceLine>
   );
@@ -87,6 +114,9 @@ function AssistantPartView({
   }
   if (part.type === "tool-getFeedUserSummary") {
     return <FeedUserSummaryPartView accounts={accounts} part={part} />;
+  }
+  if (part.type === "tool-listAccounts") {
+    return <ListAccountsPartView accounts={accounts} part={part} />;
   }
   return null;
 }
@@ -137,7 +167,7 @@ export function ChatPanel({ accounts }: { accounts: Array<SidebarUser> }) {
               {chat.messages.length === 0 && (
                 <p className="tw:text-sm tw:text-muted-foreground">
                   Mentionne un compte avec @ et demande ce qu’il a publié dans les dernières 24
-                  heures.
+                  heures, ou demande quels comptes sont enregistrés.
                 </p>
               )}
               {chat.messages.map((message) => (

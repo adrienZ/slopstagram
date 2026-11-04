@@ -4,7 +4,13 @@ import { Route } from "../../app/routes/chat.tsx";
 import { loadChatPage } from "../../app/loaders/chat.ts";
 import { handleChatRequest } from "../../app/routes/api/chat.ts";
 import { createPageRenderer } from "../render-page.ts";
-import { assistantAnswer, assistantThinking, createWorld, now } from "../setup/report-world.ts";
+import {
+  assistantAnswer,
+  assistantGreeting,
+  assistantThinking,
+  createWorld,
+  now,
+} from "../setup/report-world.ts";
 
 beforeEach(() => {
   // The Assistant reads the story feed of the current time.
@@ -115,6 +121,48 @@ test("an account whose summary was not generated renders that outcome", async (c
       "Le résumé n’est pas encore généré : il le sera au prochain relevé des stories.",
     ),
   ).toBeVisible();
+});
+
+test("asking which accounts are saved renders every saved account as a mention sticker", async (context) => {
+  const chat = await mountChat(await fetchedWorld(context));
+
+  await chat.ask("Quels comptes connais-tu ?");
+
+  const answer = await screen.findByText(assistantAnswer);
+  const list = screen.getByRole("list", { name: "Comptes enregistrés" });
+  const stickers = within(list).getAllByRole("link");
+  expect(stickers.map((sticker) => sticker.textContent)).toStrictEqual(["@user_008", "@user_072"]);
+  expect(stickers.map((sticker) => sticker.getAttribute("href"))).toStrictEqual([
+    "/users/user_008",
+    "/users/user_072",
+  ]);
+  expect(
+    stickers.map((sticker) => sticker.querySelector("img")?.getAttribute("src")),
+  ).toStrictEqual(["/media/avatars/700000000000001.jpg", "/media/avatars/700000000000068.jpg"]);
+  expect(list.compareDocumentPosition(answer)).toBe(globalThis.Node.DOCUMENT_POSITION_FOLLOWING);
+});
+
+test("asking which accounts are saved before any fetch run says none is saved", async (context) => {
+  const chat = await mountChat(await createWorld(context));
+
+  await chat.ask("Which accounts are saved?");
+
+  await screen.findByText(assistantAnswer);
+  expect(screen.getByText("Aucun compte enregistré.")).toBeVisible();
+  expect(screen.queryByRole("list", { name: "Comptes enregistrés" })).not.toBeInTheDocument();
+});
+
+test("a greeting is answered without reading any data", async (context) => {
+  const chat = await mountChat(await fetchedWorld(context));
+
+  await chat.ask("Bonjour !");
+
+  expect(await screen.findByText(assistantGreeting)).toBeVisible();
+  // No tool part: no account list, no user summary card, no sticker.
+  const thread = within(screen.getByRole("region", { name: "Messages" }));
+  expect(thread.queryByRole("list")).not.toBeInTheDocument();
+  expect(thread.queryByRole("region")).not.toBeInTheDocument();
+  expect(thread.queryByRole("link")).not.toBeInTheDocument();
 });
 
 test("an unreachable chat model is reported, and an empty message is not sent", async (context) => {
