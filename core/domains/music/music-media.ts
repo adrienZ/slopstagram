@@ -13,7 +13,7 @@ import {
   type AudioCacheStorage,
   type ImageCacheStorage,
 } from "@@/core/domains/media-store/cache-storage.ts";
-import { audioFileExtension } from "./music-media-types.ts";
+import { audioFileExtension } from "@@/core/domains/media-store/media-types.ts";
 import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 

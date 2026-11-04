@@ -8,16 +8,16 @@ export default defineConfig({
     execArgv: ["--disable-warning=ExperimentalWarning"],
     coverage: {
       // Count files no test loads, so untested modules lower the figure instead of vanishing.
-      include: ["core/**", "app/**", "server/**"],
+      include: ["core/**", "app/**", "nitro/**"],
       exclude: ["app/shadcn/**", "app/routeTree.gen.ts", "core/domains/database/migrations/**"],
       // Thresholds rewrite themselves upward when coverage improves, so the bar never drops.
       thresholds: {
         // Floor to whole percents: just under the measured value, so tiny fluctuations never fail.
         autoUpdate: (value) => Math.floor(value),
-        statements: 91,
+        statements: 92,
         branches: 87,
         functions: 91,
-        lines: 91,
+        lines: 92,
       },
     },
     // Keep server/SQLite tests in Node and browser UI tests in jsdom with their own setup.
