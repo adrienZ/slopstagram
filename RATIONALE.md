@@ -39,4 +39,5 @@ TanStack AI would fit the TanStack Start app, and we prototyped both
 [PR #271](https://github.com/adrienZ/slopstagram/pull/271) with TanStack AI). The choice is
 cheap to revisit: TanStack AI documents a
 [migration path from the Vercel AI SDK](https://tanstack.com/ai/latest/docs/migration/migration-from-vercel-ai),
-and only Assistant tool modules and the Assistant domain import the AI SDK (ADR 0007).
+and in business code only Assistant tool modules and the Assistant domain import the AI SDK,
+plus the one chat hook on the client (ADR 0007).
