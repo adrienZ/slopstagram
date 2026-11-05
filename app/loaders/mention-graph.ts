@@ -22,6 +22,7 @@ export function loadMentionGraph(runtime: MentionGraphRuntime) {
   const authors = new Set(evidence.map(({ authorId }) => authorId));
   const users = loadSidebarUsers(runtime);
   return {
+    accounts: users.toSorted((left, right) => left.username.localeCompare(right.username)),
     nodes: graph.nodes.map((node) => ({
       ...node,
       avatarPath: node.kind === "account" ? `/media/avatars/${node.accountPk}.jpg` : undefined,
