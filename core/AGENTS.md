@@ -17,15 +17,28 @@ Every folder below lives in `domains/`.
 - `runtime/`: the composition root, and the types of the external boundaries it exposes (`fetch-boundaries.ts`). It imports every domain; only entry points import its values, other modules import its types.
 - `instagram/`: Instagram payload types, the story client, retry, the Playwright session, the
   story parser and payload validation. No persistence.
-- `media-store/`: the local copies of images and audio the app serves. Not the story cache.
+- `media-store/`: the local copies of images and audio the app serves, their content types, and
+  the responses that serve them. Not the story cache.
 - `stickers/`: story annotations, sticker and location extraction, story model types.
 - `places/`: tagged place metadata, observations and place lookups.
 - `music/`: music assets and media, music observations, story audio, DASH audio.
 - `vision/`: the Ollama client, vision analysis, Apple OCR and the Apple caption step.
 - `accounts/`: user summaries, Instagram user persistence and report user keys.
-- `story-feed/`: the story feed and story days.
+- `story-feed/`: the story feed, story days, the feed user summary read and its Assistant tool.
+- `assistant/`: the chat Assistant. It composes the Assistant tools of the domains below it,
+  holds the instructions and streams the reply. No tool-owning domain imports it.
 - `fetch-run/`: the fetch run pipeline, reports, story fetching, the story cache and the hourly
   job.
+
+## Assistant tools
+
+An Assistant tool is one file, one tool: `<tool-name>.tool.ts` in kebab case (`list-accounts.tool.ts`
+for `listAccounts`), next to the domain module it exposes. Never put two tools in one file; code
+they share lives in the domain module. It exports a
+`create<Name>Tool(runtime)` factory over the runtime narrowed to the repository methods it calls,
+returning an AI SDK `tool` with an English description for agents, an input schema with
+`.describe()` examples, an output schema and an execute function. It returns data, never UI, and
+never writes; errors are typed outcomes in the output.
 
 ## Repositories
 

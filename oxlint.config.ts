@@ -22,7 +22,8 @@ const restrictedReactPaths: Array<RestrictedPath> = [
     name: "react",
     importNames: ["useEffect", "useLayoutEffect", "useInsertionEffect", "useCallback"],
     allowTypeImports: false,
-    message: "useEffect is forbidden. Use derived state or explicit event subscriptions.",
+    message:
+      "useEffect is forbidden. Use derived state or explicit event subscriptions. https://react.dev/learn/you-might-not-need-an-effect",
   },
   {
     name: "react",
@@ -133,6 +134,7 @@ export default defineConfig({
   rules: {
     "slopstagram/no-barrel-files": "error",
     "slopstagram/domain-layering": "error",
+    "slopstagram/ai-sdk-imports": "error",
   },
   overrides: [
     {
@@ -159,7 +161,7 @@ export default defineConfig({
           {
             group: ["**/database/migrate*", "drizzle-orm/**/migrator"],
             message:
-              "Scripts require an initialized database. Run migrations at server startup in server/plugins/database.ts.",
+              "Scripts require an initialized database. Run migrations at server startup in nitro/plugins/database.ts.",
           },
         ]),
       },

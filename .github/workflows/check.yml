@@ -8,8 +8,6 @@ on:
     types: [opened, synchronize, reopened]
 
 permissions:
-  actions: read
-  checks: write
   contents: read
 
 jobs:
@@ -21,9 +19,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Initialize test report
-        run: echo '<testsuites name="Tests" tests="0" failures="0" errors="0"></testsuites>' > reporter.xml
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -39,14 +34,6 @@ jobs:
 
       - name: Run checks
         run: npm run check:ci
-
-      - name: Test report
-        uses: dorny/test-reporter@v3
-        if: ${{ !cancelled() }}
-        with:
-          name: Tests
-          path: reporter.xml
-          reporter: java-junit
 
       - name: SonarQube scan
         if: ${{ success() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}

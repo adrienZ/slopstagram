@@ -19,12 +19,13 @@
   "include": [
     "core/**/*.ts",
     "devtools/**/*.ts",
+    "evals/**/*.ts",
     "scripts/**/*.ts",
     "scripts/**/*.tsx",
     "oxlint/**/*.ts",
     "app/**/*.ts",
     "app/**/*.tsx",
-    "server/**/*.ts",
+    "nitro/**/*.ts",
     "types/**/*.d.ts",
     "tests/**/*.ts",
     "tests/**/*.tsx"

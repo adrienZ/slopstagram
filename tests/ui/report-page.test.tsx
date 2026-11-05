@@ -123,6 +123,12 @@ test("saved users are linked with handles and can be collapsed and reopened", as
   ).toBeVisible();
 });
 
+test("the sidebar links to the Assistant's chat page", async () => {
+  await renderer.mountRoute("/report");
+  const pages = within(screen.getByRole("navigation", { name: "Pages" }));
+  expect(pages.getByRole("link", { name: "Assistant" })).toHaveAttribute("href", "/chat");
+});
+
 test("report calendar stops at the oldest available month across a year boundary", async () => {
   const { user } = await renderer.mountRoute("/report", {
     ...reportProps,
