@@ -121,10 +121,21 @@ export function trayBody(options: { withMissingReel?: boolean } = {}): JsonValue
 
 type OllamaFailure = "server-error" | "unreachable";
 
+/**
+ * How the chat model fails. A malformed tool call fails Ollama's tool call parser: before any
+ * chunk, Ollama answers with an error status; once it has streamed chunks, it ends the stream
+ * with an `error` line.
+ */
+type OllamaChatFailure =
+  | OllamaFailure
+  | "malformed-tool-call-before-streaming"
+  | "malformed-tool-call-while-streaming";
+
 interface OllamaBehavior {
   /** Fails the vision request of the story at this position in the run. */
   vision?: (position: number) => OllamaFailure | undefined;
   summary?: OllamaFailure;
+  chat?: OllamaChatFailure;
 }
 
 function jsonResponse(body: JsonValue, status = 200) {
@@ -143,12 +154,94 @@ const OllamaRequestSchema = z.object({
   prompt: z.string(),
 });
 
-/** An Ollama server: vision requests carry the image, summary requests the story data. */
+const OllamaChatRequestSchema = z.object({
+  messages: z.array(z.object({ content: z.string(), role: z.string() })),
+});
+
+/** What the chat model answers once it has read a tool result. */
+export const assistantAnswer = "Synthetic **answer** from the tool result, about @user_072.";
+/** What the chat model answers to a message that mentions no account. */
+export const assistantGreeting = "Synthetic greeting.";
+export const assistantThinking = "Synthetic reasoning about the question.";
+
+function ndjsonResponse(...lines: Array<JsonValue>) {
+  return new globalThis.Response(lines.map((line) => JSON.stringify(line)).join("\n"));
+}
+
+const chatDone = {
+  done: true,
+  done_reason: "stop",
+  eval_count: 1,
+  model: "synthetic",
+  prompt_eval_count: 1,
+};
+
+function chatMessage(message: JsonValue) {
+  return ndjsonResponse({ done: false, message, model: "synthetic" }, chatDone);
+}
+
+/** Ollama's error when the chat model's tool call is not well-formed XML. */
+const malformedToolCallError =
+  "XML syntax error on line 3: element <function> closed by </parameter>";
+
+function failChat(failure: OllamaChatFailure) {
+  if (failure === "malformed-tool-call-before-streaming") {
+    return jsonResponse({ error: malformedToolCallError }, 500);
+  }
+  if (failure === "malformed-tool-call-while-streaming") {
+    return ndjsonResponse(
+      {
+        done: false,
+        message: { content: "", role: "assistant", thinking: assistantThinking },
+        model: "synthetic",
+      },
+      { error: malformedToolCallError },
+    );
+  }
+  return fail(failure);
+}
+
+/**
+ * The chat model, in Ollama's streamed wire format: it reads the user summaries of the
+ * `@username` of the last user message, answers once it has the tool result, and greets a
+ * message that mentions no account.
+ */
+function answerChat(messages: z.infer<typeof OllamaChatRequestSchema>["messages"]) {
+  if (messages.some(({ role }) => role === "tool")) {
+    return chatMessage({ content: assistantAnswer, role: "assistant" });
+  }
+  const question = messages.findLast(({ role }) => role === "user")?.content ?? "";
+  const usernames = [...question.matchAll(/@(?<username>[\w.]+)/gu)].map(
+    ({ groups }) => groups?.username ?? "",
+  );
+  if (usernames.length === 0) {
+    return chatMessage({ content: assistantGreeting, role: "assistant" });
+  }
+  return chatMessage({
+    content: "",
+    role: "assistant",
+    thinking: assistantThinking,
+    tool_calls: [{ function: { arguments: { usernames }, name: "getFeedUserSummaries" } }],
+  });
+}
+
+/**
+ * An Ollama server: vision requests carry the image, summary requests the story data, chat
+ * requests the conversation.
+ */
 function createOllama(behavior: OllamaBehavior = {}) {
-  const requests: Array<{ kind: "summary" | "vision"; prompt: string }> = [];
+  const requests: Array<{ kind: "chat" | "summary" | "vision"; prompt: string }> = [];
   let visions = 0;
   async function fetchOllama(_input: RequestInfo | URL, init?: RequestInit) {
-    const body = OllamaRequestSchema.parse(JSON.parse(z.string().parse(init?.body)));
+    const json: unknown = JSON.parse(z.string().parse(init?.body));
+    const chat = OllamaChatRequestSchema.safeParse(json);
+    if (chat.success) {
+      requests.push({ kind: "chat", prompt: chat.data.messages.at(-1)?.content ?? "" });
+      return await Promise.resolve(
+        behavior.chat === undefined ? answerChat(chat.data.messages) : failChat(behavior.chat),
+      );
+    }
+    const body = OllamaRequestSchema.parse(json);
     if (body.images !== undefined) {
       expect(body.images).toHaveLength(1);
       requests.push({ kind: "vision", prompt: body.prompt });

@@ -27,3 +27,5 @@ holds the instructions and streams the Assistant's reply. No tool-owning domain 
 it. The story feed domain may now import the accounts domain, so that the story feed's
 user summary tool can resolve an account; the accounts domain never imports the story
 feed, which keeps the dependency one-way.
+
+The chat does not render a tool's result: it traces the call, and the Assistant's answer is the only display. Rendering the result as a card as well showed the same content twice, and a small model does not hold back from restating a result when the prompt asks it to.

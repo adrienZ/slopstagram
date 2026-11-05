@@ -24,9 +24,19 @@ Every folder below lives in `domains/`.
 - `music/`: music assets and media, music observations, story audio, DASH audio.
 - `vision/`: the Ollama client, vision analysis, Apple OCR and the Apple caption step.
 - `accounts/`: user summaries, Instagram user persistence and report user keys.
-- `story-feed/`: the story feed, story days and the feed user summary read.
+- `story-feed/`: the story feed, story days, the feed user summary read and its Assistant tool.
+- `assistant/`: the chat Assistant. It composes the Assistant tools of the domains below it,
+  holds the instructions and streams the reply. No tool-owning domain imports it.
 - `fetch-run/`: the fetch run pipeline, reports, story fetching, the story cache and the hourly
   job.
+
+## Assistant tools
+
+An Assistant tool is `<module>.tool.ts` next to the domain module it exposes. It exports a
+`create<Name>Tool(runtime)` factory over the runtime narrowed to the repository methods it calls,
+returning an AI SDK `tool` with an English description for agents, an input schema with
+`.describe()` examples, an output schema and an execute function. It returns data, never UI, and
+never writes; errors are typed outcomes in the output.
 
 ## Repositories
 

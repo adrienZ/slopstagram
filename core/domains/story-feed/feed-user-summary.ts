@@ -12,7 +12,7 @@ interface FeedUserSummariesRuntime {
   vision: Pick<VisionRepository, "findByMediaPk">;
 }
 
-interface FeedUserSummaryRuntime extends FeedUserSummariesRuntime {
+export interface FeedUserSummaryRuntime extends FeedUserSummariesRuntime {
   stories: Pick<StoryRepository, "listActive">;
   users: Pick<InstagramUserRepository, "listAll">;
 }
@@ -63,4 +63,21 @@ export function readFeedUserSummary(
     summary,
     username: account.username,
   };
+}
+
+export interface RequestedFeedUserSummary {
+  outcome: FeedUserSummary;
+  requestedUsername: string;
+}
+
+/** The user summaries of several accounts, in the order asked, each with the username asked for. */
+export function readFeedUserSummariesByUsername(
+  runtime: FeedUserSummaryRuntime,
+  usernames: Array<string>,
+  now: Date,
+): Array<RequestedFeedUserSummary> {
+  return usernames.map((requestedUsername) => ({
+    outcome: readFeedUserSummary(runtime, requestedUsername, now),
+    requestedUsername,
+  }));
 }
