@@ -28,6 +28,10 @@ or link.
 One instance of a sticker on a story. Separate occurrences may have the same kind
 and label.
 
+**Mention connection**:
+An observed connection between a story's author and someone named by a mention
+sticker on that story. It does not establish that the two people know each other.
+
 **Sticker kind**:
 The category of a sticker, such as mention, music, hashtag, link, or location.
 
