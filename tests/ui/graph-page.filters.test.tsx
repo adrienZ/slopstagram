@@ -137,14 +137,20 @@ test("a filtered-out selection does not reopen after clearing filters and transi
   const { graph, user, router } = await mountGraph();
   await user.click(graph.getByRole("button", { name: `@${drew}` }));
   expect(await screen.findByRole("dialog", { name: `Profil @${drew}` })).toBeVisible();
+  await user.click(
+    graph.getByRole("button", { name: `Connexion @${ben} et @${drew} : 1 stories` }),
+  );
+  expect(await screen.findByRole("dialog", { name: "Stories de la connexion" })).toBeVisible();
   expect(router.state.location.search).toEqual({});
   await user.click(screen.getByRole("button", { name: "Filtrer par compte" }));
   const filters = within(await screen.findByRole("dialog", { name: "Filtres affichés" }));
   await user.click(filters.getByRole("checkbox", { name: `@${ada}` }));
   expect(screen.queryByRole("dialog", { name: `Profil @${drew}` })).not.toBeInTheDocument();
+  expect(screen.queryByRole("dialog", { name: "Stories de la connexion" })).not.toBeInTheDocument();
   await user.click(filters.getByRole("button", { name: "Effacer les filtres" }));
   expect(graph.getByRole("button", { name: `@${drew}` })).toBeVisible();
   expect(screen.queryByRole("dialog", { name: `Profil @${drew}` })).not.toBeInTheDocument();
+  expect(screen.queryByRole("dialog", { name: "Stories de la connexion" })).not.toBeInTheDocument();
 });
 
 test("a username matching multiple known accounts skips filtering instead of choosing one", async (context) => {
