@@ -23,6 +23,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Cache Ollama models
+        uses: actions/cache@v4
+        with:
+          path: ~/.ollama
+          key: ollama-${{ env.OLLAMA_CHAT_MODEL }}
+
+      # Ollama installs and pulls the model in the background while Node and the dependencies
+      # install: the "Wait for Ollama" step joins them.
+      - name: Install Ollama in the background
+        run: |
+          nohup bash -c '
+            set -e
+            trap "touch ollama.failed" ERR
+            curl -fsSL https://ollama.com/install.sh | sh
+            (ollama serve > ollama.log 2>&1 &)
+            until curl -sf localhost:11434/api/version; do sleep 1; done
+            ollama pull "$OLLAMA_CHAT_MODEL"
+            touch ollama.ready
+          ' > ollama-setup.log 2>&1 &
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -35,33 +55,24 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Cache Ollama models
-        uses: actions/cache@v4
-        with:
-          path: ~/.ollama
-          key: ollama-${{ env.OLLAMA_CHAT_MODEL }}
-
-      - name: Install Ollama
-        run: curl -fsSL https://ollama.com/install.sh | sh
-
-      - name: Start Ollama and pull the chat model
+      - name: Wait for Ollama
         run: |
-          ollama serve > ollama.log 2>&1 &
-          for _ in $(seq 1 30); do curl -sf localhost:11434/api/version && break; sleep 1; done
-          ollama pull "$OLLAMA_CHAT_MODEL"
+          for _ in $(seq 1 600); do
+            [ -f ollama.ready ] && exit 0
+            [ -f ollama.failed ] && break
+            sleep 1
+          done
+          cat ollama-setup.log
+          exit 1
 
-      # Fails the job when the average score is under `scoreThreshold` (evalite.config.ts).
+      # Fails the job when the average score is under `scoreThreshold` (evalite.config.ts). The
+      # results, answers and traces included, are in evalite-export/last-run.json.
       - name: Run evals
         run: npm run eval
 
-      # In memory storage does not outlive the process: the export runs the evals once more.
-      - name: Export the evals UI
-        if: ${{ !cancelled() }}
-        run: npm run eval:export
-
-      - name: Upload the evals UI
+      - name: Upload the evals results
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: evalite-ui
-          path: evalite-export
+          name: evalite-results
+          path: evalite-export/last-run.json
