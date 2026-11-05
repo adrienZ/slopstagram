@@ -9,6 +9,7 @@ import { readFeedUserSummary } from "../core/domains/story-feed/feed-user-summar
 import {
   createWorld,
   imageStoryPk,
+  plainStoryPk,
   placeId,
   recordedPayloads,
 } from "../tests/setup/report-world.ts";
@@ -31,6 +32,12 @@ export const worldAccounts = {
 
 /** The one Tagged place of the seeded world, tagged by user_008. */
 export const worldPlace = { id: `instagram:${placeId}`, name: "Synthetic Cafe" };
+
+/** Synthetic identities used only by the mention-connection evaluations. */
+export const worldMention = {
+  unknown: "synthetic_guest",
+  ambiguousName: "Synthetic Guest",
+};
 
 export const savedUsernames = [worldAccounts.withoutRecentStories, worldAccounts.withSummary];
 
@@ -66,6 +73,15 @@ function checkPremises(runtime: AssistantRuntime, now: Date) {
 async function seedAssistantWorld(): Promise<AssistantRuntime> {
   const now = new Date();
   const payloads = editRecordedStories(await recordedPayloads(), (story) => {
+    const username = story.pk === imageStoryPk ? "user_072" : "user_008";
+    story.story_bloks_stickers = [
+      { bloks_sticker: { sticker_data: { ig_mention: { username } } } },
+    ];
+    if (story.pk === plainStoryPk) {
+      story.story_bloks_stickers = [username, worldMention.unknown].map((mentioned) => ({
+        bloks_sticker: { sticker_data: { ig_mention: { username: mentioned } } },
+      }));
+    }
     if (story.pk === imageStoryPk && story.taken_at !== undefined) {
       story.taken_at -= DAY_SECONDS;
     }
@@ -85,6 +101,22 @@ async function seedAssistantWorld(): Promise<AssistantRuntime> {
     wrapModel: traceModel,
   };
   checkPremises(runtime, now);
+  // Recordings have no name-only labels, so use the real repositories.
+  await Promise.all(
+    ["synthetic-name-1", "synthetic-name-2"].map(async (pk) => {
+      await world.runtime.stories.save(
+        {
+          pk,
+          taken_at: Math.floor(now.getTime() / 1000) - 2 * DAY_SECONDS,
+          annotations: {
+            locations: [],
+            stickers: [{ kind: "mention", label: worldMention.ambiguousName }],
+          },
+        },
+        { pk: "700000000000001", username: "user_008" },
+      );
+    }),
+  );
   return runtime;
 }
 

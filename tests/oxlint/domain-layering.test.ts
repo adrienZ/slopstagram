@@ -17,6 +17,16 @@ function inDomain(module: string): string {
 new RuleTester().run("domain-layering", domainLayering, {
   valid: [
     {
+      name: "the Assistant composes mention-connection tools",
+      code: 'import { createGetMentionConnectionTool } from "@@/core/domains/mention-connections/get-mention-connection.tool.ts";',
+      filename: inDomain("assistant/assistant.ts"),
+    },
+    {
+      name: "mention connections reuse domain-free text matching",
+      code: 'import { normalizeSearchQuery } from "@@/core/utils/search-text.ts";',
+      filename: inDomain("mention-connections/mention-connection-reads.ts"),
+    },
+    {
       name: "the story feed imports the accounts domain",
       code: 'import { readUserSummaries } from "@@/core/domains/accounts/user-summary.ts";',
       filename: inDomain("story-feed/feed-user-summary.ts"),
@@ -38,6 +48,14 @@ new RuleTester().run("domain-layering", domainLayering, {
     },
   ],
   invalid: [
+    {
+      name: "mention connections cannot import the Assistant they expose tools to",
+      code: 'import { streamAssistantReply } from "@@/core/domains/assistant/assistant.ts";',
+      filename: inDomain("mention-connections/get-mention-connection.tool.ts"),
+      errors: [
+        { messageId: "upward", data: { importer: "mention-connections", imported: "assistant" } },
+      ],
+    },
     {
       name: "no tool-owning domain imports the Assistant domain",
       code: 'import { streamAssistantReply } from "@@/core/domains/assistant/assistant.ts";',

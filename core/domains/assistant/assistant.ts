@@ -23,6 +23,10 @@ import { createGetTaggedPlaceTool } from "@@/core/domains/places/get-tagged-plac
 import { createListTaggedPlacesTool } from "@@/core/domains/places/list-tagged-places.tool.ts";
 import { createSearchTaggedPlacesTool } from "@@/core/domains/places/search-tagged-places.tool.ts";
 import type { TaggedPlacesRuntime } from "@@/core/domains/places/tagged-places.ts";
+import { createGetMentionConnectionTool } from "@@/core/domains/mention-connections/get-mention-connection.tool.ts";
+import { createSearchMentionConnectionsTool } from "@@/core/domains/mention-connections/search-mention-connections.tool.ts";
+import { createListMentionConnectionsTool } from "@@/core/domains/mention-connections/list-mention-connections.tool.ts";
+import type { MentionConnectionsRuntime } from "@@/core/domains/mention-connections/mention-connections.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import type { FeedUserSummaryRuntime } from "@@/core/domains/story-feed/feed-user-summary.ts";
 import { createGetFeedUserSummariesTool } from "@@/core/domains/story-feed/get-feed-user-summaries.tool.ts";
@@ -34,6 +38,8 @@ You know nothing about the accounts yourself. Answer only from the results of yo
 - When the message mentions one or more accounts, usually as @username, and asks about what they posted recently, or compares them, call getFeedUserSummaries with their usernames, then answer from the result in a few sentences. Write each account as @username.
 - When the message asks which accounts it knows or what it can ask about, and mentions no account, call listAccounts, then answer from its result, writing each account as @username.
 - When the message names an account by its name or part of it, without @username, call searchAccounts with that name. If it also asks what the account posted, call getFeedUserSummaries with the username found, then answer. When no account matches, say so, and when several match, ask which one is meant.
+- When the message asks about mentions, connections, or whether people know each other, use mention connections across all retained history, not recent user summaries: listMentionConnections lists observed pairs; searchMentionConnections finds each person's opaque id from a username or name; getMentionConnection takes the two ids from results and returns directional source-story evidence. A mention means its author mentioned its target, not the reverse. Never invent an id. If a search requiresClarification, present the separate matches and ask which is meant before choosing; equal full names are not proof of identity. A name-only observation stays separate per story, and ambiguous username candidates are not established identities.
+- Never infer friendship or personal acquaintance from mention connections. Explain that an observed mention does not prove people know each other; no_observation or missing data does not prove they do not know each other. Current usernames may have changed or been reassigned, so identity matching is approximate. Cite story identifiers, dates and authors when asked for evidence. When nextOffset is non-null, say more results exist and offer the next page.
 - When the message asks about places: call listTaggedPlaces to list the places, of the accounts it mentions or of all of them; call searchTaggedPlaces when it names a place, or part of its name, address or category; call getTaggedPlace with a place id from those results to read one place and its latest stories. Write each place as a markdown link [name](place:id), with the place's id as is. When a result has more places, say so and offer the next ones.
 - When a tool result says an account is unknown, published no story in the last 24 hours, or has no summary yet, say so plainly.
 - For a greeting, a thank-you or a message that is not about the accounts, answer briefly without calling any tool.
@@ -46,6 +52,8 @@ You know nothing about the accounts yourself. Answer only from the results of yo
 const answerTools = new Set([
   "getFeedUserSummaries",
   "getTaggedPlace",
+  "getMentionConnection",
+  "listMentionConnections",
   "listAccounts",
   "listTaggedPlaces",
 ]);
@@ -53,7 +61,10 @@ const answerTools = new Set([
 /** Bounds one reply: a tool call, its result, then the answer, with room for one retry. */
 const MAX_STEPS = 4;
 
-type AssistantToolsRuntime = FeedUserSummaryRuntime & AccountsRuntime & TaggedPlacesRuntime;
+type AssistantToolsRuntime = FeedUserSummaryRuntime &
+  AccountsRuntime &
+  TaggedPlacesRuntime &
+  MentionConnectionsRuntime;
 
 /** The chat model, as the AI SDK takes it once it is built (not a model id). */
 export type AssistantModel = Exclude<LanguageModel, string>;
@@ -68,6 +79,9 @@ function createAssistantTools(runtime: AssistantToolsRuntime) {
   return {
     getFeedUserSummaries: createGetFeedUserSummariesTool(runtime),
     getTaggedPlace: createGetTaggedPlaceTool(runtime),
+    getMentionConnection: createGetMentionConnectionTool(runtime),
+    listMentionConnections: createListMentionConnectionsTool(runtime),
+    searchMentionConnections: createSearchMentionConnectionsTool(runtime),
     listAccounts: createListAccountsTool(runtime),
     listTaggedPlaces: createListTaggedPlacesTool(runtime),
     searchAccounts: createSearchAccountsTool(runtime),

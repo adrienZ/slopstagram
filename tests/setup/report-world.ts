@@ -289,6 +289,36 @@ function callPlaceTool(question: string, usernames: Array<string>, offered: Set<
   return null;
 }
 
+/** The mention tool calls offered by the external model for synthetic connection questions. */
+function callMentionTool(question: string, offered: Set<string>) {
+  const offset = /\boffset\s+(?<offset>\d+)$/iu.exec(question)?.groups?.offset;
+  const page: Record<string, JsonValue> = offset === undefined ? {} : { offset: Number(offset) };
+  const pair = /^connection\s+(?<sourceId>\S+)\s+(?<targetId>\S+)(?:\s+offset\s+\d+)?$/iu.exec(
+    question,
+  )?.groups;
+  if (pair !== undefined && offered.has("getMentionConnection")) {
+    return chatToolCall("getMentionConnection", {
+      sourceId: pair.sourceId,
+      targetId: pair.targetId,
+      ...page,
+    });
+  }
+  const query = /^search connections\s+(?<query>.+?)(?:\s+offset\s+\d+)?$/iu.exec(question)?.groups
+    ?.query;
+  if (query !== undefined && offered.has("searchMentionConnections")) {
+    return chatToolCall("searchMentionConnections", { query, ...page });
+  }
+  const personId = /^connections of\s+(?<personId>\S+)(?:\s+offset\s+\d+)?$/iu.exec(question)
+    ?.groups?.personId;
+  if (/^connections\b/iu.test(question) && offered.has("listMentionConnections")) {
+    if (personId !== undefined) {
+      page.personId = personId;
+    }
+    return chatToolCall("listMentionConnections", page);
+  }
+  return null;
+}
+
 /**
  * The chat model, in Ollama's streamed wire format. It calls only the tools it is offered:
  * a Tagged place when the message is "place <id>", a search of the places when it starts with
@@ -310,6 +340,10 @@ function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>
   const usernames = [...question.matchAll(/@(?<username>[\w.]+)/gu)].map(
     ({ groups }) => groups?.username ?? "",
   );
+  const mentionCall = callMentionTool(question, offered);
+  if (mentionCall !== null) {
+    return mentionCall;
+  }
   const placeCall = callPlaceTool(question, usernames, offered);
   if (placeCall !== null) {
     return placeCall;

@@ -16,7 +16,7 @@ const VerdictSchema = z.object({
   faithful: z
     .boolean()
     .describe(
-      "Every fact the answer states about an account comes from the tool results. With no tool result, the answer states no fact about any account.",
+      "Every fact the answer states about an account comes from the tool results. With no tool result, the answer states no fact about any account. A mention is an observed author-to-target reference, never proof of acquaintance; missing observations never prove people do not know each other. Historical username identity is approximate and distinct name-only matches require clarification.",
     ),
   answersQuestion: z
     .boolean()
