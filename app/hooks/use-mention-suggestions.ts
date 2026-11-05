@@ -1,6 +1,5 @@
 import { useId, useRef, useState } from "react";
 import type { ChangeEvent, KeyboardEvent, SyntheticEvent } from "react";
-import { flushSync } from "react-dom";
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
 import { findTypedMention, insertMention, suggestAccounts } from "../utils/chat-mentions.ts";
 
@@ -40,14 +39,17 @@ export function useMentionSuggestions({
       return;
     }
     const inserted = insertMention(draft, caret, mention, username);
-    // The field shows the inserted text before its caret moves after the Mention.
-    flushSync(() => {
-      setCaret(inserted.caret);
-      setActiveIndex(0);
-      setDraft(inserted.text);
-    });
-    field.current?.focus();
-    field.current?.setSelectionRange(inserted.caret, inserted.caret);
+    // Write the text and the caret in the field right away: React keeps the caret when the
+    // re-render finds the field already showing the draft.
+    const input = field.current;
+    if (input !== null) {
+      input.value = inserted.text;
+      input.focus();
+      input.setSelectionRange(inserted.caret, inserted.caret);
+    }
+    setCaret(inserted.caret);
+    setActiveIndex(0);
+    setDraft(inserted.text);
   }
 
   function onChange(event: ChangeEvent<HTMLTextAreaElement>) {
