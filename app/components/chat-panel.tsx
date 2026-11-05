@@ -32,6 +32,7 @@ import {
   TraceCollapsible,
   TraceCollapsibleContent,
   TraceCollapsibleTrigger,
+  TraceDescription,
   TraceIcon,
   TraceLine,
   TraceTitle,
@@ -41,6 +42,7 @@ import { MentionBackdrop, MentionedText, MentionSuggestionList } from "./chat-me
 import { FeedUserSummariesDetails } from "./feed-user-summaries-details.tsx";
 import { AccountList } from "./account-list.tsx";
 import { TaggedPlaceDetails, TaggedPlaceList } from "./tagged-places-details.tsx";
+import { findReadPlaces, type MentionablePlace } from "../utils/place-mentions.ts";
 
 type AssistantPart = AssistantUIMessage["parts"][number];
 type FeedUserSummariesPart = Extract<AssistantPart, { type: "tool-getFeedUserSummaries" }>;
@@ -57,8 +59,8 @@ function getToolStatus(state: ToolPart["state"]): "error" | "running" | undefine
 }
 
 /**
- * A tool call as one trace line titled with the tool's name, which opens on what the tool read
- * once it has run.
+ * A tool call as one trace line, the tool's name and what it was asked, which opens on what the
+ * tool read once it has run.
  */
 function ToolTrace({
   children,
@@ -73,6 +75,10 @@ function ToolTrace({
     <TraceLine status={getToolStatus(part.state)}>
       <TraceIcon>{icon}</TraceIcon>
       <TraceTitle>{part.type.slice("tool-".length)}</TraceTitle>
+      {/* What the Assistant asked the tool. */}
+      <TraceDescription className="tw:min-w-0 tw:shrink tw:truncate tw:font-mono tw:text-xs">
+        {JSON.stringify(part.input ?? {})}
+      </TraceDescription>
     </TraceLine>
   );
   if (children === undefined) {
@@ -162,12 +168,18 @@ function GetTaggedPlacePartView({ part }: { part: GetTaggedPlacePart }) {
 function AssistantPartView({
   accounts,
   part,
+  places,
 }: {
   accounts: Array<SidebarUser>;
   part: AssistantPart;
+  places: Array<MentionablePlace>;
 }) {
   if (part.type === "text") {
-    return <ChatMarkdown accounts={accounts}>{part.text}</ChatMarkdown>;
+    return (
+      <ChatMarkdown accounts={accounts} places={places}>
+        {part.text}
+      </ChatMarkdown>
+    );
   }
   if (part.type === "reasoning") {
     if (part.state !== "streaming" && part.text.trim() === "") {
@@ -237,13 +249,19 @@ function ChatMessage({
       </Message>
     );
   }
+  const places = findReadPlaces(message);
   return (
     <Message align="start">
       <MessageContent className="tw:grid tw:w-full tw:gap-3">
         {message.parts.map((part, index) => (
           // Parts have no id; their position in a message never changes.
           // oxlint-disable-next-line react/no-array-index-key
-          <AssistantPartView key={`${message.id}-${index}`} accounts={accounts} part={part} />
+          <AssistantPartView
+            key={`${message.id}-${index}`}
+            accounts={accounts}
+            part={part}
+            places={places}
+          />
         ))}
       </MessageContent>
     </Message>

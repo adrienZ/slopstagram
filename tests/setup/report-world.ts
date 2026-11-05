@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { expect, type TestContext } from "vitest";
 import sharp from "sharp";
 import { z } from "zod";
-import type { JsonValue } from "@@/core/utils/json-value.ts";
+import { JsonValueSchema, type JsonValue } from "@@/core/utils/json-value.ts";
 import { createReport } from "@@/core/domains/fetch-run/report.ts";
 import type { RuntimeBoundaries } from "@@/core/domains/runtime/runtime.ts";
 import { createCapturingLogger } from "../mock-helpers.ts";
@@ -172,6 +172,13 @@ export const assistantAnswer =
 export function placeAnswer(place: { id: string; name: string }) {
   return `Synthetic answer about [${place.name}](place:${place.id}).`;
 }
+/**
+ * What the chat model answers once it has listed or found places: like a small model, it names
+ * them without their place links, and links the first one elsewhere.
+ */
+export function placesAnswer(names: Array<string>) {
+  return `Synthetic answer naming ${names.join(", ")}, and [${names.at(0) ?? ""}](https://example.com/elsewhere).`;
+}
 /** What the chat model answers to a message that needs no tool. */
 export const assistantGreeting = "Synthetic greeting.";
 export const assistantThinking = "Synthetic reasoning about the question.";
@@ -181,14 +188,33 @@ const FoundPlaceSchema = z.object({
   status: z.literal("found"),
 });
 
-/** The answer to a tool result: a link to the place it found, or the synthetic answer. */
-function answerToolResult(content: string) {
+/** A tool result as JSON, or null when it is not JSON. */
+function parseJson(content: string): JsonValue {
   try {
-    const found = FoundPlaceSchema.safeParse(JSON.parse(content));
-    return found.success ? placeAnswer(found.data.place) : assistantAnswer;
+    return JsonValueSchema.parse(JSON.parse(content));
   } catch {
-    return assistantAnswer;
+    return null;
   }
+}
+
+const ListedPlacesSchema = z.object({
+  places: z.array(z.object({ name: z.string() })).min(1),
+});
+
+/**
+ * The answer to a tool result: a link to the place it found, the places it listed or found, or
+ * the synthetic answer.
+ */
+function answerToolResult(content: string) {
+  const result = parseJson(content);
+  const found = FoundPlaceSchema.safeParse(result);
+  if (found.success) {
+    return placeAnswer(found.data.place);
+  }
+  const listed = ListedPlacesSchema.safeParse(result);
+  return listed.success
+    ? placesAnswer(listed.data.places.map(({ name }) => name))
+    : assistantAnswer;
 }
 
 function ndjsonResponse(...lines: Array<JsonValue>) {

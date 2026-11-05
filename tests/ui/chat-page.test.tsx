@@ -71,6 +71,8 @@ test("asking about an account traces the read, then renders the written answer",
   // The model writes markdown: the chat renders it instead of showing its marks.
   expect(bold.tagName).toBe("STRONG");
   expect(screen.getByText("getFeedUserSummaries")).toBeVisible();
+  // The trace shows what the Assistant asked the tool.
+  expect(screen.getByText('{"usernames":["user_072"]}')).toBeVisible();
   // Its mentions are the stickers of the story feed.
   const answerSticker = screen.getAllByRole("link", { name: "@user_072" }).at(-1);
   expect(answerSticker).toHaveAttribute("href", "/users/user_072");
@@ -83,7 +85,7 @@ test("asking about an account traces the read, then renders the written answer",
   expect(screen.queryByRole("link", { name: "@user_999" })).not.toBeInTheDocument();
   // What the Assistant read is kept behind its trace line.
   expect(screen.queryByText("Summary of user_072")).not.toBeInTheDocument();
-  await chat.user.click(screen.getByRole("button", { name: "getFeedUserSummaries" }));
+  await chat.user.click(screen.getByRole("button", { name: /^getFeedUserSummaries\b/u }));
   const read = within(screen.getByRole("list", { name: "Résumés lus" }));
   expect(read.getByText("2 stories dans les dernières 24 heures")).toBeVisible();
   expect(read.getByText("Summary of user_072")).toBeVisible();
@@ -102,7 +104,7 @@ test("several accounts trace one read of their summaries", async (context) => {
   await chat.ask("Are @user_072 and @user_999 together?");
 
   await screen.findByText("answer");
-  await chat.user.click(screen.getByRole("button", { name: "getFeedUserSummaries" }));
+  await chat.user.click(screen.getByRole("button", { name: /^getFeedUserSummaries\b/u }));
   const read = within(screen.getByRole("list", { name: "Résumés lus" }));
   expect(read.getByText("Summary of user_072")).toBeVisible();
   expect(read.getByText("Aucun compte ne s’appelle @user_999.")).toBeVisible();
@@ -116,7 +118,7 @@ test("asking which accounts there are traces the read, which lists the accounts"
   const bold = await screen.findByText("answer");
   expect(bold.tagName).toBe("STRONG");
   expect(screen.queryByRole("list", { name: "Comptes" })).not.toBeInTheDocument();
-  await chat.user.click(screen.getByRole("button", { name: "listAccounts" }));
+  await chat.user.click(screen.getByRole("button", { name: /^listAccounts\b/u }));
   const items = within(screen.getByRole("list", { name: "Comptes" })).getAllByRole("listitem");
   // The read is plain text: no sticker, link or avatar.
   expect(items[0]).toHaveTextContent("@user_008");
@@ -130,7 +132,7 @@ test("asking which accounts there are before any fetch run says there is none", 
   await chat.ask("Which accounts do you know?");
 
   await screen.findByText("answer");
-  await chat.user.click(screen.getByRole("button", { name: "listAccounts" }));
+  await chat.user.click(screen.getByRole("button", { name: /^listAccounts\b/u }));
   expect(screen.getByText("Aucun compte.")).toBeVisible();
 });
 
@@ -140,7 +142,7 @@ test("searching an account traces the search, which lists the matches", async (c
   await chat.ask("Search user_0");
 
   await screen.findByText("answer");
-  await chat.user.click(screen.getByRole("button", { name: "searchAccounts" }));
+  await chat.user.click(screen.getByRole("button", { name: /^searchAccounts\b/u }));
   const items = within(screen.getByRole("list", { name: "Comptes trouvés" })).getAllByRole(
     "listitem",
   );
@@ -153,7 +155,7 @@ test("a search without a match says no account was found", async (context) => {
   await chat.ask("Search nobody");
 
   await screen.findByText("answer");
-  await chat.user.click(screen.getByRole("button", { name: "searchAccounts" }));
+  await chat.user.click(screen.getByRole("button", { name: /^searchAccounts\b/u }));
   expect(screen.getByText("Aucun compte trouvé.")).toBeVisible();
 });
 
@@ -167,7 +169,7 @@ test("a place the Assistant names links to that place on the map", async (contex
   expect(link).not.toHaveAttribute("target");
   // What the Assistant read is kept behind its trace line.
   expect(screen.queryByText("1 Synthetic Street")).not.toBeInTheDocument();
-  await chat.user.click(screen.getByRole("button", { name: "getTaggedPlace" }));
+  await chat.user.click(screen.getByRole("button", { name: /^getTaggedPlace\b/u }));
   const read = within(screen.getByRole("region", { name: "Lieu lu" }));
   expect(read.getByText("Synthetic Cafe · Cafe")).toBeVisible();
   expect(read.getByText("1 Synthetic Street")).toBeVisible();
@@ -179,8 +181,15 @@ test("asking for the places traces the read, which lists the places", async (con
 
   await chat.ask("Quels lieux ?");
 
-  await screen.findByText("answer");
-  await chat.user.click(screen.getByRole("button", { name: "listTaggedPlaces" }));
+  // The places the Assistant read link to the map wherever its answer names them, even where
+  // the model forgot the place link or linked elsewhere.
+  const links = await screen.findAllByRole("link", { name: "Synthetic Cafe" });
+  expect(links.map((link) => link.getAttribute("href"))).toStrictEqual([
+    `/map?place=instagram%3A${placeId}`,
+    `/map?place=instagram%3A${placeId}`,
+  ]);
+  expect(screen.getByText("{}")).toBeVisible();
+  await chat.user.click(screen.getByRole("button", { name: /^listTaggedPlaces\b/u }));
   const items = within(screen.getByRole("list", { name: "Lieux" })).getAllByRole("listitem");
   // The read is plain text: no link.
   expect(items.map((item) => item.textContent)).toStrictEqual([
@@ -193,18 +202,18 @@ test("searching a place traces the search, which lists the matches or says there
   const chat = await mountChat(await fetchedWorld(context));
 
   await chat.ask("Cherche lieux cafe");
-  await screen.findByText("answer");
-  await chat.user.click(screen.getByRole("button", { name: "searchTaggedPlaces" }));
+  await screen.findAllByRole("link", { name: "Synthetic Cafe" });
+  await chat.user.click(screen.getByRole("button", { name: /^searchTaggedPlaces\b/u }));
   expect(
     within(screen.getByRole("list", { name: "Lieux trouvés" })).getByRole("listitem"),
   ).toHaveTextContent("Synthetic Cafe · Cafe · 1 story · @user_008");
 
   await chat.ask("Cherche lieux louvre");
   await vi.waitFor(() => {
-    expect(screen.getAllByRole("button", { name: "searchTaggedPlaces" })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: /^searchTaggedPlaces\b/u })).toHaveLength(2);
   });
   await vi.waitFor(() => expect(screen.getByRole("button", { name: "Envoyer" })).toBeEnabled());
-  const [, louvreSearch] = screen.getAllByRole("button", { name: "searchTaggedPlaces" });
+  const [, louvreSearch] = screen.getAllByRole("button", { name: /^searchTaggedPlaces\b/u });
   await chat.user.click(louvreSearch);
   expect(screen.getByText("Aucun lieu trouvé.")).toBeVisible();
 });

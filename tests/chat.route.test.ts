@@ -9,6 +9,7 @@ import {
   createWorld,
   now,
   placeAnswer,
+  placesAnswer,
   placeId,
   plainStoryPk,
 } from "./setup/report-world.ts";
@@ -296,7 +297,9 @@ test("asking for the places streams the listTaggedPlaces call and its first page
       unknownUsernames: [],
     },
   ]);
-  expect(firstPage.text).toBe(assistantAnswer);
+  expect(firstPage.text).toBe(
+    placesAnswer(Array.from({ length: 10 }, (_, index) => elevenPlace(index + 1).name)),
+  );
   expect(lastPage.toolInputs).toStrictEqual([
     { input: { offset: 10 }, toolName: "listTaggedPlaces" },
   ]);
@@ -338,7 +341,7 @@ test("searching a place streams the searchTaggedPlaces call and its matches, the
   expect(chunks.toolOutputs).toStrictEqual([
     { nextOffset: null, places: [syntheticCafe], total: 1 },
   ]);
-  expect(chunks.text).toBe(assistantAnswer);
+  expect(chunks.text).toBe(placesAnswer(["Synthetic Cafe"]));
   // A small model reasoning after a search often writes its answer in the reasoning, sending
   // no text: the answer step does not reason.
   expect(
