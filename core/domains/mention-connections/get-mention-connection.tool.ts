@@ -10,10 +10,8 @@ import type { MentionConnectionsRuntime } from "./mention-connections.ts";
 /** Reads the retained directional evidence of one pair, five stories at a time. */
 export function createGetMentionConnectionTool(runtime: MentionConnectionsRuntime) {
   return tool({
-    description: `Checks the mention connection between TWO PEOPLE over ALL saved story history. Call directly when asked whether @alice and @bob know each other or who mentioned whom. Pass their usernames or names, e.g. firstPerson="user_072", secondPerson="user_008". No preliminary account lookup is needed. Opaque ids from previous results also work.
-found: up to 5 stories with storyId, date, author and target. The author mentioned the target. storyCount counts distinct stories in either direction. nextOffset means more evidence exists.
-no_observation: no retained mention connects them; this does NOT prove they do not know each other. unknown_person: no matching saved identity. ambiguous: ask which candidate is meant, then retry using their exact id. Never choose equal-name candidates yourself.
-A mention does NOT prove personal acquaintance. Current usernames can change or be reassigned. Answer briefly from the result only.`,
+    description: `Call this when asked whether TWO people know each other or who mentioned whom. Pass both usernames or names, e.g. firstPerson="user_072", secondPerson="user_008". No account lookup needed.
+found: up to 5 stories (storyId, date, author, target); the author mentioned the target. no_observation: no mention found, which does NOT prove they do not know each other. ambiguous: ask which candidate is meant. A mention never proves acquaintance; personalRelationship is always unknown.`,
     inputSchema: z.object({
       firstPerson: z
         .string()

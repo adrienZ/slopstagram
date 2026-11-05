@@ -125,7 +125,14 @@ test("the Assistant returns bounded directional evidence, then distinguishes abs
   );
   const pair = "account:700000000000001 account:700000000000068";
   const first = outputs(await ask(world.runtime, `Connection ${pair}`));
-  expect(first).toMatchObject([{ status: "found", connection: { storyCount: 7 }, nextOffset: 5 }]);
+  expect(first).toMatchObject([
+    {
+      status: "found",
+      personalRelationship: "unknown",
+      connection: { storyCount: 7 },
+      nextOffset: 5,
+    },
+  ]);
   const read = z
     .object({
       evidence: z.array(
@@ -166,7 +173,7 @@ test("the Assistant returns bounded directional evidence, then distinguishes abs
     outputs(
       await ask(world.runtime, "Connection account:synthetic-isolated account:700000000000001"),
     ),
-  ).toMatchObject([{ status: "no_observation" }]);
+  ).toMatchObject([{ status: "no_observation", personalRelationship: "unknown" }]);
   expect(
     outputs(await ask(world.runtime, "Connection account:missing account:700000000000001")),
   ).toMatchObject([{ status: "unknown_person", personIds: ["account:missing"] }]);
@@ -223,7 +230,7 @@ test("the Assistant pages connections and identities and never connects third-pa
         "Connection username:synthetic_guest_00 username:synthetic_guest_01",
       ),
     ),
-  ).toMatchObject([{ status: "no_observation" }]);
+  ).toMatchObject([{ status: "no_observation", personalRelationship: "unknown" }]);
   expect(
     outputs(
       await ask(world.runtime, "Connection account:700000000000001 username:synthetic_guest_00"),
@@ -276,7 +283,7 @@ test("a current username collision stays ambiguous in Assistant search instead o
   ]);
   expect(
     outputs(await ask(world.runtime, "Connection account:700000000000001 account:700000000000068")),
-  ).toMatchObject([{ status: "no_observation" }]);
+  ).toMatchObject([{ status: "no_observation", personalRelationship: "unknown" }]);
 });
 
 test("a pair read resolves exact usernames directly and returns ambiguous names for clarification", async (context) => {
@@ -324,5 +331,44 @@ test("a pair read resolves exact usernames directly and returns ambiguous names 
     ),
   ).toMatchObject([
     { status: "found", evidence: [{ storyId: "synthetic-person-one", date: null }] },
+  ]);
+});
+
+test("an explicit username does not collide with another person's full name", async (context) => {
+  const world = await createWorld(context, {
+    editStory: (story) => {
+      story.story_bloks_stickers =
+        story.pk === imageStoryPk
+          ? [{ bloks_sticker: { sticker_data: { ig_mention: { username: "user_072" } } } }]
+          : [];
+    },
+  });
+  await world.run();
+  await world.runtime.users.save({
+    pk: "synthetic-fullname",
+    id: "synthetic-fullname",
+    username: "synthetic_other",
+    full_name: "user_072",
+  });
+  expect(outputs(await ask(world.runtime, "Connection @user_008 @USER_072"))).toMatchObject([
+    { status: "found", personalRelationship: "unknown" },
+  ]);
+  expect(outputs(await ask(world.runtime, "Connection @user_008 user_072"))).toMatchObject([
+    { status: "ambiguous" },
+  ]);
+});
+
+test("name-only evidence with no story date remains undated in Assistant search", async (context) => {
+  const world = await createWorld(context);
+  await world.run();
+  await world.runtime.stories.save(
+    {
+      pk: "synthetic-undated",
+      annotations: { locations: [], stickers: [{ kind: "mention", label: "Synthetic Undated" }] },
+    },
+    { pk: "700000000000001", username: "user_008" },
+  );
+  expect(outputs(await ask(world.runtime, "Search connections Synthetic Undated"))).toMatchObject([
+    { people: [{ latestStoryDate: null }] },
   ]);
 });

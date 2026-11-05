@@ -58,10 +58,12 @@ function describePerson(node: MentionNode): z.infer<typeof MentionPersonSchema> 
   };
 }
 
-function latestObservation(connection: MentionConnection): number {
-  let latest = 0;
+function latestObservation(connection: MentionConnection): number | null {
+  let latest: number | null = null;
   for (const { takenAt } of connection.evidence) {
-    latest = Math.max(latest, takenAt ?? 0);
+    if (takenAt !== null) {
+      latest = latest === null ? takenAt : Math.max(latest, takenAt);
+    }
   }
   return latest;
 }
@@ -87,7 +89,8 @@ export function listMentionConnections(
     )
     .toSorted(
       (left, right) =>
-        latestObservation(right) - latestObservation(left) || left.id.localeCompare(right.id),
+        (latestObservation(right) ?? 0) - (latestObservation(left) ?? 0) ||
+        left.id.localeCompare(right.id),
     );
   const end = offset + PAGE_SIZE;
   return {
@@ -154,8 +157,8 @@ export function searchMentionConnections(
       const connections = graph.connections.filter(
         ({ source, target }) => source === person.id || target === person.id,
       );
-      const latest =
-        connections.length === 0 ? null : Math.max(...connections.map(latestObservation));
+      const dates = connections.flatMap((connection) => latestObservation(connection) ?? []);
+      const latest = dates.length === 0 ? null : Math.max(...dates);
       return {
         ...describePerson(person),
         connectionCount: connections.length,
@@ -179,18 +182,29 @@ const ConnectionEvidenceSchema = z.object({
 export const MentionConnectionReadSchema = z.discriminatedUnion("status", [
   z.object({
     status: z.literal("found"),
+    personalRelationship: z.literal("unknown"),
+    interpretation: z.string(),
     connection: ConnectionSummarySchema,
     evidence: z.array(ConnectionEvidenceSchema),
     nextOffset: z.number().nullable(),
   }),
   z.object({
     status: z.literal("no_observation"),
+    personalRelationship: z.literal("unknown"),
+    interpretation: z.string(),
     source: MentionPersonSchema,
     target: MentionPersonSchema,
   }),
-  z.object({ status: z.literal("unknown_person"), personIds: z.array(z.string()) }),
+  z.object({
+    status: z.literal("unknown_person"),
+    personalRelationship: z.literal("unknown"),
+    interpretation: z.string(),
+    personIds: z.array(z.string()),
+  }),
   z.object({
     status: z.literal("ambiguous"),
+    personalRelationship: z.literal("unknown"),
+    interpretation: z.string(),
     matches: z.array(
       z.object({ query: z.string(), people: z.array(MentionPersonSchema), total: z.number() }),
     ),
@@ -215,9 +229,10 @@ export function getMentionConnection(
     const matches = exact
       ? [exact]
       : [...people.values()].filter((person) =>
-          [person.username, person.fullName, person.label].some(
-            (label) => label !== null && normalizeSearchQuery(label) === wanted,
-          ),
+          (query.trim().startsWith("@")
+            ? [person.username]
+            : [person.username, person.fullName, person.label]
+          ).some((label) => label !== null && normalizeSearchQuery(label) === wanted),
         );
     return { query, people: matches, total: matches.length };
   });
@@ -225,6 +240,9 @@ export function getMentionConnection(
   if (ambiguous.length > 0) {
     return {
       status: "ambiguous",
+      personalRelationship: "unknown",
+      interpretation:
+        "Several distinct identities or story observations match. Ask the user which candidate they mean before choosing.",
       matches: ambiguous.map((match) => ({
         ...match,
         people: match.people
@@ -237,6 +255,9 @@ export function getMentionConnection(
   if (!source || !target) {
     return {
       status: "unknown_person",
+      personalRelationship: "unknown",
+      interpretation:
+        "No matching identity is available in retained data. Whether these people know each other remains unknown.",
       personIds: selectors.filter(({ total }) => total === 0).map(({ query }) => query),
     };
   }
@@ -246,11 +267,21 @@ export function getMentionConnection(
       (pair.source === target.id && pair.target === source.id),
   );
   if (!connection) {
-    return { status: "no_observation", source, target };
+    return {
+      status: "no_observation",
+      personalRelationship: "unknown",
+      interpretation:
+        "No retained mention connects these people. This does not prove they do not know each other; personal acquaintance remains unknown.",
+      source,
+      target,
+    };
   }
   const end = offset + 5;
   return {
     status: "found",
+    personalRelationship: "unknown",
+    interpretation:
+      "Observed mentions exist. They do not establish whether these people know each other; personal acquaintance remains unknown.",
     connection: { source, target, storyCount: connection.storyCount },
     evidence: connection.evidence
       .toSorted(
