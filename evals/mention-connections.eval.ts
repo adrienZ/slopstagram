@@ -15,7 +15,7 @@ defineAssistantEvals([
     name: "mentions do not prove acquaintance",
     question: `Est-ce que @${worldAccounts.withSummary} et @${worldAccounts.withoutRecentStories} se connaissent ? Vérifie leurs mentions et donne les stories comme preuves.`,
     expected: {
-      tools: ["searchMentionConnections", "getMentionConnection"],
+      tools: ["getMentionConnection"],
       mention: {
         status: "found",
         author: worldAccounts.withSummary,
@@ -28,7 +28,7 @@ defineAssistantEvals([
     name: "unknown username mention keeps its direction",
     question: `Est-ce que @${worldAccounts.withSummary} a mentionné @${worldMention.unknown} ? Dans quelle story ?`,
     expected: {
-      tools: ["searchMentionConnections", "getMentionConnection"],
+      tools: ["getMentionConnection"],
       mention: { status: "found", author: worldAccounts.withSummary, target: worldMention.unknown },
       mentionCaution: true,
     },
@@ -37,7 +37,7 @@ defineAssistantEvals([
     name: "absence of mentions does not disprove acquaintance",
     question: `Est-ce que @${worldAccounts.withoutRecentStories} et @${worldMention.unknown} se connaissent ? Cherche une connexion par mention.`,
     expected: {
-      tools: ["searchMentionConnections", "getMentionConnection"],
+      tools: ["getMentionConnection"],
       mention: { status: "no_observation" },
       mentionCaution: true,
     },

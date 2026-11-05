@@ -278,3 +278,51 @@ test("a current username collision stays ambiguous in Assistant search instead o
     outputs(await ask(world.runtime, "Connection account:700000000000001 account:700000000000068")),
   ).toMatchObject([{ status: "no_observation" }]);
 });
+
+test("a pair read resolves exact usernames directly and returns ambiguous names for clarification", async (context) => {
+  const world = await createWorld(context, {
+    editStory: (story) => {
+      story.story_bloks_stickers =
+        story.pk === imageStoryPk
+          ? [{ bloks_sticker: { sticker_data: { ig_mention: { username: "user_072" } } } }]
+          : [];
+    },
+  });
+  await world.run();
+  expect(outputs(await ask(world.runtime, "Connection @USER_008 user_072"))).toMatchObject([
+    { status: "found", connection: { storyCount: 1 } },
+  ]);
+  await Promise.all(
+    ["synthetic-person-one", "synthetic-person-two"].map(async (pk) => {
+      await world.runtime.stories.save(
+        {
+          pk,
+          annotations: { locations: [], stickers: [{ kind: "mention", label: "Synthetic Guest" }] },
+        },
+        { pk: "700000000000001", username: "user_008" },
+      );
+    }),
+  );
+  expect(outputs(await ask(world.runtime, "Connection Synthetic Guest | user_008"))).toMatchObject([
+    {
+      status: "ambiguous",
+      matches: [
+        {
+          query: "Synthetic Guest",
+          total: 2,
+          people: [
+            { id: "name:synthetic-person-one:Synthetic%20Guest" },
+            { id: "name:synthetic-person-two:Synthetic%20Guest" },
+          ],
+        },
+      ],
+    },
+  ]);
+  expect(
+    outputs(
+      await ask(world.runtime, "Connection name:synthetic-person-one:Synthetic%20Guest user_008"),
+    ),
+  ).toMatchObject([
+    { status: "found", evidence: [{ storyId: "synthetic-person-one", date: null }] },
+  ]);
+});

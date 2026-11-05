@@ -189,6 +189,12 @@ export const MentionConnectionReadSchema = z.discriminatedUnion("status", [
     target: MentionPersonSchema,
   }),
   z.object({ status: z.literal("unknown_person"), personIds: z.array(z.string()) }),
+  z.object({
+    status: z.literal("ambiguous"),
+    matches: z.array(
+      z.object({ query: z.string(), people: z.array(MentionPersonSchema), total: z.number() }),
+    ),
+  }),
 ]);
 
 /** One observed pair and a bounded page of stories, preserving who mentioned whom. */
@@ -203,18 +209,41 @@ export function getMentionConnection(
       describePerson(node),
     ]),
   );
-  const source = people.get(sourceId);
-  const target = people.get(targetId);
+  const selectors = [sourceId, targetId].map((query) => {
+    const exact = people.get(query);
+    const wanted = normalizeSearchQuery(query);
+    const matches = exact
+      ? [exact]
+      : [...people.values()].filter((person) =>
+          [person.username, person.fullName, person.label].some(
+            (label) => label !== null && normalizeSearchQuery(label) === wanted,
+          ),
+        );
+    return { query, people: matches, total: matches.length };
+  });
+  const ambiguous = selectors.filter(({ total }) => total > 1);
+  if (ambiguous.length > 0) {
+    return {
+      status: "ambiguous",
+      matches: ambiguous.map((match) => ({
+        ...match,
+        people: match.people
+          .toSorted((left, right) => left.id.localeCompare(right.id))
+          .slice(0, PAGE_SIZE),
+      })),
+    };
+  }
+  const [source, target] = selectors.map((selector) => selector.people.at(0));
   if (!source || !target) {
     return {
       status: "unknown_person",
-      personIds: [...new Set([sourceId, targetId])].filter((id) => !people.has(id)),
+      personIds: selectors.filter(({ total }) => total === 0).map(({ query }) => query),
     };
   }
   const connection = graph.connections.find(
     (pair) =>
-      (pair.source === sourceId && pair.target === targetId) ||
-      (pair.source === targetId && pair.target === sourceId),
+      (pair.source === source.id && pair.target === target.id) ||
+      (pair.source === target.id && pair.target === source.id),
   );
   if (!connection) {
     return { status: "no_observation", source, target };

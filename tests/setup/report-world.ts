@@ -293,13 +293,15 @@ function callPlaceTool(question: string, usernames: Array<string>, offered: Set<
 function callMentionTool(question: string, offered: Set<string>) {
   const offset = /\boffset\s+(?<offset>\d+)$/iu.exec(question)?.groups?.offset;
   const page: Record<string, JsonValue> = offset === undefined ? {} : { offset: Number(offset) };
-  const pair = /^connection\s+(?<sourceId>\S+)\s+(?<targetId>\S+)(?:\s+offset\s+\d+)?$/iu.exec(
-    question,
+  const pair = (
+    /^connection\s+(?<sourceId>.+?)\s+\|\s+(?<targetId>.+?)(?:\s+offset\s+\d+)?$/iu.exec(
+      question,
+    ) ?? /^connection\s+(?<sourceId>\S+)\s+(?<targetId>\S+)(?:\s+offset\s+\d+)?$/iu.exec(question)
   )?.groups;
   if (pair !== undefined && offered.has("getMentionConnection")) {
     return chatToolCall("getMentionConnection", {
-      sourceId: pair.sourceId,
-      targetId: pair.targetId,
+      firstPerson: pair.sourceId,
+      secondPerson: pair.targetId,
       ...page,
     });
   }
