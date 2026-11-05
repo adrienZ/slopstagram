@@ -13,9 +13,11 @@ const previewSizes = {
 export function StoryCard({
   story,
   size = "timeline",
+  onOpen,
 }: {
   story: StoryCardData;
   size?: "timeline" | "feed" | "sticker" | "gallery";
+  onOpen?: (mediaPk: string) => void;
 }) {
   const navigate = useNavigate();
   return (
@@ -30,6 +32,10 @@ export function StoryCard({
         type="button"
         aria-label={`Ouvrir aperçu ${story.mediaPk}`}
         onClick={() => {
+          if (onOpen !== undefined) {
+            onOpen(story.mediaPk);
+            return;
+          }
           void navigate({
             to: ".",
             search: (previous) => ({ ...previous, story: story.mediaPk }),

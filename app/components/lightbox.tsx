@@ -103,18 +103,25 @@ interface LightboxProps {
   stories: Array<StoryCardData>;
   selectedStory?: string;
   linkToProfile?: boolean;
+  /** Controlled selection for viewers whose modal state is local rather than in the URL. */
+  onSelectStory?: (mediaPk?: string) => void;
 }
 
 function LightboxDialog(props: {
   stories: Array<StoryCardData>;
   story: StoryCardData;
   linkToProfile: boolean;
+  onSelectStory?: (mediaPk?: string) => void;
 }) {
   const navigateTo = useNavigate();
   const [dismissedStory, setDismissedStory] = useState<string | null>(null);
 
   function close() {
     setDismissedStory(props.story.mediaPk);
+    if (props.onSelectStory !== undefined) {
+      props.onSelectStory();
+      return;
+    }
     void navigateTo({
       to: ".",
       search: (previous) => ({ ...previous, story: undefined }),
@@ -125,12 +132,17 @@ function LightboxDialog(props: {
 
   function navigate(direction: number) {
     const index = props.stories.findIndex((entry) => entry.mediaPk === props.story.mediaPk);
+    const nextStory =
+      props.stories[(index + direction + props.stories.length) % props.stories.length]?.mediaPk;
+    if (props.onSelectStory !== undefined) {
+      props.onSelectStory(nextStory);
+      return;
+    }
     void navigateTo({
       to: ".",
       search: (previous) => ({
         ...previous,
-        story:
-          props.stories[(index + direction + props.stories.length) % props.stories.length]?.mediaPk,
+        story: nextStory,
       }),
       replace: true,
       resetScroll: false,
@@ -299,6 +311,7 @@ export function Lightbox(props: LightboxProps) {
       stories={props.stories}
       story={story}
       linkToProfile={props.linkToProfile ?? false}
+      onSelectStory={props.onSelectStory}
     />
   );
 }
