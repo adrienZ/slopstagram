@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { FeedUserSummary } from "../core/domains/story-feed/feed-user-summary.ts";
-import { FeedUserSummaryOutputSchema } from "../core/domains/story-feed/feed-user-summary.tool.ts";
+import { FeedUserSummariesOutputSchema } from "../core/domains/story-feed/get-feed-user-summaries.tool.ts";
 import type { JsonObject, JsonValue } from "../core/utils/json-value.ts";
 
 /** One tool call of an Assistant reply, as the chat stream showed it. */
@@ -20,7 +20,7 @@ export interface AssistantRun {
   errorText?: string;
 }
 
-/** How a getFeedUserSummary call ended: "found", the reason of a missing summary, or the error. */
+/** How a getFeedUserSummaries read ended: "found", the reason of a missing summary, or the error. */
 export type FeedUserSummaryOutcome =
   | "found"
   | Extract<FeedUserSummary, { status: "missing" }>["reason"]
@@ -37,10 +37,10 @@ export function describeOutcome(read: FeedUserSummary): FeedUserSummaryOutcome {
 /** What a case expects from the Assistant. */
 export interface AssistantExpectation {
   /** The tool the Assistant should call, or null when it should answer without a tool. */
-  tool: "getFeedUserSummary" | "listAccounts" | null;
-  /** The username the tool should be called with. */
+  tool: "getFeedUserSummaries" | "listAccounts" | null;
+  /** The only username the tool should be called with. */
   username?: string;
-  /** The outcome every getFeedUserSummary result should have. */
+  /** The outcome every getFeedUserSummaries result should have. */
   outcome?: FeedUserSummaryOutcome;
   /** The saved accounts of the seeded world: the only usernames an answer may name. */
   savedUsernames: Array<string>;
@@ -66,7 +66,7 @@ function normalizeUsername(username: string): string {
   return username.trim().replace(/^@/u, "").toLowerCase();
 }
 
-const UsernameInputSchema = z.object({ username: z.string() });
+const UsernamesInputSchema = z.object({ usernames: z.array(z.string()) });
 
 // An @mention, without the punctuation that may end a sentence after it.
 const MENTION = /@(?<username>[\w.]*\w)/gu;
@@ -187,16 +187,19 @@ function expectedTool(expected: AssistantExpectation): AssistantCheck {
 function expectedArguments(username: string): AssistantCheck {
   return {
     name: "Expected arguments",
-    description: `Every getFeedUserSummary call asked for ${username} (an "@" prefix and letter case ignored, as the tool does).`,
+    description: `Every getFeedUserSummaries call asked for ${username} only (an "@" prefix and letter case ignored, as the tool does).`,
     check: (run) => {
-      const calls = run.toolCalls.filter(({ toolName }) => toolName === "getFeedUserSummary");
+      const calls = run.toolCalls.filter(({ toolName }) => toolName === "getFeedUserSummaries");
       const usernames = calls.map(
-        ({ input }) => UsernameInputSchema.safeParse(input).data?.username ?? null,
+        ({ input }) => UsernamesInputSchema.safeParse(input).data?.usernames ?? null,
       );
       const passed =
         usernames.length > 0 &&
         usernames.every(
-          (called) => called !== null && normalizeUsername(called) === normalizeUsername(username),
+          (called) =>
+            called !== null &&
+            called.length > 0 &&
+            called.every((name) => normalizeUsername(name) === normalizeUsername(username)),
         );
       return result(passed, { usernames });
     },
@@ -206,13 +209,13 @@ function expectedArguments(username: string): AssistantCheck {
 function expectedOutcome(outcome: FeedUserSummaryOutcome): AssistantCheck {
   return {
     name: "Expected outcome",
-    description: `Every getFeedUserSummary call returned ${outcome}, as the stream showed its result.`,
+    description: `Every getFeedUserSummaries read returned ${outcome}, as the stream showed its result.`,
     check: (run) => {
       const outcomes = run.toolCalls
-        .filter(({ toolName }) => toolName === "getFeedUserSummary")
-        .map(({ output }) => {
-          const read = FeedUserSummaryOutputSchema.safeParse(output);
-          return read.success ? describeOutcome(read.data) : null;
+        .filter(({ toolName }) => toolName === "getFeedUserSummaries")
+        .flatMap(({ output }) => {
+          const read = FeedUserSummariesOutputSchema.safeParse(output);
+          return read.success ? read.data.map((entry) => describeOutcome(entry.outcome)) : [null];
         });
       const passed = outcomes.length > 0 && outcomes.every((seen) => seen === outcome);
       return result(passed, { outcomes });

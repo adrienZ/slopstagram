@@ -22,7 +22,8 @@ const restrictedReactPaths: Array<RestrictedPath> = [
     name: "react",
     importNames: ["useEffect", "useLayoutEffect", "useInsertionEffect", "useCallback"],
     allowTypeImports: false,
-    message: "useEffect is forbidden. Use derived state or explicit event subscriptions.",
+    message:
+      "useEffect is forbidden. Use derived state or explicit event subscriptions. https://react.dev/learn/you-might-not-need-an-effect",
   },
   {
     name: "react",

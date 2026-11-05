@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { JsonValueSchema } from "../core/utils/json-value.ts";
 import { handleChatRequest } from "../app/routes/api/chat.ts";
-import { listSavedAccounts } from "../core/domains/accounts/saved-accounts.ts";
+import { listAccounts } from "../core/domains/accounts/accounts.ts";
 import type { AssistantRuntime } from "../core/domains/assistant/assistant.ts";
 import { readFeedUserSummary } from "../core/domains/story-feed/feed-user-summary.ts";
 import { createWorld, imageStoryPk, recordedPayloads } from "../tests/setup/report-world.ts";
@@ -33,7 +33,7 @@ function checkPremises(runtime: AssistantRuntime, now: Date) {
     outcomes: Object.values(worldAccounts).map((username) =>
       describeOutcome(readFeedUserSummary(runtime, username, now)),
     ),
-    saved: listSavedAccounts(runtime).map(({ username }) => username),
+    saved: listAccounts(runtime).map(({ username }) => username),
   });
   const expected = JSON.stringify({
     outcomes: ["found", "no_stories_in_last_24h", "unknown_account"],

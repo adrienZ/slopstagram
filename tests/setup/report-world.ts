@@ -160,7 +160,8 @@ const OllamaChatRequestSchema = z.object({
 });
 
 /** What the chat model answers once it has read a tool result. */
-export const assistantAnswer = "Synthetic answer from the tool result.";
+export const assistantAnswer =
+  "Synthetic **answer** from the tool result, about @user_072 and @user_999.";
 /** What the chat model answers to a message that needs no tool. */
 export const assistantGreeting = "Synthetic greeting.";
 export const assistantThinking = "Synthetic reasoning about the question.";
@@ -213,8 +214,9 @@ function chatToolCall(name: string, args: JsonValue) {
 
 /**
  * The chat model, in Ollama's streamed wire format. It calls only the tools it is offered:
- * the user summary of the first `@username` of the last user message, or the saved accounts
- * when the message asks about accounts. It answers once it has a tool result, and greets any
+ * the user summaries of the `@username`s of the last user message, a search of the
+ * accounts when the message starts with "search", or the accounts when the message asks
+ * about accounts. It answers once it has a tool result, and greets any
  * other message without a tool.
  */
 function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>) {
@@ -223,9 +225,15 @@ function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>
   }
   const offered = new Set(tools.map((tool) => tool.function.name));
   const question = messages.findLast(({ role }) => role === "user")?.content ?? "";
-  const username = /@(?<username>[\w.]+)/u.exec(question)?.groups?.username;
-  if (username !== undefined && offered.has("getFeedUserSummary")) {
-    return chatToolCall("getFeedUserSummary", { username });
+  const usernames = [...question.matchAll(/@(?<username>[\w.]+)/gu)].map(
+    ({ groups }) => groups?.username ?? "",
+  );
+  if (usernames.length > 0 && offered.has("getFeedUserSummaries")) {
+    return chatToolCall("getFeedUserSummaries", { usernames });
+  }
+  const query = /^(?:search|cherche)\s+(?<query>.+)$/iu.exec(question)?.groups?.query;
+  if (query !== undefined && offered.has("searchAccounts")) {
+    return chatToolCall("searchAccounts", { query });
   }
   if (/\b(?:accounts|comptes)\b/iu.test(question) && offered.has("listAccounts")) {
     return chatToolCall("listAccounts", {});

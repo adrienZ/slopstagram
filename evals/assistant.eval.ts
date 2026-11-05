@@ -33,7 +33,7 @@ const cases: Array<AssistantCase> = [
     question: `Qu'a publié @${worldAccounts.withSummary} ces dernières 24 heures ?`,
     expected: {
       outcome: "found",
-      tool: "getFeedUserSummary",
+      tool: "getFeedUserSummaries",
       username: worldAccounts.withSummary,
     },
     passRateThreshold: BASELINE_PASS_RATE,
@@ -49,7 +49,7 @@ const cases: Array<AssistantCase> = [
     question: `Qu'a publié @${worldAccounts.unknown} ces dernières 24 heures ?`,
     expected: {
       outcome: "unknown_account",
-      tool: "getFeedUserSummary",
+      tool: "getFeedUserSummaries",
       username: worldAccounts.unknown,
     },
     passRateThreshold: BASELINE_PASS_RATE,
@@ -59,7 +59,7 @@ const cases: Array<AssistantCase> = [
     question: `Qu'a fait @${worldAccounts.withoutRecentStories} aujourd'hui ?`,
     expected: {
       outcome: "no_stories_in_last_24h",
-      tool: "getFeedUserSummary",
+      tool: "getFeedUserSummaries",
       username: worldAccounts.withoutRecentStories,
     },
     passRateThreshold: BASELINE_PASS_RATE,

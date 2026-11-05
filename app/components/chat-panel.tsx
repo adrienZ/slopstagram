@@ -1,4 +1,5 @@
-import { BrainIcon, SendIcon, UserSearchIcon, UsersIcon } from "lucide-react";
+import type { ReactNode } from "react";
+import { BrainIcon, SearchIcon, SendIcon, UserSearchIcon, UsersIcon } from "lucide-react";
 import type { AssistantUIMessage } from "@@/core/domains/assistant/assistant.ts";
 import { useAssistantChat } from "../hooks/use-assistant-chat.ts";
 import { useMentionSuggestions } from "../hooks/use-mention-suggestions.ts";
@@ -28,62 +29,107 @@ import {
   TraceLine,
   TraceTitle,
 } from "../shadcn/ui/trace.tsx";
+import { ChatMarkdown } from "./chat-markdown.tsx";
 import { MentionBackdrop, MentionedText, MentionSuggestionList } from "./chat-mentions.tsx";
-import { FeedUserSummaryCard } from "./feed-user-summary-card.tsx";
-import { SavedAccountList } from "./saved-account-list.tsx";
+import { FeedUserSummariesDetails } from "./feed-user-summaries-details.tsx";
+import { AccountList } from "./account-list.tsx";
 
 type AssistantPart = AssistantUIMessage["parts"][number];
-type FeedUserSummaryPart = Extract<AssistantPart, { type: "tool-getFeedUserSummary" }>;
+type FeedUserSummariesPart = Extract<AssistantPart, { type: "tool-getFeedUserSummaries" }>;
 type ListAccountsPart = Extract<AssistantPart, { type: "tool-listAccounts" }>;
+type SearchAccountsPart = Extract<AssistantPart, { type: "tool-searchAccounts" }>;
 
-function FeedUserSummaryPartView({
-  accounts,
-  part,
+/** A tool call as one trace line, which opens on what the tool read once it has run. */
+function ToolTrace({
+  children,
+  icon,
+  status,
+  title,
 }: {
-  accounts: Array<SidebarUser>;
-  part: FeedUserSummaryPart;
+  children?: ReactNode;
+  icon: ReactNode;
+  status: "error" | "running" | undefined;
+  title: string;
 }) {
-  const username = part.input?.username ?? "";
-  if (part.state === "output-available") {
-    return <FeedUserSummaryCard accounts={accounts} outcome={part.output} username={username} />;
-  }
-  const failed = part.state === "output-error" || part.state === "output-denied";
-  return (
-    <TraceLine status={failed ? "error" : "running"}>
-      <TraceIcon>
-        <UserSearchIcon />
-      </TraceIcon>
-      <TraceTitle>
-        {failed
-          ? `Le résumé de ${formatUserHandle(username)} n’a pas pu être lu.`
-          : `Lecture du résumé de ${formatUserHandle(username)}`}
-      </TraceTitle>
+  const line = (
+    <TraceLine status={status}>
+      <TraceIcon>{icon}</TraceIcon>
+      <TraceTitle>{title}</TraceTitle>
     </TraceLine>
+  );
+  if (children === undefined) {
+    return line;
+  }
+  return (
+    <TraceCollapsible>
+      <TraceCollapsibleTrigger>{line}</TraceCollapsibleTrigger>
+      <TraceCollapsibleContent>{children}</TraceCollapsibleContent>
+    </TraceCollapsible>
   );
 }
 
-function ListAccountsPartView({
-  accounts,
-  part,
-}: {
-  accounts: Array<SidebarUser>;
-  part: ListAccountsPart;
-}) {
-  if (part.state === "output-available") {
-    return <SavedAccountList accounts={accounts} listed={part.output.accounts} />;
+function getToolStatus(state: string): "error" | "running" | undefined {
+  if (state === "output-error" || state === "output-denied") {
+    return "error";
   }
-  const failed = part.state === "output-error" || part.state === "output-denied";
+  return state === "output-available" ? undefined : "running";
+}
+
+/** The Assistant writes the answer from the summaries: the chat traces the read and keeps it. */
+function FeedUserSummariesPartView({ part }: { part: FeedUserSummariesPart }) {
+  const usernames = part.input?.usernames ?? [];
+  const handles = usernames.map((username) => formatUserHandle(username ?? "")).join(", ");
+  const noun = usernames.length > 1 ? "des résumés" : "du résumé";
+  const status = getToolStatus(part.state);
   return (
-    <TraceLine status={failed ? "error" : "running"}>
-      <TraceIcon>
-        <UsersIcon />
-      </TraceIcon>
-      <TraceTitle>
-        {failed
-          ? "Les comptes enregistrés n’ont pas pu être lus."
-          : "Lecture des comptes enregistrés"}
-      </TraceTitle>
-    </TraceLine>
+    <ToolTrace
+      icon={<UserSearchIcon />}
+      status={status}
+      title={
+        status === "error"
+          ? `Lecture ${noun} de ${handles} impossible.`
+          : `Lecture ${noun} de ${handles}`
+      }
+    >
+      {part.state === "output-available" && <FeedUserSummariesDetails results={part.output} />}
+    </ToolTrace>
+  );
+}
+
+/** The Assistant writes the list from the accounts: the chat traces the read and keeps it. */
+function ListAccountsPartView({ part }: { part: ListAccountsPart }) {
+  const status = getToolStatus(part.state);
+  return (
+    <ToolTrace
+      icon={<UsersIcon />}
+      status={status}
+      title={status === "error" ? "Les comptes n’ont pas pu être lus." : "Lecture des comptes"}
+    >
+      {part.state === "output-available" && <AccountList listed={part.output.accounts} />}
+    </ToolTrace>
+  );
+}
+
+/** The Assistant writes the answer from the matches: the chat traces the search and keeps it. */
+function SearchAccountsPartView({ part }: { part: SearchAccountsPart }) {
+  const query = part.input?.query ?? "";
+  const status = getToolStatus(part.state);
+  return (
+    <ToolTrace
+      icon={<SearchIcon />}
+      status={status}
+      title={
+        status === "error" ? `La recherche de « ${query} » a échoué.` : `Recherche de « ${query} »`
+      }
+    >
+      {part.state === "output-available" && (
+        <AccountList
+          emptyLabel="Aucun compte trouvé."
+          label="Comptes trouvés"
+          listed={part.output.accounts}
+        />
+      )}
+    </ToolTrace>
   );
 }
 
@@ -95,9 +141,12 @@ function AssistantPartView({
   part: AssistantPart;
 }) {
   if (part.type === "text") {
-    return <p className="tw:leading-relaxed tw:whitespace-pre-wrap">{part.text}</p>;
+    return <ChatMarkdown accounts={accounts}>{part.text}</ChatMarkdown>;
   }
   if (part.type === "reasoning") {
+    if (part.state !== "streaming" && part.text.trim() === "") {
+      return null;
+    }
     return (
       <TraceCollapsible>
         <TraceCollapsibleTrigger>
@@ -114,11 +163,14 @@ function AssistantPartView({
       </TraceCollapsible>
     );
   }
-  if (part.type === "tool-getFeedUserSummary") {
-    return <FeedUserSummaryPartView accounts={accounts} part={part} />;
+  if (part.type === "tool-getFeedUserSummaries") {
+    return <FeedUserSummariesPartView part={part} />;
   }
   if (part.type === "tool-listAccounts") {
-    return <ListAccountsPartView accounts={accounts} part={part} />;
+    return <ListAccountsPartView part={part} />;
+  }
+  if (part.type === "tool-searchAccounts") {
+    return <SearchAccountsPartView part={part} />;
   }
   return null;
 }
@@ -181,7 +233,7 @@ export function ChatPanel({ accounts }: { accounts: Array<SidebarUser> }) {
               {chat.messages.length === 0 && (
                 <p className="tw:text-sm tw:text-muted-foreground">
                   Mentionne un compte avec @ et demande ce qu’il a publié dans les dernières 24
-                  heures, ou demande quels comptes sont enregistrés.
+                  heures, ou demande quels comptes tu connais.
                 </p>
               )}
               {chat.messages.map((message) => (

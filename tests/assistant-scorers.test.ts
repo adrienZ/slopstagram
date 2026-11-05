@@ -25,15 +25,20 @@ const found = {
   username: "user_072",
 };
 
-function summaryCall(username: string, output: JsonValue = found) {
-  return { input: { username }, output, toolName: "getFeedUserSummary" };
+/** A getFeedUserSummaries call, whose output lists one read per username asked. */
+function summaryCall(username: string, outcome: JsonValue = found) {
+  return {
+    input: { usernames: [username] },
+    output: [{ handle: `@${username}`, outcome, requestedUsername: username }],
+    toolName: "getFeedUserSummaries",
+  };
 }
 
 describe("the deterministic scorers of the Assistant evals", () => {
   test("a run calling the expected tool with the mentioned username, answered in French, passes every scorer", () => {
     expect(
       score(
-        { outcome: "found", tool: "getFeedUserSummary", username: "user_072" },
+        { outcome: "found", tool: "getFeedUserSummaries", username: "user_072" },
         {
           question: "Qu'a publié @user_072 ces dernières 24 heures ?",
           text: "@user_072 a publié deux stories : un résumé de user_072.",
@@ -50,10 +55,10 @@ describe("the deterministic scorers of the Assistant evals", () => {
     });
   });
 
-  test("the outcome scorer passes only when every getFeedUserSummary result has the expected status and reason", () => {
+  test("the outcome scorer passes only when every getFeedUserSummaries result has the expected status and reason", () => {
     function outcome(expected: "no_stories_in_last_24h" | "unknown_account", output?: JsonValue) {
       return score(
-        { outcome: expected, tool: "getFeedUserSummary", username: "user_404" },
+        { outcome: expected, tool: "getFeedUserSummaries", username: "user_404" },
         { toolCalls: output === undefined ? [] : [summaryCall("user_404", output)] },
       )["Expected outcome"];
     }
@@ -69,15 +74,15 @@ describe("the deterministic scorers of the Assistant evals", () => {
     expect(outcome("no_stories_in_last_24h", "not a tool result")).toBe(0);
     expect(
       score(
-        { outcome: "unknown_account", tool: "getFeedUserSummary", username: "user_404" },
+        { outcome: "unknown_account", tool: "getFeedUserSummaries", username: "user_404" },
         {
           // The second call failed: the stream showed no result for it.
           toolCalls: [
             summaryCall("user_404", unknown),
             {
               errorText: "The tool failed.",
-              input: { username: "user_404" },
-              toolName: "getFeedUserSummary",
+              input: { usernames: ["user_404"] },
+              toolName: "getFeedUserSummaries",
             },
           ],
         },
@@ -88,7 +93,7 @@ describe("the deterministic scorers of the Assistant evals", () => {
   test("another tool, another username, an invented account and an English answer each fail their scorer", () => {
     expect(
       score(
-        { tool: "getFeedUserSummary", username: "user_072" },
+        { tool: "getFeedUserSummaries", username: "user_072" },
         {
           question: "Qu'a publié @user_072 ?",
           text: "The account user_123 posted a story, and @someone_else liked it.",
@@ -107,7 +112,7 @@ describe("the deterministic scorers of the Assistant evals", () => {
   test("an unknown account mentioned by the question may be named in the answer", () => {
     expect(
       score(
-        { tool: "getFeedUserSummary", username: "user_404" },
+        { tool: "getFeedUserSummaries", username: "user_404" },
         {
           question: "Et @user_404 ?",
           text: "Le compte @user_404 est inconnu.",
