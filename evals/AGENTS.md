@@ -11,7 +11,7 @@ baseline of the default chat model: raise it when the model improves.
   (`evalite-export/`, open with `npx serve -s evalite-export`) or in
   `evalite-export/last-run.json`, which every `npm run eval` writes. The export runs the evals
   itself and applies no threshold.
-- The LLM judge runs `gpt-6-luna` when the `codex` CLI is installed, and is skipped otherwise. Its
+- The LLM judge runs `gpt-6-luna` when the `codex` CLI is installed, and is skipped otherwise and on CI (`CI` is set: the GitHub runners have `codex` but no login). Its
   Codex login must have access to that model, or every judged run fails with `model_not_found`.
 - Evals are not tests: `npm run check`, `npm test` and the `Check` workflow never run them. Do not
   run `evalite watch` or `evalite serve` in an agent session: they keep a server running.
