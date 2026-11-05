@@ -27,10 +27,12 @@ import {
   TraceLine,
   TraceTitle,
 } from "../shadcn/ui/trace.tsx";
+import { ChatMarkdown } from "./chat-markdown.tsx";
 import { FeedUserSummaryCard } from "./feed-user-summary-card.tsx";
 
 type AssistantPart = AssistantUIMessage["parts"][number];
 type FeedUserSummaryPart = Extract<AssistantPart, { type: "tool-getFeedUserSummary" }>;
+type FeedUserSummariesPart = Extract<AssistantPart, { type: "tool-getFeedUserSummaries" }>;
 
 function FeedUserSummaryPartView({
   accounts,
@@ -58,6 +60,33 @@ function FeedUserSummaryPartView({
   );
 }
 
+/** The comparison of several accounts is written by the Assistant: the chat only traces the read. */
+function FeedUserSummariesPartView({ part }: { part: FeedUserSummariesPart }) {
+  const handles = (part.input?.usernames ?? [])
+    .map((username) => formatUserHandle(username ?? ""))
+    .join(", ");
+  const failed = part.state === "output-error" || part.state === "output-denied";
+  const done = part.state === "output-available";
+  let status: "error" | "running" | undefined;
+  if (failed) {
+    status = "error";
+  } else if (!done) {
+    status = "running";
+  }
+  return (
+    <TraceLine status={status}>
+      <TraceIcon>
+        <UserSearchIcon />
+      </TraceIcon>
+      <TraceTitle>
+        {failed
+          ? `Les résumés de ${handles} n’ont pas pu être lus.`
+          : `Lecture des résumés de ${handles}`}
+      </TraceTitle>
+    </TraceLine>
+  );
+}
+
 function AssistantPartView({
   accounts,
   part,
@@ -66,9 +95,12 @@ function AssistantPartView({
   part: AssistantPart;
 }) {
   if (part.type === "text") {
-    return <p className="tw:leading-relaxed tw:whitespace-pre-wrap">{part.text}</p>;
+    return <ChatMarkdown>{part.text}</ChatMarkdown>;
   }
   if (part.type === "reasoning") {
+    if (part.state !== "streaming" && part.text.trim() === "") {
+      return null;
+    }
     return (
       <TraceCollapsible>
         <TraceCollapsibleTrigger>
@@ -87,6 +119,9 @@ function AssistantPartView({
   }
   if (part.type === "tool-getFeedUserSummary") {
     return <FeedUserSummaryPartView accounts={accounts} part={part} />;
+  }
+  if (part.type === "tool-getFeedUserSummaries") {
+    return <FeedUserSummariesPartView part={part} />;
   }
   return null;
 }
