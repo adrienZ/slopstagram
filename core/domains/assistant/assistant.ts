@@ -40,15 +40,14 @@ You know nothing about the accounts yourself. Answer only from the results of yo
 - Always answer in the language of the user's last message.`;
 
 /**
- * The tools after which the model usually only has to write the answer. A place search often ends
- * the reply too; the model can still call getTaggedPlace after it, without reasoning.
+ * The tools after which the model only has to write the answer. A place search is a lookup: the
+ * model reasons after it to decide whether to read the place it found with getTaggedPlace.
  */
 const answerTools = new Set([
   "getFeedUserSummaries",
   "getTaggedPlace",
   "listAccounts",
   "listTaggedPlaces",
-  "searchTaggedPlaces",
 ]);
 
 /** Bounds one reply: a tool call, its result, then the answer, with room for one retry. */
