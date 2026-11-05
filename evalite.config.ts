@@ -1,4 +1,5 @@
 import { defineConfig } from "evalite/config";
+import { createSqliteStorage } from "evalite/sqlite-storage";
 
 // `npm run eval` runs evals/*.eval.ts against the local Ollama server. See AGENTS.md.
 export default defineConfig({
@@ -11,6 +12,9 @@ export default defineConfig({
   // Evalite applies one timeout to a whole case, queue and judge included: sized for the slow local
   // chat model, whose calls wait for each other (see `inSequence` in evals/assistant-world.ts).
   testTimeout: 300_000,
+  // Kept on disk so `npm run eval:export` renders the run that `npm run eval` just made instead of
+  // running the evals again. Needs `better-sqlite3`, the one SQLite driver Evalite supports.
+  storage: async () => await createSqliteStorage("./data/evalite.db"),
   viteConfig: {
     resolve: { tsconfigPaths: true },
     // The evals seed their own in-memory world; nothing may open the application database.

@@ -9,13 +9,14 @@ baseline of the default chat model: raise it when the model improves.
   (`OLLAMA_CHAT_MODEL`, e.g. `ollama pull qwen3.5:0.8b`).
 - The terminal table is hidden: read the answers and traces in `npm run eval:export`
   (`evalite-export/`, open with `npx serve -s evalite-export`) or in
-  `evalite-export/last-run.json`, which every `npm run eval` writes. The export runs the evals
-  itself and applies no threshold.
+  `evalite-export/last-run.json`, which every `npm run eval` writes. `eval:export` renders the
+  last `npm run eval` from `data/evalite.db` (SQLite storage, `better-sqlite3`); with no stored
+  run it runs the evals itself, without the threshold.
 - The LLM judge runs `gpt-6-luna` when the `codex` CLI is installed, and is skipped otherwise and on CI (`CI` is set: the GitHub runners have `codex` but no login). Its
   Codex login must have access to that model, or every judged run fails with `model_not_found`.
 - The `Evals` workflow runs by hand (`workflow_dispatch`) or when the `evals` label is added to a
-  pull request, never on a push. It uploads `evalite-export/last-run.json`; it never runs
-  `eval:export`, which would run the evals a second time.
+  pull request, never on a push. It exports the HTML report (`eval:export`) after the run, from the
+  SQLite storage; with no stored run `eval:export` would run the evals again, so it is skipped.
 - Evals are not tests: `npm run check`, `npm test` and the `Check` workflow never run them. Do not
   run `evalite watch` or `evalite serve` in an agent session: they keep a server running.
 - Only synthetic data may reach the chat model and the judge: never `data/`, the application
