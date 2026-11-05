@@ -83,6 +83,7 @@ test("a mentioned account with a stored user summary streams the tool call, its 
           summary: "Summary of user_072",
           username: "user_072",
         },
+        handle: "@user_072",
         requestedUsername: "User_072",
       },
     ],
@@ -114,9 +115,14 @@ test("several mentioned accounts stream their summaries in the order asked", asy
           summary: "Summary of user_072",
           username: "user_072",
         },
+        handle: "@user_072",
         requestedUsername: "User_072",
       },
-      { outcome: { error: "unknown_account", status: "error" }, requestedUsername: "user_999" },
+      {
+        outcome: { error: "unknown_account", status: "error" },
+        handle: "@user_999",
+        requestedUsername: "user_999",
+      },
     ],
   ]);
   expect(chunks.text).toBe(assistantAnswer);
@@ -131,7 +137,13 @@ test("an unknown account streams the unknown_account outcome", async (context) =
   );
 
   expect(chunks.toolOutputs).toStrictEqual([
-    [{ outcome: { error: "unknown_account", status: "error" }, requestedUsername: "user_999" }],
+    [
+      {
+        outcome: { error: "unknown_account", status: "error" },
+        handle: "@user_999",
+        requestedUsername: "user_999",
+      },
+    ],
   ]);
   expect(chunks.text).toBe(assistantAnswer);
 });
@@ -149,6 +161,7 @@ test("an account without stories in the last 24 hours streams no_stories_in_last
     [
       {
         outcome: { reason: "no_stories_in_last_24h", status: "missing", username: "user_008" },
+        handle: "@user_008",
         requestedUsername: "user_008",
       },
     ],
@@ -167,6 +180,7 @@ test("an account whose summary was not generated streams not_generated, without 
     [
       {
         outcome: { reason: "not_generated", status: "missing", username: "user_072" },
+        handle: "@user_072",
         requestedUsername: "user_072",
       },
     ],
@@ -174,6 +188,47 @@ test("an account whose summary was not generated streams not_generated, without 
   expect(
     world.ollama.requests.map(({ kind }) => kind).filter((kind) => kind !== "vision"),
   ).toStrictEqual(["summary", "summary", "chat", "chat"]);
+});
+
+test("asking which accounts there are streams the listAccounts call and every account", async (context) => {
+  const world = await createWorld(context);
+  await world.run();
+
+  const chunks = await readChunks(
+    await handleChatRequest(world.runtime, chatRequest(userMessage("Which accounts do you know?"))),
+  );
+
+  expect(chunks.toolInputs).toStrictEqual([{ input: {}, toolName: "listAccounts" }]);
+  // The world's tray carries no full names.
+  expect(chunks.toolOutputs).toStrictEqual([
+    {
+      accounts: [
+        { fullName: null, handle: "@user_008", username: "user_008" },
+        { fullName: null, handle: "@user_072", username: "user_072" },
+      ],
+    },
+  ]);
+  expect(chunks.text).toBe(assistantAnswer);
+});
+
+test("searching an account by name streams the searchAccounts call and its matches", async (context) => {
+  const world = await createWorld(context);
+  await world.run();
+
+  const chunks = await readChunks(
+    await handleChatRequest(world.runtime, chatRequest(userMessage("Search USER_07"))),
+  );
+
+  expect(chunks.toolInputs).toStrictEqual([
+    { input: { query: "USER_07" }, toolName: "searchAccounts" },
+  ]);
+  expect(chunks.toolOutputs).toStrictEqual([
+    {
+      accounts: [{ fullName: null, handle: "@user_072", username: "user_072" }],
+      total: 1,
+    },
+  ]);
+  expect(chunks.text).toBe(assistantAnswer);
 });
 
 test("a greeting is answered without any tool call", async (context) => {

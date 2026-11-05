@@ -14,27 +14,41 @@ import {
 } from "ai";
 import { createOllama } from "ai-sdk-ollama";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
+import type { AccountsRuntime } from "@@/core/domains/accounts/accounts.ts";
+import { createListAccountsTool } from "@@/core/domains/accounts/list-accounts.tool.ts";
+import { createSearchAccountsTool } from "@@/core/domains/accounts/search-accounts.tool.ts";
 import { getUserSummaryModel } from "@@/core/domains/accounts/user-summary.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import type { FeedUserSummaryRuntime } from "@@/core/domains/story-feed/feed-user-summary.ts";
-import { createGetFeedUserSummariesTool } from "@@/core/domains/story-feed/feed-user-summary.tool.ts";
+import { createGetFeedUserSummariesTool } from "@@/core/domains/story-feed/get-feed-user-summaries.tool.ts";
 import { getOllamaHost } from "@@/core/domains/vision/ollama.ts";
 
-const ASSISTANT_INSTRUCTIONS = `You are the Assistant of Slopstagram, an application that collects the Instagram stories of saved accounts into a story feed of the last 24 hours.
+const ASSISTANT_INSTRUCTIONS = `You are the Assistant of Slopstagram, an application that collects the Instagram stories of accounts into a story feed of the last 24 hours.
 You know nothing about the accounts yourself. Answer only from the results of your tools, and never invent an account, a story or a summary.
 
 - When the message mentions one or more accounts, usually as @username, and asks about what they posted recently, or compares them, call getFeedUserSummaries with their usernames, then answer from the result in a few sentences. Write each account as @username.
+- When the message asks which accounts it knows or what it can ask about, and mentions no account, call listAccounts, then answer from its result, writing each account as @username.
+- When the message names an account by its name or part of it, without @username, call searchAccounts with that name. If it also asks what the account posted, call getFeedUserSummaries with the username found, then answer. When no account matches, say so, and when several match, ask which one is meant.
 - When a tool result says an account is unknown, published no story in the last 24 hours, or has no summary yet, say so plainly.
-- For a greeting or a message that is not about the accounts, answer briefly without calling any tool.
+- For a greeting, a thank-you or a message that is not about the accounts, answer briefly without calling any tool.
 - Always answer in the language of the user's last message.`;
+
+/** The tools after which the model only has to write the answer. */
+const answerTools = new Set(["getFeedUserSummaries", "listAccounts"]);
 
 /** Bounds one reply: a tool call, its result, then the answer, with room for one retry. */
 const MAX_STEPS = 4;
 
-export type AssistantRuntime = FeedUserSummaryRuntime & Pick<Runtime, "fetchOllama" | "logger">;
+type AssistantToolsRuntime = FeedUserSummaryRuntime & AccountsRuntime;
 
-function createAssistantTools(runtime: FeedUserSummaryRuntime) {
-  return { getFeedUserSummaries: createGetFeedUserSummariesTool(runtime) };
+export type AssistantRuntime = AssistantToolsRuntime & Pick<Runtime, "fetchOllama" | "logger">;
+
+function createAssistantTools(runtime: AssistantToolsRuntime) {
+  return {
+    getFeedUserSummaries: createGetFeedUserSummariesTool(runtime),
+    listAccounts: createListAccountsTool(runtime),
+    searchAccounts: createSearchAccountsTool(runtime),
+  };
 }
 
 export type AssistantUIMessage = UIMessage<
@@ -50,7 +64,7 @@ function getAssistantModel(): string {
 
 /** The UI messages of a chat request, or null when they are not a valid conversation. */
 export async function validateAssistantMessages(
-  runtime: FeedUserSummaryRuntime,
+  runtime: AssistantToolsRuntime,
   messages: Array<JsonValue>,
 ): Promise<Array<AssistantUIMessage> | null> {
   if (messages.length === 0) {
@@ -85,6 +99,14 @@ export async function streamAssistantReply(
   const result = streamText({
     // Reasoning is what lets a small model decide to call the tools.
     model: ollama(getAssistantModel(), { think: true }),
+    prepareStep: ({ steps }) => {
+      const lastTools = steps.at(-1)?.toolCalls.map(({ toolName }) => toolName) ?? [];
+      // After a read tool only the answer is left. With reasoning on, a small model often writes
+      // that answer inside its reasoning and sends no text, so the reply looks empty.
+      return lastTools.some((toolName) => answerTools.has(toolName))
+        ? { model: ollama(getAssistantModel(), { think: false }) }
+        : undefined;
+    },
     instructions: ASSISTANT_INSTRUCTIONS,
     messages: await convertToModelMessages(messages),
     stopWhen: stepCountIs(MAX_STEPS),

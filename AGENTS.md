@@ -29,7 +29,7 @@ Keep UI components limited to rendering, local UI behavior, and presentation tra
 
 ### Chat Assistant
 
-The chat page (`app/routes/chat.tsx`) posts to `app/routes/api/chat.ts`, a thin adapter over `core/domains/assistant/` that tests drive with only Ollama faked, using the `OLLAMA_CHAT_MODEL` model. Assistant tools live in their domain as `<module>.tool.ts` (`docs/adr/0007-assistant-tools-live-in-their-domain.md`), and only those, `core/domains/assistant/` and `app/hooks/use-assistant-chat.ts` may import the AI SDK (the `slopstagram/ai-sdk-imports` lint rule).
+The chat page (`app/routes/chat.tsx`) posts to `app/routes/api/chat.ts`, a thin adapter over `core/domains/assistant/` that tests drive with only Ollama faked, using the `OLLAMA_CHAT_MODEL` model. Assistant tools live in their domain, one per `<tool-name>.tool.ts` (`docs/adr/0007-assistant-tools-live-in-their-domain.md`), and only those, `core/domains/assistant/` and `app/hooks/use-assistant-chat.ts` may import the AI SDK (the `slopstagram/ai-sdk-imports` lint rule).
 
 ### Generated UI
 

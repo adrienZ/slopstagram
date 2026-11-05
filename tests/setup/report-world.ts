@@ -156,11 +156,13 @@ const OllamaRequestSchema = z.object({
 
 const OllamaChatRequestSchema = z.object({
   messages: z.array(z.object({ content: z.string(), role: z.string() })),
+  tools: z.array(z.object({ function: z.object({ name: z.string() }) })).default([]),
 });
 
 /** What the chat model answers once it has read a tool result. */
-export const assistantAnswer = "Synthetic **answer** from the tool result, about @user_072.";
-/** What the chat model answers to a message that mentions no account. */
+export const assistantAnswer =
+  "Synthetic **answer** from the tool result, about @user_072 and @user_999.";
+/** What the chat model answers to a message that needs no tool. */
 export const assistantGreeting = "Synthetic greeting.";
 export const assistantThinking = "Synthetic reasoning about the question.";
 
@@ -201,28 +203,42 @@ function failChat(failure: OllamaChatFailure) {
   return fail(failure);
 }
 
-/**
- * The chat model, in Ollama's streamed wire format: it reads the user summaries of the
- * `@username` of the last user message, answers once it has the tool result, and greets a
- * message that mentions no account.
- */
-function answerChat(messages: z.infer<typeof OllamaChatRequestSchema>["messages"]) {
-  if (messages.some(({ role }) => role === "tool")) {
-    return chatMessage({ content: assistantAnswer, role: "assistant" });
-  }
-  const question = messages.findLast(({ role }) => role === "user")?.content ?? "";
-  const usernames = [...question.matchAll(/@(?<username>[\w.]+)/gu)].map(
-    ({ groups }) => groups?.username ?? "",
-  );
-  if (usernames.length === 0) {
-    return chatMessage({ content: assistantGreeting, role: "assistant" });
-  }
+function chatToolCall(name: string, args: JsonValue) {
   return chatMessage({
     content: "",
     role: "assistant",
     thinking: assistantThinking,
-    tool_calls: [{ function: { arguments: { usernames }, name: "getFeedUserSummaries" } }],
+    tool_calls: [{ function: { arguments: args, name } }],
   });
+}
+
+/**
+ * The chat model, in Ollama's streamed wire format. It calls only the tools it is offered:
+ * the user summaries of the `@username`s of the last user message, a search of the
+ * accounts when the message starts with "search", or the accounts when the message asks
+ * about accounts. It answers once it has a tool result, and greets any
+ * other message without a tool.
+ */
+function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>) {
+  if (messages.some(({ role }) => role === "tool")) {
+    return chatMessage({ content: assistantAnswer, role: "assistant" });
+  }
+  const offered = new Set(tools.map((tool) => tool.function.name));
+  const question = messages.findLast(({ role }) => role === "user")?.content ?? "";
+  const usernames = [...question.matchAll(/@(?<username>[\w.]+)/gu)].map(
+    ({ groups }) => groups?.username ?? "",
+  );
+  if (usernames.length > 0 && offered.has("getFeedUserSummaries")) {
+    return chatToolCall("getFeedUserSummaries", { usernames });
+  }
+  const query = /^(?:search|cherche)\s+(?<query>.+)$/iu.exec(question)?.groups?.query;
+  if (query !== undefined && offered.has("searchAccounts")) {
+    return chatToolCall("searchAccounts", { query });
+  }
+  if (/\b(?:accounts|comptes)\b/iu.test(question) && offered.has("listAccounts")) {
+    return chatToolCall("listAccounts", {});
+  }
+  return chatMessage({ content: assistantGreeting, role: "assistant" });
 }
 
 /**
@@ -238,7 +254,7 @@ function createOllama(behavior: OllamaBehavior = {}) {
     if (chat.success) {
       requests.push({ kind: "chat", prompt: chat.data.messages.at(-1)?.content ?? "" });
       return await Promise.resolve(
-        behavior.chat === undefined ? answerChat(chat.data.messages) : failChat(behavior.chat),
+        behavior.chat === undefined ? answerChat(chat.data) : failChat(behavior.chat),
       );
     }
     const body = OllamaRequestSchema.parse(json);

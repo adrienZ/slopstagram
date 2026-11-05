@@ -15,7 +15,7 @@ new RuleTester().run("ai-sdk-imports", aiSdkImports, {
     {
       name: "an Assistant tool module builds its tool with the AI SDK",
       code: 'import { tool } from "ai";',
-      filename: "/repo/core/domains/story-feed/feed-user-summary.tool.ts",
+      filename: "/repo/core/domains/story-feed/get-feed-user-summaries.tool.ts",
     },
     {
       name: "the Assistant domain streams with the AI SDK and its Ollama provider",

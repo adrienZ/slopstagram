@@ -8,12 +8,17 @@ import { Sticker } from "./sticker.tsx";
 const mentionPattern = /(?<![\w/:.@])@(?<username>\w+(?:\.\w+)*)/gu;
 const profilePath = "/users/";
 
-/** Writes each `@username` of a text as a link to the profile, which the chat shows as a sticker. */
-function linkMentions(text: string): string {
-  return text.replaceAll(
-    mentionPattern,
-    (mention, username: string) => `[${mention}](${profilePath}${username})`,
-  );
+/**
+ * Writes each `@username` of a account as a link to its profile, which the chat shows as a
+ * sticker. A name that is not a account stays plain text.
+ */
+function linkMentions(text: string, accounts: Array<SidebarUser>): string {
+  return text.replaceAll(mentionPattern, (mention, username: string) => {
+    const account = accounts.find(
+      (candidate) => candidate.username.toLowerCase() === username.toLowerCase(),
+    );
+    return account === undefined ? mention : `[${mention}](${profilePath}${account.username})`;
+  });
 }
 
 function createComponents(accounts: Array<SidebarUser>): Components {
@@ -40,8 +45,8 @@ function createComponents(accounts: Array<SidebarUser>): Components {
 }
 
 /**
- * The Assistant's text, which the model writes as markdown, with its mentions as the stickers of
- * the story feed. Raw HTML in it is not rendered, and unsafe link targets are dropped by the
+ * The Assistant's text, which the model writes as markdown, with the mentions of accounts as
+ * the stickers of the story feed. Raw HTML in it is not rendered, and unsafe link targets are dropped by the
  * renderer.
  */
 export function ChatMarkdown({
@@ -54,7 +59,7 @@ export function ChatMarkdown({
   const components = useMemo(() => createComponents(accounts), [accounts]);
   return (
     <div className="tw:grid tw:gap-3">
-      <ReactMarkdown components={components}>{linkMentions(children)}</ReactMarkdown>
+      <ReactMarkdown components={components}>{linkMentions(children, accounts)}</ReactMarkdown>
     </div>
   );
 }

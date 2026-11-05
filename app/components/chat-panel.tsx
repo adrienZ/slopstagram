@@ -1,4 +1,5 @@
-import { BrainIcon, SendIcon, UserSearchIcon } from "lucide-react";
+import type { ReactNode } from "react";
+import { BrainIcon, SearchIcon, SendIcon, UserSearchIcon, UsersIcon } from "lucide-react";
 import type { AssistantUIMessage } from "@@/core/domains/assistant/assistant.ts";
 import { useAssistantChat } from "../hooks/use-assistant-chat.ts";
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
@@ -28,32 +29,105 @@ import {
   TraceTitle,
 } from "../shadcn/ui/trace.tsx";
 import { ChatMarkdown } from "./chat-markdown.tsx";
+import { FeedUserSummariesDetails } from "./feed-user-summaries-details.tsx";
+import { AccountList } from "./account-list.tsx";
 
 type AssistantPart = AssistantUIMessage["parts"][number];
 type FeedUserSummariesPart = Extract<AssistantPart, { type: "tool-getFeedUserSummaries" }>;
+type ListAccountsPart = Extract<AssistantPart, { type: "tool-listAccounts" }>;
+type SearchAccountsPart = Extract<AssistantPart, { type: "tool-searchAccounts" }>;
 
-/** The Assistant writes the answer from the summaries: the chat only traces the read. */
+/** A tool call as one trace line, which opens on what the tool read once it has run. */
+function ToolTrace({
+  children,
+  icon,
+  status,
+  title,
+}: {
+  children?: ReactNode;
+  icon: ReactNode;
+  status: "error" | "running" | undefined;
+  title: string;
+}) {
+  const line = (
+    <TraceLine status={status}>
+      <TraceIcon>{icon}</TraceIcon>
+      <TraceTitle>{title}</TraceTitle>
+    </TraceLine>
+  );
+  if (children === undefined) {
+    return line;
+  }
+  return (
+    <TraceCollapsible>
+      <TraceCollapsibleTrigger>{line}</TraceCollapsibleTrigger>
+      <TraceCollapsibleContent>{children}</TraceCollapsibleContent>
+    </TraceCollapsible>
+  );
+}
+
+function getToolStatus(state: string): "error" | "running" | undefined {
+  if (state === "output-error" || state === "output-denied") {
+    return "error";
+  }
+  return state === "output-available" ? undefined : "running";
+}
+
+/** The Assistant writes the answer from the summaries: the chat traces the read and keeps it. */
 function FeedUserSummariesPartView({ part }: { part: FeedUserSummariesPart }) {
   const usernames = part.input?.usernames ?? [];
   const handles = usernames.map((username) => formatUserHandle(username ?? "")).join(", ");
   const noun = usernames.length > 1 ? "des résumés" : "du résumé";
-  const failed = part.state === "output-error" || part.state === "output-denied";
-  const done = part.state === "output-available";
-  let status: "error" | "running" | undefined;
-  if (failed) {
-    status = "error";
-  } else if (!done) {
-    status = "running";
-  }
+  const status = getToolStatus(part.state);
   return (
-    <TraceLine status={status}>
-      <TraceIcon>
-        <UserSearchIcon />
-      </TraceIcon>
-      <TraceTitle>
-        {failed ? `Lecture ${noun} de ${handles} impossible.` : `Lecture ${noun} de ${handles}`}
-      </TraceTitle>
-    </TraceLine>
+    <ToolTrace
+      icon={<UserSearchIcon />}
+      status={status}
+      title={
+        status === "error"
+          ? `Lecture ${noun} de ${handles} impossible.`
+          : `Lecture ${noun} de ${handles}`
+      }
+    >
+      {part.state === "output-available" && <FeedUserSummariesDetails results={part.output} />}
+    </ToolTrace>
+  );
+}
+
+/** The Assistant writes the list from the accounts: the chat traces the read and keeps it. */
+function ListAccountsPartView({ part }: { part: ListAccountsPart }) {
+  const status = getToolStatus(part.state);
+  return (
+    <ToolTrace
+      icon={<UsersIcon />}
+      status={status}
+      title={status === "error" ? "Les comptes n’ont pas pu être lus." : "Lecture des comptes"}
+    >
+      {part.state === "output-available" && <AccountList listed={part.output.accounts} />}
+    </ToolTrace>
+  );
+}
+
+/** The Assistant writes the answer from the matches: the chat traces the search and keeps it. */
+function SearchAccountsPartView({ part }: { part: SearchAccountsPart }) {
+  const query = part.input?.query ?? "";
+  const status = getToolStatus(part.state);
+  return (
+    <ToolTrace
+      icon={<SearchIcon />}
+      status={status}
+      title={
+        status === "error" ? `La recherche de « ${query} » a échoué.` : `Recherche de « ${query} »`
+      }
+    >
+      {part.state === "output-available" && (
+        <AccountList
+          emptyLabel="Aucun compte trouvé."
+          label="Comptes trouvés"
+          listed={part.output.accounts}
+        />
+      )}
+    </ToolTrace>
   );
 }
 
@@ -89,6 +163,12 @@ function AssistantPartView({
   }
   if (part.type === "tool-getFeedUserSummaries") {
     return <FeedUserSummariesPartView part={part} />;
+  }
+  if (part.type === "tool-listAccounts") {
+    return <ListAccountsPartView part={part} />;
+  }
+  if (part.type === "tool-searchAccounts") {
+    return <SearchAccountsPartView part={part} />;
   }
   return null;
 }
@@ -139,7 +219,7 @@ export function ChatPanel({ accounts }: { accounts: Array<SidebarUser> }) {
               {chat.messages.length === 0 && (
                 <p className="tw:text-sm tw:text-muted-foreground">
                   Mentionne un compte avec @ et demande ce qu’il a publié dans les dernières 24
-                  heures.
+                  heures, ou demande quels comptes tu connais.
                 </p>
               )}
               {chat.messages.map((message) => (
