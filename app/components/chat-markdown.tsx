@@ -1,28 +1,44 @@
-import { useMemo } from "react";
+import { useMemo, type ReactElement, type ReactNode } from "react";
 import ReactMarkdown, { defaultUrlTransform, type Components } from "react-markdown";
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
 import { formatUserHandle } from "../utils/helper.ts";
+import {
+  buildLinkTarget,
+  linkMentions,
+  parseLinkTarget,
+  transformLinkTarget,
+  type LinkScheme,
+} from "../utils/link-scheme.ts";
 import { buildPlaceMapHref } from "../utils/place-map-link.ts";
 import type { MentionablePlace } from "../utils/place-mentions.ts";
 import { presentSticker } from "../utils/sticker-presentation.ts";
 import { Sticker } from "./sticker.tsx";
 
-const mentionPattern = /(?<![\w/:.@])@(?<username>\w+(?:\.\w+)*)/gu;
-const profilePath = "/users/";
-/** The link target the Assistant writes for a Place mention: `place:<place id>`. */
-const placeScheme = "place:";
-
 /**
- * Turns a Place mention's target into a link to the place on the map, and drops the unsafe
- * targets as the renderer does by default.
+ * What a link scheme's component gets from the markdown: the id after the scheme and the link's
+ * text. Anything else it shows, it resolves client-side from that id.
  */
-function transformLinkTarget(url: string): string {
-  return url.startsWith(placeScheme)
-    ? buildPlaceMapHref(url.slice(placeScheme.length))
-    : defaultUrlTransform(url);
+interface SchemeLinkProps {
+  id: string;
+  label: ReactNode;
 }
 
-const placeMapHrefPrefix = buildPlaceMapHref("");
+type SchemeLinks = Record<LinkScheme, (props: SchemeLinkProps) => ReactElement>;
+
+/** The component of each link scheme the Assistant may write. */
+function createSchemeLinks(accounts: Array<SidebarUser>): SchemeLinks {
+  return {
+    // A Place mention opens the map in the same tab.
+    place: ({ id, label }) => (
+      <a href={buildPlaceMapHref(id)} className="tw:underline">
+        {label}
+      </a>
+    ),
+    user: ({ id }) => (
+      <Sticker sticker={presentSticker("mention", formatUserHandle(id), accounts)} />
+    ),
+  };
+}
 
 /** The markdown tree nodes the place linking reads and writes. */
 interface MarkdownNode {
@@ -62,7 +78,7 @@ function linkPlaceNames(places: Array<MentionablePlace>) {
           { type: "text", value: value.slice(end, match.index) },
           {
             type: "link",
-            url: `${placeScheme}${place.id}`,
+            url: buildLinkTarget("place", place.id),
             children: [{ type: "text", value: match[0] }],
           },
         );
@@ -76,7 +92,7 @@ function linkPlaceNames(places: Array<MentionablePlace>) {
     if (node.type === "link") {
       const place = byName.get(textOf(node).trim().toLowerCase());
       if (place !== undefined) {
-        node.url = `${placeScheme}${place.id}`;
+        node.url = buildLinkTarget("place", place.id);
       }
       return;
     }
@@ -95,39 +111,19 @@ function linkPlaceNames(places: Array<MentionablePlace>) {
   };
 }
 
-/**
- * Writes each `@username` of a account as a link to its profile, which the chat shows as a
- * sticker. A name that is not a account stays plain text.
- */
-function linkMentions(text: string, accounts: Array<SidebarUser>): string {
-  return text.replaceAll(mentionPattern, (mention, username: string) => {
-    const account = accounts.find(
-      (candidate) => candidate.username.toLowerCase() === username.toLowerCase(),
-    );
-    return account === undefined ? mention : `[${mention}](${profilePath}${account.username})`;
-  });
+function transformTarget(url: string): string | null | undefined {
+  return transformLinkTarget(url, defaultUrlTransform);
 }
 
 function createComponents(accounts: Array<SidebarUser>): Components {
+  const schemeLinks = createSchemeLinks(accounts);
   return {
     a: ({ children, href }) => {
-      if (href?.startsWith(profilePath) === true) {
-        return (
-          <Sticker
-            sticker={presentSticker(
-              "mention",
-              formatUserHandle(href.slice(profilePath.length)),
-              accounts,
-            )}
-          />
-        );
+      const target = href === undefined ? undefined : parseLinkTarget(href);
+      if (target !== undefined) {
+        return schemeLinks[target.scheme]({ id: target.id, label: children });
       }
-      // A Place mention opens the map in the same tab.
-      return href?.startsWith(placeMapHrefPrefix) === true ? (
-        <a href={href} className="tw:underline">
-          {children}
-        </a>
-      ) : (
+      return (
         <a href={href} className="tw:underline" target="_blank" rel="noreferrer">
           {children}
         </a>
@@ -163,7 +159,7 @@ export function ChatMarkdown({
       <ReactMarkdown
         components={components}
         remarkPlugins={remarkPlugins}
-        urlTransform={transformLinkTarget}
+        urlTransform={transformTarget}
       >
         {linkMentions(children, accounts)}
       </ReactMarkdown>
