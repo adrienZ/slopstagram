@@ -60,7 +60,7 @@ async function readChunks(response: Response) {
   };
 }
 
-test("a mentioned account with a stored user summary streams the tool call and its summary, without a written answer", async (context) => {
+test("a mentioned account with a stored user summary streams the tool call, its summary, then the answer", async (context) => {
   const world = await createWorld(context);
   await world.run();
 
@@ -72,17 +72,26 @@ test("a mentioned account with a stored user summary streams the tool call and i
   expect(response.status).toBe(200);
   const chunks = await readChunks(response);
   expect(chunks.toolInputs).toStrictEqual([
-    { input: { username: "User_072" }, toolName: "getFeedUserSummary" },
+    { input: { usernames: ["User_072"] }, toolName: "getFeedUserSummaries" },
   ]);
   expect(chunks.toolOutputs).toStrictEqual([
-    { status: "found", storyCount: 2, summary: "Summary of user_072", username: "user_072" },
+    [
+      {
+        outcome: {
+          status: "found",
+          storyCount: 2,
+          summary: "Summary of user_072",
+          username: "user_072",
+        },
+        requestedUsername: "User_072",
+      },
+    ],
   ]);
   expect(chunks.reasoning).toBe(assistantThinking);
-  // The summary card is the answer: the model gets no step after a card tool.
-  expect(chunks.text).toBe("");
+  expect(chunks.text).toBe(assistantAnswer);
 });
 
-test("several mentioned accounts stream their summaries, then the written answer", async (context) => {
+test("several mentioned accounts stream their summaries in the order asked", async (context) => {
   const world = await createWorld(context);
   await world.run();
 
@@ -110,7 +119,6 @@ test("several mentioned accounts stream their summaries, then the written answer
       { outcome: { error: "unknown_account", status: "error" }, requestedUsername: "user_999" },
     ],
   ]);
-  // No card shows this result, so the model writes the comparison.
   expect(chunks.text).toBe(assistantAnswer);
 });
 
@@ -122,11 +130,10 @@ test("an unknown account streams the unknown_account outcome", async (context) =
     await handleChatRequest(world.runtime, chatRequest(userMessage("And @user_999?"))),
   );
 
-  expect(chunks.toolInputs).toStrictEqual([
-    { input: { username: "user_999" }, toolName: "getFeedUserSummary" },
+  expect(chunks.toolOutputs).toStrictEqual([
+    [{ outcome: { error: "unknown_account", status: "error" }, requestedUsername: "user_999" }],
   ]);
-  expect(chunks.toolOutputs).toStrictEqual([{ error: "unknown_account", status: "error" }]);
-  expect(chunks.text).toBe("");
+  expect(chunks.text).toBe(assistantAnswer);
 });
 
 test("an account without stories in the last 24 hours streams no_stories_in_last_24h", async (context) => {
@@ -139,7 +146,12 @@ test("an account without stories in the last 24 hours streams no_stories_in_last
   );
 
   expect(chunks.toolOutputs).toStrictEqual([
-    { reason: "no_stories_in_last_24h", status: "missing", username: "user_008" },
+    [
+      {
+        outcome: { reason: "no_stories_in_last_24h", status: "missing", username: "user_008" },
+        requestedUsername: "user_008",
+      },
+    ],
   ]);
 });
 
@@ -152,11 +164,16 @@ test("an account whose summary was not generated streams not_generated, without 
   );
 
   expect(chunks.toolOutputs).toStrictEqual([
-    { reason: "not_generated", status: "missing", username: "user_072" },
+    [
+      {
+        outcome: { reason: "not_generated", status: "missing", username: "user_072" },
+        requestedUsername: "user_072",
+      },
+    ],
   ]);
   expect(
     world.ollama.requests.map(({ kind }) => kind).filter((kind) => kind !== "vision"),
-  ).toStrictEqual(["summary", "summary", "chat"]);
+  ).toStrictEqual(["summary", "summary", "chat", "chat"]);
 });
 
 test("a greeting is answered without any tool call", async (context) => {

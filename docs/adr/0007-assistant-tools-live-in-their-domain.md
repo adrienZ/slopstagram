@@ -28,12 +28,4 @@ it. The story feed domain may now import the accounts domain, so that the story 
 user summary tool can resolve an account; the accounts domain never imports the story
 feed, which keeps the dependency one-way.
 
-A tool says how the chat shows its result. A tool whose result the chat renders as a card
-declares it with `metadata: { renderedAs: "card" }`, and the Assistant ends its reply once
-every tool the model just called is a card tool, so the model does not write the card's
-content a second time. A small model does not hold back from restating a result when the
-prompt asks it to, so the rule is enforced in code instead. A question that needs the model
-to reason over several results (a comparison, a filter) therefore goes to a data tool, which
-renders no card: `getFeedUserSummary` answers a single account with a card, and
-`getFeedUserSummaries` returns several accounts' summaries for the model to compare. Each
-tool description says when not to use the other.
+The chat does not render a tool's result: it traces the call, and the Assistant's answer is the only display. Rendering the result as a card as well showed the same content twice, and a small model does not hold back from restating a result when the prompt asks it to.

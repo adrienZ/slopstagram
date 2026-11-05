@@ -8,7 +8,6 @@ import {
   streamText,
   toUIMessageStream,
   type InferUITools,
-  type StopCondition,
   type UIDataTypes,
   type UIMessage,
   type UIMessageStreamOptions,
@@ -18,17 +17,13 @@ import type { JsonValue } from "@@/core/utils/json-value.ts";
 import { getUserSummaryModel } from "@@/core/domains/accounts/user-summary.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import type { FeedUserSummaryRuntime } from "@@/core/domains/story-feed/feed-user-summary.ts";
-import {
-  createGetFeedUserSummariesTool,
-  createGetFeedUserSummaryTool,
-} from "@@/core/domains/story-feed/feed-user-summary.tool.ts";
+import { createGetFeedUserSummariesTool } from "@@/core/domains/story-feed/feed-user-summary.tool.ts";
 import { getOllamaHost } from "@@/core/domains/vision/ollama.ts";
 
 const ASSISTANT_INSTRUCTIONS = `You are the Assistant of Slopstagram, an application that collects the Instagram stories of saved accounts into a story feed of the last 24 hours.
 You know nothing about the accounts yourself. Answer only from the results of your tools, and never invent an account, a story or a summary.
 
-- When the message mentions exactly one account, usually as @username, and simply asks about what it posted recently, call getFeedUserSummary with that username. The chat shows its result to the user as a card, and the reply ends there.
-- When the message mentions two or more accounts, or compares, filters or ranks accounts, call getFeedUserSummaries with their usernames, then answer from the result in a few sentences.
+- When the message mentions one or more accounts, usually as @username, and asks about what they posted recently, or compares them, call getFeedUserSummaries with their usernames, then answer from the result in a few sentences. Write each account as @username.
 - When a tool result says an account is unknown, published no story in the last 24 hours, or has no summary yet, say so plainly.
 - For a greeting or a message that is not about the accounts, answer briefly without calling any tool.
 - Always answer in the language of the user's last message.`;
@@ -39,10 +34,7 @@ const MAX_STEPS = 4;
 export type AssistantRuntime = FeedUserSummaryRuntime & Pick<Runtime, "fetchOllama" | "logger">;
 
 function createAssistantTools(runtime: FeedUserSummaryRuntime) {
-  return {
-    getFeedUserSummaries: createGetFeedUserSummariesTool(runtime),
-    getFeedUserSummary: createGetFeedUserSummaryTool(runtime),
-  };
+  return { getFeedUserSummaries: createGetFeedUserSummariesTool(runtime) };
 }
 
 export type AssistantUIMessage = UIMessage<
@@ -83,24 +75,6 @@ function createFailureDescriber(
   };
 }
 
-/**
- * Ends the reply once every tool the model just called is rendered as a card by the chat, which
- * a tool declares with `metadata: { renderedAs: "card" }`: the model must not write a card's
- * content a second time. Any other tool leaves the model to write the answer.
- */
-function endsWithCards(
-  tools: ReturnType<typeof createAssistantTools>,
-): StopCondition<ReturnType<typeof createAssistantTools>> {
-  const toolsByName: Partial<Record<string, { metadata?: { renderedAs?: unknown } }>> = tools;
-  return ({ steps }) => {
-    const calls = steps.at(-1)?.toolCalls ?? [];
-    return (
-      calls.length > 0 &&
-      calls.every(({ toolName }) => toolsByName[toolName]?.metadata?.renderedAs === "card")
-    );
-  };
-}
-
 /** Streams the Assistant's reply to a conversation, as a UI message stream response. */
 export async function streamAssistantReply(
   runtime: AssistantRuntime,
@@ -113,7 +87,7 @@ export async function streamAssistantReply(
     model: ollama(getAssistantModel(), { think: true }),
     instructions: ASSISTANT_INSTRUCTIONS,
     messages: await convertToModelMessages(messages),
-    stopWhen: [stepCountIs(MAX_STEPS), endsWithCards(tools)],
+    stopWhen: stepCountIs(MAX_STEPS),
     tools,
   });
   const describeFailure = createFailureDescriber(runtime.logger);

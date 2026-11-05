@@ -28,43 +28,15 @@ import {
   TraceTitle,
 } from "../shadcn/ui/trace.tsx";
 import { ChatMarkdown } from "./chat-markdown.tsx";
-import { FeedUserSummaryCard } from "./feed-user-summary-card.tsx";
 
 type AssistantPart = AssistantUIMessage["parts"][number];
-type FeedUserSummaryPart = Extract<AssistantPart, { type: "tool-getFeedUserSummary" }>;
 type FeedUserSummariesPart = Extract<AssistantPart, { type: "tool-getFeedUserSummaries" }>;
 
-function FeedUserSummaryPartView({
-  accounts,
-  part,
-}: {
-  accounts: Array<SidebarUser>;
-  part: FeedUserSummaryPart;
-}) {
-  const username = part.input?.username ?? "";
-  if (part.state === "output-available") {
-    return <FeedUserSummaryCard accounts={accounts} outcome={part.output} username={username} />;
-  }
-  const failed = part.state === "output-error" || part.state === "output-denied";
-  return (
-    <TraceLine status={failed ? "error" : "running"}>
-      <TraceIcon>
-        <UserSearchIcon />
-      </TraceIcon>
-      <TraceTitle>
-        {failed
-          ? `Le résumé de ${formatUserHandle(username)} n’a pas pu être lu.`
-          : `Lecture du résumé de ${formatUserHandle(username)}`}
-      </TraceTitle>
-    </TraceLine>
-  );
-}
-
-/** The comparison of several accounts is written by the Assistant: the chat only traces the read. */
+/** The Assistant writes the answer from the summaries: the chat only traces the read. */
 function FeedUserSummariesPartView({ part }: { part: FeedUserSummariesPart }) {
-  const handles = (part.input?.usernames ?? [])
-    .map((username) => formatUserHandle(username ?? ""))
-    .join(", ");
+  const usernames = part.input?.usernames ?? [];
+  const handles = usernames.map((username) => formatUserHandle(username ?? "")).join(", ");
+  const noun = usernames.length > 1 ? "des résumés" : "du résumé";
   const failed = part.state === "output-error" || part.state === "output-denied";
   const done = part.state === "output-available";
   let status: "error" | "running" | undefined;
@@ -79,9 +51,7 @@ function FeedUserSummariesPartView({ part }: { part: FeedUserSummariesPart }) {
         <UserSearchIcon />
       </TraceIcon>
       <TraceTitle>
-        {failed
-          ? `Les résumés de ${handles} n’ont pas pu être lus.`
-          : `Lecture des résumés de ${handles}`}
+        {failed ? `Lecture ${noun} de ${handles} impossible.` : `Lecture ${noun} de ${handles}`}
       </TraceTitle>
     </TraceLine>
   );
@@ -95,7 +65,7 @@ function AssistantPartView({
   part: AssistantPart;
 }) {
   if (part.type === "text") {
-    return <ChatMarkdown>{part.text}</ChatMarkdown>;
+    return <ChatMarkdown accounts={accounts}>{part.text}</ChatMarkdown>;
   }
   if (part.type === "reasoning") {
     if (part.state !== "streaming" && part.text.trim() === "") {
@@ -116,9 +86,6 @@ function AssistantPartView({
         </TraceCollapsibleContent>
       </TraceCollapsible>
     );
-  }
-  if (part.type === "tool-getFeedUserSummary") {
-    return <FeedUserSummaryPartView accounts={accounts} part={part} />;
   }
   if (part.type === "tool-getFeedUserSummaries") {
     return <FeedUserSummariesPartView part={part} />;

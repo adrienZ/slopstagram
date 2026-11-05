@@ -159,7 +159,7 @@ const OllamaChatRequestSchema = z.object({
 });
 
 /** What the chat model answers once it has read a tool result. */
-export const assistantAnswer = "Synthetic **answer** from the tool result.";
+export const assistantAnswer = "Synthetic **answer** from the tool result, about @user_072.";
 /** What the chat model answers to a message that mentions no account. */
 export const assistantGreeting = "Synthetic greeting.";
 export const assistantThinking = "Synthetic reasoning about the question.";
@@ -202,10 +202,9 @@ function failChat(failure: OllamaChatFailure) {
 }
 
 /**
- * The chat model, in Ollama's streamed wire format: it reads the user summary of the first
- * `@username` of the last user message, or the summaries of all the usernames when it mentions
- * several, answers once it has the tool result of the latter, and greets a message that mentions
- * no account.
+ * The chat model, in Ollama's streamed wire format: it reads the user summaries of the
+ * `@username` of the last user message, answers once it has the tool result, and greets a
+ * message that mentions no account.
  */
 function answerChat(messages: z.infer<typeof OllamaChatRequestSchema>["messages"]) {
   if (messages.some(({ role }) => role === "tool")) {
@@ -222,14 +221,7 @@ function answerChat(messages: z.infer<typeof OllamaChatRequestSchema>["messages"
     content: "",
     role: "assistant",
     thinking: assistantThinking,
-    tool_calls: [
-      {
-        function:
-          usernames.length === 1
-            ? { arguments: { username: usernames[0] }, name: "getFeedUserSummary" }
-            : { arguments: { usernames }, name: "getFeedUserSummaries" },
-      },
-    ],
+    tool_calls: [{ function: { arguments: { usernames }, name: "getFeedUserSummaries" } }],
   });
 }
 

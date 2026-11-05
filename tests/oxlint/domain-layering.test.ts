@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
 import { RuleTester } from "oxlint/plugins-dev";
-import domainLayering from "../oxlint/plugins/rules/domain-layering.ts";
+import domainLayering from "../../oxlint/plugins/rules/domain-layering.ts";
 
 // The tester registers its cases through vitest's suite functions.
 RuleTester.describe = (text, fn) => {
