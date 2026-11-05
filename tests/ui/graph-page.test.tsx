@@ -39,7 +39,8 @@ test("selecting a known point shows its profile and highlights its connections; 
       .getAllByRole("button", { name: /Connexion/u })
       .some((edge) => edge.getAttribute("aria-pressed") === "true"),
   ).toBe(true);
-  await user.click(graph.getByRole("button", { name: "Désélectionner les points" }));
+  // Pointer capture retargets a background click to the SVG viewport in the browser.
+  await user.click(graph.getByLabelText("Zone de déplacement du graphe"));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
 

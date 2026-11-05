@@ -37,6 +37,11 @@ export function MentionGraphCanvas({
         onPointerUp={graph.release}
         onPointerCancel={graph.release}
         onLostPointerCapture={graph.release}
+        onClick={() => {
+          if (graph.acceptClick()) {
+            onSelectNode();
+          }
+        }}
         ref={graph.bindWheel}
       >
         <rect
@@ -46,11 +51,6 @@ export function MentionGraphCanvas({
           role="button"
           tabIndex={0}
           aria-label="Désélectionner les points"
-          onClick={() => {
-            if (graph.acceptClick()) {
-              onSelectNode();
-            }
-          }}
           onKeyDown={(event) => {
             if (event.key === "Enter" || event.key === " ") {
               onSelectNode();
