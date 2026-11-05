@@ -166,7 +166,7 @@ _Avoid_: Chatbot, bot, AI
 
 **Assistant tool**:
 One read-only capability the Assistant can call to get data from the domain that owns
-it, such as the saved accounts or an account's user summary.
+it, such as the accounts or an account's user summary.
 _Avoid_: Function, action, skill
 
 **Mention**:

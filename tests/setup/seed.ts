@@ -163,6 +163,33 @@ export function editRecordedStories(
   };
 }
 
+type RecordedUser = NonNullable<GalleryConnection["edges"][number]["node"]["user"]>;
+
+/**
+ * Returns the recorded payloads with every account edited by `edit`, in the order of the
+ * recorded reels, so a test can give an account a username or a full name the recordings
+ * lack. The edits travel through real ingestion with the rest of the recording.
+ */
+export function editRecordedUsers(
+  recorded: RecordedPayloads,
+  edit: (user: RecordedUser, position: number) => void,
+): RecordedPayloads {
+  let position = 0;
+  return {
+    ...recorded,
+    galleryPages: recorded.galleryPages.map((payload) =>
+      updateGalleryPage(payload, ({ edges }) => {
+        for (const { node } of edges) {
+          if (node.user !== undefined) {
+            edit(node.user, position);
+            position += 1;
+          }
+        }
+      }),
+    ),
+  };
+}
+
 /**
  * Returns the recorded payloads with only the stories whose media ids are listed, dropping
  * the reels left without a story. The recorded tray is dropped too, so the client derives

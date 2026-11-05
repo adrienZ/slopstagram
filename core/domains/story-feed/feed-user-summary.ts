@@ -64,3 +64,24 @@ export function readFeedUserSummary(
     username: account.username,
   };
 }
+
+export interface RequestedFeedUserSummary {
+  /** The account written as `@username`, for the Assistant to copy into its answer. */
+  handle: string;
+  outcome: FeedUserSummary;
+  requestedUsername: string;
+}
+
+/** The user summaries of several accounts, in the order asked, each with the username asked for. */
+export function readFeedUserSummariesByUsername(
+  runtime: FeedUserSummaryRuntime,
+  usernames: Array<string>,
+  now: Date,
+): Array<RequestedFeedUserSummary> {
+  return usernames.map((requestedUsername) => {
+    const outcome = readFeedUserSummary(runtime, requestedUsername, now);
+    const username =
+      outcome.status === "error" ? requestedUsername.trim().replace(/^@/u, "") : outcome.username;
+    return { handle: `@${username}`, outcome, requestedUsername };
+  });
+}
