@@ -23,21 +23,27 @@ import { createGetTaggedPlaceTool } from "@@/core/domains/places/get-tagged-plac
 import { createListTaggedPlacesTool } from "@@/core/domains/places/list-tagged-places.tool.ts";
 import { createSearchTaggedPlacesTool } from "@@/core/domains/places/search-tagged-places.tool.ts";
 import type { TaggedPlacesRuntime } from "@@/core/domains/places/tagged-places.ts";
+import { createGetMentionConnectionTool } from "@@/core/domains/mention-connections/get-mention-connection.tool.ts";
+import { createSearchMentionConnectionsTool } from "@@/core/domains/mention-connections/search-mention-connections.tool.ts";
+import { createListMentionConnectionsTool } from "@@/core/domains/mention-connections/list-mention-connections.tool.ts";
+import type { MentionConnectionsRuntime } from "@@/core/domains/mention-connections/mention-connections.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import type { FeedUserSummaryRuntime } from "@@/core/domains/story-feed/feed-user-summary.ts";
 import { createGetFeedUserSummariesTool } from "@@/core/domains/story-feed/get-feed-user-summaries.tool.ts";
 import { getOllamaHost } from "@@/core/domains/vision/ollama.ts";
 
-const ASSISTANT_INSTRUCTIONS = `You are the Assistant of Slopstagram, an application that collects the Instagram stories of accounts into a story feed of the last 24 hours.
-You know nothing about the accounts yourself. Answer only from the results of your tools, and never invent an account, a story, a summary or a place.
+const ASSISTANT_INSTRUCTIONS = `You are Slopstagram's Assistant. Answer briefly in the user's language, only from tool results. Never invent facts or ids.
 
-- When the message mentions one or more accounts, usually as @username, and asks about what they posted recently, or compares them, call getFeedUserSummaries with their usernames, then answer from the result in a few sentences. Write each account as @username.
-- When the message asks which accounts it knows or what it can ask about, and mentions no account, call listAccounts, then answer from its result, writing each account as @username.
-- When the message names an account by its name or part of it, without @username, call searchAccounts with that name. If it also asks what the account posted, call getFeedUserSummaries with the username found, then answer. When no account matches, say so, and when several match, ask which one is meant.
-- When the message asks about places: call listTaggedPlaces to list the places, of the accounts it mentions or of all of them; call searchTaggedPlaces when it names a place, or part of its name, address or category; call getTaggedPlace with a place id from those results to read one place and its latest stories. Write each place as a markdown link [name](place:id), with the place's id as is. When a result has more places, say so and offer the next ones.
-- When a tool result says an account is unknown, published no story in the last 24 hours, or has no summary yet, say so plainly.
-- For a greeting, a thank-you or a message that is not about the accounts, answer briefly without calling any tool.
-- Always answer in the language of the user's last message.`;
+Mention connections (stickers in saved stories, ALL history, including unknown accounts):
+- Two people ("se connaissent ?", who mentioned whom) → ALWAYS call getMentionConnection with both usernames or names. Never answer without it.
+- One named person → ALWAYS call searchMentionConnections with that name. If several distinct candidates come back, ask which one is meant.
+- No named person → listMentionConnections.
+- Call the tool BEFORE writing any answer. Then follow the result's interpretation: a mention is not proof that people know each other, and no mention is not proof they do not. Give the observed stories (storyId, date) and who mentioned whom (evidence.author → evidence.target). Never invent a story URL.
+- Recent posts in the last 24 hours: call getFeedUserSummaries with the usernames. For a name without a username, searchAccounts first; clarify multiple matches.
+- Which accounts are saved: listAccounts. Finding an account by name: searchAccounts.
+- Places: listTaggedPlaces lists them, searchTaggedPlaces finds names/addresses/categories, getTaggedPlace reads a result id. Write places as [name](place:id).
+- For any paginated result with nextOffset, say more results exist and offer the next page. Report unknown/missing outcomes plainly.
+- Greetings, thanks or unrelated questions: answer briefly without tools.`;
 
 /**
  * The tools after which the model only has to write the answer. A place search is a lookup: the
@@ -46,6 +52,8 @@ You know nothing about the accounts yourself. Answer only from the results of yo
 const answerTools = new Set([
   "getFeedUserSummaries",
   "getTaggedPlace",
+  "getMentionConnection",
+  "listMentionConnections",
   "listAccounts",
   "listTaggedPlaces",
 ]);
@@ -53,7 +61,10 @@ const answerTools = new Set([
 /** Bounds one reply: a tool call, its result, then the answer, with room for one retry. */
 const MAX_STEPS = 4;
 
-type AssistantToolsRuntime = FeedUserSummaryRuntime & AccountsRuntime & TaggedPlacesRuntime;
+type AssistantToolsRuntime = FeedUserSummaryRuntime &
+  AccountsRuntime &
+  TaggedPlacesRuntime &
+  MentionConnectionsRuntime;
 
 /** The chat model, as the AI SDK takes it once it is built (not a model id). */
 export type AssistantModel = Exclude<LanguageModel, string>;
@@ -68,6 +79,9 @@ function createAssistantTools(runtime: AssistantToolsRuntime) {
   return {
     getFeedUserSummaries: createGetFeedUserSummariesTool(runtime),
     getTaggedPlace: createGetTaggedPlaceTool(runtime),
+    getMentionConnection: createGetMentionConnectionTool(runtime),
+    listMentionConnections: createListMentionConnectionsTool(runtime),
+    searchMentionConnections: createSearchMentionConnectionsTool(runtime),
     listAccounts: createListAccountsTool(runtime),
     listTaggedPlaces: createListTaggedPlacesTool(runtime),
     searchAccounts: createSearchAccountsTool(runtime),

@@ -2,6 +2,7 @@ import { toolCallAccuracy } from "evalite/scorers/deterministic";
 import { z } from "zod";
 import { findMentionedUsernames } from "../app/utils/chat-mentions.ts";
 import type { FeedUserSummary } from "../core/domains/story-feed/feed-user-summary.ts";
+import { MentionConnectionReadSchema } from "../core/domains/mention-connections/mention-connection-reads.ts";
 import { FeedUserSummariesOutputSchema } from "../core/domains/story-feed/get-feed-user-summaries.tool.ts";
 import type { JsonObject, JsonValue } from "../core/utils/json-value.ts";
 
@@ -40,6 +41,9 @@ export function describeOutcome(read: FeedUserSummary): FeedUserSummaryOutcome {
 export interface AssistantExpectation {
   /** The tools the Assistant should call, each at least once and no other: none to answer without a tool. */
   tools: Array<
+    | "getMentionConnection"
+    | "listMentionConnections"
+    | "searchMentionConnections"
     | "getFeedUserSummaries"
     | "getTaggedPlace"
     | "listAccounts"
@@ -53,6 +57,14 @@ export interface AssistantExpectation {
   outcome?: FeedUserSummaryOutcome;
   /** The place the answer must name: the chat links its name to the map. */
   place?: { id: string; name: string };
+  /** Observed unknown usernames the mention results may legitimately name. */
+  observedUsernames?: Array<string>;
+  /** A pair read must retain its outcome and, when supplied, its observed direction. */
+  mention?: { status: "found" | "no_observation"; author?: string; target?: string };
+  /** The answer must distinguish observations from personal acquaintance. */
+  mentionCaution?: boolean;
+  /** An ambiguous identity should prompt the user to clarify. */
+  clarification?: boolean;
   /** The saved accounts of the seeded world: the only usernames an answer may name. */
   savedUsernames: Array<string>;
 }
@@ -241,6 +253,7 @@ function knownUsernames(expected: AssistantExpectation): AssistantCheck {
     check: (run) => {
       const known = new Set([
         ...expected.savedUsernames.map(normalizeUsername),
+        ...(expected.observedUsernames ?? []).map(normalizeUsername),
         ...findUsernames(run.question),
       ]);
       const invented = findUsernames(run.text).filter((username) => !known.has(username));
@@ -276,6 +289,60 @@ const frenchAnswer: AssistantCheck = {
   check: (run) => result(isFrench(run.text)),
 };
 
+function mentionEvidence(expected: NonNullable<AssistantExpectation["mention"]>): AssistantCheck {
+  return {
+    name: "Mention evidence",
+    description: "The pair read reports the expected retained observation and its direction.",
+    check: (run) => {
+      const reads = run.toolCalls
+        .filter(({ toolName }) => toolName === "getMentionConnection")
+        .map(({ output }) => MentionConnectionReadSchema.safeParse(output));
+      return result(
+        reads.length > 0 &&
+          reads.every((read) => {
+            if (!read.success || read.data.status !== expected.status) {
+              return false;
+            }
+            if (expected.author === undefined || expected.target === undefined) {
+              return true;
+            }
+            return (
+              read.data.status === "found" &&
+              read.data.evidence.some(
+                ({ author, target }) =>
+                  author.username === expected.author && target.username === expected.target,
+              )
+            );
+          }),
+      );
+    },
+  };
+}
+
+const cautiousMentionAnswer: AssistantCheck = {
+  name: "Mention uncertainty",
+  description:
+    "The French answer discusses observations and explicitly limits what they establish about acquaintance.",
+  check: (run) =>
+    result(
+      /mention|observ/iu.test(run.text) &&
+        /(?:ne |n[’']).{0,100}(?:pas|peut)|pas.{0,80}(?:prouv|confirm|conclu|savoir|relation|conna)|(?:impossible|incertain|insuffisant)/iu.test(
+          run.text,
+        ),
+    ),
+};
+
+const asksForClarification: AssistantCheck = {
+  name: "Identity clarification",
+  description:
+    "The answer asks which of the distinct matching observations/persons is meant instead of reading a guessed pair.",
+  check: (run) =>
+    result(
+      /\?|précis|precis|lequel|laquelle|quel.{0,20}(?:compte|personne|observ)/iu.test(run.text) &&
+        !run.toolCalls.some(({ toolName }) => toolName === "getMentionConnection"),
+    ),
+};
+
 /** The deterministic scorers of a case: every one must pass for a run to pass. */
 export function createAssistantChecks(expected: AssistantExpectation): Array<AssistantCheck> {
   return [
@@ -283,6 +350,9 @@ export function createAssistantChecks(expected: AssistantExpectation): Array<Ass
     ...(expected.username === undefined ? [] : [expectedArguments(expected.username)]),
     ...(expected.outcome === undefined ? [] : [expectedOutcome(expected.outcome)]),
     ...(expected.place === undefined ? [] : [namedPlace(expected.place)]),
+    ...(expected.mention === undefined ? [] : [mentionEvidence(expected.mention)]),
+    ...(expected.mentionCaution === true ? [cautiousMentionAnswer] : []),
+    ...(expected.clarification === true ? [asksForClarification] : []),
     knownUsernames(expected),
     nonEmptyAnswer,
     frenchAnswer,

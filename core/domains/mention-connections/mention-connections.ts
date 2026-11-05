@@ -41,24 +41,26 @@ export interface MentionConnection {
   evidence: Array<MentionEvidence>;
 }
 
+/** Current known identities, including accounts with no retained mention connection. */
+export function readMentionAccounts(
+  runtime: Pick<MentionConnectionsRuntime, "users">,
+): Array<AccountMentionNode> {
+  return runtime.users.listAll().map((account) => ({
+    id: `account:${account.pk}`,
+    kind: "account",
+    label: `@${account.username}`,
+    accountPk: account.pk,
+    username: account.username,
+    fullName: account.full_name,
+  }));
+}
+
 /** Current retained observations, not proof of personal acquaintance or permanent identity. */
 export function readMentionConnections(runtime: MentionConnectionsRuntime) {
-  const accounts = runtime.users.listAll();
+  const accounts = readMentionAccounts(runtime);
   const byUsername = Map.groupBy(accounts, ({ username }) => username.toLowerCase());
   const nodes = new Map<string, MentionNode>();
-  const accountNodes = new Map(
-    accounts.map((account) => {
-      const node: AccountMentionNode = {
-        id: `account:${account.pk}`,
-        kind: "account",
-        label: `@${account.username}`,
-        accountPk: account.pk,
-        username: account.username,
-        fullName: account.full_name,
-      };
-      return [account.pk, node];
-    }),
-  );
+  const accountNodes = new Map(accounts.map((node) => [node.accountPk, node]));
   const connections = new Map<string, MentionConnection>();
   for (const occurrence of runtime.stories.listMentionOccurrences()) {
     const author = accountNodes.get(occurrence.authorPk);
@@ -74,13 +76,13 @@ export function readMentionConnections(runtime: MentionConnectionsRuntime) {
       }
       const candidates = byUsername.get(username) ?? [];
       const [candidate] = candidates;
-      const match = candidates.length === 1 ? accountNodes.get(candidate.pk) : undefined;
+      const match = candidates.length === 1 ? accountNodes.get(candidate.accountPk) : undefined;
       target = match ?? {
         id: `username:${username}`,
         kind: candidates.length > 1 ? "ambiguous" : "username",
         label,
         username,
-        candidateAccountIds: candidates.map(({ pk }) => `account:${pk}`),
+        candidateAccountIds: candidates.map(({ id }) => id),
       };
     } else {
       target = {
