@@ -32,6 +32,11 @@ export function formatUserName(user: StoryOutputUser): string {
   return fullName !== undefined && fullName.length > 0 ? fullName : formatUserHandle(username);
 }
 
+/** The two letters an avatar shows when its image is missing. */
+export function formatUserInitials(username: string): string {
+  return username.slice(0, 2).toUpperCase();
+}
+
 export function getUserTimelineUrl(username: string): string {
   return `/users/${encodeURIComponent(username.trim())}`;
 }

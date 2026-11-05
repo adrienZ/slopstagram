@@ -4,6 +4,15 @@ name: Evals
 # changes that can move the Assistant's answers, or by hand.
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "evals/**"
+      - "core/domains/assistant/**"
+      - "core/domains/accounts/**"
+      - "core/domains/story-feed/**"
+      - "evalite.config.ts"
+      - ".github/workflows/evals.yml"
   pull_request:
     types: [opened, synchronize, reopened]
     paths:

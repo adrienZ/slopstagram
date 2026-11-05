@@ -1,13 +1,13 @@
 import type { Matcher } from "react-day-picker";
 import { useState } from "react";
 import { fr } from "react-day-picker/locale";
-import { CalendarDaysIcon, ChevronRightIcon, MessageCircleIcon } from "lucide-react";
+import { CalendarDaysIcon, ChevronRightIcon, MapIcon, MessageCircleIcon } from "lucide-react";
 import { formatStoryDay, STORY_TIME_ZONE } from "@@/core/domains/story-feed/story-days.ts";
 import { Button } from "../shadcn/ui/button.tsx";
 import { Calendar } from "../shadcn/ui/calendar.tsx";
 import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/ui/avatar.tsx";
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
-import { formatUserHandle, getUserTimelineUrl } from "../utils/helper.ts";
+import { formatUserHandle, formatUserInitials, getUserTimelineUrl } from "../utils/helper.ts";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../shadcn/ui/collapsible.tsx";
 import {
   Sidebar,
@@ -115,6 +115,14 @@ export function StorySidebar({
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <a href="/map">
+                      <MapIcon aria-hidden="true" />
+                      <span>Carte</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </nav>
           </SidebarGroupContent>
@@ -150,7 +158,7 @@ export function StorySidebar({
                                 <Avatar>
                                   <AvatarImage src={user.avatarPath} alt="" />
                                   <AvatarFallback>
-                                    {user.username.slice(0, 2).toUpperCase()}
+                                    {formatUserInitials(user.username)}
                                   </AvatarFallback>
                                 </Avatar>
                                 <span>{formatUserHandle(user.username)}</span>

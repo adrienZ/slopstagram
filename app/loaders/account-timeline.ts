@@ -17,10 +17,10 @@ import type { InstagramUserRepository } from "@@/core/domains/database/repositor
 
 import { getStoryDate } from "@@/core/domains/story-feed/story-days.ts";
 import { createStoryCards, withStoryStickers } from "../utils/story-cards.ts";
-import type { StoryCardSources } from "../utils/story-cards.ts";
+import type { StoryCardData, StoryCardSources } from "../utils/story-cards.ts";
 import { groupTimelineLocations } from "../utils/timeline-locations.ts";
 import { groupTimelineStickers } from "../utils/timeline-stickers.ts";
-import { loadSidebarUsers } from "./sidebar-users.ts";
+import { loadSidebarUsers, type SidebarUser } from "./sidebar-users.ts";
 
 interface TimelineDetailsRuntime {
   appleVision: Pick<AppleVisionRepository, "findByMediaPk">;
@@ -242,7 +242,14 @@ export function getTimelinePreviewPaths(stories: Array<UserTimelineStory>): Map<
 }
 
 function getStoryCardSources(
-  timeline: UserTimeline,
+  timeline: Pick<
+    UserTimeline,
+    | "appleCaptionByMediaPk"
+    | "avatarPath"
+    | "outdatedVisionByPreviewUrl"
+    | "timelineUser"
+    | "visionByPreviewUrl"
+  >,
   previewPaths: Map<string, string>,
 ): StoryCardSources {
   const profilePicPathByUrl = new Map<string, string>();
@@ -261,6 +268,28 @@ function getStoryCardSources(
     outdatedVisionByPreviewUrl: timeline.outdatedVisionByPreviewUrl,
     visionByPreviewUrl: timeline.visionByPreviewUrl,
   };
+}
+
+/** The story cards of one account's stories, with their stickers already presented. */
+export function createOwnerStoryCards(
+  runtime: TimelineDetailsRuntime,
+  stories: Array<UserTimelineStory>,
+  users: Array<SidebarUser>,
+): Array<StoryCardData> {
+  const first = stories.at(0);
+  if (first === undefined) {
+    return [];
+  }
+  const timelineUser = createStoredStoryUser(first, stories);
+  const sources = getStoryCardSources(
+    {
+      ...readTimelineDetails(runtime, stories),
+      avatarPath: `/media/avatars/${first.owner_pk}.jpg`,
+      timelineUser,
+    },
+    getTimelinePreviewPaths(stories),
+  );
+  return withStoryStickers(createStoryCards(timelineUser, sources), stories, users);
 }
 
 export function loadAccountTimeline(

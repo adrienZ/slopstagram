@@ -5,9 +5,10 @@ import {
   saveStoryAudio,
   saveStoryAudioMedia,
 } from "@@/core/domains/database/repositories/story-repository.audio.ts";
-import { and, asc, desc, eq, gt, gte, lt, lte, notInArray } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, inArray, lt, lte, notInArray } from "drizzle-orm";
 import type { DrizzleDatabase } from "../client.ts";
 import { instagramUsers } from "../entities/instagram-user.ts";
+import { storyLocationObservations } from "../entities/location-metadata.ts";
 import {
   enrichStoryLocations,
   readLocationObservations,
@@ -405,6 +406,29 @@ export class StoryRepository {
     return rows.flatMap(({ story, user }) => {
       const timelineStory = getTimelineStory(this.database, story, user);
       return timelineStory === null ? [] : [timelineStory];
+    });
+  }
+
+  /** Every account's stories with at least one location observation, newest first. */
+  listWithLocationObservations(): Array<UserTimelineStory> {
+    const rows = this.database
+      .select({ story: stories, user: instagramUsers })
+      .from(stories)
+      .innerJoin(instagramUsers, eq(stories.instagramUserPk, instagramUsers.pk))
+      .where(
+        inArray(
+          stories.mediaPk,
+          this.database
+            .select({ mediaPk: storyLocationObservations.mediaPk })
+            .from(storyLocationObservations),
+        ),
+      )
+      .orderBy(desc(stories.takenAt), desc(stories.mediaPk))
+      .all();
+
+    return rows.flatMap(({ story, user }) => {
+      const entry = getTimelineStory(this.database, story, user);
+      return entry === null ? [] : [entry];
     });
   }
 

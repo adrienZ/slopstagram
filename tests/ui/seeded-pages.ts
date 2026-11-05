@@ -7,7 +7,12 @@ import type { SidebarUser } from "../../app/loaders/sidebar-users.ts";
 import { withStoryStickers, type StoryCardData } from "../../app/utils/story-cards.ts";
 import { groupTimelineLocations } from "../../app/utils/timeline-locations.ts";
 import { groupTimelineStickers } from "../../app/utils/timeline-stickers.ts";
-import { readRecordedPayloads, seedRecordedStories } from "../setup/seed.ts";
+import {
+  editRecordedStories,
+  editRecordedUsers,
+  readRecordedPayloads,
+  seedRecordedStories,
+} from "../setup/seed.ts";
 
 export const pageNow = new Date("2026-07-26T12:00:00.000Z");
 /** Publication of the newest recorded story, before `pageNow`. */
@@ -106,4 +111,56 @@ export function regroupTimeline<
     stickerGroups: groupTimelineStickers(props.timeline.stories, kinds),
     locations: groupTimelineLocations(props.timeline.stories),
   };
+}
+
+/** The recorded accounts, renamed so that each has distinct initials, in recording order. */
+export const mapAccounts = ["ada_map", "ben_map", "cleo_map"] as const;
+/** A place two accounts tagged: the oldest recorded story, then a newer one of the third account. */
+export const sharedPlace = {
+  name: "Fixture place 1",
+  oldestPk: "700000000000079",
+  latestPk: "700000000000903",
+};
+/** A place only the second account tagged. */
+export const soloPlace = { name: "Fixture place 2", pk: "700000000000090" };
+
+/**
+ * Seeds a runtime's database with what the map page renders: the recorded stories through
+ * production ingestion, with the accounts renamed and location stickers the recording lacks
+ * (a shared place, a place of its own, and a place without coordinates). No place lookup is
+ * recorded, so the places keep the positions their stickers carry.
+ */
+export async function seedMapDatabase(runtime: Runtime): Promise<void> {
+  const recorded = editRecordedUsers(
+    await readRecordedPayloads(["instagram-story-data.json"]),
+    (user, position) => {
+      user.username = mapAccounts[position] ?? user.username;
+    },
+  );
+  await seedRecordedStories(
+    runtime,
+    editRecordedStories(recorded, (story) => {
+      if (story.pk === sharedPlace.oldestPk) {
+        story.story_locations = [
+          {
+            id: "700000000000912",
+            location: { pk: "700000000000930", name: sharedPlace.name, lat: 48.8, lng: 12.5 },
+          },
+        ];
+      }
+      if (story.pk === soloPlace.pk) {
+        story.story_locations = [
+          {
+            id: "700000000000913",
+            location: { pk: "700000000000940", name: soloPlace.name, lat: 45.1, lng: 5.7 },
+          },
+          {
+            id: "700000000000914",
+            location: { pk: "700000000000950", name: "Fixture place without position" },
+          },
+        ];
+      }
+    }),
+    { publishedBefore: { now: pageNow, seconds: PUBLISHED_BEFORE_SECONDS } },
+  );
 }
