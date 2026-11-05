@@ -54,7 +54,7 @@ export function MentionConnectionStories({
               aria-label="Fermer les stories de la connexion"
               onClick={onClose}
             >
-              <XIcon />
+              <XIcon data-icon="inline-start" />
             </Button>
           </div>
           {stories.length === 0 ? (
@@ -78,7 +78,7 @@ export function MentionConnectionStories({
                 setPage(page - 1);
               }}
             >
-              <ChevronLeftIcon />
+              <ChevronLeftIcon data-icon="inline-start" />
             </Button>
             <span aria-live="polite" className="tw:text-xs tw:text-muted-foreground">
               {page + 1} / {pageCount}
@@ -92,7 +92,7 @@ export function MentionConnectionStories({
                 setPage(page + 1);
               }}
             >
-              <ChevronRightIcon />
+              <ChevronRightIcon data-icon="inline-start" />
             </Button>
           </div>
         </div>
