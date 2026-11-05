@@ -1,24 +1,19 @@
 name: Evals
 
-# The evals run the real chat model on a CPU runner: they never block a push, and only start for
-# changes that can move the Assistant's answers, or by hand.
+# The evals run the real chat model on a CPU runner, so they start by hand, or when the `evals`
+# label is added to a pull request. Not on every push: the `Check` workflow's test report is a check
+# run of the commit, and GitHub shows it on any workflow running for the same commit.
 on:
   workflow_dispatch:
   pull_request:
-    types: [opened, synchronize, reopened]
-    paths:
-      - "evals/**"
-      - "core/domains/assistant/**"
-      - "core/domains/accounts/**"
-      - "core/domains/story-feed/**"
-      - "evalite.config.ts"
-      - ".github/workflows/evals.yml"
+    types: [labeled]
 
 permissions:
   contents: read
 
 jobs:
   evals:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.label.name == 'evals' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
