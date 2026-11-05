@@ -160,7 +160,8 @@ const OllamaChatRequestSchema = z.object({
 });
 
 /** What the chat model answers once it has read a tool result. */
-export const assistantAnswer = "Synthetic **answer** from the tool result, about @user_072.";
+export const assistantAnswer =
+  "Synthetic **answer** from the tool result, about @user_072 and @user_999.";
 /** What the chat model answers to a message that needs no tool. */
 export const assistantGreeting = "Synthetic greeting.";
 export const assistantThinking = "Synthetic reasoning about the question.";

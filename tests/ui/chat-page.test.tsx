@@ -66,6 +66,9 @@ test("asking about an account traces the read, then renders the written answer",
   const sticker = screen.getByRole("link", { name: "@user_072" });
   expect(sticker).toHaveAttribute("href", "/users/user_072");
   expect(sticker.querySelector("img")).toHaveAttribute("src", "/media/avatars/700000000000068.jpg");
+  // A mention of an account that is not saved stays plain text.
+  expect(screen.getByText(/@user_999/u)).toBeVisible();
+  expect(screen.queryByRole("link", { name: "@user_999" })).not.toBeInTheDocument();
   // The reasoning is available, collapsed.
   const [reasoning] = screen.getAllByRole("button", { name: "Raisonnement" });
   expect(reasoning).toHaveAttribute("aria-expanded", "false");
