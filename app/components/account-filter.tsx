@@ -1,6 +1,6 @@
 import { useId } from "react";
 import { cn } from "cn";
-import { FilterIcon } from "lucide-react";
+import { FilterIcon, MapPinIcon, XIcon } from "lucide-react";
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
 import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/ui/avatar.tsx";
 import { Badge } from "../shadcn/ui/badge.tsx";
@@ -13,15 +13,40 @@ interface AccountFilterProps {
   accounts: Array<SidebarUser>;
   selected: Array<string>;
   onToggle: (username: string) => void;
+  /** Resets every filter: the accounts and the place. */
   onClear: () => void;
+  /** The place the map is narrowed to, shown as an entry that removes it. */
+  place?: { name: string; onRemove: () => void };
 }
 
-/** Accounts as checkboxes; no checked account means all of them. */
+/** The place filter as an entry with the place's name and a remove button. */
+function PlaceFilterEntry({ name, onRemove }: NonNullable<AccountFilterProps["place"]>) {
+  return (
+    <div className="tw:flex tw:items-center tw:gap-2 tw:rounded-md tw:border tw:py-1 tw:pr-1 tw:pl-2">
+      <MapPinIcon aria-hidden="true" className="tw:size-4 tw:shrink-0" />
+      <span className="tw:min-w-0 tw:flex-1 tw:truncate tw:text-sm">{name}</span>
+      <Button
+        variant="ghost"
+        size="icon-xs"
+        aria-label={`Retirer le lieu ${name}`}
+        onClick={onRemove}
+      >
+        <XIcon aria-hidden="true" />
+      </Button>
+    </div>
+  );
+}
+
+/**
+ * The clear action, the place filter when there is one, then the accounts as checkboxes; no
+ * checked account means all of them.
+ */
 export function AccountChecklist({
   accounts,
   selected,
   onToggle,
   onClear,
+  place,
   listClassName = "tw:max-h-72",
 }: AccountFilterProps & {
   /** Sizes the scrollable list. Defaults to a fixed maximum height. */
@@ -30,6 +55,15 @@ export function AccountChecklist({
   const id = useId();
   return (
     <>
+      <Button
+        variant="ghost"
+        size="sm"
+        disabled={selected.length === 0 && place === undefined}
+        onClick={onClear}
+      >
+        Effacer les filtres
+      </Button>
+      {place !== undefined && <PlaceFilterEntry {...place} />}
       <ul className={cn("tw:space-y-1 tw:overflow-y-auto", listClassName)}>
         {accounts.map((account) => {
           const checkboxId = `${id}-${account.username}`;
@@ -58,25 +92,23 @@ export function AccountChecklist({
           );
         })}
       </ul>
-      <Button variant="ghost" size="sm" disabled={selected.length === 0} onClick={onClear}>
-        Tous les comptes
-      </Button>
     </>
   );
 }
 
-/** A popover listing accounts as checkboxes; no checked account means all of them. */
+/** A popover of the filters: the place, then the accounts as checkboxes. */
 export function AccountFilter(props: AccountFilterProps) {
+  const activeCount = props.selected.length + (props.place === undefined ? 0 : 1);
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="outline">
           <FilterIcon aria-hidden="true" />
           Filtrer par compte
-          {props.selected.length > 0 && <Badge>{props.selected.length}</Badge>}
+          {activeCount > 0 && <Badge>{activeCount}</Badge>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" aria-label="Comptes affichés">
+      <PopoverContent align="start" aria-label="Filtres affichés">
         <AccountChecklist {...props} />
       </PopoverContent>
     </Popover>

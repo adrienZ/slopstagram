@@ -16,6 +16,12 @@ import {
   recordFailedPlaceLookup,
   recordPlaceLookup,
 } from "@@/core/domains/database/repositories/story-repository.location-metadata.ts";
+import {
+  listTaggedPlaceLabels,
+  listTaggedPlaces,
+  listTaggedPlaceStories,
+  type TaggedPlacePageQuery,
+} from "@@/core/domains/database/repositories/story-repository.tagged-places.ts";
 import type { PlaceLookupInput } from "@@/core/domains/places/location-metadata.ts";
 import {
   enrichStoryMusic,
@@ -44,6 +50,8 @@ import {
   getStoryLocations,
   getStoryStickers,
 } from "@@/core/domains/stickers/story-sticker-location.ts";
+
+export type { TaggedPlaceRow } from "@@/core/domains/database/repositories/story-repository.tagged-places.ts";
 
 export interface StoryOwner {
   full_name?: string;
@@ -430,6 +438,19 @@ export class StoryRepository {
       const entry = getTimelineStory(this.database, story, user);
       return entry === null ? [] : [entry];
     });
+  }
+
+  /** A page of the tagged places with coordinates, the place of the latest story first. */
+  listTaggedPlaces(query: TaggedPlacePageQuery) {
+    return listTaggedPlaces(this.database, query);
+  }
+
+  listTaggedPlaceLabels() {
+    return listTaggedPlaceLabels(this.database);
+  }
+
+  listTaggedPlaceStories(id: string, limit: number) {
+    return listTaggedPlaceStories(this.database, id, limit);
   }
 
   listPublicationTimes(now: Date) {

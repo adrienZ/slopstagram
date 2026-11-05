@@ -39,11 +39,20 @@ export function describeOutcome(read: FeedUserSummary): FeedUserSummaryOutcome {
 /** What a case expects from the Assistant. */
 export interface AssistantExpectation {
   /** The tools the Assistant should call, each at least once and no other: none to answer without a tool. */
-  tools: Array<"getFeedUserSummaries" | "listAccounts" | "searchAccounts">;
+  tools: Array<
+    | "getFeedUserSummaries"
+    | "getTaggedPlace"
+    | "listAccounts"
+    | "listTaggedPlaces"
+    | "searchAccounts"
+    | "searchTaggedPlaces"
+  >;
   /** The only username the tool should be called with. */
   username?: string;
   /** The outcome every getFeedUserSummaries result should have. */
   outcome?: FeedUserSummaryOutcome;
+  /** The place the answer must name: the chat links its name to the map. */
+  place?: { id: string; name: string };
   /** The saved accounts of the seeded world: the only usernames an answer may name. */
   savedUsernames: Array<string>;
 }
@@ -240,6 +249,18 @@ function knownUsernames(expected: AssistantExpectation): AssistantCheck {
   };
 }
 
+function namedPlace(place: { id: string; name: string }): AssistantCheck {
+  return {
+    name: "Place named",
+    description: `The answer names ${place.name}, which the chat links to the map, or links to place:${place.id}.`,
+    check: (run) =>
+      result(
+        run.text.toLowerCase().includes(place.name.toLowerCase()) ||
+          run.text.includes(`](place:${place.id})`),
+      ),
+  };
+}
+
 const nonEmptyAnswer: AssistantCheck = {
   name: "Non-empty answer",
   description: "The Assistant streamed an answer, and no error.",
@@ -261,6 +282,7 @@ export function createAssistantChecks(expected: AssistantExpectation): Array<Ass
     expectedTools(expected),
     ...(expected.username === undefined ? [] : [expectedArguments(expected.username)]),
     ...(expected.outcome === undefined ? [] : [expectedOutcome(expected.outcome)]),
+    ...(expected.place === undefined ? [] : [namedPlace(expected.place)]),
     knownUsernames(expected),
     nonEmptyAnswer,
     frenchAnswer,

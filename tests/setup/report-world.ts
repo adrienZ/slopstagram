@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { expect, type TestContext } from "vitest";
 import sharp from "sharp";
 import { z } from "zod";
-import type { JsonValue } from "@@/core/utils/json-value.ts";
+import { JsonValueSchema, type JsonValue } from "@@/core/utils/json-value.ts";
 import { createReport } from "@@/core/domains/fetch-run/report.ts";
 import type { RuntimeBoundaries } from "@@/core/domains/runtime/runtime.ts";
 import { createCapturingLogger } from "../mock-helpers.ts";
@@ -25,7 +25,7 @@ export const publishedBefore = { now, seconds: HOUR };
 
 export const imageStoryPk = "700000000000079";
 export const musicStoryPk = "700000000000900";
-const plainStoryPk = "700000000000116";
+export const plainStoryPk = "700000000000116";
 export const storyPks = [imageStoryPk, plainStoryPk, musicStoryPk];
 export const placeId = "111";
 export const audioAssetId = "900000000000001";
@@ -73,7 +73,9 @@ function placeBody(): JsonValue {
  * The recorded gallery, given the stickers the recording lacks: a tagged place on the image
  * story and a music sticker with a downloadable audio asset on the last story.
  */
-export async function recordedPayloads(): Promise<RecordedPayloads> {
+export async function recordedPayloads(
+  editStory?: (story: RecordedStory) => void,
+): Promise<RecordedPayloads> {
   const recorded = keepRecordedStories(
     await readRecordedPayloads(["instagram-story-data.json"]),
     storyPks,
@@ -93,6 +95,7 @@ export async function recordedPayloads(): Promise<RecordedPayloads> {
           },
         ];
       }
+      editStory?.(story);
     }),
     musicAsset: musicAssetBody(),
     place: placeBody(),
@@ -118,6 +121,8 @@ export function trayBody(options: { withMissingReel?: boolean } = {}): JsonValue
     ],
   };
 }
+
+type RecordedStory = Parameters<Parameters<typeof editRecordedStories>[1]>[0];
 
 type OllamaFailure = "server-error" | "unreachable";
 
@@ -156,15 +161,61 @@ const OllamaRequestSchema = z.object({
 
 const OllamaChatRequestSchema = z.object({
   messages: z.array(z.object({ content: z.string(), role: z.string() })),
+  think: z.boolean().optional(),
   tools: z.array(z.object({ function: z.object({ name: z.string() }) })).default([]),
 });
 
 /** What the chat model answers once it has read a tool result. */
 export const assistantAnswer =
   "Synthetic **answer** from the tool result, about @user_072 and @user_999.";
+/** What the chat model answers once it has read a found Tagged place: a link to it. */
+export function placeAnswer(place: { id: string; name: string }) {
+  return `Synthetic answer about [${place.name}](place:${place.id}).`;
+}
+/**
+ * What the chat model answers once it has listed or found places: like a small model, it names
+ * them without their place links, and links the first one elsewhere.
+ */
+export function placesAnswer(names: Array<string>) {
+  return `Synthetic answer naming ${names.join(", ")}, and [${names.at(0) ?? ""}](https://example.com/elsewhere).`;
+}
 /** What the chat model answers to a message that needs no tool. */
 export const assistantGreeting = "Synthetic greeting.";
 export const assistantThinking = "Synthetic reasoning about the question.";
+
+const FoundPlaceSchema = z.object({
+  place: z.object({ id: z.string(), name: z.string() }),
+  status: z.literal("found"),
+});
+
+/** A tool result as JSON, or null when it is not JSON. */
+function parseJson(content: string): JsonValue {
+  try {
+    return JsonValueSchema.parse(JSON.parse(content));
+  } catch {
+    return null;
+  }
+}
+
+const ListedPlacesSchema = z.object({
+  places: z.array(z.object({ name: z.string() })).min(1),
+});
+
+/**
+ * The answer to a tool result: a link to the place it found, the places it listed or found, or
+ * the synthetic answer.
+ */
+function answerToolResult(content: string) {
+  const result = parseJson(content);
+  const found = FoundPlaceSchema.safeParse(result);
+  if (found.success) {
+    return placeAnswer(found.data.place);
+  }
+  const listed = ListedPlacesSchema.safeParse(result);
+  return listed.success
+    ? placesAnswer(listed.data.places.map(({ name }) => name))
+    : assistantAnswer;
+}
 
 function ndjsonResponse(...lines: Array<JsonValue>) {
   return new globalThis.Response(lines.map((line) => JSON.stringify(line)).join("\n"));
@@ -212,22 +263,57 @@ function chatToolCall(name: string, args: JsonValue) {
   });
 }
 
+/** The place tool call the chat model makes for a question about places, if any. */
+function callPlaceTool(question: string, usernames: Array<string>, offered: Set<string>) {
+  const args: Record<string, JsonValue> = {};
+  const offset = /\boffset\s+(?<offset>\d+)$/iu.exec(question)?.groups?.offset;
+  if (offset !== undefined) {
+    args.offset = Number(offset);
+  }
+  const id = /^(?:place|lieu)\s+(?<id>\S+)$/iu.exec(question)?.groups?.id;
+  if (id !== undefined && offered.has("getTaggedPlace")) {
+    return chatToolCall("getTaggedPlace", { id });
+  }
+  const query =
+    /^(?:search|cherche)\s+(?:places|lieux)\s+(?<query>.+?)(?:\s+offset\s+\d+)?$/iu.exec(question)
+      ?.groups?.query;
+  if (query !== undefined && offered.has("searchTaggedPlaces")) {
+    return chatToolCall("searchTaggedPlaces", { query, ...args });
+  }
+  if (/\b(?:places|lieux)\b/iu.test(question) && offered.has("listTaggedPlaces")) {
+    if (usernames.length > 0) {
+      args.usernames = usernames;
+    }
+    return chatToolCall("listTaggedPlaces", args);
+  }
+  return null;
+}
+
 /**
  * The chat model, in Ollama's streamed wire format. It calls only the tools it is offered:
- * the user summaries of the `@username`s of the last user message, a search of the
+ * a Tagged place when the message is "place <id>", a search of the places when it starts with
+ * "search places", the places (of its `@username`s, from "offset <n>") when it asks about
+ * places, the user summaries of the `@username`s of the last user message, a search of the
  * accounts when the message starts with "search", or the accounts when the message asks
  * about accounts. It answers once it has a tool result, and greets any
  * other message without a tool.
  */
 function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>) {
-  if (messages.some(({ role }) => role === "tool")) {
-    return chatMessage({ content: assistantAnswer, role: "assistant" });
+  // Only a tool result of the last question: earlier turns keep theirs in the conversation.
+  const lastQuestion = messages.findLastIndex(({ role }) => role === "user");
+  const toolResult = messages.slice(lastQuestion).findLast(({ role }) => role === "tool");
+  if (toolResult !== undefined) {
+    return chatMessage({ content: answerToolResult(toolResult.content), role: "assistant" });
   }
   const offered = new Set(tools.map((tool) => tool.function.name));
   const question = messages.findLast(({ role }) => role === "user")?.content ?? "";
   const usernames = [...question.matchAll(/@(?<username>[\w.]+)/gu)].map(
     ({ groups }) => groups?.username ?? "",
   );
+  const placeCall = callPlaceTool(question, usernames, offered);
+  if (placeCall !== null) {
+    return placeCall;
+  }
   if (usernames.length > 0 && offered.has("getFeedUserSummaries")) {
     return chatToolCall("getFeedUserSummaries", { usernames });
   }
@@ -246,13 +332,22 @@ function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>
  * requests the conversation.
  */
 function createOllama(behavior: OllamaBehavior = {}) {
-  const requests: Array<{ kind: "chat" | "summary" | "vision"; prompt: string }> = [];
+  const requests: Array<{
+    kind: "chat" | "summary" | "vision";
+    prompt: string;
+    /** Whether a chat request asked the model to reason. */
+    think?: boolean;
+  }> = [];
   let visions = 0;
   async function fetchOllama(_input: RequestInfo | URL, init?: RequestInit) {
     const json: unknown = JSON.parse(z.string().parse(init?.body));
     const chat = OllamaChatRequestSchema.safeParse(json);
     if (chat.success) {
-      requests.push({ kind: "chat", prompt: chat.data.messages.at(-1)?.content ?? "" });
+      requests.push({
+        kind: "chat",
+        prompt: chat.data.messages.at(-1)?.content ?? "",
+        think: chat.data.think,
+      });
       return await Promise.resolve(
         behavior.chat === undefined ? answerChat(chat.data) : failChat(behavior.chat),
       );
@@ -293,6 +388,8 @@ export async function createWorld(
   options: {
     backup?: RuntimeBoundaries["backup"];
     client?: RuntimeBoundaries["client"];
+    /** Edits each recorded story before the fetch, e.g. to tag more places. */
+    editStory?: (story: RecordedStory) => void;
     ollama?: OllamaBehavior;
     ocr?: (position: number) => string | Error;
     queue?: RuntimeBoundaries["queue"];
@@ -315,7 +412,9 @@ export async function createWorld(
     },
     client:
       options.client ??
-      (await createRecordedInstagramClient(await recordedPayloads(), { publishedBefore })),
+      (await createRecordedInstagramClient(await recordedPayloads(options.editStory), {
+        publishedBefore,
+      })),
     fetchImage: async (url) => {
       calls.push(`image ${url}`);
       return await Promise.resolve({

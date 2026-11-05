@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
-import type { SidebarUser } from "../loaders/sidebar-users.ts";
 import type { TimelinePlace } from "../utils/timeline-locations.ts";
+import type { SidebarUser } from "../loaders/sidebar-users.ts";
 
 /** The usernames of the accounts in `chosen`, in account order; unknown names are dropped. */
 function keepAccounts(accounts: Array<SidebarUser>, chosen: Set<string>): Array<string> {
@@ -22,22 +22,29 @@ function filterPlaces(places: Array<TimelinePlace>, selected: Array<string>): Ar
   });
 }
 
-/** The map's account filter, kept in the `accounts` search param as a comma-separated list. */
+/**
+ * The map's filters, kept in the search params: the accounts, a comma-separated list in
+ * `accounts`, and the one place to show, by id in `place`. Both apply together. Unknown
+ * accounts and an unknown place are ignored.
+ */
 export function usePlaceMapFilter(
   places: Array<TimelinePlace>,
   accounts: Array<SidebarUser>,
-  value: string | undefined,
+  search: { accounts?: string; place?: string },
 ) {
   const navigate = useNavigate({ from: "/map" });
-  const selected = keepAccounts(accounts, new Set(value?.split(",")));
+  const selected = keepAccounts(accounts, new Set(search.accounts?.split(",")));
+  const place = places.find(({ id }) => id === search.place);
 
-  function select(usernames: Set<string>) {
-    const next = keepAccounts(accounts, usernames);
+  /** Shows the chosen accounts, at the current place or at every place. */
+  function update(usernames: Set<string>, placeFilter: "keep" | "remove") {
+    const chosen = keepAccounts(accounts, usernames);
     void navigate({
       to: ".",
       search: (previous) => ({
         ...previous,
-        accounts: next.length === 0 ? undefined : next.join(","),
+        accounts: chosen.length === 0 ? undefined : chosen.join(","),
+        place: placeFilter === "keep" ? previous.place : undefined,
       }),
       replace: true,
       resetScroll: false,
@@ -46,16 +53,21 @@ export function usePlaceMapFilter(
 
   return {
     selected,
-    places: filterPlaces(places, selected),
+    /** The place the map is narrowed to, before the accounts filter applies. */
+    place,
+    places: filterPlaces(place === undefined ? places : [place], selected),
     toggle: (username: string) => {
       const next = new Set(selected);
       if (!next.delete(username)) {
         next.add(username);
       }
-      select(next);
+      update(next, "keep");
+    },
+    removePlace: () => {
+      update(new Set(selected), "remove");
     },
     clear: () => {
-      select(new Set());
+      update(new Set(), "remove");
     },
   };
 }

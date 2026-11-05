@@ -15,6 +15,7 @@ export const LocationMapContext = createContext<ComponentType<LocationMapCanvasP
  */
 export function PlaceExplorer({
   places,
+  initialSelectedId,
   storyByMediaPk,
   showOwner,
   renderMarker,
@@ -22,12 +23,14 @@ export function PlaceExplorer({
   tileErrorMessage,
 }: {
   places: Array<TimelinePlace>;
+  /** The place whose popup is open when the explorer mounts. */
+  initialSelectedId?: string;
   storyByMediaPk: Map<string, StoryCardData>;
   showOwner?: boolean;
 } & Pick<LocationMapCanvasProps, "renderMarker" | "tileErrorMessage"> & {
     mapClassName?: LocationMapCanvasProps["className"];
   }) {
-  const [selectedId, setSelectedId] = useState<string>();
+  const [selectedId, setSelectedId] = useState(initialSelectedId);
   const selectId = useId();
   const selectRef = useRef<HTMLSelectElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
