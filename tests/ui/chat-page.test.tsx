@@ -84,32 +84,15 @@ test("several accounts trace one read of their summaries", async (context) => {
   expect(screen.getByText("Lecture des résumés de @user_072, @user_999")).toBeVisible();
 });
 
-test("asking which accounts are saved renders every saved account as a mention sticker", async (context) => {
+test("asking which accounts are saved traces the read, then renders the written answer", async (context) => {
   const chat = await mountChat(await fetchedWorld(context));
 
   await chat.ask("Quels comptes connais-tu ?");
 
-  const answer = await screen.findByText("answer");
-  const list = screen.getByRole("list", { name: "Comptes enregistrés" });
-  const stickers = within(list).getAllByRole("link");
-  expect(stickers.map((sticker) => sticker.textContent)).toStrictEqual(["@user_008", "@user_072"]);
-  expect(stickers.map((sticker) => sticker.getAttribute("href"))).toStrictEqual([
-    "/users/user_008",
-    "/users/user_072",
-  ]);
-  expect(
-    stickers.map((sticker) => sticker.querySelector("img")?.getAttribute("src")),
-  ).toStrictEqual(["/media/avatars/700000000000001.jpg", "/media/avatars/700000000000068.jpg"]);
-  expect(list.compareDocumentPosition(answer)).toBe(globalThis.Node.DOCUMENT_POSITION_FOLLOWING);
-});
-
-test("asking which accounts are saved before any fetch run says none is saved", async (context) => {
-  const chat = await mountChat(await createWorld(context));
-
-  await chat.ask("Which accounts are saved?");
-
-  await screen.findByText("answer");
-  expect(screen.getByText("Aucun compte enregistré.")).toBeVisible();
+  const bold = await screen.findByText("answer");
+  expect(bold.tagName).toBe("STRONG");
+  expect(screen.getByText("Lecture des comptes enregistrés")).toBeVisible();
+  // No list component repeats what the answer says.
   expect(screen.queryByRole("list", { name: "Comptes enregistrés" })).not.toBeInTheDocument();
 });
 
@@ -119,10 +102,9 @@ test("a greeting is answered without reading any data", async (context) => {
   await chat.ask("Bonjour !");
 
   expect(await screen.findByText(assistantGreeting)).toBeVisible();
-  // No tool part: no account list, no user summary card, no sticker.
+  // No tool part: no trace line and no sticker.
   const thread = within(screen.getByRole("region", { name: "Messages" }));
-  expect(thread.queryByRole("list")).not.toBeInTheDocument();
-  expect(thread.queryByRole("region")).not.toBeInTheDocument();
+  expect(thread.queryByText(/^Lecture /u)).not.toBeInTheDocument();
   expect(thread.queryByRole("link")).not.toBeInTheDocument();
 });
 

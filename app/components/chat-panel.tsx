@@ -28,7 +28,6 @@ import {
   TraceTitle,
 } from "../shadcn/ui/trace.tsx";
 import { ChatMarkdown } from "./chat-markdown.tsx";
-import { SavedAccountList } from "./saved-account-list.tsx";
 
 type AssistantPart = AssistantUIMessage["parts"][number];
 type FeedUserSummariesPart = Extract<AssistantPart, { type: "tool-getFeedUserSummaries" }>;
@@ -59,19 +58,17 @@ function FeedUserSummariesPartView({ part }: { part: FeedUserSummariesPart }) {
   );
 }
 
-function ListAccountsPartView({
-  accounts,
-  part,
-}: {
-  accounts: Array<SidebarUser>;
-  part: ListAccountsPart;
-}) {
-  if (part.state === "output-available") {
-    return <SavedAccountList accounts={accounts} listed={part.output.accounts} />;
-  }
+/** The Assistant writes the list from the saved accounts: the chat only traces the read. */
+function ListAccountsPartView({ part }: { part: ListAccountsPart }) {
   const failed = part.state === "output-error" || part.state === "output-denied";
+  let status: "error" | "running" | undefined;
+  if (failed) {
+    status = "error";
+  } else if (part.state !== "output-available") {
+    status = "running";
+  }
   return (
-    <TraceLine status={failed ? "error" : "running"}>
+    <TraceLine status={status}>
       <TraceIcon>
         <UsersIcon />
       </TraceIcon>
@@ -118,7 +115,7 @@ function AssistantPartView({
     return <FeedUserSummariesPartView part={part} />;
   }
   if (part.type === "tool-listAccounts") {
-    return <ListAccountsPartView accounts={accounts} part={part} />;
+    return <ListAccountsPartView part={part} />;
   }
   return null;
 }
