@@ -15,7 +15,8 @@ baseline of the default chat model: raise it when the model improves.
 - The LLM judge runs `gpt-6-luna` when the `codex` CLI is installed, and is skipped otherwise and on CI (`CI` is set: the GitHub runners have `codex` but no login). Its
   Codex login must have access to that model, or every judged run fails with `model_not_found`.
 - The `Evals` workflow runs by hand (`workflow_dispatch`) or on a pull request that touches the
-  Assistant or the evals, never on a push. It exports the HTML report (`eval:export`) after the run, from the
+  Assistant or the evals, never on a push. It writes the scores and answers to the run's job summary
+  (`eval:summary`), and exports the HTML report (`eval:export`) after the run, from the
   SQLite storage; with no stored run `eval:export` would run the evals again, so it is skipped.
 - Evals are not tests: `npm run check`, `npm test` and the `Check` workflow never run them. Do not
   run `evalite watch` or `evalite serve` in an agent session: they keep a server running.
