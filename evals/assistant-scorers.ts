@@ -51,8 +51,8 @@ export interface AssistantExpectation {
   username?: string;
   /** The outcome every getFeedUserSummaries result should have. */
   outcome?: FeedUserSummaryOutcome;
-  /** The place id the answer must link to, as a Place mention `[name](place:id)`. */
-  placeLink?: string;
+  /** The place the answer must name: the chat links its name to the map. */
+  place?: { id: string; name: string };
   /** The saved accounts of the seeded world: the only usernames an answer may name. */
   savedUsernames: Array<string>;
 }
@@ -249,11 +249,15 @@ function knownUsernames(expected: AssistantExpectation): AssistantCheck {
   };
 }
 
-function linkedPlace(placeId: string): AssistantCheck {
+function namedPlace(place: { id: string; name: string }): AssistantCheck {
   return {
-    name: "Place link",
-    description: `The answer links to the place ${placeId} as a markdown link to place:${placeId}.`,
-    check: (run) => result(run.text.includes(`](place:${placeId})`)),
+    name: "Place named",
+    description: `The answer names ${place.name}, which the chat links to the map, or links to place:${place.id}.`,
+    check: (run) =>
+      result(
+        run.text.toLowerCase().includes(place.name.toLowerCase()) ||
+          run.text.includes(`](place:${place.id})`),
+      ),
   };
 }
 
@@ -278,7 +282,7 @@ export function createAssistantChecks(expected: AssistantExpectation): Array<Ass
     expectedTools(expected),
     ...(expected.username === undefined ? [] : [expectedArguments(expected.username)]),
     ...(expected.outcome === undefined ? [] : [expectedOutcome(expected.outcome)]),
-    ...(expected.placeLink === undefined ? [] : [linkedPlace(expected.placeLink)]),
+    ...(expected.place === undefined ? [] : [namedPlace(expected.place)]),
     knownUsernames(expected),
     nonEmptyAnswer,
     frenchAnswer,

@@ -13,8 +13,13 @@ defineAssistantEvals([
     expected: { tools: ["searchTaggedPlaces"] },
   },
   {
+    name: "places called part of a name",
+    question: "Est-ce qu'il y a des lieux qui s'appellent Synthetic ?",
+    expected: { tools: ["searchTaggedPlaces"] },
+  },
+  {
     name: "details of a place",
     question: `Qui est allé au ${worldPlace.name}, et quand ?`,
-    expected: { placeLink: worldPlace.id, tools: ["searchTaggedPlaces", "getTaggedPlace"] },
+    expected: { place: worldPlace, tools: ["searchTaggedPlaces", "getTaggedPlace"] },
   },
 ]);
