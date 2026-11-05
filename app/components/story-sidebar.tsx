@@ -1,7 +1,13 @@
 import type { Matcher } from "react-day-picker";
 import { useState } from "react";
 import { fr } from "react-day-picker/locale";
-import { CalendarDaysIcon, ChevronRightIcon, MapIcon, MessageCircleIcon } from "lucide-react";
+import {
+  CalendarDaysIcon,
+  ChevronRightIcon,
+  MapIcon,
+  MessageCircleIcon,
+  NetworkIcon,
+} from "lucide-react";
 import { formatStoryDay, STORY_TIME_ZONE } from "@@/core/domains/story-feed/story-days.ts";
 import { Button } from "../shadcn/ui/button.tsx";
 import { Calendar } from "../shadcn/ui/calendar.tsx";
@@ -120,6 +126,14 @@ export function StorySidebar({
                     <a href="/map">
                       <MapIcon aria-hidden="true" />
                       <span>Carte</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <a href="/graph">
+                      <NetworkIcon aria-hidden="true" />
+                      <span>Graphe</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

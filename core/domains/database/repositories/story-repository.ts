@@ -382,6 +382,23 @@ export class StoryRepository {
       .map(({ kind }) => kind);
   }
 
+  /** Retained mention observations, without loading unrelated story media or metadata. */
+  listMentionOccurrences() {
+    return this.database
+      .select({
+        storyId: stories.mediaPk,
+        takenAt: stories.takenAt,
+        authorPk: instagramUsers.pk,
+        label: storyStickers.label,
+      })
+      .from(storyStickers)
+      .innerJoin(stories, eq(storyStickers.mediaPk, stories.mediaPk))
+      .innerJoin(instagramUsers, eq(stories.instagramUserPk, instagramUsers.pk))
+      .where(eq(storyStickers.kind, "mention"))
+      .orderBy(desc(stories.takenAt), desc(stories.mediaPk), asc(storyStickers.sortOrder))
+      .all();
+  }
+
   async save(value: StoryItem, owner?: StoryOwner): Promise<void> {
     await Promise.try(() => {
       const story = StoryItemSchema.parse(value);
