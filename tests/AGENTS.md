@@ -24,6 +24,8 @@ Tests go through production code paths (`docs/adr/0006-test-through-production-c
   usernames, ids, names, captions, places, CDN URLs. Use synthetic values. Only public audio
   metadata (titles, artists) may stay. `tests/fixtures.privacy.test.ts` fails on any other
   value in a fixture.
+- Oxlint rule tests live in `tests/oxlint/<rule>.test.ts`, run with `RuleTester` over the rule in
+  `oxlint/plugins/rules/`.
 - Name tests after the module they cover: `tests/<module>[.<aspect>].test.ts`, e.g.
   `stories.edge-cases.test.ts`.
 - `npm test` raises the coverage thresholds in `vitest.config.ts` (`autoUpdate`). Commit the

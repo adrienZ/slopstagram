@@ -4,13 +4,7 @@ import { Route } from "../../app/routes/chat.tsx";
 import { loadChatPage } from "../../app/loaders/chat.ts";
 import { handleChatRequest } from "../../app/routes/api/chat.ts";
 import { createPageRenderer } from "../render-page.ts";
-import {
-  assistantAnswer,
-  assistantGreeting,
-  assistantThinking,
-  createWorld,
-  now,
-} from "../setup/report-world.ts";
+import { assistantGreeting, assistantThinking, createWorld, now } from "../setup/report-world.ts";
 
 beforeEach(() => {
   // The Assistant reads the story feed of the current time.
@@ -53,7 +47,7 @@ async function fetchedWorld(context: TestContext, options: Parameters<typeof cre
   return world;
 }
 
-test("asking about an account renders its user summary card, then the answer", async (context) => {
+test("asking about an account traces the read, then renders the written answer", async (context) => {
   const chat = await mountChat(await fetchedWorld(context));
 
   const gate = chat.hold();
@@ -64,63 +58,30 @@ test("asking about an account renders its user summary card, then the answer", a
   expect(screen.getByRole("textbox", { name: "Message" })).toHaveValue("");
   gate.resolve();
 
-  const answer = await screen.findByText(assistantAnswer);
-  const card = within(screen.getByRole("region", { name: "Résumé de @user_072" }));
-  const sticker = card.getByRole("link", { name: "@user_072" });
+  const bold = await screen.findByText("answer");
+  // The model writes markdown: the chat renders it instead of showing its marks.
+  expect(bold.tagName).toBe("STRONG");
+  expect(screen.getByText("Lecture du résumé de @user_072")).toBeVisible();
+  // Its mentions are the stickers of the story feed.
+  const sticker = screen.getByRole("link", { name: "@user_072" });
   expect(sticker).toHaveAttribute("href", "/users/user_072");
   expect(sticker.querySelector("img")).toHaveAttribute("src", "/media/avatars/700000000000068.jpg");
-  expect(card.getByText("2 stories dans les dernières 24 heures")).toBeVisible();
-  expect(card.getByText("Summary of user_072")).toBeVisible();
-  expect(
-    screen.getByRole("region", { name: "Résumé de @user_072" }).compareDocumentPosition(answer),
-  ).toBe(globalThis.Node.DOCUMENT_POSITION_FOLLOWING);
   // The reasoning is available, collapsed.
-  const reasoning = screen.getByRole("button", { name: "Raisonnement" });
+  const [reasoning] = screen.getAllByRole("button", { name: "Raisonnement" });
   expect(reasoning).toHaveAttribute("aria-expanded", "false");
   expect(screen.queryByText(assistantThinking)).not.toBeInTheDocument();
   await chat.user.click(reasoning);
   expect(screen.getByText(assistantThinking)).toBeVisible();
-  expect(screen.getByRole("button", { name: "Envoyer" })).toBeEnabled();
+  await vi.waitFor(() => expect(screen.getByRole("button", { name: "Envoyer" })).toBeEnabled());
 });
 
-test("an unknown account renders the unknown outcome", async (context) => {
+test("several accounts trace one read of their summaries", async (context) => {
   const chat = await mountChat(await fetchedWorld(context));
 
-  await chat.ask("And @user_999?");
+  await chat.ask("Are @user_072 and @user_999 together?");
 
-  await screen.findByText(assistantAnswer);
-  const card = within(screen.getByRole("region", { name: "Résumé de @user_999" }));
-  expect(card.getByText("Aucun compte enregistré ne s’appelle @user_999.")).toBeVisible();
-  expect(card.queryByRole("link")).not.toBeInTheDocument();
-});
-
-test("an account without stories in the last 24 hours renders that outcome", async (context) => {
-  const world = await fetchedWorld(context);
-  vi.setSystemTime(new Date(now.getTime() + 24 * 3600 * 1000));
-  const chat = await mountChat(world);
-
-  await chat.ask("And @user_008?");
-
-  await screen.findByText(assistantAnswer);
-  const card = within(screen.getByRole("region", { name: "Résumé de @user_008" }));
-  expect(card.getByRole("link", { name: "@user_008" })).toBeVisible();
-  expect(card.getByText("Aucune story publiée dans les dernières 24 heures.")).toBeVisible();
-});
-
-test("an account whose summary was not generated renders that outcome", async (context) => {
-  const chat = await mountChat(
-    await fetchedWorld(context, { ollama: { summary: "server-error" } }),
-  );
-
-  await chat.ask("And @user_072?");
-
-  await screen.findByText(assistantAnswer);
-  const card = within(screen.getByRole("region", { name: "Résumé de @user_072" }));
-  expect(
-    card.getByText(
-      "Le résumé n’est pas encore généré : il le sera au prochain relevé des stories.",
-    ),
-  ).toBeVisible();
+  await screen.findByText("answer");
+  expect(screen.getByText("Lecture des résumés de @user_072, @user_999")).toBeVisible();
 });
 
 test("asking which accounts are saved renders every saved account as a mention sticker", async (context) => {
@@ -128,7 +89,7 @@ test("asking which accounts are saved renders every saved account as a mention s
 
   await chat.ask("Quels comptes connais-tu ?");
 
-  const answer = await screen.findByText(assistantAnswer);
+  const answer = await screen.findByText("answer");
   const list = screen.getByRole("list", { name: "Comptes enregistrés" });
   const stickers = within(list).getAllByRole("link");
   expect(stickers.map((sticker) => sticker.textContent)).toStrictEqual(["@user_008", "@user_072"]);
@@ -147,7 +108,7 @@ test("asking which accounts are saved before any fetch run says none is saved", 
 
   await chat.ask("Which accounts are saved?");
 
-  await screen.findByText(assistantAnswer);
+  await screen.findByText("answer");
   expect(screen.getByText("Aucun compte enregistré.")).toBeVisible();
   expect(screen.queryByRole("list", { name: "Comptes enregistrés" })).not.toBeInTheDocument();
 });

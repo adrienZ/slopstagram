@@ -1,8 +1,9 @@
 import { tool } from "ai";
 import { z } from "zod";
 import {
-  readFeedUserSummary,
+  readFeedUserSummariesByUsername,
   type FeedUserSummary,
+  type RequestedFeedUserSummary,
   type FeedUserSummaryRuntime,
 } from "./feed-user-summary.ts";
 
@@ -21,29 +22,36 @@ const FeedUserSummaryOutputSchema = z.discriminatedUnion("status", [
   z.object({ status: z.literal("error"), error: z.literal("unknown_account") }),
 ]) satisfies z.ZodType<FeedUserSummary>;
 
-const DESCRIPTION = `Returns the user summary of one saved Instagram account: a short text about the stories the account published in the last 24 hours, exactly as the story feed shows it, with the number of those stories.
+const FeedUserSummariesOutputSchema = z.array(
+  z.object({ requestedUsername: z.string(), outcome: FeedUserSummaryOutputSchema }),
+) satisfies z.ZodType<Array<RequestedFeedUserSummary>>;
 
-Use it when the message mentions an account, usually as @username, and asks what the account posted, did or shared recently, today or in the last 24 hours.
+const DESCRIPTION = `Returns the user summaries of one or more saved Instagram accounts: for each, a short text about the stories the account published in the last 24 hours, exactly as the story feed shows it, with the number of those stories.
+
+Use it when the message mentions one or more accounts, usually as @username, and asks what they posted, did or shared recently, today or in the last 24 hours, or compares, filters or ranks them: who posted what, who talks about a subject, whether accounts are together, which one is local.
 Do not use it to list or discover the saved accounts, or for a message that names no account.
 
-Outcomes, by "status":
-- "found": "summary" is the stored user summary and "storyCount" the number of stories in the last 24 hours. Answer from the summary only.
-- "missing" with reason "no_stories_in_last_24h": the account published no story in the last 24 hours. Say so.
-- "missing" with reason "not_generated": the account has stories, but their summary is not generated yet; it will be after the next fetch run. Say so, and do not describe the stories.
-- "error" with error "unknown_account": no saved account has this username. Say the account is unknown, and never invent a summary.`;
+The result lists, in the order asked, each "requestedUsername" with its "outcome", whose "status" is:
+- "found": "summary" is the stored user summary and "storyCount" the number of stories in the last 24 hours.
+- "missing" with reason "no_stories_in_last_24h": the account published no story in the last 24 hours.
+- "missing" with reason "not_generated": the account has stories, but their summary is not generated yet; it will be after the next fetch run.
+- "error" with error "unknown_account": no saved account has this username.
+The chat does not show this result to the user: write the answer yourself from the summaries only, and never invent one.`;
 
-/** The Assistant tool reading the story feed's user summary of one account. Read-only. */
-export function createGetFeedUserSummaryTool(runtime: FeedUserSummaryRuntime) {
+/** The Assistant tool reading the story feed's user summaries of accounts. Read-only. */
+export function createGetFeedUserSummariesTool(runtime: FeedUserSummaryRuntime) {
   return tool({
     description: DESCRIPTION,
     inputSchema: z.object({
-      username: z
-        .string()
+      usernames: z
+        .array(z.string())
+        .min(1)
+        .max(10)
         .describe(
-          'The account\'s Instagram username, as mentioned in the message. An "@" prefix and letter case are ignored. Example: "user_072" for "what did @user_072 post today?".',
+          'The accounts\' Instagram usernames, as mentioned in the message. An "@" prefix and letter case are ignored. Example: ["user_072", "user_008"] for "who posted more, @user_072 or @user_008?".',
         ),
     }),
-    outputSchema: FeedUserSummaryOutputSchema,
-    execute: ({ username }) => readFeedUserSummary(runtime, username, new Date()),
+    outputSchema: FeedUserSummariesOutputSchema,
+    execute: ({ usernames }) => readFeedUserSummariesByUsername(runtime, usernames, new Date()),
   });
 }

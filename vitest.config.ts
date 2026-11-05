@@ -1,3 +1,4 @@
+import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -30,6 +31,8 @@ export default defineConfig({
         extends: true,
         test: {
           name: "ui",
+          // Vite resolves dynamic imports when transforming for jsdom, and Linux lacks `mac-ocr`.
+          alias: { "mac-ocr": fileURLToPath(new URL("tests/ui/mac-ocr.stub.ts", import.meta.url)) },
           environment: "jsdom",
           include: ["tests/**/*.test.tsx"],
           setupFiles: ["./tests/ui/setup.ts"],

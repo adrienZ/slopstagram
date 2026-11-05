@@ -27,34 +27,33 @@ import {
   TraceLine,
   TraceTitle,
 } from "../shadcn/ui/trace.tsx";
-import { FeedUserSummaryCard } from "./feed-user-summary-card.tsx";
+import { ChatMarkdown } from "./chat-markdown.tsx";
 import { SavedAccountList } from "./saved-account-list.tsx";
 
 type AssistantPart = AssistantUIMessage["parts"][number];
-type FeedUserSummaryPart = Extract<AssistantPart, { type: "tool-getFeedUserSummary" }>;
+type FeedUserSummariesPart = Extract<AssistantPart, { type: "tool-getFeedUserSummaries" }>;
 type ListAccountsPart = Extract<AssistantPart, { type: "tool-listAccounts" }>;
 
-function FeedUserSummaryPartView({
-  accounts,
-  part,
-}: {
-  accounts: Array<SidebarUser>;
-  part: FeedUserSummaryPart;
-}) {
-  const username = part.input?.username ?? "";
-  if (part.state === "output-available") {
-    return <FeedUserSummaryCard accounts={accounts} outcome={part.output} username={username} />;
-  }
+/** The Assistant writes the answer from the summaries: the chat only traces the read. */
+function FeedUserSummariesPartView({ part }: { part: FeedUserSummariesPart }) {
+  const usernames = part.input?.usernames ?? [];
+  const handles = usernames.map((username) => formatUserHandle(username ?? "")).join(", ");
+  const noun = usernames.length > 1 ? "des résumés" : "du résumé";
   const failed = part.state === "output-error" || part.state === "output-denied";
+  const done = part.state === "output-available";
+  let status: "error" | "running" | undefined;
+  if (failed) {
+    status = "error";
+  } else if (!done) {
+    status = "running";
+  }
   return (
-    <TraceLine status={failed ? "error" : "running"}>
+    <TraceLine status={status}>
       <TraceIcon>
         <UserSearchIcon />
       </TraceIcon>
       <TraceTitle>
-        {failed
-          ? `Le résumé de ${formatUserHandle(username)} n’a pas pu être lu.`
-          : `Lecture du résumé de ${formatUserHandle(username)}`}
+        {failed ? `Lecture ${noun} de ${handles} impossible.` : `Lecture ${noun} de ${handles}`}
       </TraceTitle>
     </TraceLine>
   );
@@ -93,9 +92,12 @@ function AssistantPartView({
   part: AssistantPart;
 }) {
   if (part.type === "text") {
-    return <p className="tw:leading-relaxed tw:whitespace-pre-wrap">{part.text}</p>;
+    return <ChatMarkdown accounts={accounts}>{part.text}</ChatMarkdown>;
   }
   if (part.type === "reasoning") {
+    if (part.state !== "streaming" && part.text.trim() === "") {
+      return null;
+    }
     return (
       <TraceCollapsible>
         <TraceCollapsibleTrigger>
@@ -112,8 +114,8 @@ function AssistantPartView({
       </TraceCollapsible>
     );
   }
-  if (part.type === "tool-getFeedUserSummary") {
-    return <FeedUserSummaryPartView accounts={accounts} part={part} />;
+  if (part.type === "tool-getFeedUserSummaries") {
+    return <FeedUserSummariesPartView part={part} />;
   }
   if (part.type === "tool-listAccounts") {
     return <ListAccountsPartView accounts={accounts} part={part} />;
