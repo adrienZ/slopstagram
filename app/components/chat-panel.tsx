@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { BrainIcon, SearchIcon, SendIcon, UserSearchIcon, UsersIcon } from "lucide-react";
 import type { AssistantUIMessage } from "@@/core/domains/assistant/assistant.ts";
 import { useAssistantChat } from "../hooks/use-assistant-chat.ts";
+import { useMentionSuggestions } from "../hooks/use-mention-suggestions.ts";
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
 import { formatUserHandle } from "../utils/helper.ts";
 import { Bubble, BubbleContent } from "../shadcn/ui/bubble.tsx";
@@ -29,6 +30,7 @@ import {
   TraceTitle,
 } from "../shadcn/ui/trace.tsx";
 import { ChatMarkdown } from "./chat-markdown.tsx";
+import { MentionBackdrop, MentionedText, MentionSuggestionList } from "./chat-mentions.tsx";
 import { FeedUserSummariesDetails } from "./feed-user-summaries-details.tsx";
 import { AccountList } from "./account-list.tsx";
 
@@ -185,8 +187,15 @@ function ChatMessage({
       <Message align="end">
         <MessageContent>
           <Bubble variant="default" align="end">
-            <BubbleContent className="tw:whitespace-pre-wrap">
-              {message.parts.map((part) => (part.type === "text" ? part.text : "")).join("")}
+            <BubbleContent asChild className="tw:whitespace-pre-wrap">
+              <p>
+                <MentionedText
+                  accounts={accounts}
+                  text={message.parts
+                    .map((part) => (part.type === "text" ? part.text : ""))
+                    .join("")}
+                />
+              </p>
             </BubbleContent>
           </Bubble>
         </MessageContent>
@@ -209,6 +218,11 @@ function ChatMessage({
 /** The conversation with the Assistant and the field to write to it. */
 export function ChatPanel({ accounts }: { accounts: Array<SidebarUser> }) {
   const chat = useAssistantChat();
+  const mentions = useMentionSuggestions({
+    accounts,
+    draft: chat.draft,
+    setDraft: chat.setDraft,
+  });
 
   return (
     <div className="tw:mx-auto tw:flex tw:h-[calc(100svh-3.5rem)] tw:w-full tw:max-w-3xl tw:flex-col tw:gap-4 tw:px-4 tw:pt-6 tw:pb-4">
@@ -251,26 +265,40 @@ export function ChatPanel({ accounts }: { accounts: Array<SidebarUser> }) {
         </MessageScroller>
       </MessageScrollerProvider>
       <form
+        className="tw:relative"
         onSubmit={(event) => {
           event.preventDefault();
           chat.send();
         }}
       >
-        <InputGroup>
-          <InputGroupTextarea
-            aria-label="Message"
-            placeholder="Écris un message, @ pour mentionner un compte"
-            value={chat.draft}
-            onChange={(event) => {
-              chat.setDraft(event.target.value);
-            }}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
-                event.preventDefault();
-                chat.send();
-              }
-            }}
+        {mentions.listbox !== null && (
+          <MentionSuggestionList
+            id={mentions.listbox.id}
+            options={mentions.listbox.options}
+            onHover={mentions.setActive}
+            onPick={mentions.pick}
           />
+        )}
+        <InputGroup>
+          <div className="tw:relative tw:w-full">
+            <MentionBackdrop accounts={accounts} text={chat.draft} />
+            <InputGroupTextarea
+              {...mentions.field}
+              aria-label="Message"
+              placeholder="Écris un message, @ pour mentionner un compte"
+              value={chat.draft}
+              className="tw:relative tw:text-transparent tw:caret-foreground"
+              onKeyDown={(event) => {
+                if (mentions.onKeyDown(event)) {
+                  return;
+                }
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  chat.send();
+                }
+              }}
+            />
+          </div>
           <InputGroupAddon align="block-end">
             <InputGroupButton
               type="submit"
