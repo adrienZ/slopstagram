@@ -5,6 +5,11 @@ answers French questions through the chat route handler, over the synthetic repo
 tests. It fails when the average score is under `scoreThreshold` in `evalite.config.ts`, the
 baseline of the default chat model: raise it when the model improves.
 
+- The cases are split by area, one eval file each: `story-feed`, `accounts`, `places` and
+  `greeting` (`evals/<area>.eval.ts`), declared through `defineAssistantEvals`
+  (`evals/assistant-cases.ts`). Run one or a few with a file filter, e.g.
+  `npm run eval -- places` or `npm run eval -- places accounts`: the threshold then applies to
+  the cases that ran. Files run one after another, since they share the one local chat model.
 - Needs the Ollama server (`curl localhost:11434/api/version`) with the chat model pulled
   (`OLLAMA_CHAT_MODEL`, e.g. `ollama pull qwen3.5:0.8b`).
 - The terminal table is cut short: read the full answers and traces in `npm run eval:export`
