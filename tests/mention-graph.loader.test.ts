@@ -36,10 +36,15 @@ test("the graph joins both mention directions and counts each retained story onc
   expect(graph.nodes.map((node) => node.label).toSorted()).toEqual(["@ada_graph", "@ben_graph"]);
   expect(graph.connections).toHaveLength(1);
   expect(graph.connections[0]?.storyCount).toBe(2);
+  expect(graph.connections[0]?.storyIds.toSorted()).toEqual(["700000000000079", "700000000000090"]);
+  expect(graph.stories.map(({ mediaPk }) => mediaPk).toSorted()).toEqual([
+    "700000000000079",
+    "700000000000090",
+  ]);
   runtime.database.delete(stories).where(eq(stories.mediaPk, "700000000000079")).run();
   expect(loadMentionGraph(runtime).connections[0]?.storyCount).toBe(1);
   runtime.database.delete(stories).where(eq(stories.mediaPk, "700000000000090")).run();
-  expect(loadMentionGraph(runtime)).toEqual({ nodes: [], connections: [] });
+  expect(loadMentionGraph(runtime)).toEqual({ nodes: [], connections: [], stories: [] });
 });
 
 test("unknown usernames are shared while name-only observations stay separate and case collisions remain uncertain", async (context) => {

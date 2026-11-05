@@ -7,8 +7,12 @@ import { Button } from "../shadcn/ui/button.tsx";
 import { Popover, PopoverAnchor, PopoverContent } from "../shadcn/ui/popover.tsx";
 import { formatUserInitials, getUserTimelineUrl } from "../utils/helper.ts";
 
-export interface MentionGraphCanvasProps extends MentionGraphPageData {
+export interface MentionGraphCanvasProps extends Pick<
+  MentionGraphPageData,
+  "nodes" | "connections"
+> {
   selectedNodeId: string | undefined;
+  selectedConnectionId?: string;
   onSelectNode: (id?: string) => void;
   onSelectConnection?: (id: string) => void;
 }
@@ -17,6 +21,7 @@ export function MentionGraphCanvas({
   nodes,
   connections,
   selectedNodeId,
+  selectedConnectionId,
   onSelectNode,
   onSelectConnection,
 }: MentionGraphCanvasProps) {
@@ -70,7 +75,9 @@ export function MentionGraphCanvas({
               return null;
             }
             const highlighted =
-              connection.source === selectedNodeId || connection.target === selectedNodeId;
+              connection.id === selectedConnectionId ||
+              connection.source === selectedNodeId ||
+              connection.target === selectedNodeId;
             return (
               <g
                 key={connection.id}

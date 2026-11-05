@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowLeftIcon } from "lucide-react";
-import { useState } from "react";
 import { MentionGraphCanvas } from "../components/mention-graph-canvas.tsx";
+import { MentionConnectionStories } from "../components/mention-connection-stories.tsx";
+import { Lightbox } from "../components/lightbox.tsx";
+import { useMentionGraphSelection } from "../hooks/use-mention-graph-selection.ts";
 import type { MentionGraphPageData } from "../loaders/mention-graph.ts";
 import { getMentionGraph } from "../query-service.ts";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "../shadcn/ui/empty.tsx";
 
-export function MentionGraphPage({ nodes, connections }: MentionGraphPageData) {
-  const [selectedNodeId, setSelectedNodeId] = useState<string>();
+export function MentionGraphPage({ nodes, connections, stories }: MentionGraphPageData) {
+  const selection = useMentionGraphSelection({ nodes, connections, stories });
   return (
     <>
       <header className="tw:flex tw:h-14 tw:shrink-0 tw:items-center tw:gap-3 tw:border-b tw:px-4">
@@ -35,14 +37,33 @@ export function MentionGraphPage({ nodes, connections }: MentionGraphPageData) {
             </EmptyHeader>
           </Empty>
         ) : (
-          <MentionGraphCanvas
-            nodes={nodes}
-            connections={connections}
-            selectedNodeId={selectedNodeId}
-            onSelectNode={setSelectedNodeId}
-          />
+          <div className="tw:relative">
+            <MentionGraphCanvas
+              nodes={nodes}
+              connections={connections}
+              selectedNodeId={selection.selectedNodeId}
+              selectedConnectionId={selection.selectedConnection?.id}
+              onSelectNode={selection.selectNode}
+              onSelectConnection={selection.selectConnection}
+            />
+            {selection.selectedConnection !== undefined && (
+              <MentionConnectionStories
+                key={selection.selectedConnection.id}
+                label={selection.connectionLabel}
+                stories={selection.connectionStories}
+                onClose={selection.closeConnection}
+                onOpenStory={selection.selectStory}
+              />
+            )}
+          </div>
         )}
       </main>
+      <Lightbox
+        stories={selection.connectionStories}
+        selectedStory={selection.selectedStory}
+        onSelectStory={selection.selectStory}
+        linkToProfile
+      />
     </>
   );
 }
