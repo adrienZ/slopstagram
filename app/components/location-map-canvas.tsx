@@ -4,7 +4,15 @@
 
 import { useRef, useState } from "react";
 import type { ReactNode } from "react";
-import Map, { Marker, NavigationControl, Popup, useMap } from "react-map-gl/maplibre";
+import Map, {
+  FullscreenControl,
+  GeolocateControl,
+  Marker,
+  NavigationControl,
+  Popup,
+  ScaleControl,
+  useMap,
+} from "react-map-gl/maplibre";
 import type { MapRef } from "react-map-gl/maplibre";
 import { setWorkerUrl } from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
@@ -101,6 +109,9 @@ export default function LocationMapCanvas({
         }}
       >
         <NavigationControl position="top-right" />
+        <FullscreenControl position="top-right" />
+        <GeolocateControl position="top-right" />
+        <ScaleControl position="bottom-left" />
         {boundsChanged && <FitBounds key={boundsKey} bounds={bounds} />}
         {places.map((place) => (
           <Marker
