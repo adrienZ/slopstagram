@@ -32,7 +32,9 @@ Every folder below lives in `domains/`.
 
 ## Assistant tools
 
-An Assistant tool is `<module>.tool.ts` next to the domain module it exposes. It exports a
+An Assistant tool is one file, one tool: `<tool-name>.tool.ts` in kebab case (`list-accounts.tool.ts`
+for `listAccounts`), next to the domain module it exposes. Never put two tools in one file; code
+they share lives in the domain module. It exports a
 `create<Name>Tool(runtime)` factory over the runtime narrowed to the repository methods it calls,
 returning an AI SDK `tool` with an English description for agents, an input schema with
 `.describe()` examples, an output schema and an execute function. It returns data, never UI, and

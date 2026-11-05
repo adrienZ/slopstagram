@@ -214,8 +214,9 @@ function chatToolCall(name: string, args: JsonValue) {
 
 /**
  * The chat model, in Ollama's streamed wire format. It calls only the tools it is offered:
- * the user summaries of the `@username`s of the last user message, or the saved accounts when
- * the message asks about accounts. It answers once it has a tool result, and greets any
+ * the user summaries of the `@username`s of the last user message, a search of the
+ * accounts when the message starts with "search", or the accounts when the message asks
+ * about accounts. It answers once it has a tool result, and greets any
  * other message without a tool.
  */
 function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>) {
@@ -229,6 +230,10 @@ function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>
   );
   if (usernames.length > 0 && offered.has("getFeedUserSummaries")) {
     return chatToolCall("getFeedUserSummaries", { usernames });
+  }
+  const query = /^(?:search|cherche)\s+(?<query>.+)$/iu.exec(question)?.groups?.query;
+  if (query !== undefined && offered.has("searchAccounts")) {
+    return chatToolCall("searchAccounts", { query });
   }
   if (/\b(?:accounts|comptes)\b/iu.test(question) && offered.has("listAccounts")) {
     return chatToolCall("listAccounts", {});

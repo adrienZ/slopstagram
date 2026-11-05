@@ -9,8 +9,8 @@ const mentionPattern = /(?<![\w/:.@])@(?<username>\w+(?:\.\w+)*)/gu;
 const profilePath = "/users/";
 
 /**
- * Writes each `@username` of a saved account as a link to its profile, which the chat shows as a
- * sticker. A name that is not a saved account stays plain text.
+ * Writes each `@username` of a account as a link to its profile, which the chat shows as a
+ * sticker. A name that is not a account stays plain text.
  */
 function linkMentions(text: string, accounts: Array<SidebarUser>): string {
   return text.replaceAll(mentionPattern, (mention, username: string) => {
@@ -45,7 +45,7 @@ function createComponents(accounts: Array<SidebarUser>): Components {
 }
 
 /**
- * The Assistant's text, which the model writes as markdown, with the mentions of saved accounts as
+ * The Assistant's text, which the model writes as markdown, with the mentions of accounts as
  * the stickers of the story feed. Raw HTML in it is not rendered, and unsafe link targets are dropped by the
  * renderer.
  */

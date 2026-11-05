@@ -33,7 +33,7 @@ new RuleTester().run("domain-layering", domainLayering, {
     },
     {
       name: "the Assistant domain imports the domains whose tools it composes",
-      code: 'import { createGetFeedUserSummaryTool } from "@@/core/domains/story-feed/feed-user-summary.tool.ts";',
+      code: 'import { createGetFeedUserSummaryTool } from "@@/core/domains/story-feed/get-feed-user-summaries.tool.ts";',
       filename: inDomain("assistant/assistant.ts"),
     },
   ],
@@ -41,7 +41,7 @@ new RuleTester().run("domain-layering", domainLayering, {
     {
       name: "no tool-owning domain imports the Assistant domain",
       code: 'import { streamAssistantReply } from "@@/core/domains/assistant/assistant.ts";',
-      filename: inDomain("story-feed/feed-user-summary.tool.ts"),
+      filename: inDomain("story-feed/get-feed-user-summaries.tool.ts"),
       errors: [{ messageId: "upward", data: { importer: "story-feed", imported: "assistant" } }],
     },
     {

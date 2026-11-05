@@ -6,9 +6,10 @@ the data it reads and drifts from the domain behavior it is meant to expose (the
 feed and the tool reading a different user summary, for example). The spec is
 [issue #275](https://github.com/adrienZ/slopstagram/issues/275).
 
-An Assistant tool lives in the domain whose data it reads, in a module named after the
-domain module with a `.tool` suffix (`saved-accounts.tool.ts` next to `saved-accounts.ts`,
-`feed-user-summary.tool.ts` next to `feed-user-summary.ts`). The module
+An Assistant tool lives in the domain whose data it reads, one tool per module, named after
+the tool with a `.tool` suffix (`list-accounts.tool.ts` for `listAccounts`,
+`get-feed-user-summaries.tool.ts` for `getFeedUserSummaries`), next to the domain module it
+calls. The module
 exports a factory that takes the runtime narrowed to the repository methods the tool
 calls, like the domain services do, and returns an AI SDK tool with a description, an
 input schema, an output schema and an execute function. Tools return data, never UI, and

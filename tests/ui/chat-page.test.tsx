@@ -66,9 +66,15 @@ test("asking about an account traces the read, then renders the written answer",
   const sticker = screen.getByRole("link", { name: "@user_072" });
   expect(sticker).toHaveAttribute("href", "/users/user_072");
   expect(sticker.querySelector("img")).toHaveAttribute("src", "/media/avatars/700000000000068.jpg");
-  // A mention of an account that is not saved stays plain text.
+  // A mention of an account that is unknown stays plain text.
   expect(screen.getByText(/@user_999/u)).toBeVisible();
   expect(screen.queryByRole("link", { name: "@user_999" })).not.toBeInTheDocument();
+  // What the Assistant read is kept behind its trace line.
+  expect(screen.queryByText("Summary of user_072")).not.toBeInTheDocument();
+  await chat.user.click(screen.getByRole("button", { name: "Lecture du résumé de @user_072" }));
+  const read = within(screen.getByRole("list", { name: "Résumés lus" }));
+  expect(read.getByText("2 stories dans les dernières 24 heures")).toBeVisible();
+  expect(read.getByText("Summary of user_072")).toBeVisible();
   // The reasoning is available, collapsed.
   const [reasoning] = screen.getAllByRole("button", { name: "Raisonnement" });
   expect(reasoning).toHaveAttribute("aria-expanded", "false");
@@ -84,19 +90,61 @@ test("several accounts trace one read of their summaries", async (context) => {
   await chat.ask("Are @user_072 and @user_999 together?");
 
   await screen.findByText("answer");
-  expect(screen.getByText("Lecture des résumés de @user_072, @user_999")).toBeVisible();
+  await chat.user.click(
+    screen.getByRole("button", { name: "Lecture des résumés de @user_072, @user_999" }),
+  );
+  const read = within(screen.getByRole("list", { name: "Résumés lus" }));
+  expect(read.getByText("Summary of user_072")).toBeVisible();
+  expect(read.getByText("Aucun compte ne s’appelle @user_999.")).toBeVisible();
 });
 
-test("asking which accounts are saved traces the read, then renders the written answer", async (context) => {
+test("asking which accounts there are traces the read, which lists the accounts", async (context) => {
   const chat = await mountChat(await fetchedWorld(context));
 
   await chat.ask("Quels comptes connais-tu ?");
 
   const bold = await screen.findByText("answer");
   expect(bold.tagName).toBe("STRONG");
-  expect(screen.getByText("Lecture des comptes enregistrés")).toBeVisible();
-  // No list component repeats what the answer says.
-  expect(screen.queryByRole("list", { name: "Comptes enregistrés" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("list", { name: "Comptes" })).not.toBeInTheDocument();
+  await chat.user.click(screen.getByRole("button", { name: "Lecture des comptes" }));
+  const items = within(screen.getByRole("list", { name: "Comptes" })).getAllByRole("listitem");
+  // The read is plain text: no sticker, link or avatar.
+  expect(items[0]).toHaveTextContent("@user_008");
+  expect(items[1]).toHaveTextContent("@user_072");
+  expect(within(items[0]).queryByRole("link")).not.toBeInTheDocument();
+});
+
+test("asking which accounts there are before any fetch run says there is none", async (context) => {
+  const chat = await mountChat(await createWorld(context));
+
+  await chat.ask("Which accounts do you know?");
+
+  await screen.findByText("answer");
+  await chat.user.click(screen.getByRole("button", { name: "Lecture des comptes" }));
+  expect(screen.getByText("Aucun compte.")).toBeVisible();
+});
+
+test("searching an account traces the search, which lists the matches", async (context) => {
+  const chat = await mountChat(await fetchedWorld(context));
+
+  await chat.ask("Search user_0");
+
+  await screen.findByText("answer");
+  await chat.user.click(screen.getByRole("button", { name: "Recherche de « user_0 »" }));
+  const items = within(screen.getByRole("list", { name: "Comptes trouvés" })).getAllByRole(
+    "listitem",
+  );
+  expect(items.map((item) => item.textContent)).toStrictEqual(["@user_008", "@user_072"]);
+});
+
+test("a search without a match says no account was found", async (context) => {
+  const chat = await mountChat(await fetchedWorld(context));
+
+  await chat.ask("Search nobody");
+
+  await screen.findByText("answer");
+  await chat.user.click(screen.getByRole("button", { name: "Recherche de « nobody »" }));
+  expect(screen.getByText("Aucun compte trouvé.")).toBeVisible();
 });
 
 test("a greeting is answered without reading any data", async (context) => {
