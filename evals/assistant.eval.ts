@@ -1,6 +1,4 @@
-import { performance } from "node:perf_hooks";
 import { evalite } from "evalite";
-import { reportTrace } from "evalite/traces";
 import { afterAll } from "vitest";
 import { createAssistantJudge } from "./assistant-judge.ts";
 import {
@@ -74,33 +72,12 @@ function describeToolCalls(run: AssistantRun): string {
 
 const judge = createAssistantJudge();
 
-/**
- * Asks the Assistant and reports what the chat model did as traces. The model is built in
- * `core/`, and `wrapAISDKModel` cannot trace it: it throws on the reasoning parts that the model
- * (`think: true`) puts in the prompt of its second step, which breaks the answer after a tool.
- */
-async function askAndTrace(question: string): Promise<AssistantRun> {
-  const start = performance.now();
-  const run = await askAssistant(question);
-  reportTrace({
-    end: performance.now(),
-    input: question,
-    output: run.errorText ?? run.text,
-    start,
-  });
-  for (const { errorText, input, output, toolName } of run.toolCalls) {
-    const now = performance.now();
-    reportTrace({ end: now, input: { input, toolName }, output: errorText ?? output, start: now });
-  }
-  return run;
-}
-
 for (const assistantCase of cases) {
   const expected: AssistantExpectation = { ...assistantCase.expected, savedUsernames };
   const checks = createAssistantChecks(expected);
   evalite<string, AssistantRun, AssistantExpectation>(`Assistant: ${assistantCase.name}`, {
     data: [{ expected, input: assistantCase.question }],
-    task: askAndTrace,
+    task: askAssistant,
     trialCount: TRIALS,
     scorers: [
       ...checks.map(({ check, description, name }) => ({

@@ -8,6 +8,7 @@ import {
   streamText,
   toUIMessageStream,
   type InferUITools,
+  type LanguageModel,
   type UIDataTypes,
   type UIMessage,
   type UIMessageStreamOptions,
@@ -41,7 +42,14 @@ const MAX_STEPS = 4;
 
 type AssistantToolsRuntime = FeedUserSummaryRuntime & AccountsRuntime;
 
-export type AssistantRuntime = AssistantToolsRuntime & Pick<Runtime, "fetchOllama" | "logger">;
+/** The chat model, as the AI SDK takes it once it is built (not a model id). */
+export type AssistantModel = Exclude<LanguageModel, string>;
+
+export type AssistantRuntime = AssistantToolsRuntime &
+  Pick<Runtime, "fetchOllama" | "logger"> & {
+    /** Wraps the chat model: the evals use it to trace its calls. Production leaves it unset. */
+    wrapModel?: (model: AssistantModel) => AssistantModel;
+  };
 
 function createAssistantTools(runtime: AssistantToolsRuntime) {
   return {
@@ -96,15 +104,19 @@ export async function streamAssistantReply(
 ): Promise<Response> {
   const ollama = createOllama({ baseURL: getOllamaHost(), fetch: runtime.fetchOllama });
   const tools = createAssistantTools(runtime);
+  function chatModel(think: boolean): AssistantModel {
+    const model = ollama(getAssistantModel(), { think });
+    return runtime.wrapModel?.(model) ?? model;
+  }
   const result = streamText({
     // Reasoning is what lets a small model decide to call the tools.
-    model: ollama(getAssistantModel(), { think: true }),
+    model: chatModel(true),
     prepareStep: ({ steps }) => {
       const lastTools = steps.at(-1)?.toolCalls.map(({ toolName }) => toolName) ?? [];
       // After a read tool only the answer is left. With reasoning on, a small model often writes
       // that answer inside its reasoning and sends no text, so the reply looks empty.
       return lastTools.some((toolName) => answerTools.has(toolName))
-        ? { model: ollama(getAssistantModel(), { think: false }) }
+        ? { model: chatModel(false) }
         : undefined;
     },
     instructions: ASSISTANT_INSTRUCTIONS,

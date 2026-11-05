@@ -7,6 +7,7 @@ import type { AssistantRuntime, AssistantUIMessage } from "../core/domains/assis
 import { readFeedUserSummary } from "../core/domains/story-feed/feed-user-summary.ts";
 import { createWorld, imageStoryPk, recordedPayloads } from "../tests/setup/report-world.ts";
 import { createRecordedInstagramClient, editRecordedStories } from "../tests/setup/seed.ts";
+import { traceModel } from "./assistant-trace.ts";
 import { describeOutcome, type AssistantRun, type AssistantToolCall } from "./assistant-scorers.ts";
 
 const HOUR_SECONDS = 3600;
@@ -67,7 +68,11 @@ async function seedAssistantWorld(): Promise<AssistantRuntime> {
     },
   );
   await world.run(() => now);
-  const runtime: AssistantRuntime = { ...world.runtime, fetchOllama: undefined };
+  const runtime: AssistantRuntime = {
+    ...world.runtime,
+    fetchOllama: undefined,
+    wrapModel: traceModel,
+  };
   checkPremises(runtime, now);
   return runtime;
 }
