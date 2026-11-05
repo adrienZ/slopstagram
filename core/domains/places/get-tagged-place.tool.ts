@@ -6,7 +6,7 @@ import {
   type TaggedPlacesReadRuntime,
 } from "./tagged-places.ts";
 
-const DESCRIPTION = `Reads one Tagged place (users say "lieu" or "endroit") by its id: its name, category and address (null when unknown), its story count, the date of its latest story, its owners as @username, and its latest 5 stories, each with its date and owner.
+const DESCRIPTION = `Reads one Tagged place by its id: its name, category and address (null when unknown), its story count, the date of its latest story, its owners as @username, and its latest 5 stories, each with its date and owner.
 
 Use it when the message asks about one place: who went there, when, or what it is. Take its id as is from the result of listTaggedPlaces or searchTaggedPlaces; when you only have its name, call searchTaggedPlaces first. Never make up an id.
 Do not use it to list places. Do not use it for a greeting or a message that is not about places.

@@ -23,9 +23,6 @@ export default defineConfig({
       env: { SLOPSTAGRAM_DATABASE_PATH: ":memory:" },
       // Worktrees under .claude/ hold copies of the evals: running them too doubles the run.
       exclude: [...configDefaults.exclude, ".claude/**"],
-      // Each eval file seeds its own world but all share the one local chat model, which answers
-      // one request at a time: files run one after another so their questions do not time out.
-      fileParallelism: false,
     },
   },
 });

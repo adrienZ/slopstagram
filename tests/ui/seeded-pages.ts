@@ -5,7 +5,7 @@ import { createReportFeed } from "@@/core/domains/story-feed/story-feed.ts";
 import { resolveUserSummariesForReport } from "@@/core/domains/accounts/user-summary.ts";
 import type { SidebarUser } from "../../app/loaders/sidebar-users.ts";
 import { withStoryStickers, type StoryCardData } from "../../app/utils/story-cards.ts";
-import { groupTimelineLocations } from "@@/core/domains/places/timeline-locations.ts";
+import { groupTimelineLocations } from "../../app/utils/timeline-locations.ts";
 import { groupTimelineStickers } from "../../app/utils/timeline-stickers.ts";
 import {
   editRecordedStories,

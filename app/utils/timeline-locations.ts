@@ -1,12 +1,9 @@
 import type { UserTimelineStory } from "@@/core/domains/database/repositories/story-repository.ts";
 
-/** A Tagged place with usable coordinates and its stories, the latest first. */
 export interface TimelinePlace {
-  /** `instagram:<place id>`, or `metadata:<location metadata id>` when Instagram gave none. */
   id: string;
   name: string;
   category: string | null;
-  address: string | null;
   latitude: number;
   longitude: number;
   stories: Array<{ mediaPk: string; date: string; username: string }>;
@@ -18,10 +15,16 @@ export interface TimelineLocations {
   unpositionedLocationCount: number;
 }
 
-/**
- * Groups the stories' location observations into Tagged places, the place of the latest story
- * first, and counts the location stickers and observations that have no usable coordinates.
- */
+// The place a step away from the selected one, wrapping around the list.
+export function adjacentPlaceId(
+  places: Array<TimelinePlace>,
+  selectedId: string,
+  step: 1 | -1,
+): string | undefined {
+  const index = places.findIndex((place) => place.id === selectedId);
+  return index === -1 ? undefined : places[(index + step + places.length) % places.length]?.id;
+}
+
 export function groupTimelineLocations(stories: Array<UserTimelineStory>): TimelineLocations {
   const places = new Map<string, TimelinePlace>();
   let unpositionedStickerCount = 0;
@@ -56,7 +59,6 @@ export function groupTimelineLocations(stories: Array<UserTimelineStory>): Timel
         id,
         name: metadata.name ?? metadata.address ?? "Lieu sans nom",
         category: metadata.category,
-        address: metadata.address,
         latitude: metadata.latitude,
         longitude: metadata.longitude,
         stories: [],

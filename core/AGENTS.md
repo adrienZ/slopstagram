@@ -21,8 +21,8 @@ Every folder below lives in `domains/`.
 - `media-store/`: the local copies of images and audio the app serves, their content types, and
   the responses that serve them. Not the story cache.
 - `stickers/`: story annotations, sticker and location extraction, story model types.
-- `places/`: tagged place metadata, observations, place lookups, the grouping of stories into
-  Tagged places, and its Assistant tools.
+- `places/`: tagged place metadata, observations, place lookups, and the Assistant tools that read
+  Tagged places.
 - `music/`: music assets and media, music observations, story audio, DASH audio.
 - `vision/`: the Ollama client, vision analysis, Apple OCR and the Apple caption step.
 - `accounts/`: user summaries, Instagram user persistence and report user keys.

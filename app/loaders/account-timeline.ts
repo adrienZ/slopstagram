@@ -18,7 +18,7 @@ import type { InstagramUserRepository } from "@@/core/domains/database/repositor
 import { getStoryDate } from "@@/core/domains/story-feed/story-days.ts";
 import { createStoryCards, withStoryStickers } from "../utils/story-cards.ts";
 import type { StoryCardData, StoryCardSources } from "../utils/story-cards.ts";
-import { groupTimelineLocations } from "@@/core/domains/places/timeline-locations.ts";
+import { groupTimelineLocations } from "../utils/timeline-locations.ts";
 import { groupTimelineStickers } from "../utils/timeline-stickers.ts";
 import { loadSidebarUsers, type SidebarUser } from "./sidebar-users.ts";
 

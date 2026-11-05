@@ -1,17 +1,22 @@
 import { z } from "zod";
 import type { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
-import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
+import type {
+  StoryRepository,
+  TaggedPlaceRow,
+} from "@@/core/domains/database/repositories/story-repository.ts";
 import { normalizeSearchQuery, rankTextMatch } from "@@/core/utils/search-text.ts";
-import { groupTimelineLocations, type TimelinePlace } from "./timeline-locations.ts";
 
 /** What reading the Tagged places needs. */
 export interface TaggedPlacesReadRuntime {
-  stories: Pick<StoryRepository, "listWithLocationObservations">;
+  stories: Pick<
+    StoryRepository,
+    "listTaggedPlaceLabels" | "listTaggedPlaceStories" | "listTaggedPlaces"
+  >;
 }
 
 /** What listing the Tagged places needs: the saved accounts too, to filter by them. */
 export interface TaggedPlacesRuntime extends TaggedPlacesReadRuntime {
-  users: Pick<InstagramUserRepository, "listAll">;
+  users: Pick<InstagramUserRepository, "findByUsername">;
 }
 
 /** How many places a page of places holds. */
@@ -88,32 +93,34 @@ export const TaggedPlaceReadSchema = z.discriminatedUnion("status", [
   z.object({ status: z.literal("unknown"), id: z.string() }),
 ]) satisfies z.ZodType<TaggedPlaceRead>;
 
-/** Every Tagged place with usable coordinates, all time, the place of the latest story first. */
-function readTaggedPlaces(runtime: TaggedPlacesReadRuntime): Array<TimelinePlace> {
-  return groupTimelineLocations(runtime.stories.listWithLocationObservations()).places;
-}
+/** The name of a place that has no name nor address, as the map shows it. */
+const UNNAMED_PLACE = "Lieu sans nom";
 
 function formatHandle(username: string): string {
   return `@${username}`;
 }
 
-function summarize(place: TimelinePlace): TaggedPlaceSummary {
+function formatDate(takenAt: number): string {
+  return new Date(takenAt * 1000).toISOString();
+}
+
+function summarize(place: TaggedPlaceRow): TaggedPlaceSummary {
   return {
     id: place.id,
-    name: place.name,
+    name: place.name ?? place.address ?? UNNAMED_PLACE,
     category: place.category,
-    storyCount: place.stories.length,
-    latestStoryDate: place.stories[0]?.date ?? "",
-    owners: [...new Set(place.stories.map(({ username }) => formatHandle(username)))],
+    storyCount: place.storyCount,
+    latestStoryDate: formatDate(place.latestTakenAt),
+    owners: place.usernames.map(formatHandle),
   };
 }
 
-function paginate(places: Array<TimelinePlace>, offset = 0): TaggedPlacePage {
+function toPage(places: Array<TaggedPlaceRow>, total: number, offset: number): TaggedPlacePage {
   const end = offset + PLACE_PAGE_SIZE;
   return {
-    places: places.slice(offset, end).map(summarize),
-    total: places.length,
-    nextOffset: end < places.length ? end : null,
+    places: places.map(summarize),
+    total,
+    nextOffset: end < total ? end : null,
   };
 }
 
@@ -128,29 +135,23 @@ export interface TaggedPlaceList extends TaggedPlacePage {
  */
 export function listTaggedPlaces(
   runtime: TaggedPlacesRuntime,
-  { usernames = [], offset }: { usernames?: Array<string>; offset?: number } = {},
+  { usernames, offset = 0 }: { usernames?: Array<string>; offset?: number } = {},
 ): TaggedPlaceList {
-  const places = readTaggedPlaces(runtime);
-  if (usernames.length === 0) {
-    return { ...paginate(places, offset), unknownUsernames: [] };
-  }
-  const saved = new Map(
-    runtime.users.listAll().map(({ username }) => [username.toLowerCase(), username]),
-  );
-  const requested = usernames.map((name) => ({
+  const requested = (usernames ?? []).map((name) => ({
     name,
-    username: saved.get(normalizeSearchQuery(name)),
+    account: runtime.users.findByUsername(normalizeSearchQuery(name)),
   }));
-  const chosen = new Set(requested.flatMap(({ username }) => username ?? []));
-  const chosenPlaces = places.flatMap((place) => {
-    const stories = place.stories.filter(({ username }) => chosen.has(username));
-    return stories.length === 0 ? [] : [{ ...place, stories }];
+  const { places, total } = runtime.stories.listTaggedPlaces({
+    usernames:
+      usernames === undefined || usernames.length === 0
+        ? undefined
+        : requested.flatMap(({ account }) => account?.username ?? []),
+    offset,
+    limit: PLACE_PAGE_SIZE,
   });
   return {
-    ...paginate(chosenPlaces, offset),
-    unknownUsernames: requested.flatMap(({ name, username }) =>
-      username === undefined ? [name] : [],
-    ),
+    ...toPage(places, total, offset),
+    unknownUsernames: requested.flatMap(({ name, account }) => (account === null ? [name] : [])),
   };
 }
 
@@ -161,29 +162,40 @@ export function listTaggedPlaces(
  */
 export function searchTaggedPlaces(
   runtime: TaggedPlacesReadRuntime,
-  { query, offset }: { query: string; offset?: number },
+  { query, offset = 0 }: { query: string; offset?: number },
 ): TaggedPlacePage {
   const wanted = normalizeSearchQuery(query);
-  if (wanted === "") {
-    return paginate([], offset);
-  }
-  const matches = readTaggedPlaces(runtime).flatMap((place) => {
-    const ranks = [place.name, place.address, place.category].flatMap((text) => {
-      const rank = text === null ? null : rankTextMatch(text, wanted);
-      return rank === null ? [] : [rank];
-    });
-    return ranks.length === 0 ? [] : [{ place, rank: Math.min(...ranks) }];
-  });
-  matches.sort((left, right) => left.rank - right.rank);
-  return paginate(
-    matches.map(({ place }) => place),
+  const matches =
+    wanted === ""
+      ? []
+      : runtime.stories.listTaggedPlaceLabels().flatMap((label) => {
+          const ranks = [label.name, label.address, label.category].flatMap((text) => {
+            const rank = text === null ? null : rankTextMatch(text, wanted);
+            return rank === null ? [] : [rank];
+          });
+          return ranks.length === 0 ? [] : [{ id: label.id, rank: Math.min(...ranks) }];
+        });
+  const ids = matches
+    .toSorted((left, right) => left.rank - right.rank)
+    .slice(offset, offset + PLACE_PAGE_SIZE)
+    .map(({ id }) => id);
+  const { places } =
+    ids.length === 0
+      ? { places: [] }
+      : runtime.stories.listTaggedPlaces({ ids, offset: 0, limit: PLACE_PAGE_SIZE });
+  return toPage(
+    places.toSorted((left, right) => ids.indexOf(left.id) - ids.indexOf(right.id)),
+    matches.length,
     offset,
   );
 }
 
 /** The details of the Tagged place with this id, or `unknown`. */
 export function getTaggedPlace(runtime: TaggedPlacesReadRuntime, id: string): TaggedPlaceRead {
-  const place = readTaggedPlaces(runtime).find((candidate) => candidate.id === id.trim());
+  const wanted = id.trim();
+  const place = runtime.stories
+    .listTaggedPlaces({ ids: [wanted], offset: 0, limit: 1 })
+    .places.at(0);
   if (place === undefined) {
     return { status: "unknown", id };
   }
@@ -192,10 +204,13 @@ export function getTaggedPlace(runtime: TaggedPlacesReadRuntime, id: string): Ta
     place: {
       ...summarize(place),
       address: place.address,
-      latestStories: place.stories
-        .slice(0, LATEST_STORY_COUNT)
-        .map(({ date, username }) => ({ date, owner: formatHandle(username) })),
-      hasMoreStories: place.stories.length > LATEST_STORY_COUNT,
+      latestStories: runtime.stories
+        .listTaggedPlaceStories(wanted, LATEST_STORY_COUNT)
+        .map(({ takenAt, username }) => ({
+          date: formatDate(takenAt),
+          owner: formatHandle(username),
+        })),
+      hasMoreStories: place.storyCount > LATEST_STORY_COUNT,
     },
   };
 }

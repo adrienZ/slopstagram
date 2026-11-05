@@ -11,7 +11,7 @@ import { getPlaceMap } from "../query-service.ts";
 import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/ui/avatar.tsx";
 import { formatUserInitials } from "../utils/helper.ts";
 import { PLACE_SEARCH_PARAM } from "../utils/place-map-link.ts";
-import type { TimelinePlace } from "@@/core/domains/places/timeline-locations.ts";
+import type { TimelinePlace } from "../utils/timeline-locations.ts";
 
 export function PlaceMapPage({
   places,

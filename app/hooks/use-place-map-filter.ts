@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import type { TimelinePlace } from "@@/core/domains/places/timeline-locations.ts";
+import type { TimelinePlace } from "../utils/timeline-locations.ts";
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
 
 /** The usernames of the accounts in `chosen`, in account order; unknown names are dropped. */

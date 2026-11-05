@@ -1,5 +1,5 @@
 import { ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
-import type { TimelinePlace } from "@@/core/domains/places/timeline-locations.ts";
+import type { TimelinePlace } from "../utils/timeline-locations.ts";
 import type { StoryCardData } from "../utils/story-cards.ts";
 import { formatStickerStoryDate } from "../utils/timeline-stickers.ts";
 import { formatUserHandle, getUserTimelineUrl } from "../utils/helper.ts";
