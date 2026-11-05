@@ -41,7 +41,7 @@ import {
 } from "../shadcn/ui/table.tsx";
 import { StoryCard } from "./story-card.tsx";
 import { LocationHistory } from "./location-history.tsx";
-import type { TimelineLocations } from "../utils/timeline-locations.ts";
+import type { TimelineLocations } from "@@/core/domains/places/timeline-locations.ts";
 
 const STICKER_PAGE_SIZE = 3;
 

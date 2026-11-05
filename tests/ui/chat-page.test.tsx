@@ -4,7 +4,13 @@ import { Route } from "../../app/routes/chat.tsx";
 import { loadChatPage } from "../../app/loaders/chat.ts";
 import { handleChatRequest } from "../../app/routes/api/chat.ts";
 import { createPageRenderer } from "../render-page.ts";
-import { assistantGreeting, assistantThinking, createWorld, now } from "../setup/report-world.ts";
+import {
+  assistantGreeting,
+  assistantThinking,
+  createWorld,
+  now,
+  placeId,
+} from "../setup/report-world.ts";
 
 beforeEach(() => {
   // The Assistant reads the story feed of the current time.
@@ -151,6 +157,18 @@ test("a search without a match says no account was found", async (context) => {
   await screen.findByText("answer");
   await chat.user.click(screen.getByRole("button", { name: "Recherche de « nobody »" }));
   expect(screen.getByText("Aucun compte trouvé.")).toBeVisible();
+});
+
+test("a place the Assistant names links to that place on the map", async (context) => {
+  const chat = await mountChat(await fetchedWorld(context));
+
+  await chat.ask(`Lieu instagram:${placeId}`);
+
+  const link = await screen.findByRole("link", { name: "Synthetic Cafe" });
+  expect(link).toHaveAttribute("href", `/map?place=instagram%3A${placeId}`);
+  expect(link).not.toHaveAttribute("target");
+  // The read is traced, without showing its result.
+  expect(screen.getByText("Lecture d’un lieu")).toBeVisible();
 });
 
 test("a greeting is answered without reading any data", async (context) => {

@@ -1,7 +1,8 @@
 import { createContext, lazy, Suspense, useContext, useId, useRef, useState } from "react";
 import type { ComponentType, KeyboardEvent } from "react";
 import type { LocationMapCanvasProps } from "./location-map-canvas.tsx";
-import { adjacentPlaceId, type TimelinePlace } from "../utils/timeline-locations.ts";
+import type { TimelinePlace } from "@@/core/domains/places/timeline-locations.ts";
+import { adjacentPlaceId } from "../utils/place-navigation.ts";
 import type { StoryCardData } from "../utils/story-cards.ts";
 import { PlaceStories } from "./place-stories.tsx";
 
@@ -15,6 +16,7 @@ export const LocationMapContext = createContext<ComponentType<LocationMapCanvasP
  */
 export function PlaceExplorer({
   places,
+  initialSelectedId,
   storyByMediaPk,
   showOwner,
   renderMarker,
@@ -22,12 +24,14 @@ export function PlaceExplorer({
   tileErrorMessage,
 }: {
   places: Array<TimelinePlace>;
+  /** The place whose popup is open when the explorer mounts. */
+  initialSelectedId?: string;
   storyByMediaPk: Map<string, StoryCardData>;
   showOwner?: boolean;
 } & Pick<LocationMapCanvasProps, "renderMarker" | "tileErrorMessage"> & {
     mapClassName?: LocationMapCanvasProps["className"];
   }) {
-  const [selectedId, setSelectedId] = useState<string>();
+  const [selectedId, setSelectedId] = useState(initialSelectedId);
   const selectId = useId();
   const selectRef = useRef<HTMLSelectElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);

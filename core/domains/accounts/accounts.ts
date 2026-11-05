@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizeSearchQuery, rankTextMatch } from "@@/core/utils/search-text.ts";
 import type { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
 
 export interface AccountsRuntime {
@@ -33,27 +34,12 @@ export interface AccountSearch {
 
 const MAX_SEARCH_RESULTS = 10;
 
-function normalizeForSearch(value: string): string {
-  return value
-    .normalize("NFD")
-    .replaceAll(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .trim();
-}
-
 /** How well an account matches a normalized query: lower is better, null means no match. */
 function rankMatch(account: Account, query: string): number | null {
-  const username = normalizeForSearch(account.username);
-  if (username === query) {
-    return 0;
-  }
-  if (username.startsWith(query)) {
-    return 1;
-  }
-  if (username.includes(query)) {
-    return 2;
-  }
-  return normalizeForSearch(account.fullName ?? "").includes(query) ? 3 : null;
+  return (
+    rankTextMatch(account.username, query) ??
+    (rankTextMatch(account.fullName ?? "", query) === null ? null : 3)
+  );
 }
 
 /**
@@ -65,7 +51,7 @@ export function searchAccounts(
   query: string,
   limit = MAX_SEARCH_RESULTS,
 ): AccountSearch {
-  const wanted = normalizeForSearch(query).replace(/^@/u, "");
+  const wanted = normalizeSearchQuery(query);
   if (wanted === "") {
     return { accounts: [], total: 0 };
   }

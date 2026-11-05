@@ -10,16 +10,29 @@ import type { PlaceMapPageData } from "../loaders/place-map.ts";
 import { getPlaceMap } from "../query-service.ts";
 import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/ui/avatar.tsx";
 import { formatUserInitials } from "../utils/helper.ts";
-import type { TimelinePlace } from "../utils/timeline-locations.ts";
+import { PLACE_SEARCH_PARAM } from "../utils/place-map-link.ts";
+import type { TimelinePlace } from "@@/core/domains/places/timeline-locations.ts";
 
 export function PlaceMapPage({
   places,
   accounts,
   stories,
   selectedAccounts,
+  selectedPlace,
   selectedStory,
-}: PlaceMapPageData & { selectedAccounts?: string; selectedStory?: string }) {
-  const filter = usePlaceMapFilter(places, accounts, selectedAccounts);
+}: PlaceMapPageData & {
+  selectedAccounts?: string;
+  selectedPlace?: string;
+  selectedStory?: string;
+}) {
+  const filter = usePlaceMapFilter(places, accounts, {
+    accounts: selectedAccounts,
+    place: selectedPlace,
+  });
+  const placeFilter =
+    filter.place === undefined
+      ? undefined
+      : { name: filter.place.name, onRemove: filter.removePlace };
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const storyByMediaPk = new Map(stories.map((story) => [story.mediaPk, story]));
   const avatarByUsername = new Map(accounts.map((account) => [account.username, account]));
@@ -57,6 +70,7 @@ export function PlaceMapPage({
                 selected={filter.selected}
                 onToggle={filter.toggle}
                 onClear={filter.clear}
+                place={placeFilter}
                 listClassName="tw:min-h-0 tw:flex-1"
               />
             </div>
@@ -67,6 +81,7 @@ export function PlaceMapPage({
             selected={filter.selected}
             onToggle={filter.toggle}
             onClear={filter.clear}
+            place={placeFilter}
           />
         )}
         <div className="tw:space-y-3 tw:lg:col-span-3">
@@ -75,6 +90,7 @@ export function PlaceMapPage({
           ) : (
             <PlaceExplorer
               places={filter.places}
+              initialSelectedId={filter.place?.id}
               storyByMediaPk={storyByMediaPk}
               showOwner
               renderMarker={renderMarker}
@@ -92,6 +108,7 @@ export function PlaceMapPage({
 export const Route = createFileRoute("/map")({
   validateSearch: z.object({
     accounts: z.string().optional(),
+    [PLACE_SEARCH_PARAM]: z.coerce.string().optional(),
     story: z.coerce.string().optional(),
   }),
   loader: async () => await getPlaceMap(),
@@ -102,6 +119,7 @@ export const Route = createFileRoute("/map")({
       <PlaceMapPage
         {...Route.useLoaderData()}
         selectedAccounts={search.accounts}
+        selectedPlace={search[PLACE_SEARCH_PARAM]}
         selectedStory={search.story}
       />
     );

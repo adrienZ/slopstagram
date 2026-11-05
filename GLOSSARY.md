@@ -174,3 +174,8 @@ An `@username` of an account written in a chat message. It is not a sticker: the
 mention sticker kind is a sticker on a story, although both are shown with the same
 sticker look.
 _Avoid_: Tag, mention sticker
+
+**Place mention**:
+A tagged place the Assistant names in its answer, shown as a link to that place on the
+map.
+_Avoid_: Place tag, place link

@@ -4,8 +4,14 @@ import { JsonValueSchema } from "../core/utils/json-value.ts";
 import { handleChatRequest } from "../app/routes/api/chat.ts";
 import { listAccounts } from "../core/domains/accounts/accounts.ts";
 import type { AssistantRuntime, AssistantUIMessage } from "../core/domains/assistant/assistant.ts";
+import { listTaggedPlaces } from "../core/domains/places/tagged-places.ts";
 import { readFeedUserSummary } from "../core/domains/story-feed/feed-user-summary.ts";
-import { createWorld, imageStoryPk, recordedPayloads } from "../tests/setup/report-world.ts";
+import {
+  createWorld,
+  imageStoryPk,
+  placeId,
+  recordedPayloads,
+} from "../tests/setup/report-world.ts";
 import { createRecordedInstagramClient, editRecordedStories } from "../tests/setup/seed.ts";
 import { traceModel } from "./assistant-trace.ts";
 import { describeOutcome, type AssistantRun, type AssistantToolCall } from "./assistant-scorers.ts";
@@ -23,6 +29,9 @@ export const worldAccounts = {
   unknown: "user_404",
 };
 
+/** The one Tagged place of the seeded world, tagged by user_008. */
+export const worldPlace = { id: `instagram:${placeId}`, name: "Synthetic Cafe" };
+
 export const savedUsernames = [worldAccounts.withoutRecentStories, worldAccounts.withSummary];
 
 function keepDatabaseOpen(): void {
@@ -36,10 +45,12 @@ function checkPremises(runtime: AssistantRuntime, now: Date) {
       describeOutcome(readFeedUserSummary(runtime, username, now)),
     ),
     saved: listAccounts(runtime).map(({ username }) => username),
+    places: listTaggedPlaces(runtime).places.map(({ id, name }) => ({ id, name })),
   });
   const expected = JSON.stringify({
     outcomes: ["found", "no_stories_in_last_24h", "unknown_account"],
     saved: savedUsernames,
+    places: [worldPlace],
   });
   if (seeded !== expected) {
     throw new Error(`The seeded world changed: expected ${expected}, got ${seeded}`);

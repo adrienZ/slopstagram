@@ -1,5 +1,13 @@
 import type { ReactNode } from "react";
-import { BrainIcon, SearchIcon, SendIcon, UserSearchIcon, UsersIcon } from "lucide-react";
+import {
+  BrainIcon,
+  MapPinIcon,
+  MapPinnedIcon,
+  SearchIcon,
+  SendIcon,
+  UserSearchIcon,
+  UsersIcon,
+} from "lucide-react";
 import type { AssistantUIMessage } from "@@/core/domains/assistant/assistant.ts";
 import { useAssistantChat } from "../hooks/use-assistant-chat.ts";
 import { useMentionSuggestions } from "../hooks/use-mention-suggestions.ts";
@@ -38,6 +46,10 @@ type AssistantPart = AssistantUIMessage["parts"][number];
 type FeedUserSummariesPart = Extract<AssistantPart, { type: "tool-getFeedUserSummaries" }>;
 type ListAccountsPart = Extract<AssistantPart, { type: "tool-listAccounts" }>;
 type SearchAccountsPart = Extract<AssistantPart, { type: "tool-searchAccounts" }>;
+type TaggedPlacesPart = Extract<
+  AssistantPart,
+  { type: "tool-getTaggedPlace" | "tool-listTaggedPlaces" | "tool-searchTaggedPlaces" }
+>;
 
 /** A tool call as one trace line, which opens on what the tool read once it has run. */
 function ToolTrace({
@@ -133,6 +145,39 @@ function SearchAccountsPartView({ part }: { part: SearchAccountsPart }) {
   );
 }
 
+/** The trace line of a read of the Tagged places, in progress then done or failed. */
+interface TaggedPlacesTrace {
+  done: string;
+  failed: string;
+}
+
+function describeTaggedPlacesRead(part: TaggedPlacesPart): TaggedPlacesTrace {
+  if (part.type === "tool-getTaggedPlace") {
+    return { done: "Lecture d’un lieu", failed: "Le lieu n’a pas pu être lu." };
+  }
+  if (part.type === "tool-listTaggedPlaces") {
+    return { done: "Lecture des lieux", failed: "Les lieux n’ont pas pu être lus." };
+  }
+  const query = part.input?.query ?? "";
+  return {
+    done: `Recherche du lieu « ${query} »`,
+    failed: `La recherche du lieu « ${query} » a échoué.`,
+  };
+}
+
+/** The Assistant writes the answer from the places: the chat only traces the read (ADR 0007). */
+function TaggedPlacesPartView({ part }: { part: TaggedPlacesPart }) {
+  const status = getToolStatus(part.state);
+  const title = describeTaggedPlacesRead(part);
+  return (
+    <ToolTrace
+      icon={part.type === "tool-getTaggedPlace" ? <MapPinIcon /> : <MapPinnedIcon />}
+      status={status}
+      title={status === "error" ? title.failed : title.done}
+    />
+  );
+}
+
 function AssistantPartView({
   accounts,
   part,
@@ -171,6 +216,13 @@ function AssistantPartView({
   }
   if (part.type === "tool-searchAccounts") {
     return <SearchAccountsPartView part={part} />;
+  }
+  if (
+    part.type === "tool-getTaggedPlace" ||
+    part.type === "tool-listTaggedPlaces" ||
+    part.type === "tool-searchTaggedPlaces"
+  ) {
+    return <TaggedPlacesPartView part={part} />;
   }
   return null;
 }

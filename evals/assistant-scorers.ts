@@ -39,11 +39,20 @@ export function describeOutcome(read: FeedUserSummary): FeedUserSummaryOutcome {
 /** What a case expects from the Assistant. */
 export interface AssistantExpectation {
   /** The tools the Assistant should call, each at least once and no other: none to answer without a tool. */
-  tools: Array<"getFeedUserSummaries" | "listAccounts" | "searchAccounts">;
+  tools: Array<
+    | "getFeedUserSummaries"
+    | "getTaggedPlace"
+    | "listAccounts"
+    | "listTaggedPlaces"
+    | "searchAccounts"
+    | "searchTaggedPlaces"
+  >;
   /** The only username the tool should be called with. */
   username?: string;
   /** The outcome every getFeedUserSummaries result should have. */
   outcome?: FeedUserSummaryOutcome;
+  /** The place id the answer must link to, as a Place mention `[name](place:id)`. */
+  placeLink?: string;
   /** The saved accounts of the seeded world: the only usernames an answer may name. */
   savedUsernames: Array<string>;
 }
@@ -240,6 +249,14 @@ function knownUsernames(expected: AssistantExpectation): AssistantCheck {
   };
 }
 
+function linkedPlace(placeId: string): AssistantCheck {
+  return {
+    name: "Place link",
+    description: `The answer links to the place ${placeId} as a markdown link to place:${placeId}.`,
+    check: (run) => result(run.text.includes(`](place:${placeId})`)),
+  };
+}
+
 const nonEmptyAnswer: AssistantCheck = {
   name: "Non-empty answer",
   description: "The Assistant streamed an answer, and no error.",
@@ -261,6 +278,7 @@ export function createAssistantChecks(expected: AssistantExpectation): Array<Ass
     expectedTools(expected),
     ...(expected.username === undefined ? [] : [expectedArguments(expected.username)]),
     ...(expected.outcome === undefined ? [] : [expectedOutcome(expected.outcome)]),
+    ...(expected.placeLink === undefined ? [] : [linkedPlace(expected.placeLink)]),
     knownUsernames(expected),
     nonEmptyAnswer,
     frenchAnswer,

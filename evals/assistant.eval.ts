@@ -6,7 +6,7 @@ import {
   type AssistantExpectation,
   type AssistantRun,
 } from "./assistant-scorers.ts";
-import { askAssistant, savedUsernames, worldAccounts } from "./assistant-world.ts";
+import { askAssistant, savedUsernames, worldAccounts, worldPlace } from "./assistant-world.ts";
 
 /** Every case runs this many times: the chat model is not deterministic. */
 const TRIALS = 5;
@@ -54,6 +54,21 @@ const cases: Array<AssistantCase> = [
     name: "account name matching no saved account",
     question: "Est-ce qu'on suit quelqu'un qui s'appelle Zelda ?",
     expected: { tools: ["searchAccounts"] },
+  },
+  {
+    name: "tagged places",
+    question: "Quels lieux ont été tagués ?",
+    expected: { tools: ["listTaggedPlaces"] },
+  },
+  {
+    name: "place searched by name",
+    question: `Est-ce qu'un lieu s'appelle ${worldPlace.name} ?`,
+    expected: { tools: ["searchTaggedPlaces"] },
+  },
+  {
+    name: "details of a place",
+    question: `Qui est allé au ${worldPlace.name}, et quand ?`,
+    expected: { placeLink: worldPlace.id, tools: ["searchTaggedPlaces", "getTaggedPlace"] },
   },
   {
     name: "greeting",

@@ -1,4 +1,4 @@
-import type { TimelineLocations } from "../utils/timeline-locations.ts";
+import type { TimelineLocations } from "@@/core/domains/places/timeline-locations.ts";
 import type { StoryCardData } from "../utils/story-cards.ts";
 import { PlaceExplorer } from "./place-explorer.tsx";
 

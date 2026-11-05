@@ -25,7 +25,7 @@ export const publishedBefore = { now, seconds: HOUR };
 
 export const imageStoryPk = "700000000000079";
 export const musicStoryPk = "700000000000900";
-const plainStoryPk = "700000000000116";
+export const plainStoryPk = "700000000000116";
 export const storyPks = [imageStoryPk, plainStoryPk, musicStoryPk];
 export const placeId = "111";
 export const audioAssetId = "900000000000001";
@@ -73,7 +73,9 @@ function placeBody(): JsonValue {
  * The recorded gallery, given the stickers the recording lacks: a tagged place on the image
  * story and a music sticker with a downloadable audio asset on the last story.
  */
-export async function recordedPayloads(): Promise<RecordedPayloads> {
+export async function recordedPayloads(
+  editStory?: (story: RecordedStory) => void,
+): Promise<RecordedPayloads> {
   const recorded = keepRecordedStories(
     await readRecordedPayloads(["instagram-story-data.json"]),
     storyPks,
@@ -93,6 +95,7 @@ export async function recordedPayloads(): Promise<RecordedPayloads> {
           },
         ];
       }
+      editStory?.(story);
     }),
     musicAsset: musicAssetBody(),
     place: placeBody(),
@@ -118,6 +121,8 @@ export function trayBody(options: { withMissingReel?: boolean } = {}): JsonValue
     ],
   };
 }
+
+type RecordedStory = Parameters<Parameters<typeof editRecordedStories>[1]>[0];
 
 type OllamaFailure = "server-error" | "unreachable";
 
@@ -162,9 +167,28 @@ const OllamaChatRequestSchema = z.object({
 /** What the chat model answers once it has read a tool result. */
 export const assistantAnswer =
   "Synthetic **answer** from the tool result, about @user_072 and @user_999.";
+/** What the chat model answers once it has read a found Tagged place: a link to it. */
+export function placeAnswer(place: { id: string; name: string }) {
+  return `Synthetic answer about [${place.name}](place:${place.id}).`;
+}
 /** What the chat model answers to a message that needs no tool. */
 export const assistantGreeting = "Synthetic greeting.";
 export const assistantThinking = "Synthetic reasoning about the question.";
+
+const FoundPlaceSchema = z.object({
+  place: z.object({ id: z.string(), name: z.string() }),
+  status: z.literal("found"),
+});
+
+/** The answer to a tool result: a link to the place it found, or the synthetic answer. */
+function answerToolResult(content: string) {
+  try {
+    const found = FoundPlaceSchema.safeParse(JSON.parse(content));
+    return found.success ? placeAnswer(found.data.place) : assistantAnswer;
+  } catch {
+    return assistantAnswer;
+  }
+}
 
 function ndjsonResponse(...lines: Array<JsonValue>) {
   return new globalThis.Response(lines.map((line) => JSON.stringify(line)).join("\n"));
@@ -212,22 +236,55 @@ function chatToolCall(name: string, args: JsonValue) {
   });
 }
 
+/** The place tool call the chat model makes for a question about places, if any. */
+function callPlaceTool(question: string, usernames: Array<string>, offered: Set<string>) {
+  const args: Record<string, JsonValue> = {};
+  const offset = /\boffset\s+(?<offset>\d+)$/iu.exec(question)?.groups?.offset;
+  if (offset !== undefined) {
+    args.offset = Number(offset);
+  }
+  const id = /^(?:place|lieu)\s+(?<id>\S+)$/iu.exec(question)?.groups?.id;
+  if (id !== undefined && offered.has("getTaggedPlace")) {
+    return chatToolCall("getTaggedPlace", { id });
+  }
+  const query =
+    /^(?:search|cherche)\s+(?:places|lieux)\s+(?<query>.+?)(?:\s+offset\s+\d+)?$/iu.exec(question)
+      ?.groups?.query;
+  if (query !== undefined && offered.has("searchTaggedPlaces")) {
+    return chatToolCall("searchTaggedPlaces", { query, ...args });
+  }
+  if (/\b(?:places|lieux)\b/iu.test(question) && offered.has("listTaggedPlaces")) {
+    if (usernames.length > 0) {
+      args.usernames = usernames;
+    }
+    return chatToolCall("listTaggedPlaces", args);
+  }
+  return null;
+}
+
 /**
  * The chat model, in Ollama's streamed wire format. It calls only the tools it is offered:
- * the user summaries of the `@username`s of the last user message, a search of the
+ * a Tagged place when the message is "place <id>", a search of the places when it starts with
+ * "search places", the places (of its `@username`s, from "offset <n>") when it asks about
+ * places, the user summaries of the `@username`s of the last user message, a search of the
  * accounts when the message starts with "search", or the accounts when the message asks
  * about accounts. It answers once it has a tool result, and greets any
  * other message without a tool.
  */
 function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>) {
-  if (messages.some(({ role }) => role === "tool")) {
-    return chatMessage({ content: assistantAnswer, role: "assistant" });
+  const toolResult = messages.findLast(({ role }) => role === "tool");
+  if (toolResult !== undefined) {
+    return chatMessage({ content: answerToolResult(toolResult.content), role: "assistant" });
   }
   const offered = new Set(tools.map((tool) => tool.function.name));
   const question = messages.findLast(({ role }) => role === "user")?.content ?? "";
   const usernames = [...question.matchAll(/@(?<username>[\w.]+)/gu)].map(
     ({ groups }) => groups?.username ?? "",
   );
+  const placeCall = callPlaceTool(question, usernames, offered);
+  if (placeCall !== null) {
+    return placeCall;
+  }
   if (usernames.length > 0 && offered.has("getFeedUserSummaries")) {
     return chatToolCall("getFeedUserSummaries", { usernames });
   }
@@ -293,6 +350,8 @@ export async function createWorld(
   options: {
     backup?: RuntimeBoundaries["backup"];
     client?: RuntimeBoundaries["client"];
+    /** Edits each recorded story before the fetch, e.g. to tag more places. */
+    editStory?: (story: RecordedStory) => void;
     ollama?: OllamaBehavior;
     ocr?: (position: number) => string | Error;
     queue?: RuntimeBoundaries["queue"];
@@ -315,7 +374,9 @@ export async function createWorld(
     },
     client:
       options.client ??
-      (await createRecordedInstagramClient(await recordedPayloads(), { publishedBefore })),
+      (await createRecordedInstagramClient(await recordedPayloads(options.editStory), {
+        publishedBefore,
+      })),
     fetchImage: async (url) => {
       calls.push(`image ${url}`);
       return await Promise.resolve({

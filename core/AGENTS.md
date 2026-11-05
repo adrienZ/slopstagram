@@ -7,7 +7,8 @@ Domain and ingestion code, with no React and no Nitro. Each domain is one flat f
 ## Shared helpers
 
 - `utils/`: domain-free helpers (data paths, JSON values, logging, provider identifiers, caption
-  placeholders). It is not a domain. Imports no domain; nothing domain-specific goes here.
+  placeholders, search text matching). It is not a domain. Imports no domain; nothing
+  domain-specific goes here.
 
 ## Domains
 
@@ -20,7 +21,8 @@ Every folder below lives in `domains/`.
 - `media-store/`: the local copies of images and audio the app serves, their content types, and
   the responses that serve them. Not the story cache.
 - `stickers/`: story annotations, sticker and location extraction, story model types.
-- `places/`: tagged place metadata, observations and place lookups.
+- `places/`: tagged place metadata, observations, place lookups, the grouping of stories into
+  Tagged places, and its Assistant tools.
 - `music/`: music assets and media, music observations, story audio, DASH audio.
 - `vision/`: the Ollama client, vision analysis, Apple OCR and the Apple caption step.
 - `accounts/`: user summaries, Instagram user persistence and report user keys.

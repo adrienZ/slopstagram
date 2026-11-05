@@ -1,12 +1,27 @@
 import { useMemo } from "react";
-import ReactMarkdown, { type Components } from "react-markdown";
+import ReactMarkdown, { defaultUrlTransform, type Components } from "react-markdown";
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
 import { formatUserHandle } from "../utils/helper.ts";
+import { buildPlaceMapHref } from "../utils/place-map-link.ts";
 import { presentSticker } from "../utils/sticker-presentation.ts";
 import { Sticker } from "./sticker.tsx";
 
 const mentionPattern = /(?<![\w/:.@])@(?<username>\w+(?:\.\w+)*)/gu;
 const profilePath = "/users/";
+/** The link target the Assistant writes for a Place mention: `place:<place id>`. */
+const placeScheme = "place:";
+
+/**
+ * Turns a Place mention's target into a link to the place on the map, and drops the unsafe
+ * targets as the renderer does by default.
+ */
+function transformLinkTarget(url: string): string {
+  return url.startsWith(placeScheme)
+    ? buildPlaceMapHref(url.slice(placeScheme.length))
+    : defaultUrlTransform(url);
+}
+
+const placeMapHrefPrefix = buildPlaceMapHref("");
 
 /**
  * Writes each `@username` of a account as a link to its profile, which the chat shows as a
@@ -23,20 +38,29 @@ function linkMentions(text: string, accounts: Array<SidebarUser>): string {
 
 function createComponents(accounts: Array<SidebarUser>): Components {
   return {
-    a: ({ children, href }) =>
-      href?.startsWith(profilePath) === true ? (
-        <Sticker
-          sticker={presentSticker(
-            "mention",
-            formatUserHandle(href.slice(profilePath.length)),
-            accounts,
-          )}
-        />
+    a: ({ children, href }) => {
+      if (href?.startsWith(profilePath) === true) {
+        return (
+          <Sticker
+            sticker={presentSticker(
+              "mention",
+              formatUserHandle(href.slice(profilePath.length)),
+              accounts,
+            )}
+          />
+        );
+      }
+      // A Place mention opens the map in the same tab.
+      return href?.startsWith(placeMapHrefPrefix) === true ? (
+        <a href={href} className="tw:underline">
+          {children}
+        </a>
       ) : (
         <a href={href} className="tw:underline" target="_blank" rel="noreferrer">
           {children}
         </a>
-      ),
+      );
+    },
     p: ({ children }) => <p className="tw:leading-relaxed">{children}</p>,
     ul: ({ children }) => <ul className="tw:list-disc tw:space-y-1 tw:pl-5">{children}</ul>,
     ol: ({ children }) => <ol className="tw:list-decimal tw:space-y-1 tw:pl-5">{children}</ol>,
@@ -46,8 +70,8 @@ function createComponents(accounts: Array<SidebarUser>): Components {
 
 /**
  * The Assistant's text, which the model writes as markdown, with the mentions of accounts as
- * the stickers of the story feed. Raw HTML in it is not rendered, and unsafe link targets are dropped by the
- * renderer.
+ * the stickers of the story feed and its Place mentions as links to the map. Raw HTML in it is
+ * not rendered, and unsafe link targets are dropped by the renderer.
  */
 export function ChatMarkdown({
   accounts,
@@ -59,7 +83,9 @@ export function ChatMarkdown({
   const components = useMemo(() => createComponents(accounts), [accounts]);
   return (
     <div className="tw:grid tw:gap-3">
-      <ReactMarkdown components={components}>{linkMentions(children, accounts)}</ReactMarkdown>
+      <ReactMarkdown components={components} urlTransform={transformLinkTarget}>
+        {linkMentions(children, accounts)}
+      </ReactMarkdown>
     </div>
   );
 }

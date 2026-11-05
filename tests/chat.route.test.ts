@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { z } from "zod";
+import type { JsonValue } from "@@/core/utils/json-value.ts";
 import { handleChatRequest } from "../app/routes/api/chat.ts";
 import {
   assistantAnswer,
@@ -7,6 +8,9 @@ import {
   assistantThinking,
   createWorld,
   now,
+  placeAnswer,
+  placeId,
+  plainStoryPk,
 } from "./setup/report-world.ts";
 
 beforeEach(() => {
@@ -229,6 +233,142 @@ test("searching an account by name streams the searchAccounts call and its match
     },
   ]);
   expect(chunks.text).toBe(assistantAnswer);
+});
+
+/** Tags eleven more places on a story of user_072, each with its own position. */
+function tagElevenPlaces(story: { pk: string; story_locations?: JsonValue }) {
+  if (story.pk === plainStoryPk) {
+    story.story_locations = Array.from({ length: 11 }, (_, index) => {
+      const number = String(index + 1).padStart(2, "0");
+      return {
+        id: `synthetic-place-sticker-${number}`,
+        location: {
+          lat: 40 + index,
+          lng: 3,
+          name: `Synthetic place ${number}`,
+          pk: `7000000000009${number}`,
+        },
+      };
+    });
+  }
+}
+
+/** One of the eleven places of user_072, as a list of places gives it. */
+function elevenPlace(number: number) {
+  const padded = String(number).padStart(2, "0");
+  return {
+    category: null,
+    id: `instagram:7000000000009${padded}`,
+    latestStoryDate: "2026-10-29T10:55:48.000Z",
+    name: `Synthetic place ${padded}`,
+    owners: ["@user_072"],
+    storyCount: 1,
+  };
+}
+
+/** The place of the world's recording, which the place lookup completes. */
+const syntheticCafe = {
+  category: "Cafe",
+  id: `instagram:${placeId}`,
+  latestStoryDate: "2026-10-29T02:12:50.000Z",
+  name: "Synthetic Cafe",
+  owners: ["@user_008"],
+  storyCount: 1,
+};
+
+test("asking for the places streams the listTaggedPlaces call and its first page", async (context) => {
+  const world = await createWorld(context, { editStory: tagElevenPlaces });
+  await world.run();
+
+  const firstPage = await readChunks(
+    await handleChatRequest(world.runtime, chatRequest(userMessage("Which places?"))),
+  );
+  const lastPage = await readChunks(
+    await handleChatRequest(world.runtime, chatRequest(userMessage("Which places? offset 10"))),
+  );
+
+  expect(firstPage.toolInputs).toStrictEqual([{ input: {}, toolName: "listTaggedPlaces" }]);
+  expect(firstPage.toolOutputs).toStrictEqual([
+    {
+      nextOffset: 10,
+      places: Array.from({ length: 10 }, (_, index) => elevenPlace(index + 1)),
+      total: 12,
+      unknownUsernames: [],
+    },
+  ]);
+  expect(firstPage.text).toBe(assistantAnswer);
+  expect(lastPage.toolInputs).toStrictEqual([
+    { input: { offset: 10 }, toolName: "listTaggedPlaces" },
+  ]);
+  expect(lastPage.toolOutputs).toStrictEqual([
+    { nextOffset: null, places: [elevenPlace(11), syntheticCafe], total: 12, unknownUsernames: [] },
+  ]);
+});
+
+test("asking for the places of accounts keeps theirs and names the unknown ones", async (context) => {
+  const world = await createWorld(context);
+  await world.run();
+
+  const chunks = await readChunks(
+    await handleChatRequest(
+      world.runtime,
+      chatRequest(userMessage("Which places did @User_008 and @user_999 visit?")),
+    ),
+  );
+
+  expect(chunks.toolInputs).toStrictEqual([
+    { input: { usernames: ["User_008", "user_999"] }, toolName: "listTaggedPlaces" },
+  ]);
+  expect(chunks.toolOutputs).toStrictEqual([
+    { nextOffset: null, places: [syntheticCafe], total: 1, unknownUsernames: ["user_999"] },
+  ]);
+});
+
+test("searching a place streams the searchTaggedPlaces call and its matches, the closest first", async (context) => {
+  const world = await createWorld(context, { editStory: tagElevenPlaces });
+  await world.run();
+
+  const chunks = await readChunks(
+    await handleChatRequest(world.runtime, chatRequest(userMessage("Search places CAFÉ"))),
+  );
+
+  expect(chunks.toolInputs).toStrictEqual([
+    { input: { query: "CAFÉ" }, toolName: "searchTaggedPlaces" },
+  ]);
+  expect(chunks.toolOutputs).toStrictEqual([
+    { nextOffset: null, places: [syntheticCafe], total: 1 },
+  ]);
+  expect(chunks.text).toBe(assistantAnswer);
+});
+
+test("reading a place streams the getTaggedPlace call, its details, then an answer linking it", async (context) => {
+  const world = await createWorld(context);
+  await world.run();
+
+  const found = await readChunks(
+    await handleChatRequest(world.runtime, chatRequest(userMessage(`Place instagram:${placeId}`))),
+  );
+  const unknown = await readChunks(
+    await handleChatRequest(world.runtime, chatRequest(userMessage("Place instagram:999"))),
+  );
+
+  expect(found.toolInputs).toStrictEqual([
+    { input: { id: `instagram:${placeId}` }, toolName: "getTaggedPlace" },
+  ]);
+  expect(found.toolOutputs).toStrictEqual([
+    {
+      place: {
+        ...syntheticCafe,
+        address: "1 Synthetic Street",
+        hasMoreStories: false,
+        latestStories: [{ date: syntheticCafe.latestStoryDate, owner: "@user_008" }],
+      },
+      status: "found",
+    },
+  ]);
+  expect(found.text).toBe(placeAnswer({ id: `instagram:${placeId}`, name: "Synthetic Cafe" }));
+  expect(unknown.toolOutputs).toStrictEqual([{ id: "instagram:999", status: "unknown" }]);
+  expect(unknown.text).toBe(assistantAnswer);
 });
 
 test("a greeting is answered without any tool call", async (context) => {

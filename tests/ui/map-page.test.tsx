@@ -12,6 +12,8 @@ import { mapAccounts, seedMapDatabase, sharedPlace, soloPlace } from "./seeded-p
 const shared = useSharedTestRuntime(seedMapDatabase);
 const renderer = createPageRenderer(Route, () => loadPlaceMap(shared.runtime), "/map");
 const [ada, ben, cleo] = mapAccounts;
+const sharedPlaceId = "instagram:700000000000930";
+const placeLink = `/map?place=${encodeURIComponent(sharedPlaceId)}`;
 
 // Only the WebGL/tile boundary is replaced: markers render what the page asks them to.
 function TestMapCanvas({ places, onSelect, renderMarker, children }: LocationMapCanvasProps) {
@@ -79,7 +81,7 @@ test("the account filter keeps the places of any chosen account, in the URL", as
   await user.click(filter.getByRole("checkbox", { name: `@${ben}` }));
   expect(router.state.location.search).toEqual({ accounts: `${ada},${ben}` });
   expect(map.getAllByRole("button")).toHaveLength(2);
-  await user.click(filter.getByRole("button", { name: "Tous les comptes" }));
+  await user.click(filter.getByRole("button", { name: "Effacer les filtres" }));
   expect(router.state.location.search).toEqual({});
   expect(map.getAllByRole("button")).toHaveLength(2);
   expect(within(map.getByRole("button", { name: sharedPlace.name })).getByText("CL")).toBeVisible();
@@ -122,9 +124,67 @@ test("a place hidden by the filter does not reopen its popup when shown again", 
   await user.click(screen.getByRole("button", { name: /Filtrer par compte/u }));
   const filter = within(await screen.findByRole("dialog"));
   await user.click(filter.getByRole("checkbox", { name: `@${ada}` }));
-  await user.click(filter.getByRole("button", { name: "Tous les comptes" }));
+  await user.click(filter.getByRole("button", { name: "Effacer les filtres" }));
   expect(map.getByRole("button", { name: soloPlace.name })).toBeVisible();
   expect(map.queryByRole("region", { name: /Stories du lieu/u })).not.toBeInTheDocument();
+});
+
+test("a place link shows only that place, with its popup open", async () => {
+  const { map } = await mountMap(placeLink);
+  expect(map.getByRole("button", { name: sharedPlace.name })).toBeVisible();
+  expect(map.queryByRole("button", { name: soloPlace.name })).not.toBeInTheDocument();
+  const popup = within(map.getByRole("region", { name: `Stories du lieu : ${sharedPlace.name}` }));
+  expect(popup.getAllByRole("button", { name: /Ouvrir aperçu/u })).toHaveLength(2);
+  expect(screen.getByRole("button", { name: /Filtrer par compte/u })).toHaveTextContent("1");
+});
+
+test("a link to an unknown place is ignored", async () => {
+  const { map, user } = await mountMap("/map?place=instagram%3A700000000000999");
+  expect(map.getAllByRole("button")).toHaveLength(2);
+  expect(map.queryByRole("region", { name: /Stories du lieu/u })).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: /Filtrer par compte/u }));
+  const filter = within(await screen.findByRole("dialog"));
+  expect(filter.queryByRole("button", { name: /Retirer le lieu/u })).not.toBeInTheDocument();
+  expect(filter.getByRole("button", { name: "Effacer les filtres" })).toBeDisabled();
+});
+
+test("a place link keeps only the chosen accounts' stories of that place", async () => {
+  const { map } = await mountMap(`${placeLink}&accounts=${ada}`);
+  const popup = within(map.getByRole("region", { name: `Stories du lieu : ${sharedPlace.name}` }));
+  expect(popup.getByRole("link", { name: `@${ada}` })).toBeVisible();
+  expect(popup.queryByRole("link", { name: `@${cleo}` })).not.toBeInTheDocument();
+});
+
+test("a place link no chosen account tagged shows the empty state", async () => {
+  await renderer.mountRoute(`${placeLink}&accounts=${ben}`, undefined, { wrapper: MapWrapper });
+  expect(screen.getByText("Aucun lieu avec des coordonnées à afficher.")).toBeVisible();
+  expect(screen.queryByRole("region", { name: "Carte des lieux" })).not.toBeInTheDocument();
+});
+
+test("the place filter is an entry at the top of the filters, which removes it", async () => {
+  const { user, map, router } = await mountMap(`${placeLink}&accounts=${ada}`);
+  await user.click(screen.getByRole("button", { name: /Filtrer par compte/u }));
+  const filter = within(await screen.findByRole("dialog"));
+  const [clear, remove] = filter.getAllByRole("button");
+  expect(clear).toHaveAccessibleName("Effacer les filtres");
+  expect(remove).toHaveAccessibleName(`Retirer le lieu ${sharedPlace.name}`);
+  expect(filter.getByText(sharedPlace.name)).toBeVisible();
+  await user.click(filter.getByRole("button", { name: `Retirer le lieu ${sharedPlace.name}` }));
+  expect(router.state.location.search).toEqual({ accounts: ada });
+  expect(filter.queryByText(sharedPlace.name)).not.toBeInTheDocument();
+  expect(map.getByRole("button", { name: sharedPlace.name })).toBeVisible();
+  expect(map.queryByRole("button", { name: soloPlace.name })).not.toBeInTheDocument();
+});
+
+test("one clear action resets the place and the accounts together", async () => {
+  const { user, map, router } = await mountMap(`${placeLink}&accounts=${ada}`);
+  await user.click(screen.getByRole("button", { name: /Filtrer par compte/u }));
+  const filter = within(await screen.findByRole("dialog"));
+  await user.click(filter.getByRole("button", { name: "Effacer les filtres" }));
+  expect(router.state.location.search).toEqual({});
+  expect(map.getByRole("button", { name: sharedPlace.name })).toBeVisible();
+  expect(map.getByRole("button", { name: soloPlace.name })).toBeVisible();
+  expect(filter.getByRole("button", { name: "Effacer les filtres" })).toBeDisabled();
 });
 
 afterEach(() => {
