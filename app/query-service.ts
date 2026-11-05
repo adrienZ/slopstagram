@@ -36,3 +36,8 @@ export const getChatPage = createServerFn({ method: "GET" }).handler(async () =>
   const { loadChatPage } = await import("./loaders/chat.ts");
   return loadChatPage(getProductionRuntime());
 });
+
+export const getPlaceMap = createServerFn({ method: "GET" }).handler(async () => {
+  const { loadPlaceMap } = await import("./loaders/place-map.ts");
+  return loadPlaceMap(getProductionRuntime());
+});

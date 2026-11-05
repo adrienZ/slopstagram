@@ -1,0 +1,89 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { ArrowLeftIcon } from "lucide-react";
+import { z } from "zod";
+import { AccountFilter } from "../components/account-filter.tsx";
+import { Lightbox } from "../components/lightbox.tsx";
+import { PlaceExplorer } from "../components/place-explorer.tsx";
+import { usePlaceMapFilter } from "../hooks/use-place-map-filter.ts";
+import type { PlaceMapPageData } from "../loaders/place-map.ts";
+import { getPlaceMap } from "../query-service.ts";
+import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/ui/avatar.tsx";
+import { formatUserInitials } from "../utils/helper.ts";
+import type { TimelinePlace } from "../utils/timeline-locations.ts";
+
+export function PlaceMapPage({
+  places,
+  accounts,
+  stories,
+  selectedAccounts,
+  selectedStory,
+}: PlaceMapPageData & { selectedAccounts?: string; selectedStory?: string }) {
+  const filter = usePlaceMapFilter(places, accounts, selectedAccounts);
+  const storyByMediaPk = new Map(stories.map((story) => [story.mediaPk, story]));
+  const avatarByUsername = new Map(accounts.map((account) => [account.username, account]));
+  function renderMarker(place: TimelinePlace) {
+    const username = place.stories[0]?.username ?? "";
+    return (
+      <Avatar className="tw:size-10">
+        <AvatarImage src={avatarByUsername.get(username)?.avatarPath} alt="" />
+        <AvatarFallback className="tw:bg-primary tw:text-primary-foreground">
+          {formatUserInitials(username)}
+        </AvatarFallback>
+      </Avatar>
+    );
+  }
+  return (
+    <>
+      <header className="tw:flex tw:h-14 tw:shrink-0 tw:items-center tw:gap-3 tw:border-b tw:px-4">
+        <a
+          href="/report"
+          className="tw:flex tw:items-center tw:gap-1 tw:text-sm tw:text-muted-foreground"
+        >
+          <ArrowLeftIcon aria-hidden="true" className="tw:size-4" />
+          Stories
+        </a>
+        <h1 className="tw:text-sm tw:font-semibold">Carte</h1>
+      </header>
+      <main className="tw:mx-auto tw:w-full tw:max-w-360 tw:space-y-3 tw:px-6 tw:pt-8 tw:pb-12 tw:max-[760px]:px-4 tw:max-[760px]:py-6">
+        <AccountFilter
+          accounts={accounts}
+          selected={filter.selected}
+          onToggle={filter.toggle}
+          onClear={filter.clear}
+        />
+        {filter.places.length === 0 ? (
+          <p>Aucun lieu avec des coordonnées à afficher.</p>
+        ) : (
+          <PlaceExplorer
+            places={filter.places}
+            storyByMediaPk={storyByMediaPk}
+            showOwner
+            renderMarker={renderMarker}
+            mapClassName="tw:aspect-4/3 tw:w-full"
+            tileErrorMessage="Fond de carte indisponible. Le choix du lieu reste accessible."
+          />
+        )}
+      </main>
+      <Lightbox stories={stories} selectedStory={selectedStory} linkToProfile />
+    </>
+  );
+}
+
+export const Route = createFileRoute("/map")({
+  validateSearch: z.object({
+    accounts: z.string().optional(),
+    story: z.coerce.string().optional(),
+  }),
+  loader: async () => await getPlaceMap(),
+  head: () => ({ meta: [{ title: "Carte des lieux" }] }),
+  component: () => {
+    const search = Route.useSearch();
+    return (
+      <PlaceMapPage
+        {...Route.useLoaderData()}
+        selectedAccounts={search.accounts}
+        selectedStory={search.story}
+      />
+    );
+  },
+});

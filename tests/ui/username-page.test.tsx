@@ -41,6 +41,8 @@ test("timeline shows the handle, the dated gallery and the active account", asyn
   expect(
     accounts.getByRole("link", { name: new RegExp(`@${namedAccount.username}`, "u") }),
   ).toHaveAttribute("href", `/users/${namedAccount.username}`);
+  const pages = within(screen.getByRole("navigation", { name: "Pages" }));
+  expect(pages.getByRole("link", { name: "Carte" })).toHaveAttribute("href", "/map");
   const gallery = within(screen.getByRole("region", { name: "Galerie des stories" }));
   const days = timelineProps.timeline.years.flatMap(({ months }) =>
     months.flatMap((month) => month.days),

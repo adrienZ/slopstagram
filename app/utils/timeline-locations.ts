@@ -6,7 +6,7 @@ export interface TimelinePlace {
   category: string | null;
   latitude: number;
   longitude: number;
-  stories: Array<{ mediaPk: string; date: string }>;
+  stories: Array<{ mediaPk: string; date: string; username: string }>;
 }
 
 export interface TimelineLocations {
@@ -67,6 +67,7 @@ export function groupTimelineLocations(stories: Array<UserTimelineStory>): Timel
         place.stories.push({
           mediaPk: entry.story.pk,
           date: new Date(entry.taken_at * 1000).toISOString(),
+          username: entry.username,
         });
       }
       places.set(id, place);
