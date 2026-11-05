@@ -339,6 +339,11 @@ test("searching a place streams the searchTaggedPlaces call and its matches, the
     { nextOffset: null, places: [syntheticCafe], total: 1 },
   ]);
   expect(chunks.text).toBe(assistantAnswer);
+  // A small model reasoning after a search often writes its answer in the reasoning, sending
+  // no text: the answer step does not reason.
+  expect(
+    world.ollama.requests.filter(({ kind }) => kind === "chat").map(({ think }) => think),
+  ).toStrictEqual([true, false]);
 });
 
 test("reading a place streams the getTaggedPlace call, its details, then an answer linking it", async (context) => {

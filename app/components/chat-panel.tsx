@@ -41,15 +41,12 @@ import { ChatMarkdown } from "./chat-markdown.tsx";
 import { MentionBackdrop, MentionedText, MentionSuggestionList } from "./chat-mentions.tsx";
 import { FeedUserSummariesDetails } from "./feed-user-summaries-details.tsx";
 import { AccountList } from "./account-list.tsx";
+import { TaggedPlaceDetails, TaggedPlaceList } from "./tagged-places-details.tsx";
 
 type AssistantPart = AssistantUIMessage["parts"][number];
 type FeedUserSummariesPart = Extract<AssistantPart, { type: "tool-getFeedUserSummaries" }>;
 type ListAccountsPart = Extract<AssistantPart, { type: "tool-listAccounts" }>;
 type SearchAccountsPart = Extract<AssistantPart, { type: "tool-searchAccounts" }>;
-type TaggedPlacesPart = Extract<
-  AssistantPart,
-  { type: "tool-getTaggedPlace" | "tool-listTaggedPlaces" | "tool-searchTaggedPlaces" }
->;
 
 /** A tool call as one trace line, which opens on what the tool read once it has run. */
 function ToolTrace({
@@ -145,36 +142,63 @@ function SearchAccountsPartView({ part }: { part: SearchAccountsPart }) {
   );
 }
 
-/** The trace line of a read of the Tagged places, in progress then done or failed. */
-interface TaggedPlacesTrace {
-  done: string;
-  failed: string;
-}
+type ListTaggedPlacesPart = Extract<AssistantPart, { type: "tool-listTaggedPlaces" }>;
+type SearchTaggedPlacesPart = Extract<AssistantPart, { type: "tool-searchTaggedPlaces" }>;
+type GetTaggedPlacePart = Extract<AssistantPart, { type: "tool-getTaggedPlace" }>;
 
-function describeTaggedPlacesRead(part: TaggedPlacesPart): TaggedPlacesTrace {
-  if (part.type === "tool-getTaggedPlace") {
-    return { done: "Lecture d’un lieu", failed: "Le lieu n’a pas pu être lu." };
-  }
-  if (part.type === "tool-listTaggedPlaces") {
-    return { done: "Lecture des lieux", failed: "Les lieux n’ont pas pu être lus." };
-  }
-  const query = part.input?.query ?? "";
-  return {
-    done: `Recherche du lieu « ${query} »`,
-    failed: `La recherche du lieu « ${query} » a échoué.`,
-  };
-}
-
-/** The Assistant writes the answer from the places: the chat only traces the read (ADR 0007). */
-function TaggedPlacesPartView({ part }: { part: TaggedPlacesPart }) {
+/** The Assistant writes the list from the places: the chat traces the read and keeps it. */
+function ListTaggedPlacesPartView({ part }: { part: ListTaggedPlacesPart }) {
   const status = getToolStatus(part.state);
-  const title = describeTaggedPlacesRead(part);
   return (
     <ToolTrace
-      icon={part.type === "tool-getTaggedPlace" ? <MapPinIcon /> : <MapPinnedIcon />}
+      icon={<MapPinnedIcon />}
       status={status}
-      title={status === "error" ? title.failed : title.done}
-    />
+      title={status === "error" ? "Les lieux n’ont pas pu être lus." : "Lecture des lieux"}
+    >
+      {part.state === "output-available" && (
+        <TaggedPlaceList places={part.output.places} total={part.output.total} />
+      )}
+    </ToolTrace>
+  );
+}
+
+/** The Assistant writes the answer from the matches: the chat traces the search and keeps it. */
+function SearchTaggedPlacesPartView({ part }: { part: SearchTaggedPlacesPart }) {
+  const query = part.input?.query ?? "";
+  const status = getToolStatus(part.state);
+  return (
+    <ToolTrace
+      icon={<SearchIcon />}
+      status={status}
+      title={
+        status === "error"
+          ? `La recherche du lieu « ${query} » a échoué.`
+          : `Recherche du lieu « ${query} »`
+      }
+    >
+      {part.state === "output-available" && (
+        <TaggedPlaceList
+          emptyLabel="Aucun lieu trouvé."
+          label="Lieux trouvés"
+          places={part.output.places}
+          total={part.output.total}
+        />
+      )}
+    </ToolTrace>
+  );
+}
+
+/** The Assistant writes the answer from the place: the chat traces the read and keeps it. */
+function GetTaggedPlacePartView({ part }: { part: GetTaggedPlacePart }) {
+  const status = getToolStatus(part.state);
+  return (
+    <ToolTrace
+      icon={<MapPinIcon />}
+      status={status}
+      title={status === "error" ? "Le lieu n’a pas pu être lu." : "Lecture d’un lieu"}
+    >
+      {part.state === "output-available" && <TaggedPlaceDetails read={part.output} />}
+    </ToolTrace>
   );
 }
 
@@ -217,12 +241,14 @@ function AssistantPartView({
   if (part.type === "tool-searchAccounts") {
     return <SearchAccountsPartView part={part} />;
   }
-  if (
-    part.type === "tool-getTaggedPlace" ||
-    part.type === "tool-listTaggedPlaces" ||
-    part.type === "tool-searchTaggedPlaces"
-  ) {
-    return <TaggedPlacesPartView part={part} />;
+  if (part.type === "tool-listTaggedPlaces") {
+    return <ListTaggedPlacesPartView part={part} />;
+  }
+  if (part.type === "tool-searchTaggedPlaces") {
+    return <SearchTaggedPlacesPartView part={part} />;
+  }
+  if (part.type === "tool-getTaggedPlace") {
+    return <GetTaggedPlacePartView part={part} />;
   }
   return null;
 }

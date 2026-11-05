@@ -167,8 +167,47 @@ test("a place the Assistant names links to that place on the map", async (contex
   const link = await screen.findByRole("link", { name: "Synthetic Cafe" });
   expect(link).toHaveAttribute("href", `/map?place=instagram%3A${placeId}`);
   expect(link).not.toHaveAttribute("target");
-  // The read is traced, without showing its result.
-  expect(screen.getByText("Lecture d’un lieu")).toBeVisible();
+  // What the Assistant read is kept behind its trace line.
+  expect(screen.queryByText("1 Synthetic Street")).not.toBeInTheDocument();
+  await chat.user.click(screen.getByRole("button", { name: "Lecture d’un lieu" }));
+  const read = within(screen.getByRole("region", { name: "Lieu lu" }));
+  expect(read.getByText("Synthetic Cafe · Cafe")).toBeVisible();
+  expect(read.getByText("1 Synthetic Street")).toBeVisible();
+  expect(read.getByRole("listitem")).toHaveTextContent("29 oct. · @user_008");
+});
+
+test("asking for the places traces the read, which lists the places", async (context) => {
+  const chat = await mountChat(await fetchedWorld(context));
+
+  await chat.ask("Quels lieux ?");
+
+  await screen.findByText("answer");
+  await chat.user.click(screen.getByRole("button", { name: "Lecture des lieux" }));
+  const items = within(screen.getByRole("list", { name: "Lieux" })).getAllByRole("listitem");
+  // The read is plain text: no link.
+  expect(items.map((item) => item.textContent)).toStrictEqual([
+    "Synthetic Cafe · Cafe · 1 story · @user_008",
+  ]);
+  expect(within(items[0]).queryByRole("link")).not.toBeInTheDocument();
+});
+
+test("searching a place traces the search, which lists the matches or says there is none", async (context) => {
+  const chat = await mountChat(await fetchedWorld(context));
+
+  await chat.ask("Cherche lieux cafe");
+  await screen.findByText("answer");
+  await chat.user.click(screen.getByRole("button", { name: "Recherche du lieu « cafe »" }));
+  expect(
+    within(screen.getByRole("list", { name: "Lieux trouvés" })).getByRole("listitem"),
+  ).toHaveTextContent("Synthetic Cafe · Cafe · 1 story · @user_008");
+
+  await chat.ask("Cherche lieux louvre");
+  await vi.waitFor(() =>
+    expect(screen.getByRole("button", { name: "Recherche du lieu « louvre »" })).toBeVisible(),
+  );
+  await vi.waitFor(() => expect(screen.getByRole("button", { name: "Envoyer" })).toBeEnabled());
+  await chat.user.click(screen.getByRole("button", { name: "Recherche du lieu « louvre »" }));
+  expect(screen.getByText("Aucun lieu trouvé.")).toBeVisible();
 });
 
 test("a greeting is answered without reading any data", async (context) => {

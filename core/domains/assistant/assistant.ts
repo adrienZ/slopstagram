@@ -39,12 +39,16 @@ You know nothing about the accounts yourself. Answer only from the results of yo
 - For a greeting, a thank-you or a message that is not about the accounts, answer briefly without calling any tool.
 - Always answer in the language of the user's last message.`;
 
-/** The tools after which the model only has to write the answer. */
+/**
+ * The tools after which the model usually only has to write the answer. A place search often ends
+ * the reply too; the model can still call getTaggedPlace after it, without reasoning.
+ */
 const answerTools = new Set([
   "getFeedUserSummaries",
   "getTaggedPlace",
   "listAccounts",
   "listTaggedPlaces",
+  "searchTaggedPlaces",
 ]);
 
 /** Bounds one reply: a tool call, its result, then the answer, with room for one retry. */
