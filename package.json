@@ -23,7 +23,8 @@
     "format:check": "oxfmt --check",
     "test": "vitest run --coverage",
     "test:reporter": "vitest run --coverage --coverage.reportOnFailure --coverage.reporter=text --coverage.reporter=lcov --reporter=default --reporter=junit --outputFile.junit=./reporter.xml",
-    "eval": "evalite run"
+    "eval": "evalite run --outputPath=./evalite-export/last-run.json",
+    "eval:export": "evalite export --output=./evalite-export"
   },
   "dependencies": {
     "@ai-sdk/react": "4.0.166",

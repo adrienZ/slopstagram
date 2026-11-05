@@ -1,8 +1,9 @@
-import { z } from "zod";
+import { Chat } from "@ai-sdk/react";
+import { DefaultChatTransport, getToolName, isToolUIPart } from "ai";
 import { JsonValueSchema } from "../core/utils/json-value.ts";
 import { handleChatRequest } from "../app/routes/api/chat.ts";
 import { listAccounts } from "../core/domains/accounts/accounts.ts";
-import type { AssistantRuntime } from "../core/domains/assistant/assistant.ts";
+import type { AssistantRuntime, AssistantUIMessage } from "../core/domains/assistant/assistant.ts";
 import { readFeedUserSummary } from "../core/domains/story-feed/feed-user-summary.ts";
 import { createWorld, imageStoryPk, recordedPayloads } from "../tests/setup/report-world.ts";
 import { createRecordedInstagramClient, editRecordedStories } from "../tests/setup/seed.ts";
@@ -73,123 +74,68 @@ async function seedAssistantWorld(): Promise<AssistantRuntime> {
 
 let world: Promise<AssistantRuntime> | undefined;
 
-const ChunkSchema = z.looseObject({ type: z.string() });
-
-const KnownChunkSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("text-delta"), delta: z.string() }),
-  z.object({
-    type: z.literal("tool-input-available"),
-    toolCallId: z.string(),
-    toolName: z.string(),
-    input: JsonValueSchema,
-  }),
-  z.object({
-    type: z.literal("tool-input-error"),
-    toolCallId: z.string(),
-    toolName: z.string(),
-    input: JsonValueSchema,
-    errorText: z.string(),
-  }),
-  z.object({
-    type: z.literal("tool-output-available"),
-    toolCallId: z.string(),
-    output: JsonValueSchema,
-  }),
-  z.object({ type: z.literal("tool-output-error"), toolCallId: z.string(), errorText: z.string() }),
-  z.object({ type: z.literal("error"), errorText: z.string() }),
-]);
-
-/** The body of a streamed response, up to where the stream broke when it did. */
-async function readStream(response: Response): Promise<{ body: string; brokenBy?: string }> {
-  let body = "";
-  try {
-    for await (const text of response.body?.pipeThrough(new globalThis.TextDecoderStream()) ?? []) {
-      body += text;
-    }
-  } catch (error) {
-    return { body, brokenBy: error instanceof Error ? error.message : String(error) };
-  }
-  return { body };
-}
-
-function parseEvent(event: string) {
-  const data = event.replace(/^data: /u, "").trim();
-  if (data.length === 0 || data === "[DONE]") {
-    return [];
-  }
-  try {
-    const known = KnownChunkSchema.safeParse(ChunkSchema.parse(JSON.parse(data)));
-    return known.success ? [known.data] : [];
-  } catch {
-    // The last event of a broken stream can be cut short.
-    return [];
-  }
-}
-
-/** The known chunks of a UI message stream response, in order; the others are left out. */
-async function readChunks(response: Response) {
-  const { body, brokenBy } = await readStream(response);
-  const chunks = body.split("\n\n").flatMap(parseEvent);
-  return brokenBy === undefined
-    ? chunks
-    : [...chunks, { errorText: `The chat stream broke: ${brokenBy}`, type: "error" as const }];
-}
-
-/** Asks the Assistant one question through the chat route handler, as the chat page does. */
-export async function askAssistant(question: string): Promise<AssistantRun> {
+/**
+ * Asks the Assistant one question as the chat page does: the same `DefaultChatTransport` client,
+ * whose requests go to the chat route handler instead of the network.
+ */
+async function answer(question: string): Promise<AssistantRun> {
   world ??= seedAssistantWorld();
-  const response = await handleChatRequest(
-    await world,
-    new globalThis.Request("http://localhost/api/chat", {
-      body: JSON.stringify({
-        messages: [{ id: "message-1", parts: [{ text: question, type: "text" }], role: "user" }],
-      }),
-      method: "POST",
+  const runtime = await world;
+  const chat = new Chat<AssistantUIMessage>({
+    transport: new DefaultChatTransport<AssistantUIMessage>({
+      api: "http://localhost/api/chat",
+      fetch: async (input, init) =>
+        await handleChatRequest(runtime, new globalThis.Request(input, init)),
     }),
-  );
-  if (!response.ok) {
-    throw new Error(`The chat route answered ${response.status}: ${await response.text()}`);
-  }
-  const calls = new Map<string, AssistantToolCall>();
+  });
+  await chat.sendMessage({ text: question });
   const run: AssistantRun = { question, text: "", toolCalls: [] };
-  for (const chunk of await readChunks(response)) {
-    switch (chunk.type) {
-      case "text-delta": {
-        run.text += chunk.delta;
-        break;
+  // The client keeps a stream error, or a failed request, in `error` instead of throwing.
+  if (chat.error !== undefined) {
+    run.errorText = chat.error.message;
+  }
+  // Without a reply (a failed request) the last message is still the question.
+  const reply = chat.lastMessage?.role === "assistant" ? chat.lastMessage : undefined;
+  for (const part of reply?.parts ?? []) {
+    if (part.type === "text") {
+      run.text += part.text;
+    } else if (isToolUIPart(part)) {
+      const call: AssistantToolCall = {
+        input: JsonValueSchema.safeParse(part.input).data ?? null,
+        toolName: getToolName(part),
+      };
+      if (part.state === "output-available") {
+        call.output = JsonValueSchema.safeParse(part.output).data ?? null;
+      } else if (part.state === "output-error") {
+        call.errorText = part.errorText;
       }
-      case "tool-input-available":
-      case "tool-input-error": {
-        const call: AssistantToolCall = { input: chunk.input, toolName: chunk.toolName };
-        if (chunk.type === "tool-input-error") {
-          call.errorText = chunk.errorText;
-        }
-        calls.set(chunk.toolCallId, call);
-        run.toolCalls.push(call);
-        break;
-      }
-      case "tool-output-available": {
-        const call = calls.get(chunk.toolCallId);
-        if (call !== undefined) {
-          call.output = chunk.output;
-        }
-        break;
-      }
-      case "tool-output-error": {
-        const call = calls.get(chunk.toolCallId);
-        if (call !== undefined) {
-          call.errorText = chunk.errorText;
-        }
-        break;
-      }
-      case "error": {
-        run.errorText = chunk.errorText;
-        break;
-      }
-      default: {
-        break;
-      }
+      run.toolCalls.push(call);
     }
   }
   return run;
+}
+
+async function afterPrevious<Result>(
+  previous: Promise<unknown>,
+  task: () => Promise<Result>,
+): Promise<Result> {
+  try {
+    await previous;
+  } catch {
+    // The previous question failed on its own: this one still runs.
+  }
+  return await task();
+}
+
+let lastQuestion: Promise<unknown> = Promise.resolve();
+
+/**
+ * Asks the Assistant one question at a time, in arrival order. The local chat model answers one
+ * request at a time: more would only queue in Ollama and time out. The judge has no such limit, so
+ * evalite runs the cases concurrently and only the chat model calls wait here.
+ */
+export async function askAssistant(question: string): Promise<AssistantRun> {
+  const run = afterPrevious(lastQuestion, async () => await answer(question));
+  lastQuestion = run;
+  return await run;
 }

@@ -9,6 +9,9 @@ import { wrapAISDKModel } from "evalite/ai-sdk";
 import { z } from "zod";
 import type { AssistantExpectation, AssistantRun } from "./assistant-scorers.ts";
 
+/** The cheapest model `codex debug models` lists: the judge only grades short synthetic answers. */
+const JUDGE_MODEL = "gpt-6-luna";
+
 const VerdictSchema = z.object({
   faithful: z
     .boolean()
@@ -57,20 +60,18 @@ export interface AssistantJudge {
 }
 
 /**
- * The optional LLM judge: the Codex CLI as an AI SDK provider, with the model named by
- * `EVAL_JUDGE_MODEL`. Null, so the judge is skipped, when the variable is unset or `codex` is
- * not on the PATH. Codex runs in an empty temporary directory with a read-only sandbox and
+ * The optional LLM judge: the Codex CLI as an AI SDK provider, running `JUDGE_MODEL`. Null, so
+ * the judge is skipped, when `codex` is not on the PATH. Codex runs in an empty temporary directory with a read-only sandbox and
  * never approves an action, so it sees only the synthetic run it grades.
  */
 export function createAssistantJudge(): AssistantJudge | null {
-  const modelId = process.env.EVAL_JUDGE_MODEL;
   const codexPath = findOnPath("codex");
-  if (modelId === undefined || modelId === "" || codexPath === null) {
+  if (codexPath === null) {
     return null;
   }
   const workspace = mkdtempSync(path.join(tmpdir(), "slopstagram-judge-"));
   const model = wrapAISDKModel(
-    codexCli(modelId, {
+    codexCli(JUDGE_MODEL, {
       approvalMode: "never",
       codexPath,
       cwd: workspace,
@@ -85,7 +86,7 @@ export function createAssistantJudge(): AssistantJudge | null {
     },
     scorer: {
       name: "Judge",
-      description: `${modelId} grades faithfulness, relevance and language.`,
+      description: `${JUDGE_MODEL} grades faithfulness, relevance and language.`,
       scorer: async ({ output: run }) => {
         const { output: verdict } = await generateText({
           model,

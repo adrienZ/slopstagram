@@ -1,4 +1,6 @@
+import { toolCallAccuracy } from "evalite/scorers/deterministic";
 import { z } from "zod";
+import { findMentionedUsernames } from "../app/utils/chat-mentions.ts";
 import type { FeedUserSummary } from "../core/domains/story-feed/feed-user-summary.ts";
 import { FeedUserSummariesOutputSchema } from "../core/domains/story-feed/get-feed-user-summaries.tool.ts";
 import type { JsonObject, JsonValue } from "../core/utils/json-value.ts";
@@ -36,8 +38,8 @@ export function describeOutcome(read: FeedUserSummary): FeedUserSummaryOutcome {
 
 /** What a case expects from the Assistant. */
 export interface AssistantExpectation {
-  /** The tool the Assistant should call, or null when it should answer without a tool. */
-  tool: "getFeedUserSummaries" | "listAccounts" | null;
+  /** The tools the Assistant should call, each at least once and no other: none to answer without a tool. */
+  tools: Array<"getFeedUserSummaries" | "listAccounts" | "searchAccounts">;
   /** The only username the tool should be called with. */
   username?: string;
   /** The outcome every getFeedUserSummaries result should have. */
@@ -47,7 +49,7 @@ export interface AssistantExpectation {
 }
 
 interface CheckResult {
-  score: 0 | 1;
+  score: number;
   metadata?: JsonObject;
 }
 
@@ -55,7 +57,7 @@ interface CheckResult {
 export interface AssistantCheck {
   name: string;
   description: string;
-  check: (run: AssistantRun) => CheckResult;
+  check: (run: AssistantRun) => CheckResult | Promise<CheckResult>;
 }
 
 function result(passed: boolean, metadata?: JsonObject): CheckResult {
@@ -68,14 +70,12 @@ function normalizeUsername(username: string): string {
 
 const UsernamesInputSchema = z.object({ usernames: z.array(z.string()) });
 
-// An @mention, without the punctuation that may end a sentence after it.
-const MENTION = /@(?<username>[\w.]*\w)/gu;
 // The seeded world names every account user_<digits>, so an invented one shows up in this shape too.
 const SYNTHETIC_USERNAME = /\buser_\d+\b/giu;
 
 /** The usernames a text names, as @mentions or in the seeded world's username shape, lowercased. */
 function findUsernames(text: string): Array<string> {
-  const mentioned = [...text.matchAll(MENTION)].map((match) => match.groups?.username ?? "");
+  const mentioned = findMentionedUsernames(text);
   const bare = [...text.matchAll(SYNTHETIC_USERNAME)].map(([username]) => username);
   return [...new Set([...mentioned, ...bare].map(normalizeUsername))];
 }
@@ -166,20 +166,21 @@ function describeCalls(run: AssistantRun) {
   return run.toolCalls.map(({ input, toolName }) => ({ input, toolName }));
 }
 
-function expectedTool(expected: AssistantExpectation): AssistantCheck {
+function expectedTools(expected: AssistantExpectation): AssistantCheck {
   return {
-    name: "Expected tool",
+    name: "Expected tools",
     description:
-      expected.tool === null
+      expected.tools.length === 0
         ? "The Assistant called no tool."
-        : `The Assistant called ${expected.tool}, and no other tool.`,
-    check: (run) => {
-      const names = run.toolCalls.map(({ toolName }) => toolName);
-      const passed =
-        expected.tool === null
-          ? names.length === 0
-          : names.length > 0 && names.every((name) => name === expected.tool);
-      return result(passed, { calls: describeCalls(run) });
+        : `The Assistant called ${expected.tools.join(" and ")}, and no other tool.`,
+    // Names only, in any order: the arguments have their own scorer, which is lenient on "@" and case.
+    check: async (run) => {
+      const { score } = await toolCallAccuracy({
+        actualCalls: run.toolCalls.map(({ toolName }) => ({ toolName })),
+        expectedCalls: expected.tools.map((toolName) => ({ toolName })),
+        mode: "flexible",
+      });
+      return { metadata: { calls: describeCalls(run) }, score };
     },
   };
 }
@@ -257,7 +258,7 @@ const frenchAnswer: AssistantCheck = {
 /** The deterministic scorers of a case: every one must pass for a run to pass. */
 export function createAssistantChecks(expected: AssistantExpectation): Array<AssistantCheck> {
   return [
-    expectedTool(expected),
+    expectedTools(expected),
     ...(expected.username === undefined ? [] : [expectedArguments(expected.username)]),
     ...(expected.outcome === undefined ? [] : [expectedOutcome(expected.outcome)]),
     knownUsernames(expected),

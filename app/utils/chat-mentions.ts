@@ -8,6 +8,11 @@ const USERNAME_TAIL = /^[\w.]*/u;
 /** An `@username` that starts a word. A username never ends with a period. */
 const MENTION = /(?<![\w@])@(?<username>[\w.]*\w)/gu;
 
+/** The usernames mentioned in a message, as `@username`, in order and as written. */
+export function findMentionedUsernames(text: string): Array<string> {
+  return [...text.matchAll(MENTION)].map((match) => match.groups?.username ?? "");
+}
+
 /** The Mention being typed right before the caret. */
 export interface TypedMention {
   query: string;
