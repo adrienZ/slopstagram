@@ -7,9 +7,6 @@ export default defineConfig({
   // The run fails when the average score of every scorer (0-100) is under this: the baseline of the
   // default chat model (qwen3.5:0.8b). Raise it when the model improves.
   scoreThreshold: 75,
-  // The wide table wraps badly: read the answers in `npm run eval:export`, or in
-  // `evalite-export/last-run.json`, which `npm run eval` writes.
-  hideTable: true,
   // Evalite applies one timeout to a whole case, queue and judge included, and the 30 cases wait for
   // each other (see `askAssistant` in evals/assistant-world.ts). A CPU runner answers in about 17
   // seconds a case, so 5 minutes timed out the last 13 cases there: it gets 15 minutes. A local run
