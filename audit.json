@@ -1,6 +1,90 @@
 {
   "auditReportVersion": 2,
   "vulnerabilities": {
+    "@fastify/static": {
+      "name": "@fastify/static",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1116758,
+          "name": "@fastify/static",
+          "dependency": "@fastify/static",
+          "title": "@fastify/static vulnerable to path traversal in directory listing",
+          "url": "https://github.com/advisories/GHSA-pr96-94w5-mx2h",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-22"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N"
+          },
+          "range": ">=8.0.0 <=9.1.0"
+        },
+        {
+          "source": 1116759,
+          "name": "@fastify/static",
+          "dependency": "@fastify/static",
+          "title": "@fastify/static vulnerable to route guard bypass via encoded path separators",
+          "url": "https://github.com/advisories/GHSA-x428-ghpx-8j92",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-177"
+          ],
+          "cvss": {
+            "score": 5.9,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N"
+          },
+          "range": ">=8.0.0 <=9.1.0"
+        },
+        {
+          "source": 1124285,
+          "name": "@fastify/static",
+          "dependency": "@fastify/static",
+          "title": "@fastify/static vulnerable to Authorization Bypass via Non-Canonical URL Paths",
+          "url": "https://github.com/advisories/GHSA-8pvw-jcv7-9cmj",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-180"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N"
+          },
+          "range": "<=10.1.1"
+        },
+        {
+          "source": 1124286,
+          "name": "@fastify/static",
+          "dependency": "@fastify/static",
+          "title": "@fastify/static vulnerable to route guard bypass via path traversal",
+          "url": "https://github.com/advisories/GHSA-83w8-p2f5-377r",
+          "severity": "high",
+          "cwe": [
+            "CWE-22"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"
+          },
+          "range": "<=10.1.0"
+        },
+        "glob"
+      ],
+      "effects": [
+        "evalite"
+      ],
+      "range": "<=10.1.8",
+      "nodes": [
+        "node_modules/@fastify/static"
+      ],
+      "fixAvailable": {
+        "name": "evalite",
+        "version": "0.10.1",
+        "isSemVerMajor": true
+      }
+    },
     "@shadcn/registry": {
       "name": "@shadcn/registry",
       "severity": "low",
@@ -73,8 +157,98 @@
         "node_modules/deepmerge"
       ],
       "fixAvailable": {
-        "name": "ultracite",
-        "version": "4.2.13",
+        "name": "shadcn",
+        "version": "1.0.0",
+        "isSemVerMajor": true
+      }
+    },
+    "evalite": {
+      "name": "evalite",
+      "severity": "moderate",
+      "isDirect": true,
+      "via": [
+        "@fastify/static",
+        "file-type"
+      ],
+      "effects": [],
+      "range": ">=0.8.0",
+      "nodes": [
+        "node_modules/evalite"
+      ],
+      "fixAvailable": {
+        "name": "evalite",
+        "version": "0.10.1",
+        "isSemVerMajor": true
+      }
+    },
+    "file-type": {
+      "name": "file-type",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1114301,
+          "name": "file-type",
+          "dependency": "file-type",
+          "title": "file-type affected by infinite loop in ASF parser on malformed input with zero-size sub-header",
+          "url": "https://github.com/advisories/GHSA-5v7r-6r5c-r473",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-835"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+          },
+          "range": ">=13.0.0 <21.3.1"
+        }
+      ],
+      "effects": [
+        "evalite"
+      ],
+      "range": "13.0.0 - 21.3.0",
+      "nodes": [
+        "node_modules/evalite/node_modules/file-type"
+      ],
+      "fixAvailable": {
+        "name": "evalite",
+        "version": "0.10.1",
+        "isSemVerMajor": true
+      }
+    },
+    "glob": {
+      "name": "glob",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1244013,
+          "name": "glob",
+          "dependency": "glob",
+          "title": "Glob: AbortSignal cancellation bypass allows post-timeout filesystem traversal",
+          "url": "https://github.com/advisories/GHSA-3g3m-2fjr-6pw4",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-400"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": ">=9.0.0 <=14.0.1"
+        },
+        "minimatch"
+      ],
+      "effects": [
+        "@fastify/static"
+      ],
+      "range": "9.0.0 - 14.0.1",
+      "nodes": [
+        "node_modules/glob"
+      ],
+      "fixAvailable": {
+        "name": "evalite",
+        "version": "0.10.1",
         "isSemVerMajor": true
       }
     },
@@ -101,15 +275,16 @@
         }
       ],
       "effects": [
-        "@ts-morph/common"
+        "@ts-morph/common",
+        "glob"
       ],
       "range": "7.0.0 - 11.0.0",
       "nodes": [
         "node_modules/minimatch"
       ],
       "fixAvailable": {
-        "name": "shadcn",
-        "version": "1.0.0",
+        "name": "evalite",
+        "version": "0.10.1",
         "isSemVerMajor": true
       }
     },
@@ -176,18 +351,18 @@
     "vulnerabilities": {
       "info": 0,
       "low": 3,
-      "moderate": 4,
-      "high": 0,
+      "moderate": 7,
+      "high": 1,
       "critical": 0,
-      "total": 7
+      "total": 11
     },
     "dependencies": {
       "prod": 623,
-      "dev": 305,
-      "optional": 246,
+      "dev": 410,
+      "optional": 253,
       "peer": 0,
       "peerOptional": 0,
-      "total": 1017
+      "total": 1122
     }
   }
 }

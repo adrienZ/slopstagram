@@ -289,7 +289,7 @@ function createOllama(behavior: OllamaBehavior = {}) {
 }
 
 export async function createWorld(
-  context: TestContext,
+  context: Pick<TestContext, "onTestFinished">,
   options: {
     backup?: RuntimeBoundaries["backup"];
     client?: RuntimeBoundaries["client"];

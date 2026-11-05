@@ -26,10 +26,11 @@ Keep UI components limited to rendering, local UI behavior, and presentation tra
 - `nitro/`: Nitro plugins only (startup migrations, the bunqueue server), for what has no TanStack
   Start equivalent. No routes: every route lives in `app/routes/`.
 - `core/`: domain and ingestion code, with no React and no Nitro.
+- `evals/`: the local Assistant evaluations (see "Evals" below).
 
 ### Chat Assistant
 
-The chat page (`app/routes/chat.tsx`) posts to `app/routes/api/chat.ts`, a thin adapter over `core/domains/assistant/` that tests drive with only Ollama faked, using the `OLLAMA_CHAT_MODEL` model. Assistant tools live in their domain, one per `<tool-name>.tool.ts` (`docs/adr/0007-assistant-tools-live-in-their-domain.md`), and only those, `core/domains/assistant/` and `app/hooks/use-assistant-chat.ts` may import the AI SDK (the `slopstagram/ai-sdk-imports` lint rule).
+The chat page (`app/routes/chat.tsx`) posts to `app/routes/api/chat.ts`, a thin adapter over `core/domains/assistant/` that tests drive with only Ollama faked, using the `OLLAMA_CHAT_MODEL` model. Assistant tools live in their domain, one per `<tool-name>.tool.ts` (`docs/adr/0007-assistant-tools-live-in-their-domain.md`), and only those, `core/domains/assistant/`, `app/hooks/use-assistant-chat.ts`, tests and `evals/` may import the AI SDK (the `slopstagram/ai-sdk-imports` lint rule).
 
 ### Generated UI
 
@@ -72,6 +73,10 @@ directly or through SDK calls. Tests may migrate their isolated databases.
 ## Testing
 
 Test rules live in `tests/AGENTS.md`.
+
+## Evals
+
+Eval rules live in `evals/AGENTS.md`.
 
 ## Agent skills
 

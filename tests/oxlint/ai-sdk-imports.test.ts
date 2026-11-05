@@ -28,6 +28,11 @@ new RuleTester().run("ai-sdk-imports", aiSdkImports, {
       filename: "/repo/app/hooks/use-assistant-chat.ts",
     },
     {
+      name: "the evals judge the Assistant with an AI SDK provider",
+      code: 'import { generateText } from "ai";\nimport { codexCli } from "ai-sdk-provider-codex-cli";',
+      filename: "/repo/evals/assistant-judge.ts",
+    },
+    {
       name: "a domain module imports other packages",
       code: 'import { z } from "zod";\nimport { airport } from "aircraft";',
       filename: "/repo/core/domains/story-feed/feed-user-summary.ts",
@@ -51,6 +56,12 @@ new RuleTester().run("ai-sdk-imports", aiSdkImports, {
       code: 'import { streamText } from "ai";',
       filename: "/repo/app/routes/api/chat.ts",
       errors: [{ messageId: "restricted", data: { source: "ai" } }],
+    },
+    {
+      name: "a community provider outside the Assistant domain",
+      code: 'import { codexCli } from "ai-sdk-provider-codex-cli";',
+      filename: "/repo/core/domains/vision/ollama.ts",
+      errors: [{ messageId: "restricted", data: { source: "ai-sdk-provider-codex-cli" } }],
     },
     {
       name: "a provider or an AI SDK subpath outside the Assistant domain",

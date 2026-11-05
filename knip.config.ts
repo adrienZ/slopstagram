@@ -15,6 +15,7 @@ const config: KnipConfig = {
     "nitro/plugins/*.ts",
     "tests/**/*.test.ts",
     "tests/**/*.test.tsx",
+    "evals/*.eval.ts",
     "oxlint/plugins/**/*.ts",
     "*.config.ts",
   ],

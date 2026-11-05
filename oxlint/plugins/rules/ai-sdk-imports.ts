@@ -8,15 +8,17 @@ type ModuleNode =
   | Parameters<NonNullable<RuleVisitor["ExportAllDeclaration"]>>[0];
 
 // The AI SDK, its UI bindings and its providers.
-const aiSdkSource = /^(?:ai|ai-sdk-ollama|@ai-sdk\/[^/]+)(?:\/.*)?$/u;
+const aiSdkSource = /^(?:ai|ai-sdk-ollama|ai-sdk-provider-[^/]+|@ai-sdk\/[^/]+)(?:\/.*)?$/u;
 
 // Only Assistant tool modules, the Assistant domain and the chat page's hook may import the AI SDK
-// (docs/adr/0007-assistant-tools-live-in-their-domain.md), plus the tests that drive them.
+// (docs/adr/0007-assistant-tools-live-in-their-domain.md), plus the tests that drive them and the
+// evals, whose LLM judge is an AI SDK provider.
 const allowedImporters = [
   /\.tool\.ts$/u,
   /\/core\/domains\/assistant\//u,
   /\/app\/hooks\/use-assistant-chat\.ts$/u,
   /\/tests\//u,
+  /\/evals\//u,
 ];
 
 const aiSdkImports = {
@@ -29,7 +31,7 @@ const aiSdkImports = {
     schema: [],
     messages: {
       restricted:
-        "Only Assistant tool modules (*.tool.ts), core/domains/assistant and app/hooks/use-assistant-chat.ts may import {{source}}. See docs/adr/0007-assistant-tools-live-in-their-domain.md.",
+        "Only Assistant tool modules (*.tool.ts), core/domains/assistant, app/hooks/use-assistant-chat.ts, tests and evals may import {{source}}. See docs/adr/0007-assistant-tools-live-in-their-domain.md.",
     },
   },
   create(context) {

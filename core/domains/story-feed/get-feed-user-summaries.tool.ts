@@ -22,7 +22,8 @@ const FeedUserSummaryOutputSchema = z.discriminatedUnion("status", [
   z.object({ status: z.literal("error"), error: z.literal("unknown_account") }),
 ]) satisfies z.ZodType<FeedUserSummary>;
 
-const FeedUserSummariesOutputSchema = z.array(
+/** The result of the getFeedUserSummaries tool. */
+export const FeedUserSummariesOutputSchema = z.array(
   z.object({
     handle: z.string(),
     requestedUsername: z.string(),

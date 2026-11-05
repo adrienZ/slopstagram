@@ -22,7 +22,9 @@
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "test": "vitest run --coverage",
-    "test:reporter": "vitest run --coverage --coverage.reportOnFailure --coverage.reporter=text --coverage.reporter=lcov --reporter=default --reporter=junit --outputFile.junit=./reporter.xml"
+    "test:reporter": "vitest run --coverage --coverage.reportOnFailure --coverage.reporter=text --coverage.reporter=lcov --reporter=default --reporter=junit --outputFile.junit=./reporter.xml",
+    "eval": "evalite run --outputPath=./evalite-export/last-run.json",
+    "eval:export": "evalite export --output=./evalite-export"
   },
   "dependencies": {
     "@ai-sdk/react": "4.0.166",
@@ -75,9 +77,12 @@
     "@vitejs/devtools-vite": "^0.8.0",
     "@vitejs/plugin-react": "^6.1.2",
     "@vitest/coverage-v8": "^5.0.5",
+    "ai-sdk-provider-codex-cli": "2.4.0",
+    "better-sqlite3": "11.10.0",
     "bunqueue-dashboard": "^1.1.0",
     "css.escape": "^1.5.1",
     "drizzle-kit": "^1.0.0-rc.5-ab785fc",
+    "evalite": "1.0.0-beta.16",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "knip": "^6.42.1",
@@ -95,6 +100,11 @@
   },
   "optionalDependencies": {
     "mac-ocr": "^1.2.1"
+  },
+  "overrides": {
+    "evalite": {
+      "ai": "$ai"
+    }
   },
   "lint-staged": {
     "*": "oxfmt --no-error-on-unmatched-pattern"

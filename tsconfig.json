@@ -19,6 +19,7 @@
   "include": [
     "core/**/*.ts",
     "devtools/**/*.ts",
+    "evals/**/*.ts",
     "scripts/**/*.ts",
     "scripts/**/*.tsx",
     "oxlint/**/*.ts",
