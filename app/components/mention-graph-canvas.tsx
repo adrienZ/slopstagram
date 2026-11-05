@@ -108,7 +108,10 @@ export function MentionGraphCanvas({
                   y2={target.y}
                   stroke="currentColor"
                   strokeWidth={1 + Math.log2(connection.storyCount + 1)}
-                  className={highlighted ? "tw:text-primary" : "tw:text-muted-foreground/35"}
+                  className={cn({
+                    "tw:text-primary": highlighted,
+                    "tw:text-muted-foreground/35": !highlighted,
+                  })}
                 />
               </g>
             );
@@ -218,7 +221,7 @@ export function MentionGraphCanvas({
             graph.zoom(1.25);
           }}
         >
-          <PlusIcon />
+          <PlusIcon data-icon="inline-start" />
         </Button>
         <Button
           variant="ghost"
@@ -228,7 +231,7 @@ export function MentionGraphCanvas({
             graph.zoom(0.8);
           }}
         >
-          <MinusIcon />
+          <MinusIcon data-icon="inline-start" />
         </Button>
         <Button
           variant="ghost"
@@ -236,7 +239,7 @@ export function MentionGraphCanvas({
           aria-label="Recentrer le graphe"
           onClick={graph.recenter}
         >
-          <MaximizeIcon />
+          <MaximizeIcon data-icon="inline-start" />
         </Button>
       </div>
     </div>
