@@ -141,7 +141,7 @@ export default function LocationMapCanvas({
             maxWidth="280px"
             closeButton={false}
             closeOnClick={false}
-            className="tw:[&_.maplibregl-popup-content]:rounded-lg! tw:[&_.maplibregl-popup-content]:bg-background! tw:[&_.maplibregl-popup-tip]:border-t-background!"
+            className="tw:[&_.maplibregl-popup-content]:rounded-lg! tw:[&_.maplibregl-popup-content]:p-2! tw:[&_.maplibregl-popup-content]:bg-background! tw:[&_.maplibregl-popup-tip]:border-t-background!"
             onClose={onClose}
             onOpen={() => {
               const map = mapRef.current;

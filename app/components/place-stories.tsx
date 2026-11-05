@@ -27,7 +27,7 @@ export function PlaceStories({
   return (
     <section
       aria-label={`Stories du lieu : ${place.name}`}
-      className="tw:max-h-52 tw:w-56 tw:space-y-2 tw:overflow-y-auto tw:text-foreground"
+      className="tw:w-56 tw:space-y-1 tw:text-foreground"
     >
       <div className="tw:flex tw:items-start tw:justify-between tw:gap-2">
         <h3 className="tw:min-w-0 tw:text-sm tw:font-semibold tw:wrap-anywhere">{place.name}</h3>
@@ -40,7 +40,7 @@ export function PlaceStories({
           <XIcon className="tw:size-4" />
         </button>
       </div>
-      <ul className="tw:grid tw:grid-cols-3 tw:gap-2">
+      <ul className="tw:grid tw:max-h-60 tw:grid-cols-3 tw:gap-1.5 tw:overflow-y-auto">
         {place.stories.map((story) => {
           const card = storyByMediaPk.get(story.mediaPk);
           return (

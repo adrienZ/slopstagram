@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { expect, test } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 import { screen, within } from "@testing-library/react";
 import { Route } from "../../app/routes/map.tsx";
 import { loadPlaceMap } from "../../app/loaders/place-map.ts";
@@ -125,4 +125,25 @@ test("a place hidden by the filter does not reopen its popup when shown again", 
   await user.click(filter.getByRole("button", { name: "Tous les comptes" }));
   expect(map.getByRole("button", { name: soloPlace.name })).toBeVisible();
   expect(map.queryByRole("region", { name: /Stories du lieu/u })).not.toBeInTheDocument();
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+test("on desktop the account filters are an inline list beside the map", async () => {
+  // jsdom has no matchMedia: answer the desktop breakpoint only.
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: true,
+    media: query,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+  const { user, map, router } = await mountMap();
+  expect(screen.queryByRole("button", { name: /Filtrer par compte/u })).not.toBeInTheDocument();
+  const filters = within(screen.getByRole("complementary", { name: "Filtres" }));
+  expect(filters.getAllByRole("checkbox")).toHaveLength(3);
+  await user.click(filters.getByRole("checkbox", { name: `@${ada}` }));
+  expect(router.state.location.search).toEqual({ accounts: ada });
+  expect(map.getAllByRole("button")).toHaveLength(1);
 });
