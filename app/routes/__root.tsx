@@ -1,8 +1,8 @@
 import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { ThemeProvider } from "../components/theme-provider.tsx";
-import "../shadcn/styles.css";
-import "../assets/css/base.css";
+import { ThemeProvider } from "@/components/theme-provider.tsx";
+import "@/shadcn/styles.css";
+import "@/assets/css/base.css";
 
 export function RootDocument({ children }: { children: ReactNode }) {
   return (

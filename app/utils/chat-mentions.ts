@@ -1,4 +1,4 @@
-import type { SidebarUser } from "../loaders/sidebar-users.ts";
+import type { SidebarUser } from "@/loaders/sidebar-users.ts";
 
 const MAX_SUGGESTIONS = 8;
 /** An `@` that starts a word, followed by the username typed so far, right before the caret. */

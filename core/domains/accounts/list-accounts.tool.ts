@@ -1,6 +1,11 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { listAccounts, AccountSchema, type Account, type AccountsRuntime } from "./accounts.ts";
+import {
+  listAccounts,
+  AccountSchema,
+  type Account,
+  type AccountsRuntime,
+} from "@@/core/domains/accounts/accounts.ts";
 
 const OutputSchema = z.object({
   accounts: z.array(AccountSchema),

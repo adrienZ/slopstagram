@@ -8,7 +8,10 @@ import {
 } from "@@/core/domains/database/entities/location-metadata.ts";
 import type { StoryAnnotations } from "@@/core/domains/stickers/story-types.ts";
 import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
-import { getLocationSourceUpdates, type LocationObservationInput } from "./location-observation.ts";
+import {
+  getLocationSourceUpdates,
+  type LocationObservationInput,
+} from "@@/core/domains/places/location-observation.ts";
 import { getStoryAnnotationUpdates } from "@@/core/domains/stickers/story-sticker-location.ts";
 
 function mergeFields(

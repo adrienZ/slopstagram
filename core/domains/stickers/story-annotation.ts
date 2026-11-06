@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
-import type { StoryAnnotations } from "./story-types.ts";
+import type { StoryAnnotations } from "@@/core/domains/stickers/story-types.ts";
 import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
 import {
   annotationSources,
   getStoryAnnotations,
   type getStoryAnnotationUpdates,
-} from "./story-sticker-location.ts";
+} from "@@/core/domains/stickers/story-sticker-location.ts";
 
 function mergeAnnotationUpdates(
   previous: StoryAnnotations,

@@ -1,12 +1,12 @@
 import { evalite } from "evalite";
 import { afterAll } from "vitest";
-import { createAssistantJudge } from "./assistant-judge.ts";
+import { createAssistantJudge } from "@@/evals/assistant-judge.ts";
 import {
   createAssistantChecks,
   type AssistantExpectation,
   type AssistantRun,
-} from "./assistant-scorers.ts";
-import { askAssistant, savedUsernames } from "./assistant-world.ts";
+} from "@@/evals/assistant-scorers.ts";
+import { askAssistant, savedUsernames } from "@@/evals/assistant-world.ts";
 
 /** Every case runs this many times: the chat model is not deterministic. */
 const TRIALS = 5;

@@ -6,8 +6,8 @@ import { persistReportInstagramUsers } from "@@/core/domains/accounts/instagram-
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { fetchStories } from "@@/core/domains/fetch-run/stories.ts";
 import { GalleryPageSchema } from "@@/core/domains/instagram/story-client.ts";
-import { createRecordedClient } from "./recorded-client.ts";
-import { noSleep } from "../mock-helpers.ts";
+import { createRecordedClient } from "@@/tests/setup/recorded-client.ts";
+import { noSleep } from "@@/tests/mock-helpers.ts";
 
 const fixturesDirectory = path.join(import.meta.dirname, "../fixtures");
 const TRAY_FILE = "instagram-reels-tray.json";

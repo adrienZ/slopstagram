@@ -1,9 +1,9 @@
 import { toolCallAccuracy } from "evalite/scorers/deterministic";
 import { z } from "zod";
-import { findMentionedUsernames } from "../app/utils/chat-mentions.ts";
-import type { FeedUserSummary } from "../core/domains/story-feed/feed-user-summary.ts";
-import { FeedUserSummariesOutputSchema } from "../core/domains/story-feed/get-feed-user-summaries.tool.ts";
-import type { JsonObject, JsonValue } from "../core/utils/json-value.ts";
+import { findMentionedUsernames } from "@/utils/chat-mentions.ts";
+import type { FeedUserSummary } from "@@/core/domains/story-feed/feed-user-summary.ts";
+import { FeedUserSummariesOutputSchema } from "@@/core/domains/story-feed/get-feed-user-summaries.tool.ts";
+import type { JsonObject, JsonValue } from "@@/core/utils/json-value.ts";
 
 /** One tool call of an Assistant reply, as the chat stream showed it. */
 export interface AssistantToolCall {

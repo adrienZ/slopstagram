@@ -17,9 +17,9 @@ import type {
 import { createInstagramClient } from "@@/core/domains/instagram/story-client.ts";
 import { enrichCurrentMusicAssets } from "@@/core/domains/music/music-asset-enrichment.ts";
 import { lookUpTaggedPlaces } from "@@/core/domains/places/place-lookup.ts";
-import { createFetchState } from "./story-failure.ts";
-import { fetchMissingStories } from "./story-live-fetch.ts";
-import { createManifestUsers, createOutputUsers } from "./story-output.ts";
+import { createFetchState } from "@@/core/domains/fetch-run/story-failure.ts";
+import { fetchMissingStories } from "@@/core/domains/fetch-run/story-live-fetch.ts";
+import { createManifestUsers, createOutputUsers } from "@@/core/domains/fetch-run/story-output.ts";
 import { requestWithRetry, sleep } from "@@/core/domains/instagram/story-retry.ts";
 
 type FetchStoriesRuntime = Pick<Runtime, "logger" | "storage"> & {

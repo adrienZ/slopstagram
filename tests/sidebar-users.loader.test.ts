@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
-import { loadSidebarUsers } from "../app/loaders/sidebar-users.ts";
-import { createTestRuntime } from "./setup/test-runtime.ts";
-import { saveSummaryUsers } from "./test-database.ts";
+import { loadSidebarUsers } from "@/loaders/sidebar-users.ts";
+import { createTestRuntime } from "@@/tests/setup/test-runtime.ts";
+import { saveSummaryUsers } from "@@/tests/test-database.ts";
 
 test("lists the saved accounts with the avatar the media route serves", async (context) => {
   const runtime = await createTestRuntime(context);

@@ -11,8 +11,8 @@ import {
   reel,
   storyItem,
   reelsResponse,
-} from "./mock-helpers.ts";
-import { createTestRuntime } from "./setup/test-runtime.ts";
+} from "@@/tests/mock-helpers.ts";
+import { createTestRuntime } from "@@/tests/setup/test-runtime.ts";
 
 async function cachePreviews(
   runtime: Awaited<ReturnType<typeof createTestRuntime>>,

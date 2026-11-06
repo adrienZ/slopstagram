@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { readFeedUserSummary } from "@@/core/domains/story-feed/feed-user-summary.ts";
-import { loadStoryFeed } from "../app/loaders/story-feed.ts";
-import { createWorld, now } from "./setup/report-world.ts";
+import { loadStoryFeed } from "@/loaders/story-feed.ts";
+import { createWorld, now } from "@@/tests/setup/report-world.ts";
 
 test("reads the user summary the story feed shows, ignoring an @ prefix and letter case", async (context) => {
   const world = await createWorld(context);

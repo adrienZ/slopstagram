@@ -1,6 +1,6 @@
 import { test, expect } from "vitest";
 import { requestWithRetry, type RetryOptions } from "@@/core/domains/instagram/story-retry.ts";
-import { createMockLogger, fixedNow, response } from "./mock-helpers.ts";
+import { createMockLogger, fixedNow, response } from "@@/tests/mock-helpers.ts";
 
 function retryOptions(overrides: Partial<RetryOptions> = {}) {
   const delays: Array<number> = [];

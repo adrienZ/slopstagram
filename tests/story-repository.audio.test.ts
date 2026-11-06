@@ -1,5 +1,5 @@
 import { assert, describe, expect, test } from "vitest";
-import { createStoryFixtures } from "./test-database.ts";
+import { createStoryFixtures } from "@@/tests/test-database.ts";
 
 function manifest(sourceUrl: string) {
   return `<MPD xmlns="urn:mpeg:dash:schema:mpd:2011" type="static">

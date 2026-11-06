@@ -3,8 +3,8 @@ import { sql } from "drizzle-orm";
 import { createSelectSchema } from "drizzle-orm/zod";
 import { z } from "zod";
 import { check, index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { stories, storyStickers } from "./story.ts";
-import { mediaStates } from "./media-state.ts";
+import { stories, storyStickers } from "@@/core/domains/database/entities/story.ts";
+import { mediaStates } from "@@/core/domains/database/entities/media-state.ts";
 
 export const metadataMusic = sqliteTable(
   "metadata_music",

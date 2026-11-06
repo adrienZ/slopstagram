@@ -7,7 +7,7 @@ import { getOllamaClient } from "@@/core/domains/vision/ollama.ts";
 import type { UserSummaryRepository } from "@@/core/domains/database/repositories/user-summary-repository.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
-import { getReportUserKey } from "./report-user-key.ts";
+import { getReportUserKey } from "@@/core/domains/accounts/report-user-key.ts";
 import type {
   StoriesManifestReport,
   StoryOutputUser,

@@ -1,8 +1,8 @@
 import sharp from "sharp";
 import { assert, expect, test } from "vitest";
 import { processMusicArtwork, processMusicMedia } from "@@/core/domains/music/music-media.ts";
-import { startMediaServer, wavAudio } from "./media-server.ts";
-import { createTestRuntime } from "./setup/test-runtime.ts";
+import { startMediaServer, wavAudio } from "@@/tests/media-server.ts";
+import { createTestRuntime } from "@@/tests/setup/test-runtime.ts";
 
 test("music media caching reads and writes the runtime stories and stores", async (context) => {
   const image = await sharp({

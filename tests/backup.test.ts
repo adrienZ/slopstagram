@@ -5,7 +5,7 @@ import { expect, test } from "vitest";
 import { createDrizzle } from "@@/core/domains/database/client.ts";
 import { createDatabaseBackup } from "@@/core/domains/database/backup.ts";
 import { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
-import { createTestDatabase } from "./test-database.ts";
+import { createTestDatabase } from "@@/tests/test-database.ts";
 
 test("copies the database into the backup folder under a name ending with the time", async (context) => {
   const database = createTestDatabase(context);

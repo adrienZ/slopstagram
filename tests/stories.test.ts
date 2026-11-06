@@ -9,8 +9,8 @@ import {
   storyItem,
   storyItemWithStickers,
   reelsResponse,
-} from "./mock-helpers.ts";
-import { createTestRuntime } from "./setup/test-runtime.ts";
+} from "@@/tests/mock-helpers.ts";
+import { createTestRuntime } from "@@/tests/setup/test-runtime.ts";
 
 /** A story as the repository stores it, with the annotations it derives. */
 function storedStory(pk: string) {

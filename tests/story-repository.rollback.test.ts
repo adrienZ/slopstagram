@@ -3,7 +3,7 @@ import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
 import type { DrizzleDatabase } from "@@/core/domains/database/client.ts";
 import { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
 import { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
-import { createTestDatabase } from "./test-database.ts";
+import { createTestDatabase } from "@@/tests/test-database.ts";
 
 const owner = { id: "u1", pk: "u1", username: "one", full_name: "One" };
 const other = { id: "u2", pk: "u2", username: "two", full_name: "Two" };

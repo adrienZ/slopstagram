@@ -7,7 +7,7 @@ import { createDrizzle } from "@@/core/domains/database/client.ts";
 import { migrateDatabase } from "@@/core/domains/database/migrate.ts";
 import { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 import { processMusicMedia } from "@@/core/domains/music/music-media.ts";
-import { startMediaServer, wavAudio } from "./media-server.ts";
+import { startMediaServer, wavAudio } from "@@/tests/media-server.ts";
 
 test("music processing publishes audio only and reuses it without provider requests", async (context) => {
   const database = createDrizzle(":memory:");

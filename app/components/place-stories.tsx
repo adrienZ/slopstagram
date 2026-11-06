@@ -1,9 +1,9 @@
 import { ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
-import type { TimelinePlace } from "../utils/timeline-locations.ts";
-import type { StoryCardData } from "../utils/story-cards.ts";
-import { formatStickerStoryDate } from "../utils/timeline-stickers.ts";
-import { formatUserHandle, getUserTimelineUrl } from "../utils/helper.ts";
-import { StoryCard } from "./story-card.tsx";
+import type { TimelinePlace } from "@/utils/timeline-locations.ts";
+import type { StoryCardData } from "@/utils/story-cards.ts";
+import { formatStickerStoryDate } from "@/utils/timeline-stickers.ts";
+import { formatUserHandle, getUserTimelineUrl } from "@/utils/helper.ts";
+import { StoryCard } from "@/components/story-card.tsx";
 
 const footerButtonClassName =
   "tw:cursor-pointer tw:rounded tw:p-1 tw:hover:bg-muted tw:focus-visible:outline-2 tw:focus-visible:outline-ring";

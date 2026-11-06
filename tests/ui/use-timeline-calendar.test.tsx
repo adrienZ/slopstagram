@@ -1,6 +1,6 @@
 import { expect, test, vi } from "vitest";
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { useTimelineCalendar } from "../../app/hooks/use-timeline-calendar.ts";
+import { useTimelineCalendar } from "@/hooks/use-timeline-calendar.ts";
 
 test("a requested gap chooses the nearest earlier available day", async () => {
   const day = globalThis.document.createElement("section");

@@ -1,16 +1,16 @@
 import { resolveAppleCaptionsForReport } from "@@/core/domains/vision/apple-caption.ts";
-import { recordFetchRun } from "./fetch-run.ts";
+import { recordFetchRun } from "@@/core/domains/fetch-run/fetch-run.ts";
 import { createStoryFeed, readStoryFeedVision } from "@@/core/domains/story-feed/story-feed.ts";
 import { cacheReportImages } from "@@/core/domains/media-store/image-cache.ts";
 import { cacheReportAudio } from "@@/core/domains/music/report-audio.ts";
 import { persistReportInstagramUsers } from "@@/core/domains/accounts/instagram-user.ts";
 import type { ReportRepository } from "@@/core/domains/database/repositories/report-repository.ts";
-import type { StoriesManifestReport } from "./report-types.ts";
+import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";
 import { resolveUserSummariesForReport } from "@@/core/domains/accounts/user-summary.ts";
 import { resolveVisionForReport } from "@@/core/domains/vision/vision-report.ts";
-import { fetchStories } from "./stories.ts";
+import { fetchStories } from "@@/core/domains/fetch-run/stories.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
-import pkg from "../../../package.json" with { type: "json" };
+import pkg from "@@/package.json" with { type: "json" };
 
 export interface CreateReportOptions {
   now?: () => Date;

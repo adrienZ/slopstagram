@@ -1,5 +1,5 @@
 import { assert, describe, expect, test } from "vitest";
-import { createStoryFixtures } from "./test-database.ts";
+import { createStoryFixtures } from "@@/tests/test-database.ts";
 
 const STICKER_ASSET = {
   title: "Song",

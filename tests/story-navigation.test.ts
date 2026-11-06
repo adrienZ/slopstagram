@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { navigateToReportDate, getDisabledStoryDates } from "../app/utils/story-navigation.ts";
+import { navigateToReportDate, getDisabledStoryDates } from "@/utils/story-navigation.ts";
 
 afterEach(() => {
   vi.unstubAllGlobals();

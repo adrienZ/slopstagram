@@ -1,7 +1,11 @@
 import { open, realpath, type FileHandle } from "node:fs/promises";
 import path from "node:path";
-import { cachedMediaContentType } from "./media-types.ts";
-import { AUDIO_STORAGE_DIR, BASE_CACHE_DIR, IMAGES_STORAGE_DIR } from "./cache-storage.ts";
+import { cachedMediaContentType } from "@@/core/domains/media-store/media-types.ts";
+import {
+  AUDIO_STORAGE_DIR,
+  BASE_CACHE_DIR,
+  IMAGES_STORAGE_DIR,
+} from "@@/core/domains/media-store/cache-storage.ts";
 
 const mediaDirectory = path.resolve(BASE_CACHE_DIR, IMAGES_STORAGE_DIR);
 const audioDirectory = path.resolve(BASE_CACHE_DIR, AUDIO_STORAGE_DIR);

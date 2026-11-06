@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { FetchRunRepository } from "@@/core/domains/database/repositories/fetch-run-repository.ts";
-import type { StoriesManifestReport } from "./report-types.ts";
+import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";
 
 interface FetchRunContext {
   id: string;

@@ -13,8 +13,8 @@ import { cacheReceivedAudio } from "@@/core/domains/music/music-media.ts";
 import { enrichCurrentMusicAssets } from "@@/core/domains/music/music-asset-enrichment.ts";
 import { JsonValueSchema } from "@@/core/utils/json-value.ts";
 import { createMediaResponse } from "@@/core/domains/media-store/media-response.ts";
-import { startMediaServer } from "./media-server.ts";
-import { createMemoryCacheStorage } from "./memory-storage.ts";
+import { startMediaServer } from "@@/tests/media-server.ts";
+import { createMemoryCacheStorage } from "@@/tests/memory-storage.ts";
 import {
   createCapturingLogger,
   createClient,
@@ -22,7 +22,7 @@ import {
   noSleep,
   reel,
   reelsResponse,
-} from "./mock-helpers.ts";
+} from "@@/tests/mock-helpers.ts";
 
 test("ingestion looks up one shared audio ID and caches validated audio and artwork", async (context) => {
   const database = createDrizzle(":memory:");

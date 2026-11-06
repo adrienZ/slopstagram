@@ -1,6 +1,6 @@
 import path from "node:path";
 import type { Ollama as VisionSdk } from "ollama";
-import { getOllamaClient } from "./ollama.ts";
+import { getOllamaClient } from "@@/core/domains/vision/ollama.ts";
 import type { VisionRepository } from "@@/core/domains/database/repositories/vision-repository.ts";
 import type { ImageCacheStorage } from "@@/core/domains/media-store/cache-storage.ts";
 import {
@@ -16,7 +16,7 @@ import {
   createFailureResult,
   VISION_MODEL,
   VISION_PROMPT,
-} from "./vision-analysis.ts";
+} from "@@/core/domains/vision/vision-analysis.ts";
 
 interface VisionOptions {
   endpoint?: string;

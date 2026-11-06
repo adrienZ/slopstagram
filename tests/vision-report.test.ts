@@ -3,8 +3,8 @@ import { describe, test, vi, expect } from "vitest";
 import { z } from "zod";
 import { VISION_SERVER_NOT_RUNNING } from "@@/core/domains/vision/vision-analysis.ts";
 import { resolveVisionForReport } from "@@/core/domains/vision/vision-report.ts";
-import { createVisionReport, previewSource } from "./mock-helpers.ts";
-import { createTestRuntime } from "./setup/test-runtime.ts";
+import { createVisionReport, previewSource } from "@@/tests/mock-helpers.ts";
+import { createTestRuntime } from "@@/tests/setup/test-runtime.ts";
 
 const VisionJsonSchemaPropertySchema = z.object({
   description: z.string().optional(),

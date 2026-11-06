@@ -5,9 +5,9 @@ import {
   WARM_CACHE_QUEUE_NAME,
 } from "@@/core/domains/fetch-run/warm-cache-queue.ts";
 import { runWarmCacheJob } from "@@/core/domains/fetch-run/warm-cache.ts";
-import { audioUrl, createWorld, musicStoryPk, now, storyPks } from "./setup/report-world.ts";
-import { createFailingClient } from "./setup/recorded-client.ts";
-import { createTestRuntime } from "./setup/test-runtime.ts";
+import { audioUrl, createWorld, musicStoryPk, now, storyPks } from "@@/tests/setup/report-world.ts";
+import { createFailingClient } from "@@/tests/setup/recorded-client.ts";
+import { createTestRuntime } from "@@/tests/setup/test-runtime.ts";
 import type { FetchRunQueue } from "@@/core/domains/runtime/fetch-boundaries.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 

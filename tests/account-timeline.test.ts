@@ -4,10 +4,10 @@ import {
   createUserTimeline,
   getTimelinePreviewPaths,
   groupStoriesByPublishedDate,
-} from "../app/loaders/account-timeline.ts";
+} from "@/loaders/account-timeline.ts";
 import { VISION_MODEL, VISION_PROMPT } from "@@/core/domains/vision/vision-analysis.ts";
 import type { UserTimelineStory } from "@@/core/domains/database/repositories/story-repository.ts";
-import { createTestRuntime } from "./setup/test-runtime.ts";
+import { createTestRuntime } from "@@/tests/setup/test-runtime.ts";
 
 function timelineStory(pk: string, takenAt: number): UserTimelineStory {
   return {

@@ -1,6 +1,10 @@
 import { z } from "zod";
-import { StoryReelSchema, StoryTrayEntrySchema } from "./story-schemas.ts";
-import type { InstagramClient, ReelsMediaResponse, StoryReel } from "./instagram-types.ts";
+import { StoryReelSchema, StoryTrayEntrySchema } from "@@/core/domains/instagram/story-schemas.ts";
+import type {
+  InstagramClient,
+  ReelsMediaResponse,
+  StoryReel,
+} from "@@/core/domains/instagram/instagram-types.ts";
 import { JsonValueSchema } from "@@/core/utils/json-value.ts";
 
 const ReelTrayResponseSchema = z.object({

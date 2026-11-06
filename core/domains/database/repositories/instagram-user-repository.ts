@@ -1,10 +1,10 @@
 import { asc, eq } from "drizzle-orm";
-import type { DrizzleDatabase } from "../client.ts";
+import type { DrizzleDatabase } from "@@/core/domains/database/client.ts";
 import {
   instagramUsers,
   NewInstagramUserSchema,
   type InstagramUserEntry,
-} from "../entities/instagram-user.ts";
+} from "@@/core/domains/database/entities/instagram-user.ts";
 
 export class InstagramUserRepository {
   private readonly database: DrizzleDatabase;

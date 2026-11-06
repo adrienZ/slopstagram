@@ -20,8 +20,8 @@ async function createMediaApp(context: TestContext) {
   });
   vi.spyOn(process, "cwd").mockReturnValue(root);
   vi.resetModules();
-  const { getRouter } = await import("../app/router.tsx");
-  const { Route: mediaRoute } = await import("../app/routes/media/$.ts");
+  const { getRouter } = await import("@/router.tsx");
+  const { Route: mediaRoute } = await import("@/routes/media/$.ts");
   const router = getRouter();
 
   return {

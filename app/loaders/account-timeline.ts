@@ -16,11 +16,11 @@ import {
 import type { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
 
 import { getStoryDate } from "@@/core/domains/story-feed/story-days.ts";
-import { createStoryCards, withStoryStickers } from "../utils/story-cards.ts";
-import type { StoryCardData, StoryCardSources } from "../utils/story-cards.ts";
-import { groupTimelineLocations } from "../utils/timeline-locations.ts";
-import { groupTimelineStickers } from "../utils/timeline-stickers.ts";
-import { loadSidebarUsers, type SidebarUser } from "./sidebar-users.ts";
+import { createStoryCards, withStoryStickers } from "@/utils/story-cards.ts";
+import type { StoryCardData, StoryCardSources } from "@/utils/story-cards.ts";
+import { groupTimelineLocations } from "@/utils/timeline-locations.ts";
+import { groupTimelineStickers } from "@/utils/timeline-stickers.ts";
+import { loadSidebarUsers, type SidebarUser } from "@/loaders/sidebar-users.ts";
 
 interface TimelineDetailsRuntime {
   appleVision: Pick<AppleVisionRepository, "findByMediaPk">;

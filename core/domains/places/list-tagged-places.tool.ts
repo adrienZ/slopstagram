@@ -6,7 +6,7 @@ import {
   TaggedPlacePageSchema,
   type TaggedPlaceList,
   type TaggedPlacesRuntime,
-} from "./tagged-places.ts";
+} from "@@/core/domains/places/tagged-places.ts";
 
 const OutputSchema = TaggedPlacePageSchema.extend({
   unknownUsernames: z.array(z.string()),

@@ -1,13 +1,13 @@
 import { useId } from "react";
 import { cn } from "cn";
 import { FilterIcon, MapPinIcon, XIcon } from "lucide-react";
-import type { SidebarUser } from "../loaders/sidebar-users.ts";
-import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/ui/avatar.tsx";
-import { Badge } from "../shadcn/ui/badge.tsx";
-import { Button } from "../shadcn/ui/button.tsx";
-import { Checkbox } from "../shadcn/ui/checkbox.tsx";
-import { Popover, PopoverContent, PopoverTrigger } from "../shadcn/ui/popover.tsx";
-import { formatUserHandle, formatUserInitials } from "../utils/helper.ts";
+import type { SidebarUser } from "@/loaders/sidebar-users.ts";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shadcn/ui/avatar.tsx";
+import { Badge } from "@/shadcn/ui/badge.tsx";
+import { Button } from "@/shadcn/ui/button.tsx";
+import { Checkbox } from "@/shadcn/ui/checkbox.tsx";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shadcn/ui/popover.tsx";
+import { formatUserHandle, formatUserInitials } from "@/utils/helper.ts";
 
 interface AccountFilterProps {
   accounts: Array<SidebarUser>;

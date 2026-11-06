@@ -3,9 +3,9 @@ import type { AppleVisionRepository } from "@@/core/domains/database/repositorie
 import type { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
 import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 import type { VisionRepository } from "@@/core/domains/database/repositories/vision-repository.ts";
-import { groupTimelineLocations } from "../utils/timeline-locations.ts";
-import { createOwnerStoryCards } from "./account-timeline.ts";
-import { loadSidebarUsers } from "./sidebar-users.ts";
+import { groupTimelineLocations } from "@/utils/timeline-locations.ts";
+import { createOwnerStoryCards } from "@/loaders/account-timeline.ts";
+import { loadSidebarUsers } from "@/loaders/sidebar-users.ts";
 
 interface PlaceMapRuntime {
   appleVision: Pick<AppleVisionRepository, "findByMediaPk">;

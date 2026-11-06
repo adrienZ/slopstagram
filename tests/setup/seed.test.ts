@@ -10,8 +10,8 @@ import {
   parseGalleryPage,
   parseTrayResponse,
 } from "@@/core/domains/instagram/story-client.ts";
-import { readRecordedPayloads, seedRecordedStories } from "./seed.ts";
-import { createTestRuntime } from "./test-runtime.ts";
+import { readRecordedPayloads, seedRecordedStories } from "@@/tests/setup/seed.ts";
+import { createTestRuntime } from "@@/tests/setup/test-runtime.ts";
 
 const now = new Date("2026-10-29T12:00:00.000Z");
 const HOUR = 3600;

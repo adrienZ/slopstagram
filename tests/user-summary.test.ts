@@ -7,9 +7,9 @@ import {
   resolveUserSummariesForReport,
 } from "@@/core/domains/accounts/user-summary.ts";
 import { getReportUserKey } from "@@/core/domains/accounts/report-user-key.ts";
-import { createSummaryReport } from "./mock-helpers.ts";
-import { createTestRuntime } from "./setup/test-runtime.ts";
-import { countSummaries, saveSummaryUsers } from "./test-database.ts";
+import { createSummaryReport } from "@@/tests/mock-helpers.ts";
+import { createTestRuntime } from "@@/tests/setup/test-runtime.ts";
+import { countSummaries, saveSummaryUsers } from "@@/tests/test-database.ts";
 
 const UserSummaryRequestSchema = z.object({
   format: z

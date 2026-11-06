@@ -1,13 +1,13 @@
 import { MoonIcon, SunIcon, MonitorIcon } from "lucide-react";
-import { useTheme } from "./theme-provider.tsx";
-import { Button } from "../shadcn/ui/button.tsx";
+import { useTheme } from "@/components/theme-provider.tsx";
+import { Button } from "@/shadcn/ui/button.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from "../shadcn/ui/dropdown-menu.tsx";
+} from "@/shadcn/ui/dropdown-menu.tsx";
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();

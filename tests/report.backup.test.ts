@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { createWorld, now } from "./setup/report-world.ts";
+import { createWorld, now } from "@@/tests/setup/report-world.ts";
 
 test("a fetch run backs up the database once, after it finished", async (context) => {
   let statusAtBackup: string | undefined;

@@ -4,11 +4,11 @@ import { within } from "@testing-library/dom";
 import { JSDOM } from "jsdom";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { VISION_MODEL, VISION_PROMPT } from "@@/core/domains/vision/vision-analysis.ts";
-import { Route } from "../app/routes/users/$username.tsx";
-import { loadAccountTimeline } from "../app/loaders/account-timeline.ts";
-import { storyItem } from "./mock-helpers.ts";
-import { createPageRenderer } from "./render-page.ts";
-import { useSharedTestRuntime } from "./setup/test-runtime.ts";
+import { Route } from "@/routes/users/$username.tsx";
+import { loadAccountTimeline } from "@/loaders/account-timeline.ts";
+import { storyItem } from "@@/tests/mock-helpers.ts";
+import { createPageRenderer } from "@@/tests/render-page.ts";
+import { useSharedTestRuntime } from "@@/tests/setup/test-runtime.ts";
 
 const now = new Date("2026-10-29T12:00:00.000Z");
 const owner = { pk: "700000000000075", username: "user_075" };

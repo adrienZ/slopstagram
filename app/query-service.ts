@@ -7,7 +7,7 @@ import { storyDateSchema } from "@@/core/domains/story-feed/story-days.ts";
 export const getReport = createServerFn({ method: "GET" })
   .validator(z.object({ date: storyDateSchema.optional(), story: z.string().optional() }))
   .handler(async ({ data }) => {
-    const { loadStoryFeed } = await import("./loaders/story-feed.ts");
+    const { loadStoryFeed } = await import("@/loaders/story-feed.ts");
     try {
       return loadStoryFeed(getProductionRuntime(), new Date(), data.date, data.story);
     } catch (error) {
@@ -21,7 +21,7 @@ export const getReport = createServerFn({ method: "GET" })
 export const getUserTimeline = createServerFn({ method: "GET" })
   .validator(z.string())
   .handler(async ({ data }) => {
-    const { loadAccountTimeline } = await import("./loaders/account-timeline.ts");
+    const { loadAccountTimeline } = await import("@/loaders/account-timeline.ts");
     try {
       return loadAccountTimeline(getProductionRuntime(), data);
     } catch (error) {
@@ -33,11 +33,11 @@ export const getUserTimeline = createServerFn({ method: "GET" })
   });
 
 export const getChatPage = createServerFn({ method: "GET" }).handler(async () => {
-  const { loadChatPage } = await import("./loaders/chat.ts");
+  const { loadChatPage } = await import("@/loaders/chat.ts");
   return loadChatPage(getProductionRuntime());
 });
 
 export const getPlaceMap = createServerFn({ method: "GET" }).handler(async () => {
-  const { loadPlaceMap } = await import("./loaders/place-map.ts");
+  const { loadPlaceMap } = await import("@/loaders/place-map.ts");
   return loadPlaceMap(getProductionRuntime());
 });

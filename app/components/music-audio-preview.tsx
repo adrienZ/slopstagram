@@ -1,9 +1,9 @@
 import { PauseIcon, PlayIcon } from "lucide-react";
 import { useState } from "react";
 import { cn } from "cn";
-import { Button } from "../shadcn/ui/button.tsx";
-import type { MusicPreview } from "../utils/music-preview.ts";
-import { useAudioPreview } from "../hooks/use-audio-preview.ts";
+import { Button } from "@/shadcn/ui/button.tsx";
+import type { MusicPreview } from "@/utils/music-preview.ts";
+import { useAudioPreview } from "@/hooks/use-audio-preview.ts";
 
 function audioTime(seconds: number) {
   const whole = Math.floor(Math.max(0, seconds));

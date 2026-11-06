@@ -1,6 +1,6 @@
 import path from "node:path";
 import { migrate } from "drizzle-orm/node-sqlite/migrator";
-import type { DrizzleDatabase } from "./client.ts";
+import type { DrizzleDatabase } from "@@/core/domains/database/client.ts";
 
 const migrationsFolder = path.join(import.meta.dirname, "migrations");
 

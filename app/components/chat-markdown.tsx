@@ -1,11 +1,11 @@
 import { useMemo } from "react";
 import ReactMarkdown, { defaultUrlTransform, type Components } from "react-markdown";
-import type { SidebarUser } from "../loaders/sidebar-users.ts";
-import { formatUserHandle } from "../utils/helper.ts";
-import { buildPlaceMapHref } from "../utils/place-map-link.ts";
-import type { MentionablePlace } from "../utils/place-mentions.ts";
-import { presentSticker } from "../utils/sticker-presentation.ts";
-import { Sticker } from "./sticker.tsx";
+import type { SidebarUser } from "@/loaders/sidebar-users.ts";
+import { formatUserHandle } from "@/utils/helper.ts";
+import { buildPlaceMapHref } from "@/utils/place-map-link.ts";
+import type { MentionablePlace } from "@/utils/place-mentions.ts";
+import { presentSticker } from "@/utils/sticker-presentation.ts";
+import { Sticker } from "@/components/sticker.tsx";
 
 const mentionPattern = /(?<![\w/:.@])@(?<username>\w+(?:\.\w+)*)/gu;
 const profilePath = "/users/";

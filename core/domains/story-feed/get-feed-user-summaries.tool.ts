@@ -5,7 +5,7 @@ import {
   type FeedUserSummary,
   type RequestedFeedUserSummary,
   type FeedUserSummaryRuntime,
-} from "./feed-user-summary.ts";
+} from "@@/core/domains/story-feed/feed-user-summary.ts";
 
 const FeedUserSummaryOutputSchema = z.discriminatedUnion("status", [
   z.object({

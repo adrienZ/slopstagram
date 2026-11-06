@@ -3,7 +3,7 @@ import { sql } from "drizzle-orm";
 import { createSelectSchema } from "drizzle-orm/zod";
 import { z } from "zod";
 import { check, index, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { stories, storyStickers } from "./story.ts";
+import { stories, storyStickers } from "@@/core/domains/database/entities/story.ts";
 
 export const metadataLocations = sqliteTable(
   "metadata_location",

@@ -1,17 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowLeftIcon } from "lucide-react";
 import { z } from "zod";
-import { AccountChecklist, AccountFilter } from "../components/account-filter.tsx";
-import { Lightbox } from "../components/lightbox.tsx";
-import { PlaceExplorer } from "../components/place-explorer.tsx";
-import { useMediaQuery } from "../hooks/use-media-query.ts";
-import { usePlaceMapFilter } from "../hooks/use-place-map-filter.ts";
-import type { PlaceMapPageData } from "../loaders/place-map.ts";
-import { getPlaceMap } from "../query-service.ts";
-import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/ui/avatar.tsx";
-import { formatUserInitials } from "../utils/helper.ts";
-import { PLACE_SEARCH_PARAM } from "../utils/place-map-link.ts";
-import type { TimelinePlace } from "../utils/timeline-locations.ts";
+import { AccountChecklist, AccountFilter } from "@/components/account-filter.tsx";
+import { Lightbox } from "@/components/lightbox.tsx";
+import { PlaceExplorer } from "@/components/place-explorer.tsx";
+import { useMediaQuery } from "@/hooks/use-media-query.ts";
+import { usePlaceMapFilter } from "@/hooks/use-place-map-filter.ts";
+import type { PlaceMapPageData } from "@/loaders/place-map.ts";
+import { getPlaceMap } from "@/query-service.ts";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shadcn/ui/avatar.tsx";
+import { formatUserInitials } from "@/utils/helper.ts";
+import { PLACE_SEARCH_PARAM } from "@/utils/place-map-link.ts";
+import type { TimelinePlace } from "@/utils/timeline-locations.ts";
 
 export function PlaceMapPage({
   places,

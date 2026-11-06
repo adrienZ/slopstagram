@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 import { afterEach, expect, test, vi } from "vitest";
 import { screen, within } from "@testing-library/react";
-import { Route } from "../../app/routes/map.tsx";
-import { loadPlaceMap } from "../../app/loaders/place-map.ts";
-import { LocationMapContext } from "../../app/components/place-explorer.tsx";
-import type { LocationMapCanvasProps } from "../../app/components/location-map-canvas.tsx";
-import { createPageRenderer } from "../render-page.ts";
-import { createTestRuntime, useSharedTestRuntime } from "../setup/test-runtime.ts";
-import { mapAccounts, seedMapDatabase, sharedPlace, soloPlace } from "./seeded-pages.ts";
+import { Route } from "@/routes/map.tsx";
+import { loadPlaceMap } from "@/loaders/place-map.ts";
+import { LocationMapContext } from "@/components/place-explorer.tsx";
+import type { LocationMapCanvasProps } from "@/components/location-map-canvas.tsx";
+import { createPageRenderer } from "@@/tests/render-page.ts";
+import { createTestRuntime, useSharedTestRuntime } from "@@/tests/setup/test-runtime.ts";
+import { mapAccounts, seedMapDatabase, sharedPlace, soloPlace } from "@@/tests/ui/seeded-pages.ts";
 
 const shared = useSharedTestRuntime(seedMapDatabase);
 const renderer = createPageRenderer(Route, () => loadPlaceMap(shared.runtime), "/map");

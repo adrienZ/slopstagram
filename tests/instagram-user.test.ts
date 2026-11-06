@@ -4,7 +4,7 @@ import {
   persistReportInstagramUsers,
 } from "@@/core/domains/accounts/instagram-user.ts";
 import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";
-import { createTestRuntime } from "./setup/test-runtime.ts";
+import { createTestRuntime } from "@@/tests/setup/test-runtime.ts";
 
 function createReportWithInstagramUser(): StoriesManifestReport {
   return {

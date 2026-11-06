@@ -1,17 +1,17 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
-import { getReport } from "../query-service.ts";
+import { getReport } from "@/query-service.ts";
 
-import { Lightbox } from "../components/lightbox.tsx";
-import { StoryLayout } from "../components/story-layout.tsx";
+import { Lightbox } from "@/components/lightbox.tsx";
+import { StoryLayout } from "@/components/story-layout.tsx";
 import {
   getDisabledStoryDates,
   getOldestStoryDate,
   navigateToReportDate,
-} from "../utils/story-navigation.ts";
+} from "@/utils/story-navigation.ts";
 import { formatStoryViewTitle, storyDateSchema } from "@@/core/domains/story-feed/story-days.ts";
-import { UserSection } from "../components/user-section.tsx";
-import type { StoryFeedPageData } from "../loaders/story-feed.ts";
+import { UserSection } from "@/components/user-section.tsx";
+import type { StoryFeedPageData } from "@/loaders/story-feed.ts";
 
 export function ReportPage({
   date,

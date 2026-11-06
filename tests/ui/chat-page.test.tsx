@@ -1,16 +1,16 @@
 import { afterEach, beforeEach, expect, test, vi, type TestContext } from "vitest";
 import { screen, within } from "@testing-library/react";
-import { Route } from "../../app/routes/chat.tsx";
-import { loadChatPage } from "../../app/loaders/chat.ts";
-import { handleChatRequest } from "../../app/routes/api/chat.ts";
-import { createPageRenderer } from "../render-page.ts";
+import { Route } from "@/routes/chat.tsx";
+import { loadChatPage } from "@/loaders/chat.ts";
+import { handleChatRequest } from "@/routes/api/chat.ts";
+import { createPageRenderer } from "@@/tests/render-page.ts";
 import {
   assistantGreeting,
   assistantThinking,
   createWorld,
   now,
   placeId,
-} from "../setup/report-world.ts";
+} from "@@/tests/setup/report-world.ts";
 
 beforeEach(() => {
   // The Assistant reads the story feed of the current time.

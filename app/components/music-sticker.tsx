@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Music2Icon } from "lucide-react";
-import { Badge } from "../shadcn/ui/badge.tsx";
-import type { MusicPreview } from "../utils/music-preview.ts";
-import { MusicAudioPreview } from "./music-audio-preview.tsx";
+import { Badge } from "@/shadcn/ui/badge.tsx";
+import type { MusicPreview } from "@/utils/music-preview.ts";
+import { MusicAudioPreview } from "@/components/music-audio-preview.tsx";
 
 interface MusicStickerProps {
   label: string;

@@ -1,4 +1,4 @@
-import { defineAssistantEvals } from "./assistant-cases.ts";
+import { defineAssistantEvals } from "@@/evals/assistant-cases.ts";
 
 defineAssistantEvals([
   {

@@ -3,7 +3,7 @@ import { createServer } from "vite";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import appConfig from "../vite.config.ts";
+import appConfig from "@@/vite.config.ts";
 
 test("Vite SSR loads both react-use application hooks", async (context) => {
   const cacheDir = await mkdtemp(path.join(tmpdir(), "react-use-vite-"));

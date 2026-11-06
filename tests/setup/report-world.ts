@@ -5,15 +5,15 @@ import { z } from "zod";
 import { JsonValueSchema, type JsonValue } from "@@/core/utils/json-value.ts";
 import { createReport } from "@@/core/domains/fetch-run/report.ts";
 import type { RuntimeBoundaries } from "@@/core/domains/runtime/runtime.ts";
-import { createCapturingLogger } from "../mock-helpers.ts";
+import { createCapturingLogger } from "@@/tests/mock-helpers.ts";
 import {
   createRecordedInstagramClient,
   editRecordedStories,
   keepRecordedStories,
   readRecordedPayloads,
   type RecordedPayloads,
-} from "./seed.ts";
-import { createTestRuntime } from "./test-runtime.ts";
+} from "@@/tests/setup/seed.ts";
+import { createTestRuntime } from "@@/tests/setup/test-runtime.ts";
 
 /**
  * A pipeline world for tests: a test runtime with fakes for the external systems only

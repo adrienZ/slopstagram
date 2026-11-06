@@ -1,5 +1,5 @@
 import type { WarmCacheJobResult } from "@@/core/domains/runtime/fetch-boundaries.ts";
-import { createReport } from "./report.ts";
+import { createReport } from "@@/core/domains/fetch-run/report.ts";
 
 export async function runWarmCacheJob(
   runtime: Parameters<typeof createReport>[0],

@@ -2,7 +2,7 @@ import { readdirSync } from "node:fs";
 import { fileURLToPath, URL } from "node:url";
 import { expect, test } from "vitest";
 import { migrateDatabase } from "@@/core/domains/database/migrate.ts";
-import { createTestDatabase } from "./test-database.ts";
+import { createTestDatabase } from "@@/tests/test-database.ts";
 
 const migrationsFolder = fileURLToPath(
   new URL("../core/domains/database/migrations", import.meta.url),

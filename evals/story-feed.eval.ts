@@ -1,5 +1,5 @@
-import { defineAssistantEvals } from "./assistant-cases.ts";
-import { worldAccounts } from "./assistant-world.ts";
+import { defineAssistantEvals } from "@@/evals/assistant-cases.ts";
+import { worldAccounts } from "@@/evals/assistant-world.ts";
 
 defineAssistantEvals([
   {

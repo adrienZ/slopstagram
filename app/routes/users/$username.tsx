@@ -1,16 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { Card, CardHeader, CardTitle, CardDescription } from "../../shadcn/ui/card.tsx";
-import { getUserTimeline } from "../../query-service.ts";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/shadcn/ui/card.tsx";
+import { getUserTimeline } from "@/query-service.ts";
 
 import { ExternalLinkIcon } from "lucide-react";
-import { formatUserHandle, formatUserName, getInstagramProfileUrl } from "../../utils/helper.ts";
-import type { AccountTimelinePageData } from "../../loaders/account-timeline.ts";
-import { Lightbox } from "../../components/lightbox.tsx";
-import { StoryLayout } from "../../components/story-layout.tsx";
-import { useTimelineCalendar } from "../../hooks/use-timeline-calendar.ts";
-import { TimelineStickers } from "../../components/timeline-stickers.tsx";
-import { TimelineGallery } from "../../components/timeline-gallery.tsx";
+import { formatUserHandle, formatUserName, getInstagramProfileUrl } from "@/utils/helper.ts";
+import type { AccountTimelinePageData } from "@/loaders/account-timeline.ts";
+import { Lightbox } from "@/components/lightbox.tsx";
+import { StoryLayout } from "@/components/story-layout.tsx";
+import { useTimelineCalendar } from "@/hooks/use-timeline-calendar.ts";
+import { TimelineStickers } from "@/components/timeline-stickers.tsx";
+import { TimelineGallery } from "@/components/timeline-gallery.tsx";
 
 function TimelineHeader({
   timeline,

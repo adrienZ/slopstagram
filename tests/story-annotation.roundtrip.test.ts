@@ -12,7 +12,7 @@ import { storyStickers } from "@@/core/domains/database/entities/story.ts";
 import { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 import { createManifestUsers, createOutputUsers } from "@@/core/domains/fetch-run/story-output.ts";
 import { fetchStoriesManifest } from "@@/core/domains/fetch-run/stories.ts";
-import { createMemoryCacheStorage, createMemoryStorage } from "./memory-storage.ts";
+import { createMemoryCacheStorage, createMemoryStorage } from "@@/tests/memory-storage.ts";
 import {
   createCapturingLogger,
   createClient,
@@ -20,7 +20,7 @@ import {
   reel,
   storyItemWithStickers,
   reelsResponse,
-} from "./mock-helpers.ts";
+} from "@@/tests/mock-helpers.ts";
 import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
 
 function readStoredStory(repository: StoryRepository, mediaPk = "m1") {

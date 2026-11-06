@@ -5,10 +5,10 @@ import {
   type Runtime,
   type RuntimeBoundaries,
 } from "@@/core/domains/runtime/runtime.ts";
-import { createRecordedInstagramClient } from "./seed.ts";
-import { createMemoryCacheStorage } from "../memory-storage.ts";
-import { createMockLogger } from "../mock-helpers.ts";
-import { createMigratedDatabase, createTestDatabase } from "../test-database.ts";
+import { createRecordedInstagramClient } from "@@/tests/setup/seed.ts";
+import { createMemoryCacheStorage } from "@@/tests/memory-storage.ts";
+import { createMockLogger } from "@@/tests/mock-helpers.ts";
+import { createMigratedDatabase, createTestDatabase } from "@@/tests/test-database.ts";
 
 function unexpected(boundary: string) {
   return async (): Promise<never> => {

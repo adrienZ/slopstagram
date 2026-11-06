@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { z } from "zod";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
-import { handleChatRequest } from "../app/routes/api/chat.ts";
+import { handleChatRequest } from "@/routes/api/chat.ts";
 import {
   assistantAnswer,
   assistantGreeting,
@@ -12,7 +12,7 @@ import {
   placesAnswer,
   placeId,
   plainStoryPk,
-} from "./setup/report-world.ts";
+} from "@@/tests/setup/report-world.ts";
 
 beforeEach(() => {
   // The Assistant reads the story feed of the current time.

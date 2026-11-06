@@ -5,7 +5,7 @@ import {
   searchTaggedPlaces,
   TaggedPlacePageSchema,
   type TaggedPlacesReadRuntime,
-} from "./tagged-places.ts";
+} from "@@/core/domains/places/tagged-places.ts";
 
 const DESCRIPTION = `Searches the Tagged places whose name, address or category contains the query, ignoring case and accents, the closest first. Each place has its id (copy it as is), its name, its category (null when unknown), its story count, the date of its latest story and its owners, as @username.
 

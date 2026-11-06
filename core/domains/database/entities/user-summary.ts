@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { check, index, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-orm/zod";
-import { instagramUsers } from "./instagram-user.ts";
+import { instagramUsers } from "@@/core/domains/database/entities/instagram-user.ts";
 
 export const userSummaries = sqliteTable(
   "user_summaries",
