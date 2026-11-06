@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowLeftIcon } from "lucide-react";
 import { z } from "zod";
+import { useMedia } from "react-use";
 import { AccountChecklist, AccountFilter } from "../components/account-filter.tsx";
 import { Lightbox } from "../components/lightbox.tsx";
 import { PlaceExplorer } from "../components/place-explorer.tsx";
-import { useMediaQuery } from "../hooks/use-media-query.ts";
 import { usePlaceMapFilter } from "../hooks/use-place-map-filter.ts";
 import type { PlaceMapPageData } from "../loaders/place-map.ts";
 import { getPlaceMap } from "../query-service.ts";
@@ -33,7 +33,7 @@ export function PlaceMapPage({
     filter.place === undefined
       ? undefined
       : { name: filter.place.name, onRemove: filter.removePlace };
-  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const isDesktop = useMedia("(min-width: 1024px)", false);
   const storyByMediaPk = new Map(stories.map((story) => [story.mediaPk, story]));
   const avatarByUsername = new Map(accounts.map((account) => [account.username, account]));
   function renderMarker(place: TimelinePlace) {
