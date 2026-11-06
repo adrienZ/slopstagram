@@ -1,18 +1,11 @@
 import type { Matcher } from "react-day-picker";
 import { useState } from "react";
 import { fr } from "react-day-picker/locale";
-import { CalendarDaysIcon, ChevronRightIcon, MapIcon, MessageCircleIcon } from "lucide-react";
+import { CalendarDaysIcon, MapIcon, MessageCircleIcon } from "lucide-react";
 import { formatStoryDay, STORY_TIME_ZONE } from "@@/core/domains/story-feed/story-days.ts";
 import { Button } from "../../shadcn/ui/button.tsx";
 import { Calendar } from "../../shadcn/ui/calendar.tsx";
-import { Avatar, AvatarFallback, AvatarImage } from "../../shadcn/ui/avatar.tsx";
 import type { SidebarUser } from "../../loaders/sidebar-users.ts";
-import { formatUserHandle, formatUserInitials, getUserTimelineUrl } from "../../utils/helper.ts";
-import {
-  Collapsible,
-  CollapsibleTrigger,
-  CollapsibleContent,
-} from "../../shadcn/ui/collapsible.tsx";
 import {
   Sidebar,
   SidebarContent,
@@ -24,12 +17,10 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
   useSidebar,
 } from "../../shadcn/ui/sidebar.tsx";
 import { ThemeToggle } from "../theme-toggle.tsx";
+import { SidebarUsersMenu } from "./sidebar-users-menu.tsx";
 
 export interface StorySidebarProps {
   selectedDate: string;
@@ -132,52 +123,7 @@ export function StorySidebar({
           </SidebarGroupContent>
         </SidebarGroup>
         <SidebarSeparator />
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <nav aria-label="Utilisateurs">
-              <SidebarMenu>
-                <Collapsible defaultOpen asChild className="tw:group/users">
-                  <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuButton className="tw:font-medium">
-                        Utilisateurs
-                        <ChevronRightIcon className="tw:ml-auto tw:transition-transform tw:group-data-[state=open]/users:rotate-90" />
-                      </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <SidebarMenuSub>
-                        {users.map((user) => (
-                          <SidebarMenuSubItem key={user.username}>
-                            <SidebarMenuSubButton
-                              asChild
-                              isActive={user.username === selectedUsername}
-                              className="tw:h-11"
-                            >
-                              <a
-                                href={getUserTimelineUrl(user.username)}
-                                aria-current={
-                                  user.username === selectedUsername ? "page" : undefined
-                                }
-                              >
-                                <Avatar>
-                                  <AvatarImage src={user.avatarPath} alt="" />
-                                  <AvatarFallback>
-                                    {formatUserInitials(user.username)}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span>{formatUserHandle(user.username)}</span>
-                              </a>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        ))}
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </SidebarMenuItem>
-                </Collapsible>
-              </SidebarMenu>
-            </nav>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        <SidebarUsersMenu users={users} selectedUsername={selectedUsername} />
       </SidebarContent>
       <SidebarFooter>
         <ThemeToggle />
