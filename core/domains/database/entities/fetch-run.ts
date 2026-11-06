@@ -1,5 +1,5 @@
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { reports } from "./report.ts";
+import { reports } from "@@/core/domains/database/entities/report.ts";
 
 export const fetchRuns = sqliteTable("fetch_runs", {
   id: text().primaryKey(),

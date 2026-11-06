@@ -6,7 +6,11 @@ import type { StoryOutputUser } from "@@/core/domains/fetch-run/report-types.ts"
 import type { VisionResult } from "@@/core/domains/database/entities/vision.ts";
 import type { VisionRepository } from "@@/core/domains/database/repositories/vision-repository.ts";
 import { readCurrentVisionResult } from "@@/core/domains/vision/vision-analysis.ts";
-import { getStoryDate, getStoryDayRange, storyDateSchema } from "./story-days.ts";
+import {
+  getStoryDate,
+  getStoryDayRange,
+  storyDateSchema,
+} from "@@/core/domains/story-feed/story-days.ts";
 
 function getMediaType(value: number | undefined): "image" | "video" | null {
   if (value === 1) {

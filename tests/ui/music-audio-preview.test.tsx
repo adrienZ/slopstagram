@@ -1,14 +1,19 @@
 import { beforeAll, expect, test, vi, type TestContext } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Route } from "../../app/routes/users/$username.tsx";
-import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
-import { createPageRenderer } from "../render-page.ts";
-import { useSharedTestRuntime } from "../setup/test-runtime.ts";
-import { MusicAudioPreview } from "../../app/components/music-audio-preview.tsx";
-import { MusicSticker } from "../../app/components/music-sticker.tsx";
-import { pageNow, regroupTimeline, seedPageDatabase, timelineAccount } from "./seeded-pages.ts";
-import type { MusicPreview } from "../../app/utils/music-preview.ts";
+import { Route } from "@/routes/users/$username.tsx";
+import { loadAccountTimeline } from "@/loaders/account-timeline.ts";
+import { createPageRenderer } from "@@/tests/render-page.ts";
+import { useSharedTestRuntime } from "@@/tests/setup/test-runtime.ts";
+import { MusicAudioPreview } from "@/components/music-audio-preview.tsx";
+import { MusicSticker } from "@/components/music-sticker.tsx";
+import {
+  pageNow,
+  regroupTimeline,
+  seedPageDatabase,
+  timelineAccount,
+} from "@@/tests/ui/seeded-pages.ts";
+import type { MusicPreview } from "@/utils/music-preview.ts";
 
 const shared = useSharedTestRuntime(seedPageDatabase);
 

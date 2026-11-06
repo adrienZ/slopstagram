@@ -3,7 +3,7 @@ import { isJsonObject, JsonValueSchema } from "@@/core/utils/json-value.ts";
 import type { StoryItem, InstagramClient } from "@@/core/domains/instagram/instagram-types.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
-import { getMusicObservation } from "./music-observation.ts";
+import { getMusicObservation } from "@@/core/domains/music/music-observation.ts";
 
 type MusicAssetRepository = Pick<StoryRepository, "findByMediaPk"> &
   Partial<Pick<StoryRepository, "refreshMusicAsset">>;

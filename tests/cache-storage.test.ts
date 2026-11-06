@@ -8,8 +8,8 @@ import {
   BASE_CACHE_DIR,
   createFileCacheStorage,
 } from "@@/core/domains/media-store/cache-storage.ts";
-import { createTestRuntime } from "./setup/test-runtime.ts";
-import { storyItem } from "./mock-helpers.ts";
+import { createTestRuntime } from "@@/tests/setup/test-runtime.ts";
+import { storyItem } from "@@/tests/mock-helpers.ts";
 
 test("file cache storage creates nothing until a store is written", async (context) => {
   const parent = await mkdtemp(path.join(tmpdir(), "slopstagram-cache-"));

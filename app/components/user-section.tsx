@@ -1,9 +1,9 @@
 import type { StoryOutputUser } from "@@/core/domains/fetch-run/report-types.ts";
-import { formatUserHandle, formatUserName, getUserTimelineUrl } from "../utils/helper.ts";
-import type { StoryCardData } from "../utils/story-cards.ts";
-import { StoryCard } from "./story-card.tsx";
-import { Card, CardHeader, CardTitle, CardContent } from "../shadcn/ui/card.tsx";
-import { Separator } from "../shadcn/ui/separator.tsx";
+import { formatUserHandle, formatUserName, getUserTimelineUrl } from "@/utils/helper.ts";
+import type { StoryCardData } from "@/utils/story-cards.ts";
+import { StoryCard } from "@/components/story-card.tsx";
+import { Card, CardHeader, CardTitle, CardContent } from "@/shadcn/ui/card.tsx";
+import { Separator } from "@/shadcn/ui/separator.tsx";
 
 export interface UserSectionProps {
   user: StoryOutputUser;

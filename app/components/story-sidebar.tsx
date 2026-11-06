@@ -3,12 +3,12 @@ import { useState } from "react";
 import { fr } from "react-day-picker/locale";
 import { CalendarDaysIcon, ChevronRightIcon, MapIcon, MessageCircleIcon } from "lucide-react";
 import { formatStoryDay, STORY_TIME_ZONE } from "@@/core/domains/story-feed/story-days.ts";
-import { Button } from "../shadcn/ui/button.tsx";
-import { Calendar } from "../shadcn/ui/calendar.tsx";
-import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/ui/avatar.tsx";
-import type { SidebarUser } from "../loaders/sidebar-users.ts";
-import { formatUserHandle, formatUserInitials, getUserTimelineUrl } from "../utils/helper.ts";
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../shadcn/ui/collapsible.tsx";
+import { Button } from "@/shadcn/ui/button.tsx";
+import { Calendar } from "@/shadcn/ui/calendar.tsx";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shadcn/ui/avatar.tsx";
+import type { SidebarUser } from "@/loaders/sidebar-users.ts";
+import { formatUserHandle, formatUserInitials, getUserTimelineUrl } from "@/utils/helper.ts";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/shadcn/ui/collapsible.tsx";
 import {
   Sidebar,
   SidebarContent,
@@ -24,8 +24,8 @@ import {
   SidebarMenuSubItem,
   SidebarMenuSubButton,
   useSidebar,
-} from "../shadcn/ui/sidebar.tsx";
-import { ThemeToggle } from "./theme-toggle.tsx";
+} from "@/shadcn/ui/sidebar.tsx";
+import { ThemeToggle } from "@/components/theme-toggle.tsx";
 
 export interface StorySidebarProps {
   selectedDate: string;

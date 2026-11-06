@@ -2,7 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, URL } from "node:url";
 import { describe, expect, test } from "vitest";
-import { createRedactor, findUnsafeFixtureValues } from "../scripts/capture-fixtures.ts";
+import { createRedactor, findUnsafeFixtureValues } from "@@/scripts/capture-fixtures.ts";
 import { JsonValueSchema } from "@@/core/utils/json-value.ts";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
 

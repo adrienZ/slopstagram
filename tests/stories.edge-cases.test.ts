@@ -10,8 +10,8 @@ import {
   storyItemWithStickers,
   reelsResponse,
   response,
-} from "./mock-helpers.ts";
-import { createTestRuntime } from "./setup/test-runtime.ts";
+} from "@@/tests/mock-helpers.ts";
+import { createTestRuntime } from "@@/tests/setup/test-runtime.ts";
 
 describe("fetchStoriesManifest edge cases", () => {
   test("preserves tray and media order in the manifest", async (context) => {

@@ -5,7 +5,7 @@ import {
   searchAccounts,
   type AccountSearch,
   type AccountsRuntime,
-} from "./accounts.ts";
+} from "@@/core/domains/accounts/accounts.ts";
 
 const OutputSchema = z.object({
   accounts: z.array(AccountSchema),

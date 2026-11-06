@@ -1,6 +1,6 @@
 import { useRef, useState, type SyntheticEvent } from "react";
 import { useAudio, useUnmount } from "react-use";
-import type { MusicPreview } from "../utils/music-preview.ts";
+import type { MusicPreview } from "@/utils/music-preview.ts";
 
 export function useAudioPreview(preview: MusicPreview, preload: boolean, onError?: () => void) {
   const [loading, setLoading] = useState(false);

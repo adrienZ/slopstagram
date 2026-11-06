@@ -1,7 +1,7 @@
-import { musicStickerItems, type MusicStickerItem } from "./music-preview.ts";
+import { musicStickerItems, type MusicStickerItem } from "@/utils/music-preview.ts";
 import type { StoryAnnotations } from "@@/core/domains/stickers/story-types.ts";
 import type { UserTimelineStory } from "@@/core/domains/database/repositories/story-repository.ts";
-import { formatUserHandle } from "./helper.ts";
+import { formatUserHandle } from "@/utils/helper.ts";
 
 const stickerKindOrder = new Map([
   ["location", 0],

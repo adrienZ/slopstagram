@@ -1,17 +1,17 @@
-import { MusicSticker } from "./music-sticker.tsx";
+import { MusicSticker } from "@/components/music-sticker.tsx";
 import { useState } from "react";
 import { cn } from "cn";
 import { ChevronLeftIcon, ChevronRightIcon, ExpandIcon } from "lucide-react";
-import type { StoryCardData } from "../utils/story-cards.ts";
+import type { StoryCardData } from "@/utils/story-cards.ts";
 import {
   formatStickerStoryDate,
   type StickerKindGroup,
   type StoryStickerGroup,
-} from "../utils/timeline-stickers.ts";
-import { Sticker } from "./sticker.tsx";
-import { presentSticker } from "../utils/sticker-presentation.ts";
-import type { SidebarUser } from "../loaders/sidebar-users.ts";
-import { Button } from "../shadcn/ui/button.tsx";
+} from "@/utils/timeline-stickers.ts";
+import { Sticker } from "@/components/sticker.tsx";
+import { presentSticker } from "@/utils/sticker-presentation.ts";
+import type { SidebarUser } from "@/loaders/sidebar-users.ts";
+import { Button } from "@/shadcn/ui/button.tsx";
 import {
   Card,
   CardHeader,
@@ -20,7 +20,7 @@ import {
   CardAction,
   CardContent,
   CardFooter,
-} from "../shadcn/ui/card.tsx";
+} from "@/shadcn/ui/card.tsx";
 import {
   Dialog,
   DialogTrigger,
@@ -28,9 +28,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "../shadcn/ui/dialog.tsx";
-import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "../shadcn/ui/empty.tsx";
-import { Pagination, PaginationContent, PaginationItem } from "../shadcn/ui/pagination.tsx";
+} from "@/shadcn/ui/dialog.tsx";
+import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/shadcn/ui/empty.tsx";
+import { Pagination, PaginationContent, PaginationItem } from "@/shadcn/ui/pagination.tsx";
 import {
   Table,
   TableHeader,
@@ -38,10 +38,10 @@ import {
   TableBody,
   TableRow,
   TableCell,
-} from "../shadcn/ui/table.tsx";
-import { StoryCard } from "./story-card.tsx";
-import { LocationHistory } from "./location-history.tsx";
-import type { TimelineLocations } from "../utils/timeline-locations.ts";
+} from "@/shadcn/ui/table.tsx";
+import { StoryCard } from "@/components/story-card.tsx";
+import { LocationHistory } from "@/components/location-history.tsx";
+import type { TimelineLocations } from "@/utils/timeline-locations.ts";
 
 const STICKER_PAGE_SIZE = 3;
 

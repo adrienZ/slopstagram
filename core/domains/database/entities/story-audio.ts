@@ -1,8 +1,8 @@
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { createSelectSchema } from "drizzle-orm/zod";
 import { z } from "zod";
-import { stories } from "./story.ts";
-import { mediaStates } from "./media-state.ts";
+import { stories } from "@@/core/domains/database/entities/story.ts";
+import { mediaStates } from "@@/core/domains/database/entities/media-state.ts";
 
 // A DASH soundtrack belongs to its story, even when music metadata is shared.
 export const storyAudio = sqliteTable("story_audio", {

@@ -5,14 +5,14 @@ import { InstagramUserRepository } from "@@/core/domains/database/repositories/i
 import { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 import { fetchStoriesManifest } from "@@/core/domains/fetch-run/stories.ts";
 import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
-import { createMemoryCacheStorage } from "./memory-storage.ts";
+import { createMemoryCacheStorage } from "@@/tests/memory-storage.ts";
 import {
   createCapturingLogger,
   createClient,
   fixedNow,
   reel,
   reelsResponse,
-} from "./mock-helpers.ts";
+} from "@@/tests/mock-helpers.ts";
 
 function present<T>(value: T | null | undefined): T {
   assert.ok(value !== null && value !== undefined);

@@ -1,7 +1,10 @@
 import { Buffer } from "node:buffer";
 import path from "node:path";
-import { IMAGES_STORAGE_DIR, type ImageCacheStorage } from "./cache-storage.ts";
-import { convertImageToJpeg } from "./image-conversion.ts";
+import {
+  IMAGES_STORAGE_DIR,
+  type ImageCacheStorage,
+} from "@@/core/domains/media-store/cache-storage.ts";
+import { convertImageToJpeg } from "@@/core/domains/media-store/image-conversion.ts";
 import type { FetchImage } from "@@/core/domains/runtime/fetch-boundaries.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";

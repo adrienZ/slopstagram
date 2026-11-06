@@ -1,6 +1,6 @@
 import { asc, eq, getTableColumns } from "drizzle-orm";
 import { z } from "zod";
-import type { DrizzleDatabase } from "../client.ts";
+import type { DrizzleDatabase } from "@@/core/domains/database/client.ts";
 import {
   NewReportSchema,
   ReportStorySchema,
@@ -9,8 +9,8 @@ import {
   reportStoryGroups,
   reportStories,
   reportFailures,
-} from "../entities/report.ts";
-import { stories } from "../entities/story.ts";
+} from "@@/core/domains/database/entities/report.ts";
+import { stories } from "@@/core/domains/database/entities/story.ts";
 import { NO_ACCESSIBILITY_CAPTION } from "@@/core/utils/report-constants.ts";
 import { StoriesManifestReportSchema } from "@@/core/domains/instagram/story-schemas.ts";
 import { createOutputUsers } from "@@/core/domains/fetch-run/story-output.ts";

@@ -1,12 +1,12 @@
 import { beforeAll, expect, test } from "vitest";
 import { screen, within } from "@testing-library/react";
-import { Route as ReportRoute } from "../../app/routes/report.tsx";
-import { Route as TimelineRoute } from "../../app/routes/users/$username.tsx";
-import { loadStoryFeed } from "../../app/loaders/story-feed.ts";
-import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
-import { createPageRenderer } from "../render-page.ts";
-import { useSharedTestRuntime } from "../setup/test-runtime.ts";
-import { pageNow, seedPageDatabase, timelineAccount, today } from "./seeded-pages.ts";
+import { Route as ReportRoute } from "@/routes/report.tsx";
+import { Route as TimelineRoute } from "@/routes/users/$username.tsx";
+import { loadStoryFeed } from "@/loaders/story-feed.ts";
+import { loadAccountTimeline } from "@/loaders/account-timeline.ts";
+import { createPageRenderer } from "@@/tests/render-page.ts";
+import { useSharedTestRuntime } from "@@/tests/setup/test-runtime.ts";
+import { pageNow, seedPageDatabase, timelineAccount, today } from "@@/tests/ui/seeded-pages.ts";
 
 const shared = useSharedTestRuntime(seedPageDatabase);
 

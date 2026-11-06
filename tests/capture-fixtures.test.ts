@@ -6,7 +6,7 @@ import {
   captureInstagramPayloads,
   createRedactor,
   redactPayloads,
-} from "../scripts/capture-fixtures.ts";
+} from "@@/scripts/capture-fixtures.ts";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
 import { createInstagramClient } from "@@/core/domains/instagram/story-client.ts";
 

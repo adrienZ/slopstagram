@@ -1,6 +1,6 @@
-import type { SidebarUser } from "../loaders/sidebar-users.ts";
-import { formatStickerLabel, type StickerPlace } from "./timeline-stickers.ts";
-import { getUserTimelineUrl } from "./helper.ts";
+import type { SidebarUser } from "@/loaders/sidebar-users.ts";
+import { formatStickerLabel, type StickerPlace } from "@/utils/timeline-stickers.ts";
+import { getUserTimelineUrl } from "@/utils/helper.ts";
 
 export interface StickerPresentation {
   kind: string;

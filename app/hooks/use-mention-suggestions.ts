@@ -1,7 +1,7 @@
 import { useId, useRef, useState } from "react";
 import type { ChangeEvent, KeyboardEvent, SyntheticEvent } from "react";
-import type { SidebarUser } from "../loaders/sidebar-users.ts";
-import { findTypedMention, insertMention, suggestAccounts } from "../utils/chat-mentions.ts";
+import type { SidebarUser } from "@/loaders/sidebar-users.ts";
+import { findTypedMention, insertMention, suggestAccounts } from "@/utils/chat-mentions.ts";
 
 /**
  * The saved accounts suggested for the Mention typed before the caret of the message field, as

@@ -5,7 +5,7 @@ import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
 import { userSummaries } from "@@/core/domains/database/entities/user-summary.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
-import { createMemoryStorage } from "./memory-storage.ts";
+import { createMemoryStorage } from "@@/tests/memory-storage.ts";
 
 export function createMigratedDatabase() {
   const database = createDrizzle(":memory:");

@@ -3,8 +3,8 @@ import { readCachedImage } from "@@/core/domains/media-store/image-cache.ts";
 import { AppleOcrUnavailableError } from "@@/core/domains/vision/apple-ocr.ts";
 import { createStoryFeed, readStoryFeedVision } from "@@/core/domains/story-feed/story-feed.ts";
 import { readUserSummaries } from "@@/core/domains/accounts/user-summary.ts";
-import { createFailingClient, createRecordedClient } from "./setup/recorded-client.ts";
-import { createRecordedInstagramClient } from "./setup/seed.ts";
+import { createFailingClient, createRecordedClient } from "@@/tests/setup/recorded-client.ts";
+import { createRecordedInstagramClient } from "@@/tests/setup/seed.ts";
 import {
   audioAssetId,
   audioUrl,
@@ -17,7 +17,7 @@ import {
   recordedPayloads,
   storyPks,
   trayBody,
-} from "./setup/report-world.ts";
+} from "@@/tests/setup/report-world.ts";
 
 test("creates a report by running the whole pipeline over recorded Instagram payloads", async (context) => {
   const world = await createWorld(context);

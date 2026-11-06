@@ -3,16 +3,16 @@ import { stories } from "@@/core/domains/database/entities/story.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { createReportFeed } from "@@/core/domains/story-feed/story-feed.ts";
 import { resolveUserSummariesForReport } from "@@/core/domains/accounts/user-summary.ts";
-import type { SidebarUser } from "../../app/loaders/sidebar-users.ts";
-import { withStoryStickers, type StoryCardData } from "../../app/utils/story-cards.ts";
-import { groupTimelineLocations } from "../../app/utils/timeline-locations.ts";
-import { groupTimelineStickers } from "../../app/utils/timeline-stickers.ts";
+import type { SidebarUser } from "@/loaders/sidebar-users.ts";
+import { withStoryStickers, type StoryCardData } from "@/utils/story-cards.ts";
+import { groupTimelineLocations } from "@/utils/timeline-locations.ts";
+import { groupTimelineStickers } from "@/utils/timeline-stickers.ts";
 import {
   editRecordedStories,
   editRecordedUsers,
   readRecordedPayloads,
   seedRecordedStories,
-} from "../setup/seed.ts";
+} from "@@/tests/setup/seed.ts";
 
 export const pageNow = new Date("2026-07-26T12:00:00.000Z");
 /** Publication of the newest recorded story, before `pageNow`. */

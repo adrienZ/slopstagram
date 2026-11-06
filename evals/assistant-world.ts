@@ -1,20 +1,24 @@
 import { Chat } from "@ai-sdk/react";
 import { DefaultChatTransport, getToolName, isToolUIPart } from "ai";
-import { JsonValueSchema } from "../core/utils/json-value.ts";
-import { handleChatRequest } from "../app/routes/api/chat.ts";
-import { listAccounts } from "../core/domains/accounts/accounts.ts";
-import type { AssistantRuntime, AssistantUIMessage } from "../core/domains/assistant/assistant.ts";
-import { listTaggedPlaces } from "../core/domains/places/tagged-places.ts";
-import { readFeedUserSummary } from "../core/domains/story-feed/feed-user-summary.ts";
+import { JsonValueSchema } from "@@/core/utils/json-value.ts";
+import { handleChatRequest } from "@/routes/api/chat.ts";
+import { listAccounts } from "@@/core/domains/accounts/accounts.ts";
+import type { AssistantRuntime, AssistantUIMessage } from "@@/core/domains/assistant/assistant.ts";
+import { listTaggedPlaces } from "@@/core/domains/places/tagged-places.ts";
+import { readFeedUserSummary } from "@@/core/domains/story-feed/feed-user-summary.ts";
 import {
   createWorld,
   imageStoryPk,
   placeId,
   recordedPayloads,
-} from "../tests/setup/report-world.ts";
-import { createRecordedInstagramClient, editRecordedStories } from "../tests/setup/seed.ts";
-import { traceModel } from "./assistant-trace.ts";
-import { describeOutcome, type AssistantRun, type AssistantToolCall } from "./assistant-scorers.ts";
+} from "@@/tests/setup/report-world.ts";
+import { createRecordedInstagramClient, editRecordedStories } from "@@/tests/setup/seed.ts";
+import { traceModel } from "@@/evals/assistant-trace.ts";
+import {
+  describeOutcome,
+  type AssistantRun,
+  type AssistantToolCall,
+} from "@@/evals/assistant-scorers.ts";
 
 const HOUR_SECONDS = 3600;
 const DAY_SECONDS = 24 * HOUR_SECONDS;

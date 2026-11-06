@@ -1,7 +1,7 @@
 import { performance } from "node:perf_hooks";
 import { wrapLanguageModel } from "ai";
 import { reportTrace } from "evalite/traces";
-import type { AssistantModel } from "../core/domains/assistant/assistant.ts";
+import type { AssistantModel } from "@@/core/domains/assistant/assistant.ts";
 
 type StreamPart<Stream> = Stream extends ReadableStream<infer Part> ? Part : never;
 

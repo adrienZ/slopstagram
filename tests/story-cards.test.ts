@@ -1,6 +1,6 @@
 import { test, expect } from "vitest";
 import type { StoryOutputUser } from "@@/core/domains/fetch-run/report-types.ts";
-import { createStoryCards, type StoryCardSources } from "../app/utils/story-cards.ts";
+import { createStoryCards, type StoryCardSources } from "@/utils/story-cards.ts";
 
 function createUser(): StoryOutputUser {
   return {

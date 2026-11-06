@@ -1,8 +1,8 @@
-import type { SidebarUser } from "../loaders/sidebar-users.ts";
-import { splitMentions } from "../utils/chat-mentions.ts";
-import { formatUserHandle } from "../utils/helper.ts";
-import { presentSticker } from "../utils/sticker-presentation.ts";
-import { MentionAvatar, Sticker } from "./sticker.tsx";
+import type { SidebarUser } from "@/loaders/sidebar-users.ts";
+import { splitMentions } from "@/utils/chat-mentions.ts";
+import { formatUserHandle } from "@/utils/helper.ts";
+import { presentSticker } from "@/utils/sticker-presentation.ts";
+import { MentionAvatar, Sticker } from "@/components/sticker.tsx";
 
 /** A sent message, with the Mentions of saved accounts shown as mention stickers. */
 export function MentionedText({ accounts, text }: { accounts: Array<SidebarUser>; text: string }) {

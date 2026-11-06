@@ -1,6 +1,6 @@
-import type { TimelineLocations } from "../utils/timeline-locations.ts";
-import type { StoryCardData } from "../utils/story-cards.ts";
-import { PlaceExplorer } from "./place-explorer.tsx";
+import type { TimelineLocations } from "@/utils/timeline-locations.ts";
+import type { StoryCardData } from "@/utils/story-cards.ts";
+import { PlaceExplorer } from "@/components/place-explorer.tsx";
 
 export function LocationHistory({
   locations,

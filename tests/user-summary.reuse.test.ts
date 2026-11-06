@@ -1,13 +1,13 @@
 import { assert, test, expect, type TestContext } from "vitest";
-import { readStoryFeedSources } from "../app/loaders/story-feed.ts";
+import { readStoryFeedSources } from "@/loaders/story-feed.ts";
 import { userSummaries } from "@@/core/domains/database/entities/user-summary.ts";
 import {
   readUserSummaries,
   resolveUserSummariesForReport,
 } from "@@/core/domains/accounts/user-summary.ts";
-import { createSummaryReport } from "./mock-helpers.ts";
-import { createTestRuntime } from "./setup/test-runtime.ts";
-import { countSummaries, saveSummaryUsers } from "./test-database.ts";
+import { createSummaryReport } from "@@/tests/mock-helpers.ts";
+import { createTestRuntime } from "@@/tests/setup/test-runtime.ts";
+import { countSummaries, saveSummaryUsers } from "@@/tests/test-database.ts";
 
 async function createStoredSummary(context: TestContext) {
   const report = createSummaryReport();

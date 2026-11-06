@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { beforeAll, expect, test } from "vitest";
 import { screen, within } from "@testing-library/react";
-import { Route } from "../../app/routes/users/$username.tsx";
-import type { AccountTimelinePageData } from "../../app/loaders/account-timeline.ts";
+import { Route } from "@/routes/users/$username.tsx";
+import type { AccountTimelinePageData } from "@/loaders/account-timeline.ts";
 import type { StoryLocationObservation } from "@@/core/domains/database/entities/location-metadata.ts";
 import {
   pageNow,
@@ -10,12 +10,12 @@ import {
   stickerKindsOf,
   timelineAccount,
   seedPageDatabase,
-} from "./seeded-pages.ts";
-import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
-import { createPageRenderer } from "../render-page.ts";
-import { useSharedTestRuntime } from "../setup/test-runtime.ts";
-import { LocationMapContext } from "../../app/components/place-explorer.tsx";
-import type { LocationMapCanvasProps } from "../../app/components/location-map-canvas.tsx";
+} from "@@/tests/ui/seeded-pages.ts";
+import { loadAccountTimeline } from "@/loaders/account-timeline.ts";
+import { createPageRenderer } from "@@/tests/render-page.ts";
+import { useSharedTestRuntime } from "@@/tests/setup/test-runtime.ts";
+import { LocationMapContext } from "@/components/place-explorer.tsx";
+import type { LocationMapCanvasProps } from "@/components/location-map-canvas.tsx";
 
 const shared = useSharedTestRuntime(seedPageDatabase);
 

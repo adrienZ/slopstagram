@@ -5,7 +5,7 @@ import type { VisionRepository } from "@@/core/domains/database/repositories/vis
 import type { StoryOutputUser } from "@@/core/domains/fetch-run/report-types.ts";
 import { getReportUserKey } from "@@/core/domains/accounts/report-user-key.ts";
 import { readUserSummaries } from "@@/core/domains/accounts/user-summary.ts";
-import { createStoryFeed, readStoryFeedVision } from "./story-feed.ts";
+import { createStoryFeed, readStoryFeedVision } from "@@/core/domains/story-feed/story-feed.ts";
 
 interface FeedUserSummariesRuntime {
   summaries: Pick<UserSummaryRepository, "findBySourceHash">;

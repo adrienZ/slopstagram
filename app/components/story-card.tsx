@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { cn } from "cn";
-import type { StoryCardData } from "../utils/story-cards.ts";
+import type { StoryCardData } from "@/utils/story-cards.ts";
 
 const previewSizes = {
   timeline:

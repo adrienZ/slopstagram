@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
-import type { TimelinePlace } from "../utils/timeline-locations.ts";
-import type { SidebarUser } from "../loaders/sidebar-users.ts";
+import type { TimelinePlace } from "@/utils/timeline-locations.ts";
+import type { SidebarUser } from "@/loaders/sidebar-users.ts";
 
 /** The usernames of the accounts in `chosen`, in account order; unknown names are dropped. */
 function keepAccounts(accounts: Array<SidebarUser>, chosen: Set<string>): Array<string> {

@@ -33,6 +33,13 @@ const restrictedReactPaths: Array<RestrictedPath> = [
   },
 ];
 
+// Source files import through the tsconfig aliases, never relatively: `@/` for app/, `@@/` for the rest.
+const aliasImports: RestrictedPattern = {
+  group: ["./*", "../*"],
+  message:
+    "Import through the tsconfig aliases, not relative paths: `@/utils/helper.ts` for app/, `@@/core/...` for the rest.",
+};
+
 // The helpers of a repository are named `<repository>.<aspect>.ts` next to it. They take the database
 // or a transaction handle, and only their repository may import them.
 const privateRepositoryHelpers: RestrictedPattern = {
@@ -85,7 +92,12 @@ function restrictImports(
     "error",
     {
       paths: root ? restrictedReactPaths : [...restrictedReactPaths, ...compositionRootPaths],
-      patterns: [...patterns, ...(root ? [] : compositionRootPatterns), privateRepositoryHelpers],
+      patterns: [
+        ...patterns,
+        aliasImports,
+        ...(root ? [] : compositionRootPatterns),
+        privateRepositoryHelpers,
+      ],
     },
   ];
 }
@@ -151,7 +163,10 @@ export default defineConfig({
       // The only importer of its helpers.
       files: ["core/domains/database/repositories/story-repository.ts"],
       rules: {
-        "no-restricted-imports": ["error", { paths: restrictedReactPaths }],
+        "no-restricted-imports": [
+          "error",
+          { paths: restrictedReactPaths, patterns: [aliasImports] },
+        ],
       },
     },
     {

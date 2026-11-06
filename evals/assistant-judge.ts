@@ -7,7 +7,7 @@ import { codexCli } from "ai-sdk-provider-codex-cli";
 import type { Evalite } from "evalite";
 import { wrapAISDKModel } from "evalite/ai-sdk";
 import { z } from "zod";
-import type { AssistantExpectation, AssistantRun } from "./assistant-scorers.ts";
+import type { AssistantExpectation, AssistantRun } from "@@/evals/assistant-scorers.ts";
 
 /** The cheapest model `codex debug models` lists: the judge only grades short synthetic answers. */
 const JUDGE_MODEL = "gpt-6-luna";

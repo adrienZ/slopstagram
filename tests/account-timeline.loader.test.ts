@@ -1,13 +1,13 @@
 import { expect, test } from "vitest";
-import { loadAccountTimeline } from "../app/loaders/account-timeline.ts";
-import { useSharedTestRuntime } from "./setup/test-runtime.ts";
+import { loadAccountTimeline } from "@/loaders/account-timeline.ts";
+import { useSharedTestRuntime } from "@@/tests/setup/test-runtime.ts";
 import {
   captionedStoryPk,
   mentionedAccount,
   pageNow,
   seedPageDatabase,
   timelineAccount,
-} from "./ui/seeded-pages.ts";
+} from "@@/tests/ui/seeded-pages.ts";
 
 const shared = useSharedTestRuntime(seedPageDatabase);
 

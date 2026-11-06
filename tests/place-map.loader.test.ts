@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
-import { loadPlaceMap } from "../app/loaders/place-map.ts";
-import { useSharedTestRuntime } from "./setup/test-runtime.ts";
-import { mapAccounts, seedMapDatabase, sharedPlace, soloPlace } from "./ui/seeded-pages.ts";
+import { loadPlaceMap } from "@/loaders/place-map.ts";
+import { useSharedTestRuntime } from "@@/tests/setup/test-runtime.ts";
+import { mapAccounts, seedMapDatabase, sharedPlace, soloPlace } from "@@/tests/ui/seeded-pages.ts";
 
 const shared = useSharedTestRuntime(seedMapDatabase);
 const [ada, ben, cleo] = mapAccounts;

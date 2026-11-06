@@ -5,9 +5,9 @@ import {
   createReportFeed,
 } from "@@/core/domains/story-feed/story-feed.ts";
 import { getStoryDate, getStoryDayRange } from "@@/core/domains/story-feed/story-days.ts";
-import { readStoryFeedSources } from "../app/loaders/story-feed.ts";
+import { readStoryFeedSources } from "@/loaders/story-feed.ts";
 import { resolveUserSummariesForReport } from "@@/core/domains/accounts/user-summary.ts";
-import { createTestRuntime } from "./setup/test-runtime.ts";
+import { createTestRuntime } from "@@/tests/setup/test-runtime.ts";
 
 async function createFixture(context: TestContext) {
   const runtime = await createTestRuntime(context);

@@ -1,4 +1,4 @@
-import type { StoryVersion } from "./instagram-types.ts";
+import type { StoryVersion } from "@@/core/domains/instagram/instagram-types.ts";
 
 export function getLargestVersion<T extends StoryVersion>(
   versions: Array<T> | null | undefined,

@@ -1,4 +1,4 @@
-import { isAppleOcrUnavailable, recognizeAppleCaption } from "./apple-ocr.ts";
+import { isAppleOcrUnavailable, recognizeAppleCaption } from "@@/core/domains/vision/apple-ocr.ts";
 import type { CachedReportImages } from "@@/core/domains/media-store/image-cache.ts";
 import type { AppleVisionRepository } from "@@/core/domains/database/repositories/apple-vision-repository.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";

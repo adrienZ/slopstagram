@@ -1,14 +1,14 @@
 import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { extractReels } from "@@/core/domains/instagram/story-client.ts";
-import { storeReturnedReels } from "./story-cache.ts";
+import { storeReturnedReels } from "@@/core/domains/fetch-run/story-cache.ts";
 import {
   addFailuresForPendingReelStories,
   createMissingResponseFailure,
   getRemainingReelIds,
   logStoryProgress,
   type FetchState,
-} from "./story-failure.ts";
+} from "@@/core/domains/fetch-run/story-failure.ts";
 import {
   chunk,
   requestWithRetry,

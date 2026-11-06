@@ -1,7 +1,11 @@
 import { expect, test, type TestContext } from "vitest";
 import { searchAccounts } from "@@/core/domains/accounts/accounts.ts";
-import { editRecordedUsers, readRecordedPayloads, seedRecordedStories } from "./setup/seed.ts";
-import { createTestRuntime } from "./setup/test-runtime.ts";
+import {
+  editRecordedUsers,
+  readRecordedPayloads,
+  seedRecordedStories,
+} from "@@/tests/setup/seed.ts";
+import { createTestRuntime } from "@@/tests/setup/test-runtime.ts";
 
 type AccountSpec = [username: string, fullName: string | null];
 

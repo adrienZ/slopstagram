@@ -1,17 +1,17 @@
 import { beforeAll, expect, test } from "vitest";
 import { fireEvent, screen, within } from "@testing-library/react";
-import { Route } from "../../app/routes/users/$username.tsx";
-import type { AccountTimelinePageData } from "../../app/loaders/account-timeline.ts";
+import { Route } from "@/routes/users/$username.tsx";
+import type { AccountTimelinePageData } from "@/loaders/account-timeline.ts";
 import {
   mentionedAccount,
   pageNow,
   regroupTimeline,
   timelineAccount,
   seedPageDatabase,
-} from "./seeded-pages.ts";
-import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
-import { createPageRenderer } from "../render-page.ts";
-import { useSharedTestRuntime } from "../setup/test-runtime.ts";
+} from "@@/tests/ui/seeded-pages.ts";
+import { loadAccountTimeline } from "@/loaders/account-timeline.ts";
+import { createPageRenderer } from "@@/tests/render-page.ts";
+import { useSharedTestRuntime } from "@@/tests/setup/test-runtime.ts";
 
 const shared = useSharedTestRuntime(seedPageDatabase);
 

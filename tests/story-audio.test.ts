@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 import { createFileCacheStorage } from "@@/core/domains/media-store/cache-storage.ts";
-import { startMediaServer, wavAudio } from "./media-server.ts";
+import { startMediaServer, wavAudio } from "@@/tests/media-server.ts";
 import { assert, test, expect } from "vitest";
 import { createDrizzle } from "@@/core/domains/database/client.ts";
 import { migrateDatabase } from "@@/core/domains/database/migrate.ts";
@@ -11,19 +11,19 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { processStoryAudio, cacheReportAudio } from "@@/core/domains/music/report-audio.ts";
 import { createMediaResponse } from "@@/core/domains/media-store/media-response.ts";
-import { groupTimelineStickers } from "../app/utils/timeline-stickers.ts";
-import { musicStickerItems, storyMusicPreviews } from "../app/utils/music-preview.ts";
+import { groupTimelineStickers } from "@/utils/timeline-stickers.ts";
+import { musicStickerItems, storyMusicPreviews } from "@/utils/music-preview.ts";
 import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";
 import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
 import { fetchStoriesManifest } from "@@/core/domains/fetch-run/stories.ts";
-import { createMemoryCacheStorage } from "./memory-storage.ts";
+import { createMemoryCacheStorage } from "@@/tests/memory-storage.ts";
 import {
   createCapturingLogger,
   createClient,
   fixedNow,
   reel,
   reelsResponse,
-} from "./mock-helpers.ts";
+} from "@@/tests/mock-helpers.ts";
 
 function manifest(name: string) {
   return `<MPD xmlns="urn:mpeg:dash:schema:mpd:2011" type="static">

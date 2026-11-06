@@ -4,7 +4,7 @@ import {
   getTaggedPlace,
   TaggedPlaceReadSchema,
   type TaggedPlacesReadRuntime,
-} from "./tagged-places.ts";
+} from "@@/core/domains/places/tagged-places.ts";
 
 const DESCRIPTION = `Reads one Tagged place by its id: its name, category and address (null when unknown), its story count, the date of its latest story, its owners as @username, and its latest 5 stories, each with its date and owner.
 

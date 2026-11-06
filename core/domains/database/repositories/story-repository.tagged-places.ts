@@ -1,8 +1,11 @@
 import { and, countDistinct, desc, eq, inArray, isNotNull, max, sql } from "drizzle-orm";
-import type { DrizzleDatabase } from "../client.ts";
-import { instagramUsers } from "../entities/instagram-user.ts";
-import { metadataLocations, storyLocationObservations } from "../entities/location-metadata.ts";
-import { stories } from "../entities/story.ts";
+import type { DrizzleDatabase } from "@@/core/domains/database/client.ts";
+import { instagramUsers } from "@@/core/domains/database/entities/instagram-user.ts";
+import {
+  metadataLocations,
+  storyLocationObservations,
+} from "@@/core/domains/database/entities/location-metadata.ts";
+import { stories } from "@@/core/domains/database/entities/story.ts";
 
 type TaggedPlaceDatabase = Pick<DrizzleDatabase, "select" | "selectDistinct">;
 

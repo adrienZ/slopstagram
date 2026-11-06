@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { JsonValue } from "./json-value.ts";
+import type { JsonValue } from "@@/core/utils/json-value.ts";
 
 export const ProviderIdentifierSchema = z.union([
   z.string().refine((value) => value.trim().length > 0),

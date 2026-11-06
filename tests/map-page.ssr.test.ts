@@ -1,11 +1,11 @@
 import { expect, test } from "vitest";
 import { within } from "@testing-library/dom";
 import { JSDOM } from "jsdom";
-import { Route } from "../app/routes/map.tsx";
-import { loadPlaceMap } from "../app/loaders/place-map.ts";
-import { createPageRenderer } from "./render-page.ts";
-import { useSharedTestRuntime } from "./setup/test-runtime.ts";
-import { seedMapDatabase } from "./ui/seeded-pages.ts";
+import { Route } from "@/routes/map.tsx";
+import { loadPlaceMap } from "@/loaders/place-map.ts";
+import { createPageRenderer } from "@@/tests/render-page.ts";
+import { useSharedTestRuntime } from "@@/tests/setup/test-runtime.ts";
+import { seedMapDatabase } from "@@/tests/ui/seeded-pages.ts";
 
 const shared = useSharedTestRuntime(seedMapDatabase);
 

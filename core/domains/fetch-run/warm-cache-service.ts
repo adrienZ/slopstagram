@@ -1,6 +1,6 @@
 import type { EventEmitter } from "node:events";
 import { once } from "node:events";
-import { startWarmCacheQueue } from "./warm-cache-queue.ts";
+import { startWarmCacheQueue } from "@@/core/domains/fetch-run/warm-cache-queue.ts";
 
 /** The part of the standalone bunqueue server process the service relies on. */
 export interface BunqueueServerProcess extends EventEmitter {

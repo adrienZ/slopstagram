@@ -1,6 +1,6 @@
 import { beforeAll, expect, test } from "vitest";
 import { screen, within, waitFor } from "@testing-library/react";
-import { Route } from "../../app/routes/report.tsx";
+import { Route } from "@/routes/report.tsx";
 import {
   appleCaption,
   captionedStoryPk,
@@ -14,10 +14,10 @@ import {
   seedPageDatabase,
   today,
   userSummary,
-} from "./seeded-pages.ts";
-import { loadStoryFeed } from "../../app/loaders/story-feed.ts";
-import { createPageRenderer } from "../render-page.ts";
-import { useSharedTestRuntime } from "../setup/test-runtime.ts";
+} from "@@/tests/ui/seeded-pages.ts";
+import { loadStoryFeed } from "@/loaders/story-feed.ts";
+import { createPageRenderer } from "@@/tests/render-page.ts";
+import { useSharedTestRuntime } from "@@/tests/setup/test-runtime.ts";
 
 // The report the real loader would build, with the arguments it receives, at the test's "now".
 const shared = useSharedTestRuntime(seedPageDatabase);

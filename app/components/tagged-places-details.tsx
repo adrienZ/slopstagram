@@ -1,5 +1,5 @@
 import type { TaggedPlaceRead, TaggedPlaceSummary } from "@@/core/domains/places/tagged-places.ts";
-import { formatStickerStoryDate } from "../utils/timeline-stickers.ts";
+import { formatStickerStoryDate } from "@/utils/timeline-stickers.ts";
 
 function formatStoryCount(count: number): string {
   return `${count} ${count > 1 ? "stories" : "story"}`;

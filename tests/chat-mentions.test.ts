@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findMentionedUsernames } from "../app/utils/chat-mentions.ts";
+import { findMentionedUsernames } from "@/utils/chat-mentions.ts";
 
 describe("findMentionedUsernames", () => {
   it("lists the mentioned usernames in order, as written", () => {

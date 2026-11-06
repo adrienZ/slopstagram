@@ -7,7 +7,10 @@ import type {
 } from "@@/core/domains/database/entities/music-metadata.ts";
 import type { StoryAnnotations } from "@@/core/domains/stickers/story-types.ts";
 import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
-import { getMusicSourceUpdate, type MusicObservationInput } from "./music-observation.ts";
+import {
+  getMusicSourceUpdate,
+  type MusicObservationInput,
+} from "@@/core/domains/music/music-observation.ts";
 
 function mergeFields(previous: MusicFields | undefined, incoming: MusicFields): MusicFields {
   const known = previous ?? incoming;

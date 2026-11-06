@@ -1,5 +1,5 @@
 import { createRouter, parseSearchWith, stringifySearchWith } from "@tanstack/react-router";
-import { routeTree } from "./routeTree.gen.ts";
+import { routeTree } from "@/routeTree.gen.ts";
 
 /** Everything the application router is configured with except its route tree, so tests can reuse it. */
 export const routerOptions = {

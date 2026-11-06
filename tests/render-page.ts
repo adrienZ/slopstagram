@@ -12,9 +12,9 @@ import type { AnyRoute } from "@tanstack/react-router";
 import { createRequestHandler, defaultRenderHandler } from "@tanstack/react-router/ssr/server";
 import { createElement } from "react";
 import type { ComponentType, ReactNode } from "react";
-import { ThemeProvider } from "../app/components/theme-provider.tsx";
-import { RootDocument, rootHead } from "../app/routes/__root.tsx";
-import { routerOptions } from "../app/router.tsx";
+import { ThemeProvider } from "@/components/theme-provider.tsx";
+import { RootDocument, rootHead } from "@/routes/__root.tsx";
+import { routerOptions } from "@/router.tsx";
 
 type LoaderContext<Route extends AnyRoute> = Parameters<
   Extract<NonNullable<Route["options"]["loader"]>, (context: never) => object | Promise<object>>
