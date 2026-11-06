@@ -14,8 +14,8 @@ import {
 import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
 import { createPageRenderer } from "../render-page.ts";
 import { useSharedTestRuntime } from "../setup/test-runtime.ts";
-import { LocationMapContext } from "../../app/components/place-explorer.tsx";
-import type { LocationMapCanvasProps } from "../../app/components/location-map-canvas.tsx";
+import { LocationMapContext } from "../../app/components/place-explorer/place-explorer.tsx";
+import type { LocationMapCanvasProps } from "../../app/components/place-explorer/location-map-canvas.tsx";
 
 const shared = useSharedTestRuntime(seedPageDatabase);
 

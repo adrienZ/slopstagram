@@ -2,7 +2,7 @@ import type {
   FeedUserSummary,
   RequestedFeedUserSummary,
 } from "@@/core/domains/story-feed/feed-user-summary.ts";
-import { formatUserHandle } from "../utils/helper.ts";
+import { formatUserHandle } from "../../utils/helper.ts";
 
 function formatStoryCount(count: number): string {
   return `${count} ${count > 1 ? "stories" : "story"} dans les dernières 24 heures`;

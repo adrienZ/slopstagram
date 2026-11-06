@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { StorySidebar, type StorySidebarProps } from "./story-sidebar.tsx";
+import { StorySidebar, type StorySidebarProps } from "./story-sidebar/story-sidebar.tsx";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "../shadcn/ui/sidebar.tsx";
 import { TooltipProvider } from "../shadcn/ui/tooltip.tsx";
 

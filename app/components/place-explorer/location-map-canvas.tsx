@@ -11,15 +11,15 @@ import Map, {
   NavigationControl,
   Popup,
   ScaleControl,
-  useMap,
 } from "react-map-gl/maplibre";
 import type { MapRef } from "react-map-gl/maplibre";
 import { setWorkerUrl } from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { cn } from "cn";
-import { MapPinIcon } from "lucide-react";
-import type { TimelinePlace } from "../utils/timeline-locations.ts";
+import type { TimelinePlace } from "../../utils/timeline-locations.ts";
+import { FitBounds, fitBoundsOptions, getBounds } from "./fit-bounds.tsx";
+import { PlaceMarker } from "./place-marker.tsx";
 
 setWorkerUrl(workerUrl);
 
@@ -35,36 +35,6 @@ export interface LocationMapCanvasProps {
   className?: string;
   /** Shown when the base map fails to load. */
   tileErrorMessage?: string;
-}
-
-type Bounds = [[number, number], [number, number]];
-
-function getBounds(places: Array<TimelinePlace>): Bounds {
-  const longitudes = places.map((place) => place.longitude);
-  const latitudes = places.map((place) => place.latitude);
-  return [
-    [Math.min(...longitudes), Math.min(...latitudes)],
-    [Math.max(...longitudes), Math.max(...latitudes)],
-  ];
-}
-
-const fitBoundsOptions = { padding: 48, maxZoom: 13 };
-
-/** Fits the view to the bounds once, when it mounts: keyed by the bounds, it re-fits on change. */
-function FitBounds({ bounds }: { bounds: Bounds }) {
-  const { current: map } = useMap();
-  const fitted = useRef(false);
-  return (
-    <span
-      hidden
-      ref={() => {
-        if (!fitted.current && map !== undefined) {
-          fitted.current = true;
-          map.fitBounds(bounds, fitBoundsOptions);
-        }
-      }}
-    />
-  );
 }
 
 export default function LocationMapCanvas({
@@ -120,26 +90,12 @@ export default function LocationMapCanvas({
             latitude={place.latitude}
             anchor="bottom"
           >
-            <button
-              type="button"
-              aria-label={`Voir le lieu : ${place.name}`}
-              aria-pressed={selectedId === place.id}
-              title={place.name}
-              data-place-id={place.id}
-              className={cn(
-                "tw:cursor-pointer tw:rounded-full tw:border tw:border-white tw:shadow-md tw:focus-visible:outline-2 tw:focus-visible:outline-offset-2 tw:focus-visible:outline-ring tw:aria-pressed:ring-4 tw:aria-pressed:ring-ring",
-                renderMarker === undefined && "tw:bg-primary tw:p-2 tw:text-primary-foreground",
-              )}
-              onClick={() => {
-                onSelect(place.id);
-              }}
-            >
-              {renderMarker === undefined ? (
-                <MapPinIcon className="tw:size-5" />
-              ) : (
-                renderMarker(place)
-              )}
-            </button>
+            <PlaceMarker
+              place={place}
+              selected={selectedId === place.id}
+              renderMarker={renderMarker}
+              onSelect={onSelect}
+            />
           </Marker>
         ))}
         {selected !== undefined && (
