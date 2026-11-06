@@ -1,10 +1,10 @@
 import { useNavigate } from "@tanstack/react-router";
 import { cn } from "cn";
-import type { StoryCardData } from "../utils/story-cards.ts";
+import type { StoryCardData } from "../../utils/story-cards.ts";
 import { useState, type ReactNode } from "react";
-import { Sticker } from "./sticker.tsx";
-import { MusicSticker } from "./music-sticker.tsx";
-import { getUserTimelineUrl } from "../utils/helper.ts";
+import { Sticker } from "../sticker.tsx";
+import { MusicSticker } from "../music-sticker.tsx";
+import { getUserTimelineUrl } from "../../utils/helper.ts";
 import {
   Dialog,
   DialogClose,
@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../shadcn/ui/dialog.tsx";
+} from "../../shadcn/ui/dialog.tsx";
 import { InfoIcon } from "lucide-react";
 import type { OutdatedVision } from "@@/core/domains/vision/vision-analysis.ts";
 

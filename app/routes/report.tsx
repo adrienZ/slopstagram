@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { getReport } from "../query-service.ts";
 
-import { Lightbox } from "../components/lightbox.tsx";
+import { Lightbox } from "../components/lightbox/lightbox.tsx";
 import { StoryLayout } from "../components/story-layout.tsx";
 import {
   getDisabledStoryDates,

@@ -1,8 +1,8 @@
 import { createContext, lazy, Suspense, useContext, useId, useRef, useState } from "react";
 import type { ComponentType, KeyboardEvent } from "react";
 import type { LocationMapCanvasProps } from "./location-map-canvas.tsx";
-import { adjacentPlaceId, type TimelinePlace } from "../utils/timeline-locations.ts";
-import type { StoryCardData } from "../utils/story-cards.ts";
+import { adjacentPlaceId, type TimelinePlace } from "../../utils/timeline-locations.ts";
+import type { StoryCardData } from "../../utils/story-cards.ts";
 import { PlaceStories } from "./place-stories.tsx";
 
 export const LocationMapContext = createContext<ComponentType<LocationMapCanvasProps>>(

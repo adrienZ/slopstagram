@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowLeftIcon } from "lucide-react";
-import { ChatPanel } from "../components/chat-panel.tsx";
+import { ChatPanel } from "../components/chat-panel/chat-panel.tsx";
 import type { ChatPageData } from "../loaders/chat.ts";
 import { getChatPage } from "../query-service.ts";
 

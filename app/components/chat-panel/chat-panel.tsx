@@ -9,17 +9,17 @@ import {
   UsersIcon,
 } from "lucide-react";
 import type { AssistantUIMessage } from "@@/core/domains/assistant/assistant.ts";
-import { useAssistantChat } from "../hooks/use-assistant-chat.ts";
-import { useMentionSuggestions } from "../hooks/use-mention-suggestions.ts";
-import type { SidebarUser } from "../loaders/sidebar-users.ts";
-import { Bubble, BubbleContent } from "../shadcn/ui/bubble.tsx";
+import { useAssistantChat } from "../../hooks/use-assistant-chat.ts";
+import { useMentionSuggestions } from "../../hooks/use-mention-suggestions.ts";
+import type { SidebarUser } from "../../loaders/sidebar-users.ts";
+import { Bubble, BubbleContent } from "../../shadcn/ui/bubble.tsx";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupTextarea,
-} from "../shadcn/ui/input-group.tsx";
-import { Message, MessageContent } from "../shadcn/ui/message.tsx";
+} from "../../shadcn/ui/input-group.tsx";
+import { Message, MessageContent } from "../../shadcn/ui/message.tsx";
 import {
   MessageScroller,
   MessageScrollerButton,
@@ -27,7 +27,7 @@ import {
   MessageScrollerItem,
   MessageScrollerProvider,
   MessageScrollerViewport,
-} from "../shadcn/ui/message-scroller.tsx";
+} from "../../shadcn/ui/message-scroller.tsx";
 import {
   TraceCollapsible,
   TraceCollapsibleContent,
@@ -36,13 +36,13 @@ import {
   TraceIcon,
   TraceLine,
   TraceTitle,
-} from "../shadcn/ui/trace.tsx";
+} from "../../shadcn/ui/trace.tsx";
 import { ChatMarkdown } from "./chat-markdown.tsx";
 import { MentionBackdrop, MentionedText, MentionSuggestionList } from "./chat-mentions.tsx";
 import { FeedUserSummariesDetails } from "./feed-user-summaries-details.tsx";
 import { AccountList } from "./account-list.tsx";
 import { TaggedPlaceDetails, TaggedPlaceList } from "./tagged-places-details.tsx";
-import { findReadPlaces, type MentionablePlace } from "../utils/place-mentions.ts";
+import { findReadPlaces, type MentionablePlace } from "../../utils/place-mentions.ts";
 
 type AssistantPart = AssistantUIMessage["parts"][number];
 type FeedUserSummariesPart = Extract<AssistantPart, { type: "tool-getFeedUserSummaries" }>;

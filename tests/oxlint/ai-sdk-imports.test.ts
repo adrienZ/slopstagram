@@ -48,7 +48,7 @@ new RuleTester().run("ai-sdk-imports", aiSdkImports, {
     {
       name: "a type-only import in a component",
       code: 'import type { UIMessage } from "ai";',
-      filename: "/repo/app/components/chat-panel.tsx",
+      filename: "/repo/app/components/chat-panel/chat-panel.tsx",
       errors: [{ messageId: "restricted", data: { source: "ai" } }],
     },
     {
