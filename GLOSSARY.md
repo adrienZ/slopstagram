@@ -43,7 +43,7 @@ A story's record that one of its stickers refers to a tagged place or a music as
 
 **Tagged place**:
 A place referenced by a location sticker. Multiple sticker occurrences can refer
-to the same tagged place.
+to the same tagged place. It is mappable when it has Usable sticker metadata.
 
 **Place lookup**:
 Fetching a tagged place's current information from Instagram by its place

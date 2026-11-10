@@ -6,7 +6,12 @@ import { stories } from "../entities/story.ts";
 
 type TaggedPlaceDatabase = Pick<DrizzleDatabase, "select" | "selectDistinct">;
 
-/** `instagram:<place id>`, or `metadata:<location metadata id>` when Instagram gave none. */
+/**
+ * `instagram:<place id>`, or `metadata:<location metadata id>` when Instagram gave none. The
+ * rule is owned by `taggedPlaceId` in `core/domains/places/tagged-place-rules.ts`: this copy runs
+ * inside the query and cannot call it, so `tests/tagged-place-rules.cross-check.test.ts` keeps
+ * the two equal. Change the rule there first, then here.
+ */
 const placeId = sql<string>`case when ${metadataLocations.instagramPlaceId} is null then 'metadata:' || ${metadataLocations.id} else 'instagram:' || ${metadataLocations.instagramPlaceId} end`;
 
 export interface TaggedPlaceRow {
