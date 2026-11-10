@@ -1,3 +1,4 @@
+import { media } from "@@/core/domains/media-store/media-urls.ts";
 import type { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
 import type { InstagramUserEntry } from "@@/core/domains/database/entities/instagram-user.ts";
 import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";
@@ -95,7 +96,7 @@ export function hydrateReportInstagramUsers(
     const entity = usersByUsername.get(user.username);
     if (entity !== null && entity !== undefined) {
       user.full_name = entity.full_name;
-      user.profile_pic_url = `images/avatars/${entity.pk}.jpg`;
+      user.profile_pic_url = media.image.avatar(entity.pk).storedPath;
     }
   }
 }

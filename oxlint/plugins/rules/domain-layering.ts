@@ -17,9 +17,10 @@ const dependencies = new Map<string, Array<string>>([
   ["places", ["database", "utils"]],
   ["music", ["database", "media-store", "utils"]],
   ["vision", ["database", "media-store", "utils"]],
-  ["accounts", ["database", "vision", "utils"]],
+  // Accounts and the story feed write the stored path of an avatar or a story preview through the media record.
+  ["accounts", ["database", "media-store", "vision", "utils"]],
   // The story feed reads the user summaries of its accounts (docs/adr/0007-assistant-tools-live-in-their-domain.md).
-  ["story-feed", ["accounts", "database", "vision", "utils"]],
+  ["story-feed", ["accounts", "database", "media-store", "vision", "utils"]],
   // The Assistant composes the tools of the domains below it; no tool-owning domain imports it.
   ["assistant", ["accounts", "database", "places", "story-feed", "vision", "utils"]],
   ["fetch-run", ["*"]],
