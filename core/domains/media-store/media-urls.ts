@@ -64,12 +64,12 @@ export const media = {
   /**
    * The file a request path under `/media/` stands for (URL-encoded, without the prefix): a path
    * under `audio/` is a file of the audio store, any other path a file of the image store. Null for
-   * a path of another type or an undecodable one. The key is not confined to the store: whoever
-   * opens it must keep it inside the store folder.
+   * a path of another type, an undecodable one, and a key containing `..`: traversal fails closed
+   * here, whatever the storage driver does with such a key.
    */
   fromRequest(requestPath: string): MediaFile | null {
     const key = decode(requestPath);
-    if (key === null) {
+    if (key === null || key.includes("..")) {
       return null;
     }
     const audioPrefix = `${AUDIO_STORAGE_DIR}/`;

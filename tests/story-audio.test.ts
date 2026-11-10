@@ -223,7 +223,11 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
   expect(path.extname(saved.cachePath)).toBe(".m4a");
   expect(await readFile(path.join(directory, saved.cachePath))).toStrictEqual(audio);
   expect(saved.durationMs).toBe(1023);
-  const ranged = await createMediaResponse(saved.cachePath, directory, { range: "bytes=0-4" });
+  const ranged = await createMediaResponse(
+    { storage: createFileCacheStorage(directory) },
+    saved.cachePath,
+    { range: "bytes=0-4" },
+  );
   expect(ranged.status).toBe(206);
   expect(ranged.headers.get("content-type")).toBe("audio/mp4");
   expect(Buffer.from(await ranged.arrayBuffer())).toStrictEqual(audio.subarray(0, 5));
