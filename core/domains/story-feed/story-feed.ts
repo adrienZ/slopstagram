@@ -2,6 +2,7 @@ import type {
   StoryRepository,
   UserTimelineStory,
 } from "@@/core/domains/database/repositories/story-repository.ts";
+import { media } from "@@/core/domains/media-store/media-urls.ts";
 import type { StoryOutputUser } from "@@/core/domains/fetch-run/report-types.ts";
 import type { VisionResult } from "@@/core/domains/database/entities/vision.ts";
 import type { VisionRepository } from "@@/core/domains/database/repositories/vision-repository.ts";
@@ -21,14 +22,14 @@ export function createStoredStoryUser(
 ): StoryOutputUser {
   return {
     full_name: latestStory.full_name,
-    profile_pic_url: `images/avatars/${latestStory.owner_pk}.jpg`,
+    profile_pic_url: media.image.avatar(latestStory.owner_pk).storedPath,
     reel_ids: [],
     stories: stories.map((entry) => ({
       ig_caption: entry.story.accessibility_caption ?? "",
       locations: entry.locations,
       media_type: getMediaType(entry.story.media_type),
       media_pk: entry.story.pk,
-      preview_image_url: `images/story-previews/${entry.story.pk}.jpg`,
+      preview_image_url: media.image.storyPreview(entry.story.pk).storedPath,
       status: "ok",
       stickers: entry.stickers,
     })),
