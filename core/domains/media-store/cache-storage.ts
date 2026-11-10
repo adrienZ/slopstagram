@@ -33,6 +33,14 @@ export function createFileCacheStorage(directory: string): CacheStorage {
   };
 }
 
+/** The bytes stored at a key of the audio or image store, or null when there are none. */
+export async function readBytes(
+  storage: Pick<ImageCacheStorage, "getItemRaw">,
+  key: string,
+): Promise<Uint8Array | null> {
+  return await storage.getItemRaw<Uint8Array>(key);
+}
+
 export function getMediaCacheKey(mediaPk: string): string {
   return `${mediaPk}.json`;
 }

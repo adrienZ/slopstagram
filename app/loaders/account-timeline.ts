@@ -154,7 +154,7 @@ export function groupStoriesByPublishedDate(
 }
 
 function getStoryPreviewSource(story: UserTimelineStory): string {
-  return media.storyPreview(story.story.pk).storedPath;
+  return media.image.storyPreview(story.story.pk).storedPath;
 }
 
 interface TimelineDetails {
@@ -206,13 +206,13 @@ export function createUserTimeline(
     }
     return {
       appleCaptionByMediaPk: new Map(),
-      avatarPath: media.avatar(user.pk).url,
+      avatarPath: media.image.avatar(user.pk).url,
       outdatedVisionByPreviewUrl: new Map(),
       stories: [],
       timelineUser: {
         username: user.username,
         full_name: user.full_name,
-        profile_pic_url: media.avatar(user.pk).storedPath,
+        profile_pic_url: media.image.avatar(user.pk).storedPath,
         reel_ids: [],
         stories: [],
       },
@@ -226,7 +226,7 @@ export function createUserTimeline(
 
   return {
     ...details,
-    avatarPath: media.avatar(stories[0].owner_pk).url,
+    avatarPath: media.image.avatar(stories[0].owner_pk).url,
     stories,
     timelineUser,
     years: groupStoriesByPublishedDate(stories),
@@ -235,7 +235,10 @@ export function createUserTimeline(
 
 export function getTimelinePreviewPaths(stories: Array<UserTimelineStory>): Map<string, string> {
   return new Map(
-    stories.map((story) => [getStoryPreviewSource(story), media.storyPreview(story.story.pk).url]),
+    stories.map((story) => [
+      getStoryPreviewSource(story),
+      media.image.storyPreview(story.story.pk).url,
+    ]),
   );
 }
 
@@ -282,7 +285,7 @@ export function createOwnerStoryCards(
   const sources = getStoryCardSources(
     {
       ...readTimelineDetails(runtime, stories),
-      avatarPath: media.avatar(first.owner_pk).url,
+      avatarPath: media.image.avatar(first.owner_pk).url,
       timelineUser,
     },
     getTimelinePreviewPaths(stories),

@@ -12,8 +12,10 @@ import {
   AUDIO_STORAGE_DIR,
   type AudioCacheStorage,
   type ImageCacheStorage,
+  readBytes,
 } from "@@/core/domains/media-store/cache-storage.ts";
 import { audioFileExtension } from "@@/core/domains/media-store/media-types.ts";
+import { media, type MediaFile } from "@@/core/domains/media-store/media-urls.ts";
 import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 
@@ -31,12 +33,12 @@ type MusicMediaRuntime = MusicStorageRuntime & {
   stories: Pick<StoryRepository, "findMusicMetadata" | "saveMusicMedia">;
 };
 
-async function fileExists(storage: AudioCacheStorage, key: string | null) {
-  if (key === null || !/^audio\/[a-f0-9]{64}\.(?:mp3|m4a|aac|ogg|webm|wav|flac)$/u.test(key)) {
+async function fileExists(storage: AudioCacheStorage, file: MediaFile | null) {
+  if (file === null) {
     return false;
   }
   try {
-    const info = await storage.getMeta(key.slice("audio/".length));
+    const info = await storage.getMeta(file.key);
     return z.number().positive().safeParse(info.size).success;
   } catch {
     return false;
@@ -125,12 +127,13 @@ export async function cacheReceivedAudio(
   declaredAudioType?: "audio/mp4",
 ): Promise<CachedMusicMedia> {
   const storage = runtime.storage.audio;
-  if (cached !== null && (await fileExists(storage, cached))) {
-    const stored: unknown = await storage.getItemRaw(cached.slice(`${AUDIO_STORAGE_DIR}/`.length));
+  const cachedAudio = media.audio.fromStoredPath(cached);
+  if (cachedAudio !== null && (await fileExists(storage, cachedAudio))) {
+    const stored = await readBytes(storage, cachedAudio.key);
     return {
       cachePath: cached,
       state: "available",
-      durationMs: stored instanceof Uint8Array ? await audioDurationMs(stored) : null,
+      durationMs: stored === null ? null : await audioDurationMs(stored),
     };
   }
   if (source === null) {

@@ -12,6 +12,6 @@ export function loadSidebarUsers(runtime: {
 }): Array<SidebarUser> {
   return runtime.users.listAll().map((user) => ({
     username: user.username,
-    avatarPath: media.avatar(user.pk).url,
+    avatarPath: media.image.avatar(user.pk).url,
   }));
 }
