@@ -15,6 +15,7 @@ import {
 } from "@@/core/domains/vision/vision-analysis.ts";
 import type { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
 
+import { media } from "@@/core/domains/media-store/media-urls.ts";
 import { getStoryDate } from "@@/core/domains/story-feed/story-days.ts";
 import { createStoryCards, withStoryStickers } from "../utils/story-cards.ts";
 import type { StoryCardData, StoryCardSources } from "../utils/story-cards.ts";
@@ -153,7 +154,7 @@ export function groupStoriesByPublishedDate(
 }
 
 function getStoryPreviewSource(story: UserTimelineStory): string {
-  return `images/story-previews/${story.story.pk}.jpg`;
+  return media.storyPreview(story.story.pk).storedPath;
 }
 
 interface TimelineDetails {
@@ -205,13 +206,13 @@ export function createUserTimeline(
     }
     return {
       appleCaptionByMediaPk: new Map(),
-      avatarPath: `/media/avatars/${user.pk}.jpg`,
+      avatarPath: media.avatar(user.pk).url,
       outdatedVisionByPreviewUrl: new Map(),
       stories: [],
       timelineUser: {
         username: user.username,
         full_name: user.full_name,
-        profile_pic_url: `images/avatars/${user.pk}.jpg`,
+        profile_pic_url: media.avatar(user.pk).storedPath,
         reel_ids: [],
         stories: [],
       },
@@ -225,7 +226,7 @@ export function createUserTimeline(
 
   return {
     ...details,
-    avatarPath: `/media/avatars/${stories[0].owner_pk}.jpg`,
+    avatarPath: media.avatar(stories[0].owner_pk).url,
     stories,
     timelineUser,
     years: groupStoriesByPublishedDate(stories),
@@ -234,10 +235,7 @@ export function createUserTimeline(
 
 export function getTimelinePreviewPaths(stories: Array<UserTimelineStory>): Map<string, string> {
   return new Map(
-    stories.map((story) => [
-      getStoryPreviewSource(story),
-      `/media/${getStoryPreviewSource(story).slice(7)}`,
-    ]),
+    stories.map((story) => [getStoryPreviewSource(story), media.storyPreview(story.story.pk).url]),
   );
 }
 
@@ -284,7 +282,7 @@ export function createOwnerStoryCards(
   const sources = getStoryCardSources(
     {
       ...readTimelineDetails(runtime, stories),
-      avatarPath: `/media/avatars/${first.owner_pk}.jpg`,
+      avatarPath: media.avatar(first.owner_pk).url,
       timelineUser,
     },
     getTimelinePreviewPaths(stories),

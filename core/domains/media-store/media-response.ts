@@ -2,6 +2,7 @@ import { open, realpath, type FileHandle } from "node:fs/promises";
 import path from "node:path";
 import { cachedMediaContentType } from "./media-types.ts";
 import { AUDIO_STORAGE_DIR, BASE_CACHE_DIR, IMAGES_STORAGE_DIR } from "./cache-storage.ts";
+import { media } from "./media-urls.ts";
 
 const mediaDirectory = path.resolve(BASE_CACHE_DIR, IMAGES_STORAGE_DIR);
 const audioDirectory = path.resolve(BASE_CACHE_DIR, AUDIO_STORAGE_DIR);
@@ -19,30 +20,16 @@ function isInside(root: string, target: string) {
 }
 
 function resolveMediaTarget(requestPath: string, root: string) {
-  let decoded: string;
-  try {
-    decoded = decodeURIComponent(requestPath);
-  } catch {
+  const file = media.fromRequest(requestPath);
+  if (file === null) {
     return null;
   }
-  const isAudio = decoded.startsWith(`${AUDIO_STORAGE_DIR}/`);
   let resolvedRoot = path.resolve(root);
-  if (isAudio) {
+  if (file.store === AUDIO_STORAGE_DIR) {
     resolvedRoot = root === mediaDirectory ? audioDirectory : path.resolve(root, AUDIO_STORAGE_DIR);
   }
-  const resolved = path.resolve(
-    resolvedRoot,
-    isAudio ? decoded.slice(AUDIO_STORAGE_DIR.length + 1) : decoded,
-  );
-  const extension = path.extname(resolved).toLowerCase();
-  if (
-    !isInside(resolvedRoot, resolved) ||
-    cachedMediaContentType(extension) === undefined ||
-    (isAudio ? extension === ".jpg" : extension !== ".jpg")
-  ) {
-    return null;
-  }
-  return { path: resolved, root: resolvedRoot };
+  const resolved = path.resolve(resolvedRoot, file.key);
+  return isInside(resolvedRoot, resolved) ? { path: resolved, root: resolvedRoot } : null;
 }
 
 function byteRange(range: string, size: number): { start: number; end: number } | null {
