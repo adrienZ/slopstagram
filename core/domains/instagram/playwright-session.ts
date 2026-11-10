@@ -14,24 +14,32 @@ export interface InstagramSession {
 export interface OpenInstagramSessionOptions {
   headless?: boolean;
   profilePath?: string;
+  /** The browser launch, a boundary: Playwright's persistent context unless a test passes its own. */
+  launch?: typeof chromium.launchPersistentContext;
 }
 
 export async function openInstagramSession(
   options: OpenInstagramSessionOptions = {},
 ): Promise<InstagramSession> {
   const profilePath = path.resolve(options.profilePath ?? DEFAULT_PROFILE_PATH);
-  const context = await chromium.launchPersistentContext(profilePath, {
+  const launch = options.launch ?? chromium.launchPersistentContext.bind(chromium);
+  const context = await launch(profilePath, {
     ...cliConfig.browser.launchOptions,
     headless: options.headless ?? true,
   });
 
-  const page = context.pages()[0] ?? (await context.newPage());
-  await page.goto(INSTAGRAM_HOME_URL, {
-    waitUntil: "domcontentloaded",
-    timeout: 30_000,
-  });
-
-  return { context, page };
+  try {
+    const page = context.pages()[0] ?? (await context.newPage());
+    await page.goto(INSTAGRAM_HOME_URL, {
+      waitUntil: "domcontentloaded",
+      timeout: 30_000,
+    });
+    return { context, page };
+  } catch (error) {
+    // A browser left running keeps the profile locked, so every later run would fail to launch.
+    await context.close();
+    throw error;
+  }
 }
 
 export async function closeInstagramSession(session: InstagramSession): Promise<void> {

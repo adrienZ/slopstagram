@@ -18,7 +18,7 @@ export default defineConfig({
         statements: 93,
         branches: 87,
         functions: 92,
-        lines: 92,
+        lines: 93,
       },
     },
     // Keep server/SQLite tests in Node and browser UI tests in jsdom with their own setup.

@@ -1,5 +1,8 @@
 import { cachedMediaContentType } from "./media-types.ts";
-import { AUDIO_STORAGE_DIR, IMAGES_STORAGE_DIR } from "./cache-storage.ts";
+
+/** The folders of the media store. Defined here, not in `cache-storage.ts`, because the browser loads this file. */
+export const IMAGES_STORAGE_DIR = "images";
+export const AUDIO_STORAGE_DIR = "audio";
 
 /** A file of the media store: its store, its key in that store, where the database keeps it and the URL serving it. */
 export interface MediaFile {
