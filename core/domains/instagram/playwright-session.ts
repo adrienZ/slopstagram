@@ -14,16 +14,13 @@ export interface InstagramSession {
 export interface OpenInstagramSessionOptions {
   headless?: boolean;
   profilePath?: string;
-  /** The browser launch, a boundary: Playwright's persistent context unless a test passes its own. */
-  launch?: typeof chromium.launchPersistentContext;
 }
 
 export async function openInstagramSession(
   options: OpenInstagramSessionOptions = {},
 ): Promise<InstagramSession> {
   const profilePath = path.resolve(options.profilePath ?? DEFAULT_PROFILE_PATH);
-  const launch = options.launch ?? chromium.launchPersistentContext.bind(chromium);
-  const context = await launch(profilePath, {
+  const context = await chromium.launchPersistentContext(profilePath, {
     ...cliConfig.browser.launchOptions,
     headless: options.headless ?? true,
   });
