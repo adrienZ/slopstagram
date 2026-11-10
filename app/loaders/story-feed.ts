@@ -5,6 +5,7 @@ import type { StoryRepository } from "@@/core/domains/database/repositories/stor
 import type { UserSummaryRepository } from "@@/core/domains/database/repositories/user-summary-repository.ts";
 import type { VisionRepository } from "@@/core/domains/database/repositories/vision-repository.ts";
 import type { CachedReportImages } from "@@/core/domains/media-store/image-cache.ts";
+import { media } from "@@/core/domains/media-store/media-urls.ts";
 import { getReportUserKey } from "@@/core/domains/accounts/report-user-key.ts";
 import type { StoryOutputUser } from "@@/core/domains/fetch-run/report-types.ts";
 import type { VisionResult } from "@@/core/domains/database/entities/vision.ts";
@@ -35,11 +36,6 @@ export interface StoryFeedSources {
   visionByPreviewUrl: Map<string, VisionResult>;
 }
 
-function getLocalImageUrl(imagePath: string): string | null {
-  const marker = "images/";
-  return imagePath.startsWith(marker) ? `/media/${imagePath.slice(marker.length)}` : null;
-}
-
 function readCachedImages(users: Array<StoryOutputUser>): CachedReportImages {
   const profilePicPathByUrl = new Map<string, string>();
   const storyPreviewPathByUrl = new Map<string, string>();
@@ -51,7 +47,7 @@ function readCachedImages(users: Array<StoryOutputUser>): CachedReportImages {
       profilePicUrl.length > 0 &&
       !profilePicPathByUrl.has(profilePicUrl)
     ) {
-      const cachedPath = getLocalImageUrl(profilePicUrl);
+      const cachedPath = media.fromStoredPath(profilePicUrl)?.url ?? null;
       if (cachedPath !== null && cachedPath.length > 0) {
         profilePicPathByUrl.set(profilePicUrl, cachedPath);
       }
@@ -67,7 +63,7 @@ function readCachedImages(users: Array<StoryOutputUser>): CachedReportImages {
         continue;
       }
 
-      const cachedPath = getLocalImageUrl(previewUrl);
+      const cachedPath = media.fromStoredPath(previewUrl)?.url ?? null;
       if (cachedPath !== null && cachedPath.length > 0) {
         storyPreviewPathByUrl.set(previewUrl, cachedPath);
       }

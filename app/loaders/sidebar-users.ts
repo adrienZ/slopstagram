@@ -1,4 +1,5 @@
 import "@tanstack/react-start/server-only";
+import { media } from "@@/core/domains/media-store/media-urls.ts";
 import type { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
 
 export interface SidebarUser {
@@ -11,6 +12,6 @@ export function loadSidebarUsers(runtime: {
 }): Array<SidebarUser> {
   return runtime.users.listAll().map((user) => ({
     username: user.username,
-    avatarPath: `/media/avatars/${user.pk}.jpg`,
+    avatarPath: media.avatar(user.pk).url,
   }));
 }
