@@ -1,35 +1,13 @@
-import { open, realpath, type FileHandle } from "node:fs/promises";
 import path from "node:path";
+import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
+import { readBytes } from "./cache-storage.ts";
 import { cachedMediaContentType } from "./media-types.ts";
-import { AUDIO_STORAGE_DIR, BASE_CACHE_DIR, IMAGES_STORAGE_DIR } from "./cache-storage.ts";
 import { media } from "./media-urls.ts";
 
-const mediaDirectory = path.resolve(BASE_CACHE_DIR, IMAGES_STORAGE_DIR);
-const audioDirectory = path.resolve(BASE_CACHE_DIR, AUDIO_STORAGE_DIR);
+export type MediaRuntime = Pick<Runtime, "storage">;
+
 function notFound(): Response {
   return new globalThis.Response("media not found", { status: 404 });
-}
-function isInside(root: string, target: string) {
-  const relative = path.relative(root, target);
-  return (
-    relative.length > 0 &&
-    relative !== ".." &&
-    !relative.startsWith(`..${path.sep}`) &&
-    !path.isAbsolute(relative)
-  );
-}
-
-function resolveMediaTarget(requestPath: string, root: string) {
-  const file = media.fromRequest(requestPath);
-  if (file === null) {
-    return null;
-  }
-  let resolvedRoot = path.resolve(root);
-  if (file.store === AUDIO_STORAGE_DIR) {
-    resolvedRoot = root === mediaDirectory ? audioDirectory : path.resolve(root, AUDIO_STORAGE_DIR);
-  }
-  const resolved = path.resolve(resolvedRoot, file.key);
-  return isInside(resolvedRoot, resolved) ? { path: resolved, root: resolvedRoot } : null;
 }
 
 function byteRange(range: string, size: number): { start: number; end: number } | null {
@@ -50,38 +28,11 @@ function byteRange(range: string, size: number): { start: number; end: number } 
     : null;
 }
 
-function mediaStream(file: FileHandle, start: number, end: number) {
-  let position = start;
-  return new globalThis.ReadableStream<Uint8Array>({
-    async pull(controller) {
-      try {
-        const buffer = new Uint8Array(Math.min(64 * 1024, end - position + 1));
-        const chunk = await file.read(buffer, 0, buffer.length, position);
-        if (chunk.bytesRead === 0) {
-          throw new Error("Cached media truncated");
-        }
-        position += chunk.bytesRead;
-        controller.enqueue(buffer.subarray(0, chunk.bytesRead));
-        if (position > end) {
-          controller.close();
-          await file.close();
-        }
-      } catch (error) {
-        controller.error(error);
-        await file.close();
-      }
-    },
-    async cancel() {
-      await file.close();
-    },
-  });
-}
-
-function mediaHeaders(mediaPath: string) {
+function mediaHeaders(key: string) {
   return new globalThis.Headers({
     "cache-control": "private, max-age=3600",
     "content-type":
-      cachedMediaContentType(path.extname(mediaPath).toLowerCase()) ?? "application/octet-stream",
+      cachedMediaContentType(path.extname(key).toLowerCase()) ?? "application/octet-stream",
     "accept-ranges": "bytes",
     "x-content-type-options": "nosniff",
   });
@@ -89,59 +40,48 @@ function mediaHeaders(mediaPath: string) {
 
 /**
  * Answers a request for a cached image or audio file: `requestPath` is the URL-encoded path under
- * `/media/`, `root` the images folder of the media store. Anything outside the store, or of the
- * wrong type for its folder, is a 404.
+ * `/media/`, read as raw bytes from the runtime's media storage and sliced to answer a range.
+ * Anything outside the store, of the wrong type for its folder, or missing is a 404.
  */
 export async function createMediaResponse(
+  runtime: MediaRuntime,
   requestPath: string,
-  root: string = mediaDirectory,
   options: { range?: string | null; method?: string } = {},
 ): Promise<Response> {
-  const target = resolveMediaTarget(requestPath, root);
-  if (target === null) {
+  const file = media.fromRequest(requestPath);
+  if (file === null) {
     return notFound();
   }
-  const mediaPath = target.path;
+  let bytes: Uint8Array | null;
   try {
-    if (!isInside(await realpath(target.root), await realpath(mediaPath))) {
-      return notFound();
-    }
-    const file = await open(mediaPath, "r");
-    let streaming = false;
-    try {
-      const info = await file.stat();
-      if (!info.isFile() || info.size === 0) {
-        return notFound();
-      }
-      const headers = mediaHeaders(mediaPath);
-      const rangeHeader = options.range ?? "";
-      const range =
-        options.method !== "HEAD" && rangeHeader.length > 0
-          ? byteRange(rangeHeader, info.size)
-          : undefined;
-      if (range === null) {
-        headers.set("content-range", `bytes */${info.size}`);
-        return new globalThis.Response(null, { status: 416, headers });
-      }
-      const start = range?.start ?? 0;
-      const end = range?.end ?? info.size - 1;
-      headers.set("content-length", String(end - start + 1));
-      if (range) {
-        headers.set("content-range", `bytes ${start}-${end}/${info.size}`);
-      }
-      // A stream reads only the requested range; the handle closes after transfer/cancellation.
-      if (options.method === "HEAD") {
-        return new globalThis.Response(null, { headers });
-      }
-      const body = mediaStream(file, start, end);
-      streaming = true;
-      return new globalThis.Response(body, { status: range ? 206 : 200, headers });
-    } finally {
-      if (!streaming) {
-        await file.close();
-      }
-    }
+    bytes = await readBytes(runtime.storage[file.store], file.key);
   } catch {
+    // A storage that cannot read the key has no such file to serve.
     return notFound();
   }
+  if (bytes === null || bytes.byteLength === 0) {
+    return notFound();
+  }
+  const size = bytes.byteLength;
+  const headers = mediaHeaders(file.key);
+  const rangeHeader = options.range ?? "";
+  const range =
+    options.method !== "HEAD" && rangeHeader.length > 0 ? byteRange(rangeHeader, size) : undefined;
+  if (range === null) {
+    headers.set("content-range", `bytes */${size}`);
+    return new globalThis.Response(null, { status: 416, headers });
+  }
+  const start = range?.start ?? 0;
+  const end = range?.end ?? size - 1;
+  headers.set("content-length", String(end - start + 1));
+  if (range) {
+    headers.set("content-range", `bytes ${start}-${end}/${size}`);
+  }
+  if (options.method === "HEAD") {
+    return new globalThis.Response(null, { headers });
+  }
+  return new globalThis.Response(new Uint8Array(bytes.subarray(start, end + 1)), {
+    status: range ? 206 : 200,
+    headers,
+  });
 }

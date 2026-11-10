@@ -118,7 +118,10 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
   assert.ok(first.audioCachePath !== null);
   assert.ok(first.artworkCachePath !== null);
   expect(await readFile(path.join(directory, first.audioCachePath))).toStrictEqual(audio);
-  const artwork = await createMediaResponse(first.artworkCachePath, path.join(directory, "images"));
+  const artwork = await createMediaResponse(
+    { storage: createFileCacheStorage(directory) },
+    first.artworkCachePath,
+  );
   expect(artwork.status).toBe(200);
   expect(artwork.headers.get("content-type")).toBe("image/jpeg");
   await cacheReportAudio(
