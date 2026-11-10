@@ -57,9 +57,15 @@ export const media = {
     /** Music artwork, at a key of the image store (without its `images/` prefix). */
     artwork: (key: string | null) =>
       key?.startsWith("music/") === true ? images.fromKey(key) : null,
+    /** A file of the image store at a key, for the pipeline that writes it. */
+    file: images.file,
     fromStoredPath: images.fromStoredPath,
   },
-  audio: { fromStoredPath: audio.fromStoredPath },
+  audio: {
+    /** A file of the audio store at a key, for the pipeline that writes it. */
+    file: audio.file,
+    fromStoredPath: audio.fromStoredPath,
+  },
 
   /**
    * The file a request path under `/media/` stands for (URL-encoded, without the prefix): a path

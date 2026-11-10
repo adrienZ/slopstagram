@@ -2,6 +2,10 @@ import { expect, test } from "vitest";
 import { loadAccountTimeline } from "../app/loaders/account-timeline.ts";
 import { getRouter } from "../app/router.tsx";
 import { loadSidebarUsers } from "../app/loaders/sidebar-users.ts";
+import {
+  cachedArtworkFile,
+  cachedAudioFile,
+} from "@@/core/domains/media-store/cached-media-files.ts";
 import { media } from "@@/core/domains/media-store/media-urls.ts";
 import { createTestRuntime, useSharedTestRuntime } from "./setup/test-runtime.ts";
 import { pageNow, seedPageDatabase, timelineAccount } from "./ui/seeded-pages.ts";
@@ -104,4 +108,20 @@ test("a path that is not a valid music key has no file", () => {
   expect(media.image.artwork(null)).toBeNull();
   expect(media.image.artwork(`music/${hash}.gif`)).toBeNull();
   expect(media.image.artwork(`audio/${hash}.jpg`)).toBeNull();
+});
+
+test("the files the pipeline writes resolve back through the media record, by their stored path or key", () => {
+  const audio = cachedAudioFile("asset-1", "m4a");
+  const artwork = cachedArtworkFile("asset-1");
+
+  expect(audio.storedPath).toMatch(/^audio\/[a-f0-9]{64}\.m4a$/u);
+  expect(media.audio.fromStoredPath(audio.storedPath)).toStrictEqual(audio);
+  expect(artwork.key).toMatch(/^music\/[a-f0-9]{64}\.jpg$/u);
+  expect(media.image.artwork(artwork.key)).toStrictEqual(artwork);
+  expect(media.image.fromStoredPath(media.image.avatar("1").storedPath)).toStrictEqual(
+    media.image.avatar("1"),
+  );
+  expect(media.image.fromStoredPath(media.image.storyPreview("2").storedPath)).toStrictEqual(
+    media.image.storyPreview("2"),
+  );
 });

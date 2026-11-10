@@ -1,10 +1,11 @@
 import { Buffer } from "node:buffer";
 import { describe, test, expect } from "vitest";
-import { TextEncoder } from "node:util";
+import sharp from "sharp";
+import { readBytes } from "@@/core/domains/media-store/cache-storage.ts";
 import { cacheReportImages } from "@@/core/domains/media-store/image-cache.ts";
 import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";
 import { createMemoryCacheStorage } from "./memory-storage.ts";
-import { createMockLogger } from "./mock-helpers.ts";
+import { createCapturingLogger, createMockLogger } from "./mock-helpers.ts";
 
 const PROFILE_PK = "avatar-pk";
 
@@ -65,53 +66,57 @@ function createReport(
   };
 }
 
-async function cacheImages(
-  report: StoriesManifestReport,
-  {
-    convertToJpeg,
-    ...runtime
-  }: Parameters<typeof cacheReportImages>[0] & NonNullable<Parameters<typeof cacheReportImages>[2]>,
-) {
-  return await cacheReportImages(runtime, report, { convertToJpeg });
+type Images = ReturnType<typeof createMemoryCacheStorage>["images"];
+
+/** A real PNG of the given width: the pipeline converts what it fetches with sharp, unfaked. */
+async function pngOfWidth(width: number): Promise<Buffer> {
+  return await sharp({
+    create: { background: { r: 255, g: 0, b: 0 }, channels: 3, height: 2, width },
+  })
+    .png()
+    .toBuffer();
+}
+
+function imageResponse(body: Uint8Array) {
+  return {
+    arrayBuffer: async () => await Promise.resolve(new Uint8Array(body).buffer),
+    headers: { get: () => "image/png" },
+    ok: true,
+    status: 200,
+  };
+}
+
+/** The format and width of the image stored at a key. */
+async function storedImage(images: Images, key: string) {
+  const bytes = await readBytes(images, key);
+  expect(bytes).not.toBeNull();
+  const { format, width } = await sharp(bytes ?? Buffer.alloc(0)).metadata();
+  return { format, width };
 }
 
 describe("cacheReportImages", () => {
-  test("caches profile pictures as local report-relative files", async () => {
+  test("caches profile pictures as local report-relative files, converted to JPEG", async () => {
     const source = "https://example.com/avatar?id=1";
     const previewSource = "https://example.com/story-preview.webp";
     const previewKey = "story-pk";
     const storage = createMemoryCacheStorage();
-    const imageCacheStorage = storage.images;
+    const png = await pngOfWidth(4);
     let fetchCount = 0;
-    let convertCount = 0;
 
     const report = createReport(source, previewSource);
-    const cachedImages = await cacheImages(report, {
-      convertToJpeg: async (body) => {
-        convertCount += 1;
-        return Buffer.from(`jpeg:${body.toString()}`);
+    const cachedImages = await cacheReportImages(
+      {
+        fetchImage: async () => {
+          fetchCount += 1;
+          return imageResponse(png);
+        },
+        logger: createMockLogger(),
+        storage,
       },
-      fetchImage: async () => {
-        fetchCount += 1;
-        const body = new TextEncoder().encode("image-bytes");
-        return {
-          arrayBuffer: async () =>
-            await Promise.resolve(
-              body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength),
-            ),
-          headers: {
-            get: (name) => (name.toLowerCase() === "content-type" ? "image/jpeg" : null),
-          },
-          ok: true,
-          status: 200,
-        };
-      },
-      logger: createMockLogger(),
-      storage,
-    });
+      report,
+    );
 
     expect(fetchCount).toBe(2);
-    expect(convertCount).toBe(2);
     expect(cachedImages.profilePicPathByUrl.get(source)).toBe(`images/avatars/${PROFILE_PK}.jpg`);
     expect(cachedImages.storyPreviewPathByUrl.get(previewSource)).toBe(
       `images/story-previews/${previewKey}.jpg`,
@@ -120,44 +125,34 @@ describe("cacheReportImages", () => {
     expect(report.output.users[0]?.stories[0]?.preview_image_url).toBe(
       `images/story-previews/${previewKey}.jpg`,
     );
-    expect(await imageCacheStorage.getItemRaw(`avatars/${PROFILE_PK}.jpg`)).toStrictEqual(
-      Buffer.from("jpeg:image-bytes"),
-    );
-    expect(await imageCacheStorage.getItemRaw(`story-previews/${previewKey}.jpg`)).toStrictEqual(
-      Buffer.from("jpeg:image-bytes"),
-    );
-    expect(await imageCacheStorage.getItemRaw(`avatars/${PROFILE_PK}.json`)).toBe(null);
-    expect(await imageCacheStorage.getItemRaw(`story-previews/${previewKey}.json`)).toBe(null);
+    expect(await storedImage(storage.images, `avatars/${PROFILE_PK}.jpg`)).toStrictEqual({
+      format: "jpeg",
+      width: 4,
+    });
+    expect(await storedImage(storage.images, `story-previews/${previewKey}.jpg`)).toStrictEqual({
+      format: "jpeg",
+      width: 4,
+    });
+    expect(await storage.images.getItemRaw(`avatars/${PROFILE_PK}.json`)).toBe(null);
+    expect(await storage.images.getItemRaw(`story-previews/${previewKey}.json`)).toBe(null);
   });
 
   test("refreshes cached profile pictures from the latest API response", async () => {
     const source = "https://example.com/avatar.webp";
     const storage = createMemoryCacheStorage();
-    const imageCacheStorage = storage.images;
-    await imageCacheStorage.setItemRaw(`avatars/${PROFILE_PK}.jpg`, Buffer.from("jpeg-avatar"));
+    await storage.images.setItemRaw(`avatars/${PROFILE_PK}.jpg`, Buffer.from("jpeg-avatar"));
+    const updated = await pngOfWidth(6);
 
-    const cachedImages = await cacheImages(createReport(source), {
-      convertToJpeg: async (body) => Buffer.from(`jpeg:${body.toString()}`),
-      fetchImage: async () => {
-        const body = new TextEncoder().encode("updated-avatar");
-        return {
-          arrayBuffer: async () =>
-            await Promise.resolve(
-              body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength),
-            ),
-          headers: { get: () => "image/jpeg" },
-          ok: true,
-          status: 200,
-        };
-      },
-      logger: createMockLogger(),
-      storage,
-    });
+    const cachedImages = await cacheReportImages(
+      { fetchImage: async () => imageResponse(updated), logger: createMockLogger(), storage },
+      createReport(source),
+    );
 
     expect(cachedImages.profilePicPathByUrl.get(source)).toBe(`images/avatars/${PROFILE_PK}.jpg`);
-    expect(await imageCacheStorage.getItemRaw(`avatars/${PROFILE_PK}.jpg`)).toStrictEqual(
-      Buffer.from("jpeg:updated-avatar"),
-    );
+    expect(await storedImage(storage.images, `avatars/${PROFILE_PK}.jpg`)).toStrictEqual({
+      format: "jpeg",
+      width: 6,
+    });
   });
 
   test("reuses cached story previews without fetching again", async () => {
@@ -172,13 +167,16 @@ describe("cacheReportImages", () => {
       Buffer.from("jpeg-story"),
     );
 
-    const cachedImages = await cacheImages(createReport(source, previewSource), {
-      fetchImage: async () => {
-        throw new Error("should not fetch");
+    const cachedImages = await cacheReportImages(
+      {
+        fetchImage: async () => {
+          throw new Error("should not fetch");
+        },
+        logger: createMockLogger(),
+        storage,
       },
-      logger: createMockLogger(),
-      storage,
-    });
+      createReport(source, previewSource),
+    );
 
     expect(cachedImages.storyPreviewPathByUrl.get(previewSource)).toBe(
       `images/story-previews/${previewKey}.jpg`,
@@ -194,32 +192,20 @@ describe("cacheReportImages", () => {
     const secondPreviewSource = "https://example.com/story-preview.webp?signature=new";
     const previewKey = "story-pk";
     const storage = createMemoryCacheStorage();
-    const imageCacheStorage = storage.images;
+    const png = await pngOfWidth(4);
     let fetchCount = 0;
 
-    const options = {
-      convertToJpeg: async (body: Buffer) => Buffer.from(`jpeg:${body.toString()}`),
-      fetchImage: async (url: string) => {
+    const runtime = {
+      fetchImage: async () => {
         fetchCount += 1;
-        const body = new TextEncoder().encode(url.includes("avatar") ? "avatar" : "story");
-        return {
-          arrayBuffer: async () =>
-            await Promise.resolve(
-              body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength),
-            ),
-          headers: {
-            get: (name: string) => (name.toLowerCase() === "content-type" ? "image/webp" : null),
-          },
-          ok: true,
-          status: 200,
-        };
+        return imageResponse(png);
       },
       logger: createMockLogger(),
       storage,
     };
 
-    const first = await cacheImages(createReport(source, firstPreviewSource), options);
-    const second = await cacheImages(createReport(source, secondPreviewSource), options);
+    const first = await cacheReportImages(runtime, createReport(source, firstPreviewSource));
+    const second = await cacheReportImages(runtime, createReport(source, secondPreviewSource));
 
     expect(fetchCount).toBe(3);
     expect(first.storyPreviewPathByUrl.get(firstPreviewSource)).toBe(
@@ -228,8 +214,28 @@ describe("cacheReportImages", () => {
     expect(second.storyPreviewPathByUrl.get(secondPreviewSource)).toBe(
       `images/story-previews/${previewKey}.jpg`,
     );
-    expect(await imageCacheStorage.getItemRaw(`story-previews/${previewKey}.jpg`)).toStrictEqual(
-      Buffer.from("jpeg:story"),
+    expect(await storedImage(storage.images, `story-previews/${previewKey}.jpg`)).toStrictEqual({
+      format: "jpeg",
+      width: 4,
+    });
+  });
+
+  test("keeps nothing and logs a warning when the fetched bytes are not an image", async () => {
+    const source = "https://example.com/avatar.webp";
+    const storage = createMemoryCacheStorage();
+    const logger = createCapturingLogger();
+
+    const cachedImages = await cacheReportImages(
+      {
+        fetchImage: async () => imageResponse(Buffer.from("not an image")),
+        logger,
+        storage,
+      },
+      createReport(source),
     );
+
+    expect(cachedImages.profilePicPathByUrl.size).toBe(0);
+    expect(await storage.images.getItemRaw(`avatars/${PROFILE_PK}.jpg`)).toBe(null);
+    expect(logger.messages.some((message) => message.includes("to JPEG"))).toBe(true);
   });
 });

@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { Buffer } from "node:buffer";
 import sharp from "sharp";
 import { z } from "zod";
@@ -9,11 +8,14 @@ import type {
 } from "@@/core/domains/database/entities/music-metadata.ts";
 import { audioDurationMs } from "./audio-duration.ts";
 import {
-  AUDIO_STORAGE_DIR,
   type AudioCacheStorage,
   type ImageCacheStorage,
   readBytes,
 } from "@@/core/domains/media-store/cache-storage.ts";
+import {
+  cachedArtworkFile,
+  cachedAudioFile,
+} from "@@/core/domains/media-store/cached-media-files.ts";
 import { audioFileExtension } from "@@/core/domains/media-store/media-types.ts";
 import { media, type MediaFile } from "@@/core/domains/media-store/media-urls.ts";
 import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
@@ -113,10 +115,13 @@ async function downloadMedia(
       return { cachePath: null, state: "unsupported", durationMs: null };
     }
   }
-  const filename = `${createHash("sha256").update(`${id}:audio`).digest("hex")}.${extension}`;
-  const key = `${AUDIO_STORAGE_DIR}/${filename}`;
-  await runtime.storage.audio.setItemRaw(filename, received);
-  return { cachePath: key, state: "available", durationMs: await audioDurationMs(received) };
+  const file = cachedAudioFile(id, extension);
+  await runtime.storage.audio.setItemRaw(file.key, received);
+  return {
+    cachePath: file.storedPath,
+    state: "available",
+    durationMs: await audioDurationMs(received),
+  };
 }
 
 export async function cacheReceivedAudio(
@@ -174,11 +179,12 @@ export async function processMusicMedia(
 }
 
 async function cachedArtworkExists(storage: ImageCacheStorage, key: string | null) {
-  if (key === null || !/^music\/[a-f0-9]{64}\.jpg$/u.test(key)) {
+  const file = media.image.artwork(key);
+  if (file === null) {
     return false;
   }
   try {
-    const info = await storage.getMeta(key);
+    const info = await storage.getMeta(file.key);
     return z.number().positive().safeParse(info.size).success;
   } catch {
     return false;
@@ -209,9 +215,9 @@ async function downloadArtwork(source: string, id: string, runtime: MusicStorage
       .resize({ width: 1024, height: 1024, fit: "inside", withoutEnlargement: true })
       .jpeg()
       .toBuffer();
-    const key = `music/${createHash("sha256").update(`${id}:artwork`).digest("hex")}.jpg`;
-    await runtime.storage.images.setItemRaw(key, jpeg);
-    return { cachePath: key, state: "available" as const };
+    const file = cachedArtworkFile(id);
+    await runtime.storage.images.setItemRaw(file.key, jpeg);
+    return { cachePath: file.key, state: "available" as const };
   } catch {
     return { cachePath: null, state: "failed" as const };
   }

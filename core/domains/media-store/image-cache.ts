@@ -1,17 +1,12 @@
 import { Buffer } from "node:buffer";
-import path from "node:path";
-import { IMAGES_STORAGE_DIR, readBytes, type ImageCacheStorage } from "./cache-storage.ts";
-import { media } from "./media-urls.ts";
-import { convertImageToJpeg } from "./image-conversion.ts";
+import { readBytes, type ImageCacheStorage } from "./cache-storage.ts";
+import { media, type MediaFile } from "./media-urls.ts";
+import sharp from "sharp";
 import type { FetchImage } from "@@/core/domains/runtime/fetch-boundaries.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";
 
 type ImageCacheRuntime = Pick<Runtime, "fetchImage" | "logger" | "storage">;
-
-interface CacheReportImagesOptions {
-  convertToJpeg?: typeof convertImageToJpeg;
-}
 
 export interface CachedReportImages {
   profilePicPathByUrl: Map<string, string>;
@@ -19,7 +14,6 @@ export interface CachedReportImages {
 }
 
 interface ResolvedCacheReportImagesOptions {
-  convertToJpeg: typeof convertImageToJpeg;
   fetchImage: FetchImage;
   logger: Runtime["logger"];
   storage: ImageCacheStorage;
@@ -35,10 +29,6 @@ interface ProfilePicEntry {
   source: string;
 }
 
-function getRelativeCacheImagePath(rawKey: string): string {
-  return path.posix.join(IMAGES_STORAGE_DIR, rawKey);
-}
-
 export async function readCachedImage(
   images: ImageCacheStorage,
   cachedPath: string,
@@ -51,19 +41,12 @@ function isPresent(value: string | null | undefined): value is string {
   return Boolean(value);
 }
 
-function getJpegRawKey(namespace: string, imageKey: string): string {
-  return `${namespace}/${imageKey}.jpg`;
-}
-
 async function cacheImage(
   source: string,
-  namespace: string,
-  options: ResolvedCacheReportImagesOptions & { imageKey: string; refresh?: boolean },
+  file: MediaFile,
+  options: ResolvedCacheReportImagesOptions & { refresh?: boolean },
 ): Promise<string | null> {
-  const rawKey = getJpegRawKey(namespace, options.imageKey);
-  const cachedPath = (await options.storage.hasItem(rawKey))
-    ? getRelativeCacheImagePath(rawKey)
-    : null;
+  const cachedPath = (await options.storage.hasItem(file.key)) ? file.storedPath : null;
 
   if (cachedPath !== null && options.refresh !== true) {
     return cachedPath;
@@ -78,22 +61,18 @@ async function cacheImage(
   const body = Buffer.from(await response.arrayBuffer());
 
   try {
-    await options.storage.setItemRaw(rawKey, await options.convertToJpeg(body));
+    await options.storage.setItemRaw(file.key, await sharp(body).jpeg().toBuffer());
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     options.logger.warn(`could not convert image ${source} to JPEG: ${message}`);
     return cachedPath;
   }
 
-  return getRelativeCacheImagePath(rawKey);
+  return file.storedPath;
 }
 
-function resolveCacheOptions(
-  runtime: ImageCacheRuntime,
-  options: CacheReportImagesOptions,
-): ResolvedCacheReportImagesOptions {
+function resolveCacheOptions(runtime: ImageCacheRuntime): ResolvedCacheReportImagesOptions {
   return {
-    convertToJpeg: options.convertToJpeg ?? convertImageToJpeg,
     fetchImage: runtime.fetchImage ?? globalThis.fetch,
     logger: runtime.logger,
     storage: runtime.storage.images,
@@ -112,9 +91,8 @@ async function cacheProfilePics(
   for (const { pk, source } of new Map(entries.map((entry) => [entry.pk, entry])).values()) {
     try {
       // oxlint-disable-next-line no-await-in-loop -- Serial image caching limits network, conversion, and storage pressure.
-      const cachedPath = await cacheImage(source, "avatars", {
+      const cachedPath = await cacheImage(source, media.image.avatar(pk), {
         ...options,
-        imageKey: pk,
         refresh: true,
       });
 
@@ -152,10 +130,7 @@ async function cacheStoryPreviewByMediaPk(
   ).values()) {
     try {
       // oxlint-disable-next-line no-await-in-loop -- Serial image caching limits network, conversion, and storage pressure.
-      const cachedPath = await cacheImage(source, "story-previews", {
-        ...options,
-        imageKey: mediaPk,
-      });
+      const cachedPath = await cacheImage(source, media.image.storyPreview(mediaPk), options);
 
       if (cachedPath !== null && cachedPath.length > 0) {
         storyPreviewPathByMediaPk.set(mediaPk, cachedPath);
@@ -219,9 +194,8 @@ function addLocalPathAliases(cachedImages: CachedReportImages): void {
 export async function cacheReportImages(
   runtime: ImageCacheRuntime,
   report: StoriesManifestReport,
-  options: CacheReportImagesOptions = {},
 ): Promise<CachedReportImages> {
-  const resolvedOptions = resolveCacheOptions(runtime, options);
+  const resolvedOptions = resolveCacheOptions(runtime);
   const profilePicPathByUrl = await cacheProfilePics(report, resolvedOptions);
   const storyPreviewEntries = getStoryPreviewEntries(report);
   const storyPreviewPathByMediaPk = await cacheStoryPreviewByMediaPk(
