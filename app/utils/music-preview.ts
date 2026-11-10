@@ -1,4 +1,5 @@
 import type { StoryMusicObservation } from "@@/core/domains/database/entities/music-metadata.ts";
+import { media } from "@@/core/domains/media-store/media-urls.ts";
 import type { StoryAnnotations } from "@@/core/domains/stickers/story-types.ts";
 
 export interface MusicPreview {
@@ -17,19 +18,11 @@ export interface MusicStickerItem {
 }
 
 function localMediaPath(key: string | null, state: string): string | null {
-  return state === "available" &&
-    key !== null &&
-    /^audio\/[a-f0-9]{64}\.(?:mp3|m4a|aac|ogg|webm|wav|flac)$/u.test(key)
-    ? `/media/${key}`
-    : null;
+  return state === "available" ? (media.audio.fromStoredPath(key)?.url ?? null) : null;
 }
 
 function localArtworkPath(key: string | null, state: string): string | null {
-  return state === "available" &&
-    key !== null &&
-    /^music\/[a-f0-9]{64}\.(?:jpg|png|webp)$/u.test(key)
-    ? `/media/${key}`
-    : null;
+  return state === "available" ? (media.image.artwork(key)?.url ?? null) : null;
 }
 
 function musicPreview(observation: StoryMusicObservation): MusicPreview | null {

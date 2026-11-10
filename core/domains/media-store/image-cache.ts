@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
 import path from "node:path";
-import { IMAGES_STORAGE_DIR, type ImageCacheStorage } from "./cache-storage.ts";
+import { IMAGES_STORAGE_DIR, readBytes, type ImageCacheStorage } from "./cache-storage.ts";
+import { media } from "./media-urls.ts";
 import { convertImageToJpeg } from "./image-conversion.ts";
 import type { FetchImage } from "@@/core/domains/runtime/fetch-boundaries.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
@@ -42,10 +43,8 @@ export async function readCachedImage(
   images: ImageCacheStorage,
   cachedPath: string,
 ): Promise<Uint8Array | null> {
-  const bytes: unknown = await images.getItemRaw(
-    path.posix.relative(IMAGES_STORAGE_DIR, cachedPath),
-  );
-  return bytes instanceof Uint8Array ? bytes : null;
+  const file = media.image.fromStoredPath(cachedPath);
+  return file === null ? null : await readBytes(images, file.key);
 }
 
 function isPresent(value: string | null | undefined): value is string {

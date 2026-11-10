@@ -47,7 +47,7 @@ function readCachedImages(users: Array<StoryOutputUser>): CachedReportImages {
       profilePicUrl.length > 0 &&
       !profilePicPathByUrl.has(profilePicUrl)
     ) {
-      const cachedPath = media.fromStoredPath(profilePicUrl)?.url ?? null;
+      const cachedPath = media.image.fromStoredPath(profilePicUrl)?.url ?? null;
       if (cachedPath !== null && cachedPath.length > 0) {
         profilePicPathByUrl.set(profilePicUrl, cachedPath);
       }
@@ -63,7 +63,7 @@ function readCachedImages(users: Array<StoryOutputUser>): CachedReportImages {
         continue;
       }
 
-      const cachedPath = media.fromStoredPath(previewUrl)?.url ?? null;
+      const cachedPath = media.image.fromStoredPath(previewUrl)?.url ?? null;
       if (cachedPath !== null && cachedPath.length > 0) {
         storyPreviewPathByUrl.set(previewUrl, cachedPath);
       }

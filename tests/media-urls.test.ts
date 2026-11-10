@@ -27,7 +27,7 @@ test("an avatar URL a loader builds resolves back to the key of its image in the
     storedPath: "images/avatars/alice.jpg",
     url: "/media/avatars/alice.jpg",
   });
-  expect(media.avatar("alice")).toStrictEqual(keyOfUrl(user.avatarPath));
+  expect(media.image.avatar("alice")).toStrictEqual(keyOfUrl(user.avatarPath));
 });
 
 test("a story preview URL a loader builds resolves back to the key of its image in the media store", () => {
@@ -41,7 +41,7 @@ test("a story preview URL a loader builds resolves back to the key of its image 
     storedPath: "images/story-previews/700000000000906.jpg",
     url: "/media/story-previews/700000000000906.jpg",
   });
-  expect(media.storyPreview("700000000000906")).toStrictEqual(keyOfUrl(story.preview));
+  expect(media.image.storyPreview("700000000000906")).toStrictEqual(keyOfUrl(story.preview));
 });
 
 test("an audio URL resolves to a key of the audio store, and a type outside its folder resolves to nothing", () => {
@@ -57,8 +57,51 @@ test("an audio URL resolves to a key of the audio store, and a type outside its 
 });
 
 test("a stored path resolves to the URL serving it, and a path without a known store or a key resolves to nothing", () => {
-  expect(media.fromStoredPath("images/avatars/alice.jpg")?.url).toBe("/media/avatars/alice.jpg");
-  expect(media.fromStoredPath("audio/a.m4a")?.url).toBe("/media/audio/a.m4a");
-  expect(media.fromStoredPath("images/")).toBeNull();
-  expect(media.fromStoredPath("https://example.com/a.jpg")).toBeNull();
+  expect(media.image.fromStoredPath("images/avatars/alice.jpg")?.url).toBe(
+    "/media/avatars/alice.jpg",
+  );
+  expect(media.audio.fromStoredPath("audio/a.m4a")?.url).toBe("/media/audio/a.m4a");
+  expect(media.image.fromStoredPath("images/")).toBeNull();
+  expect(media.image.fromStoredPath("audio/a.m4a")).toBeNull();
+  expect(media.audio.fromStoredPath("images/avatars/alice.jpg")).toBeNull();
+  expect(media.image.fromStoredPath("https://example.com/a.jpg")).toBeNull();
+});
+
+test("a cached audio URL resolves back to the key of its file, and the key back to its stored path", () => {
+  const stored = `audio/${"a".repeat(64)}.m4a`;
+  const audio = media.audio.fromStoredPath(stored);
+
+  expect(audio).toStrictEqual({
+    store: "audio",
+    key: `${"a".repeat(64)}.m4a`,
+    storedPath: stored,
+    url: `/media/${stored}`,
+  });
+  expect(keyOfUrl(audio?.url ?? "")).toStrictEqual(audio);
+});
+
+test("a music artwork URL resolves back to the key of its image in the media store", () => {
+  const key = `music/${"b".repeat(64)}.jpg`;
+  const artwork = media.image.artwork(key);
+
+  expect(artwork).toStrictEqual({
+    store: "images",
+    key,
+    storedPath: `images/${key}`,
+    url: `/media/${key}`,
+  });
+  expect(keyOfUrl(artwork?.url ?? "")).toStrictEqual(artwork);
+  expect(media.image.fromStoredPath(`images/${key}`)).toStrictEqual(artwork);
+});
+
+test("a path that is not a valid music key has no file", () => {
+  const hash = "c".repeat(64);
+
+  expect(media.audio.fromStoredPath(null)).toBeNull();
+  expect(media.audio.fromStoredPath(`audio/${hash}.jpg`)).toBeNull();
+  expect(media.audio.fromStoredPath(`audio/${hash}.txt`)).toBeNull();
+  expect(media.audio.fromStoredPath(`images/${hash}.m4a`)).toBeNull();
+  expect(media.image.artwork(null)).toBeNull();
+  expect(media.image.artwork(`music/${hash}.gif`)).toBeNull();
+  expect(media.image.artwork(`audio/${hash}.jpg`)).toBeNull();
 });
