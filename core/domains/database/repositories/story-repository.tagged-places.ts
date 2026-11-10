@@ -6,7 +6,7 @@ import { stories } from "../entities/story.ts";
 
 type TaggedPlaceDatabase = Pick<DrizzleDatabase, "select" | "selectDistinct">;
 
-/** `instagram:<place id>`, or `metadata:<location metadata id>` when Instagram gave none. */
+/** Mirrors `taggedPlaceId`; `tagged-place-rules.cross-check.test.ts` keeps the two equal. */
 const placeId = sql<string>`case when ${metadataLocations.instagramPlaceId} is null then 'metadata:' || ${metadataLocations.id} else 'instagram:' || ${metadataLocations.instagramPlaceId} end`;
 
 export interface TaggedPlaceRow {
