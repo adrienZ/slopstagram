@@ -4,6 +4,7 @@ import type {
   StoryRepository,
   TaggedPlaceRow,
 } from "@@/core/domains/database/repositories/story-repository.ts";
+import { taggedPlaceDisplayName } from "@@/core/domains/places/tagged-place-rules.ts";
 import { normalizeSearchQuery, rankTextMatch } from "@@/core/utils/search-text.ts";
 
 /** What reading the Tagged places needs. */
@@ -93,9 +94,6 @@ export const TaggedPlaceReadSchema = z.discriminatedUnion("status", [
   z.object({ status: z.literal("unknown"), id: z.string() }),
 ]) satisfies z.ZodType<TaggedPlaceRead>;
 
-/** The name of a place that has no name nor address, as the map shows it. */
-const UNNAMED_PLACE = "Lieu sans nom";
-
 function formatHandle(username: string): string {
   return `@${username}`;
 }
@@ -107,7 +105,7 @@ function formatDate(takenAt: number): string {
 function summarize(place: TaggedPlaceRow): TaggedPlaceSummary {
   return {
     id: place.id,
-    name: place.name ?? place.address ?? UNNAMED_PLACE,
+    name: taggedPlaceDisplayName(place),
     category: place.category,
     storyCount: place.storyCount,
     latestStoryDate: formatDate(place.latestTakenAt),
