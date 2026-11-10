@@ -1,3 +1,8 @@
+import {
+  isMappableTaggedPlace,
+  taggedPlaceDisplayName,
+  taggedPlaceId,
+} from "@@/core/domains/places/tagged-place-rules.ts";
 import type { UserTimelineStory } from "@@/core/domains/database/repositories/story-repository.ts";
 
 export interface TimelinePlace {
@@ -35,7 +40,7 @@ export function groupTimelineLocations(stories: Array<UserTimelineStory>): Timel
     const stickers = annotations?.stickers.filter((sticker) => sticker.kind === "location") ?? [];
     const positionedOccurrences = new Set(
       observations.flatMap((observation) =>
-        observation.metadata.status === "usable" && observation.occurrenceId !== null
+        isMappableTaggedPlace(observation.metadata) && observation.occurrenceId !== null
           ? [observation.occurrenceId]
           : [],
       ),
@@ -47,17 +52,14 @@ export function groupTimelineLocations(stories: Array<UserTimelineStory>): Timel
         sticker.occurrenceId === undefined || !positionedOccurrences.has(sticker.occurrenceId),
     ).length;
     for (const { metadata } of observations) {
-      if (metadata.status !== "usable") {
+      if (!isMappableTaggedPlace(metadata)) {
         unpositionedLocationCount += 1;
         continue;
       }
-      const id =
-        metadata.instagramPlaceId === null
-          ? `metadata:${metadata.id}`
-          : `instagram:${metadata.instagramPlaceId}`;
+      const id = taggedPlaceId(metadata);
       const place = places.get(id) ?? {
         id,
-        name: metadata.name ?? metadata.address ?? "Lieu sans nom",
+        name: taggedPlaceDisplayName(metadata),
         category: metadata.category,
         latitude: metadata.latitude,
         longitude: metadata.longitude,
