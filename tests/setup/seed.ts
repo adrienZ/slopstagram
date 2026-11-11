@@ -243,10 +243,9 @@ export async function seedRecordedStories(
   recorded?: RecordedPayloads,
   options: SeedOptions = {},
 ) {
-  const now = options.publishedBefore?.now;
   const report = await fetchStories(
     { ...runtime, client: await createRecordedInstagramClient(recorded, options) },
-    { maxAttempts: 1, now: now === undefined ? undefined : () => now },
+    { maxAttempts: 1 },
   );
   if (report.failures.length > 0) {
     throw new Error(

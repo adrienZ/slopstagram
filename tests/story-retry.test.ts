@@ -26,7 +26,7 @@ async function runWithRetry<T>(
       attemptTimes.push(Date.now());
       return await runRequest();
     },
-    { logger: createMockLogger(), maxAttempts, now: fixedNow },
+    { logger: createMockLogger(), maxAttempts },
     "stories",
   );
   await vi.runAllTimersAsync();

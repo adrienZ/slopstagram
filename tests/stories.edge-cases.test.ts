@@ -3,7 +3,6 @@ import { fetchStoriesManifest } from "@@/core/domains/fetch-run/stories.ts";
 import {
   createCapturingLogger,
   createClient,
-  fixedNow,
   reel,
   storyItem,
   storyItemWithStickers,
@@ -28,9 +27,7 @@ describe("fetchStoriesManifest edge cases", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(runtime, client, {
-      now: fixedNow,
-    });
+    const report = await fetchStoriesManifest(runtime, client, {});
 
     expect(
       report.manifest.users.map((user) => ({
@@ -102,9 +99,7 @@ describe("fetchStoriesManifest edge cases", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(runtime, client, {
-      now: fixedNow,
-    });
+    const report = await fetchStoriesManifest(runtime, client, {});
 
     expect(report.manifest.users[0]?.stories[0]?.stickers).toStrictEqual([
       "@friend",
@@ -140,9 +135,7 @@ describe("fetchStoriesManifest edge cases", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(runtime, client, {
-      now: fixedNow,
-    });
+    const report = await fetchStoriesManifest(runtime, client, {});
 
     expect(report.output.users[0]?.stories[0]?.stickers).toStrictEqual([
       "Visit Link (https://link.example.test/fixture?token=fixture-token-1)",
@@ -161,7 +154,6 @@ describe("fetchStoriesManifest edge cases", () => {
     await expect(
       fetchStoriesManifest(runtime, client, {
         maxAttempts: 1,
-        now: fixedNow,
       }),
     ).rejects.toThrow(/Instagram request failed with HTTP 429/u);
     expect(client.reelsCalls).toEqual([]);
@@ -182,7 +174,6 @@ describe("fetchStoriesManifest edge cases", () => {
 
     const report = await fetchStoriesManifest(runtime, client, {
       maxAttempts: 1,
-      now: fixedNow,
     });
 
     expect(client.reelsCalls).toStrictEqual([["r1"], ["r1"]]);
@@ -217,9 +208,7 @@ describe("fetchStoriesManifest edge cases", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(runtime, client, {
-      now: fixedNow,
-    });
+    const report = await fetchStoriesManifest(runtime, client, {});
 
     expect(report.manifest.users[0]?.stories.map((story) => story.status)).toStrictEqual([
       "ok",
@@ -241,7 +230,6 @@ describe("fetchStoriesManifest edge cases", () => {
 
     const report = await fetchStoriesManifest(runtime, client, {
       maxAttempts: 1,
-      now: fixedNow,
       reelIdsPerRequest: 1,
     });
 

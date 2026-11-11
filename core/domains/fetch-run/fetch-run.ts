@@ -9,17 +9,11 @@ interface FetchRunContext {
   reportKey?: string;
 }
 
-interface FetchRunOptions {
-  now?: () => Date;
-}
-
 export async function recordFetchRun<T>(
   { fetchRuns: repository }: { fetchRuns: Pick<FetchRunRepository, "start" | "finish"> },
   perform: (run: FetchRunContext) => Promise<T>,
-  options: FetchRunOptions = {},
 ): Promise<T> {
-  const now = options.now ?? (() => new Date());
-  const run: FetchRunContext = { id: randomUUID(), startedAt: now() };
+  const run: FetchRunContext = { id: randomUUID(), startedAt: new Date() };
   repository.start(run.id, run.startedAt.toISOString());
   try {
     const result = await perform(run);
@@ -32,7 +26,7 @@ export async function recordFetchRun<T>(
       status = "partial";
     }
     repository.finish(run.id, {
-      finishedAt: now().toISOString(),
+      finishedAt: new Date().toISOString(),
       status,
       error: totalFailure
         ? (run.report?.failures[0]?.message ?? "No story media could be fetched")
@@ -43,7 +37,7 @@ export async function recordFetchRun<T>(
     return result;
   } catch (error) {
     repository.finish(run.id, {
-      finishedAt: now().toISOString(),
+      finishedAt: new Date().toISOString(),
       status: "failed",
       error: error instanceof Error ? error.message : String(error),
       counts: run.report?.metadata.counts,

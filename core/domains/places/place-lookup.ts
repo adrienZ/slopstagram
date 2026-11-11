@@ -141,7 +141,6 @@ export async function lookUpTaggedPlaces(
   savedMediaPks: Iterable<string>,
   repository: PlaceLookupRepository | undefined,
   logger: Pick<Logger, "warn">,
-  now: () => Date,
 ) {
   if (
     client.getPlace === undefined ||
@@ -150,7 +149,7 @@ export async function lookUpTaggedPlaces(
   ) {
     return;
   }
-  for (const placeId of listPlacesToLookUp(savedMediaPks, repository, now())) {
+  for (const placeId of listPlacesToLookUp(savedMediaPks, repository, new Date())) {
     let outcome: PlaceResponseResult;
     try {
       // oxlint-disable-next-line no-await-in-loop -- Keep requests sequential and stop on rate limits.
@@ -169,9 +168,9 @@ export async function lookUpTaggedPlaces(
     }
     try {
       if ("place" in outcome) {
-        repository.recordPlaceLookup(placeId, outcome.place, now());
+        repository.recordPlaceLookup(placeId, outcome.place, new Date());
       } else {
-        repository.recordFailedPlaceLookup(placeId, outcome.failure, now());
+        repository.recordFailedPlaceLookup(placeId, outcome.failure, new Date());
       }
     } catch {
       logger.warn("place lookup could not be recorded; continuing story ingestion");

@@ -16,7 +16,6 @@ import { createMemoryCacheStorage, createMemoryStorage } from "./memory-storage.
 import {
   createCapturingLogger,
   createClient,
-  fixedNow,
   reel,
   storyItemWithStickers,
   reelsResponse,
@@ -106,7 +105,6 @@ test("provider-identified occurrences keep their identities through reordering a
           }),
         ],
       ),
-      { now: fixedNow },
     );
   }
   const report = await ingest(["sticker-a", "sticker-b"]);
@@ -226,7 +224,6 @@ test("story annotations survive ingestion, cold reports, and repeated saves", as
   const report = await fetchStoriesManifest(
     { logger: createCapturingLogger(), stories: repository, storage: createMemoryCacheStorage() },
     createClient(tray, [reelsResponse({ r1: { ...reel("r1", [item]), user: owner } })]),
-    { now: fixedNow },
   );
   expect(report.manifest.users[0]?.stories[0]?.locations).toStrictEqual(["Paris", "Paris"]);
   expect(report.manifest.users[0]?.stories[0]?.stickers).toStrictEqual([
@@ -295,7 +292,6 @@ for (const unifiedLocations of [false, true]) {
           },
         }),
       ]),
-      { now: fixedNow },
     );
     await reports.save("historical", original);
 
@@ -361,7 +357,6 @@ test("partial ingestion merges sources for fresh reports, cold reads, and resave
         storage: { ...createMemoryCacheStorage(), stories: storage },
       },
       createClient(tray, [reelsResponse({ r1: { ...reel("r1", [item]), user: owner } })]),
-      { now: fixedNow },
     );
   }
   const original = await ingest(

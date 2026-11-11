@@ -3,7 +3,6 @@ import { getMediaCacheKey } from "@@/core/domains/media-store/cache-storage.ts";
 import { fetchStoriesManifest } from "@@/core/domains/fetch-run/stories.ts";
 import {
   createClient,
-  fixedNow,
   reel,
   storyItem,
   storyItemWithStickers,
@@ -44,9 +43,7 @@ describe("fetchStoriesManifest", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(runtime, client, {
-      now: fixedNow,
-    });
+    const report = await fetchStoriesManifest(runtime, client, {});
 
     expect(client.reelsCalls).toStrictEqual([["r1", "r2"]]);
     expect(report.metadata.counts).toStrictEqual({
@@ -152,9 +149,7 @@ describe("fetchStoriesManifest", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(runtime, client, {
-      now: fixedNow,
-    });
+    const report = await fetchStoriesManifest(runtime, client, {});
 
     expect(client.reelsCalls).toStrictEqual([["r1", "r2"]]);
     expect(runtime.stories.findByMediaPk("m2")).toStrictEqual(storedStory("m2"));
@@ -230,9 +225,7 @@ describe("fetchStoriesManifest", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(runtime, client, {
-      now: fixedNow,
-    });
+    const report = await fetchStoriesManifest(runtime, client, {});
 
     expect(report.output.users).toStrictEqual([
       {

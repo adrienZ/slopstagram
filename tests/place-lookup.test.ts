@@ -1,4 +1,4 @@
-import { assert, test, expect } from "vitest";
+import { assert, test, expect, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { createDrizzle } from "@@/core/domains/database/client.ts";
 import {
@@ -19,7 +19,10 @@ import {
   reel,
   response,
   reelsResponse,
+  useFixedDate,
 } from "./mock-helpers.ts";
+
+useFixedDate();
 
 const owner = { username: "one", pk: "owner" };
 
@@ -114,6 +117,7 @@ async function ingest(
   client: ReturnType<typeof createPlaceClient>,
   now: () => Date = fixedNow,
 ) {
+  vi.setSystemTime(now());
   return await fetchStoriesManifest(
     {
       logger: createCapturingLogger(),
@@ -121,7 +125,6 @@ async function ingest(
       storage: createMemoryCacheStorage(),
     },
     client,
-    { now },
   );
 }
 
@@ -379,7 +382,6 @@ test("a place with a non-numeric id is skipped without a request or a failure", 
   await fetchStoriesManifest(
     { logger, stories: repository, storage: createMemoryCacheStorage() },
     client,
-    { now: fixedNow },
   );
   expect(client.lookups).toStrictEqual([]);
   expect(storedPlace(repository, "m1").lastLookupAttemptAt).toBe(null);

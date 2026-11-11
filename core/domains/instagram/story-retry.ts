@@ -22,7 +22,6 @@ export type RequestResult<T> =
 export interface RetryOptions {
   logger: Logger;
   maxAttempts: number;
-  now: () => Date;
 }
 
 const BASE_DELAY_MS = 500;
@@ -49,7 +48,7 @@ function normalizeHeaders(headers: Record<string, string>): Record<string, strin
   );
 }
 
-function getRetryAfterMs(headers: Record<string, string>, now: Date): number | null {
+function getRetryAfterMs(headers: Record<string, string>): number | null {
   const retryAfter = normalizeHeaders(headers)["retry-after"];
 
   if (!retryAfter) {
@@ -64,16 +63,14 @@ function getRetryAfterMs(headers: Record<string, string>, now: Date): number | n
   const retryAt = Date.parse(retryAfter);
   return Number.isNaN(retryAt)
     ? null
-    : Math.min(Math.max(0, retryAt - now.getTime()), MAX_RATE_LIMIT_DELAY_MS);
+    : Math.min(Math.max(0, retryAt - Date.now()), MAX_RATE_LIMIT_DELAY_MS);
 }
 
 function getBackoffMs(
   attemptIndex: number,
   response: InstagramClientResponse<unknown> | null,
-  options: RetryOptions,
 ): number {
-  const retryAfterMs =
-    response?.status === 429 ? getRetryAfterMs(response.headers, options.now()) : null;
+  const retryAfterMs = response?.status === 429 ? getRetryAfterMs(response.headers) : null;
 
   return retryAfterMs ?? BASE_DELAY_MS * 2 ** attemptIndex + Math.floor(Math.random() * 100);
 }
@@ -117,7 +114,7 @@ async function handleFailedResponse<T>(
     return { failure, ok: false };
   }
 
-  const delayMs = getBackoffMs(attemptIndex, response, options);
+  const delayMs = getBackoffMs(attemptIndex, response);
   options.logger.warn(
     `${label} attempt ${attemptCount} failed with HTTP ${response.status}; retrying in ${delayMs}ms`,
   );
@@ -140,7 +137,7 @@ async function handleThrownRequest<T>(
     return { failure, ok: false };
   }
 
-  const delayMs = getBackoffMs(attemptIndex, null, options);
+  const delayMs = getBackoffMs(attemptIndex, null);
   options.logger.warn(
     `${label} attempt ${attemptCount} threw ${failure.message}; retrying in ${delayMs}ms`,
   );

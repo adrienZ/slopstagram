@@ -1,4 +1,4 @@
-import { assert, expect, test } from "vitest";
+import { assert, expect, test, vi } from "vitest";
 import { readCachedImage } from "@@/core/domains/media-store/image-cache.ts";
 import { AppleOcrUnavailableError } from "@@/core/domains/vision/apple-ocr.ts";
 import { createStoryFeed, readStoryFeedVision } from "@@/core/domains/story-feed/story-feed.ts";
@@ -18,6 +18,9 @@ import {
   storyPks,
   trayBody,
 } from "./setup/report-world.ts";
+import { useFixedDate } from "./mock-helpers.ts";
+
+useFixedDate(now);
 
 test("creates a report by running the whole pipeline over recorded Instagram payloads", async (context) => {
   const world = await createWorld(context);
@@ -233,16 +236,15 @@ test("stores an empty caption as not available", async (context) => {
 });
 
 test("records a failed fetch attempt even when Instagram returns no tray", async (context) => {
-  let time = now;
   const world = await createWorld(context, {
     client: createFailingClient(401, () => {
       expect(world.runs.list()[0].status).toBe("running");
       expect(world.runs.list()[0].startedAt).toBe("2026-10-29T12:00:00.000Z");
-      time = new Date("2026-10-29T12:00:03Z");
+      vi.setSystemTime(new Date("2026-10-29T12:00:03Z"));
     }),
   });
 
-  await expect(world.run(() => time)).rejects.toThrow(/HTTP 401/u);
+  await expect(world.run()).rejects.toThrow(/HTTP 401/u);
 
   const [run] = world.runs.list();
   expect(run.status).toBe("failed");

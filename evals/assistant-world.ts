@@ -78,7 +78,7 @@ async function seedAssistantWorld(): Promise<AssistantRuntime> {
       }),
     },
   );
-  await world.run(() => now);
+  await world.run();
   const runtime: AssistantRuntime = {
     ...world.runtime,
     fetchOllama: undefined,

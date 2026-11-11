@@ -15,13 +15,7 @@ import { JsonValueSchema } from "@@/core/utils/json-value.ts";
 import { createMediaResponse } from "@@/core/domains/media-store/media-response.ts";
 import { startMediaServer } from "./media-server.ts";
 import { createMemoryCacheStorage } from "./memory-storage.ts";
-import {
-  createCapturingLogger,
-  createClient,
-  fixedNow,
-  reel,
-  reelsResponse,
-} from "./mock-helpers.ts";
+import { createCapturingLogger, createClient, reel, reelsResponse } from "./mock-helpers.ts";
 
 test("ingestion looks up one shared audio ID and caches validated audio and artwork", async (context) => {
   const database = createDrizzle(":memory:");
@@ -94,7 +88,6 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
       storage: createMemoryCacheStorage(),
     },
     client,
-    { now: fixedNow },
   );
   expect(server.requests).toStrictEqual([`/lookup/${audioId}`]);
   const before = repository.findByMediaPk("first")?.annotations;

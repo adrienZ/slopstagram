@@ -29,7 +29,6 @@ type FetchStoriesRuntime = Pick<Runtime, "logger" | "storage"> & {
 
 interface FetchStoriesOptions {
   maxAttempts?: number;
-  now?: () => Date;
   reelIdsPerRequest?: number;
   reportName?: string;
 }
@@ -41,12 +40,10 @@ const DEFAULT_MAX_ATTEMPTS = 3;
 function createRetryOptions(
   runtime: FetchStoriesRuntime,
   options: FetchStoriesOptions,
-  now: () => Date,
 ): RetryOptions {
   return {
     logger: runtime.logger,
     maxAttempts: options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
-    now,
   };
 }
 
@@ -119,8 +116,7 @@ export async function fetchStoriesManifest(
   options: FetchStoriesOptions = {},
 ): Promise<StoriesManifestReport> {
   const reportName = options.reportName ?? DEFAULT_REPORT_NAME;
-  const now = options.now ?? (() => new Date());
-  const retryOptions = createRetryOptions(runtime, options, now);
+  const retryOptions = createRetryOptions(runtime, options);
   const { logger } = runtime;
 
   logger.info(`fetching tray for report ${reportName}`);
@@ -140,7 +136,7 @@ export async function fetchStoriesManifest(
   );
 
   await enrichCurrentMusicAssets(client, state.cachedItems.values(), runtime.stories, logger);
-  await lookUpTaggedPlaces(client, state.fetchedMediaPks, runtime.stories, logger, now);
+  await lookUpTaggedPlaces(client, state.fetchedMediaPks, runtime.stories, logger);
 
   const manifestUsers = createManifestUsers(
     trayJson.tray,
@@ -152,7 +148,7 @@ export async function fetchStoriesManifest(
   );
 
   return createStoriesReport({
-    createdAt: now().toISOString(),
+    createdAt: new Date().toISOString(),
     manifestUsers,
     reportName,
     state,
