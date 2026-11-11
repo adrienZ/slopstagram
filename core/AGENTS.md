@@ -42,6 +42,10 @@ returning an AI SDK `tool` with an English description for agents, an input sche
 `.describe()` examples, an output schema and an execute function. It returns data, never UI, and
 never writes; errors are typed outcomes in the output.
 
+Add each tool to the Assistant tool registry, `core/domains/assistant/assistant-tools.ts`, as a read
+tool or a lookup tool, under the key its file is named after. The `assistant-tool-registry` lint
+rule fails on a tool module missing from the registry or listed under another name.
+
 ## Repositories
 
 A repository is a class built from a database (`new XRepository(db)`, plus a logger where it has

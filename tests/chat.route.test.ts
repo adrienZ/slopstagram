@@ -343,10 +343,6 @@ test("searching a place streams the searchTaggedPlaces call and its matches, the
     { nextOffset: null, places: [syntheticCafe], total: 1 },
   ]);
   expect(chunks.text).toBe(placesAnswer(["Synthetic Cafe"]));
-  // A search is a lookup: the model reasons after it, to decide whether to read the place.
-  expect(
-    world.ollama.requests.filter(({ kind }) => kind === "chat").map(({ think }) => think),
-  ).toStrictEqual([true, true]);
 });
 
 test("reading a place streams the getTaggedPlace call, its details, then an answer linking it", async (context) => {
@@ -381,8 +377,7 @@ test("reading a place streams the getTaggedPlace call, its details, then an answ
 
 /**
  * A question that makes the fake chat model call each Assistant tool, and whether the model
- * reasons in the step after that tool's result: a read leaves only the answer to write, a search
- * is a lookup the model reasons after, to decide what to read next.
+ * reasons in the step after that tool's result (see the read and lookup tools in the registry).
  */
 const stepAfterEachTool: Record<AssistantToolName, { question: string; thinksAfter: boolean }> = {
   getFeedUserSummaries: { question: "What about @user_072?", thinksAfter: false },

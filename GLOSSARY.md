@@ -169,6 +169,12 @@ One read-only capability the Assistant can call to get data from the domain that
 it, such as the accounts or an account's user summary.
 _Avoid_: Function, action, skill
 
+**Assistant tool registry**:
+The only list of the Assistant tools, in the Assistant. It sorts them into read tools, after
+whose result the Assistant writes its answer, and lookup tools, which search and after whose
+result it keeps reasoning to decide what to read.
+_Avoid_: Tool list, tool catalog
+
 **Mention**:
 An `@username` of an account written in a chat message. It is not a sticker: the
 mention sticker kind is a sticker on a story, although both are shown with the same
