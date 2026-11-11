@@ -224,7 +224,7 @@ test("a tool the page does not know still shows as a trace line with what it was
   // A server newer than the page streams a tool the page has no view for.
   vi.stubGlobal("fetch", () =>
     createUIMessageStreamResponse({
-      stream: new ReadableStream<UIMessageChunk>({
+      stream: new globalThis.ReadableStream<UIMessageChunk>({
         start(controller) {
           controller.enqueue({ type: "start" });
           controller.enqueue({
