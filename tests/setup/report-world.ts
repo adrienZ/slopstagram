@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { expect, type TestContext } from "vitest";
 import sharp from "sharp";
 import { z } from "zod";
+import type { AssistantToolName } from "@@/core/domains/assistant/assistant-tools.ts";
 import { JsonValueSchema, type JsonValue } from "@@/core/utils/json-value.ts";
 import { createReport } from "@@/core/domains/fetch-run/report.ts";
 import type { RuntimeBoundaries } from "@@/core/domains/runtime/runtime.ts";
@@ -263,31 +264,50 @@ function chatToolCall(name: string, args: JsonValue) {
   });
 }
 
-/** The place tool call the chat model makes for a question about places, if any. */
-function callPlaceTool(question: string, usernames: Array<string>, offered: Set<string>) {
-  const args: Record<string, JsonValue> = {};
+type ToolArguments = Record<string, JsonValue>;
+
+/** The page of a list or a search the question asks for, from "offset <n>". */
+function pageOf(question: string): ToolArguments {
   const offset = /\boffset\s+(?<offset>\d+)$/iu.exec(question)?.groups?.offset;
-  if (offset !== undefined) {
-    args.offset = Number(offset);
-  }
-  const id = /^(?:place|lieu)\s+(?<id>\S+)$/iu.exec(question)?.groups?.id;
-  if (id !== undefined && offered.has("getTaggedPlace")) {
-    return chatToolCall("getTaggedPlace", { id });
-  }
-  const query =
-    /^(?:search|cherche)\s+(?:places|lieux)\s+(?<query>.+?)(?:\s+offset\s+\d+)?$/iu.exec(question)
-      ?.groups?.query;
-  if (query !== undefined && offered.has("searchTaggedPlaces")) {
-    return chatToolCall("searchTaggedPlaces", { query, ...args });
-  }
-  if (/\b(?:places|lieux)\b/iu.test(question) && offered.has("listTaggedPlaces")) {
+  return offset === undefined ? {} : { offset: Number(offset) };
+}
+
+/**
+ * For each Assistant tool, the arguments the chat model calls it with for a question, or null when
+ * the question is not for that tool. The chat model tries them in this order.
+ */
+type QuestionMatchers = {
+  [Name in AssistantToolName]: (question: string, usernames: Array<string>) => ToolArguments | null;
+};
+
+const matchQuestion: QuestionMatchers = {
+  getTaggedPlace: (question) => {
+    const id = /^(?:place|lieu)\s+(?<id>\S+)$/iu.exec(question)?.groups?.id;
+    return id === undefined ? null : { id };
+  },
+  searchTaggedPlaces: (question) => {
+    const query =
+      /^(?:search|cherche)\s+(?:places|lieux)\s+(?<query>.+?)(?:\s+offset\s+\d+)?$/iu.exec(question)
+        ?.groups?.query;
+    return query === undefined ? null : { query, ...pageOf(question) };
+  },
+  listTaggedPlaces: (question, usernames) => {
+    if (!/\b(?:places|lieux)\b/iu.test(question)) {
+      return null;
+    }
+    const args = pageOf(question);
     if (usernames.length > 0) {
       args.usernames = usernames;
     }
-    return chatToolCall("listTaggedPlaces", args);
-  }
-  return null;
-}
+    return args;
+  },
+  getFeedUserSummaries: (_question, usernames) => (usernames.length > 0 ? { usernames } : null),
+  searchAccounts: (question) => {
+    const query = /^(?:search|cherche)\s+(?<query>.+)$/iu.exec(question)?.groups?.query;
+    return query === undefined ? null : { query };
+  },
+  listAccounts: (question) => (/\b(?:accounts|comptes)\b/iu.test(question) ? {} : null),
+};
 
 /**
  * The chat model, in Ollama's streamed wire format. It calls the tools it is offered: a Tagged
@@ -311,19 +331,11 @@ function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>
   const usernames = [...question.matchAll(/@(?<username>[\w.]+)/gu)].map(
     ({ groups }) => groups?.username ?? "",
   );
-  const placeCall = callPlaceTool(question, usernames, offered);
-  if (placeCall !== null) {
-    return placeCall;
-  }
-  if (usernames.length > 0 && offered.has("getFeedUserSummaries")) {
-    return chatToolCall("getFeedUserSummaries", { usernames });
-  }
-  const query = /^(?:search|cherche)\s+(?<query>.+)$/iu.exec(question)?.groups?.query;
-  if (query !== undefined && offered.has("searchAccounts")) {
-    return chatToolCall("searchAccounts", { query });
-  }
-  if (/\b(?:accounts|comptes)\b/iu.test(question) && offered.has("listAccounts")) {
-    return chatToolCall("listAccounts", {});
+  for (const [name, match] of Object.entries(matchQuestion)) {
+    const args = offered.has(name) ? match(question, usernames) : null;
+    if (args !== null) {
+      return chatToolCall(name, args);
+    }
   }
   const city = /^(?:weather|météo)\s+(?<city>.+)$/iu.exec(question)?.groups?.city;
   if (city !== undefined) {
