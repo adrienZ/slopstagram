@@ -11,7 +11,7 @@ const DESCRIPTION = `Returns every account: the Instagram accounts whose stories
 Use it when the message asks which accounts are collected, known or followed, or what the user can ask about. Example: "which accounts do you know?".
 Do not use it when the message mentions an account, usually as @username: read that account's data with its own tool instead. Do not use it for a greeting or a message that is not about the accounts.
 
-Outcomes: "accounts" lists the accounts by username, and is empty when no account has been collected yet. The chat does not show this result to the user: write the answer yourself, naming each account by its handle, say so when there is no account, and never invent an account.`;
+Outcomes: "accounts" lists the accounts by username, and is empty when no account has been collected yet. The chat shows this result to the user only as a collapsed line: write the answer yourself, naming each account by its handle, say so when there is no account, and never invent an account.`;
 
 /** The Assistant tool listing the accounts. Read-only. */
 export function createListAccountsTool(runtime: AccountsRuntime) {
