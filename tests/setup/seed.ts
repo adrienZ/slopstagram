@@ -7,7 +7,6 @@ import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { fetchStories } from "@@/core/domains/fetch-run/stories.ts";
 import { GalleryPageSchema } from "@@/core/domains/instagram/story-client.ts";
 import { createRecordedClient } from "./recorded-client.ts";
-import { noSleep } from "../mock-helpers.ts";
 
 const fixturesDirectory = path.join(import.meta.dirname, "../fixtures");
 const TRAY_FILE = "instagram-reels-tray.json";
@@ -244,10 +243,9 @@ export async function seedRecordedStories(
   recorded?: RecordedPayloads,
   options: SeedOptions = {},
 ) {
-  const now = options.publishedBefore?.now;
   const report = await fetchStories(
     { ...runtime, client: await createRecordedInstagramClient(recorded, options) },
-    { maxAttempts: 1, now: now === undefined ? undefined : () => now, sleep: noSleep },
+    { maxAttempts: 1 },
   );
   if (report.failures.length > 0) {
     throw new Error(

@@ -12,10 +12,6 @@ import { fetchStories } from "./stories.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import pkg from "../../../package.json" with { type: "json" };
 
-export interface CreateReportOptions {
-  now?: () => Date;
-}
-
 export interface CreateReportResult {
   outputFileName: string;
   reportKey: string;
@@ -69,52 +65,44 @@ function backUpAfterFetchRun(runtime: CreateReportRuntime, at: Date): void {
   }
 }
 
-export async function createReport(
-  runtime: CreateReportRuntime,
-  options: CreateReportOptions = {},
-): Promise<CreateReportResult> {
-  const now = options.now ?? (() => new Date());
-  const result = await recordFetchRun(
-    runtime,
-    async (run) => {
-      const timestamp = formatFilenameTimestamp(run.startedAt);
-      const outputFileName = `stories-report-${timestamp}-${run.id}.json`;
-      runtime.logger.box(`${pkg.name} - report ${outputFileName}`);
-      const report = await fetchStories(runtime, { now, reportName: outputFileName });
-      run.report = report;
-      // Keep the observation and failures even if enrichment or every media fetch fails.
-      await runtime.reports.save(outputFileName, report);
-      run.reportKey = outputFileName;
-      const { counts } = report.metadata;
-      if (counts.stories > 0 && counts.fetched === 0) {
-        throw new Error(
-          `No story media could be fetched (${counts.failed}/${counts.stories} failed). ${report.failures[0]?.message ?? "Instagram returned no story media"}`,
-        );
-      }
-      await cacheReportAudio(runtime, report);
-      const cachedImages = await cacheReportImages(runtime, report);
-      await resolveAppleCaptionsForReport(runtime, report, cachedImages);
-      await resolveVisionForReport(runtime, report, cachedImages);
-      await persistReportInstagramUsers(runtime, report);
-      // Generate from the same canonical, active story set used by the user app.
-      const feedUsers = createStoryFeed(runtime, now());
-      await resolveUserSummariesForReport(
-        runtime,
-        { output: { users: feedUsers } },
-        { visionByPreviewUrl: readStoryFeedVision(runtime, feedUsers) },
+export async function createReport(runtime: CreateReportRuntime): Promise<CreateReportResult> {
+  const result = await recordFetchRun(runtime, async (run) => {
+    const timestamp = formatFilenameTimestamp(run.startedAt);
+    const outputFileName = `stories-report-${timestamp}-${run.id}.json`;
+    runtime.logger.box(`${pkg.name} - report ${outputFileName}`);
+    const report = await fetchStories(runtime, { reportName: outputFileName });
+    run.report = report;
+    // Keep the observation and failures even if enrichment or every media fetch fails.
+    await runtime.reports.save(outputFileName, report);
+    run.reportKey = outputFileName;
+    const { counts } = report.metadata;
+    if (counts.stories > 0 && counts.fetched === 0) {
+      throw new Error(
+        `No story media could be fetched (${counts.failed}/${counts.stories} failed). ${report.failures[0]?.message ?? "Instagram returned no story media"}`,
       );
-      await runtime.reports.save(outputFileName, report);
-      runtime.logger.info(
-        [`stories=${counts.stories}`, `fetched=${counts.fetched}`, `failed=${counts.failed}`].join(
-          " ",
-        ),
-      );
-      runtime.logger.success(`saved report ${outputFileName} to the database`);
+    }
+    await cacheReportAudio(runtime, report);
+    const cachedImages = await cacheReportImages(runtime, report);
+    await resolveAppleCaptionsForReport(runtime, report, cachedImages);
+    await resolveVisionForReport(runtime, report, cachedImages);
+    await persistReportInstagramUsers(runtime, report);
+    // Generate from the same canonical, active story set used by the user app.
+    const feedUsers = createStoryFeed(runtime, new Date());
+    await resolveUserSummariesForReport(
+      runtime,
+      { output: { users: feedUsers } },
+      { visionByPreviewUrl: readStoryFeedVision(runtime, feedUsers) },
+    );
+    await runtime.reports.save(outputFileName, report);
+    runtime.logger.info(
+      [`stories=${counts.stories}`, `fetched=${counts.fetched}`, `failed=${counts.failed}`].join(
+        " ",
+      ),
+    );
+    runtime.logger.success(`saved report ${outputFileName} to the database`);
 
-      return { outputFileName, reportKey: outputFileName, report };
-    },
-    { now },
-  );
-  backUpAfterFetchRun(runtime, now());
+    return { outputFileName, reportKey: outputFileName, report };
+  });
+  backUpAfterFetchRun(runtime, new Date());
   return result;
 }

@@ -451,7 +451,7 @@ export async function createWorld(
     calls,
     logger,
     ollama,
-    run: async (clock = () => now) => await createReport(runtime, { now: clock }),
+    run: async () => await createReport(runtime),
     runs: runtime.fetchRuns,
     runtime,
   };

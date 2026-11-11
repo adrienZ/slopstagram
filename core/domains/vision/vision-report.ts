@@ -1,28 +1,14 @@
 import path from "node:path";
-import type { Ollama as VisionSdk } from "ollama";
-import { getOllamaClient } from "./ollama.ts";
-import type { VisionRepository } from "@@/core/domains/database/repositories/vision-repository.ts";
-import type { ImageCacheStorage } from "@@/core/domains/media-store/cache-storage.ts";
 import {
   readCachedImage,
   type CachedReportImages,
 } from "@@/core/domains/media-store/image-cache.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
-import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";
 import type { VisionResult } from "@@/core/domains/database/entities/vision.ts";
-import {
-  analyzeImage,
-  createFailureResult,
-  VISION_MODEL,
-  VISION_PROMPT,
-} from "./vision-analysis.ts";
+import { analyzeImage, createFailureResult, type VisionRuntime } from "./vision-analysis.ts";
 
-interface VisionOptions {
-  endpoint?: string;
-  model?: string;
-  prompt?: string;
-}
+type VisionReportRuntime = VisionRuntime & Pick<Runtime, "storage">;
 
 interface PreviewEntry {
   mediaPk: string;
@@ -36,16 +22,11 @@ interface PreviewEntrySet {
 
 interface ResolvePreviewEntryOptions {
   cachedImages: CachedReportImages;
-  client: Pick<VisionSdk, "generate">;
   entry: PreviewEntry;
   index: number;
-  logger: Logger;
-  model: string;
-  prompt: string;
-  images: ImageCacheStorage;
   resultByPreviewUrl: Map<string, VisionResult>;
+  runtime: VisionReportRuntime;
   sourcesByMediaPk: Map<string, Array<string>>;
-  repository: Pick<VisionRepository, "findByMediaPk" | "save">;
   total: number;
 }
 
@@ -97,19 +78,20 @@ function skipPreviewEntry(options: {
   entry: PreviewEntry;
   index: number;
   itemLabel: string;
-  logger: Logger;
   message: string;
   resultByPreviewUrl: Map<string, VisionResult>;
+  runtime: Pick<Runtime, "logger">;
   sourcesByMediaPk: Map<string, Array<string>>;
   total: number;
   warning: string;
 }): void {
-  options.logger.progress(options.index, options.total, {
+  const { logger } = options.runtime;
+  logger.progress(options.index, options.total, {
     prefix: "vision",
     suffix: `${options.message} ${options.itemLabel}`,
   });
-  options.logger.warn(`vision skipped for ${options.itemLabel}: ${options.warning}`);
-  options.logger.progress(options.index + 1, options.total, {
+  logger.warn(`vision skipped for ${options.itemLabel}: ${options.warning}`);
+  logger.progress(options.index + 1, options.total, {
     prefix: "vision",
     suffix: `skipped ${options.itemLabel}`,
   });
@@ -144,28 +126,22 @@ async function resolvePreviewEntry(options: ResolvePreviewEntryOptions): Promise
     return;
   }
 
-  options.logger.progress(options.index, options.total, {
+  const { runtime } = options;
+  runtime.logger.progress(options.index, options.total, {
     prefix: "vision",
     suffix: `resolving ${preview.itemLabel}`,
   });
-  const result = await analyzeImage(
-    preview.itemLabel,
-    async () => {
-      const image = await readCachedImage(options.images, preview.cachedPath);
+  const result = await analyzeImage(runtime, {
+    itemLabel: preview.itemLabel,
+    mediaPk: options.entry.mediaPk,
+    read: async () => {
+      const image = await readCachedImage(runtime.storage.images, preview.cachedPath);
       if (image === null) {
         throw new Error("cached preview is missing");
       }
       return image;
     },
-    {
-      client: options.client,
-      logger: options.logger,
-      mediaPk: options.entry.mediaPk,
-      model: options.model,
-      prompt: options.prompt,
-      repository: options.repository,
-    },
-  );
+  });
   setResultForPreviewSources(
     options.resultByPreviewUrl,
     options.sourcesByMediaPk,
@@ -175,18 +151,10 @@ async function resolvePreviewEntry(options: ResolvePreviewEntryOptions): Promise
 }
 
 export async function resolveVisionForReport(
-  runtime: Pick<Runtime, "fetchOllama" | "logger" | "storage"> & {
-    vision: Pick<VisionRepository, "findByMediaPk" | "save">;
-  },
+  runtime: VisionReportRuntime,
   report: StoriesManifestReport,
   cachedImages: CachedReportImages,
-  options: VisionOptions = {},
 ): Promise<Map<string, VisionResult>> {
-  const client = getOllamaClient({
-    fetch: runtime.fetchOllama,
-    host: options.endpoint,
-  });
-  const { logger } = runtime;
   const entrySet = createPreviewEntrySet(report);
   const resultByPreviewUrl = new Map<string, VisionResult>();
 
@@ -194,16 +162,11 @@ export async function resolveVisionForReport(
     // oxlint-disable-next-line no-await-in-loop -- Vision analysis runs serially to bound local model resource use and preserve progress.
     await resolvePreviewEntry({
       cachedImages,
-      client,
       entry,
       index,
-      logger,
-      model: options.model ?? VISION_MODEL,
-      prompt: options.prompt ?? VISION_PROMPT,
-      images: runtime.storage.images,
       resultByPreviewUrl,
+      runtime,
       sourcesByMediaPk: entrySet.sourcesByMediaPk,
-      repository: runtime.vision,
       total: entrySet.uniquePreviewEntries.length,
     });
   }

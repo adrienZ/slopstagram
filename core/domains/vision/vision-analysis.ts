@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
-import type { Ollama as VisionSdk } from "ollama";
 import { z } from "zod";
 import type { VisionRepository } from "@@/core/domains/database/repositories/vision-repository.ts";
-import type { Logger } from "@@/core/utils/logging.ts";
+import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
+import { getOllamaClient } from "./ollama.ts";
 import type { VisionEntry, VisionResult } from "@@/core/domains/database/entities/vision.ts";
 
 export const VISION_MODEL = "minicpm-v4.6";
@@ -28,41 +28,25 @@ const VisionResponseSchema = z
   .strict();
 const VISION_OUTPUT_SCHEMA = z.toJSONSchema(VisionResponseSchema);
 
-type VisionClient = Pick<VisionSdk, "generate">;
+const VISION_PROMPT_HASH = createHash("sha256").update(VISION_PROMPT).digest("hex");
 
-export interface ResolvedVisionOptions {
-  client: VisionClient;
-  logger: Logger;
+export type VisionRuntime = Pick<Runtime, "fetchOllama" | "logger"> & {
+  vision: Pick<VisionRepository, "findByMediaPk" | "save">;
+};
+
+export interface VisionImage {
+  itemLabel: string;
   mediaPk: string;
-  model: string;
-  prompt: string;
-  repository: Pick<VisionRepository, "findByMediaPk" | "save">;
+  read: () => Promise<Uint8Array>;
 }
 
-function isUsableVisionEntry(
-  entry: VisionEntry | null | undefined,
-  options: {
-    model: string;
-    promptHash: string;
-  },
-): entry is VisionEntry {
-  return Boolean(
-    entry && entry.model === options.model && entry.prompt_hash === options.promptHash,
-  );
-}
-
-function getPromptHash(prompt: string): string {
-  return createHash("sha256").update(prompt).digest("hex");
+function isCurrentVisionEntry(entry: VisionEntry | null | undefined): entry is VisionEntry {
+  return entry?.model === VISION_MODEL && entry.prompt_hash === VISION_PROMPT_HASH;
 }
 
 /** Returns a saved vision result only when the current model and prompt produced it. */
 export function readCurrentVisionResult(entry: VisionEntry | null): VisionResult | null {
-  return isUsableVisionEntry(entry, {
-    model: VISION_MODEL,
-    promptHash: getPromptHash(VISION_PROMPT),
-  })
-    ? entry.result
-    : null;
+  return isCurrentVisionEntry(entry) ? entry.result : null;
 }
 
 export interface OutdatedVision {
@@ -79,7 +63,7 @@ export function describeOutdatedVision(entry: VisionEntry | null): OutdatedVisio
   }
   return {
     currentModel: VISION_MODEL,
-    currentPromptHash: getPromptHash(VISION_PROMPT),
+    currentPromptHash: VISION_PROMPT_HASH,
     model: entry.model,
     promptHash: entry.prompt_hash,
   };
@@ -155,39 +139,33 @@ function getVisionHttpStatus(error: VisionRequestError): number | null {
   return "status_code" in error ? error.status_code : null;
 }
 
-function getStoredVisionResult(
-  promptHash: string,
-  options: ResolvedVisionOptions,
-): VisionResult | null {
-  const entry = options.repository.findByMediaPk(options.mediaPk);
+function getStoredVisionResult(runtime: VisionRuntime, mediaPk: string): VisionResult | null {
+  const entry = runtime.vision.findByMediaPk(mediaPk);
 
-  if (isUsableVisionEntry(entry, { ...options, promptHash })) {
+  if (isCurrentVisionEntry(entry)) {
     return normalizeVisionResult(entry.result);
   }
 
   return null;
 }
 
-async function runVisionRequest(
-  readImage: () => Promise<Uint8Array>,
-  promptHash: string,
-  options: ResolvedVisionOptions,
-): Promise<VisionResult> {
-  const payload = await options.client.generate({
+async function runVisionRequest(runtime: VisionRuntime, image: VisionImage): Promise<VisionResult> {
+  const client = getOllamaClient({ fetch: runtime.fetchOllama });
+  const payload = await client.generate({
     format: VISION_OUTPUT_SCHEMA,
-    images: [await readImage()],
-    model: options.model,
+    images: [await image.read()],
+    model: VISION_MODEL,
     options: {
       temperature: 0.1,
     },
-    prompt: options.prompt,
+    prompt: VISION_PROMPT,
     stream: false,
   });
   const result = parseVisionResponse(payload.response ?? "");
 
-  await options.repository.save(options.mediaPk, {
-    model: options.model,
-    prompt_hash: promptHash,
+  await runtime.vision.save(image.mediaPk, {
+    model: VISION_MODEL,
+    prompt_hash: VISION_PROMPT_HASH,
     result,
   });
 
@@ -195,9 +173,9 @@ async function runVisionRequest(
 }
 
 function handleVisionError(
+  runtime: VisionRuntime,
   error: VisionRequestError,
   itemLabel: string,
-  options: ResolvedVisionOptions,
 ): VisionResult {
   const status = getVisionHttpStatus(error);
 
@@ -208,29 +186,27 @@ function handleVisionError(
   }
 
   if (error instanceof Error && isServerUnavailableError(error)) {
-    options.logger.warn(`vision unavailable for ${itemLabel}`);
+    runtime.logger.warn(`vision unavailable for ${itemLabel}`);
     return createFailureResult(VISION_SERVER_NOT_RUNNING);
   }
 
   const message = error instanceof Error ? error.message : "unknown request error";
-  options.logger.warn(`could not run vision for ${itemLabel}: ${message}`);
+  runtime.logger.warn(`could not run vision for ${itemLabel}: ${message}`);
   return createFailureResult(`vision failed: ${message}`);
 }
 
 export async function analyzeImage(
-  itemLabel: string,
-  readImage: () => Promise<Uint8Array>,
-  options: ResolvedVisionOptions,
+  runtime: VisionRuntime,
+  image: VisionImage,
 ): Promise<VisionResult> {
-  const promptHash = getPromptHash(options.prompt);
-  const storedResult = getStoredVisionResult(promptHash, options);
+  const storedResult = getStoredVisionResult(runtime, image.mediaPk);
 
   if (storedResult) {
     return storedResult;
   }
 
   try {
-    return await runVisionRequest(readImage, promptHash, options);
+    return await runVisionRequest(runtime, image);
   } catch (error) {
     const httpError = VisionHttpErrorSchema.safeParse(error);
     let requestError: VisionRequestError;
@@ -241,6 +217,6 @@ export async function analyzeImage(
     } else {
       requestError = new Error("unknown request error");
     }
-    return handleVisionError(requestError, itemLabel, options);
+    return handleVisionError(runtime, requestError, image.itemLabel);
   }
 }

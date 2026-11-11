@@ -6,8 +6,6 @@ import { fetchStoriesManifest } from "@@/core/domains/fetch-run/stories.ts";
 import {
   createCapturingLogger,
   createClient,
-  fixedNow,
-  noSleep,
   reel,
   storyItem,
   reelsResponse,
@@ -51,7 +49,7 @@ test("reads cached local previews and stops after the first unavailable result",
     [{ id: "r1", media_ids: ["m1", "m2"], user: { username: "one" } }],
     [reelsResponse({ r1: reel("r1", [storyItem("m1"), storyItem("m2")]) })],
   );
-  const report = await fetchStoriesManifest(runtime, client, { now: fixedNow, sleep: noSleep });
+  const report = await fetchStoriesManifest(runtime, client);
   const cachedImages = await cachePreviews(runtime, ["m1", "m2"]);
 
   await resolveAppleCaptionsForReport(runtime, report, cachedImages);
@@ -76,7 +74,7 @@ test("resolves local OCR without embedding it in the report", async (context) =>
     [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
     [reelsResponse({ r1: reel("r1", [storyItem("m1")]) })],
   );
-  const report = await fetchStoriesManifest(runtime, client, { now: fixedNow, sleep: noSleep });
+  const report = await fetchStoriesManifest(runtime, client);
   const cachedImages = await cachePreviews(runtime, ["m1"]);
 
   await resolveAppleCaptionsForReport(runtime, report, cachedImages);

@@ -1,4 +1,4 @@
-import { setTimeout as delay } from "node:timers/promises";
+import { setTimeout as sleep } from "node:timers/promises";
 import type { Logger } from "@@/core/utils/logging.ts";
 import type { InstagramClientResponse } from "./instagram-types.ts";
 
@@ -20,15 +20,12 @@ export type RequestResult<T> =
     };
 
 export interface RetryOptions {
-  baseDelayMs: number;
   logger: Logger;
   maxAttempts: number;
-  maxRateLimitDelayMs: number;
-  now: () => Date;
-  random: () => number;
-  sleep: (durationMs: number) => Promise<void>;
 }
 
+const BASE_DELAY_MS = 500;
+const MAX_RATE_LIMIT_DELAY_MS = 10_000;
 const TRANSIENT_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
 
 export function chunk<T>(items: Array<T>, size: number): Array<Array<T>> {
@@ -39,21 +36,13 @@ export function chunk<T>(items: Array<T>, size: number): Array<Array<T>> {
   return chunks;
 }
 
-export async function sleep(durationMs: number): Promise<void> {
-  await delay(durationMs);
-}
-
 function normalizeHeaders(headers: Record<string, string>): Record<string, string> {
   return Object.fromEntries(
     Object.entries(headers).map(([key, value]) => [key.toLowerCase(), value]),
   );
 }
 
-function getRetryAfterMs(
-  headers: Record<string, string>,
-  maxRateLimitDelayMs: number,
-  now: Date,
-): number | null {
+function getRetryAfterMs(headers: Record<string, string>): number | null {
   const retryAfter = normalizeHeaders(headers)["retry-after"];
 
   if (!retryAfter) {
@@ -62,28 +51,22 @@ function getRetryAfterMs(
 
   const seconds = Number(retryAfter);
   if (Number.isFinite(seconds)) {
-    return Math.min(Math.max(0, seconds * 1000), maxRateLimitDelayMs);
+    return Math.min(Math.max(0, seconds * 1000), MAX_RATE_LIMIT_DELAY_MS);
   }
 
   const retryAt = Date.parse(retryAfter);
   return Number.isNaN(retryAt)
     ? null
-    : Math.min(Math.max(0, retryAt - now.getTime()), maxRateLimitDelayMs);
+    : Math.min(Math.max(0, retryAt - Date.now()), MAX_RATE_LIMIT_DELAY_MS);
 }
 
 function getBackoffMs(
   attemptIndex: number,
   response: InstagramClientResponse<unknown> | null,
-  options: RetryOptions,
 ): number {
-  const retryAfterMs =
-    response?.status === 429
-      ? getRetryAfterMs(response.headers, options.maxRateLimitDelayMs, options.now())
-      : null;
+  const retryAfterMs = response?.status === 429 ? getRetryAfterMs(response.headers) : null;
 
-  return (
-    retryAfterMs ?? options.baseDelayMs * 2 ** attemptIndex + Math.floor(options.random() * 100)
-  );
+  return retryAfterMs ?? BASE_DELAY_MS * 2 ** attemptIndex + Math.floor(Math.random() * 100);
 }
 
 function createHttpFailure(
@@ -125,11 +108,11 @@ async function handleFailedResponse<T>(
     return { failure, ok: false };
   }
 
-  const delayMs = getBackoffMs(attemptIndex, response, options);
+  const delayMs = getBackoffMs(attemptIndex, response);
   options.logger.warn(
     `${label} attempt ${attemptCount} failed with HTTP ${response.status}; retrying in ${delayMs}ms`,
   );
-  await options.sleep(delayMs);
+  await sleep(delayMs);
   return null;
 }
 
@@ -148,11 +131,11 @@ async function handleThrownRequest<T>(
     return { failure, ok: false };
   }
 
-  const delayMs = getBackoffMs(attemptIndex, null, options);
+  const delayMs = getBackoffMs(attemptIndex, null);
   options.logger.warn(
     `${label} attempt ${attemptCount} threw ${failure.message}; retrying in ${delayMs}ms`,
   );
-  await options.sleep(delayMs);
+  await sleep(delayMs);
   return null;
 }
 

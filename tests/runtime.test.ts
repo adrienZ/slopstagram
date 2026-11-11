@@ -1,7 +1,7 @@
 import { expect, test, type OnTestFinishedHandler } from "vitest";
 import { fetchStories } from "@@/core/domains/fetch-run/stories.ts";
 import { getProductionRuntime } from "@@/core/domains/runtime/production-runtime.ts";
-import { createCapturingLogger, noSleep } from "./mock-helpers.ts";
+import { createCapturingLogger } from "./mock-helpers.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 
 const recordedStoryPk = "700000000000079";
@@ -13,7 +13,7 @@ async function answerOllama() {
 test("a test runtime ingests recorded stories into its own database", async (context) => {
   const runtime = await createTestRuntime(context);
 
-  const report = await fetchStories(runtime, { maxAttempts: 1, sleep: noSleep });
+  const report = await fetchStories(runtime, { maxAttempts: 1 });
 
   expect(report.failures).toEqual([]);
   expect(runtime.stories.findByMediaPk(recordedStoryPk)).not.toBeNull();
@@ -23,7 +23,7 @@ test("two test runtimes do not share a database", async (context) => {
   const first = await createTestRuntime(context);
   const second = await createTestRuntime(context);
 
-  await fetchStories(first, { maxAttempts: 1, sleep: noSleep });
+  await fetchStories(first, { maxAttempts: 1 });
 
   expect(first.stories.findByMediaPk(recordedStoryPk)).not.toBeNull();
   expect(second.stories.findByMediaPk(recordedStoryPk)).toBeNull();

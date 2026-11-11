@@ -17,13 +17,7 @@ import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-typ
 import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
 import { fetchStoriesManifest } from "@@/core/domains/fetch-run/stories.ts";
 import { createMemoryCacheStorage } from "./memory-storage.ts";
-import {
-  createCapturingLogger,
-  createClient,
-  fixedNow,
-  reel,
-  reelsResponse,
-} from "./mock-helpers.ts";
+import { createCapturingLogger, createClient, reel, reelsResponse } from "./mock-helpers.ts";
 
 function manifest(name: string) {
   return `<MPD xmlns="urn:mpeg:dash:schema:mpd:2011" type="static">
@@ -391,7 +385,6 @@ test("fresh story ingestion caches the story excerpt and prefers it over the lon
   const report = await fetchStoriesManifest(
     { logger: createCapturingLogger(), stories: repository, storage: createMemoryCacheStorage() },
     client,
-    { now: fixedNow },
   );
   const storyBytes = await readFile(new globalThis.URL("fixtures/audio-clip.m4a", import.meta.url));
   const musicBytes = wavAudio(70);

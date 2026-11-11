@@ -1,4 +1,5 @@
 import { createConsola } from "consola";
+import { afterEach, beforeEach, vi } from "vitest";
 import type { Logger } from "@@/core/utils/logging.ts";
 import type {
   StoryItem,
@@ -233,6 +234,13 @@ export function fixedNow(): Date {
   return new Date("2026-07-26T00:00:00.000Z");
 }
 
-export async function noSleep(): Promise<void> {
-  await Promise.resolve();
+/** Fakes only `Date` in every test of the file, starting at `at`; timers still run for real. */
+export function useFixedDate(at: Date = fixedNow()): void {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(at);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 }

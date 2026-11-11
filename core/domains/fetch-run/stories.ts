@@ -1,6 +1,5 @@
 import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
-import type { Logger } from "@@/core/utils/logging.ts";
 import {
   closeInstagramSession,
   openInstagramSession,
@@ -10,7 +9,6 @@ import type {
   StoryManifestReel,
 } from "@@/core/domains/fetch-run/report-types.ts";
 import type {
-  StoryTrayEntry,
   InstagramClient,
   ReelTrayResponse,
 } from "@@/core/domains/instagram/instagram-types.ts";
@@ -20,7 +18,7 @@ import { lookUpTaggedPlaces } from "@@/core/domains/places/place-lookup.ts";
 import { createFetchState } from "./story-failure.ts";
 import { fetchMissingStories } from "./story-live-fetch.ts";
 import { createManifestUsers, createOutputUsers } from "./story-output.ts";
-import { requestWithRetry, sleep } from "@@/core/domains/instagram/story-retry.ts";
+import { requestWithRetry, type RetryOptions } from "@@/core/domains/instagram/story-retry.ts";
 
 type FetchStoriesRuntime = Pick<Runtime, "logger" | "storage"> & {
   stories: Pick<StoryRepository, "findByMediaPk" | "save"> &
@@ -29,36 +27,23 @@ type FetchStoriesRuntime = Pick<Runtime, "logger" | "storage"> & {
     >;
 };
 
-export interface FetchStoriesManifestOptions {
-  baseDelayMs?: number;
+interface FetchStoriesOptions {
   maxAttempts?: number;
-  maxRateLimitDelayMs?: number;
-  now?: () => Date;
-  random?: () => number;
   reelIdsPerRequest?: number;
   reportName?: string;
-  sleep?: (durationMs: number) => Promise<void>;
 }
-
-export type FetchStoriesOptions = FetchStoriesManifestOptions & {
-  closeSession?: typeof closeInstagramSession;
-  openSession?: typeof openInstagramSession;
-};
 
 const DEFAULT_REPORT_NAME = "stories-report.json";
 const DEFAULT_REEL_IDS_PER_REQUEST = 25;
 const DEFAULT_MAX_ATTEMPTS = 3;
-const DEFAULT_BASE_DELAY_MS = 500;
-const DEFAULT_MAX_RATE_LIMIT_DELAY_MS = 10_000;
-function createRetryOptions(options: FetchStoriesManifestOptions, logger: Logger) {
+
+function createRetryOptions(
+  runtime: FetchStoriesRuntime,
+  options: FetchStoriesOptions,
+): RetryOptions {
   return {
-    baseDelayMs: options.baseDelayMs ?? DEFAULT_BASE_DELAY_MS,
-    logger,
+    logger: runtime.logger,
     maxAttempts: options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
-    maxRateLimitDelayMs: options.maxRateLimitDelayMs ?? DEFAULT_MAX_RATE_LIMIT_DELAY_MS,
-    now: options.now ?? (() => new Date()),
-    random: options.random ?? Math.random,
-    sleep: options.sleep ?? sleep,
   };
 }
 
@@ -110,78 +95,48 @@ function createStoriesReport(options: {
   };
 }
 
-async function fetchTray(
-  client: InstagramClient,
-  options: FetchStoriesManifestOptions,
-  logger: Logger,
-) {
+async function fetchTray(client: InstagramClient, retryOptions: RetryOptions) {
   const trayResult = await requestWithRetry(
     async () => await client.getTray(),
-    createRetryOptions(options, logger),
+    retryOptions,
     "reels tray request",
   );
 
   if (!trayResult.ok) {
-    logger.error(`tray fetch failed: ${trayResult.failure.message}`);
+    retryOptions.logger.error(`tray fetch failed: ${trayResult.failure.message}`);
     throw new Error(trayResult.failure.message);
   }
 
   return trayResult.value;
 }
 
-async function fetchMissingStoriesForReport(
-  runtime: FetchStoriesRuntime,
-  options: {
-    client: InstagramClient;
-    manifestOptions: FetchStoriesManifestOptions;
-    now: () => Date;
-    state: ReturnType<typeof createFetchState>;
-    tray: Array<StoryTrayEntry>;
-  },
-): Promise<void> {
-  await fetchMissingStories(
-    runtime,
-    {
-      client: options.client,
-      state: options.state,
-      trayReelIds: options.tray.map((entry) => entry.id),
-    },
-    {
-      reelIdsPerRequest: options.manifestOptions.reelIdsPerRequest ?? DEFAULT_REEL_IDS_PER_REQUEST,
-      retryOptions: createRetryOptions(
-        { ...options.manifestOptions, now: options.now },
-        runtime.logger,
-      ),
-    },
-  );
-}
-
 export async function fetchStoriesManifest(
   runtime: FetchStoriesRuntime,
   client: InstagramClient,
-  options: FetchStoriesManifestOptions = {},
+  options: FetchStoriesOptions = {},
 ): Promise<StoriesManifestReport> {
   const reportName = options.reportName ?? DEFAULT_REPORT_NAME;
-  const now = options.now ?? (() => new Date());
+  const retryOptions = createRetryOptions(runtime, options);
   const { logger } = runtime;
 
   logger.info(`fetching tray for report ${reportName}`);
-  const trayJson = await fetchTray(client, { ...options, now }, logger);
+  const trayJson = await fetchTray(client, retryOptions);
   const state = createFetchState(trayJson.tray);
 
   logger.info(
     `tray fetched: reels=${trayJson.tray.length} stories=${state.expectedMediaPks.length} status=${trayJson.status}`,
   );
-  await fetchMissingStoriesForReport(runtime, {
-    client,
-    manifestOptions: options,
-    now,
-    state,
-    tray: trayJson.tray,
-  });
+  await fetchMissingStories(
+    runtime,
+    { client, state, trayReelIds: trayJson.tray.map((entry) => entry.id) },
+    {
+      reelIdsPerRequest: options.reelIdsPerRequest ?? DEFAULT_REEL_IDS_PER_REQUEST,
+      retryOptions,
+    },
+  );
 
   await enrichCurrentMusicAssets(client, state.cachedItems.values(), runtime.stories, logger);
-  await lookUpTaggedPlaces(client, state.fetchedMediaPks, runtime.stories, logger, now);
+  await lookUpTaggedPlaces(client, state.fetchedMediaPks, runtime.stories, logger);
 
   const manifestUsers = createManifestUsers(
     trayJson.tray,
@@ -193,7 +148,7 @@ export async function fetchStoriesManifest(
   );
 
   return createStoriesReport({
-    createdAt: now().toISOString(),
+    createdAt: new Date().toISOString(),
     manifestUsers,
     reportName,
     state,
@@ -205,25 +160,15 @@ export async function fetchStories(
   runtime: FetchStoriesRuntime & Pick<Runtime, "client">,
   options: FetchStoriesOptions = {},
 ): Promise<StoriesManifestReport> {
-  const reportName = options.reportName ?? DEFAULT_REPORT_NAME;
-
   if (runtime.client) {
-    return await fetchStoriesManifest(runtime, runtime.client, {
-      ...options,
-      reportName,
-    });
+    return await fetchStoriesManifest(runtime, runtime.client, options);
   }
 
-  const openSession = options.openSession ?? openInstagramSession;
-  const closeSession = options.closeSession ?? closeInstagramSession;
-  const session = await openSession();
+  const session = await openInstagramSession();
 
   try {
-    return await fetchStoriesManifest(runtime, createInstagramClient(session), {
-      ...options,
-      reportName,
-    });
+    return await fetchStoriesManifest(runtime, createInstagramClient(session), options);
   } finally {
-    await closeSession(session);
+    await closeInstagramSession(session);
   }
 }

@@ -32,8 +32,9 @@ type LiveFetchRuntime = Pick<Runtime, "logger" | "storage"> & {
   stories: Pick<StoryRepository, "findByMediaPk" | "save">;
 };
 
-interface MissingStoriesContext
-  extends LiveFetchRuntime, FetchMissingStoriesInput, FetchMissingStoriesOptions {}
+interface MissingStoriesContext extends FetchMissingStoriesInput, FetchMissingStoriesOptions {
+  runtime: LiveFetchRuntime;
+}
 
 function getReelIdsToFetch(options: Pick<MissingStoriesContext, "state" | "trayReelIds">) {
   return options.trayReelIds.filter((reelId) =>
@@ -68,7 +69,8 @@ async function fetchSingleReel(
   reelIndex: number,
   options: MissingStoriesContext,
 ): Promise<"continue" | "stop"> {
-  logStoryProgress(options.logger, options.state, `fetching reel ${reelId}`);
+  const { logger } = options.runtime;
+  logStoryProgress(logger, options.state, `fetching reel ${reelId}`);
   const singleResult = await requestWithRetry(
     async () => await options.client.getReelsMedia([reelId]),
     options.retryOptions,
@@ -77,7 +79,7 @@ async function fetchSingleReel(
 
   if (singleResult.ok) {
     await storeReturnedReels(
-      options,
+      options.runtime,
       extractReels(singleResult.value),
       options.state.cachedItems,
       options.state.fetchedMediaPks,
@@ -85,11 +87,11 @@ async function fetchSingleReel(
     addFailuresForPendingReelStories(
       [reelId],
       options.state,
-      options.logger,
+      logger,
       createMissingResponseFailure(),
       "missing_from_response",
     );
-    logStoryProgress(options.logger, options.state, `reel ${reelId} cached`);
+    logStoryProgress(logger, options.state, `reel ${reelId} cached`);
     return "continue";
   }
 
@@ -97,17 +99,17 @@ async function fetchSingleReel(
     addFailuresForPendingReelStories(
       getRemainingReelIds(reelIdsToFetch, reelIndex),
       options.state,
-      options.logger,
+      logger,
       singleResult.failure,
       "rate_limited",
     );
-    logStoryProgress(options.logger, options.state, `rate limited reel ${reelId}`);
+    logStoryProgress(logger, options.state, `rate limited reel ${reelId}`);
     return "stop";
   }
 
-  options.logger.warn(`individual reel ${reelId} failed: ${singleResult.failure.message}`);
-  addFailuresForPendingReelStories([reelId], options.state, options.logger, singleResult.failure);
-  logStoryProgress(options.logger, options.state, `reel ${reelId} failed`);
+  logger.warn(`individual reel ${reelId} failed: ${singleResult.failure.message}`);
+  addFailuresForPendingReelStories([reelId], options.state, logger, singleResult.failure);
+  logStoryProgress(logger, options.state, `reel ${reelId} failed`);
   return "continue";
 }
 
@@ -140,17 +142,18 @@ function handleChunkRateLimit(
   options: MissingStoriesContext,
   failure: RequestFailure,
 ): void {
-  options.logger.warn(
+  const { logger } = options.runtime;
+  logger.warn(
     `rate limited while fetching chunk ${chunkIndex + 1}; marking remaining missing stories as rate_limited`,
   );
   addFailuresForPendingReelStories(
     getRemainingReelIds(reelIdsToFetch, reelIndex),
     options.state,
-    options.logger,
+    logger,
     failure,
     "rate_limited",
   );
-  logStoryProgress(options.logger, options.state, `rate limited chunk ${chunkIndex + 1}`);
+  logStoryProgress(logger, options.state, `rate limited chunk ${chunkIndex + 1}`);
 }
 
 async function fetchReelChunk(
@@ -159,8 +162,9 @@ async function fetchReelChunk(
   reelChunksLength: number,
   options: MissingStoriesContext,
 ): Promise<"continue" | { failure: RequestFailure }> {
+  const { logger } = options.runtime;
   logStoryProgress(
-    options.logger,
+    logger,
     options.state,
     `fetching reel chunk ${chunkIndex + 1}/${reelChunksLength} reels=${idChunk.length}`,
   );
@@ -175,13 +179,13 @@ async function fetchReelChunk(
   }
 
   const cachedCount = await cacheSuccessfulResponse(
-    options,
+    options.runtime,
     extractReels(chunkResult.value),
     idChunk,
     options.state,
   );
   logStoryProgress(
-    options.logger,
+    logger,
     options.state,
     `reel chunk ${chunkIndex + 1}/${reelChunksLength} cached ${cachedCount}`,
   );
@@ -196,12 +200,13 @@ function handleChunkFailure(
   options: MissingStoriesContext,
   failure: RequestFailure,
 ): Promise<{ reelIndex: number; stopped: boolean }> | { reelIndex: number; stopped: boolean } {
+  const { logger } = options.runtime;
   if (failure.reason === "rate_limited") {
     handleChunkRateLimit(chunkIndex, reelIdsToFetch, reelIndex, options, failure);
     return { reelIndex, stopped: true };
   }
 
-  options.logger.warn(`chunk ${chunkIndex + 1} failed; falling back to individual reel requests`);
+  logger.warn(`chunk ${chunkIndex + 1} failed; falling back to individual reel requests`);
   return fetchSingleReelsAfterChunkFailure(idChunk, reelIdsToFetch, reelIndex, options);
 }
 
@@ -210,15 +215,15 @@ export async function fetchMissingStories(
   input: FetchMissingStoriesInput,
   options: FetchMissingStoriesOptions,
 ): Promise<void> {
-  const context: MissingStoriesContext = { ...runtime, ...input, ...options };
+  const context: MissingStoriesContext = { ...input, ...options, runtime };
   const reelIdsToFetch = getReelIdsToFetch(context);
 
   if (reelIdsToFetch.length === 0) {
-    context.logger.info("all expected stories were found in cache");
+    runtime.logger.info("all expected stories were found in cache");
     return;
   }
 
-  context.logger.info(`fetching missing stories from ${reelIdsToFetch.length} reel(s)`);
+  runtime.logger.info(`fetching missing stories from ${reelIdsToFetch.length} reel(s)`);
   let reelIndex = 0;
   const reelChunks = chunk(reelIdsToFetch, context.reelIdsPerRequest);
 
