@@ -18,13 +18,9 @@ import { lookUpTaggedPlaces } from "@@/core/domains/places/place-lookup.ts";
 import { createFetchState } from "./story-failure.ts";
 import { fetchMissingStories } from "./story-live-fetch.ts";
 import { createManifestUsers, createOutputUsers } from "./story-output.ts";
-import {
-  requestWithRetry,
-  sleep,
-  type RetryOptions,
-} from "@@/core/domains/instagram/story-retry.ts";
+import { requestWithRetry, type RetryOptions } from "@@/core/domains/instagram/story-retry.ts";
 
-type FetchStoriesRuntime = Pick<Runtime, "logger" | "sleep" | "storage"> & {
+type FetchStoriesRuntime = Pick<Runtime, "logger" | "storage"> & {
   stories: Pick<StoryRepository, "findByMediaPk" | "save"> &
     Partial<
       Pick<StoryRepository, "recordFailedPlaceLookup" | "recordPlaceLookup" | "refreshMusicAsset">
@@ -41,8 +37,6 @@ interface FetchStoriesOptions {
 const DEFAULT_REPORT_NAME = "stories-report.json";
 const DEFAULT_REEL_IDS_PER_REQUEST = 25;
 const DEFAULT_MAX_ATTEMPTS = 3;
-const BASE_DELAY_MS = 500;
-const MAX_RATE_LIMIT_DELAY_MS = 10_000;
 
 function createRetryOptions(
   runtime: FetchStoriesRuntime,
@@ -50,13 +44,9 @@ function createRetryOptions(
   now: () => Date,
 ): RetryOptions {
   return {
-    baseDelayMs: BASE_DELAY_MS,
     logger: runtime.logger,
     maxAttempts: options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
-    maxRateLimitDelayMs: MAX_RATE_LIMIT_DELAY_MS,
     now,
-    random: Math.random,
-    sleep: runtime.sleep ?? sleep,
   };
 }
 

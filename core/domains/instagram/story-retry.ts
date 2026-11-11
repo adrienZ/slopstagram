@@ -1,5 +1,4 @@
-import { setTimeout as delay } from "node:timers/promises";
-import type { Sleep } from "@@/core/domains/runtime/fetch-boundaries.ts";
+import { promisify } from "node:util";
 import type { Logger } from "@@/core/utils/logging.ts";
 import type { InstagramClientResponse } from "./instagram-types.ts";
 
@@ -21,15 +20,13 @@ export type RequestResult<T> =
     };
 
 export interface RetryOptions {
-  baseDelayMs: number;
   logger: Logger;
   maxAttempts: number;
-  maxRateLimitDelayMs: number;
   now: () => Date;
-  random: () => number;
-  sleep: Sleep;
 }
 
+const BASE_DELAY_MS = 500;
+const MAX_RATE_LIMIT_DELAY_MS = 10_000;
 const TRANSIENT_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
 
 export function chunk<T>(items: Array<T>, size: number): Array<Array<T>> {
@@ -40,8 +37,10 @@ export function chunk<T>(items: Array<T>, size: number): Array<Array<T>> {
   return chunks;
 }
 
-export async function sleep(durationMs: number): Promise<void> {
-  await delay(durationMs);
+// Looks up setTimeout on each call, so vitest fake timers can skip the wait.
+async function sleep(durationMs: number): Promise<void> {
+  // oxlint-disable-next-line typescript/strict-void-return -- promisify uses setTimeout[promisify.custom], not the returned Timeout.
+  await promisify(globalThis.setTimeout)(durationMs);
 }
 
 function normalizeHeaders(headers: Record<string, string>): Record<string, string> {
@@ -50,11 +49,7 @@ function normalizeHeaders(headers: Record<string, string>): Record<string, strin
   );
 }
 
-function getRetryAfterMs(
-  headers: Record<string, string>,
-  maxRateLimitDelayMs: number,
-  now: Date,
-): number | null {
+function getRetryAfterMs(headers: Record<string, string>, now: Date): number | null {
   const retryAfter = normalizeHeaders(headers)["retry-after"];
 
   if (!retryAfter) {
@@ -63,13 +58,13 @@ function getRetryAfterMs(
 
   const seconds = Number(retryAfter);
   if (Number.isFinite(seconds)) {
-    return Math.min(Math.max(0, seconds * 1000), maxRateLimitDelayMs);
+    return Math.min(Math.max(0, seconds * 1000), MAX_RATE_LIMIT_DELAY_MS);
   }
 
   const retryAt = Date.parse(retryAfter);
   return Number.isNaN(retryAt)
     ? null
-    : Math.min(Math.max(0, retryAt - now.getTime()), maxRateLimitDelayMs);
+    : Math.min(Math.max(0, retryAt - now.getTime()), MAX_RATE_LIMIT_DELAY_MS);
 }
 
 function getBackoffMs(
@@ -78,13 +73,9 @@ function getBackoffMs(
   options: RetryOptions,
 ): number {
   const retryAfterMs =
-    response?.status === 429
-      ? getRetryAfterMs(response.headers, options.maxRateLimitDelayMs, options.now())
-      : null;
+    response?.status === 429 ? getRetryAfterMs(response.headers, options.now()) : null;
 
-  return (
-    retryAfterMs ?? options.baseDelayMs * 2 ** attemptIndex + Math.floor(options.random() * 100)
-  );
+  return retryAfterMs ?? BASE_DELAY_MS * 2 ** attemptIndex + Math.floor(Math.random() * 100);
 }
 
 function createHttpFailure(
@@ -130,7 +121,7 @@ async function handleFailedResponse<T>(
   options.logger.warn(
     `${label} attempt ${attemptCount} failed with HTTP ${response.status}; retrying in ${delayMs}ms`,
   );
-  await options.sleep(delayMs);
+  await sleep(delayMs);
   return null;
 }
 
@@ -153,7 +144,7 @@ async function handleThrownRequest<T>(
   options.logger.warn(
     `${label} attempt ${attemptCount} threw ${failure.message}; retrying in ${delayMs}ms`,
   );
-  await options.sleep(delayMs);
+  await sleep(delayMs);
   return null;
 }
 

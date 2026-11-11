@@ -7,7 +7,7 @@ import {
 } from "@@/core/domains/runtime/runtime.ts";
 import { createRecordedInstagramClient } from "./seed.ts";
 import { createMemoryCacheStorage } from "../memory-storage.ts";
-import { createMockLogger, noSleep } from "../mock-helpers.ts";
+import { createMockLogger } from "../mock-helpers.ts";
 import { createMigratedDatabase, createTestDatabase } from "../test-database.ts";
 
 function unexpected(boundary: string) {
@@ -35,7 +35,6 @@ async function createRuntimeOver(database: DrizzleDatabase, boundaries: RuntimeB
     logger: createMockLogger(),
     queue: noQueue,
     runAppleOcr: unexpected("runAppleOcr"),
-    sleep: noSleep,
     storage: createMemoryCacheStorage(),
     ...boundaries,
   });

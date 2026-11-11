@@ -69,7 +69,8 @@ async function fetchSingleReel(
   reelIndex: number,
   options: MissingStoriesContext,
 ): Promise<"continue" | "stop"> {
-  logStoryProgress(options.runtime.logger, options.state, `fetching reel ${reelId}`);
+  const { logger } = options.runtime;
+  logStoryProgress(logger, options.state, `fetching reel ${reelId}`);
   const singleResult = await requestWithRetry(
     async () => await options.client.getReelsMedia([reelId]),
     options.retryOptions,
@@ -86,11 +87,11 @@ async function fetchSingleReel(
     addFailuresForPendingReelStories(
       [reelId],
       options.state,
-      options.runtime.logger,
+      logger,
       createMissingResponseFailure(),
       "missing_from_response",
     );
-    logStoryProgress(options.runtime.logger, options.state, `reel ${reelId} cached`);
+    logStoryProgress(logger, options.state, `reel ${reelId} cached`);
     return "continue";
   }
 
@@ -98,22 +99,17 @@ async function fetchSingleReel(
     addFailuresForPendingReelStories(
       getRemainingReelIds(reelIdsToFetch, reelIndex),
       options.state,
-      options.runtime.logger,
+      logger,
       singleResult.failure,
       "rate_limited",
     );
-    logStoryProgress(options.runtime.logger, options.state, `rate limited reel ${reelId}`);
+    logStoryProgress(logger, options.state, `rate limited reel ${reelId}`);
     return "stop";
   }
 
-  options.runtime.logger.warn(`individual reel ${reelId} failed: ${singleResult.failure.message}`);
-  addFailuresForPendingReelStories(
-    [reelId],
-    options.state,
-    options.runtime.logger,
-    singleResult.failure,
-  );
-  logStoryProgress(options.runtime.logger, options.state, `reel ${reelId} failed`);
+  logger.warn(`individual reel ${reelId} failed: ${singleResult.failure.message}`);
+  addFailuresForPendingReelStories([reelId], options.state, logger, singleResult.failure);
+  logStoryProgress(logger, options.state, `reel ${reelId} failed`);
   return "continue";
 }
 
@@ -146,17 +142,18 @@ function handleChunkRateLimit(
   options: MissingStoriesContext,
   failure: RequestFailure,
 ): void {
-  options.runtime.logger.warn(
+  const { logger } = options.runtime;
+  logger.warn(
     `rate limited while fetching chunk ${chunkIndex + 1}; marking remaining missing stories as rate_limited`,
   );
   addFailuresForPendingReelStories(
     getRemainingReelIds(reelIdsToFetch, reelIndex),
     options.state,
-    options.runtime.logger,
+    logger,
     failure,
     "rate_limited",
   );
-  logStoryProgress(options.runtime.logger, options.state, `rate limited chunk ${chunkIndex + 1}`);
+  logStoryProgress(logger, options.state, `rate limited chunk ${chunkIndex + 1}`);
 }
 
 async function fetchReelChunk(
@@ -165,8 +162,9 @@ async function fetchReelChunk(
   reelChunksLength: number,
   options: MissingStoriesContext,
 ): Promise<"continue" | { failure: RequestFailure }> {
+  const { logger } = options.runtime;
   logStoryProgress(
-    options.runtime.logger,
+    logger,
     options.state,
     `fetching reel chunk ${chunkIndex + 1}/${reelChunksLength} reels=${idChunk.length}`,
   );
@@ -187,7 +185,7 @@ async function fetchReelChunk(
     options.state,
   );
   logStoryProgress(
-    options.runtime.logger,
+    logger,
     options.state,
     `reel chunk ${chunkIndex + 1}/${reelChunksLength} cached ${cachedCount}`,
   );
@@ -202,14 +200,13 @@ function handleChunkFailure(
   options: MissingStoriesContext,
   failure: RequestFailure,
 ): Promise<{ reelIndex: number; stopped: boolean }> | { reelIndex: number; stopped: boolean } {
+  const { logger } = options.runtime;
   if (failure.reason === "rate_limited") {
     handleChunkRateLimit(chunkIndex, reelIdsToFetch, reelIndex, options, failure);
     return { reelIndex, stopped: true };
   }
 
-  options.runtime.logger.warn(
-    `chunk ${chunkIndex + 1} failed; falling back to individual reel requests`,
-  );
+  logger.warn(`chunk ${chunkIndex + 1} failed; falling back to individual reel requests`);
   return fetchSingleReelsAfterChunkFailure(idChunk, reelIdsToFetch, reelIndex, options);
 }
 

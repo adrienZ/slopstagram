@@ -16,7 +16,6 @@ import {
   createCapturingLogger,
   createClient,
   fixedNow,
-  noSleep,
   reel,
   response,
   reelsResponse,
@@ -118,7 +117,6 @@ async function ingest(
   return await fetchStoriesManifest(
     {
       logger: createCapturingLogger(),
-      sleep: noSleep,
       stories: repository,
       storage: createMemoryCacheStorage(),
     },
@@ -379,7 +377,7 @@ test("a place with a non-numeric id is skipped without a request or a failure", 
     {},
   );
   await fetchStoriesManifest(
-    { logger, sleep: noSleep, stories: repository, storage: createMemoryCacheStorage() },
+    { logger, stories: repository, storage: createMemoryCacheStorage() },
     client,
     { now: fixedNow },
   );

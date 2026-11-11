@@ -22,7 +22,6 @@ import type {
   FetchImage,
   FetchMedia,
   FetchRunQueue,
-  Sleep,
 } from "@@/core/domains/runtime/fetch-boundaries.ts";
 
 type HttpFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
@@ -36,7 +35,6 @@ export interface RuntimeBoundaries {
   logger?: Logger;
   queue?: FetchRunQueue;
   runAppleOcr?: AppleOcrRunner;
-  sleep?: Sleep;
   storage?: CacheStorage;
 }
 

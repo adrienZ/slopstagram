@@ -19,7 +19,6 @@ import {
   createCapturingLogger,
   createClient,
   fixedNow,
-  noSleep,
   reel,
   reelsResponse,
 } from "./mock-helpers.ts";
@@ -91,7 +90,6 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
   const report = await fetchStoriesManifest(
     {
       logger: createCapturingLogger(),
-      sleep: noSleep,
       stories: repository,
       storage: createMemoryCacheStorage(),
     },

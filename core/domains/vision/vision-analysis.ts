@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
-import type { Ollama as VisionSdk } from "ollama";
 import { z } from "zod";
 import type { VisionRepository } from "@@/core/domains/database/repositories/vision-repository.ts";
-import type { Logger } from "@@/core/utils/logging.ts";
+import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
+import { getOllamaClient } from "./ollama.ts";
 import type { VisionEntry, VisionResult } from "@@/core/domains/database/entities/vision.ts";
 
 export const VISION_MODEL = "minicpm-v4.6";
@@ -28,15 +28,16 @@ const VisionResponseSchema = z
   .strict();
 const VISION_OUTPUT_SCHEMA = z.toJSONSchema(VisionResponseSchema);
 
-type VisionClient = Pick<VisionSdk, "generate">;
-
 const VISION_PROMPT_HASH = createHash("sha256").update(VISION_PROMPT).digest("hex");
 
-export interface AnalyzeImageOptions {
-  client: VisionClient;
-  logger: Logger;
+export type VisionRuntime = Pick<Runtime, "fetchOllama" | "logger"> & {
+  vision: Pick<VisionRepository, "findByMediaPk" | "save">;
+};
+
+export interface VisionImage {
+  itemLabel: string;
   mediaPk: string;
-  repository: Pick<VisionRepository, "findByMediaPk" | "save">;
+  read: () => Promise<Uint8Array>;
 }
 
 function isCurrentVisionEntry(entry: VisionEntry | null | undefined): entry is VisionEntry {
@@ -138,8 +139,8 @@ function getVisionHttpStatus(error: VisionRequestError): number | null {
   return "status_code" in error ? error.status_code : null;
 }
 
-function getStoredVisionResult(options: AnalyzeImageOptions): VisionResult | null {
-  const entry = options.repository.findByMediaPk(options.mediaPk);
+function getStoredVisionResult(runtime: VisionRuntime, mediaPk: string): VisionResult | null {
+  const entry = runtime.vision.findByMediaPk(mediaPk);
 
   if (isCurrentVisionEntry(entry)) {
     return normalizeVisionResult(entry.result);
@@ -148,13 +149,11 @@ function getStoredVisionResult(options: AnalyzeImageOptions): VisionResult | nul
   return null;
 }
 
-async function runVisionRequest(
-  readImage: () => Promise<Uint8Array>,
-  options: AnalyzeImageOptions,
-): Promise<VisionResult> {
-  const payload = await options.client.generate({
+async function runVisionRequest(runtime: VisionRuntime, image: VisionImage): Promise<VisionResult> {
+  const client = getOllamaClient({ fetch: runtime.fetchOllama });
+  const payload = await client.generate({
     format: VISION_OUTPUT_SCHEMA,
-    images: [await readImage()],
+    images: [await image.read()],
     model: VISION_MODEL,
     options: {
       temperature: 0.1,
@@ -164,7 +163,7 @@ async function runVisionRequest(
   });
   const result = parseVisionResponse(payload.response ?? "");
 
-  await options.repository.save(options.mediaPk, {
+  await runtime.vision.save(image.mediaPk, {
     model: VISION_MODEL,
     prompt_hash: VISION_PROMPT_HASH,
     result,
@@ -174,9 +173,9 @@ async function runVisionRequest(
 }
 
 function handleVisionError(
+  runtime: VisionRuntime,
   error: VisionRequestError,
   itemLabel: string,
-  options: AnalyzeImageOptions,
 ): VisionResult {
   const status = getVisionHttpStatus(error);
 
@@ -187,28 +186,27 @@ function handleVisionError(
   }
 
   if (error instanceof Error && isServerUnavailableError(error)) {
-    options.logger.warn(`vision unavailable for ${itemLabel}`);
+    runtime.logger.warn(`vision unavailable for ${itemLabel}`);
     return createFailureResult(VISION_SERVER_NOT_RUNNING);
   }
 
   const message = error instanceof Error ? error.message : "unknown request error";
-  options.logger.warn(`could not run vision for ${itemLabel}: ${message}`);
+  runtime.logger.warn(`could not run vision for ${itemLabel}: ${message}`);
   return createFailureResult(`vision failed: ${message}`);
 }
 
 export async function analyzeImage(
-  itemLabel: string,
-  readImage: () => Promise<Uint8Array>,
-  options: AnalyzeImageOptions,
+  runtime: VisionRuntime,
+  image: VisionImage,
 ): Promise<VisionResult> {
-  const storedResult = getStoredVisionResult(options);
+  const storedResult = getStoredVisionResult(runtime, image.mediaPk);
 
   if (storedResult) {
     return storedResult;
   }
 
   try {
-    return await runVisionRequest(readImage, options);
+    return await runVisionRequest(runtime, image);
   } catch (error) {
     const httpError = VisionHttpErrorSchema.safeParse(error);
     let requestError: VisionRequestError;
@@ -219,6 +217,6 @@ export async function analyzeImage(
     } else {
       requestError = new Error("unknown request error");
     }
-    return handleVisionError(requestError, itemLabel, options);
+    return handleVisionError(runtime, requestError, image.itemLabel);
   }
 }

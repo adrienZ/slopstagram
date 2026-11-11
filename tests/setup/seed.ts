@@ -239,7 +239,7 @@ export async function createRecordedInstagramClient(
  * local models. Returns the report the fetch produced.
  */
 export async function seedRecordedStories(
-  runtime: Pick<Runtime, "logger" | "sleep" | "storage" | "stories" | "users">,
+  runtime: Pick<Runtime, "logger" | "storage" | "stories" | "users">,
   recorded?: RecordedPayloads,
   options: SeedOptions = {},
 ) {

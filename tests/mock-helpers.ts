@@ -232,7 +232,3 @@ export function createClient(
 export function fixedNow(): Date {
   return new Date("2026-07-26T00:00:00.000Z");
 }
-
-export async function noSleep(): Promise<void> {
-  await Promise.resolve();
-}
