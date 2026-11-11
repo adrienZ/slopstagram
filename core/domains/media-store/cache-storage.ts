@@ -1,6 +1,7 @@
 import { createStorage, type Storage, type StorageValue } from "unstorage";
 import fsDriver from "unstorage/drivers/fs-lite";
 import path from "node:path";
+import { AUDIO_STORAGE_DIR, IMAGES_STORAGE_DIR } from "./media-urls.ts";
 import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
 
 export type ImageCacheStorage = Storage<Record<string, never>>;
@@ -14,8 +15,6 @@ export interface CacheStorage {
 }
 
 export { APP_CACHE_DIR as BASE_CACHE_DIR } from "@@/core/utils/app-data-paths.ts";
-export const IMAGES_STORAGE_DIR = "images";
-export const AUDIO_STORAGE_DIR = "audio";
 const STORIES_STORAGE_DIR = "stories";
 
 function createFileStore<T extends StorageValue>(base: string, atomic: boolean): Storage<T> {

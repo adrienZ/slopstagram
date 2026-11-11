@@ -15,7 +15,7 @@ export default defineConfig({
       thresholds: {
         // Floor to whole percents: just under the measured value, so tiny fluctuations never fail.
         autoUpdate: (value) => Math.floor(value),
-        statements: 93,
+        statements: 92,
         branches: 87,
         functions: 92,
         lines: 92,

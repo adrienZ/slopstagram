@@ -25,13 +25,18 @@ export async function openInstagramSession(
     headless: options.headless ?? true,
   });
 
-  const page = context.pages()[0] ?? (await context.newPage());
-  await page.goto(INSTAGRAM_HOME_URL, {
-    waitUntil: "domcontentloaded",
-    timeout: 30_000,
-  });
-
-  return { context, page };
+  try {
+    const page = context.pages()[0] ?? (await context.newPage());
+    await page.goto(INSTAGRAM_HOME_URL, {
+      waitUntil: "domcontentloaded",
+      timeout: 30_000,
+    });
+    return { context, page };
+  } catch (error) {
+    // A browser left running keeps the profile locked, so every later run would fail to launch.
+    await context.close();
+    throw error;
+  }
 }
 
 export async function closeInstagramSession(session: InstagramSession): Promise<void> {
