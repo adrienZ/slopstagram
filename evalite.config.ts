@@ -12,7 +12,7 @@ export default defineConfig({
   // once: they then wait for each other in `askAssistant` (evals/assistant-world.ts), so the
   // timeout bounds the whole queue, not one answer. Locally the queue takes about a minute and the
   // judge gains from running concurrently. CI has no judge and a CPU runner answers in about 20
-  // seconds, so 50 cases outgrow any queue-wide timeout: there the cases start one at a time, and
+  // seconds, so its 30 cases outgrow any queue-wide timeout: there the cases start one at a time, and
   // the timeout bounds one answer.
   testTimeout: 300_000,
   maxConcurrency: process.env.CI === undefined ? undefined : 1,

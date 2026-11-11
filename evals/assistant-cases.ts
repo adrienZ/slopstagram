@@ -1,3 +1,4 @@
+import process from "node:process";
 import { evalite } from "evalite";
 import { afterAll } from "vitest";
 import { createAssistantJudge } from "./assistant-judge.ts";
@@ -8,8 +9,11 @@ import {
 } from "./assistant-scorers.ts";
 import { askAssistant, savedUsernames } from "./assistant-world.ts";
 
-/** Every case runs this many times: the chat model is not deterministic. */
-const TRIALS = 5;
+/**
+ * Every case runs this many times: the chat model is not deterministic. CI runs fewer, as its CPU
+ * runner takes about 20 seconds an answer.
+ */
+const TRIALS = process.env.CI === undefined ? 5 : 3;
 
 /** One question to the Assistant and what its answer should show. */
 export interface AssistantCase {
