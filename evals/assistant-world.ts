@@ -148,7 +148,8 @@ let lastQuestion: Promise<unknown> = Promise.resolve();
 /**
  * Asks the Assistant one question at a time, in arrival order. The local chat model answers one
  * request at a time: more would only queue in Ollama and time out. The judge has no such limit, so
- * evalite runs the cases concurrently and only the chat model calls wait here.
+ * evalite runs the cases concurrently and only the chat model calls wait here, except on CI, which
+ * has no judge and starts the cases one at a time (evalite.config.ts).
  */
 export async function askAssistant(question: string): Promise<AssistantRun> {
   const run = afterPrevious(lastQuestion, async () => await answer(question));
