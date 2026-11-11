@@ -17,7 +17,7 @@ const DESCRIPTION = `Lists the Tagged places: the places that the accounts tagge
 Use it when the message asks which places were tagged or visited, where the accounts have been, or the places of one or more accounts. Examples: "which places were tagged?", "where did @alice go?".
 Do not use it to find a place by its name, address or category: use searchTaggedPlaces. Do not use it for a greeting or a message that is not about places.
 
-Outcomes: "places" holds up to 10 places, "total" counts every place and "nextOffset" is the offset of the next page, null on the last one: when there are more, say so and offer the next ones. "unknownUsernames" lists the requested usernames that are no account: say so. When "places" is empty, say that no place was tagged, and never invent a place. Write each place as a markdown link [name](place:id), with its id as is.`;
+Outcomes: "places" holds up to 10 places, "total" counts every place and "nextOffset" is the offset of the next page, null on the last one: when there are more, say so and offer the next ones. "unknownUsernames" lists the requested usernames that are no account: say so. When "places" is empty, say that no place was tagged, and never invent a place. Write each place as a markdown link [name](place:id), with its id as is. The chat shows this result to the user only as a collapsed line: write the answer yourself.`;
 
 /** The Assistant tool listing the Tagged places, of some accounts or all. Read-only. */
 export function createListTaggedPlacesTool(runtime: TaggedPlacesRuntime) {

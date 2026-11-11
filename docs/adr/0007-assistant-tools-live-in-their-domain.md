@@ -43,7 +43,7 @@ failed silently. The Assistant domain now holds the only list of Assistant tools
 Each entry creates its tool and states what the model does after the tool's result: write the
 answer, or keep reasoning. That step policy is the Assistant's fact about the model's loop, not
 the tool's: a tool still lives in its domain, returns data and never UI, and does not import the
-Assistant domain. The tool names, the runtime the Assistant needs and the chat message type are
+Assistant domain as a value. The tool names, the runtime the Assistant needs and the chat message type are
 derived from the registry.
 
 On the chat page, one record over every tool name states how the tool is shown: its icon, the
