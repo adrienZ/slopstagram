@@ -4,7 +4,8 @@ import type { InstagramClientResponse } from "@@/core/domains/instagram/instagra
 import { createMockLogger, fixedNow, response } from "./mock-helpers.ts";
 
 beforeEach(() => {
-  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
+  // fakeNodeBuiltins also fakes the retry wait, which imports setTimeout from node:timers/promises.
+  vi.useFakeTimers({ fakeNodeBuiltins: true, toFake: ["setTimeout", "clearTimeout", "Date"] });
   vi.setSystemTime(fixedNow());
   // Jitter adds Math.floor(0.5 * 100) = 50ms to every backoff.
   vi.spyOn(Math, "random").mockReturnValue(0.5);

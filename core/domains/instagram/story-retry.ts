@@ -1,4 +1,4 @@
-import { promisify } from "node:util";
+import { setTimeout as sleep } from "node:timers/promises";
 import type { Logger } from "@@/core/utils/logging.ts";
 import type { InstagramClientResponse } from "./instagram-types.ts";
 
@@ -34,12 +34,6 @@ export function chunk<T>(items: Array<T>, size: number): Array<Array<T>> {
     chunks.push(items.slice(index, index + size));
   }
   return chunks;
-}
-
-// Looks up setTimeout on each call, so vitest fake timers can skip the wait.
-async function sleep(durationMs: number): Promise<void> {
-  // oxlint-disable-next-line typescript/strict-void-return -- promisify uses setTimeout[promisify.custom], not the returned Timeout.
-  await promisify(globalThis.setTimeout)(durationMs);
 }
 
 function normalizeHeaders(headers: Record<string, string>): Record<string, string> {
