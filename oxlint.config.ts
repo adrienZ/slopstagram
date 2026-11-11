@@ -135,6 +135,7 @@ export default defineConfig({
     "slopstagram/no-barrel-files": "error",
     "slopstagram/domain-layering": "error",
     "slopstagram/ai-sdk-imports": "error",
+    "slopstagram/assistant-client-seam": "error",
   },
   overrides: [
     {

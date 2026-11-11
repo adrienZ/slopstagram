@@ -1,4 +1,5 @@
 import aiSdkImports from "./rules/ai-sdk-imports.ts";
+import assistantClientSeam from "./rules/assistant-client-seam.ts";
 import domainLayering from "./rules/domain-layering.ts";
 import noBarrelFiles from "./rules/no-barrel-files.ts";
 
@@ -9,6 +10,7 @@ const plugin = {
   },
   rules: {
     "ai-sdk-imports": aiSdkImports,
+    "assistant-client-seam": assistantClientSeam,
     "domain-layering": domainLayering,
     "no-barrel-files": noBarrelFiles,
   },
