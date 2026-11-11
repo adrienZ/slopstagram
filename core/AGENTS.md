@@ -46,7 +46,8 @@ Register a new tool in `domains/assistant/assistant-tools.ts` as a read tool or 
 under the key its file is named after, and give it a view in
 `app/components/assistant-tool-views.tsx`. The compiler names what else is missing, including the
 tests' fake chat model, and `knip --production` reports a tool module missing from the registry as
-an unused file.
+an unused file. Neither checks the description: end it, like every other tool, with "The chat
+hides this result from the user behind a collapsed line: write the answer yourself." (ADR 0007).
 
 ## Repositories
 
