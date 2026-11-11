@@ -1,13 +1,4 @@
-import type { ReactNode } from "react";
-import {
-  BrainIcon,
-  MapPinIcon,
-  MapPinnedIcon,
-  SearchIcon,
-  SendIcon,
-  UserSearchIcon,
-  UsersIcon,
-} from "lucide-react";
+import { BrainIcon, SendIcon } from "lucide-react";
 import type { AssistantUIMessage } from "@@/core/domains/assistant/assistant.ts";
 import { useAssistantChat } from "../hooks/use-assistant-chat.ts";
 import { useMentionSuggestions } from "../hooks/use-mention-suggestions.ts";
@@ -32,138 +23,16 @@ import {
   TraceCollapsible,
   TraceCollapsibleContent,
   TraceCollapsibleTrigger,
-  TraceDescription,
   TraceIcon,
   TraceLine,
   TraceTitle,
 } from "../shadcn/ui/trace.tsx";
 import { ChatMarkdown } from "./chat-markdown.tsx";
 import { MentionBackdrop, MentionedText, MentionSuggestionList } from "./chat-mentions.tsx";
-import { FeedUserSummariesDetails } from "./feed-user-summaries-details.tsx";
-import { AccountList } from "./account-list.tsx";
-import { TaggedPlaceDetails, TaggedPlaceList } from "./tagged-places-details.tsx";
-import { findReadPlaces, type MentionablePlace } from "../utils/place-mentions.ts";
+import { findReadPlaces, isToolPart, ToolTrace } from "./assistant-tool-views.tsx";
+import type { MentionablePlace } from "../utils/place-mentions.ts";
 
 type AssistantPart = AssistantUIMessage["parts"][number];
-type FeedUserSummariesPart = Extract<AssistantPart, { type: "tool-getFeedUserSummaries" }>;
-type ListAccountsPart = Extract<AssistantPart, { type: "tool-listAccounts" }>;
-type SearchAccountsPart = Extract<AssistantPart, { type: "tool-searchAccounts" }>;
-
-type ToolPart = Extract<AssistantPart, { type: `tool-${string}` }>;
-
-function getToolStatus(state: ToolPart["state"]): "error" | "running" | undefined {
-  if (state === "output-error" || state === "output-denied") {
-    return "error";
-  }
-  return state === "output-available" ? undefined : "running";
-}
-
-/**
- * A tool call as one trace line, the tool's name and what it was asked, which opens on what the
- * tool read once it has run.
- */
-function ToolTrace({
-  children,
-  icon,
-  part,
-}: {
-  children?: ReactNode;
-  icon: ReactNode;
-  part: ToolPart;
-}) {
-  const line = (
-    <TraceLine status={getToolStatus(part.state)}>
-      <TraceIcon>{icon}</TraceIcon>
-      <TraceTitle>{part.type.slice("tool-".length)}</TraceTitle>
-      {/* What the Assistant asked the tool. */}
-      <TraceDescription className="tw:min-w-0 tw:shrink tw:truncate tw:font-mono tw:text-xs">
-        {JSON.stringify(part.input ?? {})}
-      </TraceDescription>
-    </TraceLine>
-  );
-  if (children === undefined) {
-    return line;
-  }
-  return (
-    <TraceCollapsible>
-      <TraceCollapsibleTrigger>{line}</TraceCollapsibleTrigger>
-      <TraceCollapsibleContent>{children}</TraceCollapsibleContent>
-    </TraceCollapsible>
-  );
-}
-
-/** The Assistant writes the answer from the summaries: the chat traces the read and keeps it. */
-function FeedUserSummariesPartView({ part }: { part: FeedUserSummariesPart }) {
-  return (
-    <ToolTrace icon={<UserSearchIcon />} part={part}>
-      {part.state === "output-available" && <FeedUserSummariesDetails results={part.output} />}
-    </ToolTrace>
-  );
-}
-
-/** The Assistant writes the list from the accounts: the chat traces the read and keeps it. */
-function ListAccountsPartView({ part }: { part: ListAccountsPart }) {
-  return (
-    <ToolTrace icon={<UsersIcon />} part={part}>
-      {part.state === "output-available" && <AccountList listed={part.output.accounts} />}
-    </ToolTrace>
-  );
-}
-
-/** The Assistant writes the answer from the matches: the chat traces the search and keeps it. */
-function SearchAccountsPartView({ part }: { part: SearchAccountsPart }) {
-  return (
-    <ToolTrace icon={<SearchIcon />} part={part}>
-      {part.state === "output-available" && (
-        <AccountList
-          emptyLabel="Aucun compte trouvé."
-          label="Comptes trouvés"
-          listed={part.output.accounts}
-        />
-      )}
-    </ToolTrace>
-  );
-}
-
-type ListTaggedPlacesPart = Extract<AssistantPart, { type: "tool-listTaggedPlaces" }>;
-type SearchTaggedPlacesPart = Extract<AssistantPart, { type: "tool-searchTaggedPlaces" }>;
-type GetTaggedPlacePart = Extract<AssistantPart, { type: "tool-getTaggedPlace" }>;
-
-/** The Assistant writes the list from the places: the chat traces the read and keeps it. */
-function ListTaggedPlacesPartView({ part }: { part: ListTaggedPlacesPart }) {
-  return (
-    <ToolTrace icon={<MapPinnedIcon />} part={part}>
-      {part.state === "output-available" && (
-        <TaggedPlaceList places={part.output.places} total={part.output.total} />
-      )}
-    </ToolTrace>
-  );
-}
-
-/** The Assistant writes the answer from the matches: the chat traces the search and keeps it. */
-function SearchTaggedPlacesPartView({ part }: { part: SearchTaggedPlacesPart }) {
-  return (
-    <ToolTrace icon={<SearchIcon />} part={part}>
-      {part.state === "output-available" && (
-        <TaggedPlaceList
-          emptyLabel="Aucun lieu trouvé."
-          label="Lieux trouvés"
-          places={part.output.places}
-          total={part.output.total}
-        />
-      )}
-    </ToolTrace>
-  );
-}
-
-/** The Assistant writes the answer from the place: the chat traces the read and keeps it. */
-function GetTaggedPlacePartView({ part }: { part: GetTaggedPlacePart }) {
-  return (
-    <ToolTrace icon={<MapPinIcon />} part={part}>
-      {part.state === "output-available" && <TaggedPlaceDetails read={part.output} />}
-    </ToolTrace>
-  );
-}
 
 function AssistantPartView({
   accounts,
@@ -201,25 +70,8 @@ function AssistantPartView({
       </TraceCollapsible>
     );
   }
-  if (part.type === "tool-getFeedUserSummaries") {
-    return <FeedUserSummariesPartView part={part} />;
-  }
-  if (part.type === "tool-listAccounts") {
-    return <ListAccountsPartView part={part} />;
-  }
-  if (part.type === "tool-searchAccounts") {
-    return <SearchAccountsPartView part={part} />;
-  }
-  if (part.type === "tool-listTaggedPlaces") {
-    return <ListTaggedPlacesPartView part={part} />;
-  }
-  if (part.type === "tool-searchTaggedPlaces") {
-    return <SearchTaggedPlacesPartView part={part} />;
-  }
-  if (part.type === "tool-getTaggedPlace") {
-    return <GetTaggedPlacePartView part={part} />;
-  }
-  return null;
+  // Every tool call shows as a trace line, even of a tool the page does not know.
+  return isToolPart(part) ? <ToolTrace part={part} /> : null;
 }
 
 function ChatMessage({

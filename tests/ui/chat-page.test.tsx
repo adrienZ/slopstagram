@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, test, vi, type TestContext } from "vitest";
 import { screen, within } from "@testing-library/react";
+import { createUIMessageStreamResponse, type UIMessageChunk } from "ai";
 import { Route } from "../../app/routes/chat.tsx";
 import { loadChatPage } from "../../app/loaders/chat.ts";
 import { handleChatRequest } from "../../app/routes/api/chat.ts";
@@ -216,6 +217,45 @@ test("searching a place traces the search, which lists the matches or says there
   const [, louvreSearch] = screen.getAllByRole("button", { name: /^searchTaggedPlaces\b/u });
   await chat.user.click(louvreSearch);
   expect(screen.getByText("Aucun lieu trouvé.")).toBeVisible();
+});
+
+test("a tool the page does not know still shows as a trace line with what it was asked", async (context) => {
+  const chat = await mountChat(await fetchedWorld(context));
+  // A server newer than the page streams a tool the page has no view for.
+  vi.stubGlobal("fetch", () =>
+    createUIMessageStreamResponse({
+      stream: new ReadableStream<UIMessageChunk>({
+        start(controller) {
+          controller.enqueue({ type: "start" });
+          controller.enqueue({
+            type: "tool-input-available",
+            toolCallId: "call-1",
+            toolName: "readTheWeather",
+            input: { city: "Synthetic City" },
+          });
+          controller.enqueue({
+            type: "tool-output-available",
+            toolCallId: "call-1",
+            output: { forecast: "Synthetic sun" },
+          });
+          controller.enqueue({ type: "text-start", id: "text-1" });
+          controller.enqueue({ type: "text-delta", id: "text-1", delta: "Synthetic weather." });
+          controller.enqueue({ type: "text-end", id: "text-1" });
+          controller.enqueue({ type: "finish" });
+          controller.close();
+        },
+      }),
+    }),
+  );
+
+  await chat.ask("Quel temps fait-il ?");
+
+  expect(await screen.findByText("Synthetic weather.")).toBeVisible();
+  expect(screen.getByText("readTheWeather")).toBeVisible();
+  expect(screen.getByText('{"city":"Synthetic City"}')).toBeVisible();
+  // The page does not know how to show the result: it keeps only the trace line.
+  expect(screen.queryByRole("button", { name: /^readTheWeather\b/u })).not.toBeInTheDocument();
+  expect(screen.queryByText(/Synthetic sun/u)).not.toBeInTheDocument();
 });
 
 test("a greeting is answered without reading any data", async (context) => {
