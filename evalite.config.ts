@@ -8,12 +8,9 @@ export default defineConfig({
   // The run fails when the average score of every scorer (0-100) is under this: the baseline of the
   // default chat model (qwen3.5:0.8b). Raise it when the model improves.
   scoreThreshold: 75,
-  // A case's timeout starts when the case starts, and evalite starts every case of an eval file at
-  // once: they then wait for each other in `askAssistant` (evals/assistant-world.ts), so the
-  // timeout bounds the whole queue, not one answer. Locally the queue takes about a minute and the
-  // judge gains from running concurrently. CI has no judge and a CPU runner answers in about 20
-  // seconds, so its 30 cases outgrow any queue-wide timeout: there the cases start one at a time, and
-  // the timeout bounds one answer.
+  // A case's timeout starts with the case, and the cases of a file queue behind the one chat model
+  // (`askAssistant`), so concurrent cases would count the whole queue against it. CI has no judge
+  // to overlap with: it starts one case at a time.
   testTimeout: 300_000,
   maxConcurrency: process.env.CI === undefined ? undefined : 1,
   // Kept on disk so `npm run eval:export` renders the run that `npm run eval` just made instead of

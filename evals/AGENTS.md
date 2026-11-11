@@ -21,10 +21,7 @@ baseline of the default chat model: raise it when the model improves.
 - The `Evals` workflow runs by hand (`workflow_dispatch`), on a pull request, or on a push to `main`,
   when the change touches the Assistant, the evals or their config (the `paths` of
   `.github/workflows/evals.yml`). It never blocks a push.
-- On CI, evalite runs the cases one at a time (`maxConcurrency: 1` in `evalite.config.ts`) and each
-  case runs 3 times instead of 5 (`TRIALS` in `evals/assistant-cases.ts`): the CPU runner takes
-  about 20 seconds an answer, and the `testTimeout` of a case starts with the case, so concurrent
-  cases would count the whole queue against it.
+- On CI the cases run one at a time and 3 trials each instead of 5 (`evalite.config.ts`, `TRIALS`).
 - The workflow exports the HTML report (`eval:export`) after the run, from the SQLite storage; with
   no stored run `eval:export` would run the evals again, so it is skipped.
 - Evals are not tests: `npm run check`, `npm test` and the `Check` workflow never run them. Do not
