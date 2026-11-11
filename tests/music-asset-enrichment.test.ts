@@ -89,9 +89,14 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
   };
   const repository = new StoryRepository(database);
   const report = await fetchStoriesManifest(
-    { logger: createCapturingLogger(), stories: repository, storage: createMemoryCacheStorage() },
+    {
+      logger: createCapturingLogger(),
+      sleep: noSleep,
+      stories: repository,
+      storage: createMemoryCacheStorage(),
+    },
     client,
-    { now: fixedNow, sleep: noSleep },
+    { now: fixedNow },
   );
   expect(server.requests).toStrictEqual([`/lookup/${audioId}`]);
   const before = repository.findByMediaPk("first")?.annotations;

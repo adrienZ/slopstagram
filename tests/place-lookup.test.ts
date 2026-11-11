@@ -116,9 +116,14 @@ async function ingest(
   now: () => Date = fixedNow,
 ) {
   return await fetchStoriesManifest(
-    { logger: createCapturingLogger(), stories: repository, storage: createMemoryCacheStorage() },
+    {
+      logger: createCapturingLogger(),
+      sleep: noSleep,
+      stories: repository,
+      storage: createMemoryCacheStorage(),
+    },
     client,
-    { now, sleep: noSleep },
+    { now },
   );
 }
 
@@ -374,9 +379,9 @@ test("a place with a non-numeric id is skipped without a request or a failure", 
     {},
   );
   await fetchStoriesManifest(
-    { logger, stories: repository, storage: createMemoryCacheStorage() },
+    { logger, sleep: noSleep, stories: repository, storage: createMemoryCacheStorage() },
     client,
-    { now: fixedNow, sleep: noSleep },
+    { now: fixedNow },
   );
   expect(client.lookups).toStrictEqual([]);
   expect(storedPlace(repository, "m1").lastLookupAttemptAt).toBe(null);

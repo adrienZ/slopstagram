@@ -30,39 +30,22 @@ const VISION_OUTPUT_SCHEMA = z.toJSONSchema(VisionResponseSchema);
 
 type VisionClient = Pick<VisionSdk, "generate">;
 
-export interface ResolvedVisionOptions {
+const VISION_PROMPT_HASH = createHash("sha256").update(VISION_PROMPT).digest("hex");
+
+export interface AnalyzeImageOptions {
   client: VisionClient;
   logger: Logger;
   mediaPk: string;
-  model: string;
-  prompt: string;
   repository: Pick<VisionRepository, "findByMediaPk" | "save">;
 }
 
-function isUsableVisionEntry(
-  entry: VisionEntry | null | undefined,
-  options: {
-    model: string;
-    promptHash: string;
-  },
-): entry is VisionEntry {
-  return Boolean(
-    entry && entry.model === options.model && entry.prompt_hash === options.promptHash,
-  );
-}
-
-function getPromptHash(prompt: string): string {
-  return createHash("sha256").update(prompt).digest("hex");
+function isCurrentVisionEntry(entry: VisionEntry | null | undefined): entry is VisionEntry {
+  return entry?.model === VISION_MODEL && entry.prompt_hash === VISION_PROMPT_HASH;
 }
 
 /** Returns a saved vision result only when the current model and prompt produced it. */
 export function readCurrentVisionResult(entry: VisionEntry | null): VisionResult | null {
-  return isUsableVisionEntry(entry, {
-    model: VISION_MODEL,
-    promptHash: getPromptHash(VISION_PROMPT),
-  })
-    ? entry.result
-    : null;
+  return isCurrentVisionEntry(entry) ? entry.result : null;
 }
 
 export interface OutdatedVision {
@@ -79,7 +62,7 @@ export function describeOutdatedVision(entry: VisionEntry | null): OutdatedVisio
   }
   return {
     currentModel: VISION_MODEL,
-    currentPromptHash: getPromptHash(VISION_PROMPT),
+    currentPromptHash: VISION_PROMPT_HASH,
     model: entry.model,
     promptHash: entry.prompt_hash,
   };
@@ -155,13 +138,10 @@ function getVisionHttpStatus(error: VisionRequestError): number | null {
   return "status_code" in error ? error.status_code : null;
 }
 
-function getStoredVisionResult(
-  promptHash: string,
-  options: ResolvedVisionOptions,
-): VisionResult | null {
+function getStoredVisionResult(options: AnalyzeImageOptions): VisionResult | null {
   const entry = options.repository.findByMediaPk(options.mediaPk);
 
-  if (isUsableVisionEntry(entry, { ...options, promptHash })) {
+  if (isCurrentVisionEntry(entry)) {
     return normalizeVisionResult(entry.result);
   }
 
@@ -170,24 +150,23 @@ function getStoredVisionResult(
 
 async function runVisionRequest(
   readImage: () => Promise<Uint8Array>,
-  promptHash: string,
-  options: ResolvedVisionOptions,
+  options: AnalyzeImageOptions,
 ): Promise<VisionResult> {
   const payload = await options.client.generate({
     format: VISION_OUTPUT_SCHEMA,
     images: [await readImage()],
-    model: options.model,
+    model: VISION_MODEL,
     options: {
       temperature: 0.1,
     },
-    prompt: options.prompt,
+    prompt: VISION_PROMPT,
     stream: false,
   });
   const result = parseVisionResponse(payload.response ?? "");
 
   await options.repository.save(options.mediaPk, {
-    model: options.model,
-    prompt_hash: promptHash,
+    model: VISION_MODEL,
+    prompt_hash: VISION_PROMPT_HASH,
     result,
   });
 
@@ -197,7 +176,7 @@ async function runVisionRequest(
 function handleVisionError(
   error: VisionRequestError,
   itemLabel: string,
-  options: ResolvedVisionOptions,
+  options: AnalyzeImageOptions,
 ): VisionResult {
   const status = getVisionHttpStatus(error);
 
@@ -220,17 +199,16 @@ function handleVisionError(
 export async function analyzeImage(
   itemLabel: string,
   readImage: () => Promise<Uint8Array>,
-  options: ResolvedVisionOptions,
+  options: AnalyzeImageOptions,
 ): Promise<VisionResult> {
-  const promptHash = getPromptHash(options.prompt);
-  const storedResult = getStoredVisionResult(promptHash, options);
+  const storedResult = getStoredVisionResult(options);
 
   if (storedResult) {
     return storedResult;
   }
 
   try {
-    return await runVisionRequest(readImage, promptHash, options);
+    return await runVisionRequest(readImage, options);
   } catch (error) {
     const httpError = VisionHttpErrorSchema.safeParse(error);
     let requestError: VisionRequestError;

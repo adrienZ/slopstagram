@@ -11,18 +11,7 @@ import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";
 import type { VisionResult } from "@@/core/domains/database/entities/vision.ts";
-import {
-  analyzeImage,
-  createFailureResult,
-  VISION_MODEL,
-  VISION_PROMPT,
-} from "./vision-analysis.ts";
-
-interface VisionOptions {
-  endpoint?: string;
-  model?: string;
-  prompt?: string;
-}
+import { analyzeImage, createFailureResult } from "./vision-analysis.ts";
 
 interface PreviewEntry {
   mediaPk: string;
@@ -40,8 +29,6 @@ interface ResolvePreviewEntryOptions {
   entry: PreviewEntry;
   index: number;
   logger: Logger;
-  model: string;
-  prompt: string;
   images: ImageCacheStorage;
   resultByPreviewUrl: Map<string, VisionResult>;
   sourcesByMediaPk: Map<string, Array<string>>;
@@ -161,8 +148,6 @@ async function resolvePreviewEntry(options: ResolvePreviewEntryOptions): Promise
       client: options.client,
       logger: options.logger,
       mediaPk: options.entry.mediaPk,
-      model: options.model,
-      prompt: options.prompt,
       repository: options.repository,
     },
   );
@@ -180,12 +165,8 @@ export async function resolveVisionForReport(
   },
   report: StoriesManifestReport,
   cachedImages: CachedReportImages,
-  options: VisionOptions = {},
 ): Promise<Map<string, VisionResult>> {
-  const client = getOllamaClient({
-    fetch: runtime.fetchOllama,
-    host: options.endpoint,
-  });
+  const client = getOllamaClient({ fetch: runtime.fetchOllama });
   const { logger } = runtime;
   const entrySet = createPreviewEntrySet(report);
   const resultByPreviewUrl = new Map<string, VisionResult>();
@@ -198,8 +179,6 @@ export async function resolveVisionForReport(
       entry,
       index,
       logger,
-      model: options.model ?? VISION_MODEL,
-      prompt: options.prompt ?? VISION_PROMPT,
       images: runtime.storage.images,
       resultByPreviewUrl,
       sourcesByMediaPk: entrySet.sourcesByMediaPk,

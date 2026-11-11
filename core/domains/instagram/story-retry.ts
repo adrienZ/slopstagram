@@ -1,4 +1,5 @@
 import { setTimeout as delay } from "node:timers/promises";
+import type { Sleep } from "@@/core/domains/runtime/fetch-boundaries.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
 import type { InstagramClientResponse } from "./instagram-types.ts";
 
@@ -26,7 +27,7 @@ export interface RetryOptions {
   maxRateLimitDelayMs: number;
   now: () => Date;
   random: () => number;
-  sleep: (durationMs: number) => Promise<void>;
+  sleep: Sleep;
 }
 
 const TRANSIENT_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);

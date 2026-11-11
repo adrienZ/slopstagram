@@ -4,7 +4,6 @@ import { fetchStoriesManifest } from "@@/core/domains/fetch-run/stories.ts";
 import {
   createClient,
   fixedNow,
-  noSleep,
   reel,
   storyItem,
   storyItemWithStickers,
@@ -47,7 +46,6 @@ describe("fetchStoriesManifest", () => {
 
     const report = await fetchStoriesManifest(runtime, client, {
       now: fixedNow,
-      sleep: noSleep,
     });
 
     expect(client.reelsCalls).toStrictEqual([["r1", "r2"]]);
@@ -156,7 +154,6 @@ describe("fetchStoriesManifest", () => {
 
     const report = await fetchStoriesManifest(runtime, client, {
       now: fixedNow,
-      sleep: noSleep,
     });
 
     expect(client.reelsCalls).toStrictEqual([["r1", "r2"]]);
@@ -235,7 +232,6 @@ describe("fetchStoriesManifest", () => {
 
     const report = await fetchStoriesManifest(runtime, client, {
       now: fixedNow,
-      sleep: noSleep,
     });
 
     expect(report.output.users).toStrictEqual([

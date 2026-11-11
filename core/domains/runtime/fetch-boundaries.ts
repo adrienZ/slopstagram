@@ -20,6 +20,8 @@ export type DatabaseBackup = (at: Date) => void;
 
 export type AppleOcrRunner = (image: Uint8Array) => Promise<string>;
 
+export type Sleep = (durationMs: number) => Promise<void>;
+
 interface ScheduledQueue {
   on: (event: "error", listener: (error: Error) => void) => void;
   cron: (id: string, pattern: string) => Promise<object | null>;

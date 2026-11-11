@@ -4,7 +4,6 @@ import {
   createCapturingLogger,
   createClient,
   fixedNow,
-  noSleep,
   reel,
   storyItem,
   storyItemWithStickers,
@@ -31,7 +30,6 @@ describe("fetchStoriesManifest edge cases", () => {
 
     const report = await fetchStoriesManifest(runtime, client, {
       now: fixedNow,
-      sleep: noSleep,
     });
 
     expect(
@@ -106,7 +104,6 @@ describe("fetchStoriesManifest edge cases", () => {
 
     const report = await fetchStoriesManifest(runtime, client, {
       now: fixedNow,
-      sleep: noSleep,
     });
 
     expect(report.manifest.users[0]?.stories[0]?.stickers).toStrictEqual([
@@ -145,7 +142,6 @@ describe("fetchStoriesManifest edge cases", () => {
 
     const report = await fetchStoriesManifest(runtime, client, {
       now: fixedNow,
-      sleep: noSleep,
     });
 
     expect(report.output.users[0]?.stories[0]?.stickers).toStrictEqual([
@@ -166,7 +162,6 @@ describe("fetchStoriesManifest edge cases", () => {
       fetchStoriesManifest(runtime, client, {
         maxAttempts: 1,
         now: fixedNow,
-        sleep: noSleep,
       }),
     ).rejects.toThrow(/Instagram request failed with HTTP 429/u);
     expect(client.reelsCalls).toEqual([]);
@@ -188,7 +183,6 @@ describe("fetchStoriesManifest edge cases", () => {
     const report = await fetchStoriesManifest(runtime, client, {
       maxAttempts: 1,
       now: fixedNow,
-      sleep: noSleep,
     });
 
     expect(client.reelsCalls).toStrictEqual([["r1"], ["r1"]]);
@@ -225,7 +219,6 @@ describe("fetchStoriesManifest edge cases", () => {
 
     const report = await fetchStoriesManifest(runtime, client, {
       now: fixedNow,
-      sleep: noSleep,
     });
 
     expect(report.manifest.users[0]?.stories.map((story) => story.status)).toStrictEqual([
@@ -250,7 +243,6 @@ describe("fetchStoriesManifest edge cases", () => {
       maxAttempts: 1,
       now: fixedNow,
       reelIdsPerRequest: 1,
-      sleep: noSleep,
     });
 
     expect(client.reelsCalls).toStrictEqual([["r1"]]);
