@@ -1,7 +1,10 @@
 import { performance } from "node:perf_hooks";
 import { wrapLanguageModel } from "ai";
 import { reportTrace } from "evalite/traces";
-import type { AssistantModel } from "../core/domains/assistant/assistant.ts";
+import type { AssistantRuntime } from "../core/domains/assistant/assistant.ts";
+
+/** The chat model, as the Assistant hands it to `wrapModel`. */
+type AssistantModel = Parameters<NonNullable<AssistantRuntime["wrapModel"]>>[0];
 
 type StreamPart<Stream> = Stream extends ReadableStream<infer Part> ? Part : never;
 

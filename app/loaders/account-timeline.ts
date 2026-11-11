@@ -52,7 +52,7 @@ interface UserTimelineMonth {
   days: Array<UserTimelineDay>;
 }
 
-export interface UserTimelineYear {
+interface UserTimelineYear {
   label: string;
   months: Array<UserTimelineMonth>;
 }

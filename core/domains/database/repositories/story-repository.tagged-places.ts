@@ -27,7 +27,7 @@ export interface TaggedPlaceRowPage {
   total: number;
 }
 
-export interface TaggedPlaceFilter {
+interface TaggedPlaceFilter {
   /** Only these accounts' stories, by exact username. */
   usernames?: Array<string>;
   ids?: Array<string>;

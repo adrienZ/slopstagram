@@ -1,5 +1,5 @@
 /** A text as searches compare it: trimmed, lowercased and without accents. */
-export function normalizeForSearch(value: string): string {
+function normalizeForSearch(value: string): string {
   return value
     .normalize("NFD")
     .replaceAll(/\p{Diacritic}/gu, "")

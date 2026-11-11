@@ -56,7 +56,7 @@ const MAX_STEPS = 4;
 type AssistantToolsRuntime = FeedUserSummaryRuntime & AccountsRuntime & TaggedPlacesRuntime;
 
 /** The chat model, as the AI SDK takes it once it is built (not a model id). */
-export type AssistantModel = Exclude<LanguageModel, string>;
+type AssistantModel = Exclude<LanguageModel, string>;
 
 export type AssistantRuntime = AssistantToolsRuntime &
   Pick<Runtime, "fetchOllama" | "logger"> & {
