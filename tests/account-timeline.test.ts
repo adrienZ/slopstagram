@@ -1,51 +1,55 @@
-import { createHash } from "node:crypto";
-import { assert, test, expect } from "vitest";
-import {
-  createUserTimeline,
-  getTimelinePreviewPaths,
-  groupStoriesByPublishedDate,
-} from "../app/loaders/account-timeline.ts";
-import { VISION_MODEL, VISION_PROMPT } from "@@/core/domains/vision/vision-analysis.ts";
-import type { UserTimelineStory } from "@@/core/domains/database/repositories/story-repository.ts";
+import { HTTPError } from "nitro/h3";
+import { test, expect, type TestContext } from "vitest";
+import { loadAccountTimeline } from "../app/loaders/account-timeline.ts";
+import { saveCurrentVision } from "./mock-helpers.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 
-function timelineStory(pk: string, takenAt: number): UserTimelineStory {
-  return {
-    full_name: "Timeline User",
-    locations: [],
-    owner_pk: "user-pk",
-    story: { media_type: 1, pk, taken_at: takenAt },
-    stickers: [],
-    taken_at: takenAt,
-    username: "timeline-user",
-  };
+const owner = { pk: "timeline-pk", username: "timeline-user" };
+
+async function createTimelineRuntime(
+  context: TestContext,
+  stories: Array<{ pk: string; takenAt: number }>,
+) {
+  const runtime = await createTestRuntime(context);
+  await runtime.users.save({ ...owner, full_name: "Timeline User", id: "timeline-id" });
+  for (const { pk, takenAt } of stories) {
+    // oxlint-disable-next-line no-await-in-loop -- Stories are saved in a known order.
+    await runtime.stories.save({ media_type: 1, pk, taken_at: takenAt }, owner);
+  }
+  return runtime;
 }
 
-test("groups stories by their Paris publication day, month, and year", () => {
-  const timeline = groupStoriesByPublishedDate([
-    timelineStory("new-year", 1_767_225_600),
-    timelineStory("same-day", 1_767_226_200),
-    timelineStory("previous-year", 1_735_689_600),
-  ]);
-
-  expect(
-    timeline.map((year) => ({
-      label: year.label,
-      months: year.months.map((month) => ({
-        days: month.days.map((day) => ({
-          key: day.key,
-          stories: day.stories.map((story) => story.story.pk),
-        })),
-        label: month.label,
+function summarizeYears(years: ReturnType<typeof loadAccountTimeline>["timeline"]["years"]) {
+  return years.map((year) => ({
+    label: year.label,
+    months: year.months.map((month) => ({
+      key: month.key,
+      label: month.label,
+      days: month.days.map((day) => ({
+        key: day.key,
+        stories: day.stories.map((story) => story.story.pk),
       })),
     })),
-  ).toStrictEqual([
+  }));
+}
+
+test("groups stories by their Paris publication day, month, and year", async (context) => {
+  const runtime = await createTimelineRuntime(context, [
+    { pk: "new-year", takenAt: 1_767_225_600 },
+    { pk: "same-day", takenAt: 1_767_226_200 },
+    { pk: "previous-year", takenAt: 1_735_689_600 },
+  ]);
+
+  const { timeline } = loadAccountTimeline(runtime, "timeline-user");
+
+  expect(summarizeYears(timeline.years)).toStrictEqual([
     {
       label: "2026",
       months: [
         {
-          days: [{ key: "2026-01-01", stories: ["new-year", "same-day"] }],
+          key: "2026-01",
           label: "janvier",
+          days: [{ key: "2026-01-01", stories: ["same-day", "new-year"] }],
         },
       ],
     },
@@ -53,18 +57,50 @@ test("groups stories by their Paris publication day, month, and year", () => {
       label: "2025",
       months: [
         {
-          days: [{ key: "2025-01-01", stories: ["previous-year"] }],
+          key: "2025-01",
           label: "janvier",
+          days: [{ key: "2025-01-01", stories: ["previous-year"] }],
         },
       ],
     },
   ]);
 });
 
-test("returns no timeline for an unknown user", async (context) => {
+test("sorts months and days newest first across Paris midnight", async (context) => {
+  const runtime = await createTimelineRuntime(context, [
+    { pk: "january", takenAt: Date.parse("2026-01-01T12:00:00Z") / 1000 },
+    { pk: "february-first", takenAt: Date.parse("2026-02-01T12:00:00Z") / 1000 },
+    { pk: "february-second", takenAt: Date.parse("2026-02-01T23:30:00Z") / 1000 },
+  ]);
+
+  const { timeline } = loadAccountTimeline(runtime, "timeline-user");
+
+  expect(summarizeYears(timeline.years)).toStrictEqual([
+    {
+      label: "2026",
+      months: [
+        {
+          key: "2026-02",
+          label: "février",
+          days: [
+            { key: "2026-02-02", stories: ["february-second"] },
+            { key: "2026-02-01", stories: ["february-first"] },
+          ],
+        },
+        {
+          key: "2026-01",
+          label: "janvier",
+          days: [{ key: "2026-01-01", stories: ["january"] }],
+        },
+      ],
+    },
+  ]);
+});
+
+test("answers 404 for an unknown user", async (context) => {
   const runtime = await createTestRuntime(context);
 
-  expect(createUserTimeline(runtime, "missing-user")).toBe(null);
+  expect(() => loadAccountTimeline(runtime, "missing-user")).toThrow(HTTPError);
 });
 
 test("returns an empty timeline for a saved account without stories", async (context) => {
@@ -76,24 +112,18 @@ test("returns an empty timeline for a saved account without stories", async (con
     pk: "saved",
   });
 
-  const result = createUserTimeline(runtime, "saved-user");
+  const page = loadAccountTimeline(runtime, "saved-user");
 
-  assert.ok(result);
-  expect(result.timelineUser.username).toBe("saved-user");
-  expect(result.avatarPath).toBe("/media/avatars/saved.jpg");
-  expect(result.stories).toStrictEqual([]);
-  expect(result.years).toStrictEqual([]);
+  expect(page.timeline.timelineUser.username).toBe("saved-user");
+  expect(page.timeline.avatarPath).toBe("/media/avatars/saved.jpg");
+  expect(page.timeline.stories).toStrictEqual([]);
+  expect(page.timeline.years).toStrictEqual([]);
+  expect(page.stories).toStrictEqual([]);
 });
 
 test("assembles timeline media, captions, cached vision and local paths", async (context) => {
   const runtime = await createTestRuntime(context);
-  await runtime.users.save({
-    full_name: "Timeline User",
-    id: "timeline-id",
-    pk: "timeline-pk",
-    username: "timeline-user",
-  });
-  const owner = { pk: "timeline-pk", username: "timeline-user" };
+  await runtime.users.save({ ...owner, full_name: "Timeline User", id: "timeline-id" });
   await runtime.stories.save(
     {
       accessibility_caption: "Instagram caption",
@@ -107,23 +137,20 @@ test("assembles timeline media, captions, cached vision and local paths", async 
   );
   await runtime.stories.save({ media_type: 2, pk: "video", taken_at: 1_767_225_500 }, owner);
   await runtime.stories.save({ media_type: 99, pk: "unknown", taken_at: 1_767_225_400 }, owner);
-  const vision = { text: "visible text", visual: "a street" };
   await runtime.appleVision.save("image", "Apple caption");
-  await runtime.vision.save("video", {
-    model: VISION_MODEL,
-    prompt_hash: createHash("sha256").update(VISION_PROMPT).digest("hex"),
-    result: vision,
-  });
+  await saveCurrentVision(runtime, "video", { text: "visible text", visual: "a street" });
 
-  const timeline = createUserTimeline(runtime, "timeline-user");
+  const page = loadAccountTimeline(runtime, "timeline-user");
 
-  assert.ok(timeline);
-  const { stories } = timeline;
-  expect(stories.map((entry) => entry.story.pk)).toStrictEqual(["image", "video", "unknown"]);
-  expect(timeline.avatarPath).toBe("/media/avatars/timeline-pk.jpg");
-  expect(timeline.timelineUser.username).toBe("timeline-user");
-  expect(timeline.timelineUser.full_name).toBe("Timeline User");
-  expect(timeline.timelineUser.stories).toStrictEqual([
+  expect(page.timeline.stories.map((entry) => entry.story.pk)).toStrictEqual([
+    "image",
+    "video",
+    "unknown",
+  ]);
+  expect(page.timeline.avatarPath).toBe("/media/avatars/timeline-pk.jpg");
+  expect(page.timeline.timelineUser.username).toBe("timeline-user");
+  expect(page.timeline.timelineUser.full_name).toBe("Timeline User");
+  expect(page.timeline.timelineUser.stories).toStrictEqual([
     {
       ig_caption: "Instagram caption",
       locations: ["Cafe Example, 1 Rue Example, Paris"],
@@ -152,68 +179,53 @@ test("assembles timeline media, captions, cached vision and local paths", async 
       stickers: [],
     },
   ]);
-  expect(timeline.appleCaptionByMediaPk).toStrictEqual(new Map([["image", "Apple caption"]]));
-  expect(timeline.visionByPreviewUrl).toStrictEqual(
-    new Map([["images/story-previews/video.jpg", vision]]),
-  );
-  expect(timeline.years[0]?.months[0]?.days[0]?.stories).toStrictEqual(stories);
-  expect(getTimelinePreviewPaths(stories)).toStrictEqual(
-    new Map([
-      ["images/story-previews/image.jpg", "/media/story-previews/image.jpg"],
-      ["images/story-previews/video.jpg", "/media/story-previews/video.jpg"],
-      ["images/story-previews/unknown.jpg", "/media/story-previews/unknown.jpg"],
-    ]),
-  );
-});
-
-test("omits analysis when the stories have no cached details", async (context) => {
-  const runtime = await createTestRuntime(context);
-  await runtime.users.save({
-    full_name: "Plain User",
-    id: "plain-id",
-    pk: "plain-pk",
-    username: "plain-user",
-  });
-  await runtime.stories.save(
-    { media_type: 1, pk: "plain-story", taken_at: 1_767_225_600 },
-    { pk: "plain-pk", username: "plain-user" },
-  );
-
-  const timeline = createUserTimeline(runtime, "plain-user");
-
-  assert.ok(timeline);
-  expect(timeline.avatarPath).toBe("/media/avatars/plain-pk.jpg");
-  expect(timeline.timelineUser.profile_pic_url).toBe("images/avatars/plain-pk.jpg");
-  expect(timeline.appleCaptionByMediaPk.size).toBe(0);
-  expect(timeline.visionByPreviewUrl.size).toBe(0);
-});
-
-test("skips invalid dates and sorts months and days newest first across Paris midnight", () => {
-  const stories = [
-    timelineStory("january", Date.parse("2026-01-01T12:00:00Z") / 1000),
-    timelineStory("february-first", Date.parse("2026-02-01T12:00:00Z") / 1000),
-    timelineStory("february-second", Date.parse("2026-02-01T23:30:00Z") / 1000),
-    timelineStory("invalid", Number.NaN),
-  ];
-  const years = groupStoriesByPublishedDate(stories);
-
-  expect(years.length).toBe(1);
   expect(
-    years[0]?.months.map((month) => ({
-      key: month.key,
-      days: month.days.map((day) => ({
-        key: day.key,
-        pks: day.stories.map((story) => story.story.pk),
-      })),
+    page.stories.map(({ appleCaption, mediaPk, preview, visionDescription, visionOcr }) => ({
+      appleCaption,
+      mediaPk,
+      preview,
+      visionDescription,
+      visionOcr,
     })),
   ).toStrictEqual([
     {
-      key: "2026-02",
-      days: [
-        { key: "2026-02-02", pks: ["february-second"] },
-        { key: "2026-02-01", pks: ["february-first"] },
-      ],
+      appleCaption: "Apple caption",
+      mediaPk: "image",
+      preview: "/media/story-previews/image.jpg",
+      visionDescription: "—",
+      visionOcr: "—",
     },
-    { key: "2026-01", days: [{ key: "2026-01-01", pks: ["january"] }] },
+    {
+      appleCaption: "—",
+      mediaPk: "video",
+      preview: "/media/story-previews/video.jpg",
+      visionDescription: "a street",
+      visionOcr: "visible text",
+    },
+    {
+      appleCaption: "—",
+      mediaPk: "unknown",
+      preview: "/media/story-previews/unknown.jpg",
+      visionDescription: "—",
+      visionOcr: "—",
+    },
   ]);
+});
+
+test("omits analysis when the stories have no cached details", async (context) => {
+  const runtime = await createTimelineRuntime(context, [
+    { pk: "plain-story", takenAt: 1_767_225_600 },
+  ]);
+
+  const page = loadAccountTimeline(runtime, "timeline-user");
+
+  expect(page.timeline.avatarPath).toBe("/media/avatars/timeline-pk.jpg");
+  expect(page.timeline.timelineUser.profile_pic_url).toBe("images/avatars/timeline-pk.jpg");
+  expect(
+    page.stories.map(({ appleCaption, visionDescription, visionOcr }) => ({
+      appleCaption,
+      visionDescription,
+      visionOcr,
+    })),
+  ).toStrictEqual([{ appleCaption: "—", visionDescription: "—", visionOcr: "—" }]);
 });

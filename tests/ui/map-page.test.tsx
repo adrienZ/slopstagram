@@ -3,7 +3,7 @@ import { afterEach, expect, test, vi } from "vitest";
 import { screen, within } from "@testing-library/react";
 import { Route } from "../../app/routes/map.tsx";
 import { loadPlaceMap } from "../../app/loaders/place-map.ts";
-import { LocationMapContext } from "../../app/components/place-explorer.tsx";
+import { LocationMapContext } from "../../app/components/location-map-context.ts";
 import type { LocationMapCanvasProps } from "../../app/components/location-map-canvas.tsx";
 import { createPageRenderer } from "../render-page.ts";
 import { createTestRuntime, useSharedTestRuntime } from "../setup/test-runtime.ts";

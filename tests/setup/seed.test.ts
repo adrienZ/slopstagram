@@ -6,10 +6,10 @@ import type { z } from "zod";
 import { type JsonValue, JsonValueSchema } from "@@/core/utils/json-value.ts";
 import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 import {
-  GalleryPageSchema,
-  parseGalleryPage,
-  parseTrayResponse,
-} from "@@/core/domains/instagram/story-client.ts";
+  createFakeInstagramClient,
+  jsonBody,
+  RecordedGalleryPageSchema,
+} from "./recorded-client.ts";
 import { readRecordedPayloads, seedRecordedStories } from "./seed.ts";
 import { createTestRuntime } from "./test-runtime.ts";
 
@@ -36,18 +36,14 @@ const storyPks = [
 /** A fresh copy of the recorded gallery page, typed enough to edit what a test needs. */
 async function recordedGalleryPage() {
   const { galleryPages } = await readRecordedPayloads(["instagram-story-data.json"]);
-  return GalleryPageSchema.parse(galleryPages[0]);
+  return RecordedGalleryPageSchema.parse(galleryPages[0]);
 }
 
-function connectionOf(page: z.output<typeof GalleryPageSchema>) {
-  const connection = page.data?.xdt_api__v1__feed__reels_media__connection;
-  if (connection === undefined) {
-    throw new Error("The recorded gallery page has no reels connection");
-  }
-  return connection;
+function connectionOf(page: z.output<typeof RecordedGalleryPageSchema>) {
+  return page.data.xdt_api__v1__feed__reels_media__connection;
 }
 
-function toPayload(page: z.output<typeof GalleryPageSchema>): JsonValue {
+function toPayload(page: z.output<typeof RecordedGalleryPageSchema>): JsonValue {
   return JsonValueSchema.parse(page);
 }
 
@@ -197,15 +193,18 @@ async function readFailure(name: string) {
 
 test("the recorded tray failure is refused by the production tray parser", async () => {
   const body = await readFailure("instagram-failure-tray.json");
+  const client = createFakeInstagramClient(() => ({ ...jsonBody(null), body }));
 
-  expect(() => parseTrayResponse(body, {})).toThrow();
+  const response = await client.getTray();
+
+  expect(() => response.json()).toThrow();
 });
 
-test("the recorded failed pagination page announces more pages without a cursor", async () => {
+test("the recorded failed pagination page, which announces more pages without a cursor, stops the fetch", async () => {
   const body = await readFailure("instagram-failure-pagination-page.json");
+  const client = createFakeInstagramClient(() => ({ ...jsonBody(null), body }));
 
-  const page = parseGalleryPage(body, {});
-
-  expect(page.page_info.has_next_page).toBe(true);
-  expect(page.page_info.end_cursor ?? null).toBeNull();
+  await expect(client.getReelsMedia(["reel"])).rejects.toThrow(
+    "Instagram story media pagination did not advance",
+  );
 });

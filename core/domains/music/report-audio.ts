@@ -18,7 +18,7 @@ type StoryAudioRuntime = Pick<Runtime, "fetchMedia" | "storage"> & {
   >;
 };
 
-export async function processStoryAudio(runtime: StoryAudioRuntime, mediaPk: string) {
+async function processStoryAudio(runtime: StoryAudioRuntime, mediaPk: string) {
   const repository = runtime.stories;
   const current = repository.findStoryAudio(mediaPk);
   if (!current) {

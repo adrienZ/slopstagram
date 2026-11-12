@@ -1,75 +1,129 @@
-import type {
-  InstagramClient,
-  InstagramClientResponse,
-  ReelTrayResponse,
-  StoryReel,
-} from "@@/core/domains/instagram/instagram-types.ts";
-import type { JsonValue } from "@@/core/utils/json-value.ts";
-import { parseGalleryPage, parseTrayResponse } from "@@/core/domains/instagram/story-client.ts";
+import { z } from "zod";
+import { type JsonValue, JsonValueSchema } from "@@/core/utils/json-value.ts";
+import type { InstagramClient, StoryReel } from "@@/core/domains/instagram/instagram-types.ts";
+import { createInstagramClient } from "@@/core/domains/instagram/story-client.ts";
+import { StoryReelSchema } from "@@/core/domains/instagram/story-schemas.ts";
 import type { RecordedPayloads } from "./seed.ts";
+
+type InstagramSession = Parameters<typeof createInstagramClient>[0];
+type BrowserFetch = InstagramSession["page"]["evaluate"];
+/** What the browser page is asked to fetch. */
+export type BrowserFetchInput = Parameters<BrowserFetch>[1];
+/** What the browser page answers: a raw response body, before any parsing. */
+export type BrowserFetchResponse = Awaited<ReturnType<BrowserFetch>>;
+
+/** A recorded reels media page, typed enough for tests to edit the stories it holds. */
+export const RecordedGalleryPageSchema = z.object({
+  data: z.object({
+    xdt_api__v1__feed__reels_media__connection: z.object({
+      edges: z.array(z.object({ node: StoryReelSchema })),
+      page_info: z.object({ has_next_page: z.boolean(), end_cursor: z.string().nullish() }),
+    }),
+  }),
+});
 
 const JSON_HEADERS = { "content-type": "application/json" };
 
-function found<T>(json: () => T): InstagramClientResponse<T> {
-  return { headers: JSON_HEADERS, json, ok: true, status: 200 };
+export function jsonBody(body: JsonValue): BrowserFetchResponse {
+  return { body: JSON.stringify(body), headers: JSON_HEADERS, ok: true, status: 200 };
 }
 
-function notFound(): InstagramClientResponse<JsonValue> {
-  return { headers: {}, json: () => ({ status: "fail" }), ok: false, status: 404 };
+function notFound(): BrowserFetchResponse {
+  return { body: JSON.stringify({ status: "fail" }), headers: {}, ok: false, status: 404 };
 }
 
-function trayEntryOf(reel: StoryReel): ReelTrayResponse["tray"][number] {
-  if (reel.id === undefined || reel.user === undefined) {
-    throw new Error("A recorded reel has no id or user to derive its tray entry from");
-  }
+/**
+ * The production Instagram client, on a fake browser page that answers each fetch with
+ * `respond`. Parsing, error handling and pagination run as they do against Instagram.
+ */
+export function createFakeInstagramClient(
+  respond: (input: BrowserFetchInput) => BrowserFetchResponse,
+): InstagramClient {
+  return createInstagramClient({
+    page: { evaluate: async (_fetch, input) => await Promise.resolve(respond(input)) },
+  });
+}
+
+/** Just what the tray lists of a recorded gallery page's reels, so a page the story schema refuses still has a tray. */
+const RecordedReelsSchema = z.object({
+  data: z.object({
+    xdt_api__v1__feed__reels_media__connection: z.object({
+      edges: z.array(
+        z.object({
+          node: z.object({
+            id: z.coerce.string(),
+            items: z.array(z.object({ pk: z.coerce.string() })).optional(),
+            user: JsonValueSchema,
+          }),
+        }),
+      ),
+    }),
+  }),
+});
+
+function trayOf(galleryPages: Array<JsonValue>): JsonValue {
+  const reels = galleryPages.flatMap(
+    (page) => RecordedReelsSchema.parse(page).data.xdt_api__v1__feed__reels_media__connection.edges,
+  );
   return {
-    id: reel.id,
-    media_ids: (reel.items ?? []).map(({ pk }) => pk),
-    user: reel.user,
+    broadcasts: [],
+    status: "ok",
+    story_ranking_token: "seed",
+    tray: reels.map(({ node }) => ({
+      id: node.id,
+      media_ids: (node.items ?? []).map(({ pk }) => pk),
+      user: node.user,
+    })),
   };
 }
 
 /**
  * An Instagram client that answers from recorded response bodies instead of a browser.
- * Bodies go through the production parsers, so a recording that no longer matches the
- * schemas throws when the fetch reads it. Without a recorded tray, the tray lists the
- * reels of the gallery pages.
+ * A gallery page the story schema refuses, such as a recorded error, is served as it was
+ * recorded, so the production parser reports it. Without a recorded tray, the tray lists
+ * the reels of the gallery pages.
  */
 export function createRecordedClient(recorded: RecordedPayloads): InstagramClient {
+  const pages = recorded.galleryPages.map((page) => ({
+    page,
+    parsed: RecordedGalleryPageSchema.safeParse(page),
+  }));
   function reels(): Array<StoryReel> {
-    return recorded.galleryPages.flatMap((page) =>
-      parseGalleryPage(JSON.stringify(page), JSON_HEADERS).edges.map(({ node }) => node),
+    return pages.flatMap(({ parsed }) =>
+      parsed.success
+        ? parsed.data.data.xdt_api__v1__feed__reels_media__connection.edges.map(({ node }) => node)
+        : [],
     );
   }
-  return {
-    getMusicAsset: async () =>
-      await Promise.resolve(
-        recorded.musicAsset === undefined ? notFound() : found(() => recorded.musicAsset ?? null),
-      ),
-    getPlace: async () =>
-      await Promise.resolve(
-        recorded.place === undefined ? notFound() : found(() => recorded.place ?? null),
-      ),
-    getReelsMedia: async (reelIds) =>
-      await Promise.resolve(
-        found(() => ({
-          reels_media: reels().filter((reel) => reel.id !== undefined && reelIds.includes(reel.id)),
-        })),
-      ),
-    getTray: async () =>
-      await Promise.resolve(
-        found(() =>
-          recorded.tray === undefined
-            ? {
-                broadcasts: [],
-                status: "ok",
-                story_ranking_token: "seed",
-                tray: reels().map(trayEntryOf),
-              }
-            : parseTrayResponse(JSON.stringify(recorded.tray), JSON_HEADERS),
-        ),
-      ),
-  };
+  return createFakeInstagramClient((input) => {
+    if (input.mediaQuery !== undefined) {
+      const refused = pages.find(({ parsed }) => !parsed.success);
+      if (refused !== undefined) {
+        return jsonBody(refused.page);
+      }
+      const { reelIds } = input.mediaQuery;
+      const requested = reels().filter(
+        (reel) => reel.id !== undefined && reelIds.includes(reel.id),
+      );
+      return jsonBody(
+        JsonValueSchema.parse({
+          data: {
+            xdt_api__v1__feed__reels_media__connection: {
+              edges: requested.map((node) => ({ node })),
+              page_info: { has_next_page: false, end_cursor: null },
+            },
+          },
+        }),
+      );
+    }
+    if (input.placeQuery !== undefined) {
+      return recorded.place === undefined ? notFound() : jsonBody(recorded.place);
+    }
+    if (input.musicAssetId !== undefined) {
+      return recorded.musicAsset === undefined ? notFound() : jsonBody(recorded.musicAsset);
+    }
+    return jsonBody(recorded.tray ?? trayOf(recorded.galleryPages));
+  });
 }
 
 /**

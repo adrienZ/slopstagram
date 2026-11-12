@@ -3,7 +3,7 @@ import { once } from "node:events";
 import { startWarmCacheQueue } from "./warm-cache-queue.ts";
 
 /** The part of the standalone bunqueue server process the service relies on. */
-export interface BunqueueServerProcess extends EventEmitter {
+interface BunqueueServerProcess extends EventEmitter {
   exitCode: number | null;
   signalCode: string | null;
   kill: (signal: "SIGTERM") => boolean;

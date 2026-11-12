@@ -5,14 +5,14 @@ import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { getOllamaClient } from "./ollama.ts";
 import type { VisionEntry, VisionResult } from "@@/core/domains/database/entities/vision.ts";
 
-export const VISION_MODEL = "minicpm-v4.6";
-export const VISION_PROMPT = `
+const VISION_MODEL = "minicpm-v4.6";
+const VISION_PROMPT = `
     Describe the image in detail.
     First, extract any text that appears in the image. Provide a list of all visible text. Only if there is text.
     Then, provide a short description of the visual elements of the image. ignore all texts.
     \`\`\`json
   `;
-export const VISION_SERVER_NOT_RUNNING = "vision server not running";
+const VISION_SERVER_NOT_RUNNING = "vision server not running";
 
 const VisionResponseSchema = z
   .object({

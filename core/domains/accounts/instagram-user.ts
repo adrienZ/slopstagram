@@ -1,4 +1,3 @@
-import { media } from "@@/core/domains/media-store/media-urls.ts";
 import type { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
 import type { InstagramUserEntry } from "@@/core/domains/database/entities/instagram-user.ts";
 import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";
@@ -69,34 +68,5 @@ export async function persistReportInstagramUsers(
   );
   for (const user of [...report.manifest.users, ...report.output.users]) {
     removeEmbeddedUser(user);
-  }
-}
-
-export function hydrateReportInstagramUsers(
-  { users: repository }: { users: InstagramUserStore },
-  report: StoriesManifestReport,
-): void {
-  const usersByUsername = new Map<string, InstagramUserEntry | null>();
-
-  const users = [...report.manifest.users, ...report.output.users];
-  const missingUsernames = new Set(
-    users.filter((user) => !hasEmbeddedUser(user)).map((user) => user.username),
-  );
-  const entries = [...missingUsernames].map(
-    (username) => [username, repository.findByUsername(username)] as const,
-  );
-  for (const [username, entity] of entries) {
-    usersByUsername.set(username, entity);
-  }
-
-  for (const user of users) {
-    if (hasEmbeddedUser(user)) {
-      continue;
-    }
-    const entity = usersByUsername.get(user.username);
-    if (entity !== null && entity !== undefined) {
-      user.full_name = entity.full_name;
-      user.profile_pic_url = media.image.avatar(entity.pk).storedPath;
-    }
   }
 }

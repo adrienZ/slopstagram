@@ -94,7 +94,7 @@ function readAppleCaptions(
   return captionByMediaPk;
 }
 
-export function readStoryFeedSources(
+function readStoryFeedSources(
   runtime: StoryFeedSourcesRuntime,
   users: Array<StoryOutputUser>,
 ): StoryFeedSources {

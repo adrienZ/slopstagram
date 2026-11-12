@@ -78,7 +78,7 @@ export function createStoryFeed(
   return groupStoryFeed(runtime.stories.listActive(now), options.hasPreview);
 }
 
-export function createStoryDayFeed(
+function createStoryDayFeed(
   runtime: { stories: Pick<StoryRepository, "listPublishedBetween"> },
   day: string,
   options: StoryFeedOptions = {},

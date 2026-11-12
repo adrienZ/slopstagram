@@ -1,6 +1,6 @@
 import { toolCallAccuracy } from "evalite/scorers/deterministic";
 import { z } from "zod";
-import { findMentionedUsernames } from "../app/utils/chat-mentions.ts";
+import { findMentions } from "../app/utils/mentions.ts";
 import type { FeedUserSummary } from "../core/domains/story-feed/feed-user-summary.ts";
 import { RequestedFeedUserSummariesSchema } from "../core/domains/story-feed/feed-user-summary.ts";
 import type { JsonObject, JsonValue } from "../core/utils/json-value.ts";
@@ -84,7 +84,7 @@ const SYNTHETIC_USERNAME = /\buser_\d+\b/giu;
 
 /** The usernames a text names, as @mentions or in the seeded world's username shape, lowercased. */
 function findUsernames(text: string): Array<string> {
-  const mentioned = findMentionedUsernames(text);
+  const mentioned = findMentions(text).map(({ username }) => username);
   const bare = [...text.matchAll(SYNTHETIC_USERNAME)].map(([username]) => username);
   return [...new Set([...mentioned, ...bare].map(normalizeUsername))];
 }

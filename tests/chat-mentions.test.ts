@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { findMentionedUsernames } from "../app/utils/chat-mentions.ts";
+import { findMentions } from "../app/utils/mentions.ts";
 
-describe("findMentionedUsernames", () => {
+function findMentionedUsernames(text: string): Array<string> {
+  return findMentions(text).map(({ username }) => username);
+}
+
+describe("findMentions", () => {
   it("lists the mentioned usernames in order, as written", () => {
     expect(findMentionedUsernames("Compare @user_072 and @User.Two, then @user_072 again")).toEqual(
       ["user_072", "User.Two", "user_072"],
@@ -15,6 +19,12 @@ describe("findMentionedUsernames", () => {
 
   it("ignores an @ inside a word, an email address or a doubled @", () => {
     expect(findMentionedUsernames("mail me at someone@example.com or @@user_072")).toEqual([]);
+  });
+
+  it("gives where each Mention starts and how it is written", () => {
+    expect(findMentions("Hi @User.Two.")).toEqual([
+      { index: 3, text: "@User.Two", username: "User.Two" },
+    ]);
   });
 
   it("finds nothing in a message without mention", () => {

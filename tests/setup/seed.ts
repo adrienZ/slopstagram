@@ -5,8 +5,7 @@ import { type JsonObject, type JsonValue, JsonValueSchema } from "@@/core/utils/
 import { persistReportInstagramUsers } from "@@/core/domains/accounts/instagram-user.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { fetchStories } from "@@/core/domains/fetch-run/stories.ts";
-import { GalleryPageSchema } from "@@/core/domains/instagram/story-client.ts";
-import { createRecordedClient } from "./recorded-client.ts";
+import { createRecordedClient, RecordedGalleryPageSchema } from "./recorded-client.ts";
 
 const fixturesDirectory = path.join(import.meta.dirname, "../fixtures");
 const TRAY_FILE = "instagram-reels-tray.json";
@@ -120,22 +119,18 @@ function shiftPayloads(
   };
 }
 
-type GalleryConnection = NonNullable<
-  z.output<typeof GalleryPageSchema>["data"]
->["xdt_api__v1__feed__reels_media__connection"];
+type GalleryConnection = z.output<
+  typeof RecordedGalleryPageSchema
+>["data"]["xdt_api__v1__feed__reels_media__connection"];
 type RecordedStory = NonNullable<GalleryConnection["edges"][number]["node"]["items"]>[number];
 
-/** Parses a recorded gallery page with the production schema, lets `update` edit it, and writes it back as a payload. */
+/** Parses a recorded gallery page with the production story schema, lets `update` edit it, and writes it back as a payload. */
 function updateGalleryPage(
   payload: JsonValue,
   update: (connection: GalleryConnection) => void,
 ): JsonValue {
-  const page = GalleryPageSchema.parse(payload);
-  const connection = page.data?.xdt_api__v1__feed__reels_media__connection;
-  if (connection === undefined) {
-    throw new Error("A recorded gallery page has no reels connection");
-  }
-  update(connection);
+  const page = RecordedGalleryPageSchema.parse(payload);
+  update(page.data.xdt_api__v1__feed__reels_media__connection);
   return JsonValueSchema.parse(page);
 }
 

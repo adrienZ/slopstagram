@@ -25,7 +25,7 @@ class InstagramApiResponseError extends Error {
   readonly nonRetryable = true;
 }
 
-export const GalleryPageSchema = z.object({
+const GalleryPageSchema = z.object({
   data: z
     .object({
       xdt_api__v1__feed__reels_media__connection: z.object({
@@ -87,11 +87,7 @@ function parseInstagramResponse<T>(
   }
 }
 
-export function parseTrayResponse(body: string, headers: Record<string, string>) {
-  return parseInstagramResponse(body, headers, ReelTrayResponseSchema);
-}
-
-export function parseGalleryPage(body: string, headers: Record<string, string>) {
+function parseGalleryPage(body: string, headers: Record<string, string>) {
   return parseInstagramResponse(body, headers, GalleryResponseSchema);
 }
 

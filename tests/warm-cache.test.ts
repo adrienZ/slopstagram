@@ -1,7 +1,6 @@
 import { afterEach, assert, beforeEach, test, expect, vi } from "vitest";
 import {
   startWarmCacheQueue,
-  WARM_CACHE_CRON_PATTERN,
   WARM_CACHE_QUEUE_NAME,
 } from "@@/core/domains/fetch-run/warm-cache-queue.ts";
 import { runWarmCacheJob } from "@@/core/domains/fetch-run/warm-cache.ts";
@@ -147,7 +146,7 @@ test("startWarmCacheQueue schedules the hourly job, runs it and forwards errors"
   await started.close();
   expect(calls).toStrictEqual([
     `queue:${WARM_CACHE_QUEUE_NAME}`,
-    `cron:${WARM_CACHE_QUEUE_NAME}:${WARM_CACHE_CRON_PATTERN}`,
+    `cron:${WARM_CACHE_QUEUE_NAME}:0 * * * *`,
     "close",
   ]);
 });

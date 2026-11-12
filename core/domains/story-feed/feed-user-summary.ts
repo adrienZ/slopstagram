@@ -40,7 +40,7 @@ export type FeedUserSummary =
  * The user summary the story feed shows for one account's stories of the last 24 hours. The
  * username ignores an `@` prefix and letter case.
  */
-export function readFeedUserSummary(
+function readFeedUserSummary(
   runtime: FeedUserSummaryRuntime,
   username: string,
   now: Date,

@@ -74,7 +74,7 @@ function storyAudioPreview(annotations: StoryAnnotations | undefined): MusicPrev
       };
 }
 
-export function storyMusicPreviews(annotations: StoryAnnotations | undefined): Array<MusicPreview> {
+function storyMusicPreviews(annotations: StoryAnnotations | undefined): Array<MusicPreview> {
   const soundtrack = storyAudioPreview(annotations);
   if (soundtrack !== null) {
     return [soundtrack];

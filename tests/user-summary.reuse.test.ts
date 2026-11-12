@@ -1,5 +1,5 @@
 import { assert, test, expect, type TestContext } from "vitest";
-import { readStoryFeedSources } from "../app/loaders/story-feed.ts";
+import { readFeedUserSummaries } from "@@/core/domains/story-feed/feed-user-summary.ts";
 import { userSummaries } from "@@/core/domains/database/entities/user-summary.ts";
 import {
   readUserSummaries,
@@ -22,7 +22,7 @@ async function createStoredSummary(context: TestContext) {
   assert.ok(entry);
   return {
     entry,
-    feed: () => readStoryFeedSources(runtime, report.output.users).userSummaryByUserKey,
+    feed: () => readFeedUserSummaries(runtime, report.output.users),
     report,
     runtime,
   };
@@ -130,6 +130,6 @@ for (const outcome of ["empty", "error"] as const) {
 
     expect(summaries.size).toBe(1);
     expect(countSummaries(runtime)).toBe(0);
-    expect(readStoryFeedSources(runtime, report.output.users).userSummaryByUserKey.size).toBe(0);
+    expect(readFeedUserSummaries(runtime, report.output.users).size).toBe(0);
   });
 }

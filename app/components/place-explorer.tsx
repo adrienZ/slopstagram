@@ -1,13 +1,10 @@
-import { createContext, lazy, Suspense, useContext, useId, useRef, useState } from "react";
-import type { ComponentType, KeyboardEvent } from "react";
+import { Suspense, useContext, useId, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 import type { LocationMapCanvasProps } from "./location-map-canvas.tsx";
 import { adjacentPlaceId, type TimelinePlace } from "../utils/timeline-locations.ts";
 import type { StoryCardData } from "../utils/story-cards.ts";
+import { LocationMapContext } from "./location-map-context.ts";
 import { PlaceStories } from "./place-stories.tsx";
-
-export const LocationMapContext = createContext<ComponentType<LocationMapCanvasProps>>(
-  lazy(async () => await import("./location-map-canvas.tsx")),
-);
 
 /**
  * A place select and a map of the places, whose popup previews the selected place's stories.
