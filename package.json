@@ -12,7 +12,7 @@
     "create:report": "tsx scripts/create-report.ts",
     "fixtures:capture": "tsx scripts/capture-fixtures.ts",
     "bunqueue:server": "bunqueue start",
-    "start": "vite dev --port 5173",
+    "dev": "vite dev --port 5173",
     "build": "vite build",
     "db:generate": "drizzle-kit generate",
     "lint": "oxlint",

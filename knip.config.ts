@@ -29,8 +29,6 @@ const config: KnipConfig = {
     // Spawned by nitro/plugins/warm-cache.ts.
     "bunqueue",
   ],
-  // Run by the `start` and `build` scripts, from the dev dependencies.
-  ignoreBinaries: ["vite"],
 };
 
 export default config;

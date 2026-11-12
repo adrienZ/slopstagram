@@ -76,7 +76,7 @@ flowchart TD
 View reports:
 
 ```bash
-npm run start
+npm run dev
 ```
 
 Open <http://localhost:5173/>.
