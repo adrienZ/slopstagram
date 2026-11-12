@@ -23,8 +23,7 @@ const FeedUserSummaryOutputSchema = z.discriminatedUnion("status", [
 ]) satisfies z.ZodType<FeedUserSummary>;
 
 /**
- * The result of the getFeedUserSummaries tool. Exported for the evals, which parse the tool
- * output with it outside production.
+ * The result of the getFeedUserSummaries tool. The evals parse it.
  *
  * @public
  */
