@@ -1,6 +1,7 @@
 ## General rules
 
 Even if I talk to you in french always use english when writing a issue, commit or a PR on Github.
+Comments should only be added to things that cannot be inferred, otherwise comments explain why you did something not what it does. Favour clean code over commented code.
 
 ## Bunqueue
 
