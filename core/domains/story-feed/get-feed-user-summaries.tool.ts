@@ -2,38 +2,9 @@ import { tool } from "ai";
 import { z } from "zod";
 import {
   readFeedUserSummariesByUsername,
-  type FeedUserSummary,
-  type RequestedFeedUserSummary,
+  RequestedFeedUserSummariesSchema,
   type FeedUserSummaryRuntime,
 } from "./feed-user-summary.ts";
-
-const FeedUserSummaryOutputSchema = z.discriminatedUnion("status", [
-  z.object({
-    status: z.literal("found"),
-    username: z.string(),
-    storyCount: z.number(),
-    summary: z.string(),
-  }),
-  z.object({
-    status: z.literal("missing"),
-    username: z.string(),
-    reason: z.enum(["no_stories_in_last_24h", "not_generated"]),
-  }),
-  z.object({ status: z.literal("error"), error: z.literal("unknown_account") }),
-]) satisfies z.ZodType<FeedUserSummary>;
-
-/**
- * The result of the getFeedUserSummaries tool. The evals parse it.
- *
- * @public
- */
-export const FeedUserSummariesOutputSchema = z.array(
-  z.object({
-    handle: z.string(),
-    requestedUsername: z.string(),
-    outcome: FeedUserSummaryOutputSchema,
-  }),
-) satisfies z.ZodType<Array<RequestedFeedUserSummary>>;
 
 const DESCRIPTION = `Returns the user summaries of one or more Instagram accounts: for each, a short text about the stories the account published in the last 24 hours, exactly as the story feed shows it, with the number of those stories.
 
@@ -60,7 +31,7 @@ export function createGetFeedUserSummariesTool(runtime: FeedUserSummaryRuntime) 
           'The accounts\' Instagram usernames, as mentioned in the message. An "@" prefix and letter case are ignored. Example: ["user_072", "user_008"] for "who posted more, @user_072 or @user_008?".',
         ),
     }),
-    outputSchema: FeedUserSummariesOutputSchema,
+    outputSchema: RequestedFeedUserSummariesSchema,
     execute: ({ usernames }) => readFeedUserSummariesByUsername(runtime, usernames, new Date()),
   });
 }
