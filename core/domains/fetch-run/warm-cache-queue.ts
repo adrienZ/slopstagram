@@ -2,7 +2,7 @@ import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { runWarmCacheJob } from "./warm-cache.ts";
 
 export const WARM_CACHE_QUEUE_NAME = "warm-cache";
-export const WARM_CACHE_CRON_PATTERN = "0 * * * *";
+const WARM_CACHE_CRON_PATTERN = "0 * * * *";
 
 export interface StartWarmCacheQueueOptions {
   onError?: (error: Error) => void;

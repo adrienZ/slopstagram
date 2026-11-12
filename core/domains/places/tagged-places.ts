@@ -38,7 +38,7 @@ export interface TaggedPlaceSummary {
   owners: Array<string>;
 }
 
-export const TaggedPlaceSummarySchema = z.object({
+const TaggedPlaceSummarySchema = z.object({
   id: z.string(),
   name: z.string(),
   category: z.string().nullable(),
@@ -71,7 +71,7 @@ export const TaggedPlacePageSchema = z.object({
 }) satisfies z.ZodType<TaggedPlacePage>;
 
 /** A Tagged place with its address and its latest stories. */
-export interface TaggedPlaceDetails extends TaggedPlaceSummary {
+interface TaggedPlaceDetails extends TaggedPlaceSummary {
   address: string | null;
   /** The latest stories tagging the place, the latest first. */
   latestStories: Array<{ date: string; owner: string }>;

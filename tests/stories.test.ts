@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { getMediaCacheKey } from "@@/core/domains/media-store/cache-storage.ts";
-import { fetchStoriesManifest } from "@@/core/domains/fetch-run/stories.ts";
+import { fetchStories } from "@@/core/domains/fetch-run/stories.ts";
 import {
   createClient,
   reel,
@@ -15,7 +15,7 @@ function storedStory(pk: string) {
   return { ...storyItem(pk), annotations: { locations: [], stickers: [] } };
 }
 
-describe("fetchStoriesManifest", () => {
+describe("fetchStories", () => {
   test("fetches API media even when story storage has existing entries", async (context) => {
     const runtime = await createTestRuntime(context);
     await runtime.stories.save(storyItem("m1"));
@@ -43,7 +43,7 @@ describe("fetchStoriesManifest", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(runtime, client, {});
+    const report = await fetchStories({ ...runtime, client }, {});
 
     expect(client.reelsCalls).toStrictEqual([["r1", "r2"]]);
     expect(report.metadata.counts).toStrictEqual({
@@ -149,7 +149,7 @@ describe("fetchStoriesManifest", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(runtime, client, {});
+    const report = await fetchStories({ ...runtime, client }, {});
 
     expect(client.reelsCalls).toStrictEqual([["r1", "r2"]]);
     expect(runtime.stories.findByMediaPk("m2")).toStrictEqual(storedStory("m2"));
@@ -225,7 +225,7 @@ describe("fetchStoriesManifest", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(runtime, client, {});
+    const report = await fetchStories({ ...runtime, client }, {});
 
     expect(report.output.users).toStrictEqual([
       {

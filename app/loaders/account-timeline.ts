@@ -52,7 +52,7 @@ interface UserTimelineMonth {
   days: Array<UserTimelineDay>;
 }
 
-export interface UserTimelineYear {
+interface UserTimelineYear {
   label: string;
   months: Array<UserTimelineMonth>;
 }
@@ -108,9 +108,7 @@ function getTimelineDate(story: UserTimelineStory): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-export function groupStoriesByPublishedDate(
-  stories: Array<UserTimelineStory>,
-): Array<UserTimelineYear> {
+function groupStoriesByPublishedDate(stories: Array<UserTimelineStory>): Array<UserTimelineYear> {
   const years = new Map<string, Map<string, { days: Array<UserTimelineDay>; label: string }>>();
 
   for (const story of stories) {
@@ -194,10 +192,7 @@ function readTimelineDetails(
   return { appleCaptionByMediaPk, outdatedVisionByPreviewUrl, visionByPreviewUrl };
 }
 
-export function createUserTimeline(
-  runtime: UserTimelineRuntime,
-  username: string,
-): UserTimeline | null {
+function createUserTimeline(runtime: UserTimelineRuntime, username: string): UserTimeline | null {
   const stories = runtime.stories.listByUsername(username);
   if (stories.length === 0) {
     const user = runtime.users.findByUsername(username);
@@ -233,7 +228,7 @@ export function createUserTimeline(
   };
 }
 
-export function getTimelinePreviewPaths(stories: Array<UserTimelineStory>): Map<string, string> {
+function getTimelinePreviewPaths(stories: Array<UserTimelineStory>): Map<string, string> {
   return new Map(
     stories.map((story) => [
       getStoryPreviewSource(story),

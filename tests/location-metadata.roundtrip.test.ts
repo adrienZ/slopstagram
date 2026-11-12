@@ -3,7 +3,7 @@ import { createDrizzle } from "@@/core/domains/database/client.ts";
 import { migrateDatabase } from "@@/core/domains/database/migrate.ts";
 import { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
 import { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
-import { fetchStoriesManifest } from "@@/core/domains/fetch-run/stories.ts";
+import { fetchStories } from "@@/core/domains/fetch-run/stories.ts";
 import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
 import type { JsonObject } from "@@/core/utils/json-value.ts";
 import { createMemoryCacheStorage } from "./memory-storage.ts";
@@ -116,13 +116,15 @@ test("external-only observations do not block other location updates during live
       { facebook_places_id: "000456" },
     ],
   };
-  const report = await fetchStoriesManifest(
-    { logger, stories: repository, storage: createMemoryCacheStorage() },
-    createClient(
+  const report = await fetchStories({
+    logger,
+    stories: repository,
+    storage: createMemoryCacheStorage(),
+    client: createClient(
       [{ id: "r1", media_ids: ["m1"], user: owner }],
       [reelsResponse({ r1: { ...reel("r1", [item]), user: owner } })],
     ),
-  );
+  });
   expect(report.manifest.users[0].stories[0].locations).toStrictEqual(["Updated"]);
   const [history] = new StoryRepository(database).listByUsername("one");
   const stored = present(history.story.annotations);
@@ -221,17 +223,15 @@ test("live ingestion shares tagged places and exposes exact metadata with occurr
       story_locations: [{ id: "d", location: { ...location, pk: "different" } }],
     },
   ];
-  const report = await fetchStoriesManifest(
-    {
-      logger: createCapturingLogger(),
-      stories: new StoryRepository(database, createCapturingLogger()),
-      storage: createMemoryCacheStorage(),
-    },
-    createClient(
+  const report = await fetchStories({
+    logger: createCapturingLogger(),
+    stories: new StoryRepository(database, createCapturingLogger()),
+    storage: createMemoryCacheStorage(),
+    client: createClient(
       [{ id: "r1", media_ids: items.map(({ pk }) => pk), user: owner }],
       [reelsResponse({ r1: { ...reel("r1", items), user: owner } })],
     ),
-  );
+  });
   expect(report.manifest.users[0].stories[0].locations).toStrictEqual([
     "Paris, Paris",
     "Paris, Paris",

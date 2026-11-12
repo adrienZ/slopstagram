@@ -1,12 +1,10 @@
-import { createHash } from "node:crypto";
 import { expect, test } from "vitest";
 import { within } from "@testing-library/dom";
 import { JSDOM } from "jsdom";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
-import { VISION_MODEL, VISION_PROMPT } from "@@/core/domains/vision/vision-analysis.ts";
 import { Route } from "../app/routes/users/$username.tsx";
 import { loadAccountTimeline } from "../app/loaders/account-timeline.ts";
-import { storyItem } from "./mock-helpers.ts";
+import { saveCurrentVision, storyItem } from "./mock-helpers.ts";
 import { createPageRenderer } from "./render-page.ts";
 import { useSharedTestRuntime } from "./setup/test-runtime.ts";
 
@@ -15,7 +13,6 @@ const owner = { pk: "700000000000075", username: "user_075" };
 const emptyOwner = { pk: "700000000000901", username: "user_901" };
 const laterStoryPk = "700000000000053";
 const earlierStoryPk = "700000000000028";
-const promptHash = createHash("sha256").update(VISION_PROMPT).digest("hex");
 
 async function seed(runtime: Runtime) {
   await runtime.users.save({ ...owner, full_name: null, id: owner.pk });
@@ -28,14 +25,13 @@ async function seed(runtime: Runtime) {
     { ...storyItem(earlierStoryPk), taken_at: Date.parse("2026-10-27T10:00:00Z") / 1000 },
     owner,
   );
-  await runtime.vision.save(laterStoryPk, {
-    model: VISION_MODEL,
-    prompt_hash: promptHash,
-    result: { text: "Current synthetic OCR text", visual: "Current synthetic description" },
+  const current = await saveCurrentVision(runtime, laterStoryPk, {
+    text: "Current synthetic OCR text",
+    visual: "Current synthetic description",
   });
   await runtime.vision.save(earlierStoryPk, {
     model: "retired-model",
-    prompt_hash: promptHash,
+    prompt_hash: current.prompt_hash,
     result: { text: "Outdated synthetic OCR text", visual: "Outdated synthetic description" },
   });
   await runtime.appleVision.save(laterStoryPk, "Synthetic Apple caption");

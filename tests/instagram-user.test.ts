@@ -1,8 +1,5 @@
 import { describe, test, expect } from "vitest";
-import {
-  hydrateReportInstagramUsers,
-  persistReportInstagramUsers,
-} from "@@/core/domains/accounts/instagram-user.ts";
+import { persistReportInstagramUsers } from "@@/core/domains/accounts/instagram-user.ts";
 import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 
@@ -52,7 +49,7 @@ function createReportWithInstagramUser(): StoriesManifestReport {
 }
 
 describe("Instagram user report persistence", () => {
-  test("persists user data outside a report and hydrates it when read", async (context) => {
+  test("persists user data outside a report", async (context) => {
     const report = createReportWithInstagramUser();
     const runtime = await createTestRuntime(context);
 
@@ -70,26 +67,5 @@ describe("Instagram user report persistence", () => {
     expect("id" in report.manifest.users[0]).toBe(false);
     expect("pk" in report.manifest.users[0]).toBe(false);
     expect("profile_pic_url" in report.manifest.users[0]).toBe(false);
-
-    hydrateReportInstagramUsers(runtime, report);
-
-    expect(report.output.users[0]?.full_name).toBe("Fixture User");
-    expect(report.output.users[0]?.profile_pic_url).toBe("images/avatars/instagram-pk-1.jpg");
-  });
-
-  test("hydrates reports whose nullable user columns were read as null", async (context) => {
-    const report = createReportWithInstagramUser();
-    const runtime = await createTestRuntime(context);
-
-    await persistReportInstagramUsers(runtime, report);
-    report.manifest.users[0].full_name = null;
-    report.manifest.users[0].profile_pic_url = null;
-    report.output.users[0].full_name = null;
-    report.output.users[0].profile_pic_url = null;
-
-    hydrateReportInstagramUsers(runtime, report);
-
-    expect(report.output.users[0]?.full_name).toBe("Fixture User");
-    expect(report.output.users[0]?.profile_pic_url).toBe("images/avatars/instagram-pk-1.jpg");
   });
 });

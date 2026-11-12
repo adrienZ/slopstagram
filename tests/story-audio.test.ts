@@ -9,13 +9,13 @@ import { dashAudioSource } from "@@/core/domains/music/dash-audio.ts";
 import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { processStoryAudio, cacheReportAudio } from "@@/core/domains/music/report-audio.ts";
+import { cacheReportAudio } from "@@/core/domains/music/report-audio.ts";
 import { createMediaResponse } from "@@/core/domains/media-store/media-response.ts";
 import { groupTimelineStickers } from "../app/utils/timeline-stickers.ts";
-import { musicStickerItems, storyMusicPreviews } from "../app/utils/music-preview.ts";
+import { musicStickerItems } from "../app/utils/music-preview.ts";
 import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";
 import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
-import { fetchStoriesManifest } from "@@/core/domains/fetch-run/stories.ts";
+import { fetchStories } from "@@/core/domains/fetch-run/stories.ts";
 import { createMemoryCacheStorage } from "./memory-storage.ts";
 import { createCapturingLogger, createClient, reel, reelsResponse } from "./mock-helpers.ts";
 
@@ -31,6 +31,46 @@ function manifest(name: string) {
       </Representation></AdaptationSet>
     </Period>
   </MPD>`;
+}
+
+type StoryAudioRuntime = Parameters<typeof cacheReportAudio>[0];
+
+/** Caches the soundtrack of one story the way a fetch run does, and reads it back. */
+async function cacheStoryAudio(runtime: StoryAudioRuntime, mediaPk: string) {
+  const report: StoriesManifestReport = {
+    failures: [],
+    manifest: { users: [] },
+    metadata: {
+      broadcasts_count: 0,
+      counts: { failed: 0, fetched: 1, reels: 1, stories: 1 },
+      created_at: "2026-10-26T12:00:00Z",
+      report_name: "audio",
+      status: "ok",
+      story_ranking_token: null,
+    },
+    output: {
+      users: [
+        {
+          username: "one",
+          full_name: null,
+          profile_pic_url: null,
+          reel_ids: [],
+          stories: [
+            {
+              media_pk: mediaPk,
+              status: "ok",
+              ig_caption: "",
+              locations: [],
+              stickers: [],
+              preview_image_url: null,
+            },
+          ],
+        },
+      ],
+    },
+  };
+  await cacheReportAudio(runtime, report);
+  return runtime.stories.findStoryAudio(mediaPk) ?? null;
 }
 
 test("web story ingestion preserves DASH audio separately from shared music, including missing asset IDs", async (context) => {
@@ -208,12 +248,12 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
   expect(saved.cachePath).not.toBe(null);
   assert.ok(saved.cachePath !== null);
   expect(saved.state).toBe("available");
-  const previews = storyMusicPreviews(
+  const previews = musicStickerItems(
     new StoryRepository(database).findByMediaPk("story")?.annotations,
-  );
+  ).map(({ preview }) => preview);
   expect(previews.length).toBe(1);
-  expect(previews[0].description).toBe("Song — Artist");
-  expect(previews[0].sourceKind).toBe("story_audio");
+  expect(previews[0]?.description).toBe("Song — Artist");
+  expect(previews[0]?.sourceKind).toBe("story_audio");
   expect(path.extname(saved.cachePath)).toBe(".m4a");
   expect(await readFile(path.join(directory, saved.cachePath))).toStrictEqual(audio);
   expect(saved.durationMs).toBe(1023);
@@ -230,7 +270,7 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
     video_dash_manifest: manifest("fresh"),
     story_music_stickers: [{ music_asset_info: { title: "Song" } }],
   });
-  const reused = await processStoryAudio(
+  const reused = await cacheStoryAudio(
     {
       stories: repository,
       storage: createFileCacheStorage(directory),
@@ -276,7 +316,7 @@ test("expired and interrupted DASH downloads fail silently without publishing in
       response.end("expired");
     }
   });
-  const failed = await processStoryAudio(
+  const failed = await cacheStoryAudio(
     {
       stories: repository,
       storage: createFileCacheStorage(directory),
@@ -306,7 +346,7 @@ test("expired and interrupted DASH downloads fail silently without publishing in
   expect(groups[0].stories[0].musicItems?.[0].preview).toBe(null);
   expect(groups[0].stories[0].labels[0].label).toBe("Song");
   interrupted = true;
-  const interruptedResult = await processStoryAudio(
+  const interruptedResult = await cacheStoryAudio(
     {
       stories: repository,
       storage: createFileCacheStorage(directory),
@@ -382,10 +422,12 @@ test("fresh story ingestion caches the story excerpt and prefers it over the lon
     [reelsResponse({ reel: { ...reel("reel", [story]), user: owner } })],
   );
   const repository = new StoryRepository(database);
-  const report = await fetchStoriesManifest(
-    { logger: createCapturingLogger(), stories: repository, storage: createMemoryCacheStorage() },
+  const report = await fetchStories({
+    logger: createCapturingLogger(),
+    stories: repository,
+    storage: createMemoryCacheStorage(),
     client,
-  );
+  });
   const storyBytes = await readFile(new globalThis.URL("fixtures/audio-clip.m4a", import.meta.url));
   const musicBytes = wavAudio(70);
   const media = await startMediaServer(context, (request, response) => {

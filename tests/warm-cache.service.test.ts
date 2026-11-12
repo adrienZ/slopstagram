@@ -1,16 +1,13 @@
 import { EventEmitter } from "node:events";
 import process from "node:process";
 import { expect, test } from "vitest";
-import {
-  startWarmCacheService,
-  type BunqueueServerProcess,
-} from "@@/core/domains/fetch-run/warm-cache-service.ts";
+import { startWarmCacheService } from "@@/core/domains/fetch-run/warm-cache-service.ts";
 import type { FetchRunQueue } from "@@/core/domains/runtime/fetch-boundaries.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 
 /** A bunqueue server process that exits when it is killed, like the real one. */
 // oxlint-disable-next-line unicorn/prefer-event-target -- the real server process is an EventEmitter.
-class FakeServer extends EventEmitter implements BunqueueServerProcess {
+class FakeServer extends EventEmitter {
   exitCode: number | null = null;
   signalCode: string | null = null;
   signals: Array<string> = [];

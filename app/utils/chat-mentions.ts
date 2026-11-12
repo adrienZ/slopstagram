@@ -1,18 +1,11 @@
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
+import { findMentions } from "./mentions.ts";
 
 const MAX_SUGGESTIONS = 8;
 /** An `@` that starts a word, followed by the username typed so far, right before the caret. */
 const TYPED_MENTION = /(?<![\w@])@(?<query>[\w.]*)$/u;
 /** The rest of the username after the caret, replaced too when a suggestion is picked. */
 const USERNAME_TAIL = /^[\w.]*/u;
-/** An `@username` that starts a word. A username never ends with a period. */
-const MENTION = /(?<![\w@])@(?<username>[\w.]*\w)/gu;
-
-/** The usernames mentioned in a message, as `@username`, in order and as written. */
-export function findMentionedUsernames(text: string): Array<string> {
-  return [...text.matchAll(MENTION)].map((match) => match.groups?.username ?? "");
-}
-
 /** The Mention being typed right before the caret. */
 export interface TypedMention {
   query: string;
@@ -70,17 +63,17 @@ export type MentionSegment =
 export function splitMentions(text: string, accounts: Array<SidebarUser>): Array<MentionSegment> {
   const segments: Array<MentionSegment> = [];
   let end = 0;
-  for (const match of text.matchAll(MENTION)) {
-    const wanted = (match.groups?.username ?? "").toLowerCase();
+  for (const mention of findMentions(text)) {
+    const wanted = mention.username.toLowerCase();
     const account = accounts.find(({ username }) => username.toLowerCase() === wanted);
     if (account === undefined) {
       continue;
     }
-    if (match.index > end) {
-      segments.push({ text: text.slice(end, match.index), type: "text" });
+    if (mention.index > end) {
+      segments.push({ text: text.slice(end, mention.index), type: "text" });
     }
-    segments.push({ account, text: match[0], type: "mention" });
-    end = match.index + match[0].length;
+    segments.push({ account, text: mention.text, type: "mention" });
+    end = mention.index + mention.text.length;
   }
   if (end < text.length) {
     segments.push({ text: text.slice(end), type: "text" });

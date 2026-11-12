@@ -110,7 +110,7 @@ async function fetchTray(client: InstagramClient, retryOptions: RetryOptions) {
   return trayResult.value;
 }
 
-export async function fetchStoriesManifest(
+async function fetchStoriesManifest(
   runtime: FetchStoriesRuntime,
   client: InstagramClient,
   options: FetchStoriesOptions = {},

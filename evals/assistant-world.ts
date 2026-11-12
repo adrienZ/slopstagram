@@ -5,7 +5,7 @@ import { handleChatRequest } from "../app/routes/api/chat.ts";
 import { listAccounts } from "../core/domains/accounts/accounts.ts";
 import type { AssistantRuntime, AssistantUIMessage } from "../core/domains/assistant/assistant.ts";
 import { listTaggedPlaces } from "../core/domains/places/tagged-places.ts";
-import { readFeedUserSummary } from "../core/domains/story-feed/feed-user-summary.ts";
+import { readFeedUserSummariesByUsername } from "../core/domains/story-feed/feed-user-summary.ts";
 import {
   createWorld,
   imageStoryPk,
@@ -41,8 +41,8 @@ function keepDatabaseOpen(): void {
 /** Fails when the seeded world no longer gives the outcomes the cases rely on, so a case measures the model and not a seeding change. */
 function checkPremises(runtime: AssistantRuntime, now: Date) {
   const seeded = JSON.stringify({
-    outcomes: Object.values(worldAccounts).map((username) =>
-      describeOutcome(readFeedUserSummary(runtime, username, now)),
+    outcomes: readFeedUserSummariesByUsername(runtime, Object.values(worldAccounts), now).map(
+      ({ outcome }) => describeOutcome(outcome),
     ),
     saved: listAccounts(runtime).map(({ username }) => username),
     places: listTaggedPlaces(runtime).places.map(({ id, name }) => ({ id, name })),

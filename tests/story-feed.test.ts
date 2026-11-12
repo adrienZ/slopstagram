@@ -1,11 +1,7 @@
 import { test, type TestContext, expect } from "vitest";
-import {
-  createStoryFeed,
-  createStoryDayFeed,
-  createReportFeed,
-} from "@@/core/domains/story-feed/story-feed.ts";
+import { createStoryFeed, createReportFeed } from "@@/core/domains/story-feed/story-feed.ts";
 import { getStoryDate, getStoryDayRange } from "@@/core/domains/story-feed/story-days.ts";
-import { readStoryFeedSources } from "../app/loaders/story-feed.ts";
+import { readFeedUserSummaries } from "@@/core/domains/story-feed/feed-user-summary.ts";
 import { resolveUserSummariesForReport } from "@@/core/domains/accounts/user-summary.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 
@@ -34,7 +30,9 @@ async function createFixture(context: TestContext) {
   return {
     runtime,
     stories,
-    dayFeed: (day: string) => createStoryDayFeed(runtime, day, { hasPreview: () => true }),
+    dayFeed: (day: string) =>
+      createReportFeed(runtime, new Date("2027-01-01T00:00:00Z"), day, { hasPreview: () => true })
+        .users,
     feed: (now: string) =>
       createStoryFeed(runtime, new Date(now), { hasPreview: (pk) => pk !== "no-image" }),
   };
@@ -189,17 +187,17 @@ test("hides a summary after stories expire until a matching summary is generated
     },
   };
   await resolveUserSummariesForReport(runtime, { output: { users } }, options);
-  expect(readStoryFeedSources(runtime, users).userSummaryByUserKey.get("alice")).toBe(
+  expect(readFeedUserSummaries(runtime, users).get("alice")).toBe(
     "Activités des stories visibles.",
   );
   const laterUsers = feed("2026-10-22T10:02:00Z");
-  const laterView = readStoryFeedSources(runtime, laterUsers);
-  expect(laterView.userSummaryByUserKey.has("alice")).toBe(false);
-  expect(laterView.userSummaryByUserKey.has("bob")).toBe(true);
+  const laterView = readFeedUserSummaries(runtime, laterUsers);
+  expect(laterView.has("alice")).toBe(false);
+  expect(laterView.has("bob")).toBe(true);
   expect(generations).toBe(2);
   await resolveUserSummariesForReport(runtime, { output: { users: laterUsers } }, options);
   expect(generations).toBe(3);
-  expect(readStoryFeedSources(runtime, laterUsers).userSummaryByUserKey.get("alice")).toBe(
+  expect(readFeedUserSummaries(runtime, laterUsers).get("alice")).toBe(
     "Activités des stories visibles.",
   );
 });

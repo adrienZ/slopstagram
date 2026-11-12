@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
 import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 import type { UserSummaryRepository } from "@@/core/domains/database/repositories/user-summary-repository.ts";
@@ -39,7 +40,7 @@ export type FeedUserSummary =
  * The user summary the story feed shows for one account's stories of the last 24 hours. The
  * username ignores an `@` prefix and letter case.
  */
-export function readFeedUserSummary(
+function readFeedUserSummary(
   runtime: FeedUserSummaryRuntime,
   username: string,
   now: Date,
@@ -71,6 +72,30 @@ export interface RequestedFeedUserSummary {
   outcome: FeedUserSummary;
   requestedUsername: string;
 }
+
+const FeedUserSummarySchema = z.discriminatedUnion("status", [
+  z.object({
+    status: z.literal("found"),
+    username: z.string(),
+    storyCount: z.number(),
+    summary: z.string(),
+  }),
+  z.object({
+    status: z.literal("missing"),
+    username: z.string(),
+    reason: z.enum(["no_stories_in_last_24h", "not_generated"]),
+  }),
+  z.object({ status: z.literal("error"), error: z.literal("unknown_account") }),
+]) satisfies z.ZodType<FeedUserSummary>;
+
+/** The user summaries of several accounts, as the getFeedUserSummaries tool returns them. */
+export const RequestedFeedUserSummariesSchema = z.array(
+  z.object({
+    handle: z.string(),
+    requestedUsername: z.string(),
+    outcome: FeedUserSummarySchema,
+  }),
+) satisfies z.ZodType<Array<RequestedFeedUserSummary>>;
 
 /** The user summaries of several accounts, in the order asked, each with the username asked for. */
 export function readFeedUserSummariesByUsername(

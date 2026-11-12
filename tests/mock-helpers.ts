@@ -10,6 +10,8 @@ import type {
   ReelsMediaResponse,
 } from "@@/core/domains/instagram/instagram-types.ts";
 import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";
+import type { VisionEntry, VisionResult } from "@@/core/domains/database/entities/vision.ts";
+import { analyzeImage, type VisionRuntime } from "@@/core/domains/vision/vision-analysis.ts";
 
 export const previewSource = "https://example.com/story-preview.webp";
 
@@ -243,4 +245,36 @@ export function useFixedDate(at: Date = fixedNow()): void {
   afterEach(() => {
     vi.useRealTimers();
   });
+}
+
+/**
+ * Saves the vision result of a story as the current model and prompt would, by running the
+ * analysis against an Ollama that answers `result`. Returns the saved entry.
+ */
+export async function saveCurrentVision(
+  runtime: Omit<VisionRuntime, "fetchOllama">,
+  mediaPk: string,
+  result: VisionResult,
+): Promise<VisionEntry> {
+  const answer = { description: result.visual, ocrText: [result.text] };
+  await analyzeImage(
+    {
+      ...runtime,
+      fetchOllama: async () =>
+        await Promise.resolve(
+          new globalThis.Response(
+            JSON.stringify({ done: true, response: JSON.stringify(answer) }),
+            {
+              headers: { "content-type": "application/json" },
+            },
+          ),
+        ),
+    },
+    { itemLabel: mediaPk, mediaPk, read: async () => await Promise.resolve(new Uint8Array([0])) },
+  );
+  const entry = runtime.vision.findByMediaPk(mediaPk);
+  if (entry === null) {
+    throw new Error(`no vision saved for ${mediaPk}`);
+  }
+  return entry;
 }

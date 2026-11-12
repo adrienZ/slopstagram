@@ -3,7 +3,7 @@ import { createDrizzle } from "@@/core/domains/database/client.ts";
 import { migrateDatabase } from "@@/core/domains/database/migrate.ts";
 import { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
 import { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
-import { fetchStoriesManifest } from "@@/core/domains/fetch-run/stories.ts";
+import { fetchStories } from "@@/core/domains/fetch-run/stories.ts";
 import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
 import { createMemoryCacheStorage } from "./memory-storage.ts";
 import { createCapturingLogger, createClient, reel, reelsResponse } from "./mock-helpers.ts";
@@ -58,13 +58,15 @@ test("live ingestion shares exact audio identities across occurrences in cold ac
       ],
     },
   ];
-  const report = await fetchStoriesManifest(
-    { logger: createCapturingLogger(), stories: repository, storage: createMemoryCacheStorage() },
-    createClient(
+  const report = await fetchStories({
+    logger: createCapturingLogger(),
+    stories: repository,
+    storage: createMemoryCacheStorage(),
+    client: createClient(
       [{ id: "r1", media_ids: items.map(({ pk }) => pk), user: owner }],
       [reelsResponse({ r1: { ...reel("r1", items), user: owner } })],
     ),
-  );
+  });
   expect(report.manifest.users[0].stories[0].stickers).toStrictEqual([
     "Same Song - Artist",
     "Same Song - Artist",

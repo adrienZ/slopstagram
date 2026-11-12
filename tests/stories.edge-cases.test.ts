@@ -1,5 +1,5 @@
 import { assert, describe, test, expect } from "vitest";
-import { fetchStoriesManifest } from "@@/core/domains/fetch-run/stories.ts";
+import { fetchStories } from "@@/core/domains/fetch-run/stories.ts";
 import {
   createCapturingLogger,
   createClient,
@@ -11,7 +11,7 @@ import {
 } from "./mock-helpers.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 
-describe("fetchStoriesManifest edge cases", () => {
+describe("fetchStories edge cases", () => {
   test("preserves tray and media order in the manifest", async (context) => {
     const runtime = await createTestRuntime(context);
     const client = createClient(
@@ -27,7 +27,7 @@ describe("fetchStoriesManifest edge cases", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(runtime, client, {});
+    const report = await fetchStories({ ...runtime, client }, {});
 
     expect(
       report.manifest.users.map((user) => ({
@@ -99,7 +99,7 @@ describe("fetchStoriesManifest edge cases", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(runtime, client, {});
+    const report = await fetchStories({ ...runtime, client }, {});
 
     expect(report.manifest.users[0]?.stories[0]?.stickers).toStrictEqual([
       "@friend",
@@ -135,7 +135,7 @@ describe("fetchStoriesManifest edge cases", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(runtime, client, {});
+    const report = await fetchStories({ ...runtime, client }, {});
 
     expect(report.output.users[0]?.stories[0]?.stickers).toStrictEqual([
       "Visit Link (https://link.example.test/fixture?token=fixture-token-1)",
@@ -152,9 +152,12 @@ describe("fetchStoriesManifest edge cases", () => {
       );
 
     await expect(
-      fetchStoriesManifest(runtime, client, {
-        maxAttempts: 1,
-      }),
+      fetchStories(
+        { ...runtime, client },
+        {
+          maxAttempts: 1,
+        },
+      ),
     ).rejects.toThrow(/Instagram request failed with HTTP 429/u);
     expect(client.reelsCalls).toEqual([]);
     assert.ok(
@@ -172,9 +175,12 @@ describe("fetchStoriesManifest edge cases", () => {
       [reelsResponse({}, 500), reelsResponse({}, 500)],
     );
 
-    const report = await fetchStoriesManifest(runtime, client, {
-      maxAttempts: 1,
-    });
+    const report = await fetchStories(
+      { ...runtime, client },
+      {
+        maxAttempts: 1,
+      },
+    );
 
     expect(client.reelsCalls).toStrictEqual([["r1"], ["r1"]]);
     expect(report.manifest.users[0]?.stories[0]?.status).toBe("failed");
@@ -208,7 +214,7 @@ describe("fetchStoriesManifest edge cases", () => {
       ],
     );
 
-    const report = await fetchStoriesManifest(runtime, client, {});
+    const report = await fetchStories({ ...runtime, client }, {});
 
     expect(report.manifest.users[0]?.stories.map((story) => story.status)).toStrictEqual([
       "ok",
@@ -228,10 +234,13 @@ describe("fetchStoriesManifest edge cases", () => {
       [reelsResponse({}, 429, { "retry-after": "1" })],
     );
 
-    const report = await fetchStoriesManifest(runtime, client, {
-      maxAttempts: 1,
-      reelIdsPerRequest: 1,
-    });
+    const report = await fetchStories(
+      { ...runtime, client },
+      {
+        maxAttempts: 1,
+        reelIdsPerRequest: 1,
+      },
+    );
 
     expect(client.reelsCalls).toStrictEqual([["r1"]]);
     expect(

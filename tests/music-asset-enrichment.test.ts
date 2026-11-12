@@ -7,7 +7,7 @@ import sharp from "sharp";
 import { createDrizzle } from "@@/core/domains/database/client.ts";
 import { migrateDatabase } from "@@/core/domains/database/migrate.ts";
 import { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
-import { fetchStoriesManifest } from "@@/core/domains/fetch-run/stories.ts";
+import { fetchStories } from "@@/core/domains/fetch-run/stories.ts";
 import { cacheReportAudio } from "@@/core/domains/music/report-audio.ts";
 import { cacheReceivedAudio } from "@@/core/domains/music/music-media.ts";
 import { enrichCurrentMusicAssets } from "@@/core/domains/music/music-asset-enrichment.ts";
@@ -81,14 +81,12 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
     return { ok: result.ok, status: result.status, headers: {}, json: () => body };
   };
   const repository = new StoryRepository(database);
-  const report = await fetchStoriesManifest(
-    {
-      logger: createCapturingLogger(),
-      stories: repository,
-      storage: createMemoryCacheStorage(),
-    },
+  const report = await fetchStories({
+    logger: createCapturingLogger(),
+    stories: repository,
+    storage: createMemoryCacheStorage(),
     client,
-  );
+  });
   expect(server.requests).toStrictEqual([`/lookup/${audioId}`]);
   const before = repository.findByMediaPk("first")?.annotations;
   assert.ok(before);
