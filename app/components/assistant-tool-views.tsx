@@ -21,27 +21,20 @@ import {
 import { AccountList } from "./account-list.tsx";
 import { FeedUserSummariesDetails } from "./feed-user-summaries-details.tsx";
 import { TaggedPlaceDetails, TaggedPlaceList } from "./tagged-places-details.tsx";
+import type { ToolCall } from "../hooks/use-assistant-chat.ts";
 import type { MentionablePlace } from "../utils/place-mentions.ts";
 
 type AssistantPart = AssistantUIMessage["parts"][number];
 
-/** The tool parts of an Assistant message, by tool name. */
 type ToolParts = {
   [Name in AssistantToolName]: Extract<AssistantPart, { type: `tool-${Name}` }>;
 };
-
-export type ToolPart = ToolParts[AssistantToolName];
 
 type OutputOf<Part> = Part extends { state: "output-available"; output: infer Output }
   ? Output
   : never;
 
-/** What each Assistant tool returns, by tool name. */
-type ToolOutputs = {
-  [Name in AssistantToolName]: OutputOf<ToolParts[Name]>;
-};
-
-type ToolOutput<Name extends AssistantToolName> = ToolOutputs[Name];
+export type ToolOutput<Name extends AssistantToolName> = OutputOf<ToolParts[Name]>;
 
 /** How the chat shows a call of one Assistant tool. */
 interface AssistantToolView<Name extends AssistantToolName> {
@@ -59,11 +52,7 @@ function placeOf({ id, name }: MentionablePlace): MentionablePlace {
   return { id, name };
 }
 
-/**
- * How the chat shows each Assistant tool. The Assistant writes the answer from what the tool read:
- * the chat traces the call and keeps the result behind it.
- */
-const assistantToolViews: AssistantToolViews = {
+export const assistantToolViews: AssistantToolViews = {
   getFeedUserSummaries: {
     icon: <UserSearchIcon />,
     Result: ({ output }) => <FeedUserSummariesDetails results={output} />,
@@ -109,79 +98,51 @@ const assistantToolViews: AssistantToolViews = {
   },
 };
 
-function toolNameOf(part: ToolPart): string {
-  return part.type.slice("tool-".length);
-}
-
-function isKnownTool(name: string): name is AssistantToolName {
-  return Object.hasOwn(assistantToolViews, name);
-}
-
-/** Whether a part of an Assistant message is a tool call. */
-export function isToolPart(part: AssistantPart): part is ToolPart {
-  return part.type.startsWith("tool-");
-}
-
-function getToolStatus(state: ToolPart["state"]): "error" | "running" | undefined {
+function getToolStatus(state: ToolCall["part"]["state"]): "error" | "running" | undefined {
   if (state === "output-error" || state === "output-denied") {
     return "error";
   }
   return state === "output-available" ? undefined : "running";
 }
 
-function readResult<Name extends AssistantToolName>(
-  name: Name,
-  output: ToolOutput<Name>,
-): ReactNode {
+function ToolResult<Name extends AssistantToolName>({
+  name,
+  output,
+}: {
+  name: Name;
+  output: ToolOutput<Name>;
+}) {
   const { Result } = assistantToolViews[name];
-  return Result === undefined ? undefined : <Result output={output} />;
-}
-
-function readPlaces<Name extends AssistantToolName>(
-  name: Name,
-  output: ToolOutput<Name>,
-): Array<MentionablePlace> {
-  return assistantToolViews[name].places?.(output) ?? [];
+  return Result === undefined ? null : <Result output={output} />;
 }
 
 /**
  * A tool call as one trace line, the tool's name and what it was asked, which opens on what the
- * tool read once it has run. A tool the page does not know shows its line only.
+ * tool read once it has run. An invalid call shows its line only.
  */
-export function ToolTrace({ part }: { part: ToolPart }) {
-  const name = toolNameOf(part);
-  const known = isKnownTool(name);
+export function ToolTrace({ call }: { call: ToolCall }) {
+  const view = call.invalid ? undefined : assistantToolViews[call.name];
   const line = (
-    <TraceLine status={getToolStatus(part.state)}>
-      <TraceIcon>{known ? assistantToolViews[name].icon : <WrenchIcon />}</TraceIcon>
-      <TraceTitle>{name}</TraceTitle>
+    <TraceLine status={getToolStatus(call.part.state)}>
+      <TraceIcon>{view?.icon ?? <WrenchIcon />}</TraceIcon>
+      <TraceTitle>{call.name}</TraceTitle>
       {/* What the Assistant asked the tool. */}
       <TraceDescription className="tw:min-w-0 tw:shrink tw:truncate tw:font-mono tw:text-xs">
-        {JSON.stringify(part.input ?? {})}
+        {JSON.stringify(call.part.input ?? {})}
       </TraceDescription>
     </TraceLine>
   );
-  const result =
-    known && part.state === "output-available" ? readResult(name, part.output) : undefined;
-  const opens = known && assistantToolViews[name].Result !== undefined;
-  if (!opens) {
+  if (call.invalid || view?.Result === undefined) {
     return line;
   }
   return (
     <TraceCollapsible>
       <TraceCollapsibleTrigger>{line}</TraceCollapsibleTrigger>
-      <TraceCollapsibleContent>{result}</TraceCollapsibleContent>
+      <TraceCollapsibleContent>
+        {call.part.state === "output-available" && (
+          <ToolResult name={call.name} output={call.part.output} />
+        )}
+      </TraceCollapsibleContent>
     </TraceCollapsible>
   );
-}
-
-/** The Tagged places the Assistant's tools listed, found or read in a message. */
-export function findReadPlaces(message: AssistantUIMessage): Array<MentionablePlace> {
-  return message.parts.flatMap((part) => {
-    if (!isToolPart(part) || part.state !== "output-available") {
-      return [];
-    }
-    const name = toolNameOf(part);
-    return isKnownTool(name) ? readPlaces(name, part.output) : [];
-  });
 }

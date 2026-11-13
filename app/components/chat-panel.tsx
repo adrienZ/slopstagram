@@ -1,6 +1,6 @@
 import { BrainIcon, SendIcon } from "lucide-react";
 import type { AssistantUIMessage } from "@@/core/domains/assistant/assistant.ts";
-import { useAssistantChat } from "../hooks/use-assistant-chat.ts";
+import { toolCallOf, useAssistantChat } from "../hooks/use-assistant-chat.ts";
 import { useMentionSuggestions } from "../hooks/use-mention-suggestions.ts";
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
 import { Bubble, BubbleContent } from "../shadcn/ui/bubble.tsx";
@@ -29,8 +29,8 @@ import {
 } from "../shadcn/ui/trace.tsx";
 import { ChatMarkdown } from "./chat-markdown.tsx";
 import { MentionBackdrop, MentionedText, MentionSuggestionList } from "./chat-mentions.tsx";
-import { findReadPlaces, isToolPart, ToolTrace } from "./assistant-tool-views.tsx";
-import type { MentionablePlace } from "../utils/place-mentions.ts";
+import { ToolTrace } from "./assistant-tool-views.tsx";
+import { findReadPlaces, type MentionablePlace } from "../utils/place-mentions.ts";
 
 type AssistantPart = AssistantUIMessage["parts"][number];
 
@@ -70,8 +70,8 @@ function AssistantPartView({
       </TraceCollapsible>
     );
   }
-  // Every tool call shows as a trace line, even of a tool the page does not know.
-  return isToolPart(part) ? <ToolTrace part={part} /> : null;
+  const call = toolCallOf(part);
+  return call === undefined ? null : <ToolTrace call={call} />;
 }
 
 function ChatMessage({
