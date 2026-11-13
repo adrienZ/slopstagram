@@ -375,10 +375,7 @@ test("reading a place streams the getTaggedPlace call, its details, then an answ
   expect(unknown.text).toBe(assistantAnswer);
 });
 
-/**
- * A question that makes the fake chat model call each Assistant tool, and whether the model
- * reasons in the step after that tool's result (see the read and lookup tools in the registry).
- */
+/** A question that makes the fake chat model call each tool. */
 const stepAfterEachTool: Record<keyof AssistantTools, { question: string; thinksAfter: boolean }> =
   {
     getFeedUserSummaries: { question: "What about @user_072?", thinksAfter: false },
