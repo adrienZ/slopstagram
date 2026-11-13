@@ -129,7 +129,14 @@ test("a connection disappears with the last of its source stories", async (conte
     .delete(stories)
     .where(inArray(stories.mediaPk, [graphStories.cleo, ...laterCleoStories]))
     .run();
-  expect(loadMentionGraph(runtime)).toStrictEqual({ points: [], connections: [], stories: [] });
+  expect(loadMentionGraph(runtime)).toStrictEqual({
+    accounts: [],
+    selectedAccounts: [],
+    unknownAccounts: [],
+    points: [],
+    connections: [],
+    stories: [],
+  });
 });
 
 /** Each connection as its two labels and its source stories, newest first. */
