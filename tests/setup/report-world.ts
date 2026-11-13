@@ -161,6 +161,7 @@ const OllamaRequestSchema = z.object({
 
 const OllamaChatRequestSchema = z.object({
   messages: z.array(z.object({ content: z.string(), role: z.string() })),
+  think: z.boolean().optional(),
   tools: z.array(z.object({ function: z.object({ name: z.string() }) })).default([]),
 });
 
@@ -334,6 +335,8 @@ function createOllama(behavior: OllamaBehavior = {}) {
   const requests: Array<{
     kind: "chat" | "summary" | "vision";
     prompt: string;
+    /** Whether a chat request asked the model to reason. */
+    think?: boolean;
   }> = [];
   let visions = 0;
   async function fetchOllama(_input: RequestInfo | URL, init?: RequestInit) {
@@ -343,6 +346,7 @@ function createOllama(behavior: OllamaBehavior = {}) {
       requests.push({
         kind: "chat",
         prompt: chat.data.messages.at(-1)?.content ?? "",
+        think: chat.data.think,
       });
       return await Promise.resolve(
         behavior.chat === undefined ? answerChat(chat.data) : failChat(behavior.chat),

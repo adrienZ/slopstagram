@@ -20,6 +20,7 @@ import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { getOllamaHost } from "@@/core/domains/vision/ollama.ts";
 import {
   createAssistantTools,
+  writesAnswerAfter,
   type AssistantTools,
   type AssistantToolsRuntime,
 } from "./assistant-tools.ts";
@@ -88,9 +89,18 @@ export async function streamAssistantReply(
 ): Promise<Response> {
   const ollama = createOllama({ baseURL: getOllamaHost(), fetch: runtime.fetchOllama });
   const tools = createAssistantTools(runtime);
-  const model = ollama(getAssistantModel());
+  function chatModel(think: boolean): AssistantModel {
+    const model = ollama(getAssistantModel(), { think });
+    return runtime.wrapModel?.(model) ?? model;
+  }
   const result = streamText({
-    model: runtime.wrapModel?.(model) ?? model,
+    // Reasoning is what lets a small model decide to call the tools.
+    model: chatModel(true),
+    prepareStep: ({ steps }) => {
+      const lastTools = steps.at(-1)?.toolCalls.map(({ toolName }) => toolName) ?? [];
+      // Each tool states, in the registry, whether only the answer is left after its result.
+      return writesAnswerAfter(lastTools) ? { model: chatModel(false) } : undefined;
+    },
     instructions: ASSISTANT_INSTRUCTIONS,
     messages: await convertToModelMessages(messages),
     stopWhen: stepCountIs(MAX_STEPS),

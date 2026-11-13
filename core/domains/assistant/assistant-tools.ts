@@ -7,16 +7,24 @@ import { createSearchTaggedPlacesTool } from "@@/core/domains/places/search-tagg
 import { createGetFeedUserSummariesTool } from "@@/core/domains/story-feed/get-feed-user-summaries.tool.ts";
 
 // A tool module missing from the registry fails `knip --production` as an unused file.
-const assistantTools = {
+
+/** Reasoning is off after a read: with it on, a small model often answers inside its reasoning and sends no text. */
+const readTools = {
   getFeedUserSummaries: createGetFeedUserSummariesTool,
   getTaggedPlace: createGetTaggedPlaceTool,
   listAccounts: createListAccountsTool,
   listTaggedPlaces: createListTaggedPlacesTool,
+};
+
+/** The model keeps reasoning after a lookup, to decide what to read next. */
+const lookupTools = {
   searchAccounts: createSearchAccountsTool,
   searchTaggedPlaces: createSearchTaggedPlacesTool,
 };
 
-type AssistantToolRegistry = typeof assistantTools;
+const assistantToolRegistry = { ...readTools, ...lookupTools };
+
+type AssistantToolRegistry = typeof assistantToolRegistry;
 
 type AssistantToolName = keyof AssistantToolRegistry;
 
@@ -37,6 +45,10 @@ export type AssistantTools = {
 
 export function createAssistantTools(runtime: AssistantToolsRuntime): ToolSet {
   return Object.fromEntries(
-    Object.entries(assistantTools).map(([name, create]) => [name, create(runtime)]),
+    Object.entries(assistantToolRegistry).map(([name, create]) => [name, create(runtime)]),
   );
+}
+
+export function writesAnswerAfter(toolNames: Array<string>): boolean {
+  return toolNames.some((name) => Object.hasOwn(readTools, name));
 }
