@@ -266,31 +266,33 @@ function chatToolCall(name: string, args: JsonValue) {
 
 type ToolArguments = Record<string, JsonValue>;
 
-/** The page of a list or a search the question asks for, from "offset <n>". */
+/** A list or a search asks for a page with a trailing "offset <n>". */
+const pageRequest = /\s+offset\s+(?<offset>\d+)$/iu;
+
 function pageOf(question: string): ToolArguments {
-  const offset = /\boffset\s+(?<offset>\d+)$/iu.exec(question)?.groups?.offset;
+  const offset = pageRequest.exec(question)?.groups?.offset;
   return offset === undefined ? {} : { offset: Number(offset) };
+}
+
+function withoutPage(question: string) {
+  return question.replace(pageRequest, "");
 }
 
 /**
  * For each Assistant tool, the arguments the chat model calls it with for a question, or null when
- * the question is not for that tool. The chat model tries them in this order.
+ * the question is not for that tool.
  */
 type QuestionMatchers = {
   [Name in AssistantToolName]: (question: string, usernames: Array<string>) => ToolArguments | null;
 };
 
-const matchQuestion: QuestionMatchers = {
+const questionMatchers: QuestionMatchers = {
+  getFeedUserSummaries: (_question, usernames) => (usernames.length > 0 ? { usernames } : null),
   getTaggedPlace: (question) => {
     const id = /^(?:place|lieu)\s+(?<id>\S+)$/iu.exec(question)?.groups?.id;
     return id === undefined ? null : { id };
   },
-  searchTaggedPlaces: (question) => {
-    const query =
-      /^(?:search|cherche)\s+(?:places|lieux)\s+(?<query>.+?)(?:\s+offset\s+\d+)?$/iu.exec(question)
-        ?.groups?.query;
-    return query === undefined ? null : { query, ...pageOf(question) };
-  },
+  listAccounts: (question) => (/\b(?:accounts|comptes)\b/iu.test(question) ? {} : null),
   listTaggedPlaces: (question, usernames) => {
     if (!/\b(?:places|lieux)\b/iu.test(question)) {
       return null;
@@ -301,22 +303,45 @@ const matchQuestion: QuestionMatchers = {
     }
     return args;
   },
-  getFeedUserSummaries: (_question, usernames) => (usernames.length > 0 ? { usernames } : null),
   searchAccounts: (question) => {
     const query = /^(?:search|cherche)\s+(?<query>.+)$/iu.exec(question)?.groups?.query;
     return query === undefined ? null : { query };
   },
-  listAccounts: (question) => (/\b(?:accounts|comptes)\b/iu.test(question) ? {} : null),
+  searchTaggedPlaces: (question) => {
+    const query = /^(?:search|cherche)\s+(?:places|lieux)\s+(?<query>.+)$/iu.exec(
+      withoutPage(question),
+    )?.groups?.query;
+    return query === undefined ? null : { query, ...pageOf(question) };
+  },
 };
 
+type MissingTools<Names extends ReadonlyArray<AssistantToolName>> = Exclude<
+  AssistantToolName,
+  Names[number]
+>;
+
+/** Lists every Assistant tool: leaving one out fails to compile and names it. */
+function everyTool<const Names extends ReadonlyArray<AssistantToolName>>(
+  names: Names &
+    ([MissingTools<Names>] extends [never] ? unknown : { missing: MissingTools<Names> }),
+): Names {
+  return names;
+}
+
+/** Several matchers accept the same question, so the chat model calls the first one in this order. */
+const matcherPrecedence = everyTool([
+  "getTaggedPlace",
+  "searchTaggedPlaces",
+  "listTaggedPlaces",
+  "getFeedUserSummaries",
+  "searchAccounts",
+  "listAccounts",
+]);
+
 /**
- * The chat model, in Ollama's streamed wire format. It calls the tools it is offered: a Tagged
- * place when the message is "place <id>", a search of the places when it starts with
- * "search places", the places (of its `@username`s, from "offset <n>") when it asks about
- * places, the user summaries of the `@username`s of the last user message, a search of the
- * accounts when the message starts with "search", or the accounts when the message asks
- * about accounts. Like a small model, it also invents a tool it was not offered: a weather
- * tool when the message starts with "weather". It answers once it has a tool result, and
+ * The chat model, in Ollama's streamed wire format. It calls the first offered tool whose matcher
+ * accepts the last user message. Like a small model, it also invents a tool it was not offered: a
+ * weather tool when the message starts with "weather". It answers once it has a tool result, and
  * greets any other message without a tool.
  */
 function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>) {
@@ -331,8 +356,8 @@ function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>
   const usernames = [...question.matchAll(/@(?<username>[\w.]+)/gu)].map(
     ({ groups }) => groups?.username ?? "",
   );
-  for (const [name, match] of Object.entries(matchQuestion)) {
-    const args = offered.has(name) ? match(question, usernames) : null;
+  for (const name of matcherPrecedence) {
+    const args = offered.has(name) ? questionMatchers[name](question, usernames) : null;
     if (args !== null) {
       return chatToolCall(name, args);
     }
