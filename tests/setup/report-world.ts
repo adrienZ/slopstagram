@@ -7,6 +7,7 @@ import type {
   AssistantToolName,
   AssistantTools,
 } from "@@/core/domains/assistant/assistant-tools.ts";
+import { findMentions } from "@@/app/utils/mentions.ts";
 import { JsonValueSchema, type JsonValue } from "@@/core/utils/json-value.ts";
 import { createReport } from "@@/core/domains/fetch-run/report.ts";
 import type { RuntimeBoundaries } from "@@/core/domains/runtime/runtime.ts";
@@ -268,7 +269,6 @@ function chatToolCall(name: string, args: JsonValue) {
   });
 }
 
-/** A list or a search asks for a page with a trailing "offset <n>". */
 const pageRequest = /\s+offset\s+(?<offset>\d+)$/iu;
 
 function pageOf(question: string): { offset?: number } {
@@ -280,16 +280,15 @@ function withoutPage(text: string) {
   return text.replace(pageRequest, "");
 }
 
-function mentionedUsernames(question: string) {
-  return [...question.matchAll(/@(?<username>[\w.]+)/gu)].map(
-    ({ groups }) => groups?.username ?? "",
-  );
+function mentionsOf(question: string): { usernames?: Array<string> } {
+  const usernames = findMentions(question).map(({ username }) => username);
+  return usernames.length === 0 ? {} : { usernames };
 }
 
-/**
- * The input the chat model calls a tool with for a question, or null when the question is not for
- * that tool.
- */
+function searchQueryOf(question: string) {
+  return /^(?:search|cherche)\s+(?<query>.+)$/iu.exec(question)?.groups?.query;
+}
+
 type QuestionMatcher = {
   [Name in AssistantToolName]: {
     tool: Name;
@@ -322,7 +321,7 @@ const questionMatchers = forEveryTool([
   {
     tool: "searchTaggedPlaces",
     match: (question) => {
-      const query = /^(?:search|cherche)\s+(?:places|lieux)\s+(?<query>.+)$/iu.exec(question)
+      const query = /^(?:places|lieux)\s+(?<query>.+)$/iu.exec(searchQueryOf(question) ?? "")
         ?.groups?.query;
       return query === undefined ? null : { query: withoutPage(query), ...pageOf(question) };
     },
@@ -333,21 +332,20 @@ const questionMatchers = forEveryTool([
       if (!/\b(?:places|lieux)\b/iu.test(question)) {
         return null;
       }
-      const usernames = mentionedUsernames(question);
-      return usernames.length > 0 ? { ...pageOf(question), usernames } : pageOf(question);
+      return { ...pageOf(question), ...mentionsOf(question) };
     },
   },
   {
     tool: "getFeedUserSummaries",
     match: (question) => {
-      const usernames = mentionedUsernames(question);
-      return usernames.length > 0 ? { usernames } : null;
+      const { usernames } = mentionsOf(question);
+      return usernames === undefined ? null : { usernames };
     },
   },
   {
     tool: "searchAccounts",
     match: (question) => {
-      const query = /^(?:search|cherche)\s+(?<query>.+)$/iu.exec(question)?.groups?.query;
+      const query = searchQueryOf(question);
       return query === undefined ? null : { query };
     },
   },
