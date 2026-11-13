@@ -37,7 +37,10 @@ The chat shows each tool call as one collapsed tool trace: the tool's name and w
 asked, which opens on what the tool read. The Assistant's answer is the display; the result
 stays behind the trace. Rendering it as a card next to the answer showed the same content twice,
 and a small model does not hold back from restating a result when the prompt asks it to. The
-tool descriptions tell the model so, in the same words.
+Assistant's instructions tell the model so, once: how the chat shows a result is a fact of the
+chat, not of the tool, so no tool description repeats it. A description says what the tool
+returns, when to use it or not, and what its outcomes mean; how to write the answer, such as
+never inventing data or writing a place as a link, is in the instructions.
 
 ## Amended on 2026-11-11: the registry and the views record
 
@@ -55,8 +58,9 @@ Assistant needs and the chat message type are derived from the registry.
 
 On the chat page, one record over every tool name states how the tool is shown: its icon, the
 body of its result, and the Tagged places its output names, or explicitly none. A tool without
-a view or a scripted answer in the tests' fake chat model does not compile, and a tool module
-that is neither a read nor a lookup tool is reported by `knip --production`. A tool
-the page does not know shows its tool trace only. The app reads the Assistant domain through its
-types only, outside the server routes, and never imports a tool module; a lint rule enforces it,
-so the AI SDK, the tool schemas and the repositories stay out of the browser bundle.
+a view or a scripted answer in the tests' fake chat model does not compile, the evals' expected
+tools are typed with the registry's names, and a tool module missing from the registry is
+reported by `knip --production`. A tool the page does not know shows its tool trace only. The
+app reads the Assistant domain through its types only, outside the server routes, and never
+imports a tool module; a lint rule enforces it, so the AI SDK, the tool schemas and the
+repositories stay out of the browser bundle.

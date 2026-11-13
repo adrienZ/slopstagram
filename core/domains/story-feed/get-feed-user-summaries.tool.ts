@@ -11,12 +11,11 @@ const DESCRIPTION = `Returns the user summaries of one or more Instagram account
 Use it when the message mentions one or more accounts, usually as @username, and asks what they posted, did or shared recently, today or in the last 24 hours, or compares, filters or ranks them: who posted what, who talks about a subject, whether accounts are together, which one is local.
 Do not use it to list or discover the accounts, or for a message that names no account.
 
-The result lists, in the order asked, each "requestedUsername" with its "handle" (the account written as @username: copy it as is when you name the account) and its "outcome", whose "status" is:
+The result lists, in the order asked, each "requestedUsername" with its "handle" (@username: copy it as is to name the account) and its "outcome", whose "status" is:
 - "found": "summary" is the stored user summary and "storyCount" the number of stories in the last 24 hours.
 - "missing" with reason "no_stories_in_last_24h": the account published no story in the last 24 hours.
 - "missing" with reason "not_generated": the account has stories, but their summary is not generated yet; it will be after the next fetch run.
-- "error" with error "unknown_account": no account has this username.
-The chat hides this result from the user behind a collapsed line: write the answer yourself from the summaries only, and never invent one.`;
+- "error" with error "unknown_account": no account has this username.`;
 
 /** The Assistant tool reading the story feed's user summaries of accounts. Read-only. */
 export function createGetFeedUserSummariesTool(runtime: FeedUserSummaryRuntime) {
