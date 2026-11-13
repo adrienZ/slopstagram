@@ -28,6 +28,8 @@ const config: KnipConfig = {
     "bunqueue-dashboard",
     // Spawned by nitro/plugins/warm-cache.ts.
     "bunqueue",
+    // dependency-cruiser's parser (.dependency-cruiser.mjs), loaded by name.
+    "@swc/core",
   ],
 };
 

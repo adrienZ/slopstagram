@@ -17,14 +17,15 @@
     "db:generate": "drizzle-kit generate",
     "lint": "oxlint",
     "knip": "knip && knip --production",
-    "check": "npm run format && npm run lint && npm run knip && npm run test",
-    "check:ci": "npm run format:check && npm run lint && npm run knip && npm run test:reporter && npm run build",
+    "check": "npm run format && npm run lint && npm run depcruise && npm run knip && npm run test",
+    "check:ci": "npm run format:check && npm run lint && npm run depcruise && npm run knip && npm run test:reporter && npm run build",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "test": "vitest run --coverage",
     "test:reporter": "vitest run --coverage --coverage.reportOnFailure --coverage.reporter=text --coverage.reporter=lcov --reporter=default --reporter=junit --outputFile.junit=./reporter.xml",
     "eval": "evalite run --outputPath=./evalite-export/last-run.json",
-    "eval:export": "evalite export --output=./evalite-export"
+    "eval:export": "evalite export --output=./evalite-export",
+    "depcruise": "depcruise app core scripts evals tests nitro --config .dependency-cruiser.mjs"
   },
   "dependencies": {
     "@ai-sdk/react": "4.0.166",
@@ -62,6 +63,7 @@
   },
   "devDependencies": {
     "@playwright/cli": "^0.1.22",
+    "@swc/core": "^1.16.20",
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
@@ -81,6 +83,7 @@
     "better-sqlite3": "11.10.0",
     "bunqueue-dashboard": "^1.1.0",
     "css.escape": "^1.5.1",
+    "dependency-cruiser": "^18.7.0",
     "drizzle-kit": "^1.0.0-rc.5-ab785fc",
     "evalite": "1.0.0-beta.16",
     "husky": "^9.1.7",
