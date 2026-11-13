@@ -43,8 +43,8 @@ returning an AI SDK `tool` with an English description for agents, an input sche
 never writes; errors are typed outcomes in the output.
 
 Add each tool to the Assistant tool registry, `core/domains/assistant/assistant-tools.ts`, as a read
-tool or a lookup tool, under the key its file is named after. The `assistant-tool-registry` lint
-rule fails on a tool module missing from the registry or listed under another name.
+tool or a lookup tool, under the key its file is named after. `knip --production` reports a tool
+module missing from the registry as an unused file.
 
 ## Repositories
 

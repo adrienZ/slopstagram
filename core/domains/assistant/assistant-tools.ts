@@ -9,8 +9,8 @@ import { createGetFeedUserSummariesTool } from "@@/core/domains/story-feed/get-f
 /*
  * The Assistant tool registry: the only list of the Assistant tools, each created from the runtime
  * narrowed to what it reads. Each one lives in the domain whose data it reads, in a module named
- * after its key (`listAccounts` in `list-accounts.tool.ts`). The `assistant-tool-registry` lint
- * rule checks both, and that every tool module of the domains is listed here.
+ * after its key (`listAccounts` in `list-accounts.tool.ts`). `knip --production` reports a tool
+ * module missing from here as an unused file.
  */
 
 /**
@@ -37,7 +37,7 @@ const assistantTools = { ...readTools, ...lookupTools };
 
 type AssistantToolRegistry = typeof assistantTools;
 
-export type AssistantToolName = keyof AssistantToolRegistry;
+type AssistantToolName = keyof AssistantToolRegistry;
 
 type UnionToIntersection<Union> = (Union extends unknown ? (value: Union) => void : never) extends (
   value: infer Intersection,

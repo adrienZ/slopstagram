@@ -148,11 +148,6 @@ export default defineConfig({
       rules: { "no-restricted-imports": restrictImports([], { root: true }) },
     },
     {
-      // The Assistant tool registry, the only list of the Assistant tools.
-      files: ["core/domains/assistant/assistant-tools.ts"],
-      rules: { "slopstagram/assistant-tool-registry": "error" },
-    },
-    {
       // The only importer of its helpers.
       files: ["core/domains/database/repositories/story-repository.ts"],
       rules: {
