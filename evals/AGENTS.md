@@ -5,7 +5,7 @@ answers French questions through the chat route handler, over the synthetic repo
 tests. It fails when the average score is under `scoreThreshold` in `evalite.config.ts`, the
 baseline of the default chat model: raise it when the model improves.
 
-- The cases are split by area, one eval file each: `story-feed`, `accounts`, `places` and
+- The cases are split by area, one eval file each: `story-feed`, `accounts`, `places`, `mention-connections` and
   `greeting` (`evals/<area>.eval.ts`), declared through `defineAssistantEvals`
   (`evals/assistant-cases.ts`). Run one with a file filter, e.g. `npm run eval -- places`
   (Evalite takes a single filter): the threshold then applies to the cases that ran.

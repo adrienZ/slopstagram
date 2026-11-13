@@ -27,8 +27,8 @@ Every folder below lives in `domains/`.
 - `vision/`: the Ollama client, vision analysis, Apple OCR and the Apple caption step.
 - `accounts/`: user summaries, Instagram user persistence and report user keys.
 - `story-feed/`: the story feed, story days, the feed user summary read and its Assistant tool.
-- `mention-connections/`: the Mention connections derived from the stored mention stickers, and how
-  their labels resolve to Accounts.
+- `mention-connections/`: the Mention connections derived from the stored mention stickers, how
+  their labels resolve to Accounts, and the Assistant tools that read them.
 - `assistant/`: the chat Assistant. It composes the Assistant tools of the domains below it,
   holds the instructions and streams the reply. No tool-owning domain imports it.
 - `fetch-run/`: the fetch run pipeline, reports, story fetching, the story cache and the hourly
