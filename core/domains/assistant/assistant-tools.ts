@@ -22,7 +22,15 @@ const lookupTools = {
   searchTaggedPlaces: createSearchTaggedPlacesTool,
 };
 
-const assistantToolRegistry = { ...readTools, ...lookupTools };
+/** Every tool is in exactly one group: a tool in both does not compile. */
+function sortTools<Read extends object, Lookup extends object>(
+  read: Read,
+  lookup: Lookup & { [Name in keyof Read & keyof Lookup]: never },
+): Read & Lookup {
+  return { ...read, ...lookup };
+}
+
+const assistantToolRegistry = sortTools(readTools, lookupTools);
 
 type AssistantToolRegistry = typeof assistantToolRegistry;
 
