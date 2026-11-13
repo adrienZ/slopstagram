@@ -10,8 +10,10 @@ type ExportNode =
 
 // The app reaches the Assistant through its module's types; only the server routes call it. A tool
 // module is reached only through the Assistant module, which composes it
-// (docs/adr/0007-assistant-tools-live-in-their-domain.md). Type-only imports are erased at build
-// time, so the AI SDK, the tool schemas and the repositories never reach the browser bundle.
+// (docs/adr/0007-assistant-tools-live-in-their-domain.md). `import type` declarations are erased at
+// build time, so the AI SDK, the tool schemas and the repositories never reach the browser bundle.
+// Inline `type` specifiers are not: under verbatimModuleSyntax, `import { type A } from "x"` still
+// compiles to `import "x"`, which loads the module.
 const appFile = /\/app\//u;
 const serverRoute = /\/app\/routes\/api\//u;
 const assistantModule = /\/core\/domains\/assistant\//u;
@@ -24,24 +26,8 @@ function resolveTarget(file: string, source: string): string {
   return source.startsWith(".") ? path.posix.resolve(path.posix.dirname(file), source) : source;
 }
 
-function isTypeOnly(node: ImportNode | ExportNode): boolean {
-  if (node.type === "ExportAllDeclaration") {
-    return node.exportKind === "type";
-  }
-  if (node.type === "ExportNamedDeclaration") {
-    return (
-      node.exportKind === "type" ||
-      (node.specifiers.length > 0 &&
-        node.specifiers.every((specifier) => specifier.exportKind === "type"))
-    );
-  }
-  return (
-    node.importKind === "type" ||
-    (node.specifiers.length > 0 &&
-      node.specifiers.every(
-        (specifier) => specifier.type === "ImportSpecifier" && specifier.importKind === "type",
-      ))
-  );
+function isErased(node: ImportNode | ExportNode): boolean {
+  return (node.type === "ImportDeclaration" ? node.importKind : node.exportKind) === "type";
 }
 
 const assistantClientSeam = {
@@ -49,12 +35,12 @@ const assistantClientSeam = {
     type: "problem",
     docs: {
       description:
-        "Allow the app only type imports of the Assistant module, outside server routes, and no import of a tool module.",
+        "Allow the app only `import type` declarations of the Assistant module, outside server routes, and no import of a tool module.",
     },
     schema: [],
     messages: {
       assistantValue:
-        "Only server routes (app/routes/api) may import values from core/domains/assistant: import its types with `import type`. See docs/adr/0007-assistant-tools-live-in-their-domain.md.",
+        "Only server routes (app/routes/api) may import values from core/domains/assistant: import its types with an `import type` declaration, not inline `type` specifiers. See docs/adr/0007-assistant-tools-live-in-their-domain.md.",
       toolModule:
         "The app never imports an Assistant tool module (*.tool.ts): go through core/domains/assistant. See docs/adr/0007-assistant-tools-live-in-their-domain.md.",
     },
@@ -72,7 +58,7 @@ const assistantClientSeam = {
       const target = resolveTarget(context.filename, source);
       if (toolModule.test(target)) {
         context.report({ messageId: "toolModule", node });
-      } else if (!isServerRoute && assistantModule.test(target) && !isTypeOnly(node)) {
+      } else if (!isServerRoute && assistantModule.test(target) && !isErased(node)) {
         context.report({ messageId: "assistantValue", node });
       }
     }

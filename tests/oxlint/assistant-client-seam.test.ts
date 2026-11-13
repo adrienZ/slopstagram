@@ -18,9 +18,14 @@ new RuleTester().run("assistant-client-seam", assistantClientSeam, {
       filename: "/repo/app/components/chat-panel.tsx",
     },
     {
-      name: "a client helper reads the tool names as inline type specifiers",
-      code: 'import { type AssistantToolName } from "@@/core/domains/assistant/assistant-tools.ts";',
-      filename: "/repo/app/utils/place-mentions.ts",
+      name: "a component re-exports the chat message type",
+      code: 'export type { AssistantUIMessage } from "@@/core/domains/assistant/assistant.ts";',
+      filename: "/repo/app/components/chat-views.tsx",
+    },
+    {
+      name: "a component re-exports every type of the Assistant module",
+      code: 'export type * from "@@/core/domains/assistant/assistant.ts";',
+      filename: "/repo/app/components/chat-views.tsx",
     },
     {
       name: "the chat route streams the Assistant's reply on the server",
@@ -43,6 +48,18 @@ new RuleTester().run("assistant-client-seam", assistantClientSeam, {
       name: "a component imports the Assistant module as a value",
       code: 'import { streamAssistantReply } from "@@/core/domains/assistant/assistant.ts";',
       filename: "/repo/app/components/chat-panel.tsx",
+      errors: [{ messageId: "assistantValue" }],
+    },
+    {
+      name: "a client helper reads the tool names as inline type specifiers, which still load the module",
+      code: 'import { type AssistantToolName } from "@@/core/domains/assistant/assistant-tools.ts";',
+      filename: "/repo/app/utils/place-mentions.ts",
+      errors: [{ messageId: "assistantValue" }],
+    },
+    {
+      name: "a component re-exports a type as an inline specifier, which still loads the module",
+      code: 'export { type AssistantUIMessage } from "@@/core/domains/assistant/assistant.ts";',
+      filename: "/repo/app/components/chat-views.tsx",
       errors: [{ messageId: "assistantValue" }],
     },
     {
