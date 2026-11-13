@@ -218,6 +218,18 @@ test("searching a place traces the search, which lists the matches or says there
   expect(screen.getByText("Aucun lieu trouvé.")).toBeVisible();
 });
 
+test("a tool the model invents still shows as a trace line with what it was asked", async (context) => {
+  const chat = await mountChat(await fetchedWorld(context));
+
+  await chat.ask("Météo Synthetic City");
+
+  await screen.findByText("answer");
+  expect(screen.getByText("readTheWeather")).toBeVisible();
+  expect(screen.getByText('{"city":"Synthetic City"}')).toBeVisible();
+  // The page has no view of the tool: the trace line does not open.
+  expect(screen.queryByRole("button", { name: /^readTheWeather\b/u })).not.toBeInTheDocument();
+});
+
 test("a greeting is answered without reading any data", async (context) => {
   const chat = await mountChat(await fetchedWorld(context));
 

@@ -1,3 +1,7 @@
+---
+status: amended by issue #339
+---
+
 # Assistant tools live in the domain whose data they read
 
 The chat Assistant reads the application's data through Assistant tools. We could have
@@ -29,4 +33,35 @@ it. The story feed domain may now import the accounts domain, so that the story 
 user summary tool can resolve an account; the accounts domain never imports the story
 feed, which keeps the dependency one-way.
 
-The chat does not render a tool's result: it traces the call, and the Assistant's answer is the only display. Rendering the result as a card as well showed the same content twice, and a small model does not hold back from restating a result when the prompt asks it to.
+The chat shows each tool call as one collapsed tool trace: the tool's name and what it was
+asked, which opens on what the tool read. The Assistant's answer is the display; the result
+stays behind the trace. Rendering it as a card next to the answer showed the same content twice,
+and a small model does not hold back from restating a result when the prompt asks it to. The
+Assistant's instructions tell the model so, once: how the chat shows a result is a fact of the
+chat, not of the tool, so no tool description repeats it. A description says what the tool
+returns, when to use it or not, and what its outcomes mean; how to write the answer, such as
+never inventing data or writing a place as a link, is in the instructions.
+
+## Amended on 2026-11-11: the registry and the views record
+
+Amended by [issue #339](https://github.com/adrienZ/slopstagram/issues/339), part of
+[issue #313](https://github.com/adrienZ/slopstagram/issues/313). The paragraph above on the
+tool trace replaces one that said the chat does not render a tool's result.
+
+Adding a tool used to mean editing many files that repeated the list of tools by hand, and
+forgetting some of them failed silently. The Assistant domain now holds the only list of
+Assistant tools, a registry. It lists each tool as a read tool, after whose result the model
+writes the answer, or a lookup tool, after whose result it keeps reasoning. That step policy is
+the Assistant's fact about the model's loop, not the tool's: a tool still lives in its domain,
+returns data and never UI, and does not import the Assistant domain as a value. The tool names,
+the runtime the Assistant needs and the chat message type are derived from the registry.
+
+On the chat page, one record over every tool name states how the tool is shown: its icon and the
+body of its result. Another, next to the Place mentions, states the Tagged places each tool's
+output names, or explicitly none. A tool without a view, a places decision or a scripted answer
+in the tests' fake chat model does not compile, the evals' expected tools are typed with the
+registry's names, and a tool module missing from the registry is reported by
+`knip --production`. A tool the page does not know shows its tool trace only. The app reads the
+Assistant domain through its types only, outside the server routes, and never imports a tool
+module; a lint rule enforces it, so the AI SDK, the tool schemas and the repositories stay out of
+the browser bundle.

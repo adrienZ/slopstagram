@@ -1,9 +1,50 @@
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import {
+  DefaultChatTransport,
+  getStaticToolName,
+  isDynamicToolUIPart,
+  isStaticToolUIPart,
+  type DynamicToolUIPart,
+} from "ai";
 import { useState } from "react";
 import type { AssistantUIMessage } from "@@/core/domains/assistant/assistant.ts";
+import type { AssistantToolName } from "@@/core/domains/assistant/assistant-tools.ts";
 
 const transport = new DefaultChatTransport<AssistantUIMessage>({ api: "/api/chat" });
+
+export type AssistantPart = AssistantUIMessage["parts"][number];
+
+type ToolParts = {
+  [Name in AssistantToolName]: Extract<AssistantPart, { type: `tool-${Name}` }>;
+};
+
+type OutputOf<Part> = Part extends { state: "output-available"; output: infer Output }
+  ? Output
+  : never;
+
+export type ToolOutput<Name extends AssistantToolName> = OutputOf<ToolParts[Name]>;
+
+/**
+ * A tool call of an Assistant message. An invalid call is one the Assistant could not run: the
+ * model invented the tool, or gave it an input its schema refuses.
+ */
+export type ToolCall =
+  | {
+      invalid: false;
+      name: AssistantToolName;
+      part: Exclude<Extract<AssistantPart, { toolCallId: string }>, DynamicToolUIPart>;
+    }
+  | { invalid: true; name: string; part: DynamicToolUIPart };
+
+export function toolCallOf(part: AssistantPart): ToolCall | undefined {
+  if (isStaticToolUIPart(part)) {
+    return { invalid: false, name: getStaticToolName(part), part };
+  }
+  if (isDynamicToolUIPart(part)) {
+    return { invalid: true, name: part.toolName, part };
+  }
+  return undefined;
+}
 
 /** The conversation with the Assistant, and the message being typed. */
 export function useAssistantChat() {
