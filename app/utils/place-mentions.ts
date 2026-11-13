@@ -22,10 +22,13 @@ function placeOf({ id, name }: MentionablePlace): MentionablePlace {
 
 const placesNamedByTool: PlacesNamedByTool = {
   getFeedUserSummaries: null,
+  getMentionConnection: null,
   getTaggedPlace: (output) => (output.status === "found" ? [placeOf(output.place)] : []),
   listAccounts: null,
+  listMentionConnections: null,
   listTaggedPlaces: (output) => output.places.map(placeOf),
   searchAccounts: null,
+  searchMentionConnections: null,
   searchTaggedPlaces: (output) => output.places.map(placeOf),
 };
 

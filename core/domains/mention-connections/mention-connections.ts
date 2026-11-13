@@ -1,6 +1,7 @@
 import type { InstagramUserEntry } from "@@/core/domains/database/entities/instagram-user.ts";
 import type { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
 import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
+import { normalizeSearchQuery } from "@@/core/utils/search-text.ts";
 
 export interface MentionConnectionsRuntime {
   stories: Pick<StoryRepository, "listMentionOccurrences">;
@@ -65,7 +66,7 @@ interface MentionObservation {
   mentionedId: MentionTargetId;
 }
 
-interface MentionConnection {
+export interface MentionConnection {
   id: string;
   /** Sorted, so their order says nothing of who mentioned whom: the observations do. */
   targetIds: [MentionTargetId, MentionTargetId];
@@ -102,7 +103,10 @@ function toConnectionTargetIds(
 function createMentionTargetResolver(accounts: Array<InstagramUserEntry>) {
   const accountsByUsername = Map.groupBy(accounts, ({ username }) => username.toLowerCase());
 
-  return function resolveMentionTarget({ label, storyPk }: MentionOccurrence): MentionTarget {
+  return function resolveMentionTarget({
+    label,
+    storyPk,
+  }: Pick<MentionOccurrence, "label" | "storyPk">): MentionTarget {
     if (!label.startsWith("@")) {
       return {
         kind: "name",
@@ -211,4 +215,52 @@ export function filterByAccounts(graph: MentionConnections, usernames: Array<str
     unknownUsernames,
     graph: selectedIds.size === 0 ? graph : keepNeighborhoods(graph, selectedIds),
   };
+}
+
+/** An Account's full name, or the one a name-only sticker carries. */
+export function fullNameOf(target: MentionTarget): string | null {
+  if (target.kind === "name") {
+    return target.label;
+  }
+  return target.kind === "account" ? target.fullName : null;
+}
+
+/**
+ * Whom a target id, a username or a full name names, by the rules a mention sticker follows: a
+ * username, with or without `@` and ignoring case, names its one Account, or the username itself
+ * when no Account or several have it, as long as an Account or a sticker has it. Otherwise every
+ * Account and name-only observation with exactly this full name, ignoring case and accents, so
+ * equal names on different stories come back apart. Empty when nothing matches.
+ */
+export function findMentionTargets(
+  runtime: Pick<MentionConnectionsRuntime, "users">,
+  { targets }: Pick<MentionConnections, "targets">,
+  query: string,
+): Array<MentionTarget> {
+  const wanted = query.trim();
+  const accounts = runtime.users.listAll();
+  const target =
+    targets.find(({ id }) => id === wanted) ??
+    accounts.map(toAccountTarget).find(({ id }) => id === wanted);
+  if (target !== undefined) {
+    return [target];
+  }
+  const username = wanted.replace(/^@/u, "").toLowerCase();
+  if (
+    accounts.some((account) => account.username.toLowerCase() === username) ||
+    targets.some(({ id }) => id === `username:${username}`)
+  ) {
+    return [createMentionTargetResolver(accounts)({ label: `@${username}`, storyPk: "" })];
+  }
+  const name = normalizeSearchQuery(wanted);
+  if (name === "") {
+    return [];
+  }
+  return [
+    ...targets.filter(({ kind }) => kind === "name"),
+    ...accounts.map(toAccountTarget),
+  ].filter((candidate) => {
+    const fullName = fullNameOf(candidate);
+    return fullName !== null && normalizeSearchQuery(fullName) === name;
+  });
 }

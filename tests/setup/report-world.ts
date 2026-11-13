@@ -312,6 +312,40 @@ function forEveryTool<const Matchers extends ReadonlyArray<QuestionMatcher>>(
 /** Several matchers accept the same question, so the chat model calls the first one in this order. */
 const questionMatchers = forEveryTool([
   {
+    tool: "getMentionConnection",
+    match: (question) => {
+      const people = /^connection\s+(?<firstPerson>.+?)\s+and\s+(?<secondPerson>.+)$/iu.exec(
+        withoutPage(question),
+      )?.groups;
+      return people === undefined
+        ? null
+        : {
+            firstPerson: people.firstPerson,
+            secondPerson: people.secondPerson,
+            ...pageOf(question),
+          };
+    },
+  },
+  {
+    tool: "searchMentionConnections",
+    match: (question) => {
+      const query = /^mentions\s+(?<query>.+)$/iu.exec(searchQueryOf(question) ?? "")?.groups
+        ?.query;
+      return query === undefined ? null : { query: withoutPage(query), ...pageOf(question) };
+    },
+  },
+  {
+    tool: "listMentionConnections",
+    match: (question) => {
+      if (!/\bmentions\b/iu.test(question)) {
+        return null;
+      }
+      const person = /\bmentions\s+of\s+(?<person>.+?)\??$/iu.exec(withoutPage(question))?.groups
+        ?.person;
+      return person === undefined ? pageOf(question) : { person, ...pageOf(question) };
+    },
+  },
+  {
     tool: "getTaggedPlace",
     match: (question) => {
       const id = /^(?:place|lieu)\s+(?<id>\S+)$/iu.exec(question)?.groups?.id;
