@@ -1,6 +1,7 @@
 import { toolCallAccuracy } from "evalite/scorers/deterministic";
 import { z } from "zod";
 import { findMentions } from "../app/utils/mentions.ts";
+import type { AssistantToolName } from "../core/domains/assistant/assistant-tools.ts";
 import type { FeedUserSummary } from "../core/domains/story-feed/feed-user-summary.ts";
 import { RequestedFeedUserSummariesSchema } from "../core/domains/story-feed/feed-user-summary.ts";
 import type { JsonObject, JsonValue } from "../core/utils/json-value.ts";
@@ -39,14 +40,7 @@ export function describeOutcome(read: FeedUserSummary): FeedUserSummaryOutcome {
 /** What a case expects from the Assistant. */
 export interface AssistantExpectation {
   /** The tools the Assistant should call, each at least once and no other: none to answer without a tool. */
-  tools: Array<
-    | "getFeedUserSummaries"
-    | "getTaggedPlace"
-    | "listAccounts"
-    | "listTaggedPlaces"
-    | "searchAccounts"
-    | "searchTaggedPlaces"
-  >;
+  tools: Array<AssistantToolName>;
   /** The only username the tool should be called with. */
   username?: string;
   /** The outcome every getFeedUserSummaries result should have. */

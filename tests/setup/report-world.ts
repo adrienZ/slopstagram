@@ -2,6 +2,12 @@ import { readFile } from "node:fs/promises";
 import { expect, type TestContext } from "vitest";
 import sharp from "sharp";
 import { z } from "zod";
+import type { InferToolInput } from "ai";
+import type {
+  AssistantToolName,
+  AssistantTools,
+} from "@@/core/domains/assistant/assistant-tools.ts";
+import { findMentions } from "@@/app/utils/mentions.ts";
 import { JsonValueSchema, type JsonValue } from "@@/core/utils/json-value.ts";
 import { createReport } from "@@/core/domains/fetch-run/report.ts";
 import type { RuntimeBoundaries } from "@@/core/domains/runtime/runtime.ts";
@@ -263,40 +269,96 @@ function chatToolCall(name: string, args: JsonValue) {
   });
 }
 
-/** The place tool call the chat model makes for a question about places, if any. */
-function callPlaceTool(question: string, usernames: Array<string>, offered: Set<string>) {
-  const args: Record<string, JsonValue> = {};
-  const offset = /\boffset\s+(?<offset>\d+)$/iu.exec(question)?.groups?.offset;
-  if (offset !== undefined) {
-    args.offset = Number(offset);
-  }
-  const id = /^(?:place|lieu)\s+(?<id>\S+)$/iu.exec(question)?.groups?.id;
-  if (id !== undefined && offered.has("getTaggedPlace")) {
-    return chatToolCall("getTaggedPlace", { id });
-  }
-  const query =
-    /^(?:search|cherche)\s+(?:places|lieux)\s+(?<query>.+?)(?:\s+offset\s+\d+)?$/iu.exec(question)
-      ?.groups?.query;
-  if (query !== undefined && offered.has("searchTaggedPlaces")) {
-    return chatToolCall("searchTaggedPlaces", { query, ...args });
-  }
-  if (/\b(?:places|lieux)\b/iu.test(question) && offered.has("listTaggedPlaces")) {
-    if (usernames.length > 0) {
-      args.usernames = usernames;
-    }
-    return chatToolCall("listTaggedPlaces", args);
-  }
-  return null;
+const pageRequest = /\s+offset\s+(?<offset>\d+)$/iu;
+
+function pageOf(question: string): { offset?: number } {
+  const offset = pageRequest.exec(question)?.groups?.offset;
+  return offset === undefined ? {} : { offset: Number(offset) };
 }
 
+function withoutPage(text: string) {
+  return text.replace(pageRequest, "");
+}
+
+function mentionsOf(question: string): { usernames?: Array<string> } {
+  const usernames = findMentions(question).map(({ username }) => username);
+  return usernames.length === 0 ? {} : { usernames };
+}
+
+function searchQueryOf(question: string) {
+  return /^(?:search|cherche)\s+(?<query>.+)$/iu.exec(question)?.groups?.query;
+}
+
+type QuestionMatcher = {
+  [Name in AssistantToolName]: {
+    tool: Name;
+    match: (question: string) => InferToolInput<AssistantTools[Name]> | null;
+  };
+}[AssistantToolName];
+
+type MissingTools<Matchers extends ReadonlyArray<QuestionMatcher>> = Exclude<
+  AssistantToolName,
+  Matchers[number]["tool"]
+>;
+
+/** Leaving a tool out fails to compile and names it. */
+function forEveryTool<const Matchers extends ReadonlyArray<QuestionMatcher>>(
+  matchers: Matchers &
+    ([MissingTools<Matchers>] extends [never] ? unknown : { missing: MissingTools<Matchers> }),
+): Matchers {
+  return matchers;
+}
+
+/** Several matchers accept the same question, so the chat model calls the first one in this order. */
+const questionMatchers = forEveryTool([
+  {
+    tool: "getTaggedPlace",
+    match: (question) => {
+      const id = /^(?:place|lieu)\s+(?<id>\S+)$/iu.exec(question)?.groups?.id;
+      return id === undefined ? null : { id };
+    },
+  },
+  {
+    tool: "searchTaggedPlaces",
+    match: (question) => {
+      const query = /^(?:places|lieux)\s+(?<query>.+)$/iu.exec(searchQueryOf(question) ?? "")
+        ?.groups?.query;
+      return query === undefined ? null : { query: withoutPage(query), ...pageOf(question) };
+    },
+  },
+  {
+    tool: "listTaggedPlaces",
+    match: (question) => {
+      if (!/\b(?:places|lieux)\b/iu.test(question)) {
+        return null;
+      }
+      return { ...pageOf(question), ...mentionsOf(question) };
+    },
+  },
+  {
+    tool: "getFeedUserSummaries",
+    match: (question) => {
+      const { usernames } = mentionsOf(question);
+      return usernames === undefined ? null : { usernames };
+    },
+  },
+  {
+    tool: "searchAccounts",
+    match: (question) => {
+      const query = searchQueryOf(question);
+      return query === undefined ? null : { query };
+    },
+  },
+  {
+    tool: "listAccounts",
+    match: (question) => (/\b(?:accounts|comptes)\b/iu.test(question) ? {} : null),
+  },
+]);
+
 /**
- * The chat model, in Ollama's streamed wire format. It calls the tools it is offered: a Tagged
- * place when the message is "place <id>", a search of the places when it starts with
- * "search places", the places (of its `@username`s, from "offset <n>") when it asks about
- * places, the user summaries of the `@username`s of the last user message, a search of the
- * accounts when the message starts with "search", or the accounts when the message asks
- * about accounts. Like a small model, it also invents a tool it was not offered: a weather
- * tool when the message starts with "weather". It answers once it has a tool result, and
+ * The chat model, in Ollama's streamed wire format. It calls the first offered tool whose matcher
+ * accepts the last user message. Like a small model, it also invents a tool it was not offered: a
+ * weather tool when the message starts with "weather". It answers once it has a tool result, and
  * greets any other message without a tool.
  */
 function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>) {
@@ -308,22 +370,11 @@ function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>
   }
   const offered = new Set(tools.map((tool) => tool.function.name));
   const question = messages.findLast(({ role }) => role === "user")?.content ?? "";
-  const usernames = [...question.matchAll(/@(?<username>[\w.]+)/gu)].map(
-    ({ groups }) => groups?.username ?? "",
-  );
-  const placeCall = callPlaceTool(question, usernames, offered);
-  if (placeCall !== null) {
-    return placeCall;
-  }
-  if (usernames.length > 0 && offered.has("getFeedUserSummaries")) {
-    return chatToolCall("getFeedUserSummaries", { usernames });
-  }
-  const query = /^(?:search|cherche)\s+(?<query>.+)$/iu.exec(question)?.groups?.query;
-  if (query !== undefined && offered.has("searchAccounts")) {
-    return chatToolCall("searchAccounts", { query });
-  }
-  if (/\b(?:accounts|comptes)\b/iu.test(question) && offered.has("listAccounts")) {
-    return chatToolCall("listAccounts", {});
+  for (const { tool, match } of questionMatchers) {
+    const input = offered.has(tool) ? match(question) : null;
+    if (input !== null) {
+      return chatToolCall(tool, JsonValueSchema.parse(input));
+    }
   }
   const city = /^(?:weather|météo)\s+(?<city>.+)$/iu.exec(question)?.groups?.city;
   if (city !== undefined) {
