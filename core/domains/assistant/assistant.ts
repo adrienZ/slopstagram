@@ -98,7 +98,6 @@ export async function streamAssistantReply(
     model: chatModel(true),
     prepareStep: ({ steps }) => {
       const lastTools = steps.at(-1)?.toolCalls.map(({ toolName }) => toolName) ?? [];
-      // The registry's step policy: only the answer is left after a read tool's result.
       return writesAnswerAfter(lastTools) ? { model: chatModel(false) } : undefined;
     },
     instructions: ASSISTANT_INSTRUCTIONS,

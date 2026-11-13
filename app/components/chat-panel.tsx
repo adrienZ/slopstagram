@@ -1,6 +1,6 @@
 import { BrainIcon, SendIcon } from "lucide-react";
 import type { AssistantUIMessage } from "@@/core/domains/assistant/assistant.ts";
-import { toolCallOf, useAssistantChat } from "../hooks/use-assistant-chat.ts";
+import { toolCallOf, useAssistantChat, type AssistantPart } from "../hooks/use-assistant-chat.ts";
 import { useMentionSuggestions } from "../hooks/use-mention-suggestions.ts";
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
 import { Bubble, BubbleContent } from "../shadcn/ui/bubble.tsx";
@@ -31,8 +31,6 @@ import { ChatMarkdown } from "./chat-markdown.tsx";
 import { MentionBackdrop, MentionedText, MentionSuggestionList } from "./chat-mentions.tsx";
 import { ToolTrace } from "./assistant-tool-views.tsx";
 import { findReadPlaces, type MentionablePlace } from "../utils/place-mentions.ts";
-
-type AssistantPart = AssistantUIMessage["parts"][number];
 
 function AssistantPartView({
   accounts,

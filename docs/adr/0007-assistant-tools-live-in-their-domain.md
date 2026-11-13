@@ -51,16 +51,17 @@ tool trace replaces one that said the chat does not render a tool's result.
 Adding a tool used to mean editing many files that repeated the list of tools by hand, and
 forgetting some of them failed silently. The Assistant domain now holds the only list of
 Assistant tools, a registry. It lists each tool as a read tool, after whose result the model
-writes the answer, or a lookup tool, after whose result it keeps reasoning. That step policy is the Assistant's
-fact about the model's loop, not the tool's: a tool still lives in its domain, returns data and
-never UI, and does not import the Assistant domain as a value. The tool names, the runtime the
-Assistant needs and the chat message type are derived from the registry.
+writes the answer, or a lookup tool, after whose result it keeps reasoning. That step policy is
+the Assistant's fact about the model's loop, not the tool's: a tool still lives in its domain,
+returns data and never UI, and does not import the Assistant domain as a value. The tool names,
+the runtime the Assistant needs and the chat message type are derived from the registry.
 
-On the chat page, one record over every tool name states how the tool is shown: its icon, the
-body of its result, and the Tagged places its output names, or explicitly none. A tool without
-a view or a scripted answer in the tests' fake chat model does not compile, the evals' expected
-tools are typed with the registry's names, and a tool module missing from the registry is
-reported by `knip --production`. A tool the page does not know shows its tool trace only. The
-app reads the Assistant domain through its types only, outside the server routes, and never
-imports a tool module; a lint rule enforces it, so the AI SDK, the tool schemas and the
-repositories stay out of the browser bundle.
+On the chat page, one record over every tool name states how the tool is shown: its icon and the
+body of its result. Another, next to the Place mentions, states the Tagged places each tool's
+output names, or explicitly none. A tool without a view, a places decision or a scripted answer
+in the tests' fake chat model does not compile, the evals' expected tools are typed with the
+registry's names, and a tool module missing from the registry is reported by
+`knip --production`. A tool the page does not know shows its tool trace only. The app reads the
+Assistant domain through its types only, outside the server routes, and never imports a tool
+module; a lint rule enforces it, so the AI SDK, the tool schemas and the repositories stay out of
+the browser bundle.

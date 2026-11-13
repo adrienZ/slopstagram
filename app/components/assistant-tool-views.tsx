@@ -7,7 +7,6 @@ import {
   UsersIcon,
   WrenchIcon,
 } from "lucide-react";
-import type { AssistantUIMessage } from "@@/core/domains/assistant/assistant.ts";
 import type { AssistantToolName } from "@@/core/domains/assistant/assistant-tools.ts";
 import {
   TraceCollapsible,
@@ -21,57 +20,34 @@ import {
 import { AccountList } from "./account-list.tsx";
 import { FeedUserSummariesDetails } from "./feed-user-summaries-details.tsx";
 import { TaggedPlaceDetails, TaggedPlaceList } from "./tagged-places-details.tsx";
-import type { ToolCall } from "../hooks/use-assistant-chat.ts";
-import type { MentionablePlace } from "../utils/place-mentions.ts";
-
-type AssistantPart = AssistantUIMessage["parts"][number];
-
-type ToolParts = {
-  [Name in AssistantToolName]: Extract<AssistantPart, { type: `tool-${Name}` }>;
-};
-
-type OutputOf<Part> = Part extends { state: "output-available"; output: infer Output }
-  ? Output
-  : never;
-
-export type ToolOutput<Name extends AssistantToolName> = OutputOf<ToolParts[Name]>;
+import type { ToolCall, ToolOutput } from "../hooks/use-assistant-chat.ts";
 
 /** How the chat shows a call of one Assistant tool. */
 interface AssistantToolView<Name extends AssistantToolName> {
   icon: ReactNode;
   /** What the tool read, behind its trace line. Without it, the trace line does not open. */
   Result?: (props: { output: ToolOutput<Name> }) => ReactNode;
-  /** The Tagged places the tool's output names, or null when the tool names none. */
-  places: ((output: ToolOutput<Name>) => Array<MentionablePlace>) | null;
 }
 
 /** One view for every Assistant tool: a tool without a view does not compile. */
 type AssistantToolViews = { [Name in AssistantToolName]: AssistantToolView<Name> };
 
-function placeOf({ id, name }: MentionablePlace): MentionablePlace {
-  return { id, name };
-}
-
-export const assistantToolViews: AssistantToolViews = {
+const assistantToolViews: AssistantToolViews = {
   getFeedUserSummaries: {
     icon: <UserSearchIcon />,
     Result: ({ output }) => <FeedUserSummariesDetails results={output} />,
-    places: null,
   },
   getTaggedPlace: {
     icon: <MapPinIcon />,
     Result: ({ output }) => <TaggedPlaceDetails read={output} />,
-    places: (output) => (output.status === "found" ? [placeOf(output.place)] : []),
   },
   listAccounts: {
     icon: <UsersIcon />,
     Result: ({ output }) => <AccountList listed={output.accounts} />,
-    places: null,
   },
   listTaggedPlaces: {
     icon: <MapPinnedIcon />,
     Result: ({ output }) => <TaggedPlaceList places={output.places} total={output.total} />,
-    places: (output) => output.places.map(placeOf),
   },
   searchAccounts: {
     icon: <SearchIcon />,
@@ -82,7 +58,6 @@ export const assistantToolViews: AssistantToolViews = {
         listed={output.accounts}
       />
     ),
-    places: null,
   },
   searchTaggedPlaces: {
     icon: <SearchIcon />,
@@ -94,7 +69,6 @@ export const assistantToolViews: AssistantToolViews = {
         total={output.total}
       />
     ),
-    places: (output) => output.places.map(placeOf),
   },
 };
 
@@ -105,6 +79,7 @@ function getToolStatus(state: ToolCall["part"]["state"]): "error" | "running" | 
   return state === "output-available" ? undefined : "running";
 }
 
+/** Generic over the name, so TypeScript pairs a tool's view with that tool's output. */
 function ToolResult<Name extends AssistantToolName>({
   name,
   output,
