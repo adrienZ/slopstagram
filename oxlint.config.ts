@@ -41,6 +41,29 @@ const privateRepositoryHelpers: RestrictedPattern = {
     "story-repository.<aspect>.ts holds helpers private to story-repository.ts. Call the repository method instead of importing the helper.",
 };
 
+const loaderOnlyDatabase: RestrictedPattern = {
+  group: ["@@/core/domains/database/repositories/*", "@@/core/domains/database/*"],
+  allowTypeImports: true,
+  message:
+    "Pages and components get their data from a loader. Import types only, not repositories or the database client.",
+};
+
+// Only `import type` declarations keep the AI SDK, the tool schemas and the repositories out of the
+// browser bundle: under verbatimModuleSyntax an inline `import { type A }` still loads the module,
+// which typescript/no-import-type-side-effects and typescript/consistent-type-exports forbid.
+const assistantTypesOnly: RestrictedPattern = {
+  group: ["**/core/domains/assistant/**"],
+  allowTypeImports: true,
+  message:
+    "Only server routes (app/routes/api) may import values from core/domains/assistant: use `import type`. See docs/adr/0007-assistant-tools-live-in-their-domain.md.",
+};
+
+const noAssistantToolModule: RestrictedPattern = {
+  group: ["**/*.tool", "**/*.tool.ts"],
+  message:
+    "The app never imports an Assistant tool module (*.tool.ts): go through core/domains/assistant. See docs/adr/0007-assistant-tools-live-in-their-domain.md.",
+};
+
 // Only the composition root, core/domains/runtime, builds what holds state: the repositories, the database and the stores.
 const compositionRootPaths: Array<RestrictedPath> = [
   {
@@ -135,7 +158,6 @@ export default defineConfig({
     "slopstagram/no-barrel-files": "error",
     "slopstagram/domain-layering": "error",
     "slopstagram/ai-sdk-imports": "error",
-    "slopstagram/assistant-client-seam": "error",
   },
   overrides: [
     {
@@ -171,13 +193,17 @@ export default defineConfig({
       files: ["app/routes/**", "app/components/**", "app/hooks/**", "app/utils/**"],
       rules: {
         "no-restricted-imports": restrictImports([
-          {
-            group: ["@@/core/domains/database/repositories/*", "@@/core/domains/database/*"],
-            allowTypeImports: true,
-            message:
-              "Pages and components get their data from a loader. Import types only, not repositories or the database client.",
-          },
+          loaderOnlyDatabase,
+          assistantTypesOnly,
+          noAssistantToolModule,
         ]),
+      },
+    },
+    {
+      // Server routes call the Assistant.
+      files: ["app/routes/api/**"],
+      rules: {
+        "no-restricted-imports": restrictImports([loaderOnlyDatabase, noAssistantToolModule]),
       },
     },
     {
