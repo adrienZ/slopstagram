@@ -170,10 +170,20 @@ it, such as the accounts or an account's user summary.
 _Avoid_: Function, action, skill
 
 **Assistant tool registry**:
-The only list of the Assistant tools, in the Assistant. It sorts them into read tools, after
-whose result the Assistant writes its answer, and lookup tools, which search and after whose
-result it keeps reasoning to decide what to read.
+The only list of the Assistant tools, in the Assistant. It sorts them into read tools and
+lookup tools, which search: that is their step policy.
 _Avoid_: Tool list, tool catalog
+
+**Tool trace**:
+The collapsed line the chat shows for one Assistant tool call: the tool's name and what it
+was asked, opening on what the tool read. The Assistant's answer, not the trace, is what
+the user reads.
+_Avoid_: Tool card, tool result view
+
+**Step policy**:
+What the Assistant does after an Assistant tool's result: write the answer after a read tool,
+or keep reasoning after a lookup tool, to decide what to read. It belongs to the Assistant, not
+to the tool.
 
 **Mention**:
 An `@username` of an account written in a chat message. It is not a sticker: the

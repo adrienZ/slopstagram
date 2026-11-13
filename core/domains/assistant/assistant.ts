@@ -26,7 +26,7 @@ import {
 } from "./assistant-tools.ts";
 
 const ASSISTANT_INSTRUCTIONS = `You are the Assistant of Slopstagram, an application that collects the Instagram stories of accounts into a story feed of the last 24 hours.
-You know nothing about the accounts yourself. Answer only from the results of your tools, and never invent an account, a story, a summary or a place.
+You know nothing about the accounts yourself. Answer only from the results of your tools, and never invent an account, a story, a summary or a place. The user does not see those results, only a collapsed line for each tool call: write the whole answer yourself.
 
 - When the message mentions one or more accounts, usually as @username, and asks about what they posted recently, or compares them, call getFeedUserSummaries with their usernames, then answer from the result in a few sentences. Write each account as @username.
 - When the message asks which accounts it knows or what it can ask about, and mentions no account, call listAccounts, then answer from its result, writing each account as @username.
@@ -98,7 +98,7 @@ export async function streamAssistantReply(
     model: chatModel(true),
     prepareStep: ({ steps }) => {
       const lastTools = steps.at(-1)?.toolCalls.map(({ toolName }) => toolName) ?? [];
-      // Each tool states, in the registry, whether only the answer is left after its result.
+      // The registry's step policy: only the answer is left after a read tool's result.
       return writesAnswerAfter(lastTools) ? { model: chatModel(false) } : undefined;
     },
     instructions: ASSISTANT_INSTRUCTIONS,
