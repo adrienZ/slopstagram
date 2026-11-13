@@ -290,13 +290,14 @@ function callPlaceTool(question: string, usernames: Array<string>, offered: Set<
 }
 
 /**
- * The chat model, in Ollama's streamed wire format. It calls only the tools it is offered:
- * a Tagged place when the message is "place <id>", a search of the places when it starts with
+ * The chat model, in Ollama's streamed wire format. It calls the tools it is offered: a Tagged
+ * place when the message is "place <id>", a search of the places when it starts with
  * "search places", the places (of its `@username`s, from "offset <n>") when it asks about
  * places, the user summaries of the `@username`s of the last user message, a search of the
  * accounts when the message starts with "search", or the accounts when the message asks
- * about accounts. It answers once it has a tool result, and greets any
- * other message without a tool.
+ * about accounts. Like a small model, it also invents a tool it was not offered: a weather
+ * tool when the message starts with "weather". It answers once it has a tool result, and
+ * greets any other message without a tool.
  */
 function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>) {
   // Only a tool result of the last question: earlier turns keep theirs in the conversation.
@@ -323,6 +324,10 @@ function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>
   }
   if (/\b(?:accounts|comptes)\b/iu.test(question) && offered.has("listAccounts")) {
     return chatToolCall("listAccounts", {});
+  }
+  const city = /^(?:weather|météo)\s+(?<city>.+)$/iu.exec(question)?.groups?.city;
+  if (city !== undefined) {
+    return chatToolCall("readTheWeather", { city });
   }
   return chatMessage({ content: assistantGreeting, role: "assistant" });
 }

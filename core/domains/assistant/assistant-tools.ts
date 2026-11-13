@@ -26,7 +26,7 @@ const assistantToolRegistry = { ...readTools, ...lookupTools };
 
 type AssistantToolRegistry = typeof assistantToolRegistry;
 
-type AssistantToolName = keyof AssistantToolRegistry;
+export type AssistantToolName = keyof AssistantToolRegistry;
 
 type UnionToIntersection<Union> = (Union extends unknown ? (value: Union) => void : never) extends (
   value: infer Intersection,
