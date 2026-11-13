@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { expect, test } from "vitest";
 import { stories } from "@@/core/domains/database/entities/story.ts";
 import { readMentionConnections } from "@@/core/domains/mention-connections/mention-connections.ts";
@@ -9,6 +9,7 @@ import {
   graphAccountFullName,
   graphAccounts,
   graphStories,
+  laterCleoStories,
   lonelyAccount,
   mentionedName,
   seedGraphDatabase,
@@ -23,17 +24,17 @@ const ambiguous = `@${ambiguousUsername} (plusieurs comptes)`;
 /** Each connection as its two labels, in the loader's order, and its story count. */
 function describeConnections({ points, connections }: MentionGraphPageData) {
   const labels = new Map(points.map(({ id, label }) => [id, label]));
-  return connections.map(({ source, target, storyCount }) => [
+  return connections.map(({ source, target, storyPks }) => [
     labels.get(source),
     labels.get(target),
-    storyCount,
+    storyPks.length,
   ]);
 }
 
 test("connects each story's author to whom its stickers name, one line per pair", () => {
   // Newest story first: the third account's, then the second's, then the first's.
   expect(describeConnections(loadMentionGraph(shared.runtime))).toStrictEqual([
-    [ada, cleo, 1],
+    [ada, cleo, 5],
     [ben, cleo, 1],
     [cleo, unknown, 1],
     [cleo, mentionedName, 1],
@@ -118,12 +119,52 @@ test("a connection disappears with the last of its source stories", async (conte
   expect(describeConnections(loadMentionGraph(runtime))).toContainEqual([ada, ben, 1]);
   runtime.database.delete(stories).where(eq(stories.mediaPk, graphStories.ada)).run();
   expect(describeConnections(loadMentionGraph(runtime))).toStrictEqual([
-    [ada, cleo, 1],
+    [ada, cleo, 5],
     [ben, cleo, 1],
     [cleo, unknown, 1],
     [cleo, mentionedName, 1],
     [cleo, ambiguous, 1],
   ]);
-  runtime.database.delete(stories).where(eq(stories.mediaPk, graphStories.cleo)).run();
-  expect(loadMentionGraph(runtime)).toStrictEqual({ points: [], connections: [] });
+  runtime.database
+    .delete(stories)
+    .where(inArray(stories.mediaPk, [graphStories.cleo, ...laterCleoStories]))
+    .run();
+  expect(loadMentionGraph(runtime)).toStrictEqual({ points: [], connections: [], stories: [] });
+});
+
+/** Each connection as its two labels and its source stories, newest first. */
+function describeSourceStories({ points, connections }: MentionGraphPageData) {
+  const labels = new Map(points.map(({ id, label }) => [id, label]));
+  return connections.map(({ source, target, storyPks }) => [
+    labels.get(source),
+    labels.get(target),
+    storyPks,
+  ]);
+}
+
+test("a connection's source stories are those where one end mentioned the other, each once", () => {
+  expect(describeSourceStories(loadMentionGraph(shared.runtime))).toStrictEqual([
+    // The oldest of the later stories names the first account twice.
+    [ada, cleo, [...laterCleoStories, graphStories.cleo]],
+    [ben, cleo, [graphStories.cleo]],
+    [cleo, unknown, [graphStories.cleo]],
+    [cleo, mentionedName, [graphStories.cleo]],
+    [cleo, ambiguous, [graphStories.cleo]],
+    // The third account's story names both, which connects neither to the other.
+    [ada, ben, [graphStories.ben, graphStories.ada]],
+    [ada, unknown, [graphStories.ada]],
+    [ada, mentionedName, [graphStories.ada]],
+  ]);
+});
+
+test("every source story comes with its card, previewed through the Media store", () => {
+  const { stories: cards } = loadMentionGraph(shared.runtime);
+  expect(cards.map(({ mediaPk }) => mediaPk).toSorted()).toStrictEqual(
+    [...Object.values(graphStories), ...laterCleoStories].toSorted(),
+  );
+  expect(cards.find(({ mediaPk }) => mediaPk === graphStories.ben)).toMatchObject({
+    username: graphAccounts[1],
+    preview: `/media/story-previews/${graphStories.ben}.jpg`,
+    avatar: "/media/avatars/700000000000062.jpg",
+  });
 });

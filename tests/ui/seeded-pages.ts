@@ -180,6 +180,13 @@ export const graphStories = {
   ben: "700000000000090",
   cleo: "700000000000100",
 } as const;
+/** Newer stories of the third account, newest first, that mention only the first account. */
+export const laterCleoStories = [
+  "700000000000129",
+  "700000000000122",
+  "700000000000116",
+  "700000000000107",
+] as const;
 
 function mentionStickers(mentions: Array<{ username?: string; full_name?: string }>) {
   return mentions.map((mention) => ({ bloks_sticker: { sticker_data: { ig_mention: mention } } }));
@@ -208,6 +215,13 @@ const mentionsByStory = new Map<string, ReturnType<typeof mentionStickers>>([
       { username: ambiguousUsername },
     ]),
   ],
+  [laterCleoStories[0], mentionStickers([{ username: adaGraph }])],
+  [laterCleoStories[1], mentionStickers([{ username: adaGraph }])],
+  [laterCleoStories[2], mentionStickers([{ username: adaGraph }])],
+  [
+    laterCleoStories[3],
+    mentionStickers([{ username: adaGraph }, { username: adaGraph.toUpperCase() }]),
+  ],
 ]);
 
 /**
@@ -215,7 +229,8 @@ const mentionsByStory = new Map<string, ReturnType<typeof mentionStickers>>([
  * through production ingestion, with the mention stickers the recording lacks. The first account
  * mentions the second twice, in another case, then itself, an unknown username and a name; the
  * second mentions the first back; the third mentions both, the unknown username in upper case,
- * the same name, and a username two saved Accounts share.
+ * the same name, and a username two saved Accounts share, then mentions the first in four
+ * newer stories, twice in the oldest of them.
  */
 export async function seedGraphDatabase(runtime: Runtime): Promise<void> {
   const recorded = editRecordedUsers(
@@ -229,9 +244,12 @@ export async function seedGraphDatabase(runtime: Runtime): Promise<void> {
   );
   await seedRecordedStories(
     runtime,
-    editRecordedStories(keepRecordedStories(recorded, Object.values(graphStories)), (story) => {
-      story.story_bloks_stickers = mentionsByStory.get(story.pk) ?? [];
-    }),
+    editRecordedStories(
+      keepRecordedStories(recorded, [...Object.values(graphStories), ...laterCleoStories]),
+      (story) => {
+        story.story_bloks_stickers = mentionsByStory.get(story.pk) ?? [];
+      },
+    ),
     { publishedBefore: { now: pageNow, seconds: PUBLISHED_BEFORE_SECONDS } },
   );
   // The recording has no Accounts without stories, nor two usernames that differ only in case.
