@@ -4,7 +4,9 @@ import type { StoryRepository } from "@@/core/domains/database/repositories/stor
 import type { VisionRepository } from "@@/core/domains/database/repositories/vision-repository.ts";
 import { media } from "@@/core/domains/media-store/media-urls.ts";
 import {
+  keepNeighborhoods,
   readMentionConnections,
+  type MentionConnections,
   type MentionConnectionsRuntime,
   type MentionTarget,
 } from "@@/core/domains/mention-connections/mention-connections.ts";
@@ -48,25 +50,59 @@ function toGraphPoint(target: MentionTarget): MentionGraphPoint {
   };
 }
 
+/**
+ * The Accounts the graph can be filtered by: those it draws, by username. Filters naming any
+ * other username are skipped whole, so a shared URL never shows a partial graph as the one asked.
+ */
+function applyAccountFilters(graph: MentionConnections, requested: Array<string>) {
+  const accounts = graph.targets
+    .flatMap((target) => (target.kind === "account" ? [target] : []))
+    .toSorted((left, right) => left.username.localeCompare(right.username));
+  const idByUsername = new Map(accounts.map(({ username, id }) => [username, id]));
+  const unknownAccounts = [...new Set(requested)].filter((username) => !idByUsername.has(username));
+  const selectedIds = new Set(
+    unknownAccounts.length > 0
+      ? []
+      : requested.flatMap((username) => idByUsername.get(username) ?? []),
+  );
+  return {
+    accounts: accounts.map(({ pk, username }) => ({
+      username,
+      avatarPath: media.image.avatar(pk).url,
+    })),
+    selectedAccounts: accounts.flatMap(({ id, username }) =>
+      selectedIds.has(id) ? [username] : [],
+    ),
+    unknownAccounts,
+    graph: selectedIds.size === 0 ? graph : keepNeighborhoods(graph, selectedIds),
+  };
+}
+
 /** `source` and `target` only name the two ends: who mentioned whom is in the source stories. */
-export function loadMentionGraph(runtime: MentionGraphRuntime) {
-  const { targets, connections } = readMentionConnections(runtime);
-  const points = targets.map(toGraphPoint);
+export function loadMentionGraph(runtime: MentionGraphRuntime, accountFilters: Array<string> = []) {
+  const { graph, ...filters } = applyAccountFilters(
+    readMentionConnections(runtime),
+    accountFilters,
+  );
+  const points = graph.targets.map(toGraphPoint);
   const labelById = new Map(points.map(({ id, label }) => [id, label]));
-  const graphConnections = connections.map(({ id, targetIds: [source, target], observations }) => ({
-    id,
-    source,
-    target,
-    labels: [labelById.get(source) ?? source, labelById.get(target) ?? target] as const,
-    storyPks: observations.map(({ storyPk }) => storyPk),
-  }));
+  const connections = graph.connections.map(
+    ({ id, targetIds: [source, target], observations }) => ({
+      id,
+      source,
+      target,
+      labels: [labelById.get(source) ?? source, labelById.get(target) ?? target] as const,
+      storyPks: observations.map(({ storyPk }) => storyPk),
+    }),
+  );
   const sources = runtime.stories.listTimelineStories([
-    ...new Set(graphConnections.flatMap(({ storyPks }) => storyPks)),
+    ...new Set(connections.flatMap(({ storyPks }) => storyPks)),
   ]);
   const sidebarUsers = loadSidebarUsers(runtime);
   return {
+    ...filters,
     points,
-    connections: graphConnections,
+    connections,
     stories: [...Map.groupBy(sources, ({ owner_pk }) => owner_pk).values()].flatMap((owned) =>
       createOwnerStoryCards(runtime, owned, sidebarUsers),
     ),

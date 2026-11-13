@@ -166,3 +166,29 @@ export function readMentionConnections(runtime: MentionConnectionsRuntime): Ment
 
   return { targets: [...targets.values()], connections: [...connections.values()] };
 }
+
+/**
+ * The neighborhoods of the given points: each of them, the points it shares a connection with,
+ * and every connection between two of those points, so neighbors' own connections show too.
+ * Points and connections keep their order.
+ */
+export function keepNeighborhoods(
+  { targets, connections }: MentionConnections,
+  centerIds: ReadonlySet<string>,
+): MentionConnections {
+  const kept = new Set(centerIds);
+  for (const {
+    targetIds: [first, second],
+  } of connections) {
+    if (centerIds.has(first)) {
+      kept.add(second);
+    }
+    if (centerIds.has(second)) {
+      kept.add(first);
+    }
+  }
+  return {
+    targets: targets.filter(({ id }) => kept.has(id)),
+    connections: connections.filter(({ targetIds }) => targetIds.every((id) => kept.has(id))),
+  };
+}

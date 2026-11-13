@@ -225,16 +225,9 @@ const mentionsByStory = new Map<string, ReturnType<typeof mentionStickers>>([
   ],
 ]);
 
-/**
- * Seeds a runtime's database with what the mention graph shows: one story per recorded account
- * through production ingestion, with the mention stickers the recording lacks. The first account
- * mentions the second twice, in another case, then itself, an unknown username and a name; the
- * second mentions the first back; the third mentions both, the unknown username in upper case,
- * the same name, and a username two saved Accounts share.
- */
-export async function seedGraphDatabase(
+async function seedGraph(
   runtime: Runtime,
-  storyPks: Array<string> = [...Object.values(graphStories), ...cleoStoriesMentioningAda],
+  mentions: Map<string, ReturnType<typeof mentionStickers>>,
   { undatedStoryPks = [] }: { undatedStoryPks?: Array<string> } = {},
 ): Promise<void> {
   const recorded = editRecordedUsers(
@@ -248,8 +241,8 @@ export async function seedGraphDatabase(
   );
   await seedRecordedStories(
     runtime,
-    editRecordedStories(keepRecordedStories(recorded, storyPks), (story) => {
-      story.story_bloks_stickers = mentionsByStory.get(story.pk) ?? [];
+    editRecordedStories(keepRecordedStories(recorded, [...mentions.keys()]), (story) => {
+      story.story_bloks_stickers = mentions.get(story.pk) ?? [];
       if (undatedStoryPks.includes(story.pk)) {
         delete story.taken_at;
       }
@@ -265,4 +258,49 @@ export async function seedGraphDatabase(
     // oxlint-disable-next-line no-await-in-loop -- Three inserts, saved in order.
     await runtime.users.save({ full_name: null, id: pk, pk, username });
   }
+}
+
+/**
+ * Seeds a runtime's database with what the mention graph shows: one story per recorded account
+ * through production ingestion, with the mention stickers the recording lacks. The first account
+ * mentions the second twice, in another case, then itself, an unknown username and a name; the
+ * second mentions the first back; the third mentions both, the unknown username in upper case,
+ * the same name, and a username two saved Accounts share.
+ */
+export async function seedGraphDatabase(
+  runtime: Runtime,
+  storyPks: Array<string> = [...mentionsByStory.keys()],
+  options?: Parameters<typeof seedGraph>[2],
+): Promise<void> {
+  await seedGraph(
+    runtime,
+    new Map([...mentionsByStory].filter(([pk]) => storyPks.includes(pk))),
+    options,
+  );
+}
+
+/** Saved without a story: an Account only the filter graph mentions. */
+export const filterAccount = "eve_graph";
+/** A newer story of the third account, which mentions it and the plain graph leaves out. */
+export const filterAccountStory = "700000000000900";
+
+/**
+ * Seeds the graph of `seedGraphDatabase` plus one Account whose only neighbor is the third
+ * account, so that two filtered neighborhoods differ: the second account's holds the first and
+ * the third, this Account's only the third.
+ */
+export async function seedFilterGraphDatabase(runtime: Runtime): Promise<void> {
+  await seedGraph(
+    runtime,
+    new Map([
+      ...mentionsByStory,
+      [filterAccountStory, mentionStickers([{ username: filterAccount }])],
+    ]),
+  );
+  await runtime.users.save({
+    full_name: null,
+    id: "700000000000954",
+    pk: "700000000000954",
+    username: filterAccount,
+  });
 }
