@@ -47,15 +47,15 @@ tool trace replaces one that said the chat does not render a tool's result.
 
 Adding a tool used to mean editing many files that repeated the list of tools by hand, and
 forgetting some of them failed silently. The Assistant domain now holds the only list of
-Assistant tools, a registry. Each entry creates its tool and states what the model does after
-the tool's result: write the answer, or keep reasoning. That step policy is the Assistant's
-fact about the model's loop, not the tool's: a tool still lives in its domain, returns data and
-never UI, and does not import the Assistant domain as a value. The tool names, the runtime the
+Assistant tools, a registry. Each entry creates its tool from the runtime narrowed to what it
+reads. The model is offered every tool at every step and stops calling them when it can answer;
+no entry changes that loop. A tool still lives in its domain, returns data and never UI, and
+does not import the Assistant domain as a value. The tool names, the runtime the
 Assistant needs and the chat message type are derived from the registry.
 
 On the chat page, one record over every tool name states how the tool is shown: its icon, the
 body of its result, and the Tagged places its output names, or explicitly none. A tool without
-a view, a step policy or a scripted answer in the tests' fake chat model does not compile. A tool
+a view or a scripted answer in the tests' fake chat model does not compile. A tool
 the page does not know shows its tool trace only. The app reads the Assistant domain through its
 types only, outside the server routes, and never imports a tool module; a lint rule enforces it,
 so the AI SDK, the tool schemas and the repositories stay out of the browser bundle.
