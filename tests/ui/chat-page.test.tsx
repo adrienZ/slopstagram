@@ -11,6 +11,7 @@ import {
   now,
   placeId,
 } from "../setup/report-world.ts";
+import { seedLongConnectionGraphDatabase } from "./seeded-pages.ts";
 
 beforeEach(() => {
   // The Assistant reads the story feed of the current time.
@@ -216,6 +217,79 @@ test("searching a place traces the search, which lists the matches or says there
   const [, louvreSearch] = screen.getAllByRole("button", { name: /^searchTaggedPlaces\b/u });
   await chat.user.click(louvreSearch);
   expect(screen.getByText("Aucun lieu trouvé.")).toBeVisible();
+});
+
+async function mentionWorld(context: TestContext) {
+  const world = await createWorld(context);
+  await seedLongConnectionGraphDatabase(world.runtime);
+  return world;
+}
+
+test("asking for the mention connections traces the read, which lists who mentioned whom", async (context) => {
+  const chat = await mountChat(await mentionWorld(context));
+
+  await chat.ask("Which mentions of ben_graph?");
+
+  await screen.findByText("answer");
+  await chat.user.click(screen.getByRole("button", { name: /^listMentionConnections\b/u }));
+  const items = within(screen.getByRole("list", { name: "Connexions de mention" })).getAllByRole(
+    "listitem",
+  );
+  expect(items.map((item) => item.textContent)).toStrictEqual([
+    "@ben_graph – @cleo_graph · @cleo_graph → @ben_graph (1 story)",
+    "@ben_graph – @ada_graph · @ben_graph → @ada_graph (1 story), @ada_graph → @ben_graph (1 story)",
+  ]);
+});
+
+test("reading a mention connection traces its source stories, and says when there are more", async (context) => {
+  const chat = await mountChat(await mentionWorld(context));
+
+  await chat.ask("Connection cleo_graph and ada_graph");
+
+  await screen.findByText("answer");
+  await chat.user.click(screen.getByRole("button", { name: /^getMentionConnection\b/u }));
+  const read = within(screen.getByRole("region", { name: "Connexion de mention lue" }));
+  expect(read.getByText("@cleo_graph → @ada_graph (7 stories)")).toBeVisible();
+  expect(read.getAllByRole("listitem")).toHaveLength(5);
+  expect(read.getAllByRole("listitem")[0]).toHaveTextContent("26 juil. · @cleo_graph → @ada_graph");
+  expect(read.getByText("7 stories au total.")).toBeVisible();
+});
+
+test("a name several stories carry traces its candidates, and a search lists the people found", async (context) => {
+  const chat = await mountChat(await mentionWorld(context));
+
+  await chat.ask("Connection ada_graph and Fixture name");
+  await screen.findByText("answer");
+  await chat.user.click(screen.getByRole("button", { name: /^getMentionConnection\b/u }));
+  const candidates = within(screen.getByRole("region", { name: "Personnes nommées Fixture name" }));
+  expect(candidates.getByText("2 personnes s’appellent Fixture name.")).toBeVisible();
+  expect(candidates.getAllByRole("listitem").map((item) => item.textContent)).toStrictEqual([
+    "Fixture name · avec @cleo_graph",
+    "Fixture name · avec @ada_graph",
+  ]);
+
+  await chat.ask("Search mentions dup");
+  await vi.waitFor(() => expect(screen.getByRole("button", { name: "Envoyer" })).toBeEnabled());
+  await chat.user.click(screen.getByRole("button", { name: /^searchMentionConnections\b/u }));
+  expect(
+    within(screen.getByRole("list", { name: "Personnes trouvées" })).getByRole("listitem"),
+  ).toHaveTextContent("@dup_graph · 1 connexion · 1 story");
+});
+
+test("a mention read without an observation says so", async (context) => {
+  const chat = await mountChat(await mentionWorld(context));
+
+  await chat.ask("Connection ben_graph and unknown_graph");
+  await screen.findByText("answer");
+  await chat.user.click(screen.getByRole("button", { name: /^getMentionConnection\b/u }));
+  expect(
+    screen.getByText("Aucune story de @ben_graph ne mentionne @unknown_graph, ni l’inverse."),
+  ).toBeVisible();
+
+  await chat.ask("Which mentions of zed?");
+  await vi.waitFor(() => expect(screen.getByRole("button", { name: "Envoyer" })).toBeEnabled());
+  await chat.user.click(screen.getByRole("button", { name: /^listMentionConnections\b/u }));
+  expect(screen.getByText("Personne ne s’appelle zed dans les mentions.")).toBeVisible();
 });
 
 test("a tool the model invents still shows as a trace line with what it was asked", async (context) => {

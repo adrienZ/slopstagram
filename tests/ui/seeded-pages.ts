@@ -292,3 +292,20 @@ export async function seedFilterGraphDatabase(runtime: Runtime): Promise<void> {
     username: filterAccount,
   });
 }
+
+/** Two more stories of the third account, each mentioning the first account only. */
+export const moreCleoStories = ["700000000000906", "700000000000903"] as const;
+
+/**
+ * Seeds the graph of `seedGraphDatabase` with two more stories of the third account mentioning
+ * the first, so that their connection has more source stories than a read of it gives at once.
+ */
+export async function seedLongConnectionGraphDatabase(runtime: Runtime): Promise<void> {
+  await seedGraph(
+    runtime,
+    new Map([
+      ...mentionsByStory,
+      ...moreCleoStories.map((pk) => [pk, mentionStickers([{ username: adaGraph }])] as const),
+    ]),
+  );
+}

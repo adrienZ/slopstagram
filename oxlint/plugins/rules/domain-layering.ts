@@ -24,7 +24,10 @@ const dependencies = new Map<string, Array<string>>([
   // Mention connections derive from the stored stickers and the current Accounts only.
   ["mention-connections", ["database", "utils"]],
   // The Assistant composes the tools of the domains below it; no tool-owning domain imports it.
-  ["assistant", ["accounts", "database", "places", "story-feed", "vision", "utils"]],
+  [
+    "assistant",
+    ["accounts", "database", "mention-connections", "places", "story-feed", "vision", "utils"],
+  ],
   ["fetch-run", ["*"]],
   ["runtime", ["*"]],
 ]);

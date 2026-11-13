@@ -4,6 +4,7 @@ import type {
   MentionOccurrence,
   StoryRepository,
 } from "@@/core/domains/database/repositories/story-repository.ts";
+import { normalizeSearchQuery } from "@@/core/utils/search-text.ts";
 
 /** What reading the Mention connections needs. */
 export interface MentionConnectionsRuntime {
@@ -71,7 +72,7 @@ interface MentionObservation {
 }
 
 /** The Mention connection of one pair of points, whichever of them mentioned the other. */
-interface MentionConnection {
+export interface MentionConnection {
   /** The two point ids, sorted, joined by a space. */
   id: string;
   /** Sorted, so their order says nothing of who mentioned whom: the observations do. */
@@ -101,7 +102,10 @@ function toAccountPoint(account: InstagramUserEntry): AccountPoint {
 function createMentionResolver(accounts: Array<InstagramUserEntry>) {
   const accountsByUsername = Map.groupBy(accounts, ({ username }) => username.toLowerCase());
 
-  return function resolveMentioned({ label, storyPk }: MentionOccurrence): MentionPoint {
+  return function resolveMentioned({
+    label,
+    storyPk,
+  }: Pick<MentionOccurrence, "label" | "storyPk">): MentionPoint {
     if (!label.startsWith("@")) {
       return {
         kind: "name",
@@ -194,4 +198,51 @@ export function keepNeighborhoods(
     points: points.filter(({ id }) => kept.has(id)),
     connections: connections.filter(({ pointIds }) => pointIds.every((id) => kept.has(id))),
   };
+}
+
+/** The full name of a point: an Account's, or the one a name-only sticker carries. */
+export function fullNameOf(point: MentionPoint): string | null {
+  if (point.kind === "name") {
+    return point.label;
+  }
+  return point.kind === "account" ? point.fullName : null;
+}
+
+/**
+ * Whom a point id, a username or a full name names, by the rules a mention sticker follows: a
+ * username, with or without `@` and ignoring case, names its one Account, or the username itself
+ * when no Account or several have it, as long as an Account or a sticker has it. Otherwise every
+ * Account and name-only observation with exactly this full name, ignoring case and accents, so
+ * equal names on different stories come back apart. Empty when nothing matches.
+ */
+export function findMentionPoints(
+  runtime: Pick<MentionConnectionsRuntime, "users">,
+  { points }: Pick<MentionConnections, "points">,
+  query: string,
+): Array<MentionPoint> {
+  const wanted = query.trim();
+  const accounts = runtime.users.listAll();
+  const point =
+    points.find(({ id }) => id === wanted) ??
+    accounts.map(toAccountPoint).find(({ id }) => id === wanted);
+  if (point !== undefined) {
+    return [point];
+  }
+  const username = wanted.replace(/^@/u, "").toLowerCase();
+  if (
+    accounts.some((account) => account.username.toLowerCase() === username) ||
+    points.some(({ id }) => id === `username:${username}`)
+  ) {
+    return [createMentionResolver(accounts)({ label: `@${username}`, storyPk: "" })];
+  }
+  const name = normalizeSearchQuery(wanted);
+  if (name === "") {
+    return [];
+  }
+  return [...points.filter(({ kind }) => kind === "name"), ...accounts.map(toAccountPoint)].filter(
+    (candidate) => {
+      const fullName = fullNameOf(candidate);
+      return fullName !== null && normalizeSearchQuery(fullName) === name;
+    },
+  );
 }

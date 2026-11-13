@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import {
+  AtSignIcon,
   MapPinIcon,
   MapPinnedIcon,
+  NetworkIcon,
   SearchIcon,
   UserSearchIcon,
   UsersIcon,
@@ -19,6 +21,11 @@ import {
 } from "../shadcn/ui/trace.tsx";
 import { AccountList } from "./account-list.tsx";
 import { FeedUserSummariesDetails } from "./feed-user-summaries-details.tsx";
+import {
+  MentionConnectionDetails,
+  MentionConnectionSummaries,
+  MentionPeople,
+} from "./mention-connections-details.tsx";
 import { TaggedPlaceDetails, TaggedPlaceList } from "./tagged-places-details.tsx";
 import type { ToolCall, ToolOutput } from "../hooks/use-assistant-chat.ts";
 
@@ -37,6 +44,10 @@ const assistantToolViews: AssistantToolViews = {
     icon: <UserSearchIcon />,
     Result: ({ output }) => <FeedUserSummariesDetails results={output} />,
   },
+  getMentionConnection: {
+    icon: <AtSignIcon />,
+    Result: ({ output }) => <MentionConnectionDetails read={output} />,
+  },
   getTaggedPlace: {
     icon: <MapPinIcon />,
     Result: ({ output }) => <TaggedPlaceDetails read={output} />,
@@ -44,6 +55,10 @@ const assistantToolViews: AssistantToolViews = {
   listAccounts: {
     icon: <UsersIcon />,
     Result: ({ output }) => <AccountList listed={output.accounts} />,
+  },
+  listMentionConnections: {
+    icon: <NetworkIcon />,
+    Result: ({ output }) => <MentionConnectionSummaries list={output} />,
   },
   listTaggedPlaces: {
     icon: <MapPinnedIcon />,
@@ -58,6 +73,10 @@ const assistantToolViews: AssistantToolViews = {
         listed={output.accounts}
       />
     ),
+  },
+  searchMentionConnections: {
+    icon: <SearchIcon />,
+    Result: ({ output }) => <MentionPeople page={output} />,
   },
   searchTaggedPlaces: {
     icon: <SearchIcon />,

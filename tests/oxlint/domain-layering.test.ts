@@ -36,6 +36,11 @@ new RuleTester().run("domain-layering", domainLayering, {
       code: 'import { createGetFeedUserSummaryTool } from "@@/core/domains/story-feed/get-feed-user-summaries.tool.ts";',
       filename: inDomain("assistant/assistant.ts"),
     },
+    {
+      name: "the Assistant domain composes the Mention connection tools",
+      code: 'import { createGetMentionConnectionTool } from "@@/core/domains/mention-connections/get-mention-connection.tool.ts";',
+      filename: inDomain("assistant/assistant-tools.ts"),
+    },
   ],
   invalid: [
     {

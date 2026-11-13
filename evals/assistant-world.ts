@@ -4,12 +4,15 @@ import { JsonValueSchema } from "../core/utils/json-value.ts";
 import { handleChatRequest } from "../app/routes/api/chat.ts";
 import { listAccounts } from "../core/domains/accounts/accounts.ts";
 import type { AssistantRuntime, AssistantUIMessage } from "../core/domains/assistant/assistant.ts";
+import { listMentionConnections } from "../core/domains/mention-connections/mention-connection-reads.ts";
 import { listTaggedPlaces } from "../core/domains/places/tagged-places.ts";
 import { readFeedUserSummariesByUsername } from "../core/domains/story-feed/feed-user-summary.ts";
 import {
   createWorld,
   imageStoryPk,
+  musicStoryPk,
   placeId,
+  plainStoryPk,
   recordedPayloads,
 } from "../tests/setup/report-world.ts";
 import { createRecordedInstagramClient, editRecordedStories } from "../tests/setup/seed.ts";
@@ -34,8 +37,43 @@ export const worldPlace = { id: `instagram:${placeId}`, name: "Synthetic Cafe" }
 
 export const savedUsernames = [worldAccounts.withoutRecentStories, worldAccounts.withSummary];
 
+/** A full name two stories' mention stickers carry without a username: two people, not one. */
+export const worldMentionedName = "Synthetic Friend";
+
+function mentionStickers(mentions: Array<{ username?: string; full_name?: string }>) {
+  return mentions.map((mention) => ({ bloks_sticker: { sticker_data: { ig_mention: mention } } }));
+}
+
+/**
+ * The mention stickers of the seeded world: user_072 mentions user_008 on both its stories, and
+ * user_008 mentions user_072 back; each of them also names Synthetic Friend once.
+ */
+const worldMentions = new Map([
+  [
+    plainStoryPk,
+    mentionStickers([
+      { username: worldAccounts.withoutRecentStories },
+      { full_name: worldMentionedName },
+    ]),
+  ],
+  [musicStoryPk, mentionStickers([{ username: worldAccounts.withoutRecentStories }])],
+  [
+    imageStoryPk,
+    mentionStickers([{ username: worldAccounts.withSummary }, { full_name: worldMentionedName }]),
+  ],
+]);
+
 function keepDatabaseOpen(): void {
   // The in-memory database lives as long as the eval worker.
+}
+
+function describeMentionConnections(runtime: AssistantRuntime): Array<string> {
+  const list = listMentionConnections(runtime);
+  return list.status === "listed"
+    ? list.connections.map(({ people, storyCount }) =>
+        [...people.map(({ label }) => label), storyCount].join(" "),
+      )
+    : [];
 }
 
 /** Fails when the seeded world no longer gives the outcomes the cases rely on, so a case measures the model and not a seeding change. */
@@ -46,11 +84,17 @@ function checkPremises(runtime: AssistantRuntime, now: Date) {
     ),
     saved: listAccounts(runtime).map(({ username }) => username),
     places: listTaggedPlaces(runtime).places.map(({ id, name }) => ({ id, name })),
+    mentions: describeMentionConnections(runtime),
   });
   const expected = JSON.stringify({
     outcomes: ["found", "no_stories_in_last_24h", "unknown_account"],
     saved: savedUsernames,
     places: [worldPlace],
+    mentions: [
+      "@user_008 @user_072 3",
+      `@user_072 ${worldMentionedName} 1`,
+      `@user_008 ${worldMentionedName} 1`,
+    ],
   });
   if (seeded !== expected) {
     throw new Error(`The seeded world changed: expected ${expected}, got ${seeded}`);
@@ -69,6 +113,7 @@ async function seedAssistantWorld(): Promise<AssistantRuntime> {
     if (story.pk === imageStoryPk && story.taken_at !== undefined) {
       story.taken_at -= DAY_SECONDS;
     }
+    story.story_bloks_stickers = worldMentions.get(story.pk) ?? [];
   });
   const world = await createWorld(
     { onTestFinished: keepDatabaseOpen },
