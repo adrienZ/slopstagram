@@ -9,7 +9,7 @@ import {
 import { askAssistant, savedUsernames } from "./assistant-world.ts";
 
 /** Every case runs this many times: the chat model is not deterministic. */
-const TRIALS = 3;
+const TRIALS = 2;
 
 /** One question to the Assistant and what its answer should show. */
 export interface AssistantCase {

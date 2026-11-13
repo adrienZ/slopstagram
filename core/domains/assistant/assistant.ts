@@ -15,18 +15,15 @@ import {
 } from "ai";
 import { createOllama } from "ai-sdk-ollama";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
-import type { AccountsRuntime } from "@@/core/domains/accounts/accounts.ts";
-import { createListAccountsTool } from "@@/core/domains/accounts/list-accounts.tool.ts";
-import { createSearchAccountsTool } from "@@/core/domains/accounts/search-accounts.tool.ts";
 import { getUserSummaryModel } from "@@/core/domains/accounts/user-summary.ts";
-import { createGetTaggedPlaceTool } from "@@/core/domains/places/get-tagged-place.tool.ts";
-import { createListTaggedPlacesTool } from "@@/core/domains/places/list-tagged-places.tool.ts";
-import { createSearchTaggedPlacesTool } from "@@/core/domains/places/search-tagged-places.tool.ts";
-import type { TaggedPlacesRuntime } from "@@/core/domains/places/tagged-places.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
-import type { FeedUserSummaryRuntime } from "@@/core/domains/story-feed/feed-user-summary.ts";
-import { createGetFeedUserSummariesTool } from "@@/core/domains/story-feed/get-feed-user-summaries.tool.ts";
 import { getOllamaHost } from "@@/core/domains/vision/ollama.ts";
+import {
+  createAssistantTools,
+  writesAnswerAfter,
+  type AssistantTools,
+  type AssistantToolsRuntime,
+} from "./assistant-tools.ts";
 
 const ASSISTANT_INSTRUCTIONS = `You are the Assistant of Slopstagram, an application that collects the Instagram stories of accounts into a story feed of the last 24 hours.
 You know nothing about the accounts yourself. Answer only from the results of your tools, and never invent an account, a story, a summary or a place.
@@ -39,21 +36,8 @@ You know nothing about the accounts yourself. Answer only from the results of yo
 - For a greeting, a thank-you or a message that is not about the accounts, answer briefly without calling any tool.
 - Always answer in the language of the user's last message.`;
 
-/**
- * The tools after which the model only has to write the answer. A place search is a lookup: the
- * model reasons after it to decide whether to read the place it found with getTaggedPlace.
- */
-const answerTools = new Set([
-  "getFeedUserSummaries",
-  "getTaggedPlace",
-  "listAccounts",
-  "listTaggedPlaces",
-]);
-
 /** Bounds one reply: a tool call, its result, then the answer, with room for one retry. */
 const MAX_STEPS = 4;
-
-type AssistantToolsRuntime = FeedUserSummaryRuntime & AccountsRuntime & TaggedPlacesRuntime;
 
 /** The chat model, as the AI SDK takes it once it is built (not a model id). */
 type AssistantModel = Exclude<LanguageModel, string>;
@@ -64,22 +48,7 @@ export type AssistantRuntime = AssistantToolsRuntime &
     wrapModel?: (model: AssistantModel) => AssistantModel;
   };
 
-function createAssistantTools(runtime: AssistantToolsRuntime) {
-  return {
-    getFeedUserSummaries: createGetFeedUserSummariesTool(runtime),
-    getTaggedPlace: createGetTaggedPlaceTool(runtime),
-    listAccounts: createListAccountsTool(runtime),
-    listTaggedPlaces: createListTaggedPlacesTool(runtime),
-    searchAccounts: createSearchAccountsTool(runtime),
-    searchTaggedPlaces: createSearchTaggedPlacesTool(runtime),
-  };
-}
-
-export type AssistantUIMessage = UIMessage<
-  unknown,
-  UIDataTypes,
-  InferUITools<ReturnType<typeof createAssistantTools>>
->;
+export type AssistantUIMessage = UIMessage<unknown, UIDataTypes, InferUITools<AssistantTools>>;
 
 /** The chat model, from `OLLAMA_CHAT_MODEL`, defaulting to the user summary model. */
 function getAssistantModel(): string {
@@ -129,11 +98,8 @@ export async function streamAssistantReply(
     model: chatModel(true),
     prepareStep: ({ steps }) => {
       const lastTools = steps.at(-1)?.toolCalls.map(({ toolName }) => toolName) ?? [];
-      // After a read tool only the answer is left. With reasoning on, a small model often writes
-      // that answer inside its reasoning and sends no text, so the reply looks empty.
-      return lastTools.some((toolName) => answerTools.has(toolName))
-        ? { model: chatModel(false) }
-        : undefined;
+      // Each tool states, in the registry, whether only the answer is left after its result.
+      return writesAnswerAfter(lastTools) ? { model: chatModel(false) } : undefined;
     },
     instructions: ASSISTANT_INSTRUCTIONS,
     messages: await convertToModelMessages(messages),
