@@ -16,7 +16,11 @@ function labelsOf(
  * in the modal. None of them is in the URL, so a refresh closes them all. Selecting another point
  * closes the shown connection, so its stories never stay beside an unrelated selection.
  */
-export function useMentionGraphSelection({ points, connections, stories }: MentionGraphPageData) {
+export function useMentionGraphSelection({
+  points,
+  connections,
+  stories,
+}: Pick<MentionGraphPageData, "points" | "connections" | "stories">) {
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
   const [openStoryPk, setOpenStoryPk] = useState<string>();
