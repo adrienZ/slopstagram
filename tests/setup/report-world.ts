@@ -2,7 +2,11 @@ import { readFile } from "node:fs/promises";
 import { expect, type TestContext } from "vitest";
 import sharp from "sharp";
 import { z } from "zod";
-import type { AssistantToolName } from "@@/core/domains/assistant/assistant-tools.ts";
+import type { InferToolInput } from "ai";
+import type {
+  AssistantToolName,
+  AssistantTools,
+} from "@@/core/domains/assistant/assistant-tools.ts";
 import { JsonValueSchema, type JsonValue } from "@@/core/utils/json-value.ts";
 import { createReport } from "@@/core/domains/fetch-run/report.ts";
 import type { RuntimeBoundaries } from "@@/core/domains/runtime/runtime.ts";
@@ -264,78 +268,93 @@ function chatToolCall(name: string, args: JsonValue) {
   });
 }
 
-type ToolArguments = Record<string, JsonValue>;
-
 /** A list or a search asks for a page with a trailing "offset <n>". */
 const pageRequest = /\s+offset\s+(?<offset>\d+)$/iu;
 
-function pageOf(question: string): ToolArguments {
+function pageOf(question: string): { offset?: number } {
   const offset = pageRequest.exec(question)?.groups?.offset;
   return offset === undefined ? {} : { offset: Number(offset) };
 }
 
-function withoutPage(question: string) {
-  return question.replace(pageRequest, "");
+function withoutPage(text: string) {
+  return text.replace(pageRequest, "");
+}
+
+function mentionedUsernames(question: string) {
+  return [...question.matchAll(/@(?<username>[\w.]+)/gu)].map(
+    ({ groups }) => groups?.username ?? "",
+  );
 }
 
 /**
- * For each Assistant tool, the arguments the chat model calls it with for a question, or null when
- * the question is not for that tool.
+ * The input the chat model calls a tool with for a question, or null when the question is not for
+ * that tool.
  */
-type QuestionMatchers = {
-  [Name in AssistantToolName]: (question: string, usernames: Array<string>) => ToolArguments | null;
-};
+type QuestionMatcher = {
+  [Name in AssistantToolName]: {
+    tool: Name;
+    match: (question: string) => InferToolInput<AssistantTools[Name]> | null;
+  };
+}[AssistantToolName];
 
-const questionMatchers: QuestionMatchers = {
-  getFeedUserSummaries: (_question, usernames) => (usernames.length > 0 ? { usernames } : null),
-  getTaggedPlace: (question) => {
-    const id = /^(?:place|lieu)\s+(?<id>\S+)$/iu.exec(question)?.groups?.id;
-    return id === undefined ? null : { id };
-  },
-  listAccounts: (question) => (/\b(?:accounts|comptes)\b/iu.test(question) ? {} : null),
-  listTaggedPlaces: (question, usernames) => {
-    if (!/\b(?:places|lieux)\b/iu.test(question)) {
-      return null;
-    }
-    const args = pageOf(question);
-    if (usernames.length > 0) {
-      args.usernames = usernames;
-    }
-    return args;
-  },
-  searchAccounts: (question) => {
-    const query = /^(?:search|cherche)\s+(?<query>.+)$/iu.exec(question)?.groups?.query;
-    return query === undefined ? null : { query };
-  },
-  searchTaggedPlaces: (question) => {
-    const query = /^(?:search|cherche)\s+(?:places|lieux)\s+(?<query>.+)$/iu.exec(
-      withoutPage(question),
-    )?.groups?.query;
-    return query === undefined ? null : { query, ...pageOf(question) };
-  },
-};
-
-type MissingTools<Names extends ReadonlyArray<AssistantToolName>> = Exclude<
+type MissingTools<Matchers extends ReadonlyArray<QuestionMatcher>> = Exclude<
   AssistantToolName,
-  Names[number]
+  Matchers[number]["tool"]
 >;
 
-/** Lists every Assistant tool: leaving one out fails to compile and names it. */
-function everyTool<const Names extends ReadonlyArray<AssistantToolName>>(
-  names: Names &
-    ([MissingTools<Names>] extends [never] ? unknown : { missing: MissingTools<Names> }),
-): Names {
-  return names;
+/** Leaving a tool out fails to compile and names it. */
+function forEveryTool<const Matchers extends ReadonlyArray<QuestionMatcher>>(
+  matchers: Matchers &
+    ([MissingTools<Matchers>] extends [never] ? unknown : { missing: MissingTools<Matchers> }),
+): Matchers {
+  return matchers;
 }
 
 /** Several matchers accept the same question, so the chat model calls the first one in this order. */
-const matcherPrecedence = everyTool([
-  "getTaggedPlace",
-  "searchTaggedPlaces",
-  "listTaggedPlaces",
-  "getFeedUserSummaries",
-  "searchAccounts",
-  "listAccounts",
+const questionMatchers = forEveryTool([
+  {
+    tool: "getTaggedPlace",
+    match: (question) => {
+      const id = /^(?:place|lieu)\s+(?<id>\S+)$/iu.exec(question)?.groups?.id;
+      return id === undefined ? null : { id };
+    },
+  },
+  {
+    tool: "searchTaggedPlaces",
+    match: (question) => {
+      const query = /^(?:search|cherche)\s+(?:places|lieux)\s+(?<query>.+)$/iu.exec(question)
+        ?.groups?.query;
+      return query === undefined ? null : { query: withoutPage(query), ...pageOf(question) };
+    },
+  },
+  {
+    tool: "listTaggedPlaces",
+    match: (question) => {
+      if (!/\b(?:places|lieux)\b/iu.test(question)) {
+        return null;
+      }
+      const usernames = mentionedUsernames(question);
+      return usernames.length > 0 ? { ...pageOf(question), usernames } : pageOf(question);
+    },
+  },
+  {
+    tool: "getFeedUserSummaries",
+    match: (question) => {
+      const usernames = mentionedUsernames(question);
+      return usernames.length > 0 ? { usernames } : null;
+    },
+  },
+  {
+    tool: "searchAccounts",
+    match: (question) => {
+      const query = /^(?:search|cherche)\s+(?<query>.+)$/iu.exec(question)?.groups?.query;
+      return query === undefined ? null : { query };
+    },
+  },
+  {
+    tool: "listAccounts",
+    match: (question) => (/\b(?:accounts|comptes)\b/iu.test(question) ? {} : null),
+  },
 ]);
 
 /**
@@ -353,13 +372,10 @@ function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>
   }
   const offered = new Set(tools.map((tool) => tool.function.name));
   const question = messages.findLast(({ role }) => role === "user")?.content ?? "";
-  const usernames = [...question.matchAll(/@(?<username>[\w.]+)/gu)].map(
-    ({ groups }) => groups?.username ?? "",
-  );
-  for (const name of matcherPrecedence) {
-    const args = offered.has(name) ? questionMatchers[name](question, usernames) : null;
-    if (args !== null) {
-      return chatToolCall(name, args);
+  for (const { tool, match } of questionMatchers) {
+    const input = offered.has(tool) ? match(question) : null;
+    if (input !== null) {
+      return chatToolCall(tool, JsonValueSchema.parse(input));
     }
   }
   const city = /^(?:weather|météo)\s+(?<city>.+)$/iu.exec(question)?.groups?.city;
