@@ -12,7 +12,17 @@ import type { AssistantToolName } from "@@/core/domains/assistant/assistant-tool
 
 const transport = new DefaultChatTransport<AssistantUIMessage>({ api: "/api/chat" });
 
-type AssistantPart = AssistantUIMessage["parts"][number];
+export type AssistantPart = AssistantUIMessage["parts"][number];
+
+type ToolParts = {
+  [Name in AssistantToolName]: Extract<AssistantPart, { type: `tool-${Name}` }>;
+};
+
+type OutputOf<Part> = Part extends { state: "output-available"; output: infer Output }
+  ? Output
+  : never;
+
+export type ToolOutput<Name extends AssistantToolName> = OutputOf<ToolParts[Name]>;
 
 /**
  * A tool call of an Assistant message. An invalid call is one the Assistant could not run: the
