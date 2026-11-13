@@ -66,12 +66,18 @@ parsing branch that reads it, so only the shape production receives can type-che
 
 Coverage counts every file in `sdk/` and `server/` except generated shadcn code, the
 generated route tree and migrations. Thresholds sit just under the measured values and
-raise themselves automatically (`autoUpdate`), so coverage can only rise. CI also runs
-`knip --production`, so exports that only tests keep alive fail the build and are either
-deleted or tested through their public interface.
+raise themselves automatically (`autoUpdate`), so coverage can only rise.
 
 > Note (2026-11-04): domain modules (accounts, fetch-run, instagram, media-store, music,
 > places, stickers, story-feed, vision) now live under `core/domains/<domain>`, see
 > [PR #274](https://github.com/adrienZ/slopstagram/pull/274). The modules named above
 > (parser, repositories, sticker extraction, place lookup, music assets, vision analysis,
 > user summaries) moved with them. `sdk/` was already renamed to `core/` before that.
+
+> Note (2026-11-13): `npm run knip` now runs `knip --production` too, in `check` and in CI
+> ([PR #349](https://github.com/adrienZ/slopstagram/pull/349)). Its entries are what ships: the
+> app routes and router, the Nitro plugins and the scripts, never tests, evals or the DevTools
+> dock. An export that only tests or evals keep alive fails the build, so it is deleted, made
+> private and tested through the function production calls, or moved to a module production
+> imports. A module nothing in production imports, such as an Assistant tool missing from the
+> registry, fails the same way as an unused file.

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { z } from "zod";
-import type { AssistantToolName } from "@@/core/domains/assistant/assistant-tools.ts";
+import type { AssistantTools } from "@@/core/domains/assistant/assistant-tools.ts";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
 import { handleChatRequest } from "../app/routes/api/chat.ts";
 import {
@@ -343,10 +343,6 @@ test("searching a place streams the searchTaggedPlaces call and its matches, the
     { nextOffset: null, places: [syntheticCafe], total: 1 },
   ]);
   expect(chunks.text).toBe(placesAnswer(["Synthetic Cafe"]));
-  // A search is a lookup: the model reasons after it, to decide whether to read the place.
-  expect(
-    world.ollama.requests.filter(({ kind }) => kind === "chat").map(({ think }) => think),
-  ).toStrictEqual([true, true]);
 });
 
 test("reading a place streams the getTaggedPlace call, its details, then an answer linking it", async (context) => {
@@ -379,19 +375,16 @@ test("reading a place streams the getTaggedPlace call, its details, then an answ
   expect(unknown.text).toBe(assistantAnswer);
 });
 
-/**
- * A question that makes the fake chat model call each Assistant tool, and whether the model
- * reasons in the step after that tool's result: a read leaves only the answer to write, a search
- * is a lookup the model reasons after, to decide what to read next.
- */
-const stepAfterEachTool: Record<AssistantToolName, { question: string; thinksAfter: boolean }> = {
-  getFeedUserSummaries: { question: "What about @user_072?", thinksAfter: false },
-  getTaggedPlace: { question: `Place instagram:${placeId}`, thinksAfter: false },
-  listAccounts: { question: "Which accounts do you know?", thinksAfter: false },
-  listTaggedPlaces: { question: "Which places?", thinksAfter: false },
-  searchAccounts: { question: "Search USER_07", thinksAfter: true },
-  searchTaggedPlaces: { question: "Search places CAFÉ", thinksAfter: true },
-};
+/** A question that makes the fake chat model call each tool. */
+const stepAfterEachTool: Record<keyof AssistantTools, { question: string; thinksAfter: boolean }> =
+  {
+    getFeedUserSummaries: { question: "What about @user_072?", thinksAfter: false },
+    getTaggedPlace: { question: `Place instagram:${placeId}`, thinksAfter: false },
+    listAccounts: { question: "Which accounts do you know?", thinksAfter: false },
+    listTaggedPlaces: { question: "Which places?", thinksAfter: false },
+    searchAccounts: { question: "Search USER_07", thinksAfter: true },
+    searchTaggedPlaces: { question: "Search places CAFÉ", thinksAfter: true },
+  };
 
 test.for(Object.entries(stepAfterEachTool))(
   "after a %s result, the model reasons in the next step only for a lookup",
