@@ -10,6 +10,7 @@ import { groupTimelineStickers } from "../../app/utils/timeline-stickers.ts";
 import {
   editRecordedStories,
   editRecordedUsers,
+  keepRecordedStories,
   readRecordedPayloads,
   seedRecordedStories,
 } from "../setup/seed.ts";
@@ -163,4 +164,83 @@ export async function seedMapDatabase(runtime: Runtime): Promise<void> {
     }),
     { publishedBefore: { now: pageNow, seconds: PUBLISHED_BEFORE_SECONDS } },
   );
+}
+
+/** The recorded accounts of one reels page, renamed, with a full name only the first has. */
+export const graphAccounts = ["ada_graph", "ben_graph", "cleo_graph"] as const;
+export const graphAccountFullName = "Ada Fixture";
+/** Saved without a story: two Accounts whose usernames differ only in case, and one alone. */
+export const ambiguousUsername = "dup_graph";
+export const lonelyAccount = "lone_graph";
+export const unknownUsername = "unknown_graph";
+export const mentionedName = "Fixture name";
+/** The stories of the graph, oldest first: one per account. */
+export const graphStories = {
+  ada: "700000000000079",
+  ben: "700000000000090",
+  cleo: "700000000000100",
+} as const;
+
+function mentionStickers(mentions: Array<{ username?: string; full_name?: string }>) {
+  return mentions.map((mention) => ({ bloks_sticker: { sticker_data: { ig_mention: mention } } }));
+}
+
+const [adaGraph, benGraph] = graphAccounts;
+const mentionsByStory = new Map<string, ReturnType<typeof mentionStickers>>([
+  [
+    graphStories.ada,
+    mentionStickers([
+      { username: benGraph.toUpperCase() },
+      { username: benGraph },
+      { username: "Ada_Graph" },
+      { username: unknownUsername },
+      { full_name: mentionedName },
+    ]),
+  ],
+  [graphStories.ben, mentionStickers([{ username: adaGraph }])],
+  [
+    graphStories.cleo,
+    mentionStickers([
+      { username: adaGraph },
+      { username: benGraph },
+      { username: unknownUsername.toUpperCase() },
+      { full_name: mentionedName },
+      { username: ambiguousUsername },
+    ]),
+  ],
+]);
+
+/**
+ * Seeds a runtime's database with what the mention graph shows: one story per recorded account
+ * through production ingestion, with the mention stickers the recording lacks. The first account
+ * mentions the second twice, in another case, then itself, an unknown username and a name; the
+ * second mentions the first back; the third mentions both, the unknown username in upper case,
+ * the same name, and a username two saved Accounts share.
+ */
+export async function seedGraphDatabase(runtime: Runtime): Promise<void> {
+  const recorded = editRecordedUsers(
+    await readRecordedPayloads(["instagram-story-data.json"]),
+    (user, position) => {
+      user.username = graphAccounts[position] ?? user.username;
+      if (position === 0) {
+        user.full_name = graphAccountFullName;
+      }
+    },
+  );
+  await seedRecordedStories(
+    runtime,
+    editRecordedStories(keepRecordedStories(recorded, Object.values(graphStories)), (story) => {
+      story.story_bloks_stickers = mentionsByStory.get(story.pk) ?? [];
+    }),
+    { publishedBefore: { now: pageNow, seconds: PUBLISHED_BEFORE_SECONDS } },
+  );
+  // The recording has no Accounts without stories, nor two usernames that differ only in case.
+  for (const [pk, username] of [
+    ["700000000000951", ambiguousUsername],
+    ["700000000000952", ambiguousUsername.toUpperCase()],
+    ["700000000000953", lonelyAccount],
+  ]) {
+    // oxlint-disable-next-line no-await-in-loop -- Three inserts, saved in order.
+    await runtime.users.save({ full_name: null, id: pk, pk, username });
+  }
 }
