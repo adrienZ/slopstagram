@@ -70,6 +70,15 @@ export interface UserTimelineStory {
   username: string;
 }
 
+/** One mention sticker on a stored story, with the story's author. */
+export interface MentionOccurrence {
+  storyPk: string;
+  takenAt: number | null;
+  authorPk: string;
+  /** `@username`, or a full name when the sticker carries no username. */
+  label: string;
+}
+
 function toStoryItem(
   story: StoryRow,
   imageVersions: Array<typeof storyImageVersions.$inferSelect>,
@@ -380,6 +389,23 @@ export class StoryRepository {
       .orderBy(asc(storyStickers.kind))
       .all()
       .map(({ kind }) => kind);
+  }
+
+  /** Every mention sticker occurrence of a stored story with a known author, newest story first. */
+  listMentionOccurrences(): Array<MentionOccurrence> {
+    return this.database
+      .select({
+        storyPk: stories.mediaPk,
+        takenAt: stories.takenAt,
+        authorPk: instagramUsers.pk,
+        label: storyStickers.label,
+      })
+      .from(storyStickers)
+      .innerJoin(stories, eq(storyStickers.mediaPk, stories.mediaPk))
+      .innerJoin(instagramUsers, eq(stories.instagramUserPk, instagramUsers.pk))
+      .where(eq(storyStickers.kind, "mention"))
+      .orderBy(desc(stories.takenAt), desc(stories.mediaPk), asc(storyStickers.sortOrder))
+      .all();
   }
 
   async save(value: StoryItem, owner?: StoryOwner): Promise<void> {
