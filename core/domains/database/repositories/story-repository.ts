@@ -467,6 +467,29 @@ export class StoryRepository {
   }
 
   /** A page of the tagged places with coordinates, the place of the latest story first. */
+  listWithMentionStickers(): Array<UserTimelineStory> {
+    const rows = this.database
+      .select({ story: stories, user: instagramUsers })
+      .from(stories)
+      .innerJoin(instagramUsers, eq(stories.instagramUserPk, instagramUsers.pk))
+      .where(
+        inArray(
+          stories.mediaPk,
+          this.database
+            .select({ mediaPk: storyStickers.mediaPk })
+            .from(storyStickers)
+            .where(eq(storyStickers.kind, "mention")),
+        ),
+      )
+      .orderBy(desc(stories.takenAt), desc(stories.mediaPk))
+      .all();
+
+    return rows.flatMap(({ story, user }) => {
+      const entry = getTimelineStory(this.database, story, user);
+      return entry === null ? [] : [entry];
+    });
+  }
+
   listTaggedPlaces(query: TaggedPlacePageQuery) {
     return listTaggedPlaces(this.database, query);
   }

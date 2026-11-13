@@ -13,11 +13,24 @@ const previewSizes = {
 export function StoryCard({
   story,
   size = "timeline",
+  onOpen,
 }: {
   story: StoryCardData;
   size?: "timeline" | "feed" | "sticker" | "gallery";
+  /** Opens the story's preview; by default through the URL's `story` search parameter. */
+  onOpen?: (mediaPk: string) => void;
 }) {
   const navigate = useNavigate();
+  const open =
+    onOpen ??
+    ((mediaPk: string) => {
+      void navigate({
+        to: ".",
+        search: (previous) => ({ ...previous, story: mediaPk }),
+        replace: true,
+        resetScroll: false,
+      });
+    });
   return (
     <div className="tw:min-w-0 tw:flex-none tw:snap-start">
       <button
@@ -30,12 +43,7 @@ export function StoryCard({
         type="button"
         aria-label={`Ouvrir aperçu ${story.mediaPk}`}
         onClick={() => {
-          void navigate({
-            to: ".",
-            search: (previous) => ({ ...previous, story: story.mediaPk }),
-            replace: true,
-            resetScroll: false,
-          });
+          open(story.mediaPk);
         }}
       >
         <img

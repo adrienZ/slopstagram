@@ -99,42 +99,34 @@ function LightboxNavButton(props: {
   );
 }
 
+type SelectStory = (mediaPk?: string) => void;
+
 interface LightboxProps {
   stories: Array<StoryCardData>;
   selectedStory?: string;
   linkToProfile?: boolean;
+  /** Shows another story or closes; by default through the URL's `story` search parameter. */
+  onSelectStory?: SelectStory;
 }
 
 function LightboxDialog(props: {
   stories: Array<StoryCardData>;
   story: StoryCardData;
   linkToProfile: boolean;
+  onSelectStory: SelectStory;
 }) {
-  const navigateTo = useNavigate();
   const [dismissedStory, setDismissedStory] = useState<string | null>(null);
 
   function close() {
     setDismissedStory(props.story.mediaPk);
-    void navigateTo({
-      to: ".",
-      search: (previous) => ({ ...previous, story: undefined }),
-      replace: true,
-      resetScroll: false,
-    });
+    props.onSelectStory();
   }
 
   function navigate(direction: number) {
     const index = props.stories.findIndex((entry) => entry.mediaPk === props.story.mediaPk);
-    void navigateTo({
-      to: ".",
-      search: (previous) => ({
-        ...previous,
-        story:
-          props.stories[(index + direction + props.stories.length) % props.stories.length]?.mediaPk,
-      }),
-      replace: true,
-      resetScroll: false,
-    });
+    props.onSelectStory(
+      props.stories[(index + direction + props.stories.length) % props.stories.length]?.mediaPk,
+    );
   }
 
   function selectedCount() {
@@ -293,12 +285,22 @@ function LightboxDialog(props: {
 }
 
 export function Lightbox(props: LightboxProps) {
+  const navigate = useNavigate();
   const story = props.stories.find((entry) => entry.mediaPk === props.selectedStory);
+  function selectInUrl(mediaPk?: string) {
+    void navigate({
+      to: ".",
+      search: (previous) => ({ ...previous, story: mediaPk }),
+      replace: true,
+      resetScroll: false,
+    });
+  }
   return story === undefined ? null : (
     <LightboxDialog
       stories={props.stories}
       story={story}
       linkToProfile={props.linkToProfile ?? false}
+      onSelectStory={props.onSelectStory ?? selectInUrl}
     />
   );
 }
