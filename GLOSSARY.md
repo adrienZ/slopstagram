@@ -170,9 +170,8 @@ it, such as the accounts or an account's user summary.
 _Avoid_: Function, action, skill
 
 **Assistant tool registry**:
-The only list of the Assistant tools, in the Assistant. It sorts them into read tools, after
-whose result the Assistant writes its answer, and lookup tools, which search and after whose
-result it keeps reasoning to decide what to read.
+The only list of the Assistant tools, in the Assistant. The model is offered every tool at
+every step, and stops calling them when it can answer.
 _Avoid_: Tool list, tool catalog
 
 **Mention**:

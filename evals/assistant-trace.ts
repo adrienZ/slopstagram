@@ -10,7 +10,7 @@ type StreamPart<Stream> = Stream extends ReadableStream<infer Part> ? Part : nev
 /**
  * Traces every call of the chat model in the evalite UI: its prompt, what it streamed, and its
  * token usage. Evalite's own `wrapAISDKModel` cannot do it: it throws on the reasoning parts that
- * the model (`think: true`) puts in the prompt of its second step.
+ * a thinking model puts in the prompt of its second step.
  */
 export function traceModel(model: AssistantModel): AssistantModel {
   return wrapLanguageModel({

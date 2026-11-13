@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { z } from "zod";
-import type { AssistantTools } from "@@/core/domains/assistant/assistant-tools.ts";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
 import { handleChatRequest } from "../app/routes/api/chat.ts";
 import {
@@ -374,34 +373,6 @@ test("reading a place streams the getTaggedPlace call, its details, then an answ
   expect(unknown.toolOutputs).toStrictEqual([{ id: "instagram:999", status: "unknown" }]);
   expect(unknown.text).toBe(assistantAnswer);
 });
-
-/** A question that makes the fake chat model call each tool. */
-const stepAfterEachTool: Record<keyof AssistantTools, { question: string; thinksAfter: boolean }> =
-  {
-    getFeedUserSummaries: { question: "What about @user_072?", thinksAfter: false },
-    getTaggedPlace: { question: `Place instagram:${placeId}`, thinksAfter: false },
-    listAccounts: { question: "Which accounts do you know?", thinksAfter: false },
-    listTaggedPlaces: { question: "Which places?", thinksAfter: false },
-    searchAccounts: { question: "Search USER_07", thinksAfter: true },
-    searchTaggedPlaces: { question: "Search places CAFÉ", thinksAfter: true },
-  };
-
-test.for(Object.entries(stepAfterEachTool))(
-  "after a %s result, the model reasons in the next step only for a lookup",
-  async ([toolName, { question, thinksAfter }], context) => {
-    const world = await createWorld(context);
-    await world.run();
-
-    const chunks = await readChunks(
-      await handleChatRequest(world.runtime, chatRequest(userMessage(question))),
-    );
-
-    expect(chunks.toolInputs.map((call) => call.toolName)).toStrictEqual([toolName]);
-    expect(
-      world.ollama.requests.filter(({ kind }) => kind === "chat").map(({ think }) => think),
-    ).toStrictEqual([true, thinksAfter]);
-  },
-);
 
 test("a greeting is answered without any tool call", async (context) => {
   const world = await createWorld(context);
