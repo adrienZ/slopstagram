@@ -34,14 +34,26 @@ async function mountGraph() {
   const mounted = await renderer.mountRoute("/graph");
   const region = within(await screen.findByRole("region", { name: "Graphe des mentions" }));
   const drawing = region.getByRole("group", { name: "Points et connexions" });
-  return { ...mounted, region, drawing, canvas: within(drawing) };
+  return {
+    ...mounted,
+    region,
+    drawing,
+    canvas: within(drawing),
+    points: within(within(drawing).getByRole("group", { name: "Points" })),
+    lines: within(within(drawing).getByRole("group", { name: "Connexions" })),
+  };
 }
 
 function highlightedConnections(drawing: HTMLElement) {
-  return within(drawing)
-    .getAllByRole("img", { name: /^Connexion/u })
-    .filter((line) => line.dataset.highlighted === "true")
-    .map((line) => line.getAttribute("aria-label"));
+  return within(within(drawing).getByRole("group", { name: "Connexions" }))
+    .getAllByRole("button")
+    .filter((connection) => connection.dataset.highlighted === "true")
+    .map((connection) => connection.getAttribute("aria-label"));
+}
+
+/** The width of the line drawn for a connection. */
+function strokeWidth(connection: HTMLElement): number {
+  return Number(connection.querySelector("line")?.getAttribute("stroke-width"));
 }
 
 function readTranslate(element: Element) {
@@ -67,8 +79,8 @@ function drawnAt(drawing: HTMLElement, point: Element) {
 }
 
 test("Accounts show their initials, anyone else an abstract point, unconnected Accounts nothing", async () => {
-  const { canvas } = await mountGraph();
-  expect(canvas.getAllByRole("button").map((point) => point.getAttribute("aria-label"))).toEqual([
+  const { canvas, points } = await mountGraph();
+  expect(points.getAllByRole("button").map((point) => point.getAttribute("aria-label"))).toEqual([
     cleo,
     ada,
     ben,
@@ -83,13 +95,15 @@ test("Accounts show their initials, anyone else an abstract point, unconnected A
 });
 
 test("one line per pair, thicker with more source stories", async () => {
-  const { canvas } = await mountGraph();
-  expect(canvas.getAllByRole("img", { name: /^Connexion/u })).toHaveLength(8);
-  const twice = canvas.getByRole("img", { name: `Connexion entre ${ada} et ${ben} : 2 stories` });
-  const once = canvas.getByRole("img", { name: `Connexion entre ${ada} et ${cleo} : 1 story` });
-  expect(Number(twice.getAttribute("stroke-width"))).toBeGreaterThan(
-    Number(once.getAttribute("stroke-width")),
-  );
+  const { lines } = await mountGraph();
+  expect(lines.getAllByRole("button")).toHaveLength(8);
+  const often = lines.getByRole("button", {
+    name: `Connexion entre ${ada} et ${cleo} : 5 stories`,
+  });
+  const twice = lines.getByRole("button", { name: `Connexion entre ${ada} et ${ben} : 2 stories` });
+  const once = lines.getByRole("button", { name: `Connexion entre ${ben} et ${cleo} : 1 story` });
+  expect(strokeWidth(often)).toBeGreaterThan(strokeWidth(twice));
+  expect(strokeWidth(twice)).toBeGreaterThan(strokeWidth(once));
 });
 
 test("a known Account opens its profile and highlights its connections, the background clears it", async () => {
@@ -106,7 +120,7 @@ test("a known Account opens its profile and highlights its connections, the back
   );
   expect(point).toHaveAttribute("aria-pressed", "true");
   expect(highlightedConnections(drawing)).toEqual([
-    `Connexion entre ${ada} et ${cleo} : 1 story`,
+    `Connexion entre ${ada} et ${cleo} : 5 stories`,
     `Connexion entre ${ada} et ${ben} : 2 stories`,
     `Connexion entre ${ada} et ${unknown} : 1 story`,
     `Connexion entre ${ada} et ${mentionedName} : 1 story`,

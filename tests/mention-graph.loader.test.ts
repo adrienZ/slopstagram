@@ -7,6 +7,7 @@ import {
   graphAccountFullName,
   graphAccounts,
   graphStories,
+  laterCleoStories,
   lonelyAccount,
   mentionedName,
   seedGraphDatabase,
@@ -21,17 +22,17 @@ const ambiguous = `@${ambiguousUsername} (plusieurs comptes)`;
 /** Each connection as its two labels, in the loader's order, and its story count. */
 function describeConnections({ points, connections }: MentionGraphPageData) {
   const labels = new Map(points.map(({ id, label }) => [id, label]));
-  return connections.map(({ source, target, storyCount }) => [
+  return connections.map(({ source, target, storyPks }) => [
     labels.get(source),
     labels.get(target),
-    storyCount,
+    storyPks.length,
   ]);
 }
 
 test("connects each story's author to whom its stickers name, one line per pair", () => {
   // Newest story first: the third account's, then the second's, then the first's.
   expect(describeConnections(loadMentionGraph(shared.runtime))).toStrictEqual([
-    [ada, cleo, 1],
+    [ada, cleo, 5],
     [ben, cleo, 1],
     [cleo, unknown, 1],
     [cleo, mentionedName, 1],
@@ -95,36 +96,68 @@ test("an author naming their own username makes no connection, even when another
 const graphAuthorPks = { ada: "700000000000001", ben: "700000000000062", cleo: "700000000000068" };
 
 /** Only some of the graph's stories stored, every author still a known Account. */
-async function seedGraphStories(
-  context: TestContext,
-  kept: Array<keyof typeof graphStories>,
-): Promise<Runtime> {
+async function seedGraphStories(context: TestContext, storyPks: Array<string>): Promise<Runtime> {
   const runtime = await createTestRuntime(context);
-  await seedGraphDatabase(
-    runtime,
-    kept.map((name) => graphStories[name]),
-  );
-  const leftOut = Object.entries(graphAuthorPks).filter(
-    ([name]) => !kept.some((keptName) => keptName === name),
-  );
   await Promise.all(
-    leftOut.map(async ([name, pk]) => {
+    Object.entries(graphAuthorPks).map(async ([name, pk]) => {
       await runtime.users.save({ full_name: null, id: pk, pk, username: `${name}_graph` });
     }),
   );
+  await seedGraphDatabase(runtime, storyPks);
   return runtime;
 }
 
 test("a connection lasts only as long as one of its source stories is stored", async (context) => {
-  const withoutBen = await seedGraphStories(context, ["ada", "cleo"]);
+  const withoutBen = await seedGraphStories(context, [
+    graphStories.ada,
+    graphStories.cleo,
+    ...laterCleoStories,
+  ]);
   expect(describeConnections(loadMentionGraph(withoutBen))).toContainEqual([ada, ben, 1]);
 
-  const onlyCleo = await seedGraphStories(context, ["cleo"]);
+  const onlyCleo = await seedGraphStories(context, [graphStories.cleo, ...laterCleoStories]);
   expect(describeConnections(loadMentionGraph(onlyCleo))).toStrictEqual([
-    [ada, cleo, 1],
+    [ada, cleo, 5],
     [ben, cleo, 1],
     [cleo, unknown, 1],
     [cleo, mentionedName, 1],
     [cleo, ambiguous, 1],
   ]);
+});
+
+/** Each connection as its two labels and its source stories, newest first. */
+function describeSourceStories({ points, connections }: MentionGraphPageData) {
+  const labels = new Map(points.map(({ id, label }) => [id, label]));
+  return connections.map(({ source, target, storyPks }) => [
+    labels.get(source),
+    labels.get(target),
+    storyPks,
+  ]);
+}
+
+test("a connection's source stories are those where one end mentioned the other, each once", () => {
+  expect(describeSourceStories(loadMentionGraph(shared.runtime))).toStrictEqual([
+    // The oldest of the later stories names the first account twice.
+    [ada, cleo, [...laterCleoStories, graphStories.cleo]],
+    [ben, cleo, [graphStories.cleo]],
+    [cleo, unknown, [graphStories.cleo]],
+    [cleo, mentionedName, [graphStories.cleo]],
+    [cleo, ambiguous, [graphStories.cleo]],
+    // The third account's story names both, which connects neither to the other.
+    [ada, ben, [graphStories.ben, graphStories.ada]],
+    [ada, unknown, [graphStories.ada]],
+    [ada, mentionedName, [graphStories.ada]],
+  ]);
+});
+
+test("every source story comes with its card, previewed through the Media store", () => {
+  const { stories: cards } = loadMentionGraph(shared.runtime);
+  expect(cards.map(({ mediaPk }) => mediaPk).toSorted()).toStrictEqual(
+    [...Object.values(graphStories), ...laterCleoStories].toSorted(),
+  );
+  expect(cards.find(({ mediaPk }) => mediaPk === graphStories.ben)).toMatchObject({
+    username: graphAccounts[1],
+    preview: `/media/story-previews/${graphStories.ben}.jpg`,
+    avatar: "/media/avatars/700000000000062.jpg",
+  });
 });
