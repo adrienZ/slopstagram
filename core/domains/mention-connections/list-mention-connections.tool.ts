@@ -1,6 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
 import {
+  MENTION_PERSON_KINDS,
   listMentionConnections,
   MentionConnectionListSchema,
   MentionOffsetSchema,
@@ -13,7 +14,7 @@ Use it when the message asks who mentioned or was mentioned by someone, whom som
 Do not use it for two given people: use getMentionConnection. Do not use it to find someone by part of a name: use searchMentionPeople.
 
 Outcomes: "listed" holds up to 10 connections; "total" counts every connection and "nextOffset" is the offset of the next page, null on the last one; "person" is whom the list is about, null for everyone; an empty list means no stored story mentions them or was posted by them mentioning someone. "unknown_person": no Account, username or full name in the stored mentions equals the query. "ambiguous": several people have this full name; "candidates" are those people, apart, with their ids.
-Kinds: "account" is a saved Account, "unknown-username" a username no Account has, "ambiguous-username" a username several Accounts share ("accounts"), "name" a full name one story's sticker carries.`;
+${MENTION_PERSON_KINDS}`;
 
 /** The Assistant tool listing the Mention connections, of one person or everyone. Read-only. */
 export function createListMentionConnectionsTool(runtime: MentionConnectionsRuntime) {

@@ -11,7 +11,7 @@ import {
   now,
   placeId,
 } from "../setup/report-world.ts";
-import { seedLongConnectionGraphDatabase } from "./seeded-pages.ts";
+import { seedLongConnectionGraphDatabase } from "../setup/mention-graph-seed.ts";
 
 beforeEach(() => {
   // The Assistant reads the story feed of the current time.

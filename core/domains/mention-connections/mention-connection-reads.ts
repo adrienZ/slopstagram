@@ -97,6 +97,9 @@ const AmbiguousMentionQuerySchema = z.object({
   total: z.number(),
 }) satisfies z.ZodType<AmbiguousMentionQuery>;
 
+/** Stickers keep a username, not an account id, so a sticker naming an Account is a guess. */
+export const MENTION_PERSON_KINDS = `Kinds: "account" is a saved Account; when a sticker names it, it is the Account that has this username today, which may not be whom the story meant. "unknown-username" is a username no Account has, "ambiguous-username" a username several Accounts share ("accounts"), "name" a full name one story's sticker carries.`;
+
 export const MentionOffsetSchema = z
   .number()
   .int()
@@ -215,6 +218,15 @@ function createMentionReader(runtime: MentionConnectionsRuntime) {
   const usernames = new Map(accounts.map(({ pk, username }) => [pk, username]));
   const labels = new Map(graph.targets.map(({ id, label }) => [id, label]));
 
+  /** Every end of a connection is one of the graph's targets, so a missing label is a bug. */
+  function labelOf(id: MentionTarget["id"]): string {
+    const label = labels.get(id);
+    if (label === undefined) {
+      throw new Error(`No Mention target ${id} in the Mention connections`);
+    }
+    return label;
+  }
+
   function describePerson(target: MentionTarget): MentionPerson {
     const { id, label } = target;
     if (target.kind === "account") {
@@ -249,7 +261,7 @@ function createMentionReader(runtime: MentionConnectionsRuntime) {
       latestStoryDate: formatDate(latestTakenAt(connections)),
       connectedTo: connections
         .slice(0, CONNECTED_TO_LIMIT)
-        .map((connection) => labels.get(otherOf(connection, target.id)) ?? ""),
+        .map((connection) => labelOf(otherOf(connection, target.id))),
     };
   }
 
@@ -259,8 +271,8 @@ function createMentionReader(runtime: MentionConnectionsRuntime) {
       ({ authorId, mentionedId }) => `${authorId} ${mentionedId}`,
     );
     return [...directions.values()].map((stories) => ({
-      author: labels.get(stories[0].authorId) ?? "",
-      mentioned: labels.get(stories[0].mentionedId) ?? "",
+      author: labelOf(stories[0].authorId),
+      mentioned: labelOf(stories[0].mentionedId),
       storyCount: stories.length,
     }));
   }
@@ -269,11 +281,11 @@ function createMentionReader(runtime: MentionConnectionsRuntime) {
     query: string,
   ):
     | { status: "found"; target: MentionTarget }
-    | { status: "unknown_person" }
+    | { status: "unknown_person"; query: string }
     | ({ status: "ambiguous" } & AmbiguousMentionQuery) {
     const targets = findMentionTargets(accounts, graph, query);
     if (targets.length === 0) {
-      return { status: "unknown_person" };
+      return { status: "unknown_person", query };
     }
     if (targets.length === 1) {
       return { status: "found", target: targets[0] };
@@ -286,7 +298,15 @@ function createMentionReader(runtime: MentionConnectionsRuntime) {
     };
   }
 
-  return { graph, describePerson, describeMentions, connectionsOf, findPerson, summarizePerson };
+  return {
+    graph,
+    describePerson,
+    describeMentions,
+    connectionsOf,
+    findPerson,
+    labelOf,
+    summarizePerson,
+  };
 }
 
 /**
@@ -300,7 +320,7 @@ export function listMentionConnections(
   const reader = createMentionReader(runtime);
   const found = person === undefined ? undefined : reader.findPerson(person);
   if (found?.status === "unknown_person") {
-    return { status: "unknown_person", query: person ?? "" };
+    return found;
   }
   if (found?.status === "ambiguous") {
     const { status: _status, ...ambiguous } = found;
@@ -408,7 +428,6 @@ export function getMentionConnection(
   if (connection === undefined) {
     return { status: "no_observation", people };
   }
-  const labels = new Map([first, second].map(({ id, label }) => [id, label]));
   return {
     status: "found",
     people,
@@ -419,8 +438,8 @@ export function getMentionConnection(
       .map(({ storyPk, takenAt, authorId, mentionedId }) => ({
         storyPk,
         date: formatDate(takenAt),
-        author: labels.get(authorId) ?? "",
-        mentioned: labels.get(mentionedId) ?? "",
+        author: reader.labelOf(authorId),
+        mentioned: reader.labelOf(mentionedId),
       })),
     nextOffset: nextOffsetAfter(offset, STORY_PAGE_SIZE, connection.observations.length),
   };

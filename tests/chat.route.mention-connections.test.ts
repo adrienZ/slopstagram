@@ -18,7 +18,7 @@ import {
   moreCleoStories,
   seedLongConnectionGraphDatabase,
   unknownUsername,
-} from "./ui/seeded-pages.ts";
+} from "./setup/mention-graph-seed.ts";
 
 const ada = {
   kind: "account",

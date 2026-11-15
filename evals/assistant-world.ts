@@ -15,7 +15,11 @@ import {
   plainStoryPk,
   recordedPayloads,
 } from "../tests/setup/report-world.ts";
-import { createRecordedInstagramClient, editRecordedStories } from "../tests/setup/seed.ts";
+import {
+  createRecordedInstagramClient,
+  editRecordedStories,
+  mentionStickers,
+} from "../tests/setup/seed.ts";
 import { traceModel } from "./assistant-trace.ts";
 import { describeOutcome, type AssistantRun, type AssistantToolCall } from "./assistant-scorers.ts";
 
@@ -39,10 +43,6 @@ export const savedUsernames = [worldAccounts.withoutRecentStories, worldAccounts
 
 /** A full name two stories' mention stickers carry without a username: two people, not one. */
 export const worldMentionedName = "Synthetic Friend";
-
-function mentionStickers(mentions: Array<{ username?: string; full_name?: string }>) {
-  return mentions.map((mention) => ({ bloks_sticker: { sticker_data: { ig_mention: mention } } }));
-}
 
 /**
  * The mention stickers of the seeded world: user_072 mentions user_008 on both its stories, and

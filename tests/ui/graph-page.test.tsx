@@ -12,7 +12,7 @@ import {
   mentionedName,
   seedGraphDatabase,
   unknownUsername,
-} from "./seeded-pages.ts";
+} from "../setup/mention-graph-seed.ts";
 import { mountGraph as mountGraphWith, stubGraphLayout } from "./mount-graph.ts";
 
 const shared = useSharedTestRuntime(seedGraphDatabase);

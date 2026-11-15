@@ -1,6 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
 import {
+  MENTION_PERSON_KINDS,
   getMentionConnection,
   MentionConnectionReadSchema,
   MentionOffsetSchema,
@@ -13,7 +14,7 @@ Use it when the message asks about two people: whether they are connected, who m
 Do not use it for one person: use listMentionConnections. With only part of a name, call searchMentionPeople first.
 
 Outcomes: "found" with the connection; "nextOffset" is the offset of the next stories, null when there are no more. "no_observation": no stored story of one mentions the other. "unknown_person": no Account, username or full name in the stored mentions equals the queries listed. "ambiguous": several people have one of these full names; each match lists its "candidates", apart, with their ids.
-Kinds: "account" is a saved Account, "unknown-username" a username no Account has, "ambiguous-username" a username several Accounts share ("accounts"), "name" a full name one story's sticker carries.`;
+${MENTION_PERSON_KINDS}`;
 
 /** The Assistant tool reading the Mention connection of two people and its source stories. Read-only. */
 export function createGetMentionConnectionTool(runtime: MentionConnectionsRuntime) {
