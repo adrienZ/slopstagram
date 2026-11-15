@@ -4,7 +4,10 @@ import { JsonValueSchema } from "../core/utils/json-value.ts";
 import { handleChatRequest } from "../app/routes/api/chat.ts";
 import { listAccounts } from "../core/domains/accounts/accounts.ts";
 import type { AssistantRuntime, AssistantUIMessage } from "../core/domains/assistant/assistant.ts";
-import { listMentionConnections } from "../core/domains/mention-connections/mention-connection-reads.ts";
+import {
+  getMentionConnection,
+  listMentionConnections,
+} from "../core/domains/mention-connections/mention-connection-reads.ts";
 import { listTaggedPlaces } from "../core/domains/places/tagged-places.ts";
 import { readFeedUserSummariesByUsername } from "../core/domains/story-feed/feed-user-summary.ts";
 import {
@@ -17,6 +20,7 @@ import {
 } from "../tests/setup/report-world.ts";
 import {
   createRecordedInstagramClient,
+  addRecordedReels,
   editRecordedStories,
   mentionStickers,
 } from "../tests/setup/seed.ts";
@@ -34,12 +38,20 @@ export const worldAccounts = {
   withoutRecentStories: "user_008",
   /** No saved account has this username. */
   unknown: "user_404",
+  /** Saved, with an old story that has no mention stickers. */
+  withoutConnections: "user_016",
 };
 
 /** The one Tagged place of the seeded world, tagged by user_008. */
 export const worldPlace = { id: `instagram:${placeId}`, name: "Synthetic Cafe" };
 
-export const savedUsernames = [worldAccounts.withoutRecentStories, worldAccounts.withSummary];
+export const savedUsernames = [
+  worldAccounts.withoutRecentStories,
+  worldAccounts.withoutConnections,
+  worldAccounts.withSummary,
+];
+
+const unconnectedStoryPk = "700000000000970";
 
 /** A full name two stories' mention stickers carry without a username: two people, not one. */
 export const worldMentionedName = "Synthetic Friend";
@@ -85,9 +97,13 @@ function checkPremises(runtime: AssistantRuntime, now: Date) {
     saved: listAccounts(runtime).map(({ username }) => username),
     places: listTaggedPlaces(runtime).places.map(({ id, name }) => ({ id, name })),
     mentions: describeMentionConnections(runtime),
+    unconnected: getMentionConnection(runtime, {
+      firstPerson: worldAccounts.withoutRecentStories,
+      secondPerson: worldAccounts.withoutConnections,
+    }).status,
   });
   const expected = JSON.stringify({
-    outcomes: ["found", "no_stories_in_last_24h", "unknown_account"],
+    outcomes: ["found", "no_stories_in_last_24h", "unknown_account", "no_stories_in_last_24h"],
     saved: savedUsernames,
     places: [worldPlace],
     mentions: [
@@ -95,6 +111,7 @@ function checkPremises(runtime: AssistantRuntime, now: Date) {
       `@user_072 ${worldMentionedName} 1`,
       `@user_008 ${worldMentionedName} 1`,
     ],
+    unconnected: "no_observation",
   });
   if (seeded !== expected) {
     throw new Error(`The seeded world changed: expected ${expected}, got ${seeded}`);
@@ -107,11 +124,24 @@ function checkPremises(runtime: AssistantRuntime, now: Date) {
  * Ollama; only the chat model is real: production leaves `fetchOllama` unset, so the Ollama
  * provider uses the global fetch.
  */
-async function seedAssistantWorld(): Promise<AssistantRuntime> {
+export async function seedAssistantWorld(): Promise<AssistantRuntime> {
   const now = new Date();
-  const payloads = editRecordedStories(await recordedPayloads(), (story) => {
-    if (story.pk === imageStoryPk && story.taken_at !== undefined) {
+  const recorded = addRecordedReels(await recordedPayloads(), [
+    {
+      userPk: "700000000000969",
+      username: worldAccounts.withoutConnections,
+      storyPk: unconnectedStoryPk,
+    },
+  ]);
+  const payloads = editRecordedStories(recorded, (story) => {
+    if (
+      (story.pk === imageStoryPk || story.pk === unconnectedStoryPk) &&
+      story.taken_at !== undefined
+    ) {
       story.taken_at -= DAY_SECONDS;
+    }
+    if (story.pk === unconnectedStoryPk) {
+      story.story_locations = [];
     }
     story.story_bloks_stickers = worldMentions.get(story.pk) ?? [];
   });

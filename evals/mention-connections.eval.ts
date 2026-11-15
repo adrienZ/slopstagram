@@ -29,6 +29,11 @@ defineAssistantEvals([
   },
   {
     name: "two people no story connects",
+    question: `Est-ce que @${worldAccounts.withoutRecentStories} et @${worldAccounts.withoutConnections} se connaissent ?`,
+    expected: { tools: ["getMentionConnection"] },
+  },
+  {
+    name: "one unknown person",
     question: `Est-ce que @${worldAccounts.withoutRecentStories} et @${worldAccounts.unknown} se connaissent ?`,
     expected: { tools: ["getMentionConnection"] },
   },
