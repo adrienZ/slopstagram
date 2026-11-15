@@ -8,6 +8,7 @@ import { withStoryStickers, type StoryCardData } from "../../app/utils/story-car
 import { groupTimelineLocations } from "../../app/utils/timeline-locations.ts";
 import { groupTimelineStickers } from "../../app/utils/timeline-stickers.ts";
 import {
+  addRecordedReels,
   editRecordedStories,
   editRecordedUsers,
   keepRecordedStories,
@@ -169,7 +170,10 @@ export async function seedMapDatabase(runtime: Runtime): Promise<void> {
 /** The recorded accounts of one reels page, renamed, with a full name only the first has. */
 export const graphAccounts = ["ada_graph", "ben_graph", "cleo_graph"] as const;
 export const graphAccountFullName = "Ada Fixture";
-/** Saved without a story: two Accounts whose usernames differ only in case, and one alone. */
+/**
+ * Accounts the recording lacks, ingested with one sticker-free story each: two whose usernames
+ * differ only in case, and one alone.
+ */
 export const ambiguousUsername = "dup_graph";
 export const lonelyAccount = "lone_graph";
 export const unknownUsername = "unknown_graph";
@@ -225,13 +229,37 @@ const mentionsByStory = new Map<string, ReturnType<typeof mentionStickers>>([
   ],
 ]);
 
+type GraphReel = Parameters<typeof addRecordedReels>[1][number];
+
+const extraGraphReels: Array<GraphReel> = [
+  { userPk: "700000000000951", username: ambiguousUsername, storyPk: "700000000000961" },
+  {
+    userPk: "700000000000952",
+    username: ambiguousUsername.toUpperCase(),
+    storyPk: "700000000000962",
+  },
+  { userPk: "700000000000953", username: lonelyAccount, storyPk: "700000000000963" },
+];
+
+interface GraphSeedOptions {
+  /** The recorded stories to store, those of `mentions` by default. */
+  storyPks?: Array<string>;
+  /** The accounts the recording lacks, each with one story. */
+  reels?: Array<GraphReel>;
+  undatedStoryPks?: Array<string>;
+}
+
 async function seedGraph(
   runtime: Runtime,
   mentions: Map<string, ReturnType<typeof mentionStickers>>,
-  { undatedStoryPks = [] }: { undatedStoryPks?: Array<string> } = {},
+  {
+    storyPks = [...mentions.keys()],
+    reels = extraGraphReels,
+    undatedStoryPks = [],
+  }: GraphSeedOptions = {},
 ): Promise<void> {
   const recorded = editRecordedUsers(
-    await readRecordedPayloads(["instagram-story-data.json"]),
+    addRecordedReels(await readRecordedPayloads(["instagram-story-data.json"]), reels),
     (user, position) => {
       user.username = graphAccounts[position] ?? user.username;
       if (position === 0) {
@@ -239,9 +267,10 @@ async function seedGraph(
       }
     },
   );
+  const keptStoryPks = [...storyPks, ...reels.map(({ storyPk }) => storyPk)];
   await seedRecordedStories(
     runtime,
-    editRecordedStories(keepRecordedStories(recorded, [...mentions.keys()]), (story) => {
+    editRecordedStories(keepRecordedStories(recorded, keptStoryPks), (story) => {
       story.story_bloks_stickers = mentions.get(story.pk) ?? [];
       if (undatedStoryPks.includes(story.pk)) {
         delete story.taken_at;
@@ -249,15 +278,6 @@ async function seedGraph(
     }),
     { publishedBefore: { now: pageNow, seconds: PUBLISHED_BEFORE_SECONDS } },
   );
-  // The recording has no Accounts without stories, nor two usernames that differ only in case.
-  for (const [pk, username] of [
-    ["700000000000951", ambiguousUsername],
-    ["700000000000952", ambiguousUsername.toUpperCase()],
-    ["700000000000953", lonelyAccount],
-  ]) {
-    // oxlint-disable-next-line no-await-in-loop -- Three inserts, saved in order.
-    await runtime.users.save({ full_name: null, id: pk, pk, username });
-  }
 }
 
 /**
@@ -265,42 +285,58 @@ async function seedGraph(
  * through production ingestion, with the mention stickers the recording lacks. The first account
  * mentions the second twice, in another case, then itself, an unknown username and a name; the
  * second mentions the first back; the third mentions both, the unknown username in upper case,
- * the same name, and a username two saved Accounts share.
+ * the same name, and a username two ingested Accounts share.
  */
 export async function seedGraphDatabase(
   runtime: Runtime,
   storyPks: Array<string> = [...mentionsByStory.keys()],
-  options?: Parameters<typeof seedGraph>[2],
+  { reels = [], ...options }: Omit<GraphSeedOptions, "storyPks"> = {},
 ): Promise<void> {
-  await seedGraph(
-    runtime,
-    new Map([...mentionsByStory].filter(([pk]) => storyPks.includes(pk))),
-    options,
-  );
+  await seedGraph(runtime, mentionsByStory, {
+    ...options,
+    storyPks,
+    reels: [...extraGraphReels, ...reels],
+  });
 }
 
-/** Saved without a story: an Account only the filter graph mentions. */
+/** An Account only a newer story of the third account mentions. */
 export const filterAccount = "eve_graph";
-/** A newer story of the third account, which mentions it and the plain graph leaves out. */
+/** That newer story of the third account, which the plain graph leaves out. */
 export const filterAccountStory = "700000000000900";
+/**
+ * Two Accounts with exactly this username, each mentioning the third account. A fetch groups its
+ * reels by username, so the second one comes from a later fetch, as when a username changes hands.
+ */
+export const sharedUsername = "twin_graph";
 
 /**
  * Seeds the graph of `seedGraphDatabase` plus one Account whose only neighbor is the third
  * account, so that two filtered neighborhoods differ: the second account's holds the first and
- * the third, this Account's only the third.
+ * the third, this Account's only the third. Two more Accounts share a username exactly.
  */
 export async function seedFilterGraphDatabase(runtime: Runtime): Promise<void> {
+  const [firstTwin, secondTwin] = [
+    { userPk: "700000000000955", username: sharedUsername, storyPk: "700000000000965" },
+    { userPk: "700000000000956", username: sharedUsername, storyPk: "700000000000966" },
+  ];
+  const mentionsThirdAccount = mentionStickers([{ username: graphAccounts[2] }]);
   await seedGraph(
     runtime,
     new Map([
       ...mentionsByStory,
       [filterAccountStory, mentionStickers([{ username: filterAccount }])],
+      [firstTwin.storyPk, mentionsThirdAccount],
     ]),
+    {
+      reels: [
+        ...extraGraphReels,
+        { userPk: "700000000000954", username: filterAccount, storyPk: "700000000000964" },
+        firstTwin,
+      ],
+    },
   );
-  await runtime.users.save({
-    full_name: null,
-    id: "700000000000954",
-    pk: "700000000000954",
-    username: filterAccount,
+  await seedGraph(runtime, new Map([[secondTwin.storyPk, mentionsThirdAccount]]), {
+    storyPks: [],
+    reels: [secondTwin],
   });
 }

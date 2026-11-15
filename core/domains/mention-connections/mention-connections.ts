@@ -168,27 +168,51 @@ export function readMentionConnections(runtime: MentionConnectionsRuntime): Ment
 }
 
 /**
- * The neighborhoods of the given points: each of them, the points it shares a connection with,
- * and every connection between two of those points, so neighbors' own connections show too.
- * Points and connections keep their order.
+ * The given targets, the targets they share a connection with, and every connection between two
+ * of those, so neighbors' own connections show too. Targets and connections keep their order.
  */
-export function keepNeighborhoods(
+function keepNeighborhoods(
   { targets, connections }: MentionConnections,
-  centerIds: ReadonlySet<string>,
+  selectedIds: ReadonlySet<string>,
 ): MentionConnections {
-  const kept = new Set(centerIds);
+  const kept = new Set(selectedIds);
   for (const {
     targetIds: [first, second],
   } of connections) {
-    if (centerIds.has(first)) {
+    if (selectedIds.has(first)) {
       kept.add(second);
     }
-    if (centerIds.has(second)) {
+    if (selectedIds.has(second)) {
       kept.add(first);
     }
   }
   return {
     targets: targets.filter(({ id }) => kept.has(id)),
     connections: connections.filter(({ targetIds }) => targetIds.every((id) => kept.has(id))),
+  };
+}
+
+/**
+ * The connections narrowed to the neighborhoods of the Accounts they draw with the given exact
+ * usernames. A username several drawn Accounts share selects all of them, since nothing tells
+ * which one is meant. One username no drawn Account has skips every filter, so a shared link
+ * never shows a partial graph as the one asked for.
+ */
+export function filterByAccounts(graph: MentionConnections, usernames: Array<string>) {
+  const accounts = graph.targets.flatMap((target) => (target.kind === "account" ? [target] : []));
+  const accountsByUsername = Map.groupBy(accounts, ({ username }) => username);
+  const requested = [...new Set(usernames)];
+  const unknownUsernames = requested.filter((username) => !accountsByUsername.has(username));
+  const selectedUsernames = unknownUsernames.length > 0 ? [] : requested;
+  const selectedIds = new Set(
+    selectedUsernames.flatMap((username) =>
+      (accountsByUsername.get(username) ?? []).map(({ id }) => id),
+    ),
+  );
+  return {
+    accounts,
+    selectedUsernames,
+    unknownUsernames,
+    graph: selectedIds.size === 0 ? graph : keepNeighborhoods(graph, selectedIds),
   };
 }

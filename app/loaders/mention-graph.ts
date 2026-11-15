@@ -4,9 +4,8 @@ import type { StoryRepository } from "@@/core/domains/database/repositories/stor
 import type { VisionRepository } from "@@/core/domains/database/repositories/vision-repository.ts";
 import { media } from "@@/core/domains/media-store/media-urls.ts";
 import {
-  keepNeighborhoods,
+  filterByAccounts,
   readMentionConnections,
-  type MentionConnections,
   type MentionConnectionsRuntime,
   type MentionTarget,
 } from "@@/core/domains/mention-connections/mention-connections.ts";
@@ -51,36 +50,21 @@ function toGraphPoint(target: MentionTarget): MentionGraphPoint {
 }
 
 /**
- * The Accounts the graph can be filtered by: those it draws, by username. Filters naming any
- * other username are skipped whole, so a shared URL never shows a partial graph as the one asked.
+ * One option per username, in username order. A username several drawn Accounts share has no
+ * avatar, since choosing one of theirs would picture only one of them.
  */
-function applyAccountFilters(graph: MentionConnections, requested: Array<string>) {
-  const accounts = graph.targets
-    .flatMap((target) => (target.kind === "account" ? [target] : []))
-    .toSorted((left, right) => left.username.localeCompare(right.username));
-  const idByUsername = new Map(accounts.map(({ username, id }) => [username, id]));
-  const unknownAccounts = [...new Set(requested)].filter((username) => !idByUsername.has(username));
-  const selectedIds = new Set(
-    unknownAccounts.length > 0
-      ? []
-      : requested.flatMap((username) => idByUsername.get(username) ?? []),
-  );
-  return {
-    accounts: accounts.map(({ pk, username }) => ({
+function toFilterOptions(accounts: ReturnType<typeof filterByAccounts>["accounts"]) {
+  return [...Map.groupBy(accounts, ({ username }) => username)]
+    .toSorted(([left], [right]) => left.localeCompare(right))
+    .map(([username, [first, ...others]]) => ({
       username,
-      avatarPath: media.image.avatar(pk).url,
-    })),
-    selectedAccounts: accounts.flatMap(({ id, username }) =>
-      selectedIds.has(id) ? [username] : [],
-    ),
-    unknownAccounts,
-    graph: selectedIds.size === 0 ? graph : keepNeighborhoods(graph, selectedIds),
-  };
+      avatarPath: others.length === 0 ? media.image.avatar(first.pk).url : undefined,
+    }));
 }
 
 /** `source` and `target` only name the two ends: who mentioned whom is in the source stories. */
-export function loadMentionGraph(runtime: MentionGraphRuntime, accountFilters: Array<string> = []) {
-  const { graph, ...filters } = applyAccountFilters(
+export function loadMentionGraph(runtime: MentionGraphRuntime, accountFilters: Array<string>) {
+  const { accounts, selectedUsernames, unknownUsernames, graph } = filterByAccounts(
     readMentionConnections(runtime),
     accountFilters,
   );
@@ -99,13 +83,21 @@ export function loadMentionGraph(runtime: MentionGraphRuntime, accountFilters: A
     ...new Set(connections.flatMap(({ storyPks }) => storyPks)),
   ]);
   const sidebarUsers = loadSidebarUsers(runtime);
+  const accountOptions = toFilterOptions(accounts);
+  const selected = new Set(selectedUsernames);
   return {
-    ...filters,
-    points,
-    connections,
-    stories: [...Map.groupBy(sources, ({ owner_pk }) => owner_pk).values()].flatMap((owned) =>
-      createOwnerStoryCards(runtime, owned, sidebarUsers),
+    accounts: accountOptions,
+    selectedAccounts: accountOptions.flatMap(({ username }) =>
+      selected.has(username) ? [username] : [],
     ),
+    unknownAccounts: unknownUsernames,
+    graph: {
+      points,
+      connections,
+      stories: [...Map.groupBy(sources, ({ owner_pk }) => owner_pk).values()].flatMap((owned) =>
+        createOwnerStoryCards(runtime, owned, sidebarUsers),
+      ),
+    },
   };
 }
 

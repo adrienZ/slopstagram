@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { formatAccountFilters } from "../utils/mention-graph-search.ts";
+import { formatAccountFilters, toggleAccountFilter } from "../utils/account-filter-search.ts";
 
 /**
  * Adds and removes the graph's account filters, kept in the `accounts` search param so a link or
@@ -19,11 +19,7 @@ export function useMentionGraphFilter(selected: Array<string>) {
 
   return {
     toggle: (username: string) => {
-      show(
-        selected.includes(username)
-          ? selected.filter((selectedUsername) => selectedUsername !== username)
-          : [...selected, username],
-      );
+      show(toggleAccountFilter(selected, username));
     },
     clear: () => {
       show([]);

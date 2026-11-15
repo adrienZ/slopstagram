@@ -11,6 +11,7 @@ import {
   graphStories,
   lonelyAccount,
   seedFilterGraphDatabase,
+  sharedUsername,
 } from "./seeded-pages.ts";
 import { stubGraphLayout } from "./mount-graph.ts";
 
@@ -23,7 +24,8 @@ const renderer = createPageRenderer(
 const [adaGraph, benGraph, cleoGraph] = graphAccounts;
 const [ada, ben, cleo] = graphAccounts.map((username) => `@${username}`);
 const eve = `@${filterAccount}`;
-const everyConnectionCount = 9;
+const twin = `@${sharedUsername}`;
+const everyConnectionCount = 11;
 
 stubGraphLayout();
 
@@ -99,6 +101,7 @@ test("the filters on the left add and remove accounts in the URL, and clearing s
     ben,
     cleo,
     eve,
+    twin,
   ]);
 
   await user.click(filters.getByRole("checkbox", { name: eve }));
@@ -131,7 +134,8 @@ test("the filters on the left add and remove accounts in the URL, and clearing s
 test.each([
   ["an unknown username", "nobody_graph"],
   ["an Account without any connection", lonelyAccount],
-  ["a username several Accounts share", ambiguousUsername],
+  ["a username only Accounts without a connection share", ambiguousUsername],
+  ["a username in another case", adaGraph.toUpperCase()],
 ])(
   "%s in the URL skips every filter with an error toast, until a filter is chosen",
   async (_case, username) => {
@@ -151,6 +155,30 @@ test.each([
     });
   },
 );
+
+test("an account filter whose username two drawn Accounts share shows both of them", async () => {
+  const { user } = await mountGraph(`/graph?accounts=${sharedUsername}`);
+  expect(
+    shownPoints().toSorted((left, right) => String(left).localeCompare(String(right))),
+  ).toEqual([cleo, twin, twin]);
+  expect(shownConnections()).toHaveLength(2);
+  expect(checkedAccounts(await openFilters(user))).toEqual([twin]);
+});
+
+test("filters the graph skipped can still be cleared, which removes them from the URL", async () => {
+  const { user, router } = await mountGraph(`/graph?accounts=${benGraph},nobody_graph`);
+  await screen.findByText(/^Compte absent du graphe/u);
+  const filters = await openFilters(user);
+
+  await user.click(filters.getByRole("button", { name: "Effacer les filtres" }));
+  await waitFor(() => {
+    expect(router.state.location.search).toEqual({});
+  });
+  await waitFor(() => {
+    expect(screen.queryByText(/^Compte absent du graphe/u)).not.toBeInTheDocument();
+  });
+  expect(filters.getByRole("button", { name: "Effacer les filtres" })).toBeDisabled();
+});
 
 test("the toast names every username the graph lacks", async () => {
   await mountGraph(`/graph?accounts=nobody_graph,${adaGraph},${lonelyAccount}`);

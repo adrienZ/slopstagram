@@ -1,6 +1,11 @@
 import { useNavigate } from "@tanstack/react-router";
 import type { TimelinePlace } from "../utils/timeline-locations.ts";
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
+import {
+  formatAccountFilters,
+  parseAccountFilters,
+  toggleAccountFilter,
+} from "../utils/account-filter-search.ts";
 
 /** The usernames of the accounts in `chosen`, in account order; unknown names are dropped. */
 function keepAccounts(accounts: Array<SidebarUser>, chosen: Set<string>): Array<string> {
@@ -33,7 +38,7 @@ export function usePlaceMapFilter(
   search: { accounts?: string; place?: string },
 ) {
   const navigate = useNavigate({ from: "/map" });
-  const selected = keepAccounts(accounts, new Set(search.accounts?.split(",")));
+  const selected = keepAccounts(accounts, new Set(parseAccountFilters(search.accounts)));
   const place = places.find(({ id }) => id === search.place);
 
   /** Shows the chosen accounts, at the current place or at every place. */
@@ -43,7 +48,7 @@ export function usePlaceMapFilter(
       to: ".",
       search: (previous) => ({
         ...previous,
-        accounts: chosen.length === 0 ? undefined : chosen.join(","),
+        accounts: formatAccountFilters(chosen),
         place: placeFilter === "keep" ? previous.place : undefined,
       }),
       replace: true,
@@ -57,11 +62,7 @@ export function usePlaceMapFilter(
     place,
     places: filterPlaces(place === undefined ? places : [place], selected),
     toggle: (username: string) => {
-      const next = new Set(selected);
-      if (!next.delete(username)) {
-        next.add(username);
-      }
-      update(next, "keep");
+      update(new Set(toggleAccountFilter(selected, username)), "keep");
     },
     removePlace: () => {
       update(new Set(selected), "remove");

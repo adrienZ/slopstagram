@@ -1,7 +1,6 @@
 import { useId } from "react";
 import { cn } from "cn";
 import { FilterIcon, MapPinIcon, XIcon } from "lucide-react";
-import type { SidebarUser } from "../loaders/sidebar-users.ts";
 import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/ui/avatar.tsx";
 import { Badge } from "../shadcn/ui/badge.tsx";
 import { Button } from "../shadcn/ui/button.tsx";
@@ -10,11 +9,17 @@ import { Popover, PopoverContent, PopoverTrigger } from "../shadcn/ui/popover.ts
 import { formatUserHandle, formatUserInitials } from "../utils/helper.ts";
 
 interface AccountFilterProps {
-  accounts: Array<SidebarUser>;
+  /** An account without an avatar shows its initials. */
+  accounts: Array<{ username: string; avatarPath?: string }>;
   selected: Array<string>;
   onToggle: (username: string) => void;
   /** Resets every filter: the accounts and the place. */
   onClear: () => void;
+  /**
+   * Whether there are filters to reset, when the page keeps ones it did not apply. Defaults to
+   * whether an account or the place is selected.
+   */
+  clearable?: boolean;
   /** The place the map is narrowed to, shown as an entry that removes it. */
   place?: { name: string; onRemove: () => void };
 }
@@ -47,6 +52,7 @@ export function AccountChecklist({
   onToggle,
   onClear,
   place,
+  clearable = selected.length > 0 || place !== undefined,
   listClassName = "tw:max-h-72",
 }: AccountFilterProps & {
   /** Sizes the scrollable list. Defaults to a fixed maximum height. */
@@ -55,12 +61,7 @@ export function AccountChecklist({
   const id = useId();
   return (
     <>
-      <Button
-        variant="ghost"
-        size="sm"
-        disabled={selected.length === 0 && place === undefined}
-        onClick={onClear}
-      >
+      <Button variant="ghost" size="sm" disabled={!clearable} onClick={onClear}>
         Effacer les filtres
       </Button>
       {place !== undefined && <PlaceFilterEntry {...place} />}

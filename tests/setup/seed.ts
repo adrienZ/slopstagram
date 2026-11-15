@@ -185,6 +185,50 @@ export function editRecordedUsers(
 }
 
 /**
+ * Returns the recorded payloads with one more reel per account, each holding a copy of the first
+ * recorded story under the given media id, so a test can add an account the recordings lack and
+ * still store it through real ingestion. The page is parsed again afterwards, so the copies share
+ * nothing with the story they copy.
+ */
+export function addRecordedReels(
+  recorded: RecordedPayloads,
+  reels: Array<{ userPk: string; username: string; storyPk: string }>,
+): RecordedPayloads {
+  const [firstPage, ...otherPages] = recorded.galleryPages;
+  return {
+    ...recorded,
+    galleryPages: [
+      updateGalleryPage(firstPage, (connection) => {
+        const [template] = connection.edges;
+        const [story] = template.node.items ?? [];
+        for (const { userPk, username, storyPk } of reels) {
+          const storyUser = story.user;
+          connection.edges.push({
+            ...template,
+            node: {
+              ...template.node,
+              id: userPk,
+              user: { ...template.node.user, pk: userPk, id: userPk, username },
+              items: [
+                {
+                  ...story,
+                  pk: storyPk,
+                  id: storyPk,
+                  user: isJsonObject(storyUser)
+                    ? { ...storyUser, pk: userPk, id: userPk }
+                    : storyUser,
+                },
+              ],
+            },
+          });
+        }
+      }),
+      ...otherPages,
+    ],
+  };
+}
+
+/**
  * Returns the recorded payloads with only the stories whose media ids are listed, dropping
  * the reels left without a story. The recorded tray is dropped too, so the client derives
  * it from the stories that remain.

@@ -10,7 +10,7 @@ import { graphAccounts, seedGraphDatabase } from "./ui/seeded-pages.ts";
 const shared = useSharedTestRuntime(seedGraphDatabase);
 
 test("the server renders the settled graph, every point placed", async () => {
-  const renderer = createPageRenderer(Route, () => loadMentionGraph(shared.runtime), "/graph");
+  const renderer = createPageRenderer(Route, () => loadMentionGraph(shared.runtime, []), "/graph");
   const html = await renderer.renderRoute("/graph");
   const page = within(new JSDOM(html).window.document.body);
   const points = within(page.getByRole("group", { name: "Points" })).getAllByRole("button");

@@ -42,6 +42,11 @@ observation, kept apart per story since equal full names do not prove identity. 
 username several Accounts share stays its own target rather than one of them. A story's
 author is always an Account, so both ends of a connection are Mention targets.
 
+**Neighborhood**:
+A Mention target, the Mention targets it shares a Mention connection with, and every
+Mention connection between two of them. Filtering the mention graph by Accounts shows
+the union of their neighborhoods.
+
 **Sticker kind**:
 The category of a sticker, such as mention, music, hashtag, link, or location.
 

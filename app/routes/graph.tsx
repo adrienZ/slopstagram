@@ -14,11 +14,9 @@ import { getMentionGraph } from "../query-service.ts";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "../shadcn/ui/empty.tsx";
 import { Toaster } from "../shadcn/ui/sonner.tsx";
 import { formatUserHandle } from "../utils/helper.ts";
-import { parseAccountFilters } from "../utils/mention-graph-search.ts";
+import { formatAccountFilters, parseAccountFilters } from "../utils/account-filter-search.ts";
 
-function MentionGraphExplorer(
-  graph: Pick<MentionGraphPageData, "points" | "connections" | "stories">,
-) {
+function MentionGraphExplorer(graph: MentionGraphPageData["graph"]) {
   const { points, connections } = graph;
   const selection = useMentionGraphSelection(graph);
   const { selectedConnection } = selection;
@@ -62,7 +60,7 @@ export function MentionGraphPage({
   accounts,
   selectedAccounts,
   unknownAccounts,
-  ...graph
+  graph,
 }: MentionGraphPageData) {
   const filter = useMentionGraphFilter(selectedAccounts);
   const { theme } = useTheme();
@@ -98,13 +96,14 @@ export function MentionGraphPage({
         ) : (
           <div className="tw:relative">
             {/* A new filter draws another graph: its layout, view and selection start over. */}
-            <MentionGraphExplorer key={selectedAccounts.join(",")} {...graph} />
+            <MentionGraphExplorer key={formatAccountFilters(selectedAccounts)} {...graph} />
             <div className="tw:absolute tw:top-3 tw:left-3">
               <AccountFilter
                 accounts={accounts}
                 selected={selectedAccounts}
                 onToggle={filter.toggle}
                 onClear={filter.clear}
+                clearable={selectedAccounts.length > 0 || unknownAccounts.length > 0}
               />
             </div>
           </div>
