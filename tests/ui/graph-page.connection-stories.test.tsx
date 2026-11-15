@@ -11,7 +11,7 @@ import {
   graphAccounts,
   graphStories,
   seedGraphDatabase,
-} from "./seeded-pages.ts";
+} from "../setup/mention-graph-seed.ts";
 
 const shared = useSharedTestRuntime(seedGraphDatabase);
 const renderer = createPageRenderer(Route, () => loadMentionGraph(shared.runtime, []), "/graph");

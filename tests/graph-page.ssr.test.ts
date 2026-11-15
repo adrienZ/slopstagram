@@ -5,7 +5,7 @@ import { Route } from "../app/routes/graph.tsx";
 import { loadMentionGraph } from "../app/loaders/mention-graph.ts";
 import { createPageRenderer } from "./render-page.ts";
 import { useSharedTestRuntime } from "./setup/test-runtime.ts";
-import { graphAccounts, seedGraphDatabase } from "./ui/seeded-pages.ts";
+import { graphAccounts, seedGraphDatabase } from "./setup/mention-graph-seed.ts";
 
 const shared = useSharedTestRuntime(seedGraphDatabase);
 

@@ -1,13 +1,12 @@
 import type { InstagramUserEntry } from "@@/core/domains/database/entities/instagram-user.ts";
 import type { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
 import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
+import { normalizeSearchQuery } from "@@/core/utils/search-text.ts";
 
 export interface MentionConnectionsRuntime {
   stories: Pick<StoryRepository, "listMentionOccurrences">;
   users: Pick<InstagramUserRepository, "listAll">;
 }
-
-type MentionOccurrence = ReturnType<StoryRepository["listMentionOccurrences"]>[number];
 
 type AccountId = `account:${string}`;
 type UsernameId = `username:${string}`;
@@ -65,7 +64,7 @@ interface MentionObservation {
   mentionedId: MentionTargetId;
 }
 
-interface MentionConnection {
+export interface MentionConnection {
   id: string;
   /** Sorted, so their order says nothing of who mentioned whom: the observations do. */
   targetIds: [MentionTargetId, MentionTargetId];
@@ -99,19 +98,13 @@ function toConnectionTargetIds(
   return a < b ? [a, b] : [b, a];
 }
 
-function createMentionTargetResolver(accounts: Array<InstagramUserEntry>) {
+function createUsernameResolver(accounts: Array<InstagramUserEntry>) {
   const accountsByUsername = Map.groupBy(accounts, ({ username }) => username.toLowerCase());
 
-  return function resolveMentionTarget({ label, storyPk }: MentionOccurrence): MentionTarget {
-    if (!label.startsWith("@")) {
-      return {
-        kind: "name",
-        id: `name:${storyPk}:${encodeURIComponent(label.toLowerCase())}`,
-        label,
-        storyPk,
-      };
-    }
-    const username = label.slice(1).toLowerCase();
+  return function resolveUsername(
+    caseInsensitiveUsername: string,
+  ): AccountTarget | UnknownUsernameTarget | AmbiguousUsernameTarget {
+    const username = caseInsensitiveUsername.toLowerCase();
     const matches = accountsByUsername.get(username) ?? [];
     if (matches.length === 1) {
       return toAccountTarget(matches[0]);
@@ -120,6 +113,15 @@ function createMentionTargetResolver(accounts: Array<InstagramUserEntry>) {
     return matches.length === 0
       ? { kind: "unknown-username", ...target }
       : { kind: "ambiguous-username", ...target, accountPks: matches.map(({ pk }) => pk) };
+  };
+}
+
+function toNameTarget(label: string, storyPk: string): NameTarget {
+  return {
+    kind: "name",
+    id: `name:${storyPk}:${encodeURIComponent(label.toLowerCase())}`,
+    label,
+    storyPk,
   };
 }
 
@@ -134,14 +136,19 @@ function namesAuthor(target: MentionTarget, author: AccountTarget): boolean {
  * Stickers naming the author, and people two stickers of a story name together, make no
  * connection.
  */
-export function readMentionConnections(runtime: MentionConnectionsRuntime): MentionConnections {
-  const resolveMentionTarget = createMentionTargetResolver(runtime.users.listAll());
+export function readMentionConnections(
+  runtime: Pick<MentionConnectionsRuntime, "stories">,
+  accounts: Array<InstagramUserEntry>,
+): MentionConnections {
+  const resolveUsername = createUsernameResolver(accounts);
   const targets = new Map<MentionTargetId, MentionTarget>();
   const connections = new Map<string, MentionConnection>();
 
   for (const occurrence of runtime.stories.listMentionOccurrences()) {
     const author = toAccountTarget(occurrence.author);
-    const mentioned = resolveMentionTarget(occurrence);
+    const mentioned = occurrence.label.startsWith("@")
+      ? resolveUsername(occurrence.label.slice(1))
+      : toNameTarget(occurrence.label, occurrence.storyPk);
     if (namesAuthor(mentioned, author)) {
       continue;
     }
@@ -211,4 +218,56 @@ export function filterByAccounts(graph: MentionConnections, usernames: Array<str
     unknownUsernames,
     graph: selectedIds.size === 0 ? graph : keepNeighborhoods(graph, selectedIds),
   };
+}
+
+/** An Account's full name, or the one a name-only sticker carries. */
+export function fullNameOf(target: MentionTarget): string | null {
+  if (target.kind === "name") {
+    return target.label;
+  }
+  return target.kind === "account" ? target.fullName : null;
+}
+
+/**
+ * Whom a target id, a username or a full name names, by the rules a mention sticker follows: a
+ * username, with or without `@` and ignoring case, names its one Account, or the username itself
+ * when no Account has it, as long as a sticker has it. A username several Accounts share names
+ * each of them and the stickers naming it, since nothing tells which one is meant. Otherwise
+ * every Account and name-only observation with exactly this full name, ignoring case and accents,
+ * so equal names on different stories come back apart. Empty when nothing matches.
+ */
+export function findMentionTargets(
+  accounts: Array<InstagramUserEntry>,
+  { targets }: Pick<MentionConnections, "targets">,
+  query: string,
+): Array<MentionTarget> {
+  const wanted = query.trim();
+  const accountTargets = accounts.map(toAccountTarget);
+  const target = [...targets, ...accountTargets].find(({ id }) => id === wanted);
+  if (target !== undefined) {
+    return [target];
+  }
+  const named = createUsernameResolver(accounts)(wanted.replace(/^@/u, ""));
+  if (named.kind === "account") {
+    return [named];
+  }
+  if (named.kind === "ambiguous-username") {
+    return [
+      ...targets.filter(({ id }) => id === named.id),
+      ...accountTargets.filter(({ pk }) => named.accountPks.includes(pk)),
+    ];
+  }
+  if (targets.some(({ id }) => id === named.id)) {
+    return [named];
+  }
+  const name = normalizeSearchQuery(wanted);
+  if (name === "") {
+    return [];
+  }
+  return [...targets.filter(({ kind }) => kind === "name"), ...accountTargets].filter(
+    (candidate) => {
+      const fullName = fullNameOf(candidate);
+      return fullName !== null && normalizeSearchQuery(fullName) === name;
+    },
+  );
 }

@@ -167,6 +167,7 @@ const OllamaRequestSchema = z.object({
 
 const OllamaChatRequestSchema = z.object({
   messages: z.array(z.object({ content: z.string(), role: z.string() })),
+  options: z.object({ num_ctx: z.number().optional() }).optional(),
   think: z.boolean().optional(),
   tools: z.array(z.object({ function: z.object({ name: z.string() }) })).default([]),
 });
@@ -312,6 +313,40 @@ function forEveryTool<const Matchers extends ReadonlyArray<QuestionMatcher>>(
 /** Several matchers accept the same question, so the chat model calls the first one in this order. */
 const questionMatchers = forEveryTool([
   {
+    tool: "getMentionConnection",
+    match: (question) => {
+      const people = /^connection\s+(?<firstPerson>.+?)\s+and\s+(?<secondPerson>.+)$/iu.exec(
+        withoutPage(question),
+      )?.groups;
+      return people === undefined
+        ? null
+        : {
+            firstPerson: people.firstPerson,
+            secondPerson: people.secondPerson,
+            ...pageOf(question),
+          };
+    },
+  },
+  {
+    tool: "searchMentionPeople",
+    match: (question) => {
+      const query = /^mentions\s+(?<query>.+)$/iu.exec(searchQueryOf(question) ?? "")?.groups
+        ?.query;
+      return query === undefined ? null : { query: withoutPage(query), ...pageOf(question) };
+    },
+  },
+  {
+    tool: "listMentionConnections",
+    match: (question) => {
+      if (!/\bmentions\b/iu.test(question)) {
+        return null;
+      }
+      const person = /\bmentions\s+of\s+(?<person>.+?)\??$/iu.exec(withoutPage(question))?.groups
+        ?.person;
+      return person === undefined ? pageOf(question) : { person, ...pageOf(question) };
+    },
+  },
+  {
     tool: "getTaggedPlace",
     match: (question) => {
       const id = /^(?:place|lieu)\s+(?<id>\S+)$/iu.exec(question)?.groups?.id;
@@ -389,6 +424,7 @@ function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>
  */
 function createOllama(behavior: OllamaBehavior = {}) {
   const requests: Array<{
+    contextLength?: number;
     kind: "chat" | "summary" | "vision";
     prompt: string;
     /** Whether a chat request asked the model to reason. */
@@ -400,6 +436,7 @@ function createOllama(behavior: OllamaBehavior = {}) {
     const chat = OllamaChatRequestSchema.safeParse(json);
     if (chat.success) {
       requests.push({
+        contextLength: chat.data.options?.num_ctx,
         kind: "chat",
         prompt: chat.data.messages.at(-1)?.content ?? "",
         think: chat.data.think,

@@ -184,6 +184,11 @@ export function editRecordedUsers(
   };
 }
 
+/** A story's `story_bloks_stickers`: one mention sticker per username or full name. */
+export function mentionStickers(mentions: Array<{ username?: string; full_name?: string }>) {
+  return mentions.map((mention) => ({ bloks_sticker: { sticker_data: { ig_mention: mention } } }));
+}
+
 /**
  * Returns the recorded payloads with one more reel per account, each holding a copy of the first
  * recorded story, so a test can add an account the recordings lack. The page is parsed again

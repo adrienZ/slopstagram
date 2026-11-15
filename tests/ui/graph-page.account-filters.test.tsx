@@ -12,7 +12,7 @@ import {
   lonelyAccount,
   seedFilterGraphDatabase,
   sharedUsername,
-} from "./seeded-pages.ts";
+} from "../setup/mention-graph-seed.ts";
 import { stubGraphLayout } from "./mount-graph.ts";
 
 const shared = useSharedTestRuntime(seedFilterGraphDatabase);

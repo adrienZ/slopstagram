@@ -12,7 +12,7 @@ import {
   mentionedName,
   seedGraphDatabase,
   unknownUsername,
-} from "./ui/seeded-pages.ts";
+} from "./setup/mention-graph-seed.ts";
 
 const shared = useSharedTestRuntime(seedGraphDatabase);
 const [ada, ben, cleo] = graphAccounts.map((username) => `@${username}`);

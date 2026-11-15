@@ -17,7 +17,8 @@ Tests go through production code paths (`docs/adr/0006-test-through-production-c
   `useSharedTestRuntime(seed)`. Control time with vitest fake timers, not an injected clock.
 - Page tests: `createPageRenderer(route, props, path)` (`tests/render-page.ts`) renders the real
   route and answers only its loader, which the test calls with its runtime. jsdom tests under
-  `tests/ui/` seed it with `seedPageDatabase(runtime)` from `tests/ui/seeded-pages.ts`.
+  `tests/ui/` seed it with `seedPageDatabase(runtime)` from `tests/ui/seeded-pages.ts`. Tests of
+  the mention graph and of its Assistant tools seed it from `tests/setup/mention-graph-seed.ts`.
 - Fixtures in `tests/fixtures/` come from `npm run fixtures:capture`, which anonymizes a live
   session. Never copy them from `data/cache` or the media store, and never run the command in
   CI. Never write personal data into source, fixtures, tests, docs, commits, PRs or issues:

@@ -9,7 +9,7 @@ import {
   cleoStoriesMentioningAda,
   seedFilterGraphDatabase,
   sharedUsername,
-} from "./ui/seeded-pages.ts";
+} from "./setup/mention-graph-seed.ts";
 
 const shared = useSharedTestRuntime(seedFilterGraphDatabase);
 const [adaGraph, benGraph, cleoGraph] = graphAccounts;
