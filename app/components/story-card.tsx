@@ -1,6 +1,6 @@
-import { useNavigate } from "@tanstack/react-router";
 import { cn } from "cn";
 import type { StoryCardData } from "../utils/story-cards.ts";
+import { useStorySearchParam } from "../hooks/use-story-search-param.ts";
 
 const previewSizes = {
   timeline:
@@ -13,24 +13,14 @@ const previewSizes = {
 export function StoryCard({
   story,
   size = "timeline",
-  onOpen,
+  onOpenStory,
 }: {
   story: StoryCardData;
   size?: "timeline" | "feed" | "sticker" | "gallery";
-  /** Opens the story's preview; by default through the URL's `story` search parameter. */
-  onOpen?: (mediaPk: string) => void;
+  onOpenStory?: (mediaPk: string) => void;
 }) {
-  const navigate = useNavigate();
-  const open =
-    onOpen ??
-    ((mediaPk: string) => {
-      void navigate({
-        to: ".",
-        search: (previous) => ({ ...previous, story: mediaPk }),
-        replace: true,
-        resetScroll: false,
-      });
-    });
+  const openInUrl = useStorySearchParam();
+  const open = onOpenStory ?? openInUrl;
   return (
     <div className="tw:min-w-0 tw:flex-none tw:snap-start">
       <button

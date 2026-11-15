@@ -15,7 +15,6 @@ type GraphConnection = MentionGraphPageData["connections"][number];
 
 const ACCOUNT_RADIUS = 20;
 const UNKNOWN_RADIUS = 7;
-// Wide enough to click a thin line.
 const CONNECTION_HIT_WIDTH = 14;
 
 function radiusOf(point: GraphPoint): number {
@@ -126,14 +125,13 @@ interface MentionGraphProps extends Pick<MentionGraphPageData, "points" | "conne
   onSelectPoint: (id: string | null) => void;
   selectedConnectionId: string | null;
   onSelectConnection: (id: string) => void;
-  /** Overlaid on the graph, such as the selected connection's stories. */
-  children?: ReactNode;
+  overlay?: ReactNode;
 }
 
 /**
  * The Mention connections as a force-directed graph: points can be dragged, the background
  * panned, and the view zoomed. Selecting a point highlights its connections and, for a known
- * Account, opens its profile. Connections can be selected too.
+ * Account, opens its profile.
  */
 export function MentionGraph({
   points,
@@ -142,7 +140,7 @@ export function MentionGraph({
   onSelectPoint,
   selectedConnectionId,
   onSelectConnection,
-  children,
+  overlay,
 }: MentionGraphProps) {
   const regionRef = useRef<HTMLDivElement>(null);
   const layout = useForceLayout(points, connections);
@@ -176,7 +174,6 @@ export function MentionGraph({
   function renderConnection(connection: GraphConnection): ReactNode {
     const source = positionOf(connection.source);
     const target = positionOf(connection.target);
-    const labels = [connection.source, connection.target].map((id) => pointsById.get(id)?.label);
     const highlighted = isHighlighted(connection);
     const storyCount = connection.storyPks.length;
     const line = { x1: source.x, y1: source.y, x2: target.x, y2: target.y };
@@ -185,7 +182,7 @@ export function MentionGraph({
         key={connection.id}
         role="button"
         tabIndex={0}
-        aria-label={`Connexion entre ${labels.join(" et ")} : ${formatStoryCount(storyCount)}`}
+        aria-label={`Connexion entre ${connection.labels.join(" et ")} : ${formatStoryCount(storyCount)}`}
         aria-pressed={connection.id === selectedConnectionId}
         data-highlighted={highlighted}
         className="tw:cursor-pointer tw:outline-none"
@@ -334,7 +331,7 @@ export function MentionGraph({
         onZoomOut={viewport.zoomOut}
         onRecenter={viewport.recenter}
       />
-      {children}
+      {overlay}
       <Popover
         open={selected?.kind === "account"}
         onOpenChange={(open) => {
@@ -350,6 +347,10 @@ export function MentionGraph({
             className="tw:w-64"
             side="top"
             updatePositionStrategy="always"
+            onFocusOutside={(event) => {
+              // Focus moves into the story modal, which opens over the profile, not instead of it.
+              event.preventDefault();
+            }}
             onInteractOutside={(event) => {
               // Inside the graph, its own click handlers decide what a click selects or clears.
               if (

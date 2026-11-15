@@ -5,7 +5,20 @@ import {
   saveStoryAudio,
   saveStoryAudioMedia,
 } from "@@/core/domains/database/repositories/story-repository.audio.ts";
-import { and, asc, desc, eq, gt, gte, inArray, lt, lte, notInArray } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gt,
+  gte,
+  inArray,
+  isNotNull,
+  lt,
+  lte,
+  notInArray,
+  type SQL,
+} from "drizzle-orm";
 import type { DrizzleDatabase } from "../client.ts";
 import { instagramUsers } from "../entities/instagram-user.ts";
 import { storyLocationObservations } from "../entities/location-metadata.ts";
@@ -387,23 +400,26 @@ export class StoryRepository {
    * `@username`, or a full name when the sticker carries no username.
    */
   listMentionOccurrences() {
-    return this.database
-      .select({
-        storyPk: stories.mediaPk,
-        takenAt: stories.takenAt,
-        author: {
-          pk: instagramUsers.pk,
-          username: instagramUsers.username,
-          full_name: instagramUsers.fullName,
-        },
-        label: storyStickers.label,
-      })
-      .from(storyStickers)
-      .innerJoin(stories, eq(storyStickers.mediaPk, stories.mediaPk))
-      .innerJoin(instagramUsers, eq(stories.instagramUserPk, instagramUsers.pk))
-      .where(eq(storyStickers.kind, "mention"))
-      .orderBy(desc(stories.takenAt), desc(stories.mediaPk), asc(storyStickers.sortOrder))
-      .all();
+    return (
+      this.database
+        .select({
+          storyPk: stories.mediaPk,
+          takenAt: stories.takenAt,
+          author: {
+            pk: instagramUsers.pk,
+            username: instagramUsers.username,
+            full_name: instagramUsers.fullName,
+          },
+          label: storyStickers.label,
+        })
+        .from(storyStickers)
+        .innerJoin(stories, eq(storyStickers.mediaPk, stories.mediaPk))
+        .innerJoin(instagramUsers, eq(stories.instagramUserPk, instagramUsers.pk))
+        // An undated story has no story card, so it could not be shown as a source story.
+        .where(and(eq(storyStickers.kind, "mention"), isNotNull(stories.takenAt)))
+        .orderBy(desc(stories.takenAt), desc(stories.mediaPk), asc(storyStickers.sortOrder))
+        .all()
+    );
   }
 
   async save(value: StoryItem, owner?: StoryOwner): Promise<void> {
@@ -443,18 +459,26 @@ export class StoryRepository {
 
   /** Every account's stories with at least one location observation, newest first. */
   listWithLocationObservations(): Array<UserTimelineStory> {
+    return this.listTimelineStoriesWhere(
+      inArray(
+        stories.mediaPk,
+        this.database
+          .select({ mediaPk: storyLocationObservations.mediaPk })
+          .from(storyLocationObservations),
+      ),
+    );
+  }
+
+  listTimelineStories(mediaPks: Array<string>): Array<UserTimelineStory> {
+    return this.listTimelineStoriesWhere(inArray(stories.mediaPk, mediaPks));
+  }
+
+  private listTimelineStoriesWhere(condition: SQL): Array<UserTimelineStory> {
     const rows = this.database
       .select({ story: stories, user: instagramUsers })
       .from(stories)
       .innerJoin(instagramUsers, eq(stories.instagramUserPk, instagramUsers.pk))
-      .where(
-        inArray(
-          stories.mediaPk,
-          this.database
-            .select({ mediaPk: storyLocationObservations.mediaPk })
-            .from(storyLocationObservations),
-        ),
-      )
+      .where(condition)
       .orderBy(desc(stories.takenAt), desc(stories.mediaPk))
       .all();
 
@@ -465,29 +489,6 @@ export class StoryRepository {
   }
 
   /** A page of the tagged places with coordinates, the place of the latest story first. */
-  listWithMentionStickers(): Array<UserTimelineStory> {
-    const rows = this.database
-      .select({ story: stories, user: instagramUsers })
-      .from(stories)
-      .innerJoin(instagramUsers, eq(stories.instagramUserPk, instagramUsers.pk))
-      .where(
-        inArray(
-          stories.mediaPk,
-          this.database
-            .select({ mediaPk: storyStickers.mediaPk })
-            .from(storyStickers)
-            .where(eq(storyStickers.kind, "mention")),
-        ),
-      )
-      .orderBy(desc(stories.takenAt), desc(stories.mediaPk))
-      .all();
-
-    return rows.flatMap(({ story, user }) => {
-      const entry = getTimelineStory(this.database, story, user);
-      return entry === null ? [] : [entry];
-    });
-  }
-
   listTaggedPlaces(query: TaggedPlacePageQuery) {
     return listTaggedPlaces(this.database, query);
   }

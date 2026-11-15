@@ -13,7 +13,7 @@ import { loadSidebarUsers } from "./sidebar-users.ts";
 
 interface MentionGraphRuntime extends MentionConnectionsRuntime {
   appleVision: Pick<AppleVisionRepository, "findByMediaPk">;
-  stories: Pick<StoryRepository, "listMentionOccurrences" | "listWithMentionStickers">;
+  stories: Pick<StoryRepository, "listMentionOccurrences" | "listTimelineStories">;
   vision: Pick<VisionRepository, "findByMediaPk">;
 }
 
@@ -48,27 +48,25 @@ function toGraphPoint(target: MentionTarget): MentionGraphPoint {
   };
 }
 
-/**
- * Each connection comes with its source stories, newest first, and their story cards. `source`
- * and `target` only name the two ends: who mentioned whom is in the source stories.
- */
+/** `source` and `target` only name the two ends: who mentioned whom is in the source stories. */
 export function loadMentionGraph(runtime: MentionGraphRuntime) {
   const { targets, connections } = readMentionConnections(runtime);
-  const sourcePks = new Set(
-    connections.flatMap(({ observations }) => observations.map(({ storyPk }) => storyPk)),
-  );
-  const sources = runtime.stories
-    .listWithMentionStickers()
-    .filter(({ story }) => sourcePks.has(story.pk));
+  const points = targets.map(toGraphPoint);
+  const labelById = new Map(points.map(({ id, label }) => [id, label]));
+  const graphConnections = connections.map(({ id, targetIds: [source, target], observations }) => ({
+    id,
+    source,
+    target,
+    labels: [labelById.get(source) ?? source, labelById.get(target) ?? target] as const,
+    storyPks: observations.map(({ storyPk }) => storyPk),
+  }));
+  const sources = runtime.stories.listTimelineStories([
+    ...new Set(graphConnections.flatMap(({ storyPks }) => storyPks)),
+  ]);
   const sidebarUsers = loadSidebarUsers(runtime);
   return {
-    points: targets.map(toGraphPoint),
-    connections: connections.map(({ id, targetIds: [source, target], observations }) => ({
-      id,
-      source,
-      target,
-      storyPks: observations.map(({ storyPk }) => storyPk),
-    })),
+    points,
+    connections: graphConnections,
     stories: [...Map.groupBy(sources, ({ owner_pk }) => owner_pk).values()].flatMap((owned) =>
       createOwnerStoryCards(runtime, owned, sidebarUsers),
     ),

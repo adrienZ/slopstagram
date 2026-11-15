@@ -8,8 +8,9 @@ import type { MentionGraphPageData } from "../loaders/mention-graph.ts";
 import { getMentionGraph } from "../query-service.ts";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "../shadcn/ui/empty.tsx";
 
-export function MentionGraphPage({ points, connections, stories }: MentionGraphPageData) {
-  const selection = useMentionGraphSelection({ points, connections, stories });
+export function MentionGraphPage(graph: MentionGraphPageData) {
+  const { points, connections } = graph;
+  const selection = useMentionGraphSelection(graph);
   const { selectedConnection } = selection;
   return (
     <>
@@ -44,26 +45,27 @@ export function MentionGraphPage({ points, connections, stories }: MentionGraphP
             connections={connections}
             selectedPointId={selection.selectedPointId}
             onSelectPoint={selection.selectPoint}
-            selectedConnectionId={selectedConnection?.id ?? null}
+            selectedConnectionId={selection.selectedConnectionId}
             onSelectConnection={selection.selectConnection}
-          >
-            {selectedConnection !== undefined && (
-              <MentionConnectionStories
-                key={selectedConnection.id}
-                labels={selectedConnection.labels}
-                stories={selection.connectionStories}
-                onClose={selection.closeConnection}
-                onOpenStory={selection.openStory}
-              />
-            )}
-          </MentionGraph>
+            overlay={
+              selectedConnection !== undefined && (
+                <MentionConnectionStories
+                  key={selectedConnection.id}
+                  labels={selectedConnection.labels}
+                  stories={selection.connectionStories}
+                  onClose={selection.closeConnection}
+                  onOpenStory={selection.openStory}
+                />
+              )
+            }
+          />
         )}
       </main>
       <Lightbox
         stories={selection.connectionStories}
         selectedStory={selection.openStoryPk}
         linkToProfile
-        onSelectStory={selection.openStory}
+        onOpenStory={selection.openStory}
       />
     </>
   );

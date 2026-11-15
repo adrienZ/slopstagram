@@ -1,5 +1,5 @@
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, expect, test, vi } from "vitest";
+import { expect, test } from "vitest";
 import { Route } from "../../app/routes/graph.tsx";
 import { loadMentionGraph } from "../../app/loaders/mention-graph.ts";
 import { createPageRenderer } from "../render-page.ts";
@@ -13,36 +13,17 @@ import {
   seedGraphDatabase,
   unknownUsername,
 } from "./seeded-pages.ts";
+import { mountGraph as mountGraphWith, stubGraphLayout } from "./mount-graph.ts";
 
 const shared = useSharedTestRuntime(seedGraphDatabase);
 const renderer = createPageRenderer(Route, () => loadMentionGraph(shared.runtime), "/graph");
+async function mountGraph() {
+  return await mountGraphWith(renderer);
+}
 const [ada, ben, cleo] = graphAccounts.map((username) => `@${username}`);
 const unknown = `@${unknownUsername}`;
 
-beforeEach(() => {
-  // jsdom lays nothing out: the graph's drawing gets the size of its viewBox, at the origin.
-  vi.spyOn(globalThis.Element.prototype, "getBoundingClientRect").mockImplementation(
-    function measure(this: Element) {
-      return globalThis.DOMRect.fromRect(
-        this instanceof globalThis.SVGSVGElement ? { width: 1000, height: 700 } : {},
-      );
-    },
-  );
-});
-
-async function mountGraph() {
-  const mounted = await renderer.mountRoute("/graph");
-  const region = within(await screen.findByRole("region", { name: "Graphe des mentions" }));
-  const drawing = region.getByRole("group", { name: "Points et connexions" });
-  return {
-    ...mounted,
-    region,
-    drawing,
-    canvas: within(drawing),
-    points: within(within(drawing).getByRole("group", { name: "Points" })),
-    lines: within(within(drawing).getByRole("group", { name: "Connexions" })),
-  };
-}
+stubGraphLayout();
 
 function highlightedConnections(drawing: HTMLElement) {
   return within(within(drawing).getByRole("group", { name: "Connexions" }))
@@ -51,7 +32,6 @@ function highlightedConnections(drawing: HTMLElement) {
     .map((connection) => connection.getAttribute("aria-label"));
 }
 
-/** The width of the line drawn for a connection. */
 function strokeWidth(connection: HTMLElement): number {
   return Number(connection.querySelector("line")?.getAttribute("stroke-width"));
 }

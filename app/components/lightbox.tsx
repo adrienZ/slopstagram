@@ -1,10 +1,10 @@
-import { useNavigate } from "@tanstack/react-router";
 import { cn } from "cn";
 import type { StoryCardData } from "../utils/story-cards.ts";
 import { useState, type ReactNode } from "react";
 import { Sticker } from "./sticker.tsx";
 import { MusicSticker } from "./music-sticker.tsx";
 import { getUserTimelineUrl } from "../utils/helper.ts";
+import { useStorySearchParam } from "../hooks/use-story-search-param.ts";
 import {
   Dialog,
   DialogClose,
@@ -99,32 +99,31 @@ function LightboxNavButton(props: {
   );
 }
 
-type SelectStory = (mediaPk?: string) => void;
+type OpenStory = (mediaPk?: string) => void;
 
 interface LightboxProps {
   stories: Array<StoryCardData>;
   selectedStory?: string;
   linkToProfile?: boolean;
-  /** Shows another story or closes; by default through the URL's `story` search parameter. */
-  onSelectStory?: SelectStory;
+  onOpenStory?: OpenStory;
 }
 
 function LightboxDialog(props: {
   stories: Array<StoryCardData>;
   story: StoryCardData;
   linkToProfile: boolean;
-  onSelectStory: SelectStory;
+  onOpenStory: OpenStory;
 }) {
   const [dismissedStory, setDismissedStory] = useState<string | null>(null);
 
   function close() {
     setDismissedStory(props.story.mediaPk);
-    props.onSelectStory();
+    props.onOpenStory();
   }
 
   function navigate(direction: number) {
     const index = props.stories.findIndex((entry) => entry.mediaPk === props.story.mediaPk);
-    props.onSelectStory(
+    props.onOpenStory(
       props.stories[(index + direction + props.stories.length) % props.stories.length]?.mediaPk,
     );
   }
@@ -285,22 +284,14 @@ function LightboxDialog(props: {
 }
 
 export function Lightbox(props: LightboxProps) {
-  const navigate = useNavigate();
+  const openInUrl = useStorySearchParam();
   const story = props.stories.find((entry) => entry.mediaPk === props.selectedStory);
-  function selectInUrl(mediaPk?: string) {
-    void navigate({
-      to: ".",
-      search: (previous) => ({ ...previous, story: mediaPk }),
-      replace: true,
-      resetScroll: false,
-    });
-  }
   return story === undefined ? null : (
     <LightboxDialog
       stories={props.stories}
       story={story}
       linkToProfile={props.linkToProfile ?? false}
-      onSelectStory={props.onSelectStory ?? selectInUrl}
+      onOpenStory={props.onOpenStory ?? openInUrl}
     />
   );
 }

@@ -6,15 +6,13 @@ import { StoryCard } from "./story-card.tsx";
 
 const PAGE_SIZE = 3;
 
-/** The thumbnails of a Mention connection's source stories, three at a time. */
 export function MentionConnectionStories({
   labels,
   stories,
   onClose,
   onOpenStory,
 }: {
-  /** The labels of the connection's two points. */
-  labels: [string, string];
+  labels: readonly [string, string];
   stories: Array<StoryCardData>;
   onClose: () => void;
   onOpenStory: (mediaPk: string) => void;
@@ -43,7 +41,7 @@ export function MentionConnectionStories({
       <ul className="tw:grid tw:grid-cols-3 tw:gap-2">
         {stories.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((story) => (
           <li key={story.mediaPk} className="tw:min-w-0">
-            <StoryCard story={story} size="gallery" onOpen={onOpenStory} />
+            <StoryCard story={story} size="gallery" onOpenStory={onOpenStory} />
           </li>
         ))}
       </ul>

@@ -1,22 +1,11 @@
 import { useMemo, useState } from "react";
 import type { MentionGraphPageData } from "../loaders/mention-graph.ts";
 
-type GraphConnection = MentionGraphPageData["connections"][number];
-
-function labelsOf(
-  points: MentionGraphPageData["points"],
-  { source, target }: GraphConnection,
-): [string, string] {
-  const labelById = new Map(points.map(({ id, label }) => [id, label]));
-  return [labelById.get(source) ?? source, labelById.get(target) ?? target];
-}
-
 /**
- * The graph's selected point, the connection whose source stories are shown, and the story open
- * in the modal. None of them is in the URL, so a refresh closes them all. Selecting another point
- * closes the shown connection, so its stories never stay beside an unrelated selection.
+ * Kept out of the URL, so a refresh closes everything. Selecting a point closes the shown
+ * connection, so its stories never sit beside an unrelated selection.
  */
-export function useMentionGraphSelection({ points, connections, stories }: MentionGraphPageData) {
+export function useMentionGraphSelection({ connections, stories }: MentionGraphPageData) {
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
   const [openStoryPk, setOpenStoryPk] = useState<string>();
@@ -25,6 +14,8 @@ export function useMentionGraphSelection({ points, connections, stories }: Menti
     [stories],
   );
   const selectedConnection = connections.find(({ id }) => id === selectedConnectionId);
+  const connectionStories =
+    selectedConnection?.storyPks.flatMap((storyPk) => storyByPk.get(storyPk) ?? []) ?? [];
 
   function closeConnection() {
     setSelectedConnectionId(null);
@@ -39,12 +30,13 @@ export function useMentionGraphSelection({ points, connections, stories }: Menti
         closeConnection();
       }
     },
-    selectedConnection:
-      selectedConnection === undefined
-        ? undefined
-        : { id: selectedConnection.id, labels: labelsOf(points, selectedConnection) },
-    connectionStories:
-      selectedConnection?.storyPks.flatMap((storyPk) => storyByPk.get(storyPk) ?? []) ?? [],
+    selectedConnectionId: selectedConnection?.id ?? null,
+    selectedConnection,
+    connectionStories: connectionStories.map((story, index) => ({
+      ...story,
+      position: index + 1,
+      count: connectionStories.length,
+    })),
     selectConnection: (id: string) => {
       setSelectedConnectionId(id);
       setOpenStoryPk(undefined);
