@@ -22,10 +22,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-/**
- * Mounts the chat page over a fetched world. The browser's fetch is the boundary: the page's
- * chat requests reach the real chat route handler, which waits for the gate `hold` returns.
- */
+/** The browser's fetch is the boundary: chat requests reach the real route handler. */
 async function mountChat(world: Awaited<ReturnType<typeof createWorld>>) {
   let gate: PromiseWithResolvers<void> | undefined;
   vi.stubGlobal("fetch", async (input: string, init?: RequestInit) => {

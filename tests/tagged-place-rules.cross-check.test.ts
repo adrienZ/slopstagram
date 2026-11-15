@@ -13,7 +13,6 @@ const withInstagramId = { name: "Fixture place with id", lat: 48.8, lng: 12.5 };
 const withoutInstagramId = { name: "Fixture place without id", lat: 45.1, lng: 5.7 };
 const SEARCH_TEXT = "fixture place";
 
-/** Seeds two tagged places the recordings lack: one with an Instagram place id, one without. */
 const shared = useSharedTestRuntime(async (runtime) => {
   const recorded = await readRecordedPayloads(["instagram-story-data.json"]);
   const pks: Array<string> = [];

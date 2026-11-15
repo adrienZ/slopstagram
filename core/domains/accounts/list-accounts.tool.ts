@@ -13,7 +13,6 @@ Do not use it when the message mentions an account, usually as @username: read t
 
 Outcomes: "accounts" lists the accounts by username, and is empty when no account has been collected yet: say so.`;
 
-/** The Assistant tool listing the accounts. Read-only. */
 export function createListAccountsTool(runtime: AccountsRuntime) {
   return tool({
     description: DESCRIPTION,

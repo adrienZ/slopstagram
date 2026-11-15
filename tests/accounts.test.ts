@@ -5,10 +5,6 @@ import { createTestRuntime } from "./setup/test-runtime.ts";
 
 type AccountSpec = [username: string, fullName: string | null];
 
-/**
- * A runtime whose accounts come from real ingestion of the recorded gallery, which holds
- * three accounts. The recording is edited so that they carry the given usernames and names.
- */
 async function createAccounts(
   context: TestContext,
   accounts: [AccountSpec, AccountSpec, AccountSpec],

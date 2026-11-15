@@ -1,4 +1,3 @@
-/** A text as searches compare it: trimmed, lowercased and without accents. */
 function normalizeForSearch(value: string): string {
   return value
     .normalize("NFD")
@@ -7,7 +6,6 @@ function normalizeForSearch(value: string): string {
     .trim();
 }
 
-/** A search query as searches compare it: normalized, without a leading `@`. */
 export function normalizeSearchQuery(query: string): string {
   return normalizeForSearch(query).replace(/^@/u, "");
 }

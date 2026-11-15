@@ -190,7 +190,6 @@ export function response<T>(
   };
 }
 
-/** Builds a reels response in the shape Instagram's GraphQL gallery returns: one reel per entry, keyed by id. */
 export function reelsResponse(
   reels: Record<string, StoryReel>,
   status = 200,
@@ -247,10 +246,6 @@ export function useFixedDate(at: Date = fixedNow()): void {
   });
 }
 
-/**
- * Saves the vision result of a story as the current model and prompt would, by running the
- * analysis against an Ollama that answers `result`. Returns the saved entry.
- */
 export async function saveCurrentVision(
   runtime: Omit<VisionRuntime, "fetchOllama">,
   mediaPk: string,

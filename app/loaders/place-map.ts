@@ -14,10 +14,6 @@ interface PlaceMapRuntime {
   vision: Pick<VisionRepository, "findByMediaPk">;
 }
 
-/**
- * Every tagged place with usable coordinates, across all accounts and all time, the latest
- * story first; the accounts that tagged one of them; and the story cards of their stories.
- */
 export function loadPlaceMap(runtime: PlaceMapRuntime) {
   const located = runtime.stories.listWithLocationObservations();
   const { places } = groupTimelineLocations(located);

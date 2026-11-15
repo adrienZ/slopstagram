@@ -6,7 +6,6 @@ import type { FeedUserSummary } from "../core/domains/story-feed/feed-user-summa
 import { RequestedFeedUserSummariesSchema } from "../core/domains/story-feed/feed-user-summary.ts";
 import type { JsonObject, JsonValue } from "../core/utils/json-value.ts";
 
-/** One tool call of an Assistant reply, as the chat stream showed it. */
 export interface AssistantToolCall {
   toolName: string;
   input: JsonValue;
@@ -14,22 +13,18 @@ export interface AssistantToolCall {
   errorText?: string;
 }
 
-/** What the Assistant streamed for one question. */
 export interface AssistantRun {
   question: string;
   toolCalls: Array<AssistantToolCall>;
   text: string;
-  /** The stream's error, when the chat model failed. */
   errorText?: string;
 }
 
-/** How a getFeedUserSummaries read ended: "found", the reason of a missing summary, or the error. */
 export type FeedUserSummaryOutcome =
   | "found"
   | Extract<FeedUserSummary, { status: "missing" }>["reason"]
   | Extract<FeedUserSummary, { status: "error" }>["error"];
 
-/** The outcome of a read of the user summary of one account. */
 export function describeOutcome(read: FeedUserSummary): FeedUserSummaryOutcome {
   if (read.status === "missing") {
     return read.reason;
@@ -37,13 +32,10 @@ export function describeOutcome(read: FeedUserSummary): FeedUserSummaryOutcome {
   return read.status === "error" ? read.error : read.status;
 }
 
-/** What a case expects from the Assistant. */
 export interface AssistantExpectation {
   /** The tools the Assistant should call, each at least once and no other: none to answer without a tool. */
   tools: Array<AssistantToolName>;
-  /** The only username the tool should be called with. */
   username?: string;
-  /** The outcome every getFeedUserSummaries result should have. */
   outcome?: FeedUserSummaryOutcome;
   /** The place the answer must name: the chat links its name to the map. */
   place?: { id: string; name: string };
@@ -56,7 +48,6 @@ interface CheckResult {
   metadata?: JsonObject;
 }
 
-/** A deterministic scorer of one Assistant run. */
 export interface AssistantCheck {
   name: string;
   description: string;
@@ -76,7 +67,6 @@ const UsernamesInputSchema = z.object({ usernames: z.array(z.string()) });
 // The seeded world names every account user_<digits>, so an invented one shows up in this shape too.
 const SYNTHETIC_USERNAME = /\buser_\d+\b/giu;
 
-/** The usernames a text names, as @mentions or in the seeded world's username shape, lowercased. */
 function findUsernames(text: string): Array<string> {
   const mentioned = findMentions(text).map(({ username }) => username);
   const bare = [...text.matchAll(SYNTHETIC_USERNAME)].map(([username]) => username);
@@ -157,7 +147,6 @@ const ENGLISH_WORDS = new Set([
 
 const FRENCH_LETTERS = /[àâæçéèêëîïôœùûüÿ]/u;
 
-/** Whether a text reads as French rather than English, from its common words and accents. */
 function isFrench(text: string): boolean {
   const words = text.toLowerCase().split(/[^\p{L}]+/u);
   const french = words.filter((word) => FRENCH_WORDS.has(word) || FRENCH_LETTERS.test(word));

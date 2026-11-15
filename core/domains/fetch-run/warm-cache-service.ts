@@ -2,7 +2,6 @@ import type { EventEmitter } from "node:events";
 import { once } from "node:events";
 import { startWarmCacheQueue } from "./warm-cache-queue.ts";
 
-/** The part of the standalone bunqueue server process the service relies on. */
 interface BunqueueServerProcess extends EventEmitter {
   exitCode: number | null;
   signalCode: string | null;
@@ -48,7 +47,6 @@ function startBunqueueServer(
   };
 }
 
-/** Runs the bunqueue server and schedules the hourly warm-cache job on it. */
 export function startWarmCacheService({
   runtime,
   spawnServer,

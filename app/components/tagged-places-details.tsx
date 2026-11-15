@@ -9,7 +9,6 @@ function describePlace(place: TaggedPlaceSummary): string {
   return [place.name, place.category].filter((part) => part !== null).join(" · ");
 }
 
-/** The Tagged places the Assistant listed or found, as plain text. */
 export function TaggedPlaceList({
   emptyLabel = "Aucun lieu.",
   label = "Lieux",
@@ -46,7 +45,6 @@ export function TaggedPlaceList({
   );
 }
 
-/** The Tagged place the Assistant read, as plain text: its address and latest stories. */
 export function TaggedPlaceDetails({ read }: { read: TaggedPlaceRead }) {
   if (read.status === "unknown") {
     return <p>Aucun lieu n’a l’identifiant {read.id}.</p>;

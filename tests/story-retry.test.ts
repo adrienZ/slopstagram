@@ -16,7 +16,6 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-/** Runs the request with fake timers and returns the waits between attempts. */
 async function runWithRetry<T>(
   runRequest: () => Promise<InstagramClientResponse<T>>,
   maxAttempts = 3,

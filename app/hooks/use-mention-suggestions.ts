@@ -3,11 +3,6 @@ import type { ChangeEvent, KeyboardEvent, SyntheticEvent } from "react";
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
 import { findTypedMention, insertMention, suggestAccounts } from "../utils/chat-mentions.ts";
 
-/**
- * The saved accounts suggested for the Mention typed before the caret of the message field, as
- * a listbox the field controls: arrows move the active suggestion, Enter or Tab picks it, Escape
- * closes the list. Picking inserts `@username` and a space in the message.
- */
 export function useMentionSuggestions({
   accounts,
   draft,

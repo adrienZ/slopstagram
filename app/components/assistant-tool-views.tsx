@@ -22,10 +22,8 @@ import { FeedUserSummariesDetails } from "./feed-user-summaries-details.tsx";
 import { TaggedPlaceDetails, TaggedPlaceList } from "./tagged-places-details.tsx";
 import type { ToolCall, ToolOutput } from "../hooks/use-assistant-chat.ts";
 
-/** How the chat shows a call of one Assistant tool. */
 interface AssistantToolView<Name extends AssistantToolName> {
   icon: ReactNode;
-  /** What the tool read, behind its trace line. Without it, the trace line does not open. */
   Result?: (props: { output: ToolOutput<Name> }) => ReactNode;
 }
 
@@ -91,10 +89,6 @@ function ToolResult<Name extends AssistantToolName>({
   return Result === undefined ? null : <Result output={output} />;
 }
 
-/**
- * A tool call as one trace line, the tool's name and what it was asked, which opens on what the
- * tool read once it has run. An invalid call shows its line only.
- */
 export function ToolTrace({ call }: { call: ToolCall }) {
   const view = call.invalid ? undefined : assistantToolViews[call.name];
   const line = (

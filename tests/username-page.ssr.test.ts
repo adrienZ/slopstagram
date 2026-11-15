@@ -46,7 +46,6 @@ const renderer = createPageRenderer(
   "/users/$username",
 );
 
-/** The data the server embeds so the browser can hydrate, which includes what the lightbox shows. */
 function readHydrationData(html: string): string {
   return (
     new JSDOM(html).window.document.querySelector("script[data-tsr-stream-part]")?.textContent ?? ""

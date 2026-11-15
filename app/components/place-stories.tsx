@@ -8,7 +8,6 @@ import { StoryCard } from "./story-card.tsx";
 const footerButtonClassName =
   "tw:cursor-pointer tw:rounded tw:p-1 tw:hover:bg-muted tw:focus-visible:outline-2 tw:focus-visible:outline-ring";
 
-/** The body of a place's map popup: its story cards and dates, with previous and next places. */
 export function PlaceStories({
   place,
   storyByMediaPk,
@@ -18,7 +17,6 @@ export function PlaceStories({
 }: {
   place: TimelinePlace;
   storyByMediaPk: Map<string, StoryCardData>;
-  /** Names each story's owner, linking to their profile. */
   showOwner?: boolean;
   onClose: () => void;
   /** Steps to the previous or next place; absent when there is no other place. */

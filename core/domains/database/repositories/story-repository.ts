@@ -417,7 +417,6 @@ export class StoryRepository {
     });
   }
 
-  /** Every account's stories with at least one location observation, newest first. */
   listWithLocationObservations(): Array<UserTimelineStory> {
     const rows = this.database
       .select({ story: stories, user: instagramUsers })
@@ -440,7 +439,6 @@ export class StoryRepository {
     });
   }
 
-  /** A page of the tagged places with coordinates, the place of the latest story first. */
   listTaggedPlaces(query: TaggedPlacePageQuery) {
     return listTaggedPlaces(this.database, query);
   }

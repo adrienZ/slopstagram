@@ -33,7 +33,6 @@ const storyPks = [
   "700000000000906",
 ];
 
-/** A fresh copy of the recorded gallery page, typed enough to edit what a test needs. */
 async function recordedGalleryPage() {
   const { galleryPages } = await readRecordedPayloads(["instagram-story-data.json"]);
   return RecordedGalleryPageSchema.parse(galleryPages[0]);

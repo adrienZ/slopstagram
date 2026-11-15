@@ -13,7 +13,6 @@ Do not use it to list places.
 
 Outcomes: "status" is "found" with the place, or "unknown" when no place has this id: say so. When "hasMoreStories" is true, say that older stories tag the place too.`;
 
-/** The Assistant tool reading one Tagged place and its latest stories. Read-only. */
 export function createGetTaggedPlaceTool(runtime: TaggedPlacesReadRuntime) {
   return tool({
     description: DESCRIPTION,

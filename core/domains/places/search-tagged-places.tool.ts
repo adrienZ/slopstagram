@@ -14,7 +14,6 @@ Do not use it to list every place or the places of an account: use listTaggedPla
 
 Outcomes: "places" holds up to 10 matches, "total" counts every match and "nextOffset" is the offset of the next page, null on the last one. When "places" is empty, say that no place matches. When several places match, name them and ask which one is meant.`;
 
-/** The Assistant tool searching the Tagged places by name, address or category. Read-only. */
 export function createSearchTaggedPlacesTool(runtime: TaggedPlacesReadRuntime) {
   return tool({
     description: DESCRIPTION,

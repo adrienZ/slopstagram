@@ -28,14 +28,10 @@ export const namedAccount = {
   username: "user_072",
   fullName: "Fixture text 69",
 };
-/** The account with stories on two days, rendered by the timeline page. */
 export const timelineAccount = namedAccount.username;
-/** Saved by the application but without any story in the feed. */
 export const outsideFeedAccount = "user_901";
-/** Saved by the application: the account the first story's mention stickers point at. */
 export const mentionedAccount = "user_114";
 
-/** An image story that mentions the saved account above and carries both captions below. */
 export const captionedStoryPk = "700000000000107";
 /** Published the previous day, so it is only reachable by its day. */
 const pastStoryPk = "700000000000116";
@@ -43,11 +39,6 @@ export const hostileCaption = "</script><script>caption</script>";
 export const appleCaption = "apple <text>";
 export const userSummary = "A synthetic summary of the recorded stories.";
 
-/**
- * Seeds a runtime's database with what the page tests render: the recorded stories through
- * production ingestion, plus the accounts, captions and summaries that ingestion does not
- * produce.
- */
 export async function seedPageDatabase(runtime: Runtime): Promise<void> {
   await seedRecordedStories(runtime, await readRecordedPayloads(), {
     publishedBefore: { now: pageNow, seconds: PUBLISHED_BEFORE_SECONDS },
@@ -84,7 +75,6 @@ export async function seedPageDatabase(runtime: Runtime): Promise<void> {
   );
 }
 
-/** The sticker kinds the loader reports for a set of stories: the distinct kinds, alphabetically. */
 export function stickerKindsOf(
   entries: Array<{
     story: { annotations?: { stickers: Array<{ kind: string }> } };
@@ -97,7 +87,6 @@ export function stickerKindsOf(
   ].toSorted();
 }
 
-/** Recomputes what the loader derives from a timeline's stories, after a test changed them. */
 export function regroupTimeline<
   Props extends {
     sidebarUsers: Array<SidebarUser>;
@@ -115,21 +104,14 @@ export function regroupTimeline<
 
 /** The recorded accounts, renamed so that each has distinct initials, in recording order. */
 export const mapAccounts = ["ada_map", "ben_map", "cleo_map"] as const;
-/** A place two accounts tagged: the oldest recorded story, then a newer one of the third account. */
 export const sharedPlace = {
   name: "Fixture place 1",
   oldestPk: "700000000000079",
   latestPk: "700000000000903",
 };
-/** A place only the second account tagged. */
 export const soloPlace = { name: "Fixture place 2", pk: "700000000000090" };
 
-/**
- * Seeds a runtime's database with what the map page renders: the recorded stories through
- * production ingestion, with the accounts renamed and location stickers the recording lacks
- * (a shared place, a place of its own, and a place without coordinates). No place lookup is
- * recorded, so the places keep the positions their stickers carry.
- */
+/** No place lookup is recorded, so places keep their sticker positions. */
 export async function seedMapDatabase(runtime: Runtime): Promise<void> {
   const recorded = editRecordedUsers(
     await readRecordedPayloads(["instagram-story-data.json"]),

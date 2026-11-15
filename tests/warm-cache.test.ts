@@ -21,7 +21,6 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-/** Every media file the job cached, as the paths the report points at. */
 async function listCacheFiles(storage: Runtime["storage"]): Promise<Array<string>> {
   const [images, audio] = await Promise.all([storage.images.getKeys(), storage.audio.getKeys()]);
   return [

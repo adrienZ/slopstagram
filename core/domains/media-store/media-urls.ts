@@ -4,7 +4,6 @@ import { cachedMediaContentType } from "./media-types.ts";
 export const IMAGES_STORAGE_DIR = "images";
 export const AUDIO_STORAGE_DIR = "audio";
 
-/** A file of the media store: its store, its key in that store, where the database keeps it and the URL serving it. */
 export interface MediaFile {
   store: typeof AUDIO_STORAGE_DIR | typeof IMAGES_STORAGE_DIR;
   key: string;
@@ -17,7 +16,6 @@ function extensionOf(key: string): string {
   return dot === -1 ? "" : key.slice(dot).toLowerCase();
 }
 
-/** One store of the media store: the URL serving it and the files it holds, told by their key. */
 function createStore(
   store: MediaFile["store"],
   urlPrefix: string,
@@ -60,22 +58,15 @@ export const media = {
     /** Music artwork, at a key of the image store (without its `images/` prefix). */
     artwork: (key: string | null) =>
       key?.startsWith("music/") === true ? images.fromKey(key) : null,
-    /** A file of the image store at a key, for the pipeline that writes it. */
     file: images.file,
     fromStoredPath: images.fromStoredPath,
   },
   audio: {
-    /** A file of the audio store at a key, for the pipeline that writes it. */
     file: audio.file,
     fromStoredPath: audio.fromStoredPath,
   },
 
-  /**
-   * The file a request path under `/media/` stands for (URL-encoded, without the prefix): a path
-   * under `audio/` is a file of the audio store, any other path a file of the image store. Null for
-   * a path of another type, an undecodable one, and a key containing `..`: traversal fails closed
-   * here, whatever the storage driver does with such a key.
-   */
+  /** Traversal fails closed here, whatever the storage driver does with a `..` key. */
   fromRequest(requestPath: string): MediaFile | null {
     const key = decode(requestPath);
     if (key === null || key.includes("..")) {
