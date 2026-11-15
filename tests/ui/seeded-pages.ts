@@ -9,6 +9,7 @@ import { groupTimelineLocations } from "../../app/utils/timeline-locations.ts";
 import { groupTimelineStickers } from "../../app/utils/timeline-stickers.ts";
 import {
   addRecordedReels,
+  addRecordedStories,
   editRecordedStories,
   editRecordedUsers,
   keepRecordedStories,
@@ -246,6 +247,8 @@ interface GraphSeedOptions {
   storyPks?: Array<string>;
   /** The accounts the recording lacks, each with one story. */
   reels?: Array<GraphReel>;
+  /** More stories of recorded accounts, copies of their first one. */
+  addedStories?: Parameters<typeof addRecordedStories>[1];
   undatedStoryPks?: Array<string>;
 }
 
@@ -255,11 +258,15 @@ async function seedGraph(
   {
     storyPks = [...mentions.keys()],
     reels = extraGraphReels,
+    addedStories = [],
     undatedStoryPks = [],
   }: GraphSeedOptions = {},
 ): Promise<void> {
   const recorded = editRecordedUsers(
-    addRecordedReels(await readRecordedPayloads(["instagram-story-data.json"]), reels),
+    addRecordedStories(
+      addRecordedReels(await readRecordedPayloads(["instagram-story-data.json"]), reels),
+      addedStories,
+    ),
     (user, position) => {
       user.username = graphAccounts[position] ?? user.username;
       if (position === 0) {
@@ -267,7 +274,7 @@ async function seedGraph(
       }
     },
   );
-  const keptStoryPks = [...storyPks, ...reels.map(({ storyPk }) => storyPk)];
+  const keptStoryPks = [...storyPks, ...[...reels, ...addedStories].map(({ storyPk }) => storyPk)];
   await seedRecordedStories(
     runtime,
     editRecordedStories(keepRecordedStories(recorded, keptStoryPks), (story) => {

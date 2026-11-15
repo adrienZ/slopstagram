@@ -93,21 +93,25 @@ test("an author naming their own username makes no connection, even when another
   expect(connections).not.toContainEqual([ada, sharedAda, 1]);
 });
 
-const graphAuthorPks = { ada: "700000000000001", ben: "700000000000062", cleo: "700000000000068" };
+const graphAuthorPks = ["700000000000001", "700000000000062", "700000000000068"];
 
-/** Only some of the graph's stories stored, every author still a known Account. */
+/**
+ * Only some of the graph's stories stored. Each author also keeps a story that mentions nobody,
+ * so ingestion still stores them as known Accounts.
+ */
 async function seedGraphStories(
   context: TestContext,
   storyPks: Array<string>,
-  options?: Parameters<typeof seedGraphDatabase>[2],
+  options: { undatedStoryPks?: Array<string> } = {},
 ): Promise<Runtime> {
   const runtime = await createTestRuntime(context);
-  await Promise.all(
-    Object.entries(graphAuthorPks).map(async ([name, pk]) => {
-      await runtime.users.save({ full_name: null, id: pk, pk, username: `${name}_graph` });
-    }),
-  );
-  await seedGraphDatabase(runtime, storyPks, options);
+  await seedGraphDatabase(runtime, storyPks, {
+    ...options,
+    addedStories: graphAuthorPks.map((userPk, position) => ({
+      userPk,
+      storyPk: `70000000000097${position}`,
+    })),
+  });
   return runtime;
 }
 

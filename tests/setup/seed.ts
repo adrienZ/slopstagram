@@ -229,6 +229,34 @@ export function addRecordedReels(
 }
 
 /**
+ * Returns the recorded payloads with a copy of an account's first recorded story added to its
+ * reel under each given media id, so a test can give a recorded account a story the recordings
+ * lack and still store it through real ingestion.
+ */
+export function addRecordedStories(
+  recorded: RecordedPayloads,
+  stories: Array<{ userPk: string; storyPk: string }>,
+): RecordedPayloads {
+  return {
+    ...recorded,
+    galleryPages: recorded.galleryPages.map((payload) =>
+      updateGalleryPage(payload, ({ edges }) => {
+        for (const { node } of edges) {
+          const items = node.items ?? [];
+          const added = stories.filter(({ userPk }) => userPk === node.user?.pk);
+          if (items.length > 0) {
+            node.items = [
+              ...items,
+              ...added.map(({ storyPk }) => ({ ...items[0], pk: storyPk, id: storyPk })),
+            ];
+          }
+        }
+      }),
+    ),
+  };
+}
+
+/**
  * Returns the recorded payloads with only the stories whose media ids are listed, dropping
  * the reels left without a story. The recorded tray is dropped too, so the client derives
  * it from the stories that remain.
