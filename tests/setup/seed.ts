@@ -185,6 +185,82 @@ export function editRecordedUsers(
 }
 
 /**
+ * Returns the recorded payloads with one more reel per account, each holding a copy of the first
+ * recorded story, so a test can add an account the recordings lack. The page is parsed again
+ * afterwards, so the copies share nothing with the story they copy.
+ */
+export function addRecordedReels(
+  recorded: RecordedPayloads,
+  reels: Array<{ userPk: string; username: string; storyPk: string }>,
+): RecordedPayloads {
+  const [firstPage, ...otherPages] = recorded.galleryPages;
+  return {
+    ...recorded,
+    galleryPages: [
+      updateGalleryPage(firstPage, (connection) => {
+        const [template] = connection.edges;
+        const [story] = template.node.items ?? [];
+        const storyUser = story.user;
+        for (const { userPk, username, storyPk } of reels) {
+          connection.edges.push({
+            ...template,
+            node: {
+              ...template.node,
+              id: userPk,
+              user: { ...template.node.user, pk: userPk, id: userPk, username },
+              items: [
+                {
+                  ...story,
+                  pk: storyPk,
+                  id: storyPk,
+                  user: isJsonObject(storyUser)
+                    ? { ...storyUser, pk: userPk, id: userPk }
+                    : storyUser,
+                },
+              ],
+            },
+          });
+        }
+      }),
+      ...otherPages,
+    ],
+  };
+}
+
+/**
+ * Returns the recorded payloads with copies of an account's first recorded story added to its
+ * reel, so a test can give a recorded account stories the recordings lack.
+ */
+export function addRecordedStories(
+  recorded: RecordedPayloads,
+  stories: Array<{ userPk: string; storyPk: string }>,
+): RecordedPayloads {
+  const copiedUserPks = new Set<string>();
+  const galleryPages = recorded.galleryPages.map((payload) =>
+    updateGalleryPage(payload, ({ edges }) => {
+      for (const { node } of edges) {
+        const items = node.items ?? [];
+        const added = stories.filter(({ userPk }) => userPk === node.user?.pk);
+        if (added.length > 0 && items.length > 0) {
+          node.items = [
+            ...items,
+            ...added.map(({ storyPk }) => ({ ...items[0], pk: storyPk, id: storyPk })),
+          ];
+          copiedUserPks.add(added[0].userPk);
+        }
+      }
+    }),
+  );
+  const missing = stories.filter(({ userPk }) => !copiedUserPks.has(userPk));
+  if (missing.length > 0) {
+    throw new Error(
+      `No recorded story to copy for ${missing.map(({ userPk }) => userPk).join(", ")}`,
+    );
+  }
+  return { ...recorded, galleryPages };
+}
+
+/**
  * Returns the recorded payloads with only the stories whose media ids are listed, dropping
  * the reels left without a story. The recorded tray is dropped too, so the client derives
  * it from the stories that remain.

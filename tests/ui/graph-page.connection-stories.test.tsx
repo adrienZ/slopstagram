@@ -14,7 +14,7 @@ import {
 } from "./seeded-pages.ts";
 
 const shared = useSharedTestRuntime(seedGraphDatabase);
-const renderer = createPageRenderer(Route, () => loadMentionGraph(shared.runtime), "/graph");
+const renderer = createPageRenderer(Route, () => loadMentionGraph(shared.runtime, []), "/graph");
 async function mountGraph() {
   return await mountGraphWith(renderer);
 }
@@ -25,7 +25,7 @@ const adaAndCleo = `Connexion entre ${ada} et ${cleo} : 5 stories`;
 stubGraphLayout();
 
 function altOf(mediaPk: string): string {
-  const { stories } = loadMentionGraph(shared.runtime);
+  const { stories } = loadMentionGraph(shared.runtime, []).graph;
   return stories.find((story) => story.mediaPk === mediaPk)?.alt ?? "";
 }
 

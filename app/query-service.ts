@@ -42,7 +42,9 @@ export const getPlaceMap = createServerFn({ method: "GET" }).handler(async () =>
   return loadPlaceMap(getProductionRuntime());
 });
 
-export const getMentionGraph = createServerFn({ method: "GET" }).handler(async () => {
-  const { loadMentionGraph } = await import("./loaders/mention-graph.ts");
-  return loadMentionGraph(getProductionRuntime());
-});
+export const getMentionGraph = createServerFn({ method: "GET" })
+  .validator(z.object({ accounts: z.array(z.string()) }))
+  .handler(async ({ data }) => {
+    const { loadMentionGraph } = await import("./loaders/mention-graph.ts");
+    return loadMentionGraph(getProductionRuntime(), data.accounts);
+  });

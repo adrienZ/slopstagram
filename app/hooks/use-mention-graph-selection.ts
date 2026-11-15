@@ -5,7 +5,7 @@ import type { MentionGraphPageData } from "../loaders/mention-graph.ts";
  * Kept out of the URL, so a refresh closes everything. Selecting a point closes the shown
  * connection, so its stories never sit beside an unrelated selection.
  */
-export function useMentionGraphSelection({ connections, stories }: MentionGraphPageData) {
+export function useMentionGraphSelection({ connections, stories }: MentionGraphPageData["graph"]) {
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
   const [openStoryPk, setOpenStoryPk] = useState<string>();

@@ -16,7 +16,7 @@ import {
 import { mountGraph as mountGraphWith, stubGraphLayout } from "./mount-graph.ts";
 
 const shared = useSharedTestRuntime(seedGraphDatabase);
-const renderer = createPageRenderer(Route, () => loadMentionGraph(shared.runtime), "/graph");
+const renderer = createPageRenderer(Route, () => loadMentionGraph(shared.runtime, []), "/graph");
 async function mountGraph() {
   return await mountGraphWith(renderer);
 }
@@ -219,7 +219,7 @@ test("a dragged point follows the pointer and pulls its neighbours, then is let 
 });
 
 test("without any mention connection the page says so", async (context) => {
-  const empty = loadMentionGraph(await createTestRuntime(context));
+  const empty = loadMentionGraph(await createTestRuntime(context), []);
   await renderer.mountRoute("/graph", empty);
   expect(screen.getByText("Aucune mention à afficher")).toBeVisible();
   expect(screen.queryByRole("region", { name: "Graphe des mentions" })).not.toBeInTheDocument();

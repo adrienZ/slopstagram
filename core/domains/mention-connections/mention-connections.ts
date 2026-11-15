@@ -15,7 +15,7 @@ type NameId = `name:${string}`;
 type MentionTargetId = AccountId | UsernameId | NameId;
 
 /** A story's author, or the only current Account whose username a sticker names. */
-interface AccountTarget {
+export interface AccountTarget {
   kind: "account";
   id: AccountId;
   label: string;
@@ -165,4 +165,50 @@ export function readMentionConnections(runtime: MentionConnectionsRuntime): Ment
   }
 
   return { targets: [...targets.values()], connections: [...connections.values()] };
+}
+
+/** The union of the Neighborhoods of `selectedIds`, in their original order. */
+function keepNeighborhoods(
+  { targets, connections }: MentionConnections,
+  selectedIds: ReadonlySet<string>,
+): MentionConnections {
+  const kept = new Set(selectedIds);
+  for (const {
+    targetIds: [first, second],
+  } of connections) {
+    if (selectedIds.has(first)) {
+      kept.add(second);
+    }
+    if (selectedIds.has(second)) {
+      kept.add(first);
+    }
+  }
+  return {
+    targets: targets.filter(({ id }) => kept.has(id)),
+    connections: connections.filter(({ targetIds }) => targetIds.every((id) => kept.has(id))),
+  };
+}
+
+/**
+ * A username several drawn Accounts share selects all of them, since nothing tells which one is
+ * meant. One username no drawn Account has skips every filter, so a shared link never shows a
+ * partial graph as the one asked for.
+ */
+export function filterByAccounts(graph: MentionConnections, usernames: Array<string>) {
+  const accounts = graph.targets.flatMap((target) => (target.kind === "account" ? [target] : []));
+  const accountsByUsername = Map.groupBy(accounts, ({ username }) => username);
+  const requested = [...new Set(usernames)];
+  const unknownUsernames = requested.filter((username) => !accountsByUsername.has(username));
+  const selectedUsernames = unknownUsernames.length > 0 ? [] : requested;
+  const selectedIds = new Set(
+    selectedUsernames.flatMap((username) =>
+      (accountsByUsername.get(username) ?? []).map(({ id }) => id),
+    ),
+  );
+  return {
+    accounts,
+    selectedUsernames,
+    unknownUsernames,
+    graph: selectedIds.size === 0 ? graph : keepNeighborhoods(graph, selectedIds),
+  };
 }

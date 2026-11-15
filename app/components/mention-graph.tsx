@@ -9,9 +9,9 @@ import { Button } from "../shadcn/ui/button.tsx";
 import { Popover, PopoverAnchor, PopoverContent } from "../shadcn/ui/popover.tsx";
 import { formatUserInitials, getUserTimelineUrl } from "../utils/helper.ts";
 
-type GraphPoint = MentionGraphPageData["points"][number];
+type GraphPoint = MentionGraphPageData["graph"]["points"][number];
 type AccountPoint = Extract<GraphPoint, { kind: "account" }>;
-type GraphConnection = MentionGraphPageData["connections"][number];
+type GraphConnection = MentionGraphPageData["graph"]["connections"][number];
 
 const ACCOUNT_RADIUS = 20;
 const UNKNOWN_RADIUS = 7;
@@ -120,7 +120,7 @@ function GraphControls({
   );
 }
 
-interface MentionGraphProps extends Pick<MentionGraphPageData, "points" | "connections"> {
+interface MentionGraphProps extends Pick<MentionGraphPageData["graph"], "points" | "connections"> {
   selectedPointId: string | null;
   onSelectPoint: (id: string | null) => void;
   selectedConnectionId: string | null;
