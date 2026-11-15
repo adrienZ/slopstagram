@@ -15,7 +15,7 @@ type NameId = `name:${string}`;
 type MentionTargetId = AccountId | UsernameId | NameId;
 
 /** A story's author, or the only current Account whose username a sticker names. */
-interface AccountTarget {
+export interface AccountTarget {
   kind: "account";
   id: AccountId;
   label: string;

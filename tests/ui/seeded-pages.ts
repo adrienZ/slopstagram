@@ -251,15 +251,15 @@ interface GraphSeedOptions {
   undatedStoryPks?: Array<string>;
 }
 
-async function seedGraph(
+async function seedGraphWithMentions(
   runtime: Runtime,
   mentions: Map<string, ReturnType<typeof mentionStickers>>,
   {
     storyPks = [...mentions.keys()],
-    reels = extraGraphReels,
+    reels,
     addedStories = [],
     undatedStoryPks = [],
-  }: GraphSeedOptions = {},
+  }: GraphSeedOptions & Required<Pick<GraphSeedOptions, "reels">>,
 ): Promise<void> {
   const recorded = editRecordedUsers(
     addRecordedStories(
@@ -298,7 +298,7 @@ export async function seedGraphDatabase(
   storyPks: Array<string> = [...mentionsByStory.keys()],
   { reels = [], ...options }: Omit<GraphSeedOptions, "storyPks"> = {},
 ): Promise<void> {
-  await seedGraph(runtime, mentionsByStory, {
+  await seedGraphWithMentions(runtime, mentionsByStory, {
     ...options,
     storyPks,
     reels: [...extraGraphReels, ...reels],
@@ -326,7 +326,7 @@ export async function seedFilterGraphDatabase(runtime: Runtime): Promise<void> {
     { userPk: "700000000000956", username: sharedUsername, storyPk: "700000000000966" },
   ];
   const mentionsThirdAccount = mentionStickers([{ username: graphAccounts[2] }]);
-  await seedGraph(
+  await seedGraphWithMentions(
     runtime,
     new Map([
       ...mentionsByStory,
@@ -341,7 +341,7 @@ export async function seedFilterGraphDatabase(runtime: Runtime): Promise<void> {
       ],
     },
   );
-  await seedGraph(runtime, new Map([[secondTwin.storyPk, mentionsThirdAccount]]), {
+  await seedGraphWithMentions(runtime, new Map([[secondTwin.storyPk, mentionsThirdAccount]]), {
     storyPks: [],
     reels: [secondTwin],
   });

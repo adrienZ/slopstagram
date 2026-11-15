@@ -1,5 +1,9 @@
 import { useNavigate } from "@tanstack/react-router";
-import { formatAccountFilters, toggleAccountFilter } from "../utils/account-filter-search.ts";
+import {
+  formatAccountFilters,
+  replaceFilterSearch,
+  toggleAccountFilter,
+} from "../utils/account-filter-search.ts";
 
 /** Kept in the `accounts` search param so a link or a reload opens the same view. */
 export function useMentionGraphFilter(selected: Array<string>) {
@@ -7,10 +11,8 @@ export function useMentionGraphFilter(selected: Array<string>) {
 
   function show(usernames: Array<string>) {
     void navigate({
-      to: ".",
+      ...replaceFilterSearch,
       search: { accounts: formatAccountFilters(usernames) },
-      replace: true,
-      resetScroll: false,
     });
   }
 

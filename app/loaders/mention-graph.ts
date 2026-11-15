@@ -6,9 +6,11 @@ import { media } from "@@/core/domains/media-store/media-urls.ts";
 import {
   filterByAccounts,
   readMentionConnections,
+  type AccountTarget,
   type MentionConnectionsRuntime,
   type MentionTarget,
 } from "@@/core/domains/mention-connections/mention-connections.ts";
+import { keepAccountFilters } from "../utils/account-filter-search.ts";
 import { createOwnerStoryCards } from "./account-timeline.ts";
 import { loadSidebarUsers } from "./sidebar-users.ts";
 
@@ -50,7 +52,7 @@ function toGraphPoint(target: MentionTarget): MentionGraphPoint {
 }
 
 /** A username several drawn Accounts share has no avatar: one would picture only one of them. */
-function toFilterOptions(accounts: ReturnType<typeof filterByAccounts>["accounts"]) {
+function toFilterOptions(accounts: Array<AccountTarget>) {
   return [...Map.groupBy(accounts, ({ username }) => username)]
     .toSorted(([left], [right]) => left.localeCompare(right))
     .map(([username, [first, ...others]]) => ({
@@ -81,12 +83,9 @@ export function loadMentionGraph(runtime: MentionGraphRuntime, accountFilters: A
   ]);
   const sidebarUsers = loadSidebarUsers(runtime);
   const accountOptions = toFilterOptions(accounts);
-  const selected = new Set(selectedUsernames);
   return {
     accounts: accountOptions,
-    selectedAccounts: accountOptions.flatMap(({ username }) =>
-      selected.has(username) ? [username] : [],
-    ),
+    selectedAccounts: keepAccountFilters(accountOptions, selectedUsernames),
     unknownAccounts: unknownUsernames,
     graph: {
       points,
