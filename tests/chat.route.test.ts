@@ -365,6 +365,11 @@ test.for(Object.entries(stepAfterEachTool))(
     expect(
       world.ollama.requests.filter(({ kind }) => kind === "chat").map(({ think }) => think),
     ).toStrictEqual([true, thinksAfter]);
+    expect(
+      world.ollama.requests
+        .filter(({ kind }) => kind === "chat")
+        .map(({ contextLength }) => contextLength),
+    ).toStrictEqual([8192, 8192]);
   },
 );
 

@@ -167,6 +167,7 @@ const OllamaRequestSchema = z.object({
 
 const OllamaChatRequestSchema = z.object({
   messages: z.array(z.object({ content: z.string(), role: z.string() })),
+  options: z.object({ num_ctx: z.number().optional() }).optional(),
   think: z.boolean().optional(),
   tools: z.array(z.object({ function: z.object({ name: z.string() }) })).default([]),
 });
@@ -423,6 +424,7 @@ function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>
  */
 function createOllama(behavior: OllamaBehavior = {}) {
   const requests: Array<{
+    contextLength?: number;
     kind: "chat" | "summary" | "vision";
     prompt: string;
     /** Whether a chat request asked the model to reason. */
@@ -434,6 +436,7 @@ function createOllama(behavior: OllamaBehavior = {}) {
     const chat = OllamaChatRequestSchema.safeParse(json);
     if (chat.success) {
       requests.push({
+        contextLength: chat.data.options?.num_ctx,
         kind: "chat",
         prompt: chat.data.messages.at(-1)?.content ?? "",
         think: chat.data.think,

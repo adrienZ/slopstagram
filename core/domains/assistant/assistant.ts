@@ -92,7 +92,8 @@ export async function streamAssistantReply(
   const ollama = createOllama({ baseURL: getOllamaHost(), fetch: runtime.fetchOllama });
   const tools = createAssistantTools(runtime);
   function chatModel(think: boolean): AssistantModel {
-    const model = ollama(getAssistantModel(), { think });
+    // The tool schemas nearly fill Ollama's default 4K context before reasoning starts.
+    const model = ollama(getAssistantModel(), { options: { num_ctx: 8192 }, think });
     return runtime.wrapModel?.(model) ?? model;
   }
   const result = streamText({
