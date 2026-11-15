@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ChatRouteImport } from './routes/chat'
+import { Route as GraphRouteImport } from './routes/graph'
 import { Route as MapRouteImport } from './routes/map'
 import { Route as ReportRouteImport } from './routes/report'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
@@ -19,6 +20,11 @@ import { Route as UsersUsernameRouteImport } from './routes/users/$username'
 const ChatRoute = ChatRouteImport.update({
   id: '/chat',
   path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GraphRoute = GraphRouteImport.update({
+  id: '/graph',
+  path: '/graph',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MapRoute = MapRouteImport.update({
@@ -49,6 +55,7 @@ const UsersUsernameRoute = UsersUsernameRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/chat': typeof ChatRoute
+  '/graph': typeof GraphRoute
   '/map': typeof MapRoute
   '/report': typeof ReportRoute
   '/api/chat': typeof ApiChatRoute
@@ -57,6 +64,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/chat': typeof ChatRoute
+  '/graph': typeof GraphRoute
   '/map': typeof MapRoute
   '/report': typeof ReportRoute
   '/api/chat': typeof ApiChatRoute
@@ -66,6 +74,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/chat': typeof ChatRoute
+  '/graph': typeof GraphRoute
   '/map': typeof MapRoute
   '/report': typeof ReportRoute
   '/api/chat': typeof ApiChatRoute
@@ -75,13 +84,26 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/chat' | '/map' | '/report' | '/api/chat' | '/media/$' | '/users/$username'
+    | '/chat'
+    | '/graph'
+    | '/map'
+    | '/report'
+    | '/api/chat'
+    | '/media/$'
+    | '/users/$username'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/chat' | '/map' | '/report' | '/api/chat' | '/media/$' | '/users/$username'
+    | '/chat'
+    | '/graph'
+    | '/map'
+    | '/report'
+    | '/api/chat'
+    | '/media/$'
+    | '/users/$username'
   id:
     | '__root__'
     | '/chat'
+    | '/graph'
     | '/map'
     | '/report'
     | '/api/chat'
@@ -91,6 +113,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   ChatRoute: typeof ChatRoute
+  GraphRoute: typeof GraphRoute
   MapRoute: typeof MapRoute
   ReportRoute: typeof ReportRoute
   ApiChatRoute: typeof ApiChatRoute
@@ -105,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/chat'
       fullPath: '/chat'
       preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/graph': {
+      id: '/graph'
+      path: '/graph'
+      fullPath: '/graph'
+      preLoaderRoute: typeof GraphRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/map': {
@@ -147,6 +177,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   ChatRoute: ChatRoute,
+  GraphRoute: GraphRoute,
   MapRoute: MapRoute,
   ReportRoute: ReportRoute,
   ApiChatRoute: ApiChatRoute,

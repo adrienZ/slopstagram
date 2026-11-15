@@ -21,6 +21,8 @@ const dependencies = new Map<string, Array<string>>([
   ["accounts", ["database", "media-store", "vision", "utils"]],
   // The story feed reads the user summaries of its accounts (docs/adr/0007-assistant-tools-live-in-their-domain.md).
   ["story-feed", ["accounts", "database", "media-store", "vision", "utils"]],
+  // Mention connections derive from the stored stickers and the current Accounts only.
+  ["mention-connections", ["database", "utils"]],
   // The Assistant composes the tools of the domains below it; no tool-owning domain imports it.
   ["assistant", ["accounts", "database", "places", "story-feed", "vision", "utils"]],
   ["fetch-run", ["*"]],

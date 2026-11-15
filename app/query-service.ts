@@ -41,3 +41,8 @@ export const getPlaceMap = createServerFn({ method: "GET" }).handler(async () =>
   const { loadPlaceMap } = await import("./loaders/place-map.ts");
   return loadPlaceMap(getProductionRuntime());
 });
+
+export const getMentionGraph = createServerFn({ method: "GET" }).handler(async () => {
+  const { loadMentionGraph } = await import("./loaders/mention-graph.ts");
+  return loadMentionGraph(getProductionRuntime());
+});

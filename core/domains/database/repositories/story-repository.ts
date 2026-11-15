@@ -382,6 +382,30 @@ export class StoryRepository {
       .map(({ kind }) => kind);
   }
 
+  /**
+   * Every mention sticker of a stored story with its author, newest story first. `label` is
+   * `@username`, or a full name when the sticker carries no username.
+   */
+  listMentionOccurrences() {
+    return this.database
+      .select({
+        storyPk: stories.mediaPk,
+        takenAt: stories.takenAt,
+        author: {
+          pk: instagramUsers.pk,
+          username: instagramUsers.username,
+          full_name: instagramUsers.fullName,
+        },
+        label: storyStickers.label,
+      })
+      .from(storyStickers)
+      .innerJoin(stories, eq(storyStickers.mediaPk, stories.mediaPk))
+      .innerJoin(instagramUsers, eq(stories.instagramUserPk, instagramUsers.pk))
+      .where(eq(storyStickers.kind, "mention"))
+      .orderBy(desc(stories.takenAt), desc(stories.mediaPk), asc(storyStickers.sortOrder))
+      .all();
+  }
+
   async save(value: StoryItem, owner?: StoryOwner): Promise<void> {
     await Promise.try(() => {
       const story = StoryItemSchema.parse(value);

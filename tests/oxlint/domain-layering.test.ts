@@ -51,6 +51,14 @@ new RuleTester().run("domain-layering", domainLayering, {
       errors: [{ messageId: "upward", data: { importer: "accounts", imported: "story-feed" } }],
     },
     {
+      name: "the Mention connections read stickers and Accounts, never the story feed",
+      code: 'import { createStoryFeed } from "@@/core/domains/story-feed/story-feed.ts";',
+      filename: inDomain("mention-connections/mention-connections.ts"),
+      errors: [
+        { messageId: "upward", data: { importer: "mention-connections", imported: "story-feed" } },
+      ],
+    },
+    {
       name: "the story feed still cannot import the fetch run",
       code: 'import { createReport } from "@@/core/domains/fetch-run/report.ts";',
       filename: inDomain("story-feed/story-feed.ts"),
