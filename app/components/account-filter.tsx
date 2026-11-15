@@ -9,16 +9,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "../shadcn/ui/popover.ts
 import { formatUserHandle, formatUserInitials } from "../utils/helper.ts";
 
 interface AccountFilterProps {
-  /** An account without an avatar shows its initials. */
   accounts: Array<{ username: string; avatarPath?: string }>;
   selected: Array<string>;
   onToggle: (username: string) => void;
   /** Resets every filter: the accounts and the place. */
   onClear: () => void;
-  /**
-   * Whether there are filters to reset, when the page keeps ones it did not apply. Defaults to
-   * whether an account or the place is selected.
-   */
+  /** Set when the page keeps filters it did not apply, which still need clearing. */
   clearable?: boolean;
   /** The place the map is narrowed to, shown as an entry that removes it. */
   place?: { name: string; onRemove: () => void };

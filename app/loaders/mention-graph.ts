@@ -49,10 +49,7 @@ function toGraphPoint(target: MentionTarget): MentionGraphPoint {
   };
 }
 
-/**
- * One option per username, in username order. A username several drawn Accounts share has no
- * avatar, since choosing one of theirs would picture only one of them.
- */
+/** A username several drawn Accounts share has no avatar: one would picture only one of them. */
 function toFilterOptions(accounts: ReturnType<typeof filterByAccounts>["accounts"]) {
   return [...Map.groupBy(accounts, ({ username }) => username)]
     .toSorted(([left], [right]) => left.localeCompare(right))

@@ -186,9 +186,8 @@ export function editRecordedUsers(
 
 /**
  * Returns the recorded payloads with one more reel per account, each holding a copy of the first
- * recorded story under the given media id, so a test can add an account the recordings lack and
- * still store it through real ingestion. The page is parsed again afterwards, so the copies share
- * nothing with the story they copy.
+ * recorded story, so a test can add an account the recordings lack. The page is parsed again
+ * afterwards, so the copies share nothing with the story they copy.
  */
 export function addRecordedReels(
   recorded: RecordedPayloads,
@@ -229,9 +228,8 @@ export function addRecordedReels(
 }
 
 /**
- * Returns the recorded payloads with a copy of an account's first recorded story added to its
- * reel under each given media id, so a test can give a recorded account a story the recordings
- * lack and still store it through real ingestion.
+ * Returns the recorded payloads with copies of an account's first recorded story added to its
+ * reel, so a test can give a recorded account stories the recordings lack.
  */
 export function addRecordedStories(
   recorded: RecordedPayloads,

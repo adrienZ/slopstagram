@@ -1,10 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { formatAccountFilters, toggleAccountFilter } from "../utils/account-filter-search.ts";
 
-/**
- * Adds and removes the graph's account filters, kept in the `accounts` search param so a link or
- * a reload opens the same view. `selected` are the filters the graph shows.
- */
+/** Kept in the `accounts` search param so a link or a reload opens the same view. */
 export function useMentionGraphFilter(selected: Array<string>) {
   const navigate = useNavigate({ from: "/graph" });
 

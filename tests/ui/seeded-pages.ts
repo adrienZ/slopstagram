@@ -243,11 +243,10 @@ const extraGraphReels: Array<GraphReel> = [
 ];
 
 interface GraphSeedOptions {
-  /** The recorded stories to store, those of `mentions` by default. */
   storyPks?: Array<string>;
   /** The accounts the recording lacks, each with one story. */
   reels?: Array<GraphReel>;
-  /** More stories of recorded accounts, copies of their first one. */
+  /** Copies of a recorded account's first story. */
   addedStories?: Parameters<typeof addRecordedStories>[1];
   undatedStoryPks?: Array<string>;
 }

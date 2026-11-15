@@ -167,10 +167,7 @@ export function readMentionConnections(runtime: MentionConnectionsRuntime): Ment
   return { targets: [...targets.values()], connections: [...connections.values()] };
 }
 
-/**
- * The given targets, the targets they share a connection with, and every connection between two
- * of those, so neighbors' own connections show too. Targets and connections keep their order.
- */
+/** The union of the Neighborhoods of `selectedIds`, in their original order. */
 function keepNeighborhoods(
   { targets, connections }: MentionConnections,
   selectedIds: ReadonlySet<string>,
@@ -193,10 +190,9 @@ function keepNeighborhoods(
 }
 
 /**
- * The connections narrowed to the neighborhoods of the Accounts they draw with the given exact
- * usernames. A username several drawn Accounts share selects all of them, since nothing tells
- * which one is meant. One username no drawn Account has skips every filter, so a shared link
- * never shows a partial graph as the one asked for.
+ * A username several drawn Accounts share selects all of them, since nothing tells which one is
+ * meant. One username no drawn Account has skips every filter, so a shared link never shows a
+ * partial graph as the one asked for.
  */
 export function filterByAccounts(graph: MentionConnections, usernames: Array<string>) {
   const accounts = graph.targets.flatMap((target) => (target.kind === "account" ? [target] : []));
