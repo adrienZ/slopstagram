@@ -16,6 +16,10 @@ type GraphConnection = MentionGraphPageData["connections"][number];
 const ACCOUNT_RADIUS = 20;
 const UNKNOWN_RADIUS = 7;
 
+function radiusOf(point: GraphPoint): number {
+  return point.kind === "account" ? ACCOUNT_RADIUS : UNKNOWN_RADIUS;
+}
+
 function formatStoryCount(count: number): string {
   return `${count} ${count > 1 ? "stories" : "story"}`;
 }
@@ -138,7 +142,7 @@ export function MentionGraph({
   const [selectedElement, setSelectedElement] = useState<SVGGElement | null>(null);
   const pointsById = new Map(points.map((point) => [point.id, point]));
   const selected = selectedPointId === null ? undefined : pointsById.get(selectedPointId);
-  const neighbours = new Set(
+  const neighbours = new Set<string>(
     connections.flatMap(({ source, target }) => {
       if (source === selectedPointId) {
         return [target];
@@ -231,7 +235,7 @@ export function MentionGraph({
       >
         <PointMark point={point} clipPathId={clipPathId} />
         <circle
-          r={(point.kind === "account" ? ACCOUNT_RADIUS : UNKNOWN_RADIUS) + 3}
+          r={radiusOf(point) + 3}
           fill="none"
           strokeWidth={2.5}
           className={isSelected ? "tw:stroke-primary" : "tw:stroke-transparent"}
@@ -242,12 +246,11 @@ export function MentionGraph({
 
   function renderHoverLabel(point: GraphPoint): ReactNode {
     const { x, y } = positionOf(point.id);
-    const radius = point.kind === "account" ? ACCOUNT_RADIUS : UNKNOWN_RADIUS;
     return (
       <text
         role="tooltip"
         x={x}
-        y={y - radius - 8}
+        y={y - radiusOf(point) - 8}
         textAnchor="middle"
         className="tw:pointer-events-none tw:fill-foreground tw:stroke-background tw:stroke-[3px] tw:text-sm tw:font-medium tw:[paint-order:stroke]"
       >

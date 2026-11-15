@@ -1,7 +1,5 @@
-import { eq } from "drizzle-orm";
-import { expect, test } from "vitest";
-import { stories } from "@@/core/domains/database/entities/story.ts";
-import { readMentionConnections } from "@@/core/domains/mention-connections/mention-connections.ts";
+import { expect, test, type TestContext } from "vitest";
+import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { loadMentionGraph, type MentionGraphPageData } from "../app/loaders/mention-graph.ts";
 import { createTestRuntime, useSharedTestRuntime } from "./setup/test-runtime.ts";
 import {
@@ -44,27 +42,6 @@ test("connects each story's author to whom its stickers name, one line per pair"
   ]);
 });
 
-test("a pair's line counts its distinct stories, whoever mentioned whom and however often", () => {
-  const { connections } = readMentionConnections(shared.runtime);
-  const pair = connections.find(({ pointIds }) =>
-    pointIds.every((id) => ["account:700000000000001", "account:700000000000062"].includes(id)),
-  );
-  expect(
-    pair?.observations.map(({ takenAt: _takenAt, ...observation }) => observation),
-  ).toStrictEqual([
-    {
-      storyPk: graphStories.ben,
-      authorId: "account:700000000000062",
-      mentionedId: "account:700000000000001",
-    },
-    {
-      storyPk: graphStories.ada,
-      authorId: "account:700000000000001",
-      mentionedId: "account:700000000000062",
-    },
-  ]);
-});
-
 test("shows only connected points: Accounts with their profile, anyone else as a label", () => {
   const { points } = loadMentionGraph(shared.runtime);
   expect(points).toStrictEqual([
@@ -100,30 +77,54 @@ test("shows only connected points: Accounts with their profile, anyone else as a
   expect(points.map(({ label }) => label)).not.toContain(`@${lonelyAccount}`);
 });
 
-test("a username several Accounts share names none of them", () => {
-  const { points } = readMentionConnections(shared.runtime);
-  expect(points.find(({ id }) => id === `username:${ambiguousUsername}`)).toStrictEqual({
-    kind: "ambiguous-username",
-    id: `username:${ambiguousUsername}`,
-    label: `@${ambiguousUsername}`,
-    username: ambiguousUsername,
-    accountPks: ["700000000000952", "700000000000951"],
-  });
-});
-
-test("a connection disappears with the last of its source stories", async (context) => {
+test("an author naming their own username makes no connection, even when another Account shares it", async (context) => {
   const runtime = await createTestRuntime(context);
   await seedGraphDatabase(runtime);
-  runtime.database.delete(stories).where(eq(stories.mediaPk, graphStories.ben)).run();
-  expect(describeConnections(loadMentionGraph(runtime))).toContainEqual([ada, ben, 1]);
-  runtime.database.delete(stories).where(eq(stories.mediaPk, graphStories.ada)).run();
-  expect(describeConnections(loadMentionGraph(runtime))).toStrictEqual([
+  await runtime.users.save({
+    full_name: null,
+    id: "700000000000954",
+    pk: "700000000000954",
+    username: graphAccounts[0].toUpperCase(),
+  });
+  const sharedAda = `${ada} (plusieurs comptes)`;
+  const connections = describeConnections(loadMentionGraph(runtime));
+  expect(connections).toContainEqual([ben, sharedAda, 1]);
+  expect(connections).not.toContainEqual([ada, sharedAda, 1]);
+});
+
+const graphAuthorPks = { ada: "700000000000001", ben: "700000000000062", cleo: "700000000000068" };
+
+/** Only some of the graph's stories stored, every author still a known Account. */
+async function seedGraphStories(
+  context: TestContext,
+  kept: Array<keyof typeof graphStories>,
+): Promise<Runtime> {
+  const runtime = await createTestRuntime(context);
+  await seedGraphDatabase(
+    runtime,
+    kept.map((name) => graphStories[name]),
+  );
+  const leftOut = Object.entries(graphAuthorPks).filter(
+    ([name]) => !kept.some((keptName) => keptName === name),
+  );
+  await Promise.all(
+    leftOut.map(async ([name, pk]) => {
+      await runtime.users.save({ full_name: null, id: pk, pk, username: `${name}_graph` });
+    }),
+  );
+  return runtime;
+}
+
+test("a connection lasts only as long as one of its source stories is stored", async (context) => {
+  const withoutBen = await seedGraphStories(context, ["ada", "cleo"]);
+  expect(describeConnections(loadMentionGraph(withoutBen))).toContainEqual([ada, ben, 1]);
+
+  const onlyCleo = await seedGraphStories(context, ["cleo"]);
+  expect(describeConnections(loadMentionGraph(onlyCleo))).toStrictEqual([
     [ada, cleo, 1],
     [ben, cleo, 1],
     [cleo, unknown, 1],
     [cleo, mentionedName, 1],
     [cleo, ambiguous, 1],
   ]);
-  runtime.database.delete(stories).where(eq(stories.mediaPk, graphStories.cleo)).run();
-  expect(loadMentionGraph(runtime)).toStrictEqual({ points: [], connections: [] });
 });

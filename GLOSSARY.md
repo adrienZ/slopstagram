@@ -29,8 +29,8 @@ One instance of a sticker on a story. Separate occurrences may have the same kin
 and label.
 
 **Mention connection**:
-An observed link between a story's author and someone that story's mention sticker
-names, counted in distinct source stories and keeping who mentioned whom. It does not
+An observed link between a story's author and a Mention target of that story's sticker,
+counted in distinct source stories and keeping who mentioned whom. It does not
 establish that the two people know each other, and two people named on the same story
 are not connected.
 _Avoid_: Relationship, friendship, Mention
@@ -39,7 +39,8 @@ _Avoid_: Relationship, friendship, Mention
 Whom a mention sticker names: the Account whose current username matches its label,
 ignoring case; an unknown username, shared by every sticker naming it; or a name-only
 observation, kept apart per story since equal full names do not prove identity. A
-username several Accounts share stays its own target rather than one of them.
+username several Accounts share stays its own target rather than one of them. A story's
+author is always an Account, so both ends of a connection are Mention targets.
 
 **Sticker kind**:
 The category of a sticker, such as mention, music, hashtag, link, or location.

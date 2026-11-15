@@ -1,93 +1,87 @@
 import type { InstagramUserEntry } from "@@/core/domains/database/entities/instagram-user.ts";
 import type { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
-import type {
-  MentionOccurrence,
-  StoryRepository,
-} from "@@/core/domains/database/repositories/story-repository.ts";
+import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 
-/** What reading the Mention connections needs. */
 export interface MentionConnectionsRuntime {
   stories: Pick<StoryRepository, "listMentionOccurrences">;
   users: Pick<InstagramUserRepository, "listAll">;
 }
 
-/** A known Account: a story's author, or the one current Account whose username a sticker names. */
-interface AccountPoint {
+type MentionOccurrence = ReturnType<StoryRepository["listMentionOccurrences"]>[number];
+
+type AccountId = `account:${string}`;
+type UsernameId = `username:${string}`;
+type NameId = `name:${string}`;
+type MentionTargetId = AccountId | UsernameId | NameId;
+
+/** A story's author, or the only current Account whose username a sticker names. */
+interface AccountTarget {
   kind: "account";
-  /** `account:<pk>`. */
-  id: string;
-  /** `@username`. */
+  id: AccountId;
   label: string;
   pk: string;
   username: string;
   fullName: string | null;
 }
 
-/** A username no current Account has, one point for every sticker naming it, ignoring case. */
-interface UnknownUsernamePoint {
-  kind: "unknown-username";
-  /** `username:<lowercase username>`. */
-  id: string;
-  /** `@username`, lowercase. */
+/** Every sticker naming the same username, ignoring case, names this one target. */
+interface UsernameTarget {
+  id: UsernameId;
   label: string;
   username: string;
+}
+
+interface UnknownUsernameTarget extends UsernameTarget {
+  kind: "unknown-username";
 }
 
 /**
- * A username several current Accounts share, ignoring case. Stickers keep a label, not an
- * account id, so none of those Accounts is assumed to be the person mentioned.
+ * Stickers keep a label, not an account id, so when several current Accounts share the username
+ * none of them is assumed to be the person mentioned.
  */
-interface AmbiguousUsernamePoint {
+interface AmbiguousUsernameTarget extends UsernameTarget {
   kind: "ambiguous-username";
-  /** `username:<lowercase username>`. */
-  id: string;
-  /** `@username`, lowercase. */
-  label: string;
-  username: string;
-  /** The Accounts whose username matches, none of them merged into this point. */
   accountPks: Array<string>;
 }
 
-/** A full name a sticker carries without a username: equal names on other stories stay apart. */
-interface NamePoint {
+/** Equal full names do not prove identity, so each story's name stays its own target. */
+interface NameTarget {
   kind: "name";
-  /** `name:<story pk>:<encoded lowercase name>`. */
-  id: string;
-  /** The full name as the sticker spells it. */
+  id: NameId;
   label: string;
   storyPk: string;
 }
 
-/** Someone at one end of a Mention connection. */
-export type MentionPoint = AccountPoint | UnknownUsernamePoint | AmbiguousUsernamePoint | NamePoint;
+export type MentionTarget =
+  | AccountTarget
+  | UnknownUsernameTarget
+  | AmbiguousUsernameTarget
+  | NameTarget;
 
-/** One source story of a Mention connection, with who mentioned whom. */
 interface MentionObservation {
   storyPk: string;
   takenAt: number | null;
-  /** The point of the story's author, always an Account. */
-  authorId: string;
-  mentionedId: string;
+  authorId: AccountId;
+  mentionedId: MentionTargetId;
 }
 
-/** The Mention connection of one pair of points, whichever of them mentioned the other. */
 interface MentionConnection {
-  /** The two point ids, sorted, joined by a space. */
   id: string;
   /** Sorted, so their order says nothing of who mentioned whom: the observations do. */
-  pointIds: [string, string];
-  /** One per source story, however many stickers it carries for the pair, newest first. */
+  targetIds: [MentionTargetId, MentionTargetId];
+  /** One per source story, however many stickers it carries for the pair. */
   observations: Array<MentionObservation>;
 }
 
+/** Both newest source story first, as the occurrences are read. */
 export interface MentionConnections {
-  /** Only the points with a connection, in the order of their newest source story. */
-  points: Array<MentionPoint>;
-  /** In the order of their newest source story. */
+  targets: Array<MentionTarget>;
   connections: Array<MentionConnection>;
 }
 
-function toAccountPoint(account: InstagramUserEntry): AccountPoint {
+function toAccountTarget(
+  account: Pick<InstagramUserEntry, "pk" | "username" | "full_name">,
+): AccountTarget {
   return {
     kind: "account",
     id: `account:${account.pk}`,
@@ -98,10 +92,17 @@ function toAccountPoint(account: InstagramUserEntry): AccountPoint {
   };
 }
 
-function createMentionResolver(accounts: Array<InstagramUserEntry>) {
+function toConnectionTargetIds(
+  a: MentionTargetId,
+  b: MentionTargetId,
+): [MentionTargetId, MentionTargetId] {
+  return a < b ? [a, b] : [b, a];
+}
+
+function createMentionTargetResolver(accounts: Array<InstagramUserEntry>) {
   const accountsByUsername = Map.groupBy(accounts, ({ username }) => username.toLowerCase());
 
-  return function resolveMentioned({ label, storyPk }: MentionOccurrence): MentionPoint {
+  return function resolveMentionTarget({ label, storyPk }: MentionOccurrence): MentionTarget {
     if (!label.startsWith("@")) {
       return {
         kind: "name",
@@ -113,49 +114,45 @@ function createMentionResolver(accounts: Array<InstagramUserEntry>) {
     const username = label.slice(1).toLowerCase();
     const matches = accountsByUsername.get(username) ?? [];
     if (matches.length === 1) {
-      return toAccountPoint(matches[0]);
+      return toAccountTarget(matches[0]);
     }
-    const id = `username:${username}`;
+    const target: UsernameTarget = { id: `username:${username}`, label: `@${username}`, username };
     return matches.length === 0
-      ? { kind: "unknown-username", id, label: `@${username}`, username }
-      : {
-          kind: "ambiguous-username",
-          id,
-          label: `@${username}`,
-          username,
-          accountPks: matches.map(({ pk }) => pk),
-        };
+      ? { kind: "unknown-username", ...target }
+      : { kind: "ambiguous-username", ...target, accountPks: matches.map(({ pk }) => pk) };
   };
 }
 
+function namesAuthor(target: MentionTarget, author: AccountTarget): boolean {
+  return (
+    target.id === author.id ||
+    (target.kind === "ambiguous-username" && target.accountPks.includes(author.pk))
+  );
+}
+
 /**
- * The Mention connections of every stored story: from the story's author to whom each of its
- * mention stickers names. Stickers naming the author, and people two stickers of a story name
- * together, make no connection. A connection is an observation, not proof that two people know
- * each other, and it lasts only as long as one of its source stories is stored.
+ * Stickers naming the author, and people two stickers of a story name together, make no
+ * connection.
  */
 export function readMentionConnections(runtime: MentionConnectionsRuntime): MentionConnections {
-  const accounts = runtime.users.listAll();
-  const authors = new Map(accounts.map((account) => [account.pk, toAccountPoint(account)]));
-  const resolveMentioned = createMentionResolver(accounts);
-  const points = new Map<string, MentionPoint>();
+  const resolveMentionTarget = createMentionTargetResolver(runtime.users.listAll());
+  const targets = new Map<MentionTargetId, MentionTarget>();
   const connections = new Map<string, MentionConnection>();
 
   for (const occurrence of runtime.stories.listMentionOccurrences()) {
-    const author = authors.get(occurrence.authorPk);
-    const mentioned = resolveMentioned(occurrence);
-    if (author === undefined || mentioned.id === author.id) {
+    const author = toAccountTarget(occurrence.author);
+    const mentioned = resolveMentionTarget(occurrence);
+    if (namesAuthor(mentioned, author)) {
       continue;
     }
-    for (const point of [author, mentioned]) {
-      if (!points.has(point.id)) {
-        points.set(point.id, point);
+    for (const target of [author, mentioned]) {
+      if (!targets.has(target.id)) {
+        targets.set(target.id, target);
       }
     }
-    const pointIds: [string, string] =
-      author.id < mentioned.id ? [author.id, mentioned.id] : [mentioned.id, author.id];
-    const id = pointIds.join(" ");
-    const connection = connections.get(id) ?? { id, pointIds, observations: [] };
+    const targetIds = toConnectionTargetIds(author.id, mentioned.id);
+    const id = targetIds.join(" ");
+    const connection = connections.get(id) ?? { id, targetIds, observations: [] };
     connections.set(id, connection);
     if (!connection.observations.some(({ storyPk }) => storyPk === occurrence.storyPk)) {
       connection.observations.push({
@@ -167,5 +164,5 @@ export function readMentionConnections(runtime: MentionConnectionsRuntime): Ment
     }
   }
 
-  return { points: [...points.values()], connections: [...connections.values()] };
+  return { targets: [...targets.values()], connections: [...connections.values()] };
 }

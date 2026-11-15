@@ -217,7 +217,10 @@ const mentionsByStory = new Map<string, ReturnType<typeof mentionStickers>>([
  * second mentions the first back; the third mentions both, the unknown username in upper case,
  * the same name, and a username two saved Accounts share.
  */
-export async function seedGraphDatabase(runtime: Runtime): Promise<void> {
+export async function seedGraphDatabase(
+  runtime: Runtime,
+  storyPks: Array<string> = Object.values(graphStories),
+): Promise<void> {
   const recorded = editRecordedUsers(
     await readRecordedPayloads(["instagram-story-data.json"]),
     (user, position) => {
@@ -229,7 +232,7 @@ export async function seedGraphDatabase(runtime: Runtime): Promise<void> {
   );
   await seedRecordedStories(
     runtime,
-    editRecordedStories(keepRecordedStories(recorded, Object.values(graphStories)), (story) => {
+    editRecordedStories(keepRecordedStories(recorded, storyPks), (story) => {
       story.story_bloks_stickers = mentionsByStory.get(story.pk) ?? [];
     }),
     { publishedBefore: { now: pageNow, seconds: PUBLISHED_BEFORE_SECONDS } },

@@ -7,7 +7,7 @@ export const GRAPH_WIDTH = 1000;
 export const GRAPH_HEIGHT = 700;
 
 /** Where the layout's origin sits in the drawing, and how much it is scaled. */
-export interface GraphView {
+interface GraphView {
   x: number;
   y: number;
   scale: number;
@@ -89,7 +89,7 @@ export function useGraphViewport({ positions, pin, release }: GraphViewportOptio
   function track(
     event: ReactPointerEvent,
     onMove: (to: LayoutPosition, from: LayoutPosition) => void,
-    onEnd: () => void,
+    onEnd?: () => void,
   ) {
     const element = svg.current;
     if (element === null || event.button !== 0) {
@@ -120,7 +120,7 @@ export function useGraphViewport({ positions, pin, release }: GraphViewportOptio
       frame?.removeEventListener("pointerup", end);
       frame?.removeEventListener("pointercancel", end);
       if (dragged.current) {
-        onEnd();
+        onEnd?.();
       }
     }
     frame?.addEventListener("pointermove", move);
@@ -144,15 +144,9 @@ export function useGraphViewport({ positions, pin, release }: GraphViewportOptio
 
   function startPan(event: ReactPointerEvent) {
     const start = latestView.current;
-    track(
-      event,
-      (to, from) => {
-        setView({ ...start, x: start.x + to.x - from.x, y: start.y + to.y - from.y });
-      },
-      () => {
-        // A pan only moves the view: nothing to let go of.
-      },
-    );
+    track(event, (to, from) => {
+      setView({ ...start, x: start.x + to.x - from.x, y: start.y + to.y - from.y });
+    });
   }
 
   /** Whether a click is a real click, not the end of a drag. */

@@ -3,7 +3,7 @@ import { media } from "@@/core/domains/media-store/media-urls.ts";
 import {
   readMentionConnections,
   type MentionConnectionsRuntime,
-  type MentionPoint,
+  type MentionTarget,
 } from "@@/core/domains/mention-connections/mention-connections.ts";
 
 /** A known Account, drawn with its avatar, or an abstract point for anyone else. */
@@ -18,33 +18,31 @@ type MentionGraphPoint =
     }
   | { kind: "unknown"; id: string; label: string };
 
-function toGraphPoint(point: MentionPoint): MentionGraphPoint {
-  if (point.kind === "account") {
+function toGraphPoint(target: MentionTarget): MentionGraphPoint {
+  if (target.kind === "account") {
     return {
       kind: "account",
-      id: point.id,
-      label: point.label,
-      username: point.username,
-      fullName: point.fullName,
-      avatarPath: media.image.avatar(point.pk).url,
+      id: target.id,
+      label: target.label,
+      username: target.username,
+      fullName: target.fullName,
+      avatarPath: media.image.avatar(target.pk).url,
     };
   }
   return {
     kind: "unknown",
-    id: point.id,
-    label: point.kind === "ambiguous-username" ? `${point.label} (plusieurs comptes)` : point.label,
+    id: target.id,
+    label:
+      target.kind === "ambiguous-username" ? `${target.label} (plusieurs comptes)` : target.label,
   };
 }
 
-/**
- * Every Mention connection of the stored history, one per pair of points with its story count.
- * `source` and `target` only name the two ends: who mentioned whom is in the source stories.
- */
+/** `source` and `target` only name the two ends: who mentioned whom is in the source stories. */
 export function loadMentionGraph(runtime: MentionConnectionsRuntime) {
-  const { points, connections } = readMentionConnections(runtime);
+  const { targets, connections } = readMentionConnections(runtime);
   return {
-    points: points.map(toGraphPoint),
-    connections: connections.map(({ id, pointIds: [source, target], observations }) => ({
+    points: targets.map(toGraphPoint),
+    connections: connections.map(({ id, targetIds: [source, target], observations }) => ({
       id,
       source,
       target,
