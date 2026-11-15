@@ -19,7 +19,6 @@ async function readChatRequest(request: Request) {
   }
 }
 
-/** Answers a POSTed conversation of UI messages with the Assistant's UI message stream. */
 export async function handleChatRequest(
   runtime: AssistantRuntime,
   request: Request,

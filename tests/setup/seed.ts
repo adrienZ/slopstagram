@@ -14,9 +14,7 @@ const MUSIC_ASSET_FILE = "instagram-music-asset.json";
 const GALLERY_FILE = /^instagram-story-data(?:-\d+)?\.json$/u;
 const TIMESTAMP_KEYS = new Set(["taken_at", "latest_reel_media", "expiring_at"]);
 
-/** Recorded Instagram response bodies, as the capture command writes them. */
 export interface RecordedPayloads {
-  /** One body per reels media page, in the order Instagram returned them. */
   galleryPages: Array<JsonValue>;
   /** The reels tray body. When absent it is derived from the reels of the gallery pages. */
   tray?: JsonValue;
@@ -35,11 +33,6 @@ async function readJson(name: string): Promise<JsonValue> {
   );
 }
 
-/**
- * Reads recorded payloads from tests/fixtures. Without names it reads the gallery pages
- * and, when present, the tray, place and music asset recordings. Naming files picks a
- * smaller set, e.g. one gallery page.
- */
 export async function readRecordedPayloads(names?: Array<string>): Promise<RecordedPayloads> {
   const available = new Set(await readdir(fixturesDirectory));
   const selected = names ?? [...available];
@@ -124,7 +117,6 @@ type GalleryConnection = z.output<
 >["data"]["xdt_api__v1__feed__reels_media__connection"];
 type RecordedStory = NonNullable<GalleryConnection["edges"][number]["node"]["items"]>[number];
 
-/** Parses a recorded gallery page with the production story schema, lets `update` edit it, and writes it back as a payload. */
 function updateGalleryPage(
   payload: JsonValue,
   update: (connection: GalleryConnection) => void,
@@ -134,11 +126,7 @@ function updateGalleryPage(
   return JsonValueSchema.parse(page);
 }
 
-/**
- * Returns the recorded payloads with every story edited by `edit`. The edits travel through
- * real ingestion with the rest of the recording, so a test can give a story a caption, a
- * date or a sticker the recordings lack.
- */
+/** Edits travel through real ingestion with the rest of the recording. */
 export function editRecordedStories(
   recorded: RecordedPayloads,
   edit: (story: RecordedStory) => void,
@@ -159,11 +147,7 @@ export function editRecordedStories(
 
 type RecordedUser = NonNullable<GalleryConnection["edges"][number]["node"]["user"]>;
 
-/**
- * Returns the recorded payloads with every account edited by `edit`, in the order of the
- * recorded reels, so a test can give an account a username or a full name the recordings
- * lack. The edits travel through real ingestion with the rest of the recording.
- */
+/** Edits travel through real ingestion with the rest of the recording. */
 export function editRecordedUsers(
   recorded: RecordedPayloads,
   edit: (user: RecordedUser, position: number) => void,
@@ -184,11 +168,7 @@ export function editRecordedUsers(
   };
 }
 
-/**
- * Returns the recorded payloads with only the stories whose media ids are listed, dropping
- * the reels left without a story. The recorded tray is dropped too, so the client derives
- * it from the stories that remain.
- */
+/** The tray is dropped too, so the client derives it from the remaining stories. */
 export function keepRecordedStories(
   recorded: RecordedPayloads,
   mediaPks: Array<string>,
@@ -207,11 +187,6 @@ export function keepRecordedStories(
   };
 }
 
-/**
- * The recorded Instagram client over the given payloads, or over the recorded fixtures
- * when none are given, shifted in time when `publishedBefore` is set. It is the only fake
- * in the seed and in report creation tests.
- */
 export async function createRecordedInstagramClient(
   recorded?: RecordedPayloads,
   options: Pick<SeedOptions, "publishedBefore"> = {},
@@ -223,16 +198,7 @@ export async function createRecordedInstagramClient(
   return createRecordedClient(payloads);
 }
 
-/**
- * Ingests recorded Instagram payloads the way production does: the production response
- * parsers over the recordings, then the real fetch, story storage, place and music
- * enrichment, and user persistence. Only the transport is replaced, so a recording that
- * no longer matches the validation schemas fails the seed, with the reason, instead of
- * storing less than production would.
- *
- * Media caching, captions, vision and summaries are not run: they need the network or
- * local models. Returns the report the fetch produced.
- */
+/** Only the transport is replaced, so a recording that no longer matches the schemas fails the seed instead of storing less. */
 export async function seedRecordedStories(
   runtime: Pick<Runtime, "logger" | "storage" | "stories" | "users">,
   recorded?: RecordedPayloads,

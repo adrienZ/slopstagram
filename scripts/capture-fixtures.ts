@@ -132,13 +132,7 @@ function collectAccountNames(value: JsonValue, names = new Set<string>()): Set<s
   return names;
 }
 
-/**
- * Whether music asset info is clearly a licensed catalog track, the only audio whose title and
- * display artist are public. Default-deny: the info must say explicitly that it is not original
- * sound (`is_original_sound: false`), carry no other original-audio marker, and its title and
- * display artist must not contain any username or full name found in the same payload. A missing
- * or ambiguous indicator means the audio is treated as user-made.
- */
+/** Default-deny: a missing or ambiguous indicator means user-made audio, whose title is usually the creator's name. */
 function isLicensedCatalogTrack(info: JsonObject, accountNames: ReadonlySet<string>): boolean {
   if (info.is_original_sound !== false) {
     return false;
@@ -159,14 +153,7 @@ function isLicensedCatalogTrack(info: JsonObject, accountNames: ReadonlySet<stri
   return texts.every((text) => [...accountNames].every((name) => !text.includes(name)));
 }
 
-/**
- * Replaces everything that could identify someone while keeping the payload's shape.
- * Redaction is default-deny: every string is replaced unless its key is known to be structural,
- * and places lose their names, addresses, ids, slugs and coordinates. The one exception is public
- * music asset metadata of licensed catalog tracks (see PUBLIC_AUDIO_KEYS); original audio gets a
- * synthetic title and display artist because they are usually the creator's name.
- * One redactor gives the same replacement to the same original, across every payload it sees.
- */
+/** Default-deny: every string is replaced unless its key is structural; one original always gets the same replacement. */
 export function createRedactor() {
   const replacements = new Map<string, string>();
 
@@ -337,12 +324,7 @@ function keyProblem(entryKey: string): string | null {
     : null;
 }
 
-/**
- * Lists every value of a fixture payload that is neither structural (known enum-like keys,
- * numbers, booleans), synthetic (what `createRedactor` writes, or an explicit `fixture` marker),
- * nor public audio metadata of a licensed catalog track. It applies the redactor's own rules in
- * reverse and never reports the offending value, only where it is.
- */
+/** Reports where an unsafe value sits, never the value. */
 export function findUnsafeFixtureValues(payload: JsonValue): Array<UnsafeFixtureValue> {
   const names = collectAccountNames(payload);
   const unsafe: Array<UnsafeFixtureValue> = [];
@@ -437,11 +419,7 @@ function findFirst(value: JsonValue, key: string): string | null {
   );
 }
 
-/**
- * Records the raw response bodies of the first reels, one place and one music asset, by
- * running the production client over `session`. Only the first few tray entries are kept,
- * so other people in the tray never reach the recording.
- */
+/** Only the first tray entries are kept, so other people in the tray never reach the recording. */
 export async function captureInstagramPayloads(session: Session): Promise<CapturedPayloads> {
   const bodies: Array<{ requestUrl: string; body: string; isGalleryPage: boolean }> = [];
   async function recording(...args: Parameters<Evaluate>): Promise<Awaited<ReturnType<Evaluate>>> {
@@ -506,7 +484,6 @@ interface BuiltFixtures {
   files: Array<[string, JsonValue]>;
 }
 
-/** Records when a capture ran and what each written file covers. */
 export function buildFixtureMetadata(payloads: CapturedPayloads, capturedAt: Date): BuiltFixtures {
   const files: Array<[string, JsonValue, string]> = [
     [

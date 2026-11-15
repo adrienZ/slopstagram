@@ -20,7 +20,6 @@ function describeOutcome(outcome: FeedUserSummary, handle: string): string {
     : "Le résumé n’est pas encore généré : il le sera au prochain relevé des stories.";
 }
 
-/** The user summaries the Assistant read, as plain text, for each account asked. */
 export function FeedUserSummariesDetails({
   results,
 }: {

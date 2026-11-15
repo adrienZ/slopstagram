@@ -7,12 +7,9 @@ import type { RecordedPayloads } from "./seed.ts";
 
 type InstagramSession = Parameters<typeof createInstagramClient>[0];
 type BrowserFetch = InstagramSession["page"]["evaluate"];
-/** What the browser page is asked to fetch. */
 export type BrowserFetchInput = Parameters<BrowserFetch>[1];
-/** What the browser page answers: a raw response body, before any parsing. */
 export type BrowserFetchResponse = Awaited<ReturnType<BrowserFetch>>;
 
-/** A recorded reels media page, typed enough for tests to edit the stories it holds. */
 export const RecordedGalleryPageSchema = z.object({
   data: z.object({
     xdt_api__v1__feed__reels_media__connection: z.object({
@@ -32,10 +29,7 @@ function notFound(): BrowserFetchResponse {
   return { body: JSON.stringify({ status: "fail" }), headers: {}, ok: false, status: 404 };
 }
 
-/**
- * The production Instagram client, on a fake browser page that answers each fetch with
- * `respond`. Parsing, error handling and pagination run as they do against Instagram.
- */
+/** Parsing, error handling and pagination run as they do against Instagram. */
 export function createFakeInstagramClient(
   respond: (input: BrowserFetchInput) => BrowserFetchResponse,
 ): InstagramClient {
@@ -77,12 +71,7 @@ function trayOf(galleryPages: Array<JsonValue>): JsonValue {
   };
 }
 
-/**
- * An Instagram client that answers from recorded response bodies instead of a browser.
- * A gallery page the story schema refuses, such as a recorded error, is served as it was
- * recorded, so the production parser reports it. Without a recorded tray, the tray lists
- * the reels of the gallery pages.
- */
+/** A gallery page the schema refuses is served as recorded, so the production parser reports it. */
 export function createRecordedClient(recorded: RecordedPayloads): InstagramClient {
   const pages = recorded.galleryPages.map((page) => ({
     page,
@@ -126,10 +115,6 @@ export function createRecordedClient(recorded: RecordedPayloads): InstagramClien
   });
 }
 
-/**
- * An Instagram client whose every request answers with `status`, after calling `onRequest`.
- * A non-transient status such as 401 fails at once, without the retry delays.
- */
 export function createFailingClient(status: number, onRequest?: () => void): InstagramClient {
   async function refuse() {
     onRequest?.();

@@ -19,7 +19,6 @@ export const AccountSchema = z.object({
   username: z.string(),
 }) satisfies z.ZodType<Account>;
 
-/** The accounts, by username. */
 export function listAccounts(runtime: AccountsRuntime): Array<Account> {
   return runtime.users
     .listAll()
@@ -42,10 +41,7 @@ function rankMatch(account: Account, query: string): number | null {
   );
 }
 
-/**
- * The accounts whose username or full name contains the query, ignoring case, accents and
- * a leading `@`: the exact username first, then the usernames starting with it, then the others.
- */
+/** Exact username first, then prefixes, then the others. */
 export function searchAccounts(
   runtime: AccountsRuntime,
   query: string,

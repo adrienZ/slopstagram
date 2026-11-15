@@ -20,17 +20,11 @@ type LoaderContext<Route extends AnyRoute> = Parameters<
   Extract<NonNullable<Route["options"]["loader"]>, (context: never) => object | Promise<object>>
 >[0];
 
-/** The loader's data, or a function computing it from the loader context the route builds (deps, route context). */
 type PageProps<Route extends AnyRoute, Props extends object> =
   | Props
   | ((context: LoaderContext<Route>) => Props);
 
-/**
- * Renders a real file route with its component, head, search validation and beforeLoad,
- * answering only its loader with `props`, or with what `props` computes from the loader
- * context: the server function behind a loader cannot run outside the Start runtime. Pair `renderRoute` (HTML string) or `mountRoute` (jsdom DOM)
- * with Testing Library.
- */
+/** A loader's server function cannot run outside the Start runtime, so `props` answers it. */
 export function createPageRenderer<Route extends AnyRoute, Props extends object>(
   fileRoute: Route,
   props: PageProps<Route, Props>,
@@ -74,10 +68,6 @@ export function createPageRenderer<Route extends AnyRoute, Props extends object>
       const response = await handler(defaultRenderHandler);
       return await response.text();
     },
-    /**
-     * Mounts the route in jsdom. `beforeLoad` runs ahead of the route's own, e.g. to hold a
-     * navigation, and `wrapper` supplies context the page needs, e.g. a map canvas.
-     */
     mountRoute: async (
       url: string,
       mountProps = props,

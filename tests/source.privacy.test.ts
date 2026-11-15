@@ -26,7 +26,6 @@ function escapeRegExp(value: string): string {
   return value.replaceAll(/[.*+?^${}()|[\]\\]/gu, String.raw`\$&`);
 }
 
-/** The positions in a text where one of the terms appears as a whole word, ignoring case. */
 function findTerms(text: string, terms: Array<string>): Array<number> {
   if (terms.length === 0) {
     return [];

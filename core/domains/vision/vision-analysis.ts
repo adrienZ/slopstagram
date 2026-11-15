@@ -56,7 +56,6 @@ export interface OutdatedVision {
   promptHash: string;
 }
 
-/** Describes how a saved vision entry differs from the current model and prompt, or null when it matches. */
 export function describeOutdatedVision(entry: VisionEntry | null): OutdatedVision | null {
   if (entry === null || readCurrentVisionResult(entry) !== null) {
     return null;

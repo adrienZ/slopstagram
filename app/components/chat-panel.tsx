@@ -118,7 +118,6 @@ function ChatMessage({
   );
 }
 
-/** The conversation with the Assistant and the field to write to it. */
 export function ChatPanel({ accounts }: { accounts: Array<SidebarUser> }) {
   const chat = useAssistantChat();
   const mentions = useMentionSuggestions({

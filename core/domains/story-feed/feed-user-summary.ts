@@ -18,10 +18,7 @@ export interface FeedUserSummaryRuntime extends FeedUserSummariesRuntime {
   users: Pick<InstagramUserRepository, "listAll">;
 }
 
-/**
- * The stored user summaries of the story feed's accounts, by report user key. Read-only: an
- * account whose summary was not generated has no entry, and none is generated.
- */
+/** Read-only: a missing summary is never generated here. */
 export function readFeedUserSummaries(
   runtime: FeedUserSummariesRuntime,
   users: Array<StoryOutputUser>,
@@ -36,10 +33,7 @@ export type FeedUserSummary =
   | { reason: "no_stories_in_last_24h" | "not_generated"; status: "missing"; username: string }
   | { error: "unknown_account"; status: "error" };
 
-/**
- * The user summary the story feed shows for one account's stories of the last 24 hours. The
- * username ignores an `@` prefix and letter case.
- */
+/** Ignores an `@` prefix and letter case. */
 function readFeedUserSummary(
   runtime: FeedUserSummaryRuntime,
   username: string,
@@ -88,7 +82,6 @@ const FeedUserSummarySchema = z.discriminatedUnion("status", [
   z.object({ status: z.literal("error"), error: z.literal("unknown_account") }),
 ]) satisfies z.ZodType<FeedUserSummary>;
 
-/** The user summaries of several accounts, as the getFeedUserSummaries tool returns them. */
 export const RequestedFeedUserSummariesSchema = z.array(
   z.object({
     handle: z.string(),

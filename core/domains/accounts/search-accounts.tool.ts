@@ -19,7 +19,6 @@ Do not use it when the message mentions an account as @username, or to list ever
 
 Outcomes: "accounts" holds up to 10 matches, the closest first, and "total" counts every match: say so when there are more. When it is empty, say that no account matches. When several accounts match, do not pick one: name them and ask which one is meant.`;
 
-/** The Assistant tool searching the accounts by name. Read-only. */
 export function createSearchAccountsTool(runtime: AccountsRuntime) {
   return tool({
     description: DESCRIPTION,

@@ -19,7 +19,6 @@ Do not use it to find a place by its name, address or category: use searchTagged
 
 Outcomes: "places" holds up to 10 places, "total" counts every place and "nextOffset" is the offset of the next page, null on the last one. "unknownUsernames" lists the requested usernames that are no account: say so. When "places" is empty, say that no place was tagged.`;
 
-/** The Assistant tool listing the Tagged places, of some accounts or all. Read-only. */
 export function createListTaggedPlacesTool(runtime: TaggedPlacesRuntime) {
   return tool({
     description: DESCRIPTION,

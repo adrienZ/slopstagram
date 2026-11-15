@@ -46,7 +46,6 @@ export function toolCallOf(part: AssistantPart): ToolCall | undefined {
   return undefined;
 }
 
-/** The conversation with the Assistant, and the message being typed. */
 export function useAssistantChat() {
   const { messages, sendMessage, status, error } = useChat<AssistantUIMessage>({ transport });
   const [draft, setDraft] = useState("");

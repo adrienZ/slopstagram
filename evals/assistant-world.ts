@@ -19,17 +19,12 @@ import { describeOutcome, type AssistantRun, type AssistantToolCall } from "./as
 const HOUR_SECONDS = 3600;
 const DAY_SECONDS = 24 * HOUR_SECONDS;
 
-/** The accounts of the seeded world, all synthetic. */
 export const worldAccounts = {
-  /** Two stories in the last 24 hours, with a stored user summary. */
   withSummary: "user_072",
-  /** Saved, but its only story is older than 24 hours. */
   withoutRecentStories: "user_008",
-  /** No saved account has this username. */
   unknown: "user_404",
 };
 
-/** The one Tagged place of the seeded world, tagged by user_008. */
 export const worldPlace = { id: `instagram:${placeId}`, name: "Synthetic Cafe" };
 
 export const savedUsernames = [worldAccounts.withoutRecentStories, worldAccounts.withSummary];
@@ -57,12 +52,7 @@ function checkPremises(runtime: AssistantRuntime, now: Date) {
   }
 }
 
-/**
- * The synthetic report world of the tests, ingested an hour after its stories were published,
- * with the story of user_008 moved a day earlier. Report creation runs with the world's fake
- * Ollama; only the chat model is real: production leaves `fetchOllama` unset, so the Ollama
- * provider uses the global fetch.
- */
+/** Only the chat model is real; report creation runs on the world's fake Ollama. */
 async function seedAssistantWorld(): Promise<AssistantRuntime> {
   const now = new Date();
   const payloads = editRecordedStories(await recordedPayloads(), (story) => {
@@ -90,10 +80,7 @@ async function seedAssistantWorld(): Promise<AssistantRuntime> {
 
 let world: Promise<AssistantRuntime> | undefined;
 
-/**
- * Asks the Assistant one question as the chat page does: the same `DefaultChatTransport` client,
- * whose requests go to the chat route handler instead of the network.
- */
+/** The chat page's own `DefaultChatTransport`, pointed at the route handler instead of the network. */
 async function answer(question: string): Promise<AssistantRun> {
   world ??= seedAssistantWorld();
   const runtime = await world;
@@ -145,11 +132,7 @@ async function afterPrevious<Result>(
 
 let lastQuestion: Promise<unknown> = Promise.resolve();
 
-/**
- * Asks the Assistant one question at a time, in arrival order. The local chat model answers one
- * request at a time: more would only queue in Ollama and time out. The judge has no such limit, so
- * evalite runs the cases concurrently and only the chat model calls wait here.
- */
+/** The local chat model answers one request at a time; more would queue in Ollama and time out. */
 export async function askAssistant(question: string): Promise<AssistantRun> {
   const run = afterPrevious(lastQuestion, async () => await answer(question));
   lastQuestion = run;

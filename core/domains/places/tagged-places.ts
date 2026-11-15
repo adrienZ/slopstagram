@@ -7,7 +7,6 @@ import type {
 import { taggedPlaceDisplayName } from "@@/core/domains/places/tagged-place-rules.ts";
 import { normalizeSearchQuery, rankTextMatch } from "@@/core/utils/search-text.ts";
 
-/** What reading the Tagged places needs. */
 export interface TaggedPlacesReadRuntime {
   stories: Pick<
     StoryRepository,
@@ -15,17 +14,13 @@ export interface TaggedPlacesReadRuntime {
   >;
 }
 
-/** What listing the Tagged places needs: the saved accounts too, to filter by them. */
 export interface TaggedPlacesRuntime extends TaggedPlacesReadRuntime {
   users: Pick<InstagramUserRepository, "findByUsername">;
 }
 
-/** How many places a page of places holds. */
 const PLACE_PAGE_SIZE = 10;
-/** How many of its latest stories the details of a place list. */
 const LATEST_STORY_COUNT = 5;
 
-/** A Tagged place, as a list or a search of places gives it. */
 export interface TaggedPlaceSummary {
   /** Opaque: `instagram:<id>` or `metadata:<id>`, to copy as is. */
   id: string;
@@ -47,16 +42,12 @@ const TaggedPlaceSummarySchema = z.object({
   owners: z.array(z.string()),
 }) satisfies z.ZodType<TaggedPlaceSummary>;
 
-/** One page of places, the place of the latest story first. */
 export interface TaggedPlacePage {
   places: Array<TaggedPlaceSummary>;
-  /** How many places there are over every page. */
   total: number;
-  /** The offset of the next page, or null on the last page. */
   nextOffset: number | null;
 }
 
-/** The input of a page of places: the offset of the page, the first one when left out. */
 export const PlaceOffsetSchema = z
   .number()
   .int()
@@ -70,12 +61,9 @@ export const TaggedPlacePageSchema = z.object({
   nextOffset: z.number().nullable(),
 }) satisfies z.ZodType<TaggedPlacePage>;
 
-/** A Tagged place with its address and its latest stories. */
 interface TaggedPlaceDetails extends TaggedPlaceSummary {
   address: string | null;
-  /** The latest stories tagging the place, the latest first. */
   latestStories: Array<{ date: string; owner: string }>;
-  /** Whether older stories tag the place too. */
   hasMoreStories: boolean;
 }
 
@@ -123,14 +111,10 @@ function toPage(places: Array<TaggedPlaceRow>, total: number, offset: number): T
 }
 
 export interface TaggedPlaceList extends TaggedPlacePage {
-  /** The requested usernames that are no saved account, as written. */
   unknownUsernames: Array<string>;
 }
 
-/**
- * A page of the Tagged places. With usernames, only the places at least one of those accounts
- * tagged, each keeping only their stories, ignoring case and a leading `@`.
- */
+/** Each place keeps only the given accounts' stories. */
 export function listTaggedPlaces(
   runtime: TaggedPlacesRuntime,
   { usernames, offset = 0 }: { usernames?: Array<string>; offset?: number } = {},
@@ -153,11 +137,7 @@ export function listTaggedPlaces(
   };
 }
 
-/**
- * A page of the Tagged places whose name, address or category contains the query, ignoring
- * case, accents and a leading `@`: exact matches first, then prefixes, then the others, each
- * the place of the latest story first.
- */
+/** Exact matches first, then prefixes, then the others. */
 export function searchTaggedPlaces(
   runtime: TaggedPlacesReadRuntime,
   { query, offset = 0 }: { query: string; offset?: number },
@@ -188,7 +168,6 @@ export function searchTaggedPlaces(
   );
 }
 
-/** The details of the Tagged place with this id, or `unknown`. */
 export function getTaggedPlace(runtime: TaggedPlacesReadRuntime, id: string): TaggedPlaceRead {
   const wanted = id.trim();
   const place = runtime.stories

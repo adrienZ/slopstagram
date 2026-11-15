@@ -13,7 +13,6 @@ export function createMigratedDatabase() {
   return database;
 }
 
-/** A migrated in-memory database, closed when the test ends. */
 export function createTestDatabase(context: Pick<TestContext, "onTestFinished">) {
   const database = createMigratedDatabase();
   context.onTestFinished(() => {
@@ -22,7 +21,6 @@ export function createTestDatabase(context: Pick<TestContext, "onTestFinished">)
   return database;
 }
 
-/** The real story repository on a migrated in-memory database, with in-memory story file storage. */
 export function createStoryFixtures(context: Pick<TestContext, "onTestFinished">) {
   return {
     storyRepository: new StoryRepository(createTestDatabase(context)),

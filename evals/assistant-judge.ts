@@ -59,11 +59,7 @@ export interface AssistantJudge {
   close: () => void;
 }
 
-/**
- * The optional LLM judge: the Codex CLI as an AI SDK provider, running `JUDGE_MODEL`. Null, so
- * the judge is skipped, when `codex` is not on the PATH or on CI (the runners have `codex` but no login). Codex runs in an empty temporary directory with a read-only sandbox and
- * never approves an action, so it sees only the synthetic run it grades.
- */
+/** Null on CI: the runners have `codex` but no login. Read-only sandbox in an empty dir, so it sees only the run it grades. */
 export function createAssistantJudge(): AssistantJudge | null {
   const codexPath = findOnPath("codex");
   if (codexPath === null || process.env.CI !== undefined) {

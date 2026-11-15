@@ -50,12 +50,10 @@ export type AssistantRuntime = AssistantToolsRuntime &
 
 export type AssistantUIMessage = UIMessage<unknown, UIDataTypes, InferUITools<AssistantTools>>;
 
-/** The chat model, from `OLLAMA_CHAT_MODEL`, defaulting to the user summary model. */
 function getAssistantModel(): string {
   return process.env.OLLAMA_CHAT_MODEL ?? getUserSummaryModel();
 }
 
-/** The UI messages of a chat request, or null when they are not a valid conversation. */
 export async function validateAssistantMessages(
   runtime: AssistantToolsRuntime,
   messages: Array<JsonValue>,
@@ -70,7 +68,6 @@ export async function validateAssistantMessages(
   return validated.success ? validated.data : null;
 }
 
-/** Logs why the chat model did not answer, and gives the error text the chat shows. */
 function createFailureDescriber(
   logger: AssistantRuntime["logger"],
 ): NonNullable<UIMessageStreamOptions<AssistantUIMessage>["onError"]> {
@@ -82,7 +79,6 @@ function createFailureDescriber(
   };
 }
 
-/** Streams the Assistant's reply to a conversation, as a UI message stream response. */
 export async function streamAssistantReply(
   runtime: AssistantRuntime,
   messages: Array<AssistantUIMessage>,

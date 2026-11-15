@@ -10,7 +10,6 @@ import {
 } from "./mock-helpers.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 
-/** A story as the repository stores it, with the annotations it derives. */
 function storedStory(pk: string) {
   return { ...storyItem(pk), annotations: { locations: [], stickers: [] } };
 }

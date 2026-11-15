@@ -29,7 +29,6 @@ beforeAll(() => {
   [timelineEntry] = timelineProps.timeline.stories;
 });
 
-/** Renders the page with the sticker kinds its stories really have, as the loader would report them. */
 async function renderTimeline(props: AccountTimelinePageData) {
   return await renderer.mountRoute(`/users/${timelineAccount}`, regroupTimeline(props));
 }
