@@ -1,10 +1,10 @@
-import { useNavigate } from "@tanstack/react-router";
 import { cn } from "cn";
 import type { StoryCardData } from "../utils/story-cards.ts";
 import { useState, type ReactNode } from "react";
 import { Sticker } from "./sticker.tsx";
 import { MusicSticker } from "./music-sticker.tsx";
 import { getUserTimelineUrl } from "../utils/helper.ts";
+import { useStorySearchParam } from "../hooks/use-story-search-param.ts";
 import {
   Dialog,
   DialogClose,
@@ -99,42 +99,33 @@ function LightboxNavButton(props: {
   );
 }
 
+type OpenStory = (mediaPk?: string) => void;
+
 interface LightboxProps {
   stories: Array<StoryCardData>;
   selectedStory?: string;
   linkToProfile?: boolean;
+  onOpenStory?: OpenStory;
 }
 
 function LightboxDialog(props: {
   stories: Array<StoryCardData>;
   story: StoryCardData;
   linkToProfile: boolean;
+  onOpenStory: OpenStory;
 }) {
-  const navigateTo = useNavigate();
   const [dismissedStory, setDismissedStory] = useState<string | null>(null);
 
   function close() {
     setDismissedStory(props.story.mediaPk);
-    void navigateTo({
-      to: ".",
-      search: (previous) => ({ ...previous, story: undefined }),
-      replace: true,
-      resetScroll: false,
-    });
+    props.onOpenStory();
   }
 
   function navigate(direction: number) {
     const index = props.stories.findIndex((entry) => entry.mediaPk === props.story.mediaPk);
-    void navigateTo({
-      to: ".",
-      search: (previous) => ({
-        ...previous,
-        story:
-          props.stories[(index + direction + props.stories.length) % props.stories.length]?.mediaPk,
-      }),
-      replace: true,
-      resetScroll: false,
-    });
+    props.onOpenStory(
+      props.stories[(index + direction + props.stories.length) % props.stories.length]?.mediaPk,
+    );
   }
 
   function selectedCount() {
@@ -293,12 +284,14 @@ function LightboxDialog(props: {
 }
 
 export function Lightbox(props: LightboxProps) {
+  const openInUrl = useStorySearchParam();
   const story = props.stories.find((entry) => entry.mediaPk === props.selectedStory);
   return story === undefined ? null : (
     <LightboxDialog
       stories={props.stories}
       story={story}
       linkToProfile={props.linkToProfile ?? false}
+      onOpenStory={props.onOpenStory ?? openInUrl}
     />
   );
 }

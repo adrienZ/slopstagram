@@ -1,4 +1,4 @@
-import { useId, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { cn } from "cn";
 import { LocateFixedIcon, MinusIcon, PlusIcon } from "lucide-react";
 import type { MentionGraphPageData } from "../loaders/mention-graph.ts";
@@ -15,6 +15,7 @@ type GraphConnection = MentionGraphPageData["connections"][number];
 
 const ACCOUNT_RADIUS = 20;
 const UNKNOWN_RADIUS = 7;
+const CONNECTION_HIT_WIDTH = 14;
 
 function radiusOf(point: GraphPoint): number {
   return point.kind === "account" ? ACCOUNT_RADIUS : UNKNOWN_RADIUS;
@@ -119,9 +120,12 @@ function GraphControls({
   );
 }
 
-interface MentionGraphProps extends MentionGraphPageData {
+interface MentionGraphProps extends Pick<MentionGraphPageData, "points" | "connections"> {
   selectedPointId: string | null;
   onSelectPoint: (id: string | null) => void;
+  selectedConnectionId: string | null;
+  onSelectConnection: (id: string) => void;
+  overlay?: ReactNode;
 }
 
 /**
@@ -134,7 +138,11 @@ export function MentionGraph({
   connections,
   selectedPointId,
   onSelectPoint,
+  selectedConnectionId,
+  onSelectConnection,
+  overlay,
 }: MentionGraphProps) {
+  const regionRef = useRef<HTMLDivElement>(null);
   const layout = useForceLayout(points, connections);
   const viewport = useGraphViewport(layout);
   const clipPathId = useId();
@@ -155,8 +163,8 @@ export function MentionGraph({
       ? undefined
       : pointsById.get(hoveredPointId);
 
-  function isHighlighted({ source, target }: GraphConnection): boolean {
-    return source === selectedPointId || target === selectedPointId;
+  function isHighlighted({ id, source, target }: GraphConnection): boolean {
+    return id === selectedConnectionId || source === selectedPointId || target === selectedPointId;
   }
 
   function positionOf(id: string): LayoutPosition {
@@ -166,26 +174,42 @@ export function MentionGraph({
   function renderConnection(connection: GraphConnection): ReactNode {
     const source = positionOf(connection.source);
     const target = positionOf(connection.target);
-    const labels = [connection.source, connection.target].map((id) => pointsById.get(id)?.label);
     const highlighted = isHighlighted(connection);
+    const storyCount = connection.storyPks.length;
+    const line = { x1: source.x, y1: source.y, x2: target.x, y2: target.y };
     return (
-      <line
+      <g
         key={connection.id}
-        role="img"
-        aria-label={`Connexion entre ${labels.join(" et ")} : ${formatStoryCount(connection.storyCount)}`}
+        role="button"
+        tabIndex={0}
+        aria-label={`Connexion entre ${connection.labels.join(" et ")} : ${formatStoryCount(storyCount)}`}
+        aria-pressed={connection.id === selectedConnectionId}
         data-highlighted={highlighted}
-        x1={source.x}
-        y1={source.y}
-        x2={target.x}
-        y2={target.y}
-        strokeWidth={connectionWidth(connection.storyCount)}
-        strokeLinecap="round"
-        className={cn({
-          "tw:stroke-primary": highlighted,
-          "tw:stroke-muted-foreground/50": selectedPointId === null,
-          "tw:stroke-muted-foreground/15": selectedPointId !== null && !highlighted,
-        })}
-      />
+        className="tw:cursor-pointer tw:outline-none"
+        onClick={(event) => {
+          event.stopPropagation();
+          if (viewport.isClick()) {
+            onSelectConnection(connection.id);
+          }
+        }}
+        onKeyDown={(event) => {
+          onActivate(event, () => {
+            onSelectConnection(connection.id);
+          });
+        }}
+      >
+        <line
+          {...line}
+          strokeWidth={connectionWidth(storyCount)}
+          strokeLinecap="round"
+          className={cn({
+            "tw:stroke-primary": highlighted,
+            "tw:stroke-muted-foreground/50": !highlighted && selectedPointId === null,
+            "tw:stroke-muted-foreground/15": !highlighted && selectedPointId !== null,
+          })}
+        />
+        <line {...line} strokeWidth={CONNECTION_HIT_WIDTH} className="tw:stroke-transparent" />
+      </g>
     );
   }
 
@@ -261,6 +285,7 @@ export function MentionGraph({
 
   return (
     <div
+      ref={regionRef}
       role="region"
       aria-label="Graphe des mentions"
       className="tw:relative tw:h-[calc(100dvh-11rem)] tw:min-h-96 tw:overflow-hidden tw:rounded-lg tw:border tw:bg-muted/20"
@@ -291,8 +316,12 @@ export function MentionGraph({
         <g
           transform={`translate(${viewport.view.x} ${viewport.view.y}) scale(${viewport.view.scale})`}
         >
-          <g>{connections.map(renderConnection)}</g>
-          <g>{points.map(renderPoint)}</g>
+          <g role="group" aria-label="Connexions">
+            {connections.map(renderConnection)}
+          </g>
+          <g role="group" aria-label="Points">
+            {points.map(renderPoint)}
+          </g>
           {hovered !== undefined && renderHoverLabel(hovered)}
         </g>
       </svg>
@@ -302,6 +331,7 @@ export function MentionGraph({
         onZoomOut={viewport.zoomOut}
         onRecenter={viewport.recenter}
       />
+      {overlay}
       <Popover
         open={selected?.kind === "account"}
         onOpenChange={(open) => {
@@ -317,11 +347,15 @@ export function MentionGraph({
             className="tw:w-64"
             side="top"
             updatePositionStrategy="always"
+            onFocusOutside={(event) => {
+              // Focus moves into the story modal, which opens over the profile, not instead of it.
+              event.preventDefault();
+            }}
             onInteractOutside={(event) => {
               // Inside the graph, its own click handlers decide what a click selects or clears.
               if (
                 event.target instanceof globalThis.Node &&
-                selectedElement?.ownerSVGElement?.contains(event.target) === true
+                regionRef.current?.contains(event.target) === true
               ) {
                 event.preventDefault();
               }

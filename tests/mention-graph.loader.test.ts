@@ -7,6 +7,7 @@ import {
   graphAccountFullName,
   graphAccounts,
   graphStories,
+  cleoStoriesMentioningAda,
   lonelyAccount,
   mentionedName,
   seedGraphDatabase,
@@ -18,20 +19,14 @@ const [ada, ben, cleo] = graphAccounts.map((username) => `@${username}`);
 const unknown = `@${unknownUsername}`;
 const ambiguous = `@${ambiguousUsername} (plusieurs comptes)`;
 
-/** Each connection as its two labels, in the loader's order, and its story count. */
-function describeConnections({ points, connections }: MentionGraphPageData) {
-  const labels = new Map(points.map(({ id, label }) => [id, label]));
-  return connections.map(({ source, target, storyCount }) => [
-    labels.get(source),
-    labels.get(target),
-    storyCount,
-  ]);
+function describeConnections({ connections }: MentionGraphPageData) {
+  return connections.map(({ labels, storyPks }) => [...labels, storyPks.length]);
 }
 
 test("connects each story's author to whom its stickers name, one line per pair", () => {
   // Newest story first: the third account's, then the second's, then the first's.
   expect(describeConnections(loadMentionGraph(shared.runtime))).toStrictEqual([
-    [ada, cleo, 1],
+    [ada, cleo, 5],
     [ben, cleo, 1],
     [cleo, unknown, 1],
     [cleo, mentionedName, 1],
@@ -97,34 +92,75 @@ const graphAuthorPks = { ada: "700000000000001", ben: "700000000000062", cleo: "
 /** Only some of the graph's stories stored, every author still a known Account. */
 async function seedGraphStories(
   context: TestContext,
-  kept: Array<keyof typeof graphStories>,
+  storyPks: Array<string>,
+  options?: Parameters<typeof seedGraphDatabase>[2],
 ): Promise<Runtime> {
   const runtime = await createTestRuntime(context);
-  await seedGraphDatabase(
-    runtime,
-    kept.map((name) => graphStories[name]),
-  );
-  const leftOut = Object.entries(graphAuthorPks).filter(
-    ([name]) => !kept.some((keptName) => keptName === name),
-  );
   await Promise.all(
-    leftOut.map(async ([name, pk]) => {
+    Object.entries(graphAuthorPks).map(async ([name, pk]) => {
       await runtime.users.save({ full_name: null, id: pk, pk, username: `${name}_graph` });
     }),
   );
+  await seedGraphDatabase(runtime, storyPks, options);
   return runtime;
 }
 
 test("a connection lasts only as long as one of its source stories is stored", async (context) => {
-  const withoutBen = await seedGraphStories(context, ["ada", "cleo"]);
+  const withoutBen = await seedGraphStories(context, [
+    graphStories.ada,
+    graphStories.cleo,
+    ...cleoStoriesMentioningAda,
+  ]);
   expect(describeConnections(loadMentionGraph(withoutBen))).toContainEqual([ada, ben, 1]);
 
-  const onlyCleo = await seedGraphStories(context, ["cleo"]);
-  expect(describeConnections(loadMentionGraph(onlyCleo))).toStrictEqual([
-    [ada, cleo, 1],
+  const onlyCleo = await seedGraphStories(context, [
+    graphStories.cleo,
+    ...cleoStoriesMentioningAda,
+  ]);
+  const graph = loadMentionGraph(onlyCleo);
+  expect(graph.stories.map(({ mediaPk }) => mediaPk).toSorted()).toStrictEqual(
+    [graphStories.cleo, ...cleoStoriesMentioningAda].toSorted(),
+  );
+  expect(describeConnections(graph)).toStrictEqual([
+    [ada, cleo, 5],
     [ben, cleo, 1],
     [cleo, unknown, 1],
     [cleo, mentionedName, 1],
     [cleo, ambiguous, 1],
   ]);
+});
+
+test("a connection's source stories are those where one end mentioned the other, each once", () => {
+  const { connections } = loadMentionGraph(shared.runtime);
+  expect(connections.map(({ labels, storyPks }) => [...labels, storyPks])).toStrictEqual([
+    [ada, cleo, [...cleoStoriesMentioningAda, graphStories.cleo]],
+    [ben, cleo, [graphStories.cleo]],
+    [cleo, unknown, [graphStories.cleo]],
+    [cleo, mentionedName, [graphStories.cleo]],
+    [cleo, ambiguous, [graphStories.cleo]],
+    [ada, ben, [graphStories.ben, graphStories.ada]],
+    [ada, unknown, [graphStories.ada]],
+    [ada, mentionedName, [graphStories.ada]],
+  ]);
+});
+
+test("every source story comes with its card, previewed through the Media store", () => {
+  const { stories: cards } = loadMentionGraph(shared.runtime);
+  expect(cards.map(({ mediaPk }) => mediaPk).toSorted()).toStrictEqual(
+    [...Object.values(graphStories), ...cleoStoriesMentioningAda].toSorted(),
+  );
+  expect(cards.find(({ mediaPk }) => mediaPk === graphStories.ben)).toMatchObject({
+    username: graphAccounts[1],
+    preview: `/media/story-previews/${graphStories.ben}.jpg`,
+    avatar: "/media/avatars/700000000000062.jpg",
+  });
+});
+
+test("an undated story, which no page can show, is no source story", async (context) => {
+  const runtime = await seedGraphStories(context, [graphStories.ada, graphStories.ben], {
+    undatedStoryPks: [graphStories.ben],
+  });
+  const graph = loadMentionGraph(runtime);
+  expect(describeConnections(graph)).toContainEqual([ada, ben, 1]);
+  expect(graph.stories.map(({ mediaPk }) => mediaPk)).toStrictEqual([graphStories.ada]);
 });

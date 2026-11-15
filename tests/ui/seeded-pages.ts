@@ -180,6 +180,14 @@ export const graphStories = {
   ben: "700000000000090",
   cleo: "700000000000100",
 } as const;
+export const cleoStoryMentioningAdaTwice = "700000000000107";
+/** Newest first. */
+export const cleoStoriesMentioningAda = [
+  "700000000000129",
+  "700000000000122",
+  "700000000000116",
+  cleoStoryMentioningAdaTwice,
+] as const;
 
 function mentionStickers(mentions: Array<{ username?: string; full_name?: string }>) {
   return mentions.map((mention) => ({ bloks_sticker: { sticker_data: { ig_mention: mention } } }));
@@ -208,6 +216,13 @@ const mentionsByStory = new Map<string, ReturnType<typeof mentionStickers>>([
       { username: ambiguousUsername },
     ]),
   ],
+  [cleoStoriesMentioningAda[0], mentionStickers([{ username: adaGraph }])],
+  [cleoStoriesMentioningAda[1], mentionStickers([{ username: adaGraph }])],
+  [cleoStoriesMentioningAda[2], mentionStickers([{ username: adaGraph }])],
+  [
+    cleoStoryMentioningAdaTwice,
+    mentionStickers([{ username: adaGraph }, { username: adaGraph.toUpperCase() }]),
+  ],
 ]);
 
 /**
@@ -219,7 +234,8 @@ const mentionsByStory = new Map<string, ReturnType<typeof mentionStickers>>([
  */
 export async function seedGraphDatabase(
   runtime: Runtime,
-  storyPks: Array<string> = Object.values(graphStories),
+  storyPks: Array<string> = [...Object.values(graphStories), ...cleoStoriesMentioningAda],
+  { undatedStoryPks = [] }: { undatedStoryPks?: Array<string> } = {},
 ): Promise<void> {
   const recorded = editRecordedUsers(
     await readRecordedPayloads(["instagram-story-data.json"]),
@@ -234,6 +250,9 @@ export async function seedGraphDatabase(
     runtime,
     editRecordedStories(keepRecordedStories(recorded, storyPks), (story) => {
       story.story_bloks_stickers = mentionsByStory.get(story.pk) ?? [];
+      if (undatedStoryPks.includes(story.pk)) {
+        delete story.taken_at;
+      }
     }),
     { publishedBefore: { now: pageNow, seconds: PUBLISHED_BEFORE_SECONDS } },
   );
