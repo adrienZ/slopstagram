@@ -64,7 +64,7 @@ function toFilterOptions(accounts: Array<AccountTarget>) {
 /** `source` and `target` only name the two ends: who mentioned whom is in the source stories. */
 export function loadMentionGraph(runtime: MentionGraphRuntime, accountFilters: Array<string>) {
   const { accounts, selectedUsernames, unknownUsernames, graph } = filterByAccounts(
-    readMentionConnections(runtime),
+    readMentionConnections(runtime, runtime.users.listAll()),
     accountFilters,
   );
   const points = graph.targets.map(toGraphPoint);

@@ -74,7 +74,7 @@ const assistantToolViews: AssistantToolViews = {
       />
     ),
   },
-  searchMentionConnections: {
+  searchMentionPeople: {
     icon: <SearchIcon />,
     Result: ({ output }) => <MentionPeople page={output} />,
   },

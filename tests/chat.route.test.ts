@@ -347,7 +347,7 @@ const stepAfterEachTool: Record<keyof AssistantTools, { question: string; thinks
     listMentionConnections: { question: "Which mentions?", thinksAfter: false },
     listTaggedPlaces: { question: "Which places?", thinksAfter: false },
     searchAccounts: { question: "Search USER_07", thinksAfter: true },
-    searchMentionConnections: { question: "Search mentions user", thinksAfter: true },
+    searchMentionPeople: { question: "Search mentions user", thinksAfter: true },
     searchTaggedPlaces: { question: "Search places CAFÉ", thinksAfter: true },
   };
 

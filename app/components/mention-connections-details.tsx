@@ -2,6 +2,7 @@ import type {
   AmbiguousMentionQuery,
   MentionConnectionList,
   MentionConnectionRead,
+  MentionDirection,
   MentionPeoplePage,
 } from "@@/core/domains/mention-connections/mention-connection-reads.ts";
 import { formatStickerStoryDate } from "../utils/timeline-stickers.ts";
@@ -10,15 +11,7 @@ function formatStoryCount(count: number): string {
   return `${count} ${count > 1 ? "stories" : "story"}`;
 }
 
-function formatMention({
-  author,
-  mentioned,
-  storyCount,
-}: {
-  author: string;
-  mentioned: string;
-  storyCount: number;
-}): string {
+function formatMention({ author, mentioned, storyCount }: MentionDirection): string {
   return `${author} → ${mentioned} (${formatStoryCount(storyCount)})`;
 }
 

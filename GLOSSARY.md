@@ -42,6 +42,13 @@ observation, kept apart per story since equal full names do not prove identity. 
 username several Accounts share stays its own target rather than one of them. A story's
 author is always an Account, so both ends of a connection are Mention targets.
 
+**Mention person**:
+A Mention target as the Assistant reads it: someone at one end of a Mention connection, named
+by an id, a username or a full name. A name several Mention people answer to stays ambiguous
+until the user says which one is meant, and a username several Accounts share answers to each
+of those Accounts and to the stickers naming it.
+_Avoid_: Contact, friend
+
 **Neighborhood**:
 A Mention target, the Mention targets it shares a Mention connection with, and every
 Mention connection between two of them. Filtering the mention graph by Accounts shows

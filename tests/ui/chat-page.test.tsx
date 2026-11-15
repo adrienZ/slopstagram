@@ -270,7 +270,7 @@ test("a name several stories carry traces its candidates, and a search lists the
 
   await chat.ask("Search mentions dup");
   await vi.waitFor(() => expect(screen.getByRole("button", { name: "Envoyer" })).toBeEnabled());
-  await chat.user.click(screen.getByRole("button", { name: /^searchMentionConnections\b/u }));
+  await chat.user.click(screen.getByRole("button", { name: /^searchMentionPeople\b/u }));
   expect(
     within(screen.getByRole("list", { name: "Personnes trouvées" })).getByRole("listitem"),
   ).toHaveTextContent("@dup_graph · 1 connexion · 1 story");

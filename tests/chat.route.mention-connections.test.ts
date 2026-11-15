@@ -39,6 +39,10 @@ const ambiguous = {
   label: `@${ambiguousUsername}`,
   accounts: [`@${ambiguousUsername.toUpperCase()}`, `@${ambiguousUsername}`],
 };
+const ambiguousAccounts = [
+  { id: "account:700000000000952", label: `@${ambiguousUsername.toUpperCase()}` },
+  { id: "account:700000000000951", label: `@${ambiguousUsername}` },
+].map((account) => ({ kind: "account", ...account, fullName: null }));
 const unknown = {
   kind: "unknown-username",
   id: `username:${unknownUsername}`,
@@ -171,7 +175,7 @@ test("searching the mentions finds Accounts and name-only observations, each sto
   const chunks = await ask(world, "Search mentions FIXTURE");
 
   expect(chunks.toolInputs).toStrictEqual([
-    { input: { query: "FIXTURE" }, toolName: "searchMentionConnections" },
+    { input: { query: "FIXTURE" }, toolName: "searchMentionPeople" },
   ]);
   expect(chunks.toolOutputs).toStrictEqual([
     {
@@ -269,11 +273,45 @@ test("reading a connection by an Account's full name keeps each story's directio
   ]);
 });
 
-test("two people no story connects are no observation, a username several Accounts share stays apart", async (context) => {
+test("a username several Accounts share answers to each of them and to the stickers naming it", async (context) => {
   const world = await createMentionWorld(context);
 
-  const shared = await ask(world, `Connection cleo_graph and ${ambiguousUsername}`);
-  const none = await ask(world, `Connection ada_graph and ${ambiguousUsername}`);
+  const chunks = await ask(world, `Connection cleo_graph and ${ambiguousUsername}`);
+
+  expect(chunks.toolOutputs).toStrictEqual([
+    {
+      status: "ambiguous",
+      matches: [
+        {
+          query: ambiguousUsername,
+          candidates: [
+            {
+              person: ambiguous,
+              connectionCount: 1,
+              storyCount: 1,
+              latestStoryDate: "2026-07-26T06:38:35.000Z",
+              connectedTo: [cleo.label],
+            },
+            ...ambiguousAccounts.map((person) => ({
+              person,
+              connectionCount: 0,
+              storyCount: 0,
+              latestStoryDate: null,
+              connectedTo: [],
+            })),
+          ],
+          total: 3,
+        },
+      ],
+    },
+  ]);
+});
+
+test("two people no story connects are no observation", async (context) => {
+  const world = await createMentionWorld(context);
+
+  const shared = await ask(world, `Connection cleo_graph and ${ambiguous.id}`);
+  const none = await ask(world, `Connection ada_graph and ${ambiguous.id}`);
   const neverSeen = await ask(world, "Connection ben_graph and zed");
 
   expect(shared.toolOutputs).toMatchObject([

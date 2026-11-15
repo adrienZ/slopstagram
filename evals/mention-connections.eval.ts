@@ -20,7 +20,7 @@ defineAssistantEvals([
   {
     name: "someone mentioned by part of a name",
     question: "Est-ce que quelqu'un a mentionné une personne qui s'appelle Friend ?",
-    expected: { tools: ["searchMentionConnections"] },
+    expected: { tools: ["searchMentionPeople"] },
   },
   {
     name: "a full name two stories carry",

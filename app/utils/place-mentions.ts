@@ -28,7 +28,7 @@ const placesNamedByTool: PlacesNamedByTool = {
   listMentionConnections: null,
   listTaggedPlaces: (output) => output.places.map(placeOf),
   searchAccounts: null,
-  searchMentionConnections: null,
+  searchMentionPeople: null,
   searchTaggedPlaces: (output) => output.places.map(placeOf),
 };
 

@@ -3,7 +3,7 @@ import { createListAccountsTool } from "@@/core/domains/accounts/list-accounts.t
 import { createSearchAccountsTool } from "@@/core/domains/accounts/search-accounts.tool.ts";
 import { createGetMentionConnectionTool } from "@@/core/domains/mention-connections/get-mention-connection.tool.ts";
 import { createListMentionConnectionsTool } from "@@/core/domains/mention-connections/list-mention-connections.tool.ts";
-import { createSearchMentionConnectionsTool } from "@@/core/domains/mention-connections/search-mention-connections.tool.ts";
+import { createSearchMentionPeopleTool } from "@@/core/domains/mention-connections/search-mention-people.tool.ts";
 import { createGetTaggedPlaceTool } from "@@/core/domains/places/get-tagged-place.tool.ts";
 import { createListTaggedPlacesTool } from "@@/core/domains/places/list-tagged-places.tool.ts";
 import { createSearchTaggedPlacesTool } from "@@/core/domains/places/search-tagged-places.tool.ts";
@@ -24,7 +24,7 @@ const readTools = {
 /** The model keeps reasoning after a lookup, to decide what to read next. */
 const lookupTools = {
   searchAccounts: createSearchAccountsTool,
-  searchMentionConnections: createSearchMentionConnectionsTool,
+  searchMentionPeople: createSearchMentionPeopleTool,
   searchTaggedPlaces: createSearchTaggedPlacesTool,
 };
 

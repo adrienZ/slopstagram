@@ -10,14 +10,10 @@ import {
   type MentionTarget,
 } from "./mention-connections.ts";
 
-/** How many connections or people a page holds. */
 const PAGE_SIZE = 10;
-/** How many source stories a read of one connection gives at a time. */
 const STORY_PAGE_SIZE = 5;
-/** How many neighbors a found person names. */
-const NEIGHBOR_COUNT = 5;
+const CONNECTED_TO_LIMIT = 5;
 
-/** Someone at one end of a Mention connection, as the Assistant reads them. */
 type MentionPerson =
   | { kind: "account"; id: string; label: string; fullName: string | null }
   | { kind: "unknown-username"; id: string; label: string }
@@ -41,7 +37,6 @@ const MentionPersonSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("name"), id: z.string(), label: z.string() }),
 ]) satisfies z.ZodType<MentionPerson>;
 
-/** A person and what the stored mentions observed of them. */
 export interface MentionPersonSummary {
   person: MentionPerson;
   connectionCount: number;
@@ -61,8 +56,7 @@ const MentionPersonSummarySchema = z.object({
   connectedTo: z.array(z.string()),
 }) satisfies z.ZodType<MentionPersonSummary>;
 
-/** How many source stories show one person mentioning the other. */
-interface MentionDirection {
+export interface MentionDirection {
   author: string;
   mentioned: string;
   storyCount: number;
@@ -74,7 +68,6 @@ const MentionDirectionSchema = z.object({
   storyCount: z.number(),
 }) satisfies z.ZodType<MentionDirection>;
 
-/** A Mention connection as a list of connections gives it. */
 export interface MentionConnectionSummary {
   people: [MentionPerson, MentionPerson];
   storyCount: number;
@@ -104,7 +97,6 @@ const AmbiguousMentionQuerySchema = z.object({
   total: z.number(),
 }) satisfies z.ZodType<AmbiguousMentionQuery>;
 
-/** The input of a page: the offset of the page, the first one when left out. */
 export const MentionOffsetSchema = z
   .number()
   .int()
@@ -217,10 +209,10 @@ function otherOf(
   return first === id ? second : first;
 }
 
-/** The stored Mention connections, with what the Assistant needs to describe their people. */
 function createMentionReader(runtime: MentionConnectionsRuntime) {
-  const graph: MentionConnections = readMentionConnections(runtime);
-  const usernames = new Map(runtime.users.listAll().map(({ pk, username }) => [pk, username]));
+  const accounts = runtime.users.listAll();
+  const graph: MentionConnections = readMentionConnections(runtime, accounts);
+  const usernames = new Map(accounts.map(({ pk, username }) => [pk, username]));
   const labels = new Map(graph.targets.map(({ id, label }) => [id, label]));
 
   function describePerson(target: MentionTarget): MentionPerson {
@@ -256,7 +248,7 @@ function createMentionReader(runtime: MentionConnectionsRuntime) {
       ).size,
       latestStoryDate: formatDate(latestTakenAt(connections)),
       connectedTo: connections
-        .slice(0, NEIGHBOR_COUNT)
+        .slice(0, CONNECTED_TO_LIMIT)
         .map((connection) => labels.get(otherOf(connection, target.id)) ?? ""),
     };
   }
@@ -273,16 +265,15 @@ function createMentionReader(runtime: MentionConnectionsRuntime) {
     }));
   }
 
-  /** The person a query names, or why there is not exactly one. */
   function findPerson(
     query: string,
   ):
     | { status: "found"; target: MentionTarget }
-    | { status: "unknown" }
+    | { status: "unknown_person" }
     | ({ status: "ambiguous" } & AmbiguousMentionQuery) {
-    const targets = findMentionTargets(runtime, graph, query);
+    const targets = findMentionTargets(accounts, graph, query);
     if (targets.length === 0) {
-      return { status: "unknown" };
+      return { status: "unknown_person" };
     }
     if (targets.length === 1) {
       return { status: "found", target: targets[0] };
@@ -308,7 +299,7 @@ export function listMentionConnections(
 ): MentionConnectionList {
   const reader = createMentionReader(runtime);
   const found = person === undefined ? undefined : reader.findPerson(person);
-  if (found?.status === "unknown") {
+  if (found?.status === "unknown_person") {
     return { status: "unknown_person", query: person ?? "" };
   }
   if (found?.status === "ambiguous") {
@@ -351,7 +342,7 @@ export function listMentionConnections(
  * others, each the person of the latest source story first. Equal names from different stories
  * are different people.
  */
-export function searchMentionConnections(
+export function searchMentionPeople(
   runtime: MentionConnectionsRuntime,
   { query, offset = 0 }: { query: string; offset?: number },
 ): MentionPeoplePage {
@@ -392,7 +383,7 @@ export function getMentionConnection(
   const reader = createMentionReader(runtime);
   const queries = [firstPerson, secondPerson];
   const found = queries.map((query) => reader.findPerson(query));
-  const unknown = queries.filter((_, index) => found[index].status === "unknown");
+  const unknown = queries.filter((_, index) => found[index].status === "unknown_person");
   if (unknown.length > 0) {
     return { status: "unknown_person", queries: unknown };
   }

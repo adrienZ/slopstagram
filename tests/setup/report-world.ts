@@ -327,7 +327,7 @@ const questionMatchers = forEveryTool([
     },
   },
   {
-    tool: "searchMentionConnections",
+    tool: "searchMentionPeople",
     match: (question) => {
       const query = /^mentions\s+(?<query>.+)$/iu.exec(searchQueryOf(question) ?? "")?.groups
         ?.query;
