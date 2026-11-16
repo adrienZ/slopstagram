@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getReport } from "../query-service.ts";
+import { getProductionRuntime } from "@@/core/domains/runtime/production-runtime.ts";
 
 import { Lightbox } from "../components/lightbox.tsx";
 import { StoryLayout } from "../components/story-layout.tsx";
@@ -11,7 +12,7 @@ import {
 } from "../utils/story-navigation.ts";
 import { formatStoryViewTitle, storyDateSchema } from "@@/core/domains/story-feed/story-days.ts";
 import { UserSection } from "../components/user-section.tsx";
-import type { StoryFeedPageData } from "../loaders/story-feed.ts";
+import { loadStoryFeed, type StoryFeedPageData } from "../loaders/story-feed.ts";
 
 export function ReportPage({
   date,
@@ -69,6 +70,10 @@ function ReportRoute() {
     />
   );
 }
+
+const getReport = createServerFn({ method: "GET" })
+  .validator(z.object({ date: storyDateSchema.optional(), story: z.string().optional() }))
+  .handler(({ data }) => loadStoryFeed(getProductionRuntime(), new Date(), data.date, data.story));
 
 export const Route = createFileRoute("/report")({
   validateSearch: z.object({

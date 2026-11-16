@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
 import { ArrowLeftIcon } from "lucide-react";
 import { z } from "zod";
 import { AccountFilter } from "../components/account-filter.tsx";
@@ -6,8 +7,8 @@ import { MentionGraphExplorer } from "../components/mention-graph-explorer.tsx";
 import { useTheme } from "../components/theme-provider.tsx";
 import { UnknownAccountsToast } from "../components/unknown-accounts-toast.tsx";
 import { useMentionGraphFilter } from "../hooks/use-mention-graph-filter.ts";
-import type { MentionGraphPageData } from "../loaders/mention-graph.ts";
-import { getMentionGraph } from "../query-service.ts";
+import { loadMentionGraph, type MentionGraphPageData } from "../loaders/mention-graph.ts";
+import { getProductionRuntime } from "@@/core/domains/runtime/production-runtime.ts";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "../shadcn/ui/empty.tsx";
 import { Toaster } from "../shadcn/ui/sonner.tsx";
 import { formatAccountFilters, parseAccountFilters } from "../search-params.ts";
@@ -90,6 +91,10 @@ function MentionGraphRoute() {
     />
   );
 }
+
+const getMentionGraph = createServerFn({ method: "GET" })
+  .validator(z.object({ accounts: z.array(z.string()) }))
+  .handler(({ data }) => loadMentionGraph(getProductionRuntime(), data.accounts));
 
 export const Route = createFileRoute("/graph")({
   validateSearch: z.object({ accounts: z.string().optional() }),
