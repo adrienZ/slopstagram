@@ -32,7 +32,7 @@ The interface is in French.
   <tr>
     <td width="50%" valign="top">
       <strong>Story feed</strong><br />
-      <img width="1440" height="1350" alt="The story feed, browsable day by day" src="https://github.com/user-attachments/assets/c33981d2-2048-4c16-99f9-3305c9803cd6" />
+      <img width="1440" height="900" alt="The story feed, browsable day by day" src="https://github.com/user-attachments/assets/0ac3e45c-ac81-4c1e-ae41-fecf802dfbea" />
     </td>
     <td width="50%" valign="top">
       <strong>Chat Assistant</strong><br />
