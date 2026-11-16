@@ -7,6 +7,7 @@ import { useAudioPreview } from "../hooks/use-audio-preview.ts";
 
 function audioTime(seconds: number) {
   const whole = Math.floor(Math.max(0, seconds));
+
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
 }
 
@@ -19,10 +20,13 @@ interface MusicAudioPreviewProps {
 function AudioPlayer({ preview, preload = true, onError }: MusicAudioPreviewProps) {
   const player = useAudioPreview(preview, preload, onError);
   const [failedArtworkUrl, setFailedArtworkUrl] = useState<string | null>(null);
+
   if (preview.audioUrl === null || player.failed) {
     return null;
   }
+
   const hasArtwork = preview.artworkUrl !== null && preview.artworkUrl !== failedArtworkUrl;
+
   return (
     <div
       role="group"
@@ -99,5 +103,6 @@ export function MusicAudioPreview(props: MusicAudioPreviewProps) {
   if (props.preview.audioUrl === null) {
     return null;
   }
+
   return <AudioPlayer key={`${props.preview.id}:${props.preview.audioUrl}`} {...props} />;
 }

@@ -97,6 +97,7 @@ export function createCapturingLogger(): Logger & { messages: Array<string> } {
     function capturingLog(...args: Array<unknown>): void {
       messages.push(`${typeName}: ${args.join(" ")}`);
     }
+
     capturingLog.raw = capturingLog;
 
     return capturingLog;
@@ -268,8 +269,10 @@ export async function saveCurrentVision(
     { itemLabel: mediaPk, mediaPk, read: async () => await Promise.resolve(new Uint8Array([0])) },
   );
   const entry = runtime.vision.findByMediaPk(mediaPk);
+
   if (entry === null) {
     throw new Error(`no vision saved for ${mediaPk}`);
   }
+
   return entry;
 }

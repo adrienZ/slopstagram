@@ -5,7 +5,9 @@ import { AUDIO_STORAGE_DIR, IMAGES_STORAGE_DIR } from "./media-urls.ts";
 import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
 
 export type ImageCacheStorage = Storage<Record<string, never>>;
+
 export type AudioCacheStorage = Storage<Record<string, never>>;
+
 type StoryStorage = Storage<StoryItem>;
 
 export interface CacheStorage {
@@ -15,6 +17,7 @@ export interface CacheStorage {
 }
 
 export { APP_CACHE_DIR as BASE_CACHE_DIR } from "@@/core/utils/app-data-paths.ts";
+
 const STORIES_STORAGE_DIR = "stories";
 
 function createFileStore<T extends StorageValue>(base: string, atomic: boolean): Storage<T> {

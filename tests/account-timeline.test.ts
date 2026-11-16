@@ -12,10 +12,12 @@ async function createTimelineRuntime(
 ) {
   const runtime = await createTestRuntime(context);
   await runtime.users.save({ ...owner, full_name: "Timeline User", id: "timeline-id" });
+
   for (const { pk, takenAt } of stories) {
     // oxlint-disable-next-line no-await-in-loop -- Stories are saved in a known order.
     await runtime.stories.save({ media_type: 1, pk, taken_at: takenAt }, owner);
   }
+
   return runtime;
 }
 

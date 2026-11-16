@@ -16,6 +16,7 @@ const shared = useSharedTestRuntime(seedPageDatabase);
 /** The key the media route resolves for a URL: the router hands the route its splat. */
 function keyOfUrl(url: string) {
   const [, params] = getRouter().getMatchedRoutes(url);
+
   return media.fromRequest(params._splat);
 }
 

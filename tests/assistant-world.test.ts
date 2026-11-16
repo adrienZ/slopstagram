@@ -9,11 +9,13 @@ test.for([
   { secondPerson: worldAccounts.unknown, status: "unknown_person" },
 ])("the eval world distinguishes $status", async ({ secondPerson, status }, context) => {
   const world = await createWorld(context);
+
   const runtime = {
     ...(await seedAssistantWorld()),
     fetchOllama: world.runtime.fetchOllama,
     wrapModel: undefined,
   };
+
   const answer = await readChunks(
     await handleChatRequest(
       runtime,

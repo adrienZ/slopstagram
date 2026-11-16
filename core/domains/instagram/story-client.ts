@@ -15,8 +15,10 @@ const REELS_TRAY_URL = "https://www.instagram.com/api/v1/feed/reels_tray/";
 const REELS_MEDIA_URL = "https://www.instagram.com/api/graphql";
 const MUSIC_ASSET_URL = "https://www.instagram.com/api/v1/clips/music/";
 const PLACE_URL = "https://www.instagram.com/api/graphql";
+
 // PolarisExploreLocationsContainerQuery, verified against the web location page.
 const PLACE_DOCUMENT_ID = "28572807415659320";
+
 // PolarisStoriesV3ReelPageGalleryQuery, verified against the web story viewer.
 const REELS_MEDIA_DOCUMENT_ID = "29306733562261201";
 
@@ -43,6 +45,7 @@ const GalleryResponseSchema = GalleryPageSchema.transform((response) => {
       `Instagram story media query failed: ${response.errors?.[0]?.message ?? "missing media data"}`,
     );
   }
+
   return response.data.xdt_api__v1__feed__reels_media__connection;
 });
 
@@ -77,6 +80,7 @@ function parseInstagramResponse<T>(
     return schema.parse(JSON.parse(quoteNumericIdentifiers(body)));
   } catch (error) {
     const contentType = headers["content-type"] ?? "";
+
     if (!contentType.includes("application/json")) {
       throw new InstagramApiResponseError(
         `Instagram returned ${contentType || "a non-JSON response"}; run npm run auth to refresh the browser session`,
@@ -123,12 +127,15 @@ async function fetchFromInstagramPage(
   musicAssetId?: string,
 ): Promise<BrowserFetchResponse> {
   const input: BrowserFetchInput = { appId: IG_APP_ID, requestUrl: url };
+
   if (musicAssetId !== undefined) {
     input.musicAssetId = musicAssetId;
   }
+
   return await session.page.evaluate(async ({ appId, requestUrl, musicAssetId: audioId }) => {
     const headers = new globalThis.Headers({ "x-ig-app-id": appId });
     let body: string | undefined;
+
     if (audioId !== undefined) {
       headers.set("content-type", "application/x-www-form-urlencoded");
       headers.set(
@@ -142,6 +149,7 @@ async function fetchFromInstagramPage(
         max_id: "",
       }).toString();
     }
+
     const response = await globalThis.fetch(requestUrl, {
       body,
       headers,
@@ -168,8 +176,10 @@ async function fetchGalleryFromInstagramPage(
       // Avoid inner named functions here: tsx injects a __name helper the browser lacks.
       const pageRequire: (name: string) => Record<string, string | undefined> | undefined =
         globalThis.require;
+
       const lsd = pageRequire("LSD")?.token ?? "";
       const user = pageRequire("CurrentUserInitialData");
+
       const response = await globalThis.fetch(requestUrl, {
         body: new globalThis.URLSearchParams({
           doc_id: query?.documentId ?? "",
@@ -214,8 +224,10 @@ async function fetchPlaceFromInstagramPage(
       // Avoid inner named functions here: tsx injects a __name helper the browser lacks.
       const pageRequire: (name: string) => Record<string, string | undefined> | undefined =
         globalThis.require;
+
       const lsd = pageRequire("LSD")?.token ?? "";
       const user = pageRequire("CurrentUserInitialData");
+
       const response = await globalThis.fetch(requestUrl, {
         body: new globalThis.URLSearchParams({
           doc_id: placeQuery?.documentId ?? "",
@@ -274,20 +286,25 @@ export function createInstagramClient(session: InstagramClientSession): Instagra
       if (reelIds.length === 0) {
         return { ok: true, status: 200, headers: {}, json: () => ({ reels_media: [] }) };
       }
+
       const reels: Array<StoryReel> = [];
       const cursors = new Set<string>();
       let after: string | undefined;
+
       for (;;) {
         // The gallery query limits each page to ten reels, even for a larger request.
         const query: NonNullable<BrowserFetchInput["mediaQuery"]> = {
           documentId: REELS_MEDIA_DOCUMENT_ID,
           reelIds,
         };
+
         if (after !== undefined) {
           query.after = after;
         }
+
         // oxlint-disable-next-line no-await-in-loop -- Each cursor depends on the previous page.
         const response = await fetchGalleryFromInstagramPage(session, query);
+
         if (!response.ok) {
           return toClientResponse(
             response,
@@ -296,8 +313,10 @@ export function createInstagramClient(session: InstagramClientSession): Instagra
             })),
           );
         }
+
         const page = parseGalleryPage(response.body, response.headers);
         reels.push(...page.edges.map(({ node }) => node));
+
         if (!page.page_info.has_next_page) {
           return {
             ok: true,
@@ -306,7 +325,9 @@ export function createInstagramClient(session: InstagramClientSession): Instagra
             json: () => ({ reels_media: reels }),
           };
         }
+
         const cursor = page.page_info.end_cursor;
+
         if (
           cursor === null ||
           cursor === undefined ||
@@ -316,6 +337,7 @@ export function createInstagramClient(session: InstagramClientSession): Instagra
         ) {
           throw new InstagramApiResponseError("Instagram story media pagination did not advance");
         }
+
         cursors.add(cursor);
         after = cursor;
       }

@@ -65,6 +65,7 @@ export const Route = createFileRoute("/report")({
   beforeLoad: ({ search }) => ({ selectedStory: search.story }),
   loader: async ({ deps, context }) => {
     const report = await getReport({ data: { ...deps, story: context.selectedStory } });
+
     if (
       context.selectedStory !== undefined &&
       report.selectedDate !== (deps.date ?? report.today)
@@ -76,6 +77,7 @@ export const Route = createFileRoute("/report")({
         replace: true,
       });
     }
+
     return report;
   },
   staleTime: Infinity,

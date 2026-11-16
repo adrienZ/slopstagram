@@ -14,5 +14,6 @@ export function ErrorToast({ message }: { message: string }) {
   useUnmount(() => {
     toast.dismiss(id);
   });
+
   return null;
 }

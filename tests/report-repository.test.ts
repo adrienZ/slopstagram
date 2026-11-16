@@ -175,15 +175,18 @@ describe("ReportRepository", () => {
       .prepare("SELECT reportKey, mediaPk FROM report_stories ORDER BY reportKey")
       .all()
       .map((row) => Object.fromEntries(Object.entries(row)));
+
     expect(reportStoryLinks).toStrictEqual([
       { mediaPk: "shared-story", reportKey: first.metadata.report_name },
       { mediaPk: "shared-story", reportKey: second.metadata.report_name },
     ]);
     expect(repository.findByKey(second.metadata.report_name)).toStrictEqual(second);
+
     const [storedReport] = database.$client
       .prepare("SELECT createdAt, reportName, storiesCount FROM reports WHERE key = ?")
       .all(second.metadata.report_name)
       .map((row) => Object.fromEntries(Object.entries(row)));
+
     expect(storedReport).toStrictEqual({
       createdAt: second.metadata.created_at,
       reportName: second.metadata.report_name,

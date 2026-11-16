@@ -21,6 +21,7 @@ function TimelineHeader({
 }) {
   const displayName = timeline.timelineUser.full_name?.trim();
   const handle = formatUserHandle(timeline.timelineUser.username);
+
   return (
     <>
       <a className="tw:mb-6 tw:inline-block tw:text-muted-foreground" href="/">
@@ -69,6 +70,7 @@ export function TimelineContent({
   sidebarUsers,
 }: AccountTimelinePageData & { selectedStory?: string }) {
   const storyByMediaPk = new Map(stories.map((story) => [story.mediaPk, story]));
+
   return (
     <>
       <TimelineHeader timeline={timeline} userName={formatUserName(timeline.timelineUser)} />
@@ -89,7 +91,9 @@ export function UserTimelinePage(props: AccountTimelinePageData & { selectedStor
   const days = props.timeline.years.flatMap((year) =>
     year.months.flatMap((month) => month.days.map((day) => day.key)),
   );
+
   const calendar = useTimelineCalendar(days, props.today);
+
   return (
     <StoryLayout
       {...calendar}

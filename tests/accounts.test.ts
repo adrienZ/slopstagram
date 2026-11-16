@@ -14,14 +14,17 @@ async function createAccounts(
     (user, position) => {
       const [username, fullName] = accounts[position] ?? [user.username, null];
       user.username = username;
+
       // The recorded accounts carry no full name.
       if (fullName !== null) {
         user.full_name = fullName;
       }
     },
   );
+
   const runtime = await createTestRuntime(context);
   await seedRecordedStories(runtime, recorded);
+
   return runtime;
 }
 

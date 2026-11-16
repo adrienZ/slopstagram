@@ -21,12 +21,14 @@ describe("UserSummaryRepository", () => {
     });
     migrateDatabase(database);
     const users = new InstagramUserRepository(database);
+
     const owner = {
       full_name: "Display Name",
       id: "user-id",
       pk: "user-pk",
       username: entry.user_key,
     };
+
     await users.save(owner);
     const repository = new UserSummaryRepository(database);
 

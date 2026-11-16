@@ -36,10 +36,12 @@ test("music processing publishes audio only and reuses it without provider reque
   const before = repository.findByMediaPk("story")?.annotations;
   const metadata = before?.musicObservations?.[0].metadata;
   assert.ok(metadata);
+
   const media = await startMediaServer(context, (_request, response) => {
     response.writeHead(200, { "content-type": "audio/wav" });
     response.end(wavAudio());
   });
+
   const result = await processMusicMedia(
     {
       stories: repository,
@@ -48,12 +50,14 @@ test("music processing publishes audio only and reuses it without provider reque
     },
     { id: metadata.id, status: metadata.status },
   );
+
   expect(result?.audioState).toBe("available");
   assert.ok(result);
   expect(result.artworkState).toBe("pending");
   assert.ok(result.audioCachePath !== null);
   expect(await readFile(path.join(root, result.audioCachePath))).toStrictEqual(wavAudio());
   expect(result.audioDurationMs).toBe(1000);
+
   const retry = await processMusicMedia(
     {
       stories: repository,
@@ -62,6 +66,7 @@ test("music processing publishes audio only and reuses it without provider reque
     },
     { id: metadata.id, status: metadata.status },
   );
+
   expect(retry?.audioCachePath).toBe(result.audioCachePath);
   expect(media.requests).toStrictEqual(["/audio"]);
   const cold = new StoryRepository(database).findByMediaPk("story")?.annotations;
@@ -79,11 +84,13 @@ test("partial audio stays separate and promotion preserves its source and proces
     await rm(root, { recursive: true, force: true });
   });
   const repository = new StoryRepository(database);
+
   const asset = {
     title: "Same",
     fast_start_progressive_download_url: "https://example.com/fallback",
     cover_artwork_thumbnail_uri: "https://example.com/art",
   };
+
   await repository.save({
     pk: "story",
     story_music_stickers: [
@@ -97,10 +104,12 @@ test("partial audio stays separate and promotion preserves its source and proces
   const reference = observations[0].metadata;
   let status = 200;
   let contentType = "text/html";
+
   const media = await startMediaServer(context, (_request, response) => {
     response.writeHead(status, { "content-type": contentType });
     response.end(contentType === "audio/wav" ? wavAudio() : "not audio");
   });
+
   const result = await processMusicMedia(
     {
       stories: repository,
@@ -109,6 +118,7 @@ test("partial audio stays separate and promotion preserves its source and proces
     },
     reference,
   );
+
   assert.ok(result);
   expect(result.audioState).toBe("unsupported");
   expect(result.audioCachePath).toBe(null);
@@ -129,6 +139,7 @@ test("partial audio stays separate and promotion preserves its source and proces
   expect(promoted.artworkCachePath).toBe(result.artworkCachePath);
   expect(promoted.audioState).toBe("unsupported");
   contentType = "audio/wav";
+
   const recovered = await processMusicMedia(
     {
       stories: repository,
@@ -137,11 +148,13 @@ test("partial audio stays separate and promotion preserves its source and proces
     },
     promoted,
   );
+
   assert.ok(recovered);
   expect(recovered.audioCachePath).not.toBe(null);
   assert.ok(recovered.audioCachePath !== null);
   await rm(path.join(root, recovered.audioCachePath));
   status = 403;
+
   const missing = await processMusicMedia(
     {
       stories: repository,
@@ -150,6 +163,7 @@ test("partial audio stays separate and promotion preserves its source and proces
     },
     promoted,
   );
+
   expect(missing?.audioState).toBe("failed");
   assert.ok(missing);
   expect(missing.audioCachePath).toBe(null);
@@ -171,12 +185,14 @@ test("missing sources do not fetch and failed transfers never publish partial fi
   });
   const metadata = repository.findByMediaPk("story")?.annotations?.musicObservations?.[0].metadata;
   assert.ok(metadata);
+
   const media = await startMediaServer(context, (_request, response) => {
     response.writeHead(200, { "content-type": "audio/mpeg", "content-length": 1000 });
     response.flushHeaders();
     response.write(new Uint8Array([1, 2]));
     response.destroy();
   });
+
   const empty = await processMusicMedia(
     {
       stories: repository,
@@ -185,6 +201,7 @@ test("missing sources do not fetch and failed transfers never publish partial fi
     },
     metadata,
   );
+
   expect(empty?.audioState).toBe("unavailable");
   assert.ok(empty);
   expect(empty.artworkState).toBe("unavailable");
@@ -195,6 +212,7 @@ test("missing sources do not fetch and failed transfers never publish partial fi
       { id: "a", music_asset_info: { progressive_download_url: "https://example.com/audio" } },
     ],
   });
+
   const failed = await processMusicMedia(
     {
       stories: repository,
@@ -203,6 +221,7 @@ test("missing sources do not fetch and failed transfers never publish partial fi
     },
     metadata,
   );
+
   expect(failed?.audioState).toBe("failed");
   assert.ok(failed);
   expect(failed.audioCachePath).toBe(null);
@@ -235,10 +254,12 @@ test("the cached file duration survives partial promotion and remains distinct f
   const metadata = repository.findByMediaPk("clip")?.annotations?.musicObservations?.[0].metadata;
   assert.ok(metadata);
   const wav = wavAudio();
+
   const media = await startMediaServer(context, (_request, response) => {
     response.writeHead(200, { "content-type": "audio/wav" });
     response.end(wav);
   });
+
   const result = await processMusicMedia(
     {
       stories: repository,
@@ -247,6 +268,7 @@ test("the cached file duration survives partial promotion and remains distinct f
     },
     metadata,
   );
+
   expect(result?.audioDurationMs).toBe(1000);
   assert.ok(result);
   expect(result.durationMs).toBe(999_999);
@@ -256,8 +278,10 @@ test("the cached file duration survives partial promotion and remains distinct f
       { id: "occurrence", music_asset_info: { audio_asset_id: "asset", display_artist: "Artist" } },
     ],
   });
+
   const promoted = new StoryRepository(database).findByMediaPk("clip")?.annotations
     ?.musicObservations?.[0].metadata;
+
   expect(promoted?.status).toBe("usable");
   assert.ok(promoted);
   expect(promoted.audioDurationMs).toBe(1000);

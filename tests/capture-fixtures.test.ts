@@ -36,6 +36,7 @@ const secrets = [
   "real_sharer",
   "audio.cdninstagram.com",
 ];
+
 // Public metadata of a licensed catalog track is kept as recorded.
 const publicAudio = ["Synthetic Song", "Synthetic Artist", "777", "888000"];
 
@@ -121,14 +122,17 @@ function liveSession(): Session {
     user: entry.user,
     items: [liveStory(entry)],
   }));
+
   return {
     page: {
       evaluate: async (_pageFunction, input) => {
         if (input.requestUrl.endsWith("/reels_tray/")) {
           return await Promise.resolve(body(liveTray));
         }
+
         if (input.mediaQuery !== undefined) {
           const { reelIds } = input.mediaQuery;
+
           return await Promise.resolve(
             body({
               data: {
@@ -140,6 +144,7 @@ function liveSession(): Session {
             }),
           );
         }
+
         if (input.placeQuery !== undefined) {
           return await Promise.resolve(
             body({
@@ -164,6 +169,7 @@ function liveSession(): Session {
             }),
           );
         }
+
         return await Promise.resolve(
           body({
             metadata: { music_info: { music_asset_info: musicAssetInfo() } },
@@ -191,15 +197,18 @@ test("redacted captures contain no original name, identifier, URL, text, place o
   for (const secret of secrets) {
     expect(redacted).not.toContain(secret);
   }
+
   for (const kept of publicAudio) {
     expect(redacted).toContain(kept);
   }
+
   expect(redacted).toContain('"media_type":1');
   expect(redacted).toContain('"width":1080');
 });
 
 test("redacted captures still parse with the production client, and tray and gallery agree", async () => {
   const { tray, galleryPages } = redactPayloads(await captureInstagramPayloads(liveSession()));
+
   const recorded: Session = {
     page: {
       evaluate: async (_pageFunction, input) =>
@@ -211,6 +220,7 @@ test("redacted captures still parse with the production client, and tray and gal
         }),
     },
   };
+
   const client = createInstagramClient(recorded);
 
   const trayResponse = await client.getTray();
@@ -248,6 +258,7 @@ test("fixture metadata states the capture date and what each file covers", async
     "instagram-place.json",
     "instagram-music-asset.json",
   ]);
+
   for (const { covers } of metadata.files) {
     expect(covers.length).toBeGreaterThan(0);
   }
@@ -291,6 +302,7 @@ test("redaction replaces every place field, coordinates included, deterministica
   const text = JSON.stringify(first);
 
   expect(first).toStrictEqual(second);
+
   for (const original of [
     "Synthetic Cafe",
     "Synth",
@@ -308,9 +320,11 @@ test("redaction replaces every place field, coordinates included, deterministica
   ]) {
     expect(text).not.toContain(original);
   }
+
   const info = z
     .object({ location_info: z.object({ lat: z.number(), lng: z.number(), slug: z.string() }) })
     .parse(first).location_info;
+
   expect(Math.abs(info.lat)).toBeLessThanOrEqual(90);
   expect(Math.abs(info.lng)).toBeLessThanOrEqual(180);
   expect(info.slug).toMatch(/^fixture-slug-\d+$/u);
@@ -333,6 +347,7 @@ test("a place gets the same replacement wherever it appears across payloads", ()
 test("public audio metadata is kept while the people around the track are replaced", () => {
   const redact = createRedactor();
   const sticker = { id: "sticker-1", music_asset_info: musicAssetInfo() };
+
   const asset = {
     metadata: { music_info: { music_asset_info: musicAssetInfo() } },
     shared_by: { username: "real_sharer" },
@@ -345,10 +360,12 @@ test("public audio metadata is kept while the people around the track are replac
     for (const kept of ["Synthetic Song", "Synthetic Artist", '"audio_asset_id":"777"']) {
       expect(redacted).toContain(kept);
     }
+
     expect(redacted).toContain('"duration_in_ms":30000');
     expect(redacted).not.toContain("cdninstagram.com");
     expect(redacted).not.toContain("real_artist_account");
   }
+
   expect(redactedSticker).not.toContain("sticker-1");
   expect(redactedAsset).not.toContain("real_sharer");
 });
@@ -366,6 +383,7 @@ test("a username nested inside a music payload is still replaced", () => {
   );
 
   expect(redacted).toContain("Synthetic Song");
+
   for (const original of ["real_nested_user", "real_nested_artist", "Nested Person"]) {
     expect(redacted).not.toContain(original);
   }
@@ -393,6 +411,7 @@ test("original audio replaces the creator name but keeps ids and durations", () 
   for (const original of creatorTexts) {
     expect(redacted).not.toContain(original);
   }
+
   expect(redacted).toContain('"audio_asset_id":"4321"');
   expect(redacted).toContain('"duration_in_ms":12000');
   expect(redacted).toContain("Fixture audio title");
@@ -411,6 +430,7 @@ test("audio is replaced when the original indicator is missing or ambiguous", ()
 
   for (const info of cases) {
     const redacted = JSON.stringify(createRedactor()({ music_asset_info: info }));
+
     for (const original of creatorTexts) {
       expect(redacted).not.toContain(original);
     }
@@ -437,6 +457,7 @@ test("replaced audio text is deterministic and distinct per original", () => {
   const first = createRedactor();
   const second = createRedactor();
   const info = originalAudioInfo();
+
   const other = originalAudioInfo({
     title: "Another creator_two sound",
     display_artist: "creator_two",
@@ -468,14 +489,17 @@ test("the capture command is on demand only and never reads the local cache", as
   const packageJson = z
     .object({ scripts: z.record(z.string(), z.string()) })
     .parse(JSON.parse(await readFile("package.json", "utf-8")));
+
   const script = await readFile("scripts/capture-fixtures.ts", "utf-8");
   const imports = script.match(/from "[^"]+"/gu) ?? [];
 
   expect(packageJson.scripts["fixtures:capture"]).toBe("tsx scripts/capture-fixtures.ts");
+
   for (const name of ["check", "check:ci", "test", "test:reporter", "postinstall", "prepare"]) {
     expect(packageJson.scripts[name]).not.toContain("fixtures:capture");
     expect(packageJson.scripts[name]).not.toContain("capture-fixtures");
   }
+
   expect(script).not.toContain("data/cache");
   expect(imports.join("\n")).not.toMatch(/cache|storage|media-service|database|repositor/u);
 });

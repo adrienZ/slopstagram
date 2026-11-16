@@ -60,11 +60,13 @@ export function useSharedTestRuntime(
   afterAll(() => {
     current?.database.$client.close();
   });
+
   return {
     get runtime(): Runtime {
       if (current === undefined) {
         throw new Error("The shared test runtime is only available once the tests run.");
       }
+
       return current;
     },
   };

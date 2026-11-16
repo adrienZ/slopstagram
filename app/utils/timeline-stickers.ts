@@ -35,10 +35,13 @@ export function formatStickerLabel(kind: string, label: string): string {
   if (kind === "mention") {
     return formatUserHandle(label);
   }
+
   if (kind !== "link" || !globalThis.URL.canParse(label)) {
     return label;
   }
+
   const url = new globalThis.URL(label);
+
   return `${url.hostname}${url.pathname === "/" ? "" : url.pathname}`;
 }
 
@@ -51,16 +54,19 @@ export interface StickerPlace {
 // linked to the sticker occurrence. A sticker without one has no coordinates.
 export function stickerPlaces(annotations: StoryAnnotations | undefined) {
   const places = new Map<string, StickerPlace>();
+
   for (const { occurrenceId, metadata } of annotations?.locationObservations ?? []) {
     if (occurrenceId === null) {
       continue;
     }
+
     const category = metadata.category?.trim();
     places.set(occurrenceId, {
       category: category === undefined || category.length === 0 ? undefined : category,
       hasCoordinates: metadata.status === "usable",
     });
   }
+
   return places;
 }
 
@@ -71,6 +77,7 @@ export function stickerPlace(
   if (sticker.kind !== "location") {
     return undefined;
   }
+
   return (
     (sticker.occurrenceId === undefined ? undefined : places.get(sticker.occurrenceId)) ?? {
       hasCoordinates: false,
@@ -83,10 +90,12 @@ export function groupTimelineStickers(
   availableKinds: Array<string>,
 ): Array<StickerKindGroup> {
   const kinds = new Map(availableKinds.map((kind) => [kind, new Map<string, StoryStickerGroup>()]));
+
   const occurrences = stories
     .toSorted((left, right) => right.taken_at - left.taken_at)
     .flatMap((entry) => {
       const places = stickerPlaces(entry.story.annotations);
+
       return (entry.story.annotations?.stickers ?? []).map((sticker, position) => ({
         entry,
         sticker,
@@ -97,11 +106,13 @@ export function groupTimelineStickers(
 
   for (const { entry, sticker, key, place } of occurrences) {
     const byStory = kinds.get(sticker.kind) ?? new Map<string, StoryStickerGroup>();
+
     const group = byStory.get(entry.story.pk) ?? {
       mediaPk: entry.story.pk,
       date: new Date(entry.taken_at * 1000).toISOString(),
       labels: [],
     };
+
     const label = { key, label: sticker.label, place };
     group.labels.push(label);
     byStory.set(entry.story.pk, group);
@@ -110,15 +121,19 @@ export function groupTimelineStickers(
 
   for (const entry of stories.toSorted((left, right) => right.taken_at - left.taken_at)) {
     const items = musicStickerItems(entry.story.annotations);
+
     if (items.length === 0) {
       continue;
     }
+
     const byStory = kinds.get("music") ?? new Map<string, StoryStickerGroup>();
+
     const group = byStory.get(entry.story.pk) ?? {
       mediaPk: entry.story.pk,
       date: new Date(entry.taken_at * 1000).toISOString(),
       labels: [],
     };
+
     group.musicItems = items;
     byStory.set(entry.story.pk, group);
     kinds.set("music", byStory);

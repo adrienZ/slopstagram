@@ -78,6 +78,7 @@ export async function recordedPayloads(
     await readRecordedPayloads(["instagram-story-data.json"]),
     storyPks,
   );
+
   return {
     ...editRecordedStories(recorded, (story) => {
       if (story.pk === imageStoryPk) {
@@ -85,6 +86,7 @@ export async function recordedPayloads(
           { id: "synthetic-location-sticker", location: { name: "Synthetic Cafe", pk: placeId } },
         ];
       }
+
       if (story.pk === musicStoryPk) {
         story.story_music_stickers = [
           {
@@ -93,6 +95,7 @@ export async function recordedPayloads(
           },
         ];
       }
+
       editStory?.(story);
     }),
     musicAsset: musicAssetBody(),
@@ -143,6 +146,7 @@ function fail(failure: OllamaFailure) {
   if (failure === "unreachable") {
     throw new TypeError("fetch failed");
   }
+
   return jsonResponse({ error: "model crashed" }, 500);
 }
 
@@ -160,13 +164,16 @@ const OllamaChatRequestSchema = z.object({
 
 export const assistantAnswer =
   "Synthetic **answer** from the tool result, about @user_072 and @user_999.";
+
 export function placeAnswer(place: { id: string; name: string }) {
   return `Synthetic answer about [${place.name}](place:${place.id}).`;
 }
+
 /** Like a small model: names places without their links, and links the first one elsewhere. */
 export function placesAnswer(names: Array<string>) {
   return `Synthetic answer naming ${names.join(", ")}, and [${names.at(0) ?? ""}](https://example.com/elsewhere).`;
 }
+
 export const assistantGreeting = "Synthetic greeting.";
 export const assistantThinking = "Synthetic reasoning about the question.";
 
@@ -190,10 +197,13 @@ const ListedPlacesSchema = z.object({
 function answerToolResult(content: string) {
   const result = parseJson(content);
   const found = FoundPlaceSchema.safeParse(result);
+
   if (found.success) {
     return placeAnswer(found.data.place);
   }
+
   const listed = ListedPlacesSchema.safeParse(result);
+
   return listed.success
     ? placesAnswer(listed.data.places.map(({ name }) => name))
     : assistantAnswer;
@@ -222,6 +232,7 @@ function failChat(failure: OllamaChatFailure) {
   if (failure === "malformed-tool-call-before-streaming") {
     return jsonResponse({ error: malformedToolCallError }, 500);
   }
+
   if (failure === "malformed-tool-call-while-streaming") {
     return ndjsonResponse(
       {
@@ -232,6 +243,7 @@ function failChat(failure: OllamaChatFailure) {
       { error: malformedToolCallError },
     );
   }
+
   return fail(failure);
 }
 
@@ -248,6 +260,7 @@ const pageRequest = /\s+offset\s+(?<offset>\d+)$/iu;
 
 function pageOf(question: string): { offset?: number } {
   const offset = pageRequest.exec(question)?.groups?.offset;
+
   return offset === undefined ? {} : { offset: Number(offset) };
 }
 
@@ -257,6 +270,7 @@ function withoutPage(text: string) {
 
 function mentionsOf(question: string): { usernames?: Array<string> } {
   const usernames = findMentions(question).map(({ username }) => username);
+
   return usernames.length === 0 ? {} : { usernames };
 }
 
@@ -292,6 +306,7 @@ const questionMatchers = forEveryTool([
       const people = /^connection\s+(?<firstPerson>.+?)\s+and\s+(?<secondPerson>.+)$/iu.exec(
         withoutPage(question),
       )?.groups;
+
       return people === undefined
         ? null
         : {
@@ -306,6 +321,7 @@ const questionMatchers = forEveryTool([
     match: (question) => {
       const query = /^mentions\s+(?<query>.+)$/iu.exec(searchQueryOf(question) ?? "")?.groups
         ?.query;
+
       return query === undefined ? null : { query: withoutPage(query), ...pageOf(question) };
     },
   },
@@ -315,8 +331,10 @@ const questionMatchers = forEveryTool([
       if (!/\bmentions\b/iu.test(question)) {
         return null;
       }
+
       const person = /\bmentions\s+of\s+(?<person>.+?)\??$/iu.exec(withoutPage(question))?.groups
         ?.person;
+
       return person === undefined ? pageOf(question) : { person, ...pageOf(question) };
     },
   },
@@ -324,6 +342,7 @@ const questionMatchers = forEveryTool([
     tool: "getTaggedPlace",
     match: (question) => {
       const id = /^(?:place|lieu)\s+(?<id>\S+)$/iu.exec(question)?.groups?.id;
+
       return id === undefined ? null : { id };
     },
   },
@@ -332,6 +351,7 @@ const questionMatchers = forEveryTool([
     match: (question) => {
       const query = /^(?:places|lieux)\s+(?<query>.+)$/iu.exec(searchQueryOf(question) ?? "")
         ?.groups?.query;
+
       return query === undefined ? null : { query: withoutPage(query), ...pageOf(question) };
     },
   },
@@ -341,6 +361,7 @@ const questionMatchers = forEveryTool([
       if (!/\b(?:places|lieux)\b/iu.test(question)) {
         return null;
       }
+
       return { ...pageOf(question), ...mentionsOf(question) };
     },
   },
@@ -348,6 +369,7 @@ const questionMatchers = forEveryTool([
     tool: "getFeedUserSummaries",
     match: (question) => {
       const { usernames } = mentionsOf(question);
+
       return usernames === undefined ? null : { usernames };
     },
   },
@@ -355,6 +377,7 @@ const questionMatchers = forEveryTool([
     tool: "searchAccounts",
     match: (question) => {
       const query = searchQueryOf(question);
+
       return query === undefined ? null : { query };
     },
   },
@@ -369,21 +392,28 @@ function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>
   // Only a tool result of the last question: earlier turns keep theirs in the conversation.
   const lastQuestion = messages.findLastIndex(({ role }) => role === "user");
   const toolResult = messages.slice(lastQuestion).findLast(({ role }) => role === "tool");
+
   if (toolResult !== undefined) {
     return chatMessage({ content: answerToolResult(toolResult.content), role: "assistant" });
   }
+
   const offered = new Set(tools.map((tool) => tool.function.name));
   const question = messages.findLast(({ role }) => role === "user")?.content ?? "";
+
   for (const { tool, match } of questionMatchers) {
     const input = offered.has(tool) ? match(question) : null;
+
     if (input !== null) {
       return chatToolCall(tool, JsonValueSchema.parse(input));
     }
   }
+
   const city = /^(?:weather|météo)\s+(?<city>.+)$/iu.exec(question)?.groups?.city;
+
   if (city !== undefined) {
     return chatToolCall("readTheWeather", { city });
   }
+
   return chatMessage({ content: assistantGreeting, role: "assistant" });
 }
 
@@ -394,10 +424,13 @@ function createOllama(behavior: OllamaBehavior = {}) {
     prompt: string;
     think?: boolean;
   }> = [];
+
   let visions = 0;
+
   async function fetchOllama(_input: RequestInfo | URL, init?: RequestInit) {
     const json: unknown = JSON.parse(z.string().parse(init?.body));
     const chat = OllamaChatRequestSchema.safeParse(json);
+
     if (chat.success) {
       requests.push({
         contextLength: chat.data.options?.num_ctx,
@@ -405,17 +438,21 @@ function createOllama(behavior: OllamaBehavior = {}) {
         prompt: chat.data.messages.at(-1)?.content ?? "",
         think: chat.data.think,
       });
+
       return await Promise.resolve(
         behavior.chat === undefined ? answerChat(chat.data) : failChat(behavior.chat),
       );
     }
+
     const body = OllamaRequestSchema.parse(json);
+
     if (body.images !== undefined) {
       expect(body.images).toHaveLength(1);
       requests.push({ kind: "vision", prompt: body.prompt });
       const position = visions;
       visions += 1;
       const failure = behavior.vision?.(position);
+
       return await Promise.resolve(
         failure === undefined
           ? jsonResponse({
@@ -428,15 +465,20 @@ function createOllama(behavior: OllamaBehavior = {}) {
           : fail(failure),
       );
     }
+
     requests.push({ kind: "summary", prompt: body.prompt });
+
     if (behavior.summary !== undefined) {
       return await Promise.resolve(fail(behavior.summary));
     }
+
     const username = /"username": "(?<username>[^"]+)"/u.exec(body.prompt)?.groups?.username;
+
     return await Promise.resolve(
       jsonResponse({ done: true, response: JSON.stringify({ summary: `Summary of ${username}` }) }),
     );
   }
+
   return { fetchOllama, requests };
 }
 
@@ -455,12 +497,15 @@ export async function createWorld(
   // What the pipeline asked the outside world for, in order.
   const calls: Array<string> = [];
   const backups: Array<Date> = [];
+
   const png = await sharp({ create: { background: "teal", channels: 3, height: 8, width: 8 } })
     .png()
     .toBuffer();
+
   const audio = await readFile(new globalThis.URL("../fixtures/audio-clip.m4a", import.meta.url));
   const ollama = createOllama(options.ollama);
   let ocrCalls = 0;
+
   const runtime = await createTestRuntime(context, {
     backup: (at) => {
       backups.push(at);
@@ -473,6 +518,7 @@ export async function createWorld(
       })),
     fetchImage: async (url) => {
       calls.push(`image ${url}`);
+
       return await Promise.resolve({
         arrayBuffer: async () => await Promise.resolve(new Uint8Array(png).buffer),
         headers: { get: () => "image/png" },
@@ -482,6 +528,7 @@ export async function createWorld(
     },
     fetchMedia: async (url) => {
       calls.push(`media ${url}`);
+
       return await Promise.resolve(
         url === audioUrl
           ? new globalThis.Response(audio, { headers: { "content-type": "video/mp4" } })
@@ -495,12 +542,15 @@ export async function createWorld(
       calls.push("ocr");
       const outcome = options.ocr?.(ocrCalls) ?? `Synthetic caption ${ocrCalls}`;
       ocrCalls += 1;
+
       if (outcome instanceof Error) {
         throw outcome;
       }
+
       return await Promise.resolve(outcome);
     },
   });
+
   return {
     ...runtime,
     backups,

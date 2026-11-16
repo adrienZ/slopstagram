@@ -37,7 +37,9 @@ function VisionLabel(props: { label: string; outdated?: OutdatedVision }) {
   if (props.outdated === undefined) {
     return props.label;
   }
+
   const { currentModel, currentPromptHash, model, promptHash } = props.outdated;
+
   return (
     <span className="tw:inline-flex tw:items-center tw:gap-1.5">
       {props.label}
@@ -284,6 +286,7 @@ function LightboxDialog(props: {
 export function Lightbox(props: LightboxProps) {
   const openStory = useOpenStory(props.onOpenStory);
   const story = props.stories.find((entry) => entry.mediaPk === props.selectedStory);
+
   return story === undefined ? null : (
     <LightboxDialog
       stories={props.stories}

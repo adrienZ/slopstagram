@@ -58,6 +58,7 @@ export function createRuntime(
   boundaries: RuntimeBoundaries = {},
 ): Runtime {
   const logger = boundaries.logger ?? createLogger("runtime");
+
   return {
     ...boundaries,
     appleVision: new AppleVisionRepository(database),

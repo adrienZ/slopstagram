@@ -37,16 +37,21 @@ export async function readRecordedPayloads(names?: Array<string>): Promise<Recor
   const available = new Set(await readdir(fixturesDirectory));
   const selected = names ?? [...available];
   const missing = selected.filter((name) => !available.has(name));
+
   if (missing.length > 0) {
     throw new Error(`Recorded payloads not found in tests/fixtures: ${missing.join(", ")}`);
   }
+
   const galleryNames = selected.filter((name) => GALLERY_FILE.test(name)).toSorted();
+
   if (galleryNames.length === 0) {
     throw new Error("No recorded reels media payload selected");
   }
+
   async function readOptional(name: string): Promise<JsonValue | undefined> {
     return selected.includes(name) ? await readJson(name) : undefined;
   }
+
   return {
     galleryPages: await Promise.all(galleryNames.map(readJson)),
     musicAsset: await readOptional(MUSIC_ASSET_FILE),
@@ -67,6 +72,7 @@ function newestPublication(value: JsonValue): number {
   if (Array.isArray(value)) {
     return Math.max(-Infinity, ...value.map(newestPublication));
   }
+
   if (isJsonObject(value)) {
     return Math.max(
       -Infinity,
@@ -75,6 +81,7 @@ function newestPublication(value: JsonValue): number {
       ),
     );
   }
+
   return -Infinity;
 }
 
@@ -82,6 +89,7 @@ function shiftTimestamps(value: JsonValue, offsetSeconds: number): JsonValue {
   if (Array.isArray(value)) {
     return value.map((child) => shiftTimestamps(child, offsetSeconds));
   }
+
   if (isJsonObject(value)) {
     return Object.fromEntries(
       Object.entries(value).map(([key, child]) => [
@@ -92,6 +100,7 @@ function shiftTimestamps(value: JsonValue, offsetSeconds: number): JsonValue {
       ]),
     );
   }
+
   return value;
 }
 
@@ -100,11 +109,14 @@ function shiftPayloads(
   publishedBefore: NonNullable<SeedOptions["publishedBefore"]>,
 ): RecordedPayloads {
   const newest = newestPublication(recorded.galleryPages);
+
   if (newest === -Infinity) {
     throw new Error("The recorded payloads hold no story to shift in time");
   }
+
   const offset =
     Math.floor(publishedBefore.now.getTime() / 1000) - publishedBefore.seconds - newest;
+
   return {
     ...recorded,
     galleryPages: recorded.galleryPages.map((page) => shiftTimestamps(page, offset)),
@@ -115,6 +127,7 @@ function shiftPayloads(
 type GalleryConnection = z.output<
   typeof RecordedGalleryPageSchema
 >["data"]["xdt_api__v1__feed__reels_media__connection"];
+
 type RecordedStory = NonNullable<GalleryConnection["edges"][number]["node"]["items"]>[number];
 
 function updateGalleryPage(
@@ -123,6 +136,7 @@ function updateGalleryPage(
 ): JsonValue {
   const page = RecordedGalleryPageSchema.parse(payload);
   update(page.data.xdt_api__v1__feed__reels_media__connection);
+
   return JsonValueSchema.parse(page);
 }
 
@@ -153,6 +167,7 @@ export function editRecordedUsers(
   edit: (user: RecordedUser, position: number) => void,
 ): RecordedPayloads {
   let position = 0;
+
   return {
     ...recorded,
     galleryPages: recorded.galleryPages.map((payload) =>
@@ -178,6 +193,7 @@ export function addRecordedReels(
   reels: Array<{ userPk: string; username: string; storyPk: string }>,
 ): RecordedPayloads {
   const [firstPage, ...otherPages] = recorded.galleryPages;
+
   return {
     ...recorded,
     galleryPages: [
@@ -185,6 +201,7 @@ export function addRecordedReels(
         const [template] = connection.edges;
         const [story] = template.node.items ?? [];
         const storyUser = story.user;
+
         for (const { userPk, username, storyPk } of reels) {
           connection.edges.push({
             ...template,
@@ -216,11 +233,13 @@ export function addRecordedStories(
   stories: Array<{ userPk: string; storyPk: string }>,
 ): RecordedPayloads {
   const copiedUserPks = new Set<string>();
+
   const galleryPages = recorded.galleryPages.map((payload) =>
     updateGalleryPage(payload, ({ edges }) => {
       for (const { node } of edges) {
         const items = node.items ?? [];
         const added = stories.filter(({ userPk }) => userPk === node.user?.pk);
+
         if (added.length > 0 && items.length > 0) {
           node.items = [
             ...items,
@@ -231,12 +250,15 @@ export function addRecordedStories(
       }
     }),
   );
+
   const missing = stories.filter(({ userPk }) => !copiedUserPks.has(userPk));
+
   if (missing.length > 0) {
     throw new Error(
       `No recorded story to copy for ${missing.map(({ userPk }) => userPk).join(", ")}`,
     );
   }
+
   return { ...recorded, galleryPages };
 }
 
@@ -252,6 +274,7 @@ export function keepRecordedStories(
         for (const { node } of connection.edges) {
           node.items = node.items?.filter(({ pk }) => mediaPks.includes(pk));
         }
+
         connection.edges = connection.edges.filter(({ node }) => (node.items?.length ?? 0) > 0);
       }),
     ),
@@ -267,6 +290,7 @@ export async function createRecordedInstagramClient(
     options.publishedBefore === undefined
       ? (recorded ?? (await readRecordedPayloads()))
       : shiftPayloads(recorded ?? (await readRecordedPayloads()), options.publishedBefore);
+
   return createRecordedClient(payloads);
 }
 
@@ -280,6 +304,7 @@ export async function seedRecordedStories(
     { ...runtime, client: await createRecordedInstagramClient(recorded, options) },
     { maxAttempts: 1 },
   );
+
   if (report.failures.length > 0) {
     throw new Error(
       `Seeding failed for ${report.failures.length} recorded stories: ${report.failures
@@ -287,6 +312,8 @@ export async function seedRecordedStories(
         .join("; ")}`,
     );
   }
+
   await persistReportInstagramUsers(runtime, globalThis.structuredClone(report));
+
   return report;
 }

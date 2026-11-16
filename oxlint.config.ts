@@ -135,7 +135,7 @@ const ultraciteSoftenerConfig = defineConfig({
 export default defineConfig({
   extends: [ultracite, antiSlop, ultraciteSoftenerConfig, restrictedReactImports],
   ignorePatterns: [
-    ...(ultracite.ignorePatterns ?? []),
+    ...ultracite.ignorePatterns,
     ".agents/**",
     ".claude/**",
     "app/routeTree.gen.ts",

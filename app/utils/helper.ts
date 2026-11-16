@@ -2,6 +2,7 @@ import type { StoryOutputUser } from "@@/core/domains/fetch-run/report-types.ts"
 
 export function formatReportDate(value: string): string {
   const date = new Date(value);
+
   return Number.isNaN(date.getTime())
     ? value
     : new Intl.DateTimeFormat("fr-FR", {
@@ -29,6 +30,7 @@ export function formatUserHandle(username: string): string {
 export function formatUserName(user: StoryOutputUser): string {
   const fullName = user.full_name?.trim();
   const username = user.username.trim();
+
   if (fullName !== undefined && fullName.length > 0 && username.length > 0) {
     return `${fullName} (@${username})`;
   }

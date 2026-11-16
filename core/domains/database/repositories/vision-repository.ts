@@ -31,6 +31,7 @@ export class VisionRepository {
       text: value.result.text,
       visual: value.result.visual,
     });
+
     await this.database
       .insert(vision)
       .values(entry)

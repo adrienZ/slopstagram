@@ -26,29 +26,35 @@ const ada = {
   label: "@ada_graph",
   fullName: graphAccountFullName,
 };
+
 const ben = { kind: "account", id: "account:700000000000062", label: "@ben_graph", fullName: null };
+
 const cleo = {
   kind: "account",
   id: "account:700000000000068",
   label: "@cleo_graph",
   fullName: null,
 };
+
 const ambiguous = {
   kind: "ambiguous-username",
   id: `username:${ambiguousUsername}`,
   label: `@${ambiguousUsername}`,
   accounts: [`@${ambiguousUsername.toUpperCase()}`, `@${ambiguousUsername}`],
 };
+
 const ambiguousAccounts = [
   { id: "account:700000000000952", label: `@${ambiguousUsername.toUpperCase()}` },
   { id: "account:700000000000951", label: `@${ambiguousUsername}` },
 ].map((account) => ({ kind: "account", ...account, fullName: null }));
+
 const unknown = {
   kind: "unknown-username",
   id: `username:${unknownUsername}`,
   label: `@${unknownUsername}`,
   fullName: null,
 };
+
 /** The same full name, named by a sticker of the third account's story and of the first's. */
 const nameOnCleoStory = {
   person: {
@@ -62,6 +68,7 @@ const nameOnCleoStory = {
   latestStoryDate: "2026-07-26T06:38:35.000Z",
   connectedTo: [cleo.label],
 };
+
 const nameOnAdaStory = {
   person: {
     kind: "name",
@@ -79,6 +86,7 @@ const nameOnAdaStory = {
 async function createMentionWorld(context: Parameters<typeof createWorld>[0]) {
   const world = await createWorld(context);
   await seedLongConnectionGraphDatabase(world.runtime);
+
   return world;
 }
 

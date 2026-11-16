@@ -6,5 +6,6 @@ let productionRuntime: Runtime | undefined;
 
 export function getProductionRuntime(): Runtime {
   productionRuntime ??= createRuntime(createDrizzle(APP_DATABASE_PATH));
+
   return productionRuntime;
 }

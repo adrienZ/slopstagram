@@ -21,24 +21,30 @@ async function runWithRetry<T>(
   maxAttempts = 3,
 ) {
   const attemptTimes: Array<number> = [];
+
   const pending = requestWithRetry(
     async () => {
       attemptTimes.push(Date.now());
+
       return await runRequest();
     },
     { logger: createMockLogger(), maxAttempts },
     "stories",
   );
+
   await vi.runAllTimersAsync();
   const result = await pending;
   const delays = attemptTimes.slice(1).map((time, index) => time - attemptTimes[index]);
+
   return { delays, result };
 }
 
 test("retries transient HTTP failures with exponential backoff and jitter", async () => {
   let attempts = 0;
+
   const { delays, result } = await runWithRetry(async () => {
     attempts += 1;
+
     return attempts < 3 ? response("unavailable", 503) : response("recovered");
   });
 
@@ -60,8 +66,10 @@ const retryAfterCases: Array<{ name: string; headers: Record<string, string>; de
 for (const entry of retryAfterCases) {
   test(`handles rate limiting with ${entry.name}`, async () => {
     let attempts = 0;
+
     const { delays, result } = await runWithRetry(async () => {
       attempts += 1;
+
       return attempts === 1 ? response("limited", 429, entry.headers) : response("recovered");
     });
 
@@ -73,8 +81,10 @@ for (const entry of retryAfterCases) {
 
 test("does not retry permanent HTTP failures", async () => {
   let attempts = 0;
+
   const { delays, result } = await runWithRetry(async () => {
     attempts += 1;
+
     return response(null, 403);
   });
 
@@ -93,8 +103,10 @@ test("does not retry permanent HTTP failures", async () => {
 
 test("stops retrying rate limits at the configured attempt limit", async () => {
   let attempts = 0;
+
   const { delays, result } = await runWithRetry(async () => {
     attempts += 1;
+
     return response(null, 429);
   }, 2);
 
@@ -113,11 +125,14 @@ test("stops retrying rate limits at the configured attempt limit", async () => {
 
 test("retries thrown network failures before recovering", async () => {
   let attempts = 0;
+
   const { delays, result } = await runWithRetry(async () => {
     attempts += 1;
+
     if (attempts === 1) {
       throw new Error("connection reset");
     }
+
     return response("recovered");
   });
 
@@ -128,6 +143,7 @@ test("retries thrown network failures before recovering", async () => {
 
 test("reports the final thrown failure after exhausting retries", async () => {
   let attempts = 0;
+
   const { delays, result } = await runWithRetry(async () => {
     attempts += 1;
     throw new Error(`connection reset ${attempts}`);
@@ -148,6 +164,7 @@ test("reports the final thrown failure after exhausting retries", async () => {
 
 test("does not retry errors marked non-retryable", async () => {
   let attempts = 0;
+
   const { delays, result } = await runWithRetry(async () => {
     attempts += 1;
     throw Object.assign(new Error("session expired"), { nonRetryable: true });

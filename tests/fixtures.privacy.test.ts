@@ -8,15 +8,19 @@ import type { JsonValue } from "@@/core/utils/json-value.ts";
 
 const fixturesDirectory = fileURLToPath(new URL("fixtures", import.meta.url));
 const MEDIA_EXTENSIONS = new Set([".m4a", ".mp4"]);
+
 // MP4 atoms that hold titles, artists, comments, dates, GPS positions or copyright notices.
 const PERSONAL_MEDIA_TAGS = ["©nam", "©ART", "©alb", "©cmt", "©day", "©xyz"];
 
 const fixtureNames = await readdir(fixturesDirectory);
+
 // Capture metadata describes the files (names, dates, what they cover); it holds no payload.
 const METADATA_FILE_NAME = "capture-metadata.json";
+
 const jsonNames = fixtureNames.filter(
   (name) => name.endsWith(".json") && name !== METADATA_FILE_NAME,
 );
+
 const mediaNames = fixtureNames.filter((name) => MEDIA_EXTENSIONS.has(path.extname(name)));
 
 function describeUnsafe(payload: JsonValue): Array<string> {
@@ -177,6 +181,7 @@ describe("the fixture privacy guard", () => {
         ],
       },
     };
+
     expect(findUnsafeFixtureValues(made).length).toBeGreaterThan(0);
 
     const redacted = createRedactor()(made);

@@ -35,6 +35,7 @@ export function TimelineGallery({
                   <div className="tw:grid tw:grid-cols-[repeat(auto-fill,minmax(125px,1fr))] tw:gap-1.5 tw:sm:grid-cols-[repeat(auto-fill,minmax(175px,1fr))]">
                     {day.stories.map((entry) => {
                       const card = storyByMediaPk.get(entry.story.pk);
+
                       return card === undefined ? null : (
                         <StoryCard key={card.mediaPk} story={card} size="gallery" />
                       );

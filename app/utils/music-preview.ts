@@ -28,9 +28,11 @@ function localArtworkPath(key: string | null, state: string): string | null {
 function musicPreview(observation: StoryMusicObservation): MusicPreview | null {
   const { metadata } = observation;
   const audioUrl = localMediaPath(metadata.audioCachePath, metadata.audioState);
+
   if (audioUrl === null) {
     return null;
   }
+
   return {
     id: observation.id,
     description: [metadata.title, metadata.artist].filter(Boolean).join(" — ") || "Musique reçue",
@@ -44,11 +46,14 @@ function musicPreview(observation: StoryMusicObservation): MusicPreview | null {
 function storySongDescription(annotations: StoryAnnotations | undefined): string {
   const metadataNames = (annotations?.musicObservations ?? []).flatMap(({ metadata }) => {
     const title = metadata.title?.trim();
+
     if (title === undefined || title.length === 0) {
       return [];
     }
+
     return [[title, metadata.artist?.trim()].filter(Boolean).join(" — ")];
   });
+
   const names =
     metadataNames.length > 0
       ? metadataNames
@@ -56,12 +61,14 @@ function storySongDescription(annotations: StoryAnnotations | undefined): string
           .filter(({ kind }) => kind === "music")
           .map(({ label }) => label.trim())
           .filter((label) => label.length > 0);
+
   return [...new Set(names)].join(" / ") || "Audio de la story";
 }
 
 function storyAudioPreview(annotations: StoryAnnotations | undefined): MusicPreview | null {
   const audio = annotations?.storyAudio;
   const audioUrl = audio ? localMediaPath(audio.cachePath, audio.state) : null;
+
   return audioUrl === null || !audio
     ? null
     : {
@@ -76,12 +83,15 @@ function storyAudioPreview(annotations: StoryAnnotations | undefined): MusicPrev
 
 function storyMusicPreviews(annotations: StoryAnnotations | undefined): Array<MusicPreview> {
   const soundtrack = storyAudioPreview(annotations);
+
   if (soundtrack !== null) {
     return [soundtrack];
   }
+
   const assets = (annotations?.musicObservations ?? [])
     .map(musicPreview)
     .filter((preview) => preview !== null);
+
   return [...new Map(assets.map((preview) => [preview.audioUrl, preview])).values()];
 }
 
@@ -100,6 +110,7 @@ export function musicStickerItems(
   const previews = storyMusicPreviews(annotations);
   const soundtrack = previews.find(({ sourceKind }) => sourceKind === "story_audio");
   const linked = new Set<string>();
+
   const items = (annotations?.stickers ?? [])
     .filter(({ kind }) => kind === "music")
     .map((sticker, index) => {
@@ -109,6 +120,7 @@ export function musicStickerItems(
           : annotations?.musicObservations?.find(
               ({ occurrenceId }) => occurrenceId === sticker.occurrenceId,
             );
+
       // Old cache observations have no occurrence link. Reconcile only an exact
       // title/artist label with one distinct asset observed in this same story.
       const candidates = new Map(
@@ -122,13 +134,18 @@ export function musicStickerItems(
           )
           .map((observation) => [observation.metadata.id, observation]),
       );
+
       const observation =
         established ?? (candidates.size === 1 ? [...candidates.values()][0] : undefined);
+
       const asset = observation === undefined ? null : musicPreview(observation);
+
       if (asset !== null) {
         linked.add(asset.audioUrl ?? "");
       }
+
       let preview = asset;
+
       if (soundtrack) {
         preview =
           index === 0
@@ -143,14 +160,17 @@ export function musicStickerItems(
               }
             : null;
       }
+
       return { key: sticker.occurrenceId ?? `music:${index}`, label: sticker.label, preview };
     });
+
   // A soundtrack is displayed once at story level; this creates no occurrence link.
   const unlinked = previews.filter(
     (preview) =>
       !linked.has(preview.audioUrl ?? "") &&
       (preview.sourceKind !== "story_audio" || items.length === 0),
   );
+
   return [
     ...items,
     ...unlinked.map((preview) => ({ key: preview.id, label: preview.description, preview })),

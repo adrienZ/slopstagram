@@ -42,12 +42,14 @@ function readCachedImages(users: Array<StoryOutputUser>): CachedReportImages {
 
   for (const user of users) {
     const profilePicUrl = user.profile_pic_url?.trim();
+
     if (
       profilePicUrl !== undefined &&
       profilePicUrl.length > 0 &&
       !profilePicPathByUrl.has(profilePicUrl)
     ) {
       const cachedPath = media.image.fromStoredPath(profilePicUrl)?.url ?? null;
+
       if (cachedPath !== null && cachedPath.length > 0) {
         profilePicPathByUrl.set(profilePicUrl, cachedPath);
       }
@@ -55,6 +57,7 @@ function readCachedImages(users: Array<StoryOutputUser>): CachedReportImages {
 
     for (const story of user.stories) {
       const previewUrl = story.preview_image_url?.trim();
+
       if (
         previewUrl === undefined ||
         previewUrl.length === 0 ||
@@ -64,6 +67,7 @@ function readCachedImages(users: Array<StoryOutputUser>): CachedReportImages {
       }
 
       const cachedPath = media.image.fromStoredPath(previewUrl)?.url ?? null;
+
       if (cachedPath !== null && cachedPath.length > 0) {
         storyPreviewPathByUrl.set(previewUrl, cachedPath);
       }
@@ -125,20 +129,25 @@ export function loadStoryFeed(
   } = createReportFeed(runtime, now, selectedDate, {
     selectedStory,
   });
+
   const sources = readStoryFeedSources(runtime, feedUsers);
   const sidebarUsers = loadSidebarUsers(runtime);
+
   const storedStories = feedUsers.flatMap((user) =>
     user.stories.flatMap(({ media_pk }) => {
       const story = runtime.stories.findByMediaPk(media_pk);
+
       return story === null ? [] : [{ story }];
     }),
   );
+
   const users = feedUsers.map((user) => ({
     user,
     avatar: sources.cachedImages.profilePicPathByUrl.get(user.profile_pic_url?.trim() ?? ""),
     summary: sources.userSummaryByUserKey.get(getReportUserKey(user)),
     stories: withStoryStickers(createStoryCards(user, sources), storedStories, sidebarUsers),
   }));
+
   return {
     date: formatReportDate(now.toISOString()),
     selectedDate: day,

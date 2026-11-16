@@ -163,6 +163,7 @@ test("location dialog maps the whole history by provider identity and preserves 
     [observation("d", "partial", null)],
     [],
   ]);
+
   const { user } = await renderer.mountRoute(
     `/users/${timelineAccount}`,
     withObservedKinds(props),
@@ -170,6 +171,7 @@ test("location dialog maps the whole history by provider identity and preserves 
       wrapper: MapWrapper,
     },
   );
+
   expect(screen.queryByRole("region", { name: "Carte des lieux" })).not.toBeInTheDocument();
   expect(
     within(screen.getByRole("region", { name: "Type de sticker : location" })).getByText(
@@ -212,6 +214,7 @@ test("a location history without coordinates keeps every label and preview avail
     withObservedKinds(locationTimeline([[observation("partial", "missing", null)], []])),
     { wrapper: MapWrapper },
   );
+
   await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
   expect(modal.getByText("0 lieux sur la carte")).toBeVisible();
@@ -231,9 +234,11 @@ test("a location history without coordinates keeps every label and preview avail
 test("metadata without a displayable sticker remains mappable through its story provenance", async () => {
   const props = locationTimeline([[{ ...observation("unlabelled", "place"), occurrenceId: null }]]);
   const { annotations } = props.timeline.stories[0].story;
+
   if (annotations !== undefined) {
     annotations.stickers = [];
   }
+
   const { user } = await renderer.mountRoute(
     `/users/${timelineAccount}`,
     withObservedKinds(props),
@@ -241,6 +246,7 @@ test("metadata without a displayable sticker remains mappable through its story 
       wrapper: MapWrapper,
     },
   );
+
   await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
   expect(modal.getByText("1 lieu sur la carte")).toBeVisible();
@@ -261,6 +267,7 @@ test("overlapping anonymous places stay distinct and can each be selected withou
   first.metadata.instagramPlaceId = null;
   second.metadata.instagramPlaceId = null;
   const props = locationTimeline([[first, { ...first, id: "repeat" }], [second]]);
+
   const { user } = await renderer.mountRoute(
     `/users/${timelineAccount}`,
     withObservedKinds(props),
@@ -268,6 +275,7 @@ test("overlapping anonymous places stay distinct and can each be selected withou
       wrapper: MapWrapper,
     },
   );
+
   await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
   await user.selectOptions(
@@ -296,6 +304,7 @@ test("unlinked observations never supply a position for a separate legacy sticke
       { ...observation("partial", "unknown", null), occurrenceId: null },
     ],
   ]);
+
   const { user } = await renderer.mountRoute(
     `/users/${timelineAccount}`,
     withObservedKinds(props),
@@ -303,6 +312,7 @@ test("unlinked observations never supply a position for a separate legacy sticke
       wrapper: MapWrapper,
     },
   );
+
   await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
   expect(modal.getByText("1 sticker sans position confirmée")).toBeVisible();
@@ -315,6 +325,7 @@ test("a place category appears in the place list but not in the map popup", asyn
   const plain = observation("b", "place-b", 49);
   plain.metadata.name = "Sans catégorie";
   const props = locationTimeline([[observation("a", "place-a", 48, "Pont")], [plain]]);
+
   const { user } = await renderer.mountRoute(
     `/users/${timelineAccount}`,
     withObservedKinds(props),
@@ -322,6 +333,7 @@ test("a place category appears in the place list but not in the map popup", asyn
       wrapper: MapWrapper,
     },
   );
+
   await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
   expect(modal.getByRole("option", { name: "Même nom · Pont · 1 stories" })).toBeVisible();
@@ -339,6 +351,7 @@ test("arrow keys step through the markers of an open popup and wrap around", asy
   const third = observation("c", "place-c", 50);
   third.metadata.name = "Troisième";
   const props = locationTimeline([[observation("a", "place-a")], [second], [third]]);
+
   const { user } = await renderer.mountRoute(
     `/users/${timelineAccount}`,
     withObservedKinds(props),
@@ -346,6 +359,7 @@ test("arrow keys step through the markers of an open popup and wrap around", asy
       wrapper: MapWrapper,
     },
   );
+
   await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
   const map = within(await modal.findByRole("region", { name: "Carte des lieux" }));
@@ -366,6 +380,7 @@ test("arrow keys step through the markers of an open popup and wrap around", asy
 
 test("a single place has no previous or next buttons", async () => {
   const props = locationTimeline([[observation("a", "place-a")]]);
+
   const { user } = await renderer.mountRoute(
     `/users/${timelineAccount}`,
     withObservedKinds(props),
@@ -373,6 +388,7 @@ test("a single place has no previous or next buttons", async () => {
       wrapper: MapWrapper,
     },
   );
+
   await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
   await user.click(await modal.findByRole("button", { name: "Même nom" }));
@@ -384,6 +400,7 @@ test("location stickers show a crossed-out pin when the place has no coordinates
     [observation("a", "place-a")],
     [observation("b", "partial", null)],
   ]);
+
   props.timeline.stories.push({
     ...props.timeline.stories[0],
     story: {
@@ -398,9 +415,11 @@ test("location stickers show a crossed-out pin when the place has no coordinates
   await renderer.mountRoute(`/users/${timelineAccount}`, withObservedKinds(props), {
     wrapper: MapWrapper,
   });
+
   const card = screen.getByRole("region", {
     name: "Type de sticker : location",
   });
+
   expect(card.querySelectorAll(".lucide-map-pin")).toHaveLength(1);
   expect(card.querySelectorAll(".lucide-map-pin-off")).toHaveLength(2);
 });
@@ -410,6 +429,7 @@ test("location stickers show the place category on a separate line when known", 
     [observation("a", "place-a", 48, "Parc")],
     [observation("b", "place-b")],
   ]);
+
   await renderer.mountRoute(`/users/${timelineAccount}`, withObservedKinds(props), {
     wrapper: MapWrapper,
   });

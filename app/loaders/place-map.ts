@@ -18,12 +18,15 @@ export function loadPlaceMap(runtime: PlaceMapRuntime) {
   const located = runtime.stories.listWithLocationObservations();
   const { places } = groupTimelineLocations(located);
   const mappedPks = new Set(places.flatMap((place) => place.stories.map(({ mediaPk }) => mediaPk)));
+
   const storiesByOwner = Map.groupBy(
     located.filter((entry) => mappedPks.has(entry.story.pk)),
     (entry) => entry.username,
   );
+
   const sidebarUsers = loadSidebarUsers(runtime);
   const order = new Map(located.map((entry, index) => [entry.story.pk, index]));
+
   return {
     places,
     accounts: sidebarUsers

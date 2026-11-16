@@ -44,6 +44,7 @@ function MapWrapper({ children }: { children: ReactNode }) {
 async function mountMap(url = "/map") {
   const mounted = await renderer.mountRoute(url, undefined, { wrapper: MapWrapper });
   const map = within(await screen.findByRole("region", { name: "Carte des lieux" }));
+
   return { ...mounted, map };
 }
 

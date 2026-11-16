@@ -20,8 +20,10 @@ export function useMentionSuggestions({
   const [dismissedAt, setDismissedAt] = useState<number | null>(null);
 
   const mention = findTypedMention(draft, Math.min(caret, draft.length));
+
   const suggestions =
     mention === null || mention.start === dismissedAt ? [] : suggestAccounts(accounts, mention);
+
   const open = suggestions.length > 0;
   const active = Math.min(activeIndex, suggestions.length - 1);
 
@@ -33,15 +35,18 @@ export function useMentionSuggestions({
     if (mention === null) {
       return;
     }
+
     const inserted = insertMention(draft, caret, mention, username);
     // Write the text and the caret in the field right away: React keeps the caret when the
     // re-render finds the field already showing the draft.
     const input = field.current;
+
     if (input !== null) {
       input.value = inserted.text;
       input.focus();
       input.setSelectionRange(inserted.caret, inserted.caret);
     }
+
     setCaret(inserted.caret);
     setActiveIndex(0);
     setDraft(inserted.text);
@@ -49,9 +54,11 @@ export function useMentionSuggestions({
 
   function onChange(event: ChangeEvent<HTMLTextAreaElement>) {
     const { selectionStart, value } = event.target;
+
     if (findTypedMention(value, selectionStart) === null) {
       setDismissedAt(null);
     }
+
     setCaret(selectionStart);
     setActiveIndex(0);
     setDraft(value);
@@ -60,9 +67,11 @@ export function useMentionSuggestions({
   /** Handles the key when it acts on the suggestions, and says whether it did. */
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>): boolean {
     const suggestion = suggestions.at(active);
+
     if (!open || suggestion === undefined || event.nativeEvent.isComposing) {
       return false;
     }
+
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       const step = event.key === "ArrowDown" ? 1 : -1;
       setActiveIndex((active + step + suggestions.length) % suggestions.length);
@@ -73,7 +82,9 @@ export function useMentionSuggestions({
     } else {
       return false;
     }
+
     event.preventDefault();
+
     return true;
   }
 

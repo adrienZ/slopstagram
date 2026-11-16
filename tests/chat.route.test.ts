@@ -200,6 +200,7 @@ function tagElevenPlaces(story: { pk: string; story_locations?: JsonValue }) {
   if (story.pk === plainStoryPk) {
     story.story_locations = Array.from({ length: 11 }, (_, index) => {
       const number = String(index + 1).padStart(2, "0");
+
       return {
         id: `synthetic-place-sticker-${number}`,
         location: {
@@ -215,6 +216,7 @@ function tagElevenPlaces(story: { pk: string; story_locations?: JsonValue }) {
 
 function elevenPlace(number: number) {
   const padded = String(number).padStart(2, "0");
+
   return {
     category: null,
     id: `instagram:7000000000009${padded}`,
@@ -241,6 +243,7 @@ test("asking for the places streams the listTaggedPlaces call and its first page
   const firstPage = await readChunks(
     await handleChatRequest(world.runtime, chatRequest(userMessage("Which places?"))),
   );
+
   const lastPage = await readChunks(
     await handleChatRequest(world.runtime, chatRequest(userMessage("Which places? offset 10"))),
   );
@@ -308,6 +311,7 @@ test("reading a place streams the getTaggedPlace call, its details, then an answ
   const found = await readChunks(
     await handleChatRequest(world.runtime, chatRequest(userMessage(`Place instagram:${placeId}`))),
   );
+
   const unknown = await readChunks(
     await handleChatRequest(world.runtime, chatRequest(userMessage("Place instagram:999"))),
   );
@@ -419,6 +423,7 @@ test.for([
 
 test("a request that is not a conversation of UI messages is rejected", async (context) => {
   const world = await createWorld(context);
+
   const bodies = [
     "not json",
     JSON.stringify({ nope: true }),

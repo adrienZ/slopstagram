@@ -47,6 +47,7 @@ function readPositions(nodes: Array<LayoutNode>): Map<string, LayoutPosition> {
 function createForceLayout(points: Array<{ id: string }>, links: Array<LayoutLink>) {
   const nodes: Array<LayoutNode> = points.map(({ id }) => ({ id }));
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
+
   const simulation = forceSimulation(nodes)
     .force(
       "link",
@@ -63,10 +64,12 @@ function createForceLayout(points: Array<{ id: string }>, links: Array<LayoutLin
     .force("y", forceY(0).strength(0.06))
     .stop()
     .tick(SETTLE_TICKS);
+
   let positions = readPositions(nodes);
   const listeners = new Set<() => void>();
   simulation.on("tick", () => {
     positions = readPositions(nodes);
+
     for (const listener of listeners) {
       listener();
     }
@@ -76,6 +79,7 @@ function createForceLayout(points: Array<{ id: string }>, links: Array<LayoutLin
     getPositions: () => positions,
     subscribe: (listener: () => void) => {
       listeners.add(listener);
+
       return () => {
         listeners.delete(listener);
       };
@@ -83,9 +87,11 @@ function createForceLayout(points: Array<{ id: string }>, links: Array<LayoutLin
     /** Holds a point where the pointer is and lets the others react to it. */
     pin: (id: string, { x, y }: LayoutPosition) => {
       const node = nodesById.get(id);
+
       if (node === undefined) {
         return;
       }
+
       node.fx = x;
       node.fy = y;
       simulation.alphaTarget(DRAG_ALPHA_TARGET).restart();
@@ -93,9 +99,11 @@ function createForceLayout(points: Array<{ id: string }>, links: Array<LayoutLin
     /** Lets a pinned point go: the simulation cools down and stops by itself. */
     release: (id: string) => {
       const node = nodesById.get(id);
+
       if (node === undefined) {
         return;
       }
+
       node.fx = null;
       node.fy = null;
       simulation.alphaTarget(0);
@@ -112,11 +120,14 @@ function createForceLayout(points: Array<{ id: string }>, links: Array<LayoutLin
  */
 export function useForceLayout(points: Array<{ id: string }>, links: Array<LayoutLink>) {
   const layout = useMemo(() => createForceLayout(points, links), [points, links]);
+
   const positions = useSyncExternalStore(
     layout.subscribe,
     layout.getPositions,
     layout.getPositions,
   );
+
   useUnmount(layout.stop);
+
   return { positions, pin: layout.pin, release: layout.release };
 }

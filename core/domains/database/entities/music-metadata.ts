@@ -36,6 +36,7 @@ export const metadataMusic = sqliteTable(
     ),
   ],
 );
+
 export const storyMusicObservations = sqliteTable(
   "story_music_observations",
   {
@@ -53,9 +54,11 @@ export const storyMusicObservations = sqliteTable(
   },
   (table) => [index("music_observations_story_source").on(table.mediaPk, table.source)],
 );
+
 function nonempty(schema: z.ZodString) {
   return schema.refine((value) => value.trim().length > 0);
 }
+
 const StoredMusicSchema = createSelectSchema(metadataMusic, {
   audioDurationMs: z.number().int().positive().nullable().default(null),
   instagramAudioAssetId: nonempty,
@@ -63,6 +66,7 @@ const StoredMusicSchema = createSelectSchema(metadataMusic, {
   artist: nonempty,
   durationMs: (schema) => schema.int().positive(),
 });
+
 const MusicMetadataSchema = z.discriminatedUnion("status", [
   StoredMusicSchema.extend({ status: z.literal("partial") }),
   StoredMusicSchema.extend({
@@ -72,17 +76,24 @@ const MusicMetadataSchema = z.discriminatedUnion("status", [
     artist: nonempty(z.string()),
   }),
 ]);
+
 export const StoryMusicObservationSchema = createSelectSchema(storyMusicObservations)
   .omit({ mediaPk: true, sortOrder: true, musicId: true })
   .extend({ metadata: MusicMetadataSchema });
+
 export type MusicFields = Omit<
   typeof metadataMusic.$inferSelect,
   "id" | "audioCachePath" | "artworkCachePath" | "audioState" | "artworkState" | "audioDurationMs"
 >;
+
 export type MusicMetadata = z.infer<typeof MusicMetadataSchema>;
+
 export type StoryMusicObservation = z.infer<typeof StoryMusicObservationSchema>;
+
 export type MusicMetadataReference = Pick<MusicMetadata, "id" | "status">;
+
 export type MusicMediaState = typeof metadataMusic.$inferSelect.audioState;
+
 export function classifyMusic(row: typeof metadataMusic.$inferSelect): MusicMetadata {
   return row.instagramAudioAssetId !== null && row.title !== null && row.artist !== null
     ? {

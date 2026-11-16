@@ -13,6 +13,7 @@ function getMediaType(value: number | undefined): "image" | "video" | null {
   if (value === 1) {
     return "image";
   }
+
   return value === 2 ? "video" : null;
 }
 
@@ -53,12 +54,15 @@ function groupStoryFeed(
         left.username.localeCompare(right.username) ||
         left.story.pk.localeCompare(right.story.pk),
     );
+
   const byUser = new Map<string, Array<UserTimelineStory>>();
+
   for (const entry of entries) {
     const stories = byUser.get(entry.username) ?? [];
     stories.push(entry);
     byUser.set(entry.username, stories);
   }
+
   return [...byUser.values()].map((stories) =>
     createStoredStoryUser(
       stories[0],
@@ -84,6 +88,7 @@ function createStoryDayFeed(
   options: StoryFeedOptions = {},
 ): Array<StoryOutputUser> {
   const { start, end } = getStoryDayRange(day);
+
   return groupStoryFeed(runtime.stories.listPublishedBetween(start, end), options.hasPreview);
 }
 
@@ -98,25 +103,32 @@ export function createReportFeed(
   const today = getStoryDate(now);
   const parsedDate = storyDateSchema.safeParse(requestedDate).data ?? today;
   let selectedDate = parsedDate > today ? today : parsedDate;
+
   let users =
     selectedDate === today
       ? createStoryFeed(runtime, now, options)
       : createStoryDayFeed(runtime, selectedDate, options);
+
   const publications = runtime.stories
     .listPublicationTimes(now)
     .filter(({ mediaPk }) => options.hasPreview?.(mediaPk) ?? true);
+
   const availableDates = new Set(
     publications.map(({ takenAt }) => getStoryDate(new Date(takenAt * 1000))),
   );
+
   availableDates.delete(today);
+
   if (publications.some(({ takenAt }) => takenAt > now.getTime() / 1000 - 86_400)) {
     availableDates.add(today);
   }
+
   if (
     options.selectedStory !== undefined &&
     !users.some((user) => user.stories.some((story) => story.media_pk === options.selectedStory))
   ) {
     const selectedStory = publications.find(({ mediaPk }) => mediaPk === options.selectedStory);
+
     if (selectedStory !== undefined) {
       selectedDate = getStoryDate(new Date(selectedStory.takenAt * 1000));
       users =
@@ -125,6 +137,7 @@ export function createReportFeed(
           : createStoryDayFeed(runtime, selectedDate, options);
     }
   }
+
   return {
     today,
     selectedDate,
@@ -138,11 +151,14 @@ export function readStoryFeedVision(
   users: Array<StoryOutputUser>,
 ): Map<string, VisionResult> {
   const visionByPreviewUrl = new Map<string, VisionResult>();
+
   for (const story of users.flatMap((user) => user.stories)) {
     const result = readCurrentVisionResult(repository.findByMediaPk(story.media_pk));
+
     if (story.preview_image_url !== null && story.preview_image_url.length > 0 && result !== null) {
       visionByPreviewUrl.set(story.preview_image_url, result);
     }
   }
+
   return visionByPreviewUrl;
 }

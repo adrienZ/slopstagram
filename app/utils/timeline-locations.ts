@@ -27,6 +27,7 @@ export function adjacentPlaceId(
   step: 1 | -1,
 ): string | undefined {
   const index = places.findIndex((place) => place.id === selectedId);
+
   return index === -1 ? undefined : places[(index + step + places.length) % places.length]?.id;
 }
 
@@ -34,10 +35,12 @@ export function groupTimelineLocations(stories: Array<UserTimelineStory>): Timel
   const places = new Map<string, TimelinePlace>();
   let unpositionedStickerCount = 0;
   let unpositionedLocationCount = 0;
+
   for (const entry of stories.toSorted((left, right) => right.taken_at - left.taken_at)) {
     const { annotations } = entry.story;
     const observations = annotations?.locationObservations ?? [];
     const stickers = annotations?.stickers.filter((sticker) => sticker.kind === "location") ?? [];
+
     const positionedOccurrences = new Set(
       observations.flatMap((observation) =>
         isMappableTaggedPlace(observation.metadata) && observation.occurrenceId !== null
@@ -45,18 +48,22 @@ export function groupTimelineLocations(stories: Array<UserTimelineStory>): Timel
           : [],
       ),
     );
+
     // Story-level provenance permits mapping an unlinked observation, but does
     // not establish coordinates for any particular legacy sticker label.
     unpositionedStickerCount += stickers.filter(
       (sticker) =>
         sticker.occurrenceId === undefined || !positionedOccurrences.has(sticker.occurrenceId),
     ).length;
+
     for (const { metadata } of observations) {
       if (!isMappableTaggedPlace(metadata)) {
         unpositionedLocationCount += 1;
         continue;
       }
+
       const id = taggedPlaceId(metadata);
+
       const place = places.get(id) ?? {
         id,
         name: taggedPlaceDisplayName(metadata),
@@ -65,6 +72,7 @@ export function groupTimelineLocations(stories: Array<UserTimelineStory>): Timel
         longitude: metadata.longitude,
         stories: [],
       };
+
       if (!place.stories.some((story) => story.mediaPk === entry.story.pk)) {
         place.stories.push({
           mediaPk: entry.story.pk,
@@ -72,8 +80,10 @@ export function groupTimelineLocations(stories: Array<UserTimelineStory>): Timel
           username: entry.username,
         });
       }
+
       places.set(id, place);
     }
   }
+
   return { places: [...places.values()], unpositionedStickerCount, unpositionedLocationCount };
 }

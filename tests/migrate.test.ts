@@ -7,6 +7,7 @@ import { createTestDatabase } from "./test-database.ts";
 const migrationsFolder = fileURLToPath(
   new URL("../core/domains/database/migrations", import.meta.url),
 );
+
 // Each migration is a folder, so loose files next to them are not counted.
 const migrationCount = readdirSync(migrationsFolder, { withFileTypes: true }).filter((entry) =>
   entry.isDirectory(),
@@ -27,6 +28,7 @@ test("migrating an empty database applies every migration, leaves a consistent s
   const applied = database.$client
     .prepare("SELECT count(*) AS count FROM __drizzle_migrations")
     .get();
+
   expect(applied?.count).toBe(migrationCount);
   expect(database.$client.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
   // Columns that later migrations dropped stay gone.

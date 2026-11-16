@@ -35,6 +35,7 @@ test("orders sticker kinds as location, mention, link, music, hashtag", () => {
     [],
     ["hashtag", "poll", "music", "link", "mention", "location"],
   );
+
   expect(groups.map((group) => group.kind)).toStrictEqual([
     "location",
     "mention",
@@ -64,6 +65,7 @@ test("groups the full sticker history by kind and story while retaining empty da
       },
     },
   }));
+
   const groups = groupTimelineStickers(stories, ["mention", "music", "poll"]);
   expect(groups.map((group) => group.kind)).toStrictEqual(["mention", "music", "poll"]);
   expect(groups[0]?.stories.length).toBe(60);

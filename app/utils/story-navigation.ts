@@ -10,11 +10,13 @@ export function getTimelineDayId(day: string): string {
 
 export function getOldestStoryDate(availableDates: Array<string>, today: string): string {
   let oldest = today;
+
   for (const day of availableDates) {
     if (day < oldest) {
       oldest = day;
     }
   }
+
   return oldest;
 }
 

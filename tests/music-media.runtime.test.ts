@@ -10,15 +10,19 @@ test("music media caching reads and writes the runtime stories and stores", asyn
   })
     .png()
     .toBuffer();
+
   const media = await startMediaServer(context, (request, response) => {
     if (request.url === "/default-audio") {
       response.writeHead(200, { "content-type": "audio/wav" });
       response.end(wavAudio());
+
       return;
     }
+
     response.writeHead(200, { "content-type": "image/png" });
     response.end(image);
   });
+
   const runtime = await createTestRuntime(context, { fetchMedia: media.fetchMedia });
   await runtime.stories.save({
     pk: "default-story",
@@ -35,8 +39,10 @@ test("music media caching reads and writes the runtime stories and stores", asyn
       },
     ],
   });
+
   const metadata =
     runtime.stories.findByMediaPk("default-story")?.annotations?.musicObservations?.[0].metadata;
+
   assert.ok(metadata);
   const reference = { id: metadata.id, status: metadata.status };
 

@@ -47,6 +47,7 @@ export function createPageRenderer<Route extends AnyRoute, Props extends object>
         typeof requestProps === "function" ? requestProps(context) : requestProps,
       beforeLoad: async (context) => {
         await beforeLoad?.();
+
         // oxlint-disable-next-line typescript/no-unsafe-return, typescript/no-unsafe-call -- AnyRoute types the route's own beforeLoad as any.
         return await fileRoute.options.beforeLoad?.(context);
       },
@@ -59,13 +60,16 @@ export function createPageRenderer<Route extends AnyRoute, Props extends object>
         request: new globalThis.Request(`http://localhost${url}`),
         createRouter: () => {
           const root = createRootRoute({ shellComponent: RootDocument, head: rootHead });
+
           return createRouter({
             routeTree: root.addChildren([cloneRoute(root, requestProps)]),
             ...routerOptions,
           });
         },
       });
+
       const response = await handler(defaultRenderHandler);
+
       return await response.text();
     },
     mountRoute: async (
@@ -79,13 +83,16 @@ export function createPageRenderer<Route extends AnyRoute, Props extends object>
       const root = createRootRoute({
         component: () => createElement(ThemeProvider, null, createElement(Outlet)),
       });
+
       const router = createRouter({
         routeTree: root.addChildren([cloneRoute(root, mountProps, options.beforeLoad)]),
         history: createMemoryHistory({ initialEntries: [url] }),
         defaultPendingMinMs: 0,
         ...routerOptions,
       });
+
       await router.load();
+
       return {
         user: userEvent.setup(),
         router,

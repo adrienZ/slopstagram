@@ -16,11 +16,13 @@ import {
 import { stubGraphLayout } from "./mount-graph.ts";
 
 const shared = useSharedTestRuntime(seedFilterGraphDatabase);
+
 const renderer = createPageRenderer(
   Route,
   ({ deps }) => loadMentionGraph(shared.runtime, deps.accounts),
   "/graph",
 );
+
 const [adaGraph, benGraph, cleoGraph] = graphAccounts;
 const [ada, ben, cleo] = graphAccounts.map((username) => `@${username}`);
 const eve = `@${filterAccount}`;
@@ -32,6 +34,7 @@ stubGraphLayout();
 async function mountGraph(url = "/graph") {
   const mounted = await renderer.mountRoute(url);
   await screen.findByRole("region", { name: "Graphe des mentions" });
+
   return mounted;
 }
 
@@ -39,6 +42,7 @@ async function mountGraph(url = "/graph") {
 function drawing() {
   const region = within(screen.getByRole("region", { name: "Graphe des mentions" }));
   const canvas = within(region.getByRole("group", { name: "Points et connexions" }));
+
   return {
     points: within(canvas.getByRole("group", { name: "Points" })),
     lines: within(canvas.getByRole("group", { name: "Connexions" })),
@@ -59,6 +63,7 @@ function shownConnections(): Array<string | null> {
 
 async function openFilters(user: Awaited<ReturnType<typeof mountGraph>>["user"]) {
   await user.click(screen.getByRole("button", { name: /^Filtrer par compte/u }));
+
   return within(await screen.findByRole("dialog", { name: "Filtres affichés" }));
 }
 
@@ -202,9 +207,11 @@ test("a filtered graph keeps its selection and story modal out of the URL, and a
   await user.click(
     drawing().lines.getByRole("button", { name: `Connexion entre ${ada} et ${ben} : 2 stories` }),
   );
+
   const evidence = within(
     screen.getByRole("region", { name: `Stories de la connexion entre ${ada} et ${ben}` }),
   );
+
   await user.click(evidence.getByRole("button", { name: `Ouvrir aperçu ${graphStories.ada}` }));
   expect(await screen.findByRole("dialog", { name: "Aperçu de l’image" })).toBeVisible();
   expect(router.state.location.href).toBe(href);

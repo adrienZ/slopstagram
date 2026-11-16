@@ -32,6 +32,7 @@ function setupDatabase(context: { onTestFinished: (callback: () => void) => void
   context.onTestFinished(() => {
     database.$client.close();
   });
+
   return database;
 }
 
@@ -68,8 +69,10 @@ function placeBody(id: string, info: PlaceBodyInfo): JsonValue {
     location_city: info.city ?? "",
     location_zip: info.zip ?? "",
   } satisfies JsonObject;
+
   const withBusiness =
     info.business === undefined ? locationInfo : { ...locationInfo, ig_business: info.business };
+
   return {
     data: {
       xdt_location_get_web_info: {
@@ -98,15 +101,19 @@ function createPlaceClient(
     [{ id: "reel", media_ids: stories.map(({ pk }) => pk), user: owner }],
     [reelsResponse({ reel: { ...reel("reel", stories), user: owner } })],
   );
+
   const lookups: Array<string> = [];
+
   return Object.assign(client, {
     lookups,
     async getPlace(placeId: string) {
       lookups.push(placeId);
       const canned = places[placeId];
+
       if (canned === undefined) {
         throw new Error(`Unexpected place lookup ${placeId}`);
       }
+
       return canned();
     },
   });
@@ -118,6 +125,7 @@ async function ingest(
   now: () => Date = fixedNow,
 ) {
   vi.setSystemTime(now());
+
   return await fetchStories({
     logger: createCapturingLogger(),
     stories: repository,
@@ -129,11 +137,13 @@ async function ingest(
 function storedPlace(repository: StoryRepository, pk: string) {
   const observation = repository.findByMediaPk(pk)?.annotations?.locationObservations?.[0];
   assert.ok(observation);
+
   return observation.metadata;
 }
 
 test("a place that stories only identify by its id becomes usable after a lookup", async (context) => {
   const repository = setup(context);
+
   const client = createPlaceClient([storyAt("m1", { pk: "700000000000633" })], {
     "700000000000633": () =>
       response(
@@ -145,6 +155,7 @@ test("a place that stories only identify by its id becomes usable after a lookup
         }),
       ),
   });
+
   await ingest(repository, client);
   const place = storedPlace(repository, "m1");
   expect(place.status).toBe("usable");
@@ -159,6 +170,7 @@ test("a place that stories only identify by its id becomes usable after a lookup
 
 test("the category Instagram returns is stored exactly as received", async (context) => {
   const repository = setup(context);
+
   const client = createPlaceClient([storyAt("m1", { pk: "111" })], {
     "111": () =>
       response(
@@ -168,16 +180,19 @@ test("the category Instagram returns is stored exactly as received", async (cont
         }),
       ),
   });
+
   await ingest(repository, client);
   expect(storedPlace(repository, "m1").category).toBe("Bistrot de quartier");
 });
 
 test("an empty category from Instagram is stored as a missing category", async (context) => {
   const repository = setup(context);
+
   const client = createPlaceClient([storyAt("m1", { pk: "111" }), storyAt("m2", { pk: "222" })], {
     "111": () => response(placeBody("111", { name: "Empty", category: "" })),
     "222": () => response(placeBody("222", { name: "Blank", category: "   " })),
   });
+
   await ingest(repository, client);
   expect(storedPlace(repository, "m1").category).toBe(null);
   expect(storedPlace(repository, "m2").category).toBe(null);
@@ -185,6 +200,7 @@ test("an empty category from Instagram is stored as a missing category", async (
 
 test("a category never decides whether a place is usable", async (context) => {
   const repository = setup(context);
+
   const client = createPlaceClient([storyAt("m1", { pk: "111" }), storyAt("m2", { pk: "222" })], {
     "111": () => response(placeBody("111", { name: "No coordinates", category: "Pont" })),
     "222": () =>
@@ -197,6 +213,7 @@ test("a category never decides whether a place is usable", async (context) => {
         }),
       ),
   });
+
   await ingest(repository, client);
   expect(storedPlace(repository, "m1").status).toBe("partial");
   expect(storedPlace(repository, "m1").category).toBe("Pont");
@@ -205,9 +222,11 @@ test("a category never decides whether a place is usable", async (context) => {
 
 test("a lookup supplies the zip code and fills a missing city", async (context) => {
   const repository = setup(context);
+
   const client = createPlaceClient([storyAt("m1", { pk: "111" })], {
     "111": () => response(placeBody("111", { name: "Chez Paul", city: "Amiens", zip: "80000" })),
   });
+
   await ingest(repository, client);
   const place = storedPlace(repository, "m1");
   expect(place.city).toBe("Amiens");
@@ -216,6 +235,7 @@ test("a lookup supplies the zip code and fills a missing city", async (context) 
 
 test("a city from a story is stored and never overwritten by a lookup", async (context) => {
   const repository = setup(context);
+
   const client = createPlaceClient([storyAt("m1", { pk: "111", city: "Story City" })], {
     "111": () =>
       response(
@@ -226,6 +246,7 @@ test("a city from a story is stored and never overwritten by a lookup", async (c
         }),
       ),
   });
+
   await ingest(repository, client);
   const place = storedPlace(repository, "m1");
   expect(place.city).toBe("Story City");
@@ -234,6 +255,7 @@ test("a city from a story is stored and never overwritten by a lookup", async (c
 
 test("empty strings are stored as a missing city and a missing zip code", async (context) => {
   const repository = setup(context);
+
   const client = createPlaceClient(
     [storyAt("m1", { pk: "111", city: "" }), storyAt("m2", { pk: "222", city: "   " })],
     {
@@ -241,7 +263,9 @@ test("empty strings are stored as a missing city and a missing zip code", async 
       "222": () => response(placeBody("222", { name: "Blank", city: "  ", zip: "  " })),
     },
   );
+
   await ingest(repository, client);
+
   for (const pk of ["m1", "m2"]) {
     expect(storedPlace(repository, pk).city).toBe(null);
     expect(storedPlace(repository, pk).zip).toBe(null);
@@ -250,24 +274,29 @@ test("empty strings are stored as a missing city and a missing zip code", async 
 
 test("a blank city from a story leaves the gap for the lookup to fill", async (context) => {
   const repository = setup(context);
+
   const client = createPlaceClient([storyAt("m1", { pk: "111", city: "" })], {
     "111": () => response(placeBody("111", { name: "Chez Paul", city: "Amiens" })),
   });
+
   await ingest(repository, client);
   expect(storedPlace(repository, "m1").city).toBe("Amiens");
 });
 
 test("a story never supplies the zip code", async (context) => {
   const repository = setup(context);
+
   const client = createPlaceClient([storyAt("m1", { pk: "111", zip: "99999" })], {
     "111": () => response(placeBody("111", { name: "Chez Paul", zip: "" })),
   });
+
   await ingest(repository, client);
   expect(storedPlace(repository, "m1").zip).toBe(null);
 });
 
 test("a city and a zip code never decide whether a place is usable", async (context) => {
   const repository = setup(context);
+
   const client = createPlaceClient([storyAt("m1", { pk: "111" }), storyAt("m2", { pk: "222" })], {
     "111": () =>
       response(
@@ -279,6 +308,7 @@ test("a city and a zip code never decide whether a place is usable", async (cont
       ),
     "222": () => response(placeBody("222", { name: "No city", lat: 1, lng: 2 })),
   });
+
   await ingest(repository, client);
   expect(storedPlace(repository, "m1").status).toBe("partial");
   expect(storedPlace(repository, "m2").status).toBe("usable");
@@ -286,6 +316,7 @@ test("a city and a zip code never decide whether a place is usable", async (cont
 
 test("story values are never overwritten and only gaps are filled", async (context) => {
   const repository = setup(context);
+
   const client = createPlaceClient(
     [
       storyAt("m1", {
@@ -307,6 +338,7 @@ test("story values are never overwritten and only gaps are filled", async (conte
         ),
     },
   );
+
   await ingest(repository, client);
   const place = storedPlace(repository, "m1");
   expect(place.name).toBe("Story name");
@@ -319,11 +351,14 @@ test("story values are never overwritten and only gaps are filled", async (conte
 
 test("blank text and out-of-range coordinates from Instagram fill nothing", async (context) => {
   const repository = setup(context);
+
   const client = createPlaceClient([storyAt("m1", { pk: "111" }), storyAt("m2", { pk: "222" })], {
     "111": () => response(placeBody("111", { name: "   ", address: "  ", lat: 91, lng: -181 })),
     "222": () => response(placeBody("222", { name: "", address: "", lat: -91, lng: 181 })),
   });
+
   await ingest(repository, client);
+
   for (const pk of ["m1", "m2"]) {
     const place = storedPlace(repository, pk);
     expect(place.name).toBe(null);
@@ -336,9 +371,11 @@ test("blank text and out-of-range coordinates from Instagram fill nothing", asyn
 
 test("a place with only one coordinate filled stays partial", async (context) => {
   const repository = setup(context);
+
   const client = createPlaceClient([storyAt("m1", { pk: "111" })], {
     "111": () => response(placeBody("111", { name: "Chez Paul", lat: 48 })),
   });
+
   await ingest(repository, client);
   const place = storedPlace(repository, "m1");
   expect(place.status).toBe("partial");
@@ -349,9 +386,11 @@ test("a place with only one coordinate filled stays partial", async (context) =>
 test("only places referenced by the stories saved in the run are looked up", async (context) => {
   const repository = setup(context);
   await repository.save(storyAt("old", { pk: "222" }));
+
   const client = createPlaceClient([storyAt("m1", { pk: "111" })], {
     "111": () => response(placeBody("111", { name: "Fresh", lat: 1, lng: 2 })),
   });
+
   await ingest(repository, client);
   expect(client.lookups).toStrictEqual(["111"]);
   expect(storedPlace(repository, "old").lastLookupAttemptAt).toBe(null);
@@ -360,9 +399,11 @@ test("only places referenced by the stories saved in the run are looked up", asy
 
 test("a place that was already looked up is not looked up again", async (context) => {
   const repository = setup(context);
+
   const first = createPlaceClient([storyAt("m1", { pk: "111" })], {
     "111": () => response(placeBody("111", { name: "Fresh", lat: 1, lng: 2 })),
   });
+
   await ingest(repository, first);
   const second = createPlaceClient([storyAt("m2", { pk: "111" })], {});
   await ingest(repository, second);
@@ -373,10 +414,12 @@ test("a place that was already looked up is not looked up again", async (context
 test("a place with a non-numeric id is skipped without a request or a failure", async (context) => {
   const repository = setup(context);
   const logger = createCapturingLogger();
+
   const client = createPlaceClient(
     [storyAt("m1", { pk: "bloks_sticker_id", name: "Sticker" })],
     {},
   );
+
   await fetchStories({ logger, stories: repository, storage: createMemoryCacheStorage(), client });
   expect(client.lookups).toStrictEqual([]);
   expect(storedPlace(repository, "m1").lastLookupAttemptAt).toBe(null);
@@ -390,6 +433,7 @@ test("a place with a non-numeric id is skipped without a request or a failure", 
 
 test("each kind of unusable lookup applies no values, keeps the story and is recorded as failed", async (context) => {
   const repository = setup(context);
+
   const unusable = {
     "1": () =>
       response({
@@ -410,9 +454,11 @@ test("each kind of unusable lookup applies no values, keeps the story and is rec
     "5": () => response(placeBody("5", { name: "Rejected" }), 500),
     "6": () => response({ data: { unexpected: true } }),
   } satisfies Record<string, () => ReturnType<typeof response<JsonValue>>>;
+
   const stories = Object.keys(unusable).map((pk) => storyAt(`m${pk}`, { pk }));
   await ingest(repository, createPlaceClient(stories, unusable));
   const failures: Record<string, string | null> = {};
+
   for (const pk of Object.keys(unusable)) {
     const place = storedPlace(repository, `m${pk}`);
     expect(place.status).toBe("partial");
@@ -420,6 +466,7 @@ test("each kind of unusable lookup applies no values, keeps the story and is rec
     expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
     failures[pk] = place.lastLookupFailure;
   }
+
   expect(failures["1"] ?? "").toMatch(/no place data/iu);
   expect(failures["2"] ?? "").toMatch(/field_exception/u);
   expect(failures["3"] ?? "").toMatch(/no place data/iu);
@@ -430,12 +477,14 @@ test("each kind of unusable lookup applies no values, keeps the story and is rec
 
 test("a thrown lookup never blocks the story or the lookups after it", async (context) => {
   const repository = setup(context);
+
   const client = createPlaceClient([storyAt("m1", { pk: "1" }), storyAt("m2", { pk: "2" })], {
     "1": () => {
       throw new Error("socket hang up");
     },
     "2": () => response(placeBody("2", { name: "Second", lat: 1, lng: 2 })),
   });
+
   const report = await ingest(repository, client);
   expect(report.metadata.counts.fetched).toBe(2);
   expect(repository.findByMediaPk("m1")).not.toBe(null);
@@ -445,11 +494,13 @@ test("a thrown lookup never blocks the story or the lookups after it", async (co
 
 test("a thrown lookup is recorded with its attempt time and raw error", async (context) => {
   const repository = setup(context);
+
   const client = createPlaceClient([storyAt("m1", { pk: "1", name: "Known", lat: 1, lng: 2 })], {
     "1": () => {
       throw new Error("socket hang up");
     },
   });
+
   await ingest(repository, client);
   const place = storedPlace(repository, "m1");
   expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
@@ -461,9 +512,11 @@ test("a thrown lookup is recorded with its attempt time and raw error", async (c
 test("a blocked session stops the remaining lookups and records nothing", async (context) => {
   for (const status of [401, 403, 429]) {
     const repository = setup(context);
+
     const client = createPlaceClient([storyAt("m1", { pk: "1" }), storyAt("m2", { pk: "2" })], {
       "1": () => response(placeBody("1", { name: "Blocked" }), status),
     });
+
     // oxlint-disable-next-line no-await-in-loop -- Each status uses its own database.
     await ingest(repository, client);
     expect(client.lookups).toStrictEqual(["1"]);
@@ -497,6 +550,7 @@ test("a place whose last lookup failed is looked up again only after twelve hour
   const retried = createPlaceClient([storyAt("m3", { pk: "111" })], {
     "111": () => response(placeBody("111", { name: "Chez Paul", lat: 1, lng: 2 })),
   });
+
   await ingest(repository, retried, laterBy(12 * HOUR));
   expect(retried.lookups).toStrictEqual(["111"]);
   const place = storedPlace(repository, "m3");
@@ -506,11 +560,13 @@ test("a place whose last lookup failed is looked up again only after twelve hour
 
 test("a recorded failure is bounded and never holds request headers, cookies or tokens", async (context) => {
   const repository = setup(context);
+
   const leaking = Object.assign(new Error("x".repeat(5000)), {
     headers: { cookie: "sessionid=secret-session" },
     request: { headers: { "x-csrftoken": "secret-token" } },
     cause: new Error("sessionid=secret-session"),
   });
+
   await ingest(
     repository,
     createPlaceClient([storyAt("m1", { pk: "111" })], {
@@ -529,12 +585,14 @@ test("a failure that cannot be recorded never blocks the story or the lookups af
   repository.recordFailedPlaceLookup = () => {
     throw new Error("database is locked");
   };
+
   const client = createPlaceClient([storyAt("m1", { pk: "1" }), storyAt("m2", { pk: "2" })], {
     "1": () => {
       throw new Error("socket hang up");
     },
     "2": () => response(placeBody("2", { name: "Second" })),
   });
+
   const report = await ingest(repository, client);
   expect(report.metadata.counts.fetched).toBe(2);
   expect(client.lookups).toStrictEqual(["1", "2"]);
@@ -626,6 +684,7 @@ test("a later story observation keeps the looked-up zip code and a story city re
 
 test("the phone, price range, slug and business account of a place are stored", async (context) => {
   const repository = setup(context);
+
   const client = createPlaceClient([storyAt("m1", { pk: "111" })], {
     "111": () =>
       response(
@@ -644,6 +703,7 @@ test("the phone, price range, slug and business account of a place are stored", 
         }),
       ),
   });
+
   await ingest(repository, client);
   expect(repository.findPlaceDetails("111")).toStrictEqual({
     phone: "+33 1 23 45 67 89",
@@ -657,6 +717,7 @@ test("the phone, price range, slug and business account of a place are stored", 
 
 test("a place without a linked business account has no business information", async (context) => {
   const repository = setup(context);
+
   const client = createPlaceClient(
     [storyAt("m1", { pk: "111" }), storyAt("m2", { pk: "222" }), storyAt("m3", { pk: "333" })],
     {
@@ -672,7 +733,9 @@ test("a place without a linked business account has no business information", as
       "333": () => response(placeBody("333", { phone: "0506", business: null })),
     },
   );
+
   await ingest(repository, client);
+
   for (const [id, phone] of [
     ["111", "0102"],
     ["222", "0304"],
@@ -689,6 +752,7 @@ test("a place without a linked business account has no business information", as
 
 test("empty strings from Instagram are stored as missing details", async (context) => {
   const repository = setup(context);
+
   const client = createPlaceClient([storyAt("m1", { pk: "111" })], {
     "111": () =>
       response(
@@ -701,6 +765,7 @@ test("empty strings from Instagram are stored as missing details", async (contex
         }),
       ),
   });
+
   await ingest(repository, client);
   expect(repository.findPlaceDetails("111")).toStrictEqual({
     phone: null,
@@ -714,9 +779,11 @@ test("empty strings from Instagram are stored as missing details", async (contex
 
 test("an unusable lookup stores no details", async (context) => {
   const repository = setup(context);
+
   const client = createPlaceClient([storyAt("m1", { pk: "5" })], {
     "5": () => response(placeBody("5", { phone: "0102" }), 500),
   });
+
   await ingest(repository, client);
   expect(repository.findPlaceDetails("5")).toBe(null);
 });
@@ -780,6 +847,7 @@ test("a malformed detail never blocks the place fill and keeps the earlier detai
       "111": () => response(placeBody("111", { phone: "0102", priceRange: 2 })),
     }),
   );
+
   const malformed = createPlaceClient([storyAt("m2", { pk: "222" })], {
     "222": () =>
       response(
@@ -791,6 +859,7 @@ test("a malformed detail never blocks the place fill and keeps the earlier detai
         }),
       ),
   });
+
   await ingest(repository, malformed);
   const place = storedPlace(repository, "m2");
   expect(place.name).toBe("Chez Paul");
@@ -911,6 +980,7 @@ test("a later lookup of the same place never adds a second location sticker", as
 
 test("a story that tags the same place twice gets a single location sticker", async (context) => {
   const repository = setup(context);
+
   const story: StoryItem = {
     ...storyAt("m1", { pk: "111" }),
     story_locations: [
@@ -918,6 +988,7 @@ test("a story that tags the same place twice gets a single location sticker", as
       { id: "sticker-b", location: { pk: "111" } },
     ],
   };
+
   await ingest(
     repository,
     createPlaceClient([story], {
@@ -943,6 +1014,7 @@ test("a lookup recorded for an unknown place changes nothing", async (context) =
 
 test("a story that tags two places gets one location sticker per place, in lookup order", async (context) => {
   const repository = setup(context);
+
   const story: StoryItem = {
     ...storyAt("m1", { pk: "111" }),
     story_locations: [
@@ -950,6 +1022,7 @@ test("a story that tags two places gets one location sticker per place, in looku
       { id: "sticker-b", location: { pk: "222" } },
     ],
   };
+
   await ingest(
     repository,
     createPlaceClient([story], {
@@ -976,6 +1049,7 @@ test("a place whose last lookup succeeded three months ago is looked up again, a
   const refreshed = createPlaceClient([storyAt("m3", { pk: "111" })], {
     "111": () => response(placeBody("111", { name: "Chez Paul" })),
   });
+
   await ingest(repository, refreshed, laterBy(REFRESH_AFTER));
   expect(refreshed.lookups).toStrictEqual(["111"]);
   expect(storedPlace(repository, "m3").lastLookupAttemptAt).toBe(

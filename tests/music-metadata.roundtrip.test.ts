@@ -10,6 +10,7 @@ import { createCapturingLogger, createClient, reel, reelsResponse } from "./mock
 
 function present<T>(value: T | null | undefined): T {
   assert.ok(value !== null && value !== undefined);
+
   return value;
 }
 
@@ -19,6 +20,7 @@ function setup(context: { onTestFinished: (callback: () => void) => void }) {
   context.onTestFinished(() => {
     database.$client.close();
   });
+
   return { database, repository: new StoryRepository(database, createCapturingLogger()) };
 }
 
@@ -30,12 +32,14 @@ test("live ingestion shares exact audio identities across occurrences in cold ac
   const { database, repository } = setup(context);
   const owner = { id: "u1", pk: "u1", username: "one", full_name: "One" };
   await new InstagramUserRepository(database).save(owner);
+
   const asset = {
     audio_asset_id: "00012345678901234567890",
     title: "  Same Song  ",
     display_artist: "Artist",
     duration_in_ms: 246_652,
   };
+
   const items: Array<StoryItem> = [
     {
       pk: "m1",
@@ -58,6 +62,7 @@ test("live ingestion shares exact audio identities across occurrences in cold ac
       ],
     },
   ];
+
   const report = await fetchStories({
     logger: createCapturingLogger(),
     stories: repository,
@@ -67,6 +72,7 @@ test("live ingestion shares exact audio identities across occurrences in cold ac
       [reelsResponse({ r1: { ...reel("r1", items), user: owner } })],
     ),
   });
+
   expect(report.manifest.users[0].stories[0].stickers).toStrictEqual([
     "Same Song - Artist",
     "Same Song - Artist",
@@ -74,9 +80,11 @@ test("live ingestion shares exact audio identities across occurrences in cold ac
   const history = new StoryRepository(database).listByUsername("one");
   const first = present(present(history.find(({ story }) => story.pk === "m1")).story.annotations);
   const shared = present(present(history.find(({ story }) => story.pk === "m2")).story.annotations);
+
   const homonym = present(
     present(history.find(({ story }) => story.pk === "m3")).story.annotations,
   );
+
   const observations = present(first.musicObservations);
   expect(observations.length).toBe(2);
   expect(observations.map(({ occurrenceId }) => occurrenceId)).toStrictEqual(
@@ -248,31 +256,38 @@ test("certain partial music promotes every established link and sparse live upda
 
 test("music links survive reordered live input and cold resaves, with source clearing kept independent", async (context) => {
   const { database, repository } = setup(context);
+
   const a = {
     id: "a",
     music_asset_info: { audio_asset_id: "one", title: "Song", display_artist: "Artist" },
   };
+
   const b = {
     id: "b",
     music_asset_info: { audio_asset_id: "two", title: "Song", display_artist: "Artist" },
   };
+
   await repository.save({
     pk: "m1",
     story_music_stickers: [a, b],
     story_locations: [{ id: "place", location: { pk: "place", name: "Place", lat: 1, lng: 2 } }],
   });
   const before = read(repository, "m1");
+
   const byProvider = new Map(
     present(before.musicObservations).map((entry) => [entry.providerOccurrenceId, entry]),
   );
+
   await repository.save({ pk: "m1", story_music_stickers: [b, a] });
   const reordered = read(new StoryRepository(database), "m1");
   expect(
     present(reordered.musicObservations).map(({ providerOccurrenceId }) => providerOccurrenceId),
   ).toStrictEqual(["b", "a"]);
+
   for (const entry of present(reordered.musicObservations)) {
     expect(entry).toStrictEqual(byProvider.get(entry.providerOccurrenceId));
   }
+
   await repository.save(present(new StoryRepository(database).findByMediaPk("m1")));
   expect(read(new StoryRepository(database), "m1")).toStrictEqual(reordered);
   await repository.save({ pk: "m1", story_music_stickers: [] });
@@ -284,14 +299,17 @@ test("music links survive reordered live input and cold resaves, with source cle
 
 test("malformed or omitted music sources preserve rich metadata and all saved contributions", async (context) => {
   const { database, repository } = setup(context);
+
   const asset = {
     audio_asset_id: "audio",
     title: "Before",
     display_artist: "Artist",
     duration_in_ms: 123_456,
   };
+
   await repository.save({ pk: "m1", story_music_stickers: [{ id: "a", music_asset_info: asset }] });
   const before = read(repository, "m1");
+
   for (const story of [
     { pk: "m1" },
     { pk: "m1", story_music_stickers: null },
@@ -369,6 +387,7 @@ test("uncertain repeated music stays separate while current raw occurrences rece
   });
   const after = read(new StoryRepository(database), "m1");
   expect(after.stickers.length).toBe(2);
+
   for (const entry of present(after.musicObservations)) {
     expect(
       after.stickers.some(({ occurrenceId }) => occurrenceId === entry.occurrenceId),
@@ -416,6 +435,7 @@ test("numeric IDs are accepted only when exact and invalid durations remain unkn
   expect(observations[0].metadata.instagramAudioAssetId).toBe("123");
   expect(observations[0].metadata.durationMs).toBe(1000);
   expect(observations[0].metadata.status).toBe("usable");
+
   for (const entry of observations.slice(1)) {
     expect(entry.metadata.instagramAudioAssetId).toBe(null);
     expect(entry.metadata.durationMs).toBe(null);

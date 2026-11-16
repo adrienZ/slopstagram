@@ -20,4 +20,5 @@ export const storyAudio = sqliteTable("story_audio", {
 export const StoryAudioSchema = createSelectSchema(storyAudio, {
   durationMs: z.number().int().positive().nullable().default(null),
 });
+
 export type StoryAudio = z.infer<typeof StoryAudioSchema>;

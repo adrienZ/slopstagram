@@ -143,6 +143,7 @@ async function fetchStoriesManifest(
     state.cachedItems,
     state.failureByMediaPk,
   );
+
   logger.info(
     `manifest complete: fetched=${state.fetchedMediaPks.size} failed=${state.failureByMediaPk.size}`,
   );

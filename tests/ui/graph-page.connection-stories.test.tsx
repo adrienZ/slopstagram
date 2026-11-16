@@ -15,9 +15,11 @@ import {
 
 const shared = useSharedTestRuntime(seedGraphDatabase);
 const renderer = createPageRenderer(Route, () => loadMentionGraph(shared.runtime, []), "/graph");
+
 async function mountGraph() {
   return await mountGraphWith(renderer);
 }
+
 const [ada, ben, cleo] = graphAccounts.map((username) => `@${username}`);
 const adaAndBen = `Connexion entre ${ada} et ${ben} : 2 stories`;
 const adaAndCleo = `Connexion entre ${ada} et ${cleo} : 5 stories`;
@@ -26,6 +28,7 @@ stubGraphLayout();
 
 function altOf(mediaPk: string): string {
   const { stories } = loadMentionGraph(shared.runtime, []).graph;
+
   return stories.find((story) => story.mediaPk === mediaPk)?.alt ?? "";
 }
 
@@ -41,9 +44,11 @@ test("a connection opens the stories where one end mentioned the other, each onc
   await user.click(connection);
   expect(connection).toHaveAttribute("aria-pressed", "true");
   expect(connection).toHaveAttribute("data-highlighted", "true");
+
   const panel = region.getByRole("region", {
     name: `Stories de la connexion entre ${ada} et ${ben}`,
   });
+
   expect(shownStories(panel)).toEqual([graphStories.ben, graphStories.ada]);
   expect(within(panel).queryByRole("button", { name: "Stories suivantes" })).toBeNull();
 });
@@ -51,9 +56,11 @@ test("a connection opens the stories where one end mentioned the other, each onc
 test("the stories show three at a time, with arrows to the other pages", async () => {
   const { user, region, lines } = await mountGraph();
   await user.click(lines.getByRole("button", { name: adaAndCleo }));
+
   const panel = region.getByRole("region", {
     name: `Stories de la connexion entre ${ada} et ${cleo}`,
   });
+
   const previous = within(panel).getByRole("button", { name: "Stories précédentes" });
   const next = within(panel).getByRole("button", { name: "Stories suivantes" });
   expect(shownStories(panel)).toEqual(cleoStoriesMentioningAda.slice(0, 3));
@@ -72,9 +79,11 @@ test("the stories show three at a time, with arrows to the other pages", async (
 test("a thumbnail opens its story in a modal that stays out of the URL", async () => {
   const { user, region, lines, router } = await mountGraph();
   await user.click(lines.getByRole("button", { name: adaAndBen }));
+
   const panel = within(
     region.getByRole("region", { name: `Stories de la connexion entre ${ada} et ${ben}` }),
   );
+
   await user.click(panel.getByRole("button", { name: `Ouvrir aperçu ${graphStories.ada}` }));
 
   const modal = within(await screen.findByRole("dialog", { name: "Aperçu de l’image" }));
@@ -90,9 +99,11 @@ test("a thumbnail opens its story in a modal that stays out of the URL", async (
 test("the modal steps and counts through the connection's stories only", async () => {
   const { user, region, lines } = await mountGraph();
   await user.click(lines.getByRole("button", { name: adaAndBen }));
+
   const panel = within(
     region.getByRole("region", { name: `Stories de la connexion entre ${ada} et ${ben}` }),
   );
+
   await user.click(panel.getByRole("button", { name: `Ouvrir aperçu ${graphStories.ada}` }));
 
   const modal = within(await screen.findByRole("dialog", { name: "Aperçu de l’image" }));
@@ -109,9 +120,11 @@ test("the stories close with their own control, not with the background", async 
   const connection = lines.getByRole("button", { name: adaAndBen });
   await user.click(connection);
   await user.click(drawing);
+
   const panel = region.getByRole("region", {
     name: `Stories de la connexion entre ${ada} et ${ben}`,
   });
+
   await user.click(
     within(panel).getByRole("button", { name: "Fermer les stories de la connexion" }),
   );
@@ -140,9 +153,11 @@ test("opening a story keeps the selected point and its profile", async () => {
   const point = points.getByRole("button", { name: ada });
   await user.click(point);
   await user.click(lines.getByRole("button", { name: adaAndBen }));
+
   const panel = within(
     region.getByRole("region", { name: `Stories de la connexion entre ${ada} et ${ben}` }),
   );
+
   await user.click(panel.getByRole("button", { name: `Ouvrir aperçu ${graphStories.ada}` }));
   const modal = within(await screen.findByRole("dialog", { name: "Aperçu de l’image" }));
   await user.click(modal.getByRole("button", { name: "Fermer l’aperçu" }));

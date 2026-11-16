@@ -16,11 +16,14 @@ export function normalizeSearchQuery(query: string): string {
  */
 export function rankTextMatch(value: string, query: string): 0 | 1 | 2 | null {
   const text = normalizeForSearch(value);
+
   if (text === query) {
     return 0;
   }
+
   if (text.startsWith(query)) {
     return 1;
   }
+
   return text.includes(query) ? 2 : null;
 }

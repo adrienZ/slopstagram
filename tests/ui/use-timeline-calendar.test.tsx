@@ -7,9 +7,11 @@ test("a requested gap chooses the nearest earlier available day", async () => {
   day.id = "story-day-2026-07-23";
   globalThis.document.body.append(day);
   const scroll = vi.spyOn(day, "scrollIntoView");
+
   const { result } = renderHook(() =>
     useTimelineCalendar(["2026-07-25", "2026-07-23"], "2026-07-26"),
   );
+
   expect(result.current.selectedDate).toBe("2026-07-25");
   act(() => {
     result.current.onSelectDate(new Date("2026-07-24T12:00:00Z"));
@@ -25,9 +27,11 @@ test("a requested gap chooses the nearest earlier available day", async () => {
 
 test("requests before the oldest day select the oldest day even if its element is absent", async () => {
   const frame = vi.spyOn(globalThis, "requestAnimationFrame");
+
   const { result } = renderHook(() =>
     useTimelineCalendar(["2026-07-25", "2026-07-23"], "2026-07-26"),
   );
+
   act(() => {
     result.current.onSelectDate(new Date("2026-07-01T12:00:00Z"));
   });

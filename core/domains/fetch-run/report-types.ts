@@ -8,8 +8,13 @@ import type {
 } from "@@/core/domains/instagram/story-schemas.ts";
 
 export type StoryFetchFailure = z.infer<typeof StoryFetchFailureSchema>;
+
 export type StoryFetchFailureReason = StoryFetchFailure["reason"];
+
 export type StoryManifestItem = z.infer<typeof StoryManifestItemSchema>;
+
 export type StoryManifestReel = z.infer<typeof StoryManifestReelSchema>;
+
 export type StoryOutputUser = z.infer<typeof StoryOutputUserSchema>;
+
 export type StoriesManifestReport = z.infer<typeof StoriesManifestReportSchema>;

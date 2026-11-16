@@ -25,9 +25,11 @@ export async function handleChatRequest(
 ): Promise<Response> {
   const body = await readChatRequest(request);
   const messages = body === null ? null : await validateAssistantMessages(runtime, body.messages);
+
   if (messages === null) {
     return new globalThis.Response("Invalid chat request", { status: 400 });
   }
+
   return await streamAssistantReply(runtime, messages);
 }
 

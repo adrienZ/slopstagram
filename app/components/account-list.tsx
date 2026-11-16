@@ -13,6 +13,7 @@ export function AccountList({
   if (listed.length === 0) {
     return <p>{emptyLabel}</p>;
   }
+
   return (
     <ul aria-label={label} className="tw:grid tw:gap-1">
       {listed.map((account) => (

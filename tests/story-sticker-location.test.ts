@@ -23,6 +23,7 @@ test("extracts content-only labels including fallback forms and literal colons",
     ],
     story_locations: [{ location: { name: "Paris", address: "France" } }],
   });
+
   expect(stickers.map(({ kind, label }) => ({ kind, label }))).toStrictEqual([
     { kind: "mention", label: "@friend" },
     { kind: "mention", label: "Friend Name" },

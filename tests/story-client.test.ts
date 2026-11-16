@@ -18,6 +18,7 @@ function createSession(
 ): Parameters<typeof createInstagramClient>[0] {
   const rawBody = z.string().safeParse(body);
   let serializedBody: string;
+
   if (body instanceof Error) {
     serializedBody = "<!DOCTYPE html>";
   } else if (rawBody.success) {
@@ -30,6 +31,7 @@ function createSession(
     page: {
       evaluate: async (_callback, input) => {
         calls.push(input);
+
         return {
           body: serializedBody,
           headers: { "content-type": contentType },
@@ -43,6 +45,7 @@ function createSession(
 
 test("createInstagramClient fetches tray through the authenticated browser page", async () => {
   const calls: Array<BrowserFetchCall> = [];
+
   const session = createSession(
     {
       broadcasts: [],
@@ -73,17 +76,21 @@ test("createInstagramClient fetches tray through the authenticated browser page"
 
 test("music lookup uses the authenticated session and preserves large numeric audio IDs", async () => {
   const calls: Array<BrowserFetchCall> = [];
+
   const client = createInstagramClient(
     createSession(
       '{"metadata":{"music_info":{"music_asset_info":{"audio_asset_id":10882110464472591}}}}',
       calls,
     ),
   );
+
   const { getMusicAsset } = client;
   expect(getMusicAsset).not.toBe(undefined);
+
   if (getMusicAsset === undefined) {
     throw new Error("Music asset lookup unavailable");
   }
+
   const result = await getMusicAsset("10882110464472591");
   expect(result.json()).toStrictEqual({
     metadata: { music_info: { music_asset_info: { audio_asset_id: "10882110464472591" } } },
@@ -100,13 +107,17 @@ test("music lookup uses the authenticated session and preserves large numeric au
 test("looks up a place with the location container query from the authenticated page", async () => {
   const calls: Array<BrowserFetchCall> = [];
   const body = { data: { xdt_location_get_web_info: { native_location_data: null } } };
+
   const { getPlace } = createInstagramClient(
     createSession(body, calls, "text/javascript; charset=utf-8"),
   );
+
   expect(getPlace).not.toBe(undefined);
+
   if (getPlace === undefined) {
     throw new Error("Place lookup unavailable");
   }
+
   const result = await getPlace("700000000000633");
   expect(result.json()).toStrictEqual(body);
   expect(calls).toStrictEqual([
@@ -120,16 +131,19 @@ test("looks up a place with the location container query from the authenticated 
 
 test("sends the place query from the page with the page's own tokens", async (context) => {
   const requests: Array<{ url: string; body: string; headers: Headers; method: string }> = [];
+
   const pageModules = new Map([
     ["LSD", { token: "lsd-token" }],
     ["DTSGInitialData", { token: "dtsg-token" }],
     ["CurrentUserInitialData", { NON_FACEBOOK_USER_ID: "user-1" }],
   ]);
+
   vi.stubGlobal("require", (name: string) => pageModules.get(name));
   vi.stubGlobal(
     "fetch",
     async (url: string, init: { body: string; headers: Headers; method: string }) => {
       requests.push({ url, ...init });
+
       return await Promise.resolve(
         new globalThis.Response('{"ok":true}', {
           headers: { "content-type": "text/javascript" },
@@ -140,12 +154,15 @@ test("sends the place query from the page with the page's own tokens", async (co
   context.onTestFinished(() => {
     vi.unstubAllGlobals();
   });
+
   const { getPlace } = createInstagramClient({
     page: { evaluate: async (pageFunction, input) => await pageFunction(input) },
   });
+
   if (getPlace === undefined) {
     throw new Error("Place lookup unavailable");
   }
+
   const result = await getPlace("700000000000633");
   expect(result.json()).toStrictEqual({ ok: true });
   expect(requests.length).toBe(1);
@@ -168,14 +185,17 @@ test("sends empty place query tokens when the page has none", async (context) =>
   vi.stubGlobal("require", () => null);
   vi.stubGlobal("fetch", async (_url: string, init: { body: string }) => {
     bodies.push(init.body);
+
     return await Promise.resolve(new globalThis.Response("{}"));
   });
   context.onTestFinished(() => {
     vi.unstubAllGlobals();
   });
+
   const { getPlace } = createInstagramClient({
     page: { evaluate: async (pageFunction, input) => await pageFunction(input) },
   });
+
   await getPlace?.("1");
   const params = Object.fromEntries(new globalThis.URLSearchParams(bodies[0]));
   expect([params.fb_dtsg, params.lsd, params.av]).toStrictEqual(["", "", ""]);
@@ -185,9 +205,11 @@ test("rejects an HTML place lookup response", async () => {
   const { getPlace } = createInstagramClient(
     createSession("<!DOCTYPE html><html></html>", [], "text/html; charset=utf-8"),
   );
+
   if (getPlace === undefined) {
     throw new Error("Place lookup unavailable");
   }
+
   const result = await getPlace("700000000000633");
   expect(() => result.json()).toThrow(/text\/html/u);
 });
@@ -258,6 +280,7 @@ test("reports an expired browser session when Instagram returns HTML", async () 
 
 test("createInstagramClient fetches reels media with the web viewer GraphQL query", async () => {
   const calls: Array<BrowserFetchCall> = [];
+
   const session = createSession(
     {
       data: {
@@ -302,6 +325,7 @@ function stubBrowserPage(
   vi.stubGlobal("require", (name: string) => pageModules.get(name));
   vi.stubGlobal("fetch", async (url: string, init: Omit<PageRequest, "url">) => {
     requests.push({ url, ...init });
+
     return await Promise.resolve(
       new globalThis.Response(responseBody, { headers: { "content-type": "text/javascript" } }),
     );
@@ -309,6 +333,7 @@ function stubBrowserPage(
   context.onTestFinished(() => {
     vi.unstubAllGlobals();
   });
+
   return requests;
 }
 
@@ -389,9 +414,11 @@ test("posts the music asset lookup from the page with the csrf token", async (co
   vi.stubGlobal("document", { cookie: "mid=1; csrftoken=csrf-token; other=2" });
 
   const { getMusicAsset } = createInstagramClient(runInPage);
+
   if (getMusicAsset === undefined) {
     throw new Error("Music asset lookup unavailable");
   }
+
   const response = await getMusicAsset("audio-1");
 
   expect(response.json()).toStrictEqual({});
@@ -435,6 +462,7 @@ test("rejects GraphQL errors returned with HTTP 200 instead of accepting empty m
     },
     {},
   ];
+
   for (const body of failureBodies) {
     const session = createSession(body);
     // oxlint-disable-next-line no-await-in-loop -- Verify each distinct HTTP-success failure payload.
@@ -446,6 +474,7 @@ test("rejects GraphQL errors returned with HTTP 200 instead of accepting empty m
 
 test("reads all gallery pages without dropping reels", async () => {
   const calls: Array<BrowserFetchCall> = [];
+
   const pages = [
     {
       data: {
@@ -464,10 +493,12 @@ test("reads all gallery pages without dropping reels", async () => {
       },
     },
   ];
+
   const session: Parameters<typeof createInstagramClient>[0] = {
     page: {
       evaluate: async (_callback, input) => {
         calls.push(input);
+
         return {
           body: JSON.stringify(pages.shift()),
           headers: { "content-type": "application/json" },
@@ -477,6 +508,7 @@ test("reads all gallery pages without dropping reels", async () => {
       },
     },
   };
+
   const response = await createInstagramClient(session).getReelsMedia(["r1", "r2"]);
   expect(response.json()).toStrictEqual({
     reels_media: [
@@ -498,6 +530,7 @@ test("rejects a gallery response whose pagination cannot advance", async () => {
       },
     },
   };
+
   await expect(createInstagramClient(createSession(body)).getReelsMedia(["r1"])).rejects.toThrow(
     /pagination/u,
   );
@@ -510,9 +543,11 @@ function createPagedSession(
     page: {
       evaluate: async () => {
         const page = pages.shift();
+
         if (page === undefined) {
           throw new Error("Unexpected extra page request");
         }
+
         return {
           body: JSON.stringify(page.body),
           headers: { "content-type": "application/json" },

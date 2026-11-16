@@ -27,17 +27,20 @@ interface RollbackScenario {
 function annotationsOf(repository: StoryRepository, pk: string) {
   const annotations = repository.findByMediaPk(pk)?.annotations;
   assert.ok(annotations);
+
   return annotations;
 }
 
 function firstOf<T>(items: Array<T> | undefined): T {
   const item = items?.[0];
   assert.ok(item !== undefined, "expected an observation");
+
   return item;
 }
 
 const oldImage = { candidates: [{ url: "https://example.com/old.jpg" }] };
 const newImage = { candidates: [{ url: "https://example.com/new.jpg" }] };
+
 const promotedMusic: StoryItem = {
   pk: "m1",
   taken_at: 1_767_225_601,
@@ -140,15 +143,18 @@ test.for(scenarios)(
     const database = createTestDatabase(context);
     const repository = new StoryRepository(database);
     const { owners, trigger } = scenario;
+
     if (owners) {
       const users = new InstagramUserRepository(database);
       await users.save(owners.saved);
       await users.save(owners.failing);
     }
+
     for (const [index, story] of scenario.saved.entries()) {
       // oxlint-disable-next-line no-await-in-loop -- Saves are ordered: the first story owns the shared record.
       await repository.save(story, index === 0 ? owners?.saved : undefined);
     }
+
     const before = scenario.saved.map(({ pk }) => repository.findByMediaPk(pk));
     database.$client.exec(
       `CREATE TEMP TRIGGER ${trigger.name} ${trigger.on} ${trigger.when === undefined ? "" : `WHEN ${trigger.when}`}
@@ -159,6 +165,7 @@ test.for(scenarios)(
 
     const cold = new StoryRepository(database);
     expect(scenario.saved.map(({ pk }) => cold.findByMediaPk(pk))).toStrictEqual(before);
+
     if (owners) {
       expect(cold.listByUsername(owners.saved.username)).toHaveLength(1);
       expect(cold.listByUsername(owners.failing.username)).toHaveLength(0);

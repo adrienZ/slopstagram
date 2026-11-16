@@ -73,4 +73,5 @@ export const StoryStickerSchema = StoredStoryStickerSchema.omit({ mediaPk: true,
   });
 
 export type StorySticker = z.infer<typeof StoryStickerSchema>;
+
 export type StoryRow = typeof stories.$inferSelect;

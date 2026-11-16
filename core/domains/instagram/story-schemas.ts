@@ -106,6 +106,7 @@ export const StoryManifestItemSchema = z.object({
   stickers: z.array(z.string()),
   status: ReportStorySchema.shape.status,
 });
+
 export const StoryManifestReelSchema = z.object({
   full_name: ReportStoryGroupSchema.shape.fullName.optional(),
   id: ReportStoryGroupSchema.shape.instagramId.unwrap().optional(),
@@ -117,6 +118,7 @@ export const StoryManifestReelSchema = z.object({
   stories: z.array(StoryManifestItemSchema),
   username: ReportStoryGroupSchema.shape.username,
 });
+
 export const StoryOutputUserSchema = z.object({
   full_name: StoryManifestReelSchema.shape.full_name,
   profile_pic_url: StoryManifestReelSchema.shape.profile_pic_url,
@@ -124,6 +126,7 @@ export const StoryOutputUserSchema = z.object({
   stories: z.array(StoryManifestItemSchema),
   username: StoryManifestReelSchema.shape.username,
 });
+
 export const StoryFetchFailureSchema = z.object({
   attempt_count: ReportFailureSchema.shape.attemptCount,
   http_status: ReportFailureSchema.shape.httpStatus,
@@ -132,6 +135,7 @@ export const StoryFetchFailureSchema = z.object({
   reason: ReportFailureSchema.shape.reason,
   reel_id: ReportFailureSchema.shape.reelId,
 });
+
 const StoryFetchCountsSchema = z.object({
   failed: ReportSchema.shape.failedCount,
   fetched: ReportSchema.shape.fetchedCount,

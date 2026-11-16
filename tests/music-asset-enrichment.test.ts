@@ -26,10 +26,13 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
     await rm(directory, { recursive: true, force: true });
   });
   const audio = await readFile(new globalThis.URL("fixtures/audio-clip.m4a", import.meta.url));
+
   const cover = await sharp({ create: { width: 8, height: 8, channels: 3, background: "red" } })
     .png()
     .toBuffer();
+
   const audioId = "1088211046447259";
+
   const server = await startMediaServer(context, (request, result) => {
     if (request.url === `/lookup/${audioId}`) {
       result.writeHead(200, { "content-type": "application/json" });
@@ -56,6 +59,7 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
       result.end(cover);
     }
   });
+
   const stories = ["first", "second"].map((pk) => ({
     pk,
     media_type: 1,
@@ -65,6 +69,7 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
       { id: `sticker-${pk}`, music_asset_info: { audio_asset_id: audioId, title: "Original" } },
     ],
   }));
+
   const client = createClient(
     [
       {
@@ -75,18 +80,23 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
     ],
     [reelsResponse({ reel: { ...reel("reel", stories), user: { username: "one", pk: "owner" } } })],
   );
+
   client.getMusicAsset = async (id) => {
     const result = await server.fetchMedia(`https://example.com/lookup/${id}`);
     const body = JsonValueSchema.parse(await result.json());
+
     return { ok: result.ok, status: result.status, headers: {}, json: () => body };
   };
+
   const repository = new StoryRepository(database);
+
   const report = await fetchStories({
     logger: createCapturingLogger(),
     stories: repository,
     storage: createMemoryCacheStorage(),
     client,
   });
+
   expect(server.requests).toStrictEqual([`/lookup/${audioId}`]);
   const before = repository.findByMediaPk("first")?.annotations;
   assert.ok(before);
@@ -112,10 +122,12 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
   assert.ok(first.audioCachePath !== null);
   assert.ok(first.artworkCachePath !== null);
   expect(await readFile(path.join(directory, first.audioCachePath))).toStrictEqual(audio);
+
   const artwork = await createMediaResponse(
     { storage: createFileCacheStorage(directory) },
     first.artworkCachePath,
   );
+
   expect(artwork.status).toBe(200);
   expect(artwork.headers.get("content-type")).toBe("image/jpeg");
   await cacheReportAudio(
@@ -136,20 +148,25 @@ test("lookup rejects mismatched and original-sound results and stops on rate lim
     database.$client.close();
   });
   const repository = new StoryRepository(database);
+
   const stories = ["mismatch", "original", "limited", "after"].map((pk) => ({
     pk,
     story_music_stickers: [{ music_asset_info: { audio_asset_id: pk, title: pk } }],
   }));
+
   for (const story of stories) {
     // oxlint-disable-next-line no-await-in-loop -- Persist independent stories in order.
     await repository.save(story);
   }
+
   const server = await startMediaServer(context, (request, result) => {
     if (request.url === "/limited") {
       result.writeHead(429);
       result.end();
+
       return;
     }
+
     result.writeHead(200, { "content-type": "application/json" });
     result.end(
       JSON.stringify(
@@ -175,12 +192,14 @@ test("lookup rejects mismatched and original-sound results and stops on rate lim
       ),
     );
   });
+
   const logger = createCapturingLogger();
   await enrichCurrentMusicAssets(
     {
       getMusicAsset: async (id) => {
         const result = await server.fetchMedia(`https://example.com/${id}`);
         const body = result.ok ? JsonValueSchema.parse(await result.json()) : null;
+
         return { ok: result.ok, status: result.status, headers: {}, json: () => body };
       },
     },
@@ -189,12 +208,14 @@ test("lookup rejects mismatched and original-sound results and stops on rate lim
     logger,
   );
   expect(server.requests).toStrictEqual(["/mismatch", "/original", "/limited"]);
+
   for (const story of stories) {
     expect(
       repository.findByMediaPk(story.pk)?.annotations?.musicObservations?.[0].metadata
         .audioSourceUrl,
     ).toBe(null);
   }
+
   expect(logger.messages.some((message) => message.includes("429"))).toBeTruthy();
 });
 
@@ -207,10 +228,12 @@ test("generic video/mp4 responses with a video track are never cached as music",
     await rm(directory, { recursive: true, force: true });
   });
   const video = await readFile(new globalThis.URL("fixtures/video-clip.mp4", import.meta.url));
+
   const server = await startMediaServer(context, (_request, result) => {
     result.writeHead(200, { "content-type": "video/mp4" });
     result.end(video);
   });
+
   const cached = await cacheReceivedAudio(
     {
       storage: createFileCacheStorage(directory),
@@ -220,6 +243,7 @@ test("generic video/mp4 responses with a video track are never cached as music",
     "https://example.com/video",
     null,
   );
+
   expect(cached.state).toBe("unsupported");
   expect(cached.cachePath).toBe(null);
 });
@@ -231,6 +255,7 @@ test("lookup skips stories without an audio ID, muted stories, and shared reels"
     database.$client.close();
   });
   const repository = new StoryRepository(database);
+
   const stories = [
     { pk: "missing", story_music_stickers: [{ music_asset_info: { title: "Song" } }] },
     {
@@ -250,19 +275,23 @@ test("lookup skips stories without an audio ID, muted stories, and shared reels"
       story_music_stickers: [{ music_asset_info: { audio_asset_id: "reel", title: "Song" } }],
     },
   ];
+
   for (const story of stories) {
     // oxlint-disable-next-line no-await-in-loop -- Persist independent stories in order.
     await repository.save(story);
   }
+
   const server = await startMediaServer(context, (_request, result) => {
     result.writeHead(200, { "content-type": "application/json" });
     result.end("{}");
   });
+
   await enrichCurrentMusicAssets(
     {
       getMusicAsset: async (id) => {
         const result = await server.fetchMedia(`https://example.com/${id}`);
         const body = JsonValueSchema.parse(await result.json());
+
         return { ok: result.ok, status: result.status, headers: {}, json: () => body };
       },
     },

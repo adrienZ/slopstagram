@@ -17,6 +17,7 @@ const MIN_SCALE = 0.2;
 const MAX_SCALE = 4;
 const BUTTON_ZOOM_FACTOR = 1.25;
 const FIT_MARGIN = 48;
+
 /** How far, in screen pixels, a pointer travels before a press becomes a drag rather than a click. */
 const DRAG_THRESHOLD = 4;
 
@@ -29,12 +30,14 @@ function fitView(positions: Iterable<LayoutPosition>): GraphView {
   const all = [...positions];
   const xs = all.map(({ x }) => x);
   const ys = all.map(({ y }) => y);
+
   const [left, right, top, bottom] = [
     Math.min(...xs),
     Math.max(...xs),
     Math.min(...ys),
     Math.max(...ys),
   ];
+
   const scale = clampScale(
     Math.min(
       1,
@@ -42,6 +45,7 @@ function fitView(positions: Iterable<LayoutPosition>): GraphView {
       GRAPH_HEIGHT / (bottom - top + 2 * FIT_MARGIN),
     ),
   );
+
   return {
     x: GRAPH_WIDTH / 2 - (scale * (left + right)) / 2,
     y: GRAPH_HEIGHT / 2 - (scale * (top + bottom)) / 2,
@@ -53,6 +57,7 @@ function fitView(positions: Iterable<LayoutPosition>): GraphView {
 function zoomAround(view: GraphView, factor: number, anchor: LayoutPosition): GraphView {
   const scale = clampScale(view.scale * factor);
   const ratio = scale / view.scale;
+
   return {
     x: anchor.x - (anchor.x - view.x) * ratio,
     y: anchor.y - (anchor.y - view.y) * ratio,
@@ -64,6 +69,7 @@ function zoomAround(view: GraphView, factor: number, anchor: LayoutPosition): Gr
 function toDrawing(svg: SVGSVGElement, clientX: number, clientY: number): LayoutPosition {
   const rect = svg.getBoundingClientRect();
   const ratio = Math.min(rect.width / GRAPH_WIDTH, rect.height / GRAPH_HEIGHT);
+
   return {
     x: (clientX - rect.left - (rect.width - GRAPH_WIDTH * ratio) / 2) / ratio,
     y: (clientY - rect.top - (rect.height - GRAPH_HEIGHT * ratio) / 2) / ratio,
@@ -92,37 +98,46 @@ export function useGraphViewport({ positions, pin, release }: GraphViewportOptio
     onEnd?: () => void,
   ) {
     const element = svg.current;
+
     if (element === null || event.button !== 0) {
       return;
     }
+
     const { pointerId, clientX: startX, clientY: startY } = event;
     const from = toDrawing(element, startX, startY);
     const frame = element.ownerDocument.defaultView;
     dragged.current = false;
+
     function move(next: PointerEvent) {
       if (next.pointerId !== pointerId || element === null) {
         return;
       }
+
       if (
         !dragged.current &&
         Math.hypot(next.clientX - startX, next.clientY - startY) < DRAG_THRESHOLD
       ) {
         return;
       }
+
       dragged.current = true;
       onMove(toDrawing(element, next.clientX, next.clientY), from);
     }
+
     function end(last: PointerEvent) {
       if (last.pointerId !== pointerId) {
         return;
       }
+
       frame?.removeEventListener("pointermove", move);
       frame?.removeEventListener("pointerup", end);
       frame?.removeEventListener("pointercancel", end);
+
       if (dragged.current) {
         onEnd?.();
       }
     }
+
     frame?.addEventListener("pointermove", move);
     frame?.addEventListener("pointerup", end);
     frame?.addEventListener("pointercancel", end);
@@ -153,6 +168,7 @@ export function useGraphViewport({ positions, pin, release }: GraphViewportOptio
   function isClick(): boolean {
     const click = !dragged.current;
     dragged.current = false;
+
     return click;
   }
 
@@ -164,17 +180,21 @@ export function useGraphViewport({ positions, pin, release }: GraphViewportOptio
   const attach = useMemo(() => {
     function zoomWithWheel(event: WheelEvent) {
       const element = svg.current;
+
       if (element === null) {
         return;
       }
+
       event.preventDefault();
       const anchor = toDrawing(element, event.clientX, event.clientY);
       setView((current) => zoomAround(current, Math.exp(-event.deltaY / 500), anchor));
     }
+
     // React listens to wheel events passively, which cannot keep the page from scrolling.
     return function attachWheelZoom(element: SVGSVGElement | null) {
       svg.current = element;
       element?.addEventListener("wheel", zoomWithWheel, { passive: false });
+
       return () => {
         element?.removeEventListener("wheel", zoomWithWheel);
       };

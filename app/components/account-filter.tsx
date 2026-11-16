@@ -48,6 +48,7 @@ export function AccountChecklist({
   listClassName?: string;
 }) {
   const id = useId();
+
   return (
     <>
       <Button variant="ghost" size="sm" disabled={!clearable} onClick={onClear}>
@@ -58,6 +59,7 @@ export function AccountChecklist({
         {accounts.map((account) => {
           const checkboxId = `${id}-${account.username}`;
           const handle = formatUserHandle(account.username);
+
           return (
             <li key={account.username}>
               <label
@@ -88,6 +90,7 @@ export function AccountChecklist({
 
 export function AccountFilter(props: AccountFilterProps) {
   const activeCount = props.selected.length + (props.place === undefined ? 0 : 1);
+
   return (
     <Popover>
       <PopoverTrigger asChild>

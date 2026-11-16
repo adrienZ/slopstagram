@@ -2,7 +2,9 @@ import path from "node:path";
 import type { RuleTester } from "oxlint/plugins-dev";
 
 type Rule = Parameters<RuleTester["run"]>[1];
+
 type RuleVisitor = ReturnType<NonNullable<Rule["create"]>>;
+
 type ImportNode = Parameters<NonNullable<RuleVisitor["ImportDeclaration"]>>[0];
 
 // Value imports between core domains must point down this table. fetch-run sits on top: it may
@@ -56,6 +58,7 @@ const baseline = new Map<string, Array<string>>([
 // "core/domains/<domain>/<module>" or "core/utils/<module>" as ["<domain>", "<domain>/<module>"], or null outside core.
 function locate(file: string): [string, string] | null {
   const match = /\/core\/(?:domains\/)?(?<module>(?<domain>[^/]+)\/.+)$/u.exec(file);
+
   return match?.groups ? [match.groups.domain, match.groups.module] : null;
 }
 
@@ -73,6 +76,7 @@ function resolveTarget(file: string, source: string): string | null {
   if (source.startsWith("@@/")) {
     return `/${source.slice(3)}`;
   }
+
   return source.startsWith(".") ? path.posix.resolve(path.posix.dirname(file), source) : null;
 }
 
@@ -90,20 +94,25 @@ const domainLayering = {
   },
   create(context) {
     const importerAt = locate(context.filename);
+
     return {
       ImportDeclaration(node) {
         if (importerAt === null || isTypeOnly(node)) {
           return;
         }
+
         const source = node.source.value;
         const target = resolveTarget(context.filename, source);
         const importedAt = target === null ? null : locate(target);
+
         if (!importedAt) {
           return;
         }
+
         const [importer, module] = importerAt;
         const [imported] = importedAt;
         const allowed = dependencies.get(importer) ?? [];
+
         if (
           imported === importer ||
           (allowed.includes("*") && !entryPointOnly.has(imported)) ||
@@ -112,6 +121,7 @@ const domainLayering = {
         ) {
           return;
         }
+
         context.report({ messageId: "upward", node, data: { importer, imported } });
       },
     };

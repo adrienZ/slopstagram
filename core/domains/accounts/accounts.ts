@@ -48,14 +48,19 @@ export function searchAccounts(
   limit = MAX_SEARCH_RESULTS,
 ): AccountSearch {
   const wanted = normalizeSearchQuery(query);
+
   if (wanted === "") {
     return { accounts: [], total: 0 };
   }
+
   const matches = listAccounts(runtime).flatMap((account) => {
     const rank = rankMatch(account, wanted);
+
     return rank === null ? [] : [{ account, rank }];
   });
+
   matches.sort((left, right) => left.rank - right.rank);
+
   return {
     accounts: matches.slice(0, limit).map(({ account }) => account),
     total: matches.length,

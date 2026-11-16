@@ -14,9 +14,12 @@ function filterPlaces(places: Array<TimelinePlace>, selected: Array<string>): Ar
   if (selected.length === 0) {
     return places;
   }
+
   const chosen = new Set(selected);
+
   return places.flatMap((place) => {
     const stories = place.stories.filter(({ username }) => chosen.has(username));
+
     return stories.length === 0 ? [] : [{ ...place, stories }];
   });
 }

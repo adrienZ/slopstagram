@@ -30,6 +30,7 @@ async function runAppleOcr(image: Uint8Array, platform: NodeJS.Platform): Promis
 
   // oxlint-disable-next-line typescript/consistent-type-imports keep it async for non macOS platforms
   let macOcr: typeof import("mac-ocr");
+
   try {
     macOcr = await import("mac-ocr");
   } catch (error) {
@@ -38,6 +39,7 @@ async function runAppleOcr(image: Uint8Array, platform: NodeJS.Platform): Promis
   }
 
   const result = await macOcr.ocr(image);
+
   return result.text;
 }
 
@@ -58,11 +60,13 @@ export async function recognizeAppleCaption(
   }
 
   const image = await readCachedImage(runtime.storage.images, cachedPath);
+
   if (image === null) {
     throw new Error(`cached image ${cachedPath} is missing`);
   }
 
   const caption = normalizeOcrText(await runOcr(image));
   await repository.save(mediaPk, caption);
+
   return caption;
 }

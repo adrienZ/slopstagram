@@ -181,6 +181,7 @@ describe("fetchStories", () => {
 
   test("groups final output by user with story accessibility captions", async (context) => {
     const runtime = await createTestRuntime(context);
+
     const client = createClient(
       [
         {

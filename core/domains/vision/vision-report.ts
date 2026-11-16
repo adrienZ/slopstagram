@@ -123,6 +123,7 @@ async function resolvePreviewEntry(options: ResolvePreviewEntryOptions): Promise
 
   if (!preview.ok) {
     skipPreviewEntry({ ...options, ...preview });
+
     return;
   }
 
@@ -131,17 +132,21 @@ async function resolvePreviewEntry(options: ResolvePreviewEntryOptions): Promise
     prefix: "vision",
     suffix: `resolving ${preview.itemLabel}`,
   });
+
   const result = await analyzeImage(runtime, {
     itemLabel: preview.itemLabel,
     mediaPk: options.entry.mediaPk,
     read: async () => {
       const image = await readCachedImage(runtime.storage.images, preview.cachedPath);
+
       if (image === null) {
         throw new Error("cached preview is missing");
       }
+
       return image;
     },
   });
+
   setResultForPreviewSources(
     options.resultByPreviewUrl,
     options.sourcesByMediaPk,

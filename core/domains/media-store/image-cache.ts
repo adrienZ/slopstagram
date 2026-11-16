@@ -27,6 +27,7 @@ export async function readCachedImage(
   cachedPath: string,
 ): Promise<Uint8Array | null> {
   const file = media.image.fromStoredPath(cachedPath);
+
   return file === null ? null : await readBytes(images, file.key);
 }
 
@@ -49,8 +50,10 @@ async function cacheImage(
 
   const fetchImage = runtime.fetchImage ?? globalThis.fetch;
   const response = await fetchImage(source);
+
   if (!response.ok) {
     runtime.logger.warn(`could not cache image ${source}: HTTP ${response.status}`);
+
     return cachedPath;
   }
 
@@ -61,6 +64,7 @@ async function cacheImage(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     runtime.logger.warn(`could not convert image ${source} to JPEG: ${message}`);
+
     return cachedPath;
   }
 
@@ -72,6 +76,7 @@ async function cacheProfilePics(
   report: StoriesManifestReport,
 ): Promise<Map<string, string>> {
   const profilePicPathByUrl = new Map<string, string>();
+
   const entries = report.manifest.users
     .map((user) => ({ pk: user.pk, source: user.profile_pic_url }))
     .filter((entry): entry is ProfilePicEntry => isPresent(entry.pk) && isPresent(entry.source));
@@ -175,6 +180,7 @@ function addLocalPathAliases(cachedImages: CachedReportImages): void {
   for (const imagePath of cachedImages.profilePicPathByUrl.values()) {
     cachedImages.profilePicPathByUrl.set(imagePath, imagePath);
   }
+
   for (const imagePath of cachedImages.storyPreviewPathByUrl.values()) {
     cachedImages.storyPreviewPathByUrl.set(imagePath, imagePath);
   }
@@ -195,6 +201,7 @@ export async function cacheReportImages(
       storyPreviewPathByMediaPk,
     ),
   };
+
   replaceReportImageSources(report, cachedImages);
   addLocalPathAliases(cachedImages);
 

@@ -8,5 +8,6 @@ export const ProviderIdentifierSchema = z.union([
 
 export function getProviderIdentifier(value: JsonValue | undefined): string | null {
   const parsed = ProviderIdentifierSchema.safeParse(value);
+
   return parsed.success ? parsed.data : null;
 }

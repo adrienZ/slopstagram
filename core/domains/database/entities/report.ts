@@ -14,6 +14,7 @@ export const reports = sqliteTable("reports", {
   storiesCount: integer().notNull(),
   storyRankingToken: text(),
 });
+
 export const reportStoryGroups = sqliteTable(
   "report_story_groups",
   {
@@ -30,6 +31,7 @@ export const reportStoryGroups = sqliteTable(
   },
   (table) => [primaryKey({ columns: [table.reportKey, table.reelId] })],
 );
+
 export const reportStories = sqliteTable(
   "report_stories",
   {
@@ -48,6 +50,7 @@ export const reportStories = sqliteTable(
   },
   (table) => [primaryKey({ columns: [table.reportKey, table.reelId, table.mediaPk] })],
 );
+
 export const reportFailures = sqliteTable(
   "report_failures",
   {
@@ -64,6 +67,7 @@ export const reportFailures = sqliteTable(
   },
   (table) => [primaryKey({ columns: [table.reportKey, table.failureIndex] })],
 );
+
 export const NewReportSchema = createInsertSchema(reports);
 export const ReportSchema = createSelectSchema(reports);
 export const ReportStoryGroupSchema = createSelectSchema(reportStoryGroups);

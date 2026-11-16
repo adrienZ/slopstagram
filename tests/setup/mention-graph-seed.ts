@@ -16,6 +16,7 @@ const RECORDED_STORIES_PUBLISHED = { now: new Date("2026-07-26T12:00:00.000Z"), 
 /** The recorded accounts of one reels page, renamed, with a full name only the first has. */
 export const graphAccounts = ["ada_graph", "ben_graph", "cleo_graph"] as const;
 export const graphAccountFullName = "Ada Fixture";
+
 /**
  * Accounts the recording lacks, ingested with one sticker-free story each: two whose usernames
  * differ only in case, and one alone.
@@ -24,13 +25,16 @@ export const ambiguousUsername = "dup_graph";
 export const lonelyAccount = "lone_graph";
 export const unknownUsername = "unknown_graph";
 export const mentionedName = "Fixture name";
+
 /** The stories of the graph, oldest first: one per account. */
 export const graphStories = {
   ada: "700000000000079",
   ben: "700000000000090",
   cleo: "700000000000100",
 } as const;
+
 export const cleoStoryMentioningAdaTwice = "700000000000107";
+
 /** Newest first. */
 export const cleoStoriesMentioningAda = [
   "700000000000129",
@@ -40,6 +44,7 @@ export const cleoStoriesMentioningAda = [
 ] as const;
 
 const [adaGraph, benGraph] = graphAccounts;
+
 const mentionsByStory = new Map<string, ReturnType<typeof mentionStickers>>([
   [
     graphStories.ada,
@@ -109,16 +114,19 @@ async function seedGraphWithMentions(
     ),
     (user, position) => {
       user.username = graphAccounts[position] ?? user.username;
+
       if (position === 0) {
         user.full_name = graphAccountFullName;
       }
     },
   );
+
   const keptStoryPks = [...storyPks, ...[...reels, ...addedStories].map(({ storyPk }) => storyPk)];
   await seedRecordedStories(
     runtime,
     editRecordedStories(keepRecordedStories(recorded, keptStoryPks), (story) => {
       story.story_bloks_stickers = mentions.get(story.pk) ?? [];
+
       if (undatedStoryPks.includes(story.pk)) {
         delete story.taken_at;
       }
@@ -148,8 +156,10 @@ export async function seedGraphDatabase(
 
 /** An Account only a newer story of the third account mentions. */
 export const filterAccount = "eve_graph";
+
 /** That newer story of the third account, which the plain graph leaves out. */
 export const filterAccountStory = "700000000000900";
+
 /**
  * Two Accounts with exactly this username, each mentioning the third account. A fetch groups its
  * reels by username, so the second one comes from a later fetch, as when a username changes hands.
@@ -166,6 +176,7 @@ export async function seedFilterGraphDatabase(runtime: Runtime): Promise<void> {
     { userPk: "700000000000955", username: sharedUsername, storyPk: "700000000000965" },
     { userPk: "700000000000956", username: sharedUsername, storyPk: "700000000000966" },
   ];
+
   const mentionsThirdAccount = mentionStickers([{ username: graphAccounts[2] }]);
   await seedGraphWithMentions(
     runtime,

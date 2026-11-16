@@ -55,6 +55,7 @@ export function devtoolsLaunchers(): Plugin {
                 proxy.on("proxyRes", (response) => {
                   response.headers["x-frame-options"] = "SAMEORIGIN";
                   const policy = response.headers["content-security-policy"]?.toString();
+
                   if (policy !== undefined) {
                     response.headers["content-security-policy"] = policy.replace(
                       "frame-ancestors 'none'",
@@ -77,6 +78,7 @@ export function devtoolsLaunchers(): Plugin {
         await Promise.all(
           TOOLS.map(async (tool) => {
             const terminalId = `${tool.id}:process`;
+
             if (!ctx.terminals.sessions.has(terminalId)) {
               await ctx.terminals.startChildProcess(
                 {
@@ -88,6 +90,7 @@ export function devtoolsLaunchers(): Plugin {
                 { id: terminalId, title: tool.title },
               );
             }
+
             ctx.docks.register({
               id: tool.id,
               title: tool.title,

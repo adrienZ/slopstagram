@@ -29,6 +29,7 @@ export function readMusicObservations(
     .where(eq(storyMusicObservations.mediaPk, mediaPk))
     .orderBy(asc(storyMusicObservations.sortOrder))
     .all();
+
   return rows.map(({ story_music_observations: observation, metadata_music: music }) => ({
     id: observation.id,
     source: observation.source,
@@ -45,6 +46,7 @@ function saveMetadata(
 ) {
   const identifier =
     observation.fields.instagramAudioAssetId ?? previous?.metadata.instagramAudioAssetId ?? null;
+
   const known =
     identifier === null
       ? undefined
@@ -53,12 +55,14 @@ function saveMetadata(
           .from(metadataMusic)
           .where(eq(metadataMusic.instagramAudioAssetId, identifier))
           .get();
+
   const entry = planMusicMetadataWrite(observation, known, previous);
   database
     .insert(metadataMusic)
     .values(entry)
     .onConflictDoUpdate({ target: metadataMusic.id, set: entry })
     .run();
+
   if (previous && previous.metadata.id !== entry.id) {
     database
       .update(storyMusicObservations)
@@ -67,6 +71,7 @@ function saveMetadata(
       .run();
     database.delete(metadataMusic).where(eq(metadataMusic.id, previous.metadata.id)).run();
   }
+
   return { musicId: entry.id };
 }
 
@@ -78,6 +83,7 @@ export function refreshMusicAsset(
   if (previous.metadata.instagramAudioAssetId !== observation.fields.instagramAudioAssetId) {
     return;
   }
+
   saveMetadata(database, observation, previous);
 }
 
@@ -87,6 +93,7 @@ export function enrichStoryMusic(
   annotations: StoryAnnotations,
 ) {
   const plan = planStoryMusicUpdates(story, annotations, readMusicObservations(database, story.pk));
+
   for (const write of plan.writes) {
     const metadata = saveMetadata(database, write.observation, write.previous);
     const entry = { ...write.entry, ...metadata };
@@ -96,6 +103,7 @@ export function enrichStoryMusic(
       .onConflictDoUpdate({ target: storyMusicObservations.id, set: entry })
       .run();
   }
+
   for (const id of plan.removedObservationIds) {
     database.delete(storyMusicObservations).where(eq(storyMusicObservations.id, id)).run();
   }
@@ -103,6 +111,7 @@ export function enrichStoryMusic(
 
 export function findMusicMetadata(database: MusicDatabase, reference: MusicMetadataReference) {
   const table = metadataMusic;
+
   return database.select().from(table).where(eq(table.id, reference.id)).get();
 }
 

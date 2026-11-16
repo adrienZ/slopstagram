@@ -10,6 +10,7 @@ test("Vite SSR loads both react-use application hooks", async (context) => {
   context.onTestFinished(async () => {
     await rm(cacheDir, { recursive: true, force: true });
   });
+
   const server = await createServer({
     configFile: false,
     cacheDir,
@@ -18,6 +19,7 @@ test("Vite SSR loads both react-use application hooks", async (context) => {
     ssr: appConfig.ssr,
     server: { middlewareMode: true, hmr: false, ws: false, watch: null },
   });
+
   try {
     const audioPreview = await server.ssrLoadModule("/app/hooks/use-audio-preview.ts");
     const timelineCalendar = await server.ssrLoadModule("/app/hooks/use-timeline-calendar.ts");

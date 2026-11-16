@@ -6,12 +6,15 @@ import { createTestRuntime } from "./setup/test-runtime.ts";
 describe("recognizeAppleCaption", () => {
   test("uses stored OCR by media key", async (context) => {
     let runCount = 0;
+
     const runtime = await createTestRuntime(context, {
       runAppleOcr: async () => {
         runCount += 1;
+
         return "fresh caption";
       },
     });
+
     await runtime.appleVision.save("story-1", "stored caption");
 
     const caption = await recognizeAppleCaption(runtime, "story-1", "images/story-1.jpg");
@@ -22,12 +25,15 @@ describe("recognizeAppleCaption", () => {
 
   test("stores OCR result when the repository has no entry", async (context) => {
     let receivedImage: Uint8Array | undefined;
+
     const runtime = await createTestRuntime(context, {
       runAppleOcr: async (image) => {
         receivedImage = image;
+
         return "fresh caption";
       },
     });
+
     await runtime.storage.images.setItemRaw("story-2.jpg", Buffer.from("local-image"));
 
     const caption = await recognizeAppleCaption(runtime, "story-2", "images/story-2.jpg");
@@ -41,6 +47,7 @@ describe("recognizeAppleCaption", () => {
     const runtime = await createTestRuntime(context, {
       runAppleOcr: async () => "\r\n  fresh caption  \n",
     });
+
     await runtime.storage.images.setItemRaw("story-3.jpg", Buffer.from("local-image"));
 
     const caption = await recognizeAppleCaption(runtime, "story-3", "images/story-3.jpg");

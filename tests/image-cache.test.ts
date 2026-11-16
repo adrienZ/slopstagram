@@ -90,6 +90,7 @@ async function storedImage(images: Images, key: string) {
   const bytes = await readBytes(images, key);
   expect(bytes).not.toBeNull();
   const { format, width } = await sharp(bytes ?? Buffer.alloc(0)).metadata();
+
   return { format, width };
 }
 
@@ -103,10 +104,12 @@ describe("cacheReportImages", () => {
     let fetchCount = 0;
 
     const report = createReport(source, previewSource);
+
     const cachedImages = await cacheReportImages(
       {
         fetchImage: async () => {
           fetchCount += 1;
+
           return imageResponse(png);
         },
         logger: createMockLogger(),
@@ -197,6 +200,7 @@ describe("cacheReportImages", () => {
     const runtime = {
       fetchImage: async () => {
         fetchCount += 1;
+
         return imageResponse(png);
       },
       logger: createMockLogger(),

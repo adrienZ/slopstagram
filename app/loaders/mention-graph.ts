@@ -43,6 +43,7 @@ function toGraphPoint(target: MentionTarget): MentionGraphPoint {
       avatarPath: media.image.avatar(target.pk).url,
     };
   }
+
   return {
     kind: "unknown",
     id: target.id,
@@ -67,8 +68,10 @@ export function loadMentionGraph(runtime: MentionGraphRuntime, accountFilters: A
     readMentionConnections(runtime),
     accountFilters,
   );
+
   const points = graph.targets.map(toGraphPoint);
   const labelById = new Map(points.map(({ id, label }) => [id, label]));
+
   const connections = graph.connections.map(
     ({ id, targetIds: [source, target], observations }) => ({
       id,
@@ -78,11 +81,14 @@ export function loadMentionGraph(runtime: MentionGraphRuntime, accountFilters: A
       storyPks: observations.map(({ storyPk }) => storyPk),
     }),
   );
+
   const sources = runtime.stories.listTimelineStories([
     ...new Set(connections.flatMap(({ storyPks }) => storyPks)),
   ]);
+
   const sidebarUsers = loadSidebarUsers(runtime);
   const accountOptions = toFilterOptions(drawnUsernames);
+
   return {
     accounts: accountOptions,
     selectedAccounts: keepAccountFilters(accountOptions, selectedUsernames),

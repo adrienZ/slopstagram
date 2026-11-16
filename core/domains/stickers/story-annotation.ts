@@ -14,7 +14,9 @@ function mergeAnnotationUpdates(
   const replaced = new Set<string>(
     updates.filter((update) => update.preservePrevious !== true).map((update) => update.source),
   );
+
   const order: Array<string> = annotationSources.map(({ source }) => source);
+
   const completedKinds = new Set<string>(
     annotationSources
       .flatMap(({ kinds }) => [...kinds])
@@ -25,6 +27,7 @@ function mergeAnnotationUpdates(
         ),
       ),
   );
+
   const stickers = [
     ...previous.stickers.filter(
       (sticker) =>
@@ -47,10 +50,9 @@ function mergeAnnotationUpdates(
     (left, right) =>
       order.indexOf(left.source ?? "unknown") - order.indexOf(right.source ?? "unknown"),
   );
+
   return {
-    locations: stickers
-      .filter((sticker) => sticker.kind === "location")
-      .map((sticker) => sticker.label),
+    locations: stickers.flatMap((sticker) => (sticker.kind === "location" ? [sticker.label] : [])),
     stickers,
   };
 }
@@ -64,11 +66,15 @@ export function planStoryAnnotations(
     story.annotations === undefined
       ? mergeAnnotationUpdates(previous, updates)
       : getStoryAnnotations(story);
+
   const stickers = [...annotations.stickers];
+
   if (!stickers.some((sticker) => sticker.kind === "location")) {
     stickers.push(...annotations.locations.map((label) => ({ kind: "location", label })));
   }
+
   const used = new Set<string>();
+
   const stickerEntries = stickers.map((sticker, sortOrder) => {
     function sameProvider(candidate: StoryAnnotations["stickers"][number]): boolean {
       return (
@@ -77,8 +83,10 @@ export function planStoryAnnotations(
         candidate.providerOccurrenceId === sticker.providerOccurrenceId
       );
     }
+
     const uniqueInternalId =
       stickers.filter((candidate) => candidate.occurrenceId === sticker.occurrenceId).length === 1;
+
     const explicit = previous.stickers.find(
       (candidate) =>
         uniqueInternalId &&
@@ -89,16 +97,22 @@ export function planStoryAnnotations(
             (sticker.source === undefined || sticker.source === "unknown"))) &&
         candidate.providerOccurrenceId === sticker.providerOccurrenceId,
     );
+
     const candidates =
       sticker.providerOccurrenceId === undefined ? [] : previous.stickers.filter(sameProvider);
+
     const identified =
       candidates.length === 1 && stickers.filter(sameProvider).length === 1
         ? candidates[0]
         : undefined;
+
     const retainedId = (explicit ?? identified)?.occurrenceId;
+
     const occurrenceId =
       retainedId !== undefined && !used.has(retainedId) ? retainedId : randomUUID();
+
     used.add(occurrenceId);
+
     return {
       occurrenceId,
       providerOccurrenceId: sticker.providerOccurrenceId ?? null,
@@ -117,5 +131,6 @@ export function planStoryAnnotations(
       sortOrder,
     };
   });
+
   return { annotations, stickerEntries };
 }

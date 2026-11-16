@@ -93,6 +93,7 @@ function getToolStatus(state: ToolCall["part"]["state"]): "error" | "running" | 
   if (state === "output-error" || state === "output-denied") {
     return "error";
   }
+
   return state === "output-available" ? undefined : "running";
 }
 
@@ -105,11 +106,13 @@ function ToolResult<Name extends AssistantToolName>({
   output: ToolOutput<Name>;
 }) {
   const { Result } = assistantToolViews[name];
+
   return Result === undefined ? null : <Result output={output} />;
 }
 
 export function ToolTrace({ call }: { call: ToolCall }) {
   const view = call.invalid ? undefined : assistantToolViews[call.name];
+
   const line = (
     <TraceLine status={getToolStatus(call.part.state)}>
       <TraceIcon>{view?.icon ?? <WrenchIcon />}</TraceIcon>
@@ -120,9 +123,11 @@ export function ToolTrace({ call }: { call: ToolCall }) {
       </TraceDescription>
     </TraceLine>
   );
+
   if (call.invalid || view?.Result === undefined) {
     return line;
   }
+
   return (
     <TraceCollapsible>
       <TraceCollapsibleTrigger>{line}</TraceCollapsibleTrigger>

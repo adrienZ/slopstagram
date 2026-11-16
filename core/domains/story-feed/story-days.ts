@@ -19,8 +19,10 @@ function getMidnight(date: Date): Date {
     minute: "2-digit",
     hourCycle: "h23",
   }).formatToParts(date);
+
   const hours = Number(parts.find((part) => part.type === "hour")?.value);
   const minutes = Number(parts.find((part) => part.type === "minute")?.value);
+
   return new Date(date.getTime() - (hours * 60 + minutes) * 60_000);
 }
 
@@ -28,6 +30,7 @@ export function getStoryDayRange(day: string) {
   const date = new Date(`${storyDateSchema.parse(day)}T00:00:00Z`);
   const nextDate = new Date(date);
   nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+
   return { start: getMidnight(date), end: getMidnight(nextDate) };
 }
 

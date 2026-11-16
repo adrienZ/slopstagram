@@ -40,9 +40,11 @@ export function toolCallOf(part: AssistantPart): ToolCall | undefined {
   if (isStaticToolUIPart(part)) {
     return { invalid: false, name: getStaticToolName(part), part };
   }
+
   if (isDynamicToolUIPart(part)) {
     return { invalid: true, name: part.toolName, part };
   }
+
   return undefined;
 }
 
@@ -53,9 +55,11 @@ export function useAssistantChat() {
 
   function send() {
     const text = draft.trim();
+
     if (text.length === 0 || answering) {
       return;
     }
+
     void sendMessage({ text });
     setDraft("");
   }

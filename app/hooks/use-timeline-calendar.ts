@@ -10,9 +10,11 @@ export function useTimelineCalendar(days: Array<string>, today: string) {
   function selectDate(date: Date): void {
     const requestedDay = getStoryDate(date);
     const day = days.find((key) => key <= requestedDay) ?? days.at(-1);
+
     if (day === undefined) {
       return;
     }
+
     setSelectedDate(day);
     globalThis.requestAnimationFrame(() => {
       globalThis.document.querySelector(`#${getTimelineDayId(day)}`)?.scrollIntoView({

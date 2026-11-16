@@ -20,6 +20,7 @@ export function MentionGraphPage({
 }: MentionGraphPageData) {
   const filter = useMentionGraphFilter(selectedAccounts);
   const { theme } = useTheme();
+
   return (
     <>
       <header className="tw:flex tw:h-14 tw:shrink-0 tw:items-center tw:gap-3 tw:border-b tw:px-4">

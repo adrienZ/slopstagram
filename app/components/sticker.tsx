@@ -8,6 +8,7 @@ const badgeClass = "tw:h-auto tw:max-w-full tw:gap-1 tw:py-1 tw:whitespace-norma
 
 export function MentionAvatar({ src }: { src: string }) {
   const [failed, setFailed] = useState(false);
+
   return failed ? null : (
     <img
       src={src}
@@ -33,6 +34,7 @@ function MentionSticker({ sticker }: { sticker: StickerPresentation }) {
       <span className="tw:wrap-anywhere">{sticker.label}</span>
     </>
   );
+
   return (
     <Badge asChild variant="secondary" title={sticker.title} className={badgeClass}>
       {sticker.profileUrl === undefined ? (
@@ -49,6 +51,7 @@ function MentionSticker({ sticker }: { sticker: StickerPresentation }) {
 function LocationSticker({ label, place }: { label: string; place?: StickerPlace }) {
   const category = place?.category;
   const Icon = place?.hasCoordinates === false ? MapPinOffIcon : MapPinIcon;
+
   return (
     <Badge variant="secondary" title={label} className={badgeClass}>
       <Icon aria-hidden="true" />
@@ -76,12 +79,15 @@ export function Sticker({ sticker }: { sticker: StickerPresentation }) {
   if (sticker.kind === "mention") {
     return <MentionSticker sticker={sticker} />;
   }
+
   if (sticker.kind === "location") {
     return <LocationSticker label={sticker.label} place={sticker.place} />;
   }
+
   if (sticker.kind === "hashtag") {
     return <HashtagSticker label={sticker.label} />;
   }
+
   return (
     <Badge variant="secondary" title={sticker.title} className={badgeClass}>
       <span className="tw:wrap-anywhere">{sticker.label}</span>

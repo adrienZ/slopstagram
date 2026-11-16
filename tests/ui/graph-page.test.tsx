@@ -17,9 +17,11 @@ import { mountGraph as mountGraphWith, stubGraphLayout } from "./mount-graph.ts"
 
 const shared = useSharedTestRuntime(seedGraphDatabase);
 const renderer = createPageRenderer(Route, () => loadMentionGraph(shared.runtime, []), "/graph");
+
 async function mountGraph() {
   return await mountGraphWith(renderer);
 }
+
 const [ada, ben, cleo] = graphAccounts.map((username) => `@${username}`);
 const unknown = `@${unknownUsername}`;
 
@@ -40,6 +42,7 @@ function readTranslate(element: Element) {
   const match = /translate\((?<x>[-\d.]+) (?<y>[-\d.]+)\)(?: scale\((?<scale>[-\d.]+)\))?/u.exec(
     element.getAttribute("transform") ?? "",
   );
+
   return {
     x: Number(match?.groups?.x),
     y: Number(match?.groups?.y),
@@ -55,6 +58,7 @@ function zoomPercent(level: HTMLElement): number {
 function drawnAt(drawing: HTMLElement, point: Element) {
   const view = readTranslate(drawing.querySelector("g[transform]") ?? drawing);
   const position = readTranslate(point);
+
   return { x: view.x + view.scale * position.x, y: view.y + view.scale * position.y };
 }
 
@@ -77,9 +81,11 @@ test("Accounts show their initials, anyone else an abstract point, unconnected A
 test("one line per pair, thicker with more source stories", async () => {
   const { lines } = await mountGraph();
   expect(lines.getAllByRole("button")).toHaveLength(8);
+
   const often = lines.getByRole("button", {
     name: `Connexion entre ${ada} et ${cleo} : 5 stories`,
   });
+
   const twice = lines.getByRole("button", { name: `Connexion entre ${ada} et ${ben} : 2 stories` });
   const once = lines.getByRole("button", { name: `Connexion entre ${ben} et ${cleo} : 1 story` });
   expect(strokeWidth(often)).toBeGreaterThan(strokeWidth(twice));

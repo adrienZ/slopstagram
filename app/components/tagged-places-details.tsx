@@ -20,6 +20,7 @@ export function TaggedPlaceList({
   if (places.length === 0) {
     return <p>{emptyLabel}</p>;
   }
+
   return (
     <>
       <ul aria-label={label} className="tw:grid tw:gap-1">
@@ -46,7 +47,9 @@ export function TaggedPlaceDetails({ read }: { read: TaggedPlaceRead }) {
   if (read.status === "unknown") {
     return <p>Aucun lieu n’a l’identifiant {read.id}.</p>;
   }
+
   const { place } = read;
+
   return (
     <section aria-label="Lieu lu" className="tw:grid tw:gap-1">
       <p className="tw:font-medium">{describePlace(place)}</p>

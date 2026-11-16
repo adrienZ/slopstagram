@@ -25,6 +25,7 @@ type ReportStoryRow = typeof reportStories.$inferSelect & { accessibilityCaption
 
 function toReportEntry(key: string, report: StoriesManifestReport): typeof reports.$inferInsert {
   const { counts } = report.metadata;
+
   return NewReportSchema.parse({
     broadcastsCount: report.metadata.broadcasts_count,
     createdAt: report.metadata.created_at,
@@ -38,6 +39,7 @@ function toReportEntry(key: string, report: StoriesManifestReport): typeof repor
     storyRankingToken: report.metadata.story_ranking_token,
   });
 }
+
 function toReportStoryEntry(
   reportKey: string,
   reelId: string,
@@ -57,9 +59,11 @@ function toReportStoryEntry(
     stickers: JSON.stringify(story.stickers),
   };
 }
+
 function parseStringArray(value: string): Array<string> {
   return z.array(z.string()).parse(JSON.parse(value));
 }
+
 function toManifestStory(row: ReportStoryRow): StoryManifestItem {
   const story: StoryManifestItem = {
     ig_caption:
@@ -73,11 +77,14 @@ function toManifestStory(row: ReportStoryRow): StoryManifestItem {
     status: ReportStorySchema.shape.status.parse(row.status),
     stickers: parseStringArray(row.stickers),
   };
+
   if (row.failureIndex !== null) {
     story.failure_index = row.failureIndex;
   }
+
   return story;
 }
+
 function toFailure(row: typeof reportFailures.$inferSelect): StoryFetchFailure {
   return {
     attempt_count: row.attemptCount,
@@ -88,6 +95,7 @@ function toFailure(row: typeof reportFailures.$inferSelect): StoryFetchFailure {
     reel_id: row.reelId,
   };
 }
+
 function buildManifestUsers(
   reels: Array<typeof reportStoryGroups.$inferSelect>,
   storyRows: Array<ReportStoryRow>,
@@ -110,6 +118,7 @@ function buildManifestUsers(
     };
   });
 }
+
 function readReportRows(database: DrizzleDatabase, key: string) {
   return {
     failures: database
@@ -136,6 +145,7 @@ function readReportRows(database: DrizzleDatabase, key: string) {
       .all(),
   };
 }
+
 function toReport(
   report: typeof reports.$inferSelect,
   rows: ReturnType<typeof readReportRows>,
@@ -158,11 +168,13 @@ function toReport(
     },
     output: { users: [] },
   });
+
   return {
     ...parsedReport,
     output: { users: createOutputUsers(parsedReport.manifest.users) },
   };
 }
+
 async function upsertReport(
   database: DrizzleDatabase,
   entry: typeof reports.$inferInsert,
@@ -185,6 +197,7 @@ async function upsertReport(
       target: reports.key,
     });
 }
+
 async function replaceReportRelations(
   database: DrizzleDatabase,
   key: string,
@@ -193,6 +206,7 @@ async function replaceReportRelations(
   await database.delete(reportFailures).where(eq(reportFailures.reportKey, key));
   await database.delete(reportStories).where(eq(reportStories.reportKey, key));
   await database.delete(reportStoryGroups).where(eq(reportStoryGroups.reportKey, key));
+
   const reelEntries = report.manifest.users.map((reel) => ({
     fullName: reel.full_name ?? null,
     instagramId: reel.id ?? null,
@@ -203,15 +217,19 @@ async function replaceReportRelations(
     sortOrder: reel.order,
     username: reel.username,
   }));
+
   if (reelEntries.length > 0) {
     await database.insert(reportStoryGroups).values(reelEntries);
   }
+
   const storyEntries = report.manifest.users.flatMap((reel) =>
     reel.stories.map((story, sortOrder) => toReportStoryEntry(key, reel.reel_id, sortOrder, story)),
   );
+
   if (storyEntries.length > 0) {
     await database.insert(reportStories).values(storyEntries);
   }
+
   const failureEntries = report.failures.map((failure, failureIndex) => ({
     attemptCount: failure.attempt_count,
     failureIndex,
@@ -222,6 +240,7 @@ async function replaceReportRelations(
     reelId: failure.reel_id,
     reportKey: key,
   }));
+
   if (failureEntries.length > 0) {
     await database.insert(reportFailures).values(failureEntries);
   }
@@ -235,9 +254,11 @@ export class ReportRepository {
   }
   findByKey(key: string): StoriesManifestReport | null {
     const report = this.database.select().from(reports).where(eq(reports.key, key)).get();
+
     if (report === undefined) {
       return null;
     }
+
     return toReport(report, readReportRows(this.database, key));
   }
   listKeys(): Array<string> {

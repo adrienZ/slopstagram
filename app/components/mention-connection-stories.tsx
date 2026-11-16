@@ -21,6 +21,7 @@ export function MentionConnectionStories({
   const [page, setPage] = useState(0);
   const pageCount = Math.ceil(stories.length / PAGE_SIZE);
   const title = `Stories de la connexion entre ${labels.join(" et ")}`;
+
   return (
     <section
       aria-label={title}

@@ -10,6 +10,7 @@ const audioTypes = new Map([
 
 export function audioFileExtension(contentType: string): string | undefined {
   const normalized = contentType === "audio/x-wav" ? "audio/wav" : contentType;
+
   return [...audioTypes].find(([, type]) => type === normalized)?.[0];
 }
 

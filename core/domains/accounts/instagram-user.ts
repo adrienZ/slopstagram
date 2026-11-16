@@ -54,10 +54,12 @@ export async function persistReportInstagramUsers(
       usersByUsername.set(user.username, toInstagramUser(user));
     }
   }
+
   for (const user of report.output.users) {
     if (!hasEmbeddedUser(user) || usersByUsername.has(user.username)) {
       continue;
     }
+
     usersByUsername.set(user.username, toInstagramUser(user));
   }
 
@@ -66,6 +68,7 @@ export async function persistReportInstagramUsers(
       await repository.save(user);
     }),
   );
+
   for (const user of [...report.manifest.users, ...report.output.users]) {
     removeEmbeddedUser(user);
   }

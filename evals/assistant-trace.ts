@@ -17,6 +17,7 @@ export function traceModel(model: AssistantModel): AssistantModel {
         const toolCalls: Array<string> = [];
         const output = { reasoning: "", text: "", toolCalls };
         let usage: { inputTokens: number; outputTokens: number; totalTokens: number } | undefined;
+
         const traced = stream.pipeThrough(
           new globalThis.TransformStream<StreamPart<typeof stream>, StreamPart<typeof stream>>({
             flush: () => {
@@ -34,10 +35,12 @@ export function traceModel(model: AssistantModel): AssistantModel {
                 const outputTokens = part.usage.outputTokens.total ?? 0;
                 usage = { inputTokens, outputTokens, totalTokens: inputTokens + outputTokens };
               }
+
               controller.enqueue(part);
             },
           }),
         );
+
         return { ...rest, stream: traced };
       },
     },

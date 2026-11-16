@@ -15,16 +15,19 @@ export async function recordFetchRun<T>(
 ): Promise<T> {
   const run: FetchRunContext = { id: randomUUID(), startedAt: new Date() };
   repository.start(run.id, run.startedAt.toISOString());
+
   try {
     const result = await perform(run);
     const counts = run.report?.metadata.counts;
     const totalFailure = counts !== undefined && counts.stories > 0 && counts.fetched === 0;
     let status: "failed" | "partial" | "succeeded" = "succeeded";
+
     if (totalFailure) {
       status = "failed";
     } else if ((counts?.failed ?? 0) > 0) {
       status = "partial";
     }
+
     repository.finish(run.id, {
       finishedAt: new Date().toISOString(),
       status,
@@ -34,6 +37,7 @@ export async function recordFetchRun<T>(
       counts,
       reportKey: run.reportKey,
     });
+
     return result;
   } catch (error) {
     repository.finish(run.id, {
