@@ -1,8 +1,8 @@
 import { assert, expect, test, vi } from "vitest";
 import { readCachedImage } from "@@/core/domains/media-store/image-cache.ts";
 import { AppleOcrUnavailableError } from "@@/core/domains/vision/apple-ocr.ts";
-import { createStoryFeed, readStoryFeedVision } from "@@/core/domains/story-feed/story-feed.ts";
-import { readUserSummaries } from "@@/core/domains/accounts/user-summary.ts";
+import { createStoryFeed } from "@@/core/domains/story-feed/story-feed.ts";
+import { readFeedUserSummaries } from "@@/core/domains/story-feed/feed-user-summary.ts";
 import { createFailingClient, createRecordedClient } from "./setup/recorded-client.ts";
 import { createRecordedInstagramClient } from "./setup/seed.ts";
 import {
@@ -119,9 +119,7 @@ test("creates a report by running the whole pipeline over recorded Instagram pay
   // User summaries, written from the stored vision analyses.
   const feed = createStoryFeed({ stories: world.stories }, now);
 
-  const summaries = readUserSummaries({ summaries: world.summaries }, feed, {
-    visionByPreviewUrl: readStoryFeedVision({ vision: world.vision }, feed),
-  });
+  const summaries = readFeedUserSummaries(world, feed);
 
   expect(Object.fromEntries(summaries)).toStrictEqual({
     user_008: "Summary of user_008",
@@ -156,11 +154,7 @@ test("records a failed vision analysis and still completes the run", async (cont
     "Synthetic caption 2",
   ]);
   const feed = createStoryFeed({ stories: world.stories }, now);
-  expect(
-    readUserSummaries({ summaries: world.summaries }, feed, {
-      visionByPreviewUrl: readStoryFeedVision({ vision: world.vision }, feed),
-    }).size,
-  ).toBe(2);
+  expect(readFeedUserSummaries(world, feed).size).toBe(2);
 });
 
 test("records an unreachable vision server in the log and completes the run", async (context) => {
@@ -186,7 +180,7 @@ test("records an unreachable vision server in the log and completes the run", as
   ).toHaveLength(2);
   expect(world.summaries.findBySourceHash("unknown")).toBeNull();
   const feed = createStoryFeed({ stories: world.stories }, now);
-  expect(readUserSummaries({ summaries: world.summaries }, feed).size).toBe(0);
+  expect(readFeedUserSummaries(world, feed).size).toBe(0);
 });
 
 test("skips the remaining captions when Apple OCR is unavailable", async (context) => {

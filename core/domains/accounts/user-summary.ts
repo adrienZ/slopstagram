@@ -40,14 +40,13 @@ const UserSummaryResponseSchema = z
 
 const USER_SUMMARY_OUTPUT_SCHEMA = z.toJSONSchema(UserSummaryResponseSchema);
 
-type RunUserSummary = (prompt: string) => Promise<string>;
+export type RunUserSummary = (prompt: string) => Promise<string>;
 
 type ResolveUserSummariesRuntime = Pick<Runtime, "fetchOllama" | "logger"> & {
   summaries: Pick<UserSummaryRepository, "findBySourceHash" | "save">;
 };
 
 interface ResolveUserSummariesOptions {
-  endpoint?: string;
   model?: string;
   visionByPreviewUrl?: Map<string, VisionResult>;
   runUserSummary?: RunUserSummary;
@@ -206,14 +205,12 @@ function createTimeoutFetch(fetchOllama: HttpFetch, timeoutMs: number): OllamaFe
 }
 
 function createDefaultOllamaRunner(options: {
-  endpoint?: string;
   fetchOllama?: HttpFetch;
   model: string;
   timeoutMs: number;
 }): RunUserSummary {
   const ollama = getOllamaClient({
     fetch: createTimeoutFetch(options.fetchOllama ?? globalThis.fetch, options.timeoutMs),
-    host: options.endpoint,
   });
 
   return async (prompt) => {
@@ -272,7 +269,6 @@ function resolveOptions(
     runUserSummary:
       options.runUserSummary ??
       createDefaultOllamaRunner({
-        endpoint: options.endpoint,
         fetchOllama: runtime.fetchOllama,
         model,
         timeoutMs,

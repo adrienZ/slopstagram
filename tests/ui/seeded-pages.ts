@@ -1,8 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { stories } from "@@/core/domains/database/entities/story.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
-import { createReportFeed } from "@@/core/domains/story-feed/story-feed.ts";
-import { resolveUserSummariesForReport } from "@@/core/domains/accounts/user-summary.ts";
+import { summarizeStoryFeed } from "@@/core/domains/story-feed/feed-user-summary.ts";
 import type { SidebarUser } from "../../app/loaders/sidebar-users.ts";
 import { withStoryStickers, type StoryCardData } from "../../app/utils/story-cards.ts";
 import { groupTimelineLocations } from "../../app/utils/timeline-locations.ts";
@@ -74,10 +73,10 @@ export async function seedPageDatabase(runtime: Runtime): Promise<void> {
     });
   }
 
-  await resolveUserSummariesForReport(
+  await summarizeStoryFeed(
     runtime,
-    { output: { users: createReportFeed(runtime, pageNow).users } },
-    { runUserSummary: async () => await Promise.resolve(JSON.stringify({ summary: userSummary })) },
+    pageNow,
+    async () => await Promise.resolve(JSON.stringify({ summary: userSummary })),
   );
 }
 

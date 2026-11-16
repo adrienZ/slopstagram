@@ -5,12 +5,36 @@ import type { UserSummaryRepository } from "@@/core/domains/database/repositorie
 import type { VisionRepository } from "@@/core/domains/database/repositories/vision-repository.ts";
 import type { StoryOutputUser } from "@@/core/domains/fetch-run/report-types.ts";
 import { getReportUserKey } from "@@/core/domains/accounts/report-user-key.ts";
-import { readUserSummaries } from "@@/core/domains/accounts/user-summary.ts";
+import {
+  readUserSummaries,
+  resolveUserSummariesForReport,
+  type RunUserSummary,
+} from "@@/core/domains/accounts/user-summary.ts";
+import type { InstagramUserEntry } from "@@/core/domains/database/entities/instagram-user.ts";
 import { createStoryFeed, readStoryFeedVision } from "./story-feed.ts";
 
 interface FeedUserSummariesRuntime {
   summaries: Pick<UserSummaryRepository, "findBySourceHash">;
   vision: Pick<VisionRepository, "findByMediaPk">;
+}
+
+type SummarizeStoryFeedRuntime = Parameters<typeof resolveUserSummariesForReport>[0] &
+  Parameters<typeof createStoryFeed>[0] &
+  Parameters<typeof readStoryFeedVision>[0];
+
+/** Writes from the same feed and vision `readFeedUserSummaries` hashes to find a summary. */
+export async function summarizeStoryFeed(
+  runtime: SummarizeStoryFeedRuntime,
+  now: Date,
+  runUserSummary?: RunUserSummary,
+): Promise<void> {
+  const users = createStoryFeed(runtime, now);
+
+  await resolveUserSummariesForReport(
+    runtime,
+    { output: { users } },
+    { runUserSummary, visionByPreviewUrl: readStoryFeedVision(runtime, users) },
+  );
 }
 
 export interface FeedUserSummaryRuntime extends FeedUserSummariesRuntime {
@@ -33,20 +57,25 @@ export type FeedUserSummary =
   | { reason: "no_stories_in_last_24h" | "not_generated"; status: "missing"; username: string }
   | { error: "unknown_account"; status: "error" };
 
+interface AccountsAndStoryFeed {
+  accounts: Array<InstagramUserEntry>;
+  feed: Array<StoryOutputUser>;
+}
+
 /** Ignores an `@` prefix and letter case. */
 function readFeedUserSummary(
-  runtime: FeedUserSummaryRuntime,
+  runtime: FeedUserSummariesRuntime,
+  { accounts, feed }: AccountsAndStoryFeed,
   username: string,
-  now: Date,
 ): FeedUserSummary {
   const wanted = username.trim().replace(/^@/u, "").toLowerCase();
-  const account = runtime.users.listAll().find((user) => user.username.toLowerCase() === wanted);
+  const account = accounts.find((user) => user.username.toLowerCase() === wanted);
 
   if (account === undefined) {
     return { error: "unknown_account", status: "error" };
   }
 
-  const feedUser = createStoryFeed(runtime, now).find((user) => user.username === account.username);
+  const feedUser = feed.find((user) => user.username === account.username);
 
   if (feedUser === undefined) {
     return { reason: "no_stories_in_last_24h", status: "missing", username: account.username };
@@ -102,8 +131,13 @@ export function readFeedUserSummariesByUsername(
   usernames: Array<string>,
   now: Date,
 ): Array<RequestedFeedUserSummary> {
+  const accountsAndStoryFeed: AccountsAndStoryFeed = {
+    accounts: runtime.users.listAll(),
+    feed: createStoryFeed(runtime, now),
+  };
+
   return usernames.map((requestedUsername) => {
-    const outcome = readFeedUserSummary(runtime, requestedUsername, now);
+    const outcome = readFeedUserSummary(runtime, accountsAndStoryFeed, requestedUsername);
 
     const username =
       outcome.status === "error" ? requestedUsername.trim().replace(/^@/u, "") : outcome.username;
