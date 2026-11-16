@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { VisionRepository } from "@@/core/domains/database/repositories/vision-repository.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
-import { getOllamaClient } from "./ollama.ts";
+import { createOllamaClient } from "./ollama.ts";
 import type { VisionEntry, VisionResult } from "@@/core/domains/database/entities/vision.ts";
 
 const VISION_MODEL = "minicpm-v4.6";
@@ -157,7 +157,7 @@ function getStoredVisionResult(runtime: VisionRuntime, mediaPk: string): VisionR
 }
 
 async function runVisionRequest(runtime: VisionRuntime, image: VisionImage): Promise<VisionResult> {
-  const client = getOllamaClient({ fetch: runtime.fetchOllama });
+  const client = createOllamaClient({ fetch: runtime.fetchOllama });
 
   const payload = await client.generate({
     format: VISION_OUTPUT_SCHEMA,

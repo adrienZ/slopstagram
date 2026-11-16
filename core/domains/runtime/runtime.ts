@@ -6,70 +6,49 @@ import { ReportRepository } from "@@/core/domains/database/repositories/report-r
 import { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 import { UserSummaryRepository } from "@@/core/domains/database/repositories/user-summary-repository.ts";
 import { VisionRepository } from "@@/core/domains/database/repositories/vision-repository.ts";
-import { createBunqueue } from "@@/core/domains/fetch-run/bunqueue.ts";
-import type { InstagramClient } from "@@/core/domains/instagram/instagram-types.ts";
-import {
-  BASE_CACHE_DIR,
-  createFileCacheStorage,
-  type CacheStorage,
-} from "@@/core/domains/media-store/cache-storage.ts";
-import { createDatabaseBackup } from "@@/core/domains/database/backup.ts";
-import { APP_BACKUPS_DIR } from "@@/core/utils/app-data-paths.ts";
-import { createLogger, type Logger } from "@@/core/utils/logging.ts";
+import type { CacheStorage } from "@@/core/domains/media-store/cache-storage.ts";
+import type { Logger } from "@@/core/utils/logging.ts";
 import type {
   AppleOcrRunner,
   DatabaseBackup,
   FetchImage,
   FetchMedia,
   FetchRunQueue,
+  HttpFetch,
+  WithInstagramClient,
 } from "@@/core/domains/runtime/fetch-boundaries.ts";
 
-type HttpFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
-
 export interface RuntimeBoundaries {
-  backup?: DatabaseBackup;
-  client?: InstagramClient;
-  fetchImage?: FetchImage;
-  fetchMedia?: FetchMedia;
-  fetchOllama?: HttpFetch;
-  logger?: Logger;
-  queue?: FetchRunQueue;
-  runAppleOcr?: AppleOcrRunner;
-  storage?: CacheStorage;
+  backup: DatabaseBackup;
+  fetchImage: FetchImage;
+  fetchMedia: FetchMedia;
+  fetchOllama: HttpFetch;
+  logger: Logger;
+  queue: FetchRunQueue;
+  runAppleOcr: AppleOcrRunner;
+  storage: CacheStorage;
+  withInstagramClient: WithInstagramClient;
 }
 
 export interface Runtime extends RuntimeBoundaries {
-  backup: DatabaseBackup;
   appleVision: AppleVisionRepository;
   database: DrizzleDatabase;
   fetchRuns: FetchRunRepository;
-  logger: Logger;
-  queue: FetchRunQueue;
   reports: ReportRepository;
   stories: StoryRepository;
   summaries: UserSummaryRepository;
   users: InstagramUserRepository;
-  storage: CacheStorage;
   vision: VisionRepository;
 }
 
-export function createRuntime(
-  database: DrizzleDatabase,
-  boundaries: RuntimeBoundaries = {},
-): Runtime {
-  const logger = boundaries.logger ?? createLogger("runtime");
-
+export function createRuntime(database: DrizzleDatabase, boundaries: RuntimeBoundaries): Runtime {
   return {
     ...boundaries,
     appleVision: new AppleVisionRepository(database),
-    backup: boundaries.backup ?? createDatabaseBackup(database, APP_BACKUPS_DIR),
     database,
     fetchRuns: new FetchRunRepository(database),
-    logger,
-    queue: boundaries.queue ?? createBunqueue,
     reports: new ReportRepository(database),
-    stories: new StoryRepository(database, logger),
-    storage: boundaries.storage ?? createFileCacheStorage(BASE_CACHE_DIR),
+    stories: new StoryRepository(database, boundaries.logger),
     summaries: new UserSummaryRepository(database),
     users: new InstagramUserRepository(database),
     vision: new VisionRepository(database),

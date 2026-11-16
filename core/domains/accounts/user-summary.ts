@@ -3,8 +3,9 @@ import process from "node:process";
 import { clearTimeout, setTimeout } from "node:timers";
 import type { Fetch as OllamaFetch } from "ollama";
 import { z } from "zod";
-import { getOllamaClient } from "@@/core/domains/vision/ollama.ts";
+import { createOllamaClient } from "@@/core/domains/vision/ollama.ts";
 import type { UserSummaryRepository } from "@@/core/domains/database/repositories/user-summary-repository.ts";
+import type { HttpFetch } from "@@/core/domains/runtime/fetch-boundaries.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import type { Logger } from "@@/core/utils/logging.ts";
 import { getReportUserKey } from "./report-user-key.ts";
@@ -13,8 +14,6 @@ import type {
   StoryOutputUser,
 } from "@@/core/domains/fetch-run/report-types.ts";
 import type { VisionResult } from "@@/core/domains/database/entities/vision.ts";
-
-type HttpFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
 const USER_SUMMARY_MLX_MODEL = "qwen3.5:0.8b-mlx";
 const USER_SUMMARY_PORTABLE_MODEL = "qwen3.5:0.8b";
@@ -207,12 +206,12 @@ function createTimeoutFetch(fetchOllama: HttpFetch, timeoutMs: number): OllamaFe
 
 function createDefaultOllamaRunner(options: {
   endpoint?: string;
-  fetchOllama?: HttpFetch;
+  fetchOllama: HttpFetch;
   model: string;
   timeoutMs: number;
 }): RunUserSummary {
-  const ollama = getOllamaClient({
-    fetch: createTimeoutFetch(options.fetchOllama ?? globalThis.fetch, options.timeoutMs),
+  const ollama = createOllamaClient({
+    fetch: createTimeoutFetch(options.fetchOllama, options.timeoutMs),
     host: options.endpoint,
   });
 

@@ -1,9 +1,5 @@
 import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
-import {
-  closeInstagramSession,
-  openInstagramSession,
-} from "@@/core/domains/instagram/playwright-session.ts";
 import type {
   StoriesManifestReport,
   StoryManifestReel,
@@ -12,7 +8,6 @@ import type {
   InstagramClient,
   ReelTrayResponse,
 } from "@@/core/domains/instagram/instagram-types.ts";
-import { createInstagramClient } from "@@/core/domains/instagram/story-client.ts";
 import { enrichCurrentMusicAssets } from "@@/core/domains/music/music-asset-enrichment.ts";
 import { lookUpTaggedPlaces } from "@@/core/domains/places/place-lookup.ts";
 import { createFetchState } from "./story-failure.ts";
@@ -110,11 +105,11 @@ async function fetchTray(client: InstagramClient, retryOptions: RetryOptions) {
   return trayResult.value;
 }
 
-async function fetchStoriesManifest(
-  runtime: FetchStoriesRuntime,
-  client: InstagramClient,
+export async function fetchStories(
+  runtime: FetchStoriesRuntime & { client: InstagramClient },
   options: FetchStoriesOptions = {},
 ): Promise<StoriesManifestReport> {
+  const { client } = runtime;
   const reportName = options.reportName ?? DEFAULT_REPORT_NAME;
   const retryOptions = createRetryOptions(runtime, options);
   const { logger } = runtime;
@@ -155,21 +150,4 @@ async function fetchStoriesManifest(
     state,
     trayJson,
   });
-}
-
-export async function fetchStories(
-  runtime: FetchStoriesRuntime & Pick<Runtime, "client">,
-  options: FetchStoriesOptions = {},
-): Promise<StoriesManifestReport> {
-  if (runtime.client) {
-    return await fetchStoriesManifest(runtime, runtime.client, options);
-  }
-
-  const session = await openInstagramSession();
-
-  try {
-    return await fetchStoriesManifest(runtime, createInstagramClient(session), options);
-  } finally {
-    await closeInstagramSession(session);
-  }
 }

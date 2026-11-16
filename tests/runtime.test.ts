@@ -13,7 +13,9 @@ async function answerOllama() {
 test("a test runtime ingests recorded stories into its own database", async (context) => {
   const runtime = await createTestRuntime(context);
 
-  const report = await fetchStories(runtime, { maxAttempts: 1 });
+  const report = await runtime.withInstagramClient(
+    async (client) => await fetchStories({ ...runtime, client }, { maxAttempts: 1 }),
+  );
 
   expect(report.failures).toStrictEqual([]);
   expect(runtime.stories.findByMediaPk(recordedStoryPk)).not.toBeNull();
@@ -23,7 +25,9 @@ test("two test runtimes do not share a database", async (context) => {
   const first = await createTestRuntime(context);
   const second = await createTestRuntime(context);
 
-  await fetchStories(first, { maxAttempts: 1 });
+  await first.withInstagramClient(
+    async (client) => await fetchStories({ ...first, client }, { maxAttempts: 1 }),
+  );
 
   expect(first.stories.findByMediaPk(recordedStoryPk)).not.toBeNull();
   expect(second.stories.findByMediaPk(recordedStoryPk)).toBeNull();
@@ -53,7 +57,7 @@ test("a test runtime overrides only the boundary a test passes", async (context)
   const runtime = await createTestRuntime(context, { fetchOllama: answerOllama });
 
   expect(runtime.fetchOllama).toBe(answerOllama);
-  await expect(runtime.fetchImage?.("https://example.com/a.jpg")).rejects.toThrow(
+  await expect(runtime.fetchImage("https://example.com/a.jpg")).rejects.toThrow(
     "no fake for fetchImage",
   );
 });
@@ -80,7 +84,6 @@ test("the production runtime is created once and reused", () => {
   const runtime = getProductionRuntime();
 
   expect(getProductionRuntime()).toBe(runtime);
-  expect(runtime.client).toBeUndefined();
   expect(runtime.logger.options.defaults.tag).toBe("runtime");
   expect(runtime.queue).toBeTypeOf("function");
   expect(Object.keys(runtime.storage).toSorted()).toStrictEqual(["audio", "images", "stories"]);

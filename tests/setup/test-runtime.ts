@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, type TestContext } from "vitest";
 import type { DrizzleDatabase } from "@@/core/domains/database/client.ts";
+import type { InstagramClient } from "@@/core/domains/instagram/instagram-types.ts";
+import type { WithInstagramClient } from "@@/core/domains/runtime/fetch-boundaries.ts";
 import {
   createRuntime,
   type Runtime,
@@ -25,10 +27,15 @@ function noBackup(): void {
   // The test runtime copies nothing; a test that cares passes a fake.
 }
 
-async function createRuntimeOver(database: DrizzleDatabase, boundaries: RuntimeBoundaries) {
+type TestBoundaries = Partial<RuntimeBoundaries>;
+
+export function servingClient(client: InstagramClient): WithInstagramClient {
+  return async (run) => await run(client);
+}
+
+async function createRuntimeOver(database: DrizzleDatabase, boundaries: TestBoundaries) {
   return createRuntime(database, {
     backup: noBackup,
-    client: await createRecordedInstagramClient(),
     fetchImage: unexpected("fetchImage"),
     fetchMedia: unexpected("fetchMedia"),
     fetchOllama: unexpected("fetchOllama"),
@@ -36,6 +43,7 @@ async function createRuntimeOver(database: DrizzleDatabase, boundaries: RuntimeB
     queue: noQueue,
     runAppleOcr: unexpected("runAppleOcr"),
     storage: createMemoryCacheStorage(),
+    withInstagramClient: servingClient(await createRecordedInstagramClient()),
     ...boundaries,
   });
 }
@@ -43,14 +51,14 @@ async function createRuntimeOver(database: DrizzleDatabase, boundaries: RuntimeB
 /** A runtime over a fresh in-memory database and stores; other boundaries fail on use unless overridden. */
 export async function createTestRuntime(
   context: Pick<TestContext, "onTestFinished">,
-  boundaries: RuntimeBoundaries = {},
+  boundaries: TestBoundaries = {},
 ) {
   return await createRuntimeOver(createTestDatabase(context), boundaries);
 }
 
 export function shareTestRuntime(
   seed: (runtime: Runtime) => Promise<void>,
-  boundaries: RuntimeBoundaries = {},
+  boundaries: TestBoundaries = {},
 ) {
   let current: Runtime | undefined;
   beforeAll(async () => {

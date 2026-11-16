@@ -155,7 +155,8 @@ export async function seedAssistantWorld(): Promise<AssistantRuntime> {
 
   const runtime: AssistantRuntime = {
     ...world.runtime,
-    fetchOllama: undefined,
+    // The evals grade the local model itself, so only Ollama goes over the network.
+    fetchOllama: async (input, init) => await globalThis.fetch(input, init),
     wrapModel: traceModel,
   };
 

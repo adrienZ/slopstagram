@@ -1,4 +1,5 @@
 import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";
+import type { InstagramClient } from "@@/core/domains/instagram/instagram-types.ts";
 
 // The shapes of the external boundaries the runtime exposes. They live here, not in the domains
 // that call them, so runtime.ts imports nothing from those domains.
@@ -15,6 +16,11 @@ interface FetchImageResponse {
 export type FetchImage = (url: string) => Promise<FetchImageResponse>;
 
 export type FetchMedia = (url: string) => Promise<Response>;
+
+export type HttpFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+
+// A callback rather than a client, so the Instagram session lives only as long as the fetch.
+export type WithInstagramClient = <T>(run: (client: InstagramClient) => Promise<T>) => Promise<T>;
 
 export type DatabaseBackup = (at: Date) => void;
 

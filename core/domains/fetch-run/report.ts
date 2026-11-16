@@ -43,9 +43,12 @@ function formatFilenameTimestamp(date: Date): string {
   return `${year}-${month}-${day}T${hours}-${minutes}-${seconds}${formatTimezoneOffset(date)}`;
 }
 
-type CreateReportRuntime = { reports: Pick<ReportRepository, "save"> } & Pick<Runtime, "backup"> &
+type CreateReportRuntime = { reports: Pick<ReportRepository, "save"> } & Pick<
+  Runtime,
+  "backup" | "withInstagramClient"
+> &
   Parameters<typeof recordFetchRun>[0] &
-  Parameters<typeof fetchStories>[0] &
+  Omit<Parameters<typeof fetchStories>[0], "client"> &
   Parameters<typeof cacheReportAudio>[0] &
   Parameters<typeof cacheReportImages>[0] &
   Parameters<typeof resolveAppleCaptionsForReport>[0] &
@@ -70,7 +73,11 @@ export async function createReport(runtime: CreateReportRuntime): Promise<Create
     const timestamp = formatFilenameTimestamp(run.startedAt);
     const outputFileName = `stories-report-${timestamp}-${run.id}.json`;
     runtime.logger.box(`${pkg.name} - report ${outputFileName}`);
-    const report = await fetchStories(runtime, { reportName: outputFileName });
+
+    const report = await runtime.withInstagramClient(
+      async (client) => await fetchStories({ ...runtime, client }, { reportName: outputFileName }),
+    );
+
     run.report = report;
     // Keep the observation and failures even if enrichment or every media fetch fails.
     await runtime.reports.save(outputFileName, report);

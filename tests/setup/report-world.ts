@@ -10,6 +10,7 @@ import type {
 import { findMentions } from "@@/app/utils/mentions.ts";
 import { JsonValueSchema, type JsonValue } from "@@/core/utils/json-value.ts";
 import { createReport } from "@@/core/domains/fetch-run/report.ts";
+import type { InstagramClient } from "@@/core/domains/instagram/instagram-types.ts";
 import type { RuntimeBoundaries } from "@@/core/domains/runtime/runtime.ts";
 import { createCapturingLogger } from "../mock-helpers.ts";
 import {
@@ -19,7 +20,7 @@ import {
   readRecordedPayloads,
   type RecordedPayloads,
 } from "./seed.ts";
-import { createTestRuntime } from "./test-runtime.ts";
+import { createTestRuntime, servingClient } from "./test-runtime.ts";
 
 export const now = new Date("2026-10-29T12:00:00.000Z");
 const HOUR = 3600;
@@ -486,7 +487,7 @@ export async function createWorld(
   context: Pick<TestContext, "onTestFinished">,
   options: {
     backup?: RuntimeBoundaries["backup"];
-    client?: RuntimeBoundaries["client"];
+    client?: InstagramClient;
     editStory?: (story: RecordedStory) => void;
     ollama?: OllamaBehavior;
     ocr?: (position: number) => string | Error;
@@ -506,16 +507,17 @@ export async function createWorld(
   const ollama = createOllama(options.ollama);
   let ocrCalls = 0;
 
-  const runtime = await createTestRuntime(context, {
+  const boundaries: Partial<RuntimeBoundaries> = {
     backup: (at) => {
       backups.push(at);
       options.backup?.(at);
     },
-    client:
+    withInstagramClient: servingClient(
       options.client ??
-      (await createRecordedInstagramClient(await recordedPayloads(options.editStory), {
-        publishedBefore,
-      })),
+        (await createRecordedInstagramClient(await recordedPayloads(options.editStory), {
+          publishedBefore,
+        })),
+    ),
     fetchImage: async (url) => {
       calls.push(`image ${url}`);
 
@@ -537,7 +539,6 @@ export async function createWorld(
     },
     fetchOllama: ollama.fetchOllama,
     logger,
-    queue: options.queue,
     runAppleOcr: async () => {
       calls.push("ocr");
       const outcome = options.ocr?.(ocrCalls) ?? `Synthetic caption ${ocrCalls}`;
@@ -549,7 +550,13 @@ export async function createWorld(
 
       return await Promise.resolve(outcome);
     },
-  });
+  };
+
+  if (options.queue !== undefined) {
+    boundaries.queue = options.queue;
+  }
+
+  const runtime = await createTestRuntime(context, boundaries);
 
   return {
     ...runtime,
