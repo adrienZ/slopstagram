@@ -5,7 +5,10 @@ import { getRouter, routerOptions } from "../../app/router.tsx";
 
 test("an unknown URL renders the not-found page of the application router", async () => {
   const router = getRouter();
-  router.update({ history: createMemoryHistory({ initialEntries: ["/no-such-page"] }) });
+  router.update({
+    context: router.options.context,
+    history: createMemoryHistory({ initialEntries: ["/no-such-page"] }),
+  });
   await router.load();
   render(<RouterProvider router={router} />);
   const heading = await screen.findByRole("heading", { name: "404 : Page introuvable" });

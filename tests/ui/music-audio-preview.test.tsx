@@ -3,19 +3,20 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route } from "../../app/routes/users/$username.tsx";
 import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
-import { createPageRenderer } from "../render-page.ts";
+import { createPageRenderer, pageDataOf } from "../render-page.ts";
 import { shareTestRuntime } from "../setup/test-runtime.ts";
 import { MusicAudioPreview } from "../../app/components/music-audio-preview.tsx";
 import { MusicSticker } from "../../app/components/music-sticker.tsx";
 import { pageNow, regroupTimeline, seedPageDatabase, timelineAccount } from "./seeded-pages.ts";
 import type { MusicPreview } from "../../app/utils/music-preview.ts";
+import { createPageData } from "../../app/page-data.ts";
 
 const shared = shareTestRuntime(seedPageDatabase);
 
 // The detail modal is tested through the timeline page that hosts it.
 const renderer = createPageRenderer(
   Route,
-  ({ params }) => loadAccountTimeline(shared.runtime, params.username, pageNow),
+  () => createPageData(shared.runtime, pageNow),
   "/users/$username",
 );
 
@@ -168,48 +169,52 @@ test("detail-modal audio seeking keeps the selected story and navigation stops p
 
   const { router } = await renderer.mountRoute(
     `/users/${timelineAccount}?story=${entry.story.pk}`,
-    regroupTimeline({
-      ...timelineProps,
-      timeline: {
-        ...timelineProps.timeline,
-        stories: [
-          {
-            ...entry,
-            story: {
-              ...entry.story,
-              annotations: {
-                locations: [],
-                stickers: [{ kind: "music", label: "Song" }],
-                musicObservations: [
-                  {
-                    id: "observation",
-                    source: "story_music_stickers",
-                    providerOccurrenceId: null,
-                    occurrenceId: null,
-                    metadata: {
-                      status: "partial",
-                      id: "music",
-                      instagramAudioAssetId: null,
-                      title: "Audio de la story",
-                      artist: null,
-                      durationMs: null,
-                      audioDurationMs: null,
-                      audioSourceUrl: null,
-                      artworkSourceUrl: null,
-                      audioCachePath: `audio/${"a".repeat(64)}.m4a`,
-                      artworkCachePath: null,
-                      audioState: "available",
-                      artworkState: "unavailable",
-                    },
+    {
+      accountTimeline: pageDataOf(
+        regroupTimeline({
+          ...timelineProps,
+          timeline: {
+            ...timelineProps.timeline,
+            stories: [
+              {
+                ...entry,
+                story: {
+                  ...entry.story,
+                  annotations: {
+                    locations: [],
+                    stickers: [{ kind: "music", label: "Song" }],
+                    musicObservations: [
+                      {
+                        id: "observation",
+                        source: "story_music_stickers",
+                        providerOccurrenceId: null,
+                        occurrenceId: null,
+                        metadata: {
+                          status: "partial",
+                          id: "music",
+                          instagramAudioAssetId: null,
+                          title: "Audio de la story",
+                          artist: null,
+                          durationMs: null,
+                          audioDurationMs: null,
+                          audioSourceUrl: null,
+                          artworkSourceUrl: null,
+                          audioCachePath: `audio/${"a".repeat(64)}.m4a`,
+                          artworkCachePath: null,
+                          audioState: "available",
+                          artworkState: "unavailable",
+                        },
+                      },
+                    ],
                   },
-                ],
+                },
               },
-            },
+              ...others,
+            ],
           },
-          ...others,
-        ],
-      },
-    }),
+        }),
+      ),
+    },
   );
 
   const dialog = within(await screen.findByRole("dialog", { name: "Aperçu de l’image" }));

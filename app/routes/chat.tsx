@@ -1,9 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
 import { ArrowLeftIcon } from "lucide-react";
 import { ChatPanel } from "../components/chat-panel.tsx";
-import { loadChatPage, type ChatPageData } from "../loaders/chat.ts";
-import { getProductionRuntime } from "@@/core/domains/runtime/production-runtime.ts";
+import type { ChatPageData } from "../loaders/chat.ts";
 
 export function ChatPage({ accounts }: ChatPageData) {
   return (
@@ -29,12 +27,8 @@ function ChatRoute() {
   return <ChatPage accounts={accounts} />;
 }
 
-const getChatPage = createServerFn({ method: "GET" }).handler(() =>
-  loadChatPage(getProductionRuntime()),
-);
-
 export const Route = createFileRoute("/chat")({
-  loader: async () => await getChatPage(),
+  loader: async ({ context }) => await context.pages.chatPage(),
   head: () => ({ meta: [{ title: "Assistant" }] }),
   component: ChatRoute,
 });

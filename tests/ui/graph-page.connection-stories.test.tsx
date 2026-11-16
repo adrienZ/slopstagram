@@ -12,9 +12,10 @@ import {
   graphStories,
   seedGraphDatabase,
 } from "../setup/mention-graph-seed.ts";
+import { createPageData } from "../../app/page-data.ts";
 
 const shared = shareTestRuntime(seedGraphDatabase);
-const renderer = createPageRenderer(Route, () => loadMentionGraph(shared.runtime, []), "/graph");
+const renderer = createPageRenderer(Route, () => createPageData(shared.runtime), "/graph");
 
 async function mountGraph() {
   return await mountGraphWith(renderer);

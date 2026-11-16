@@ -3,23 +3,23 @@ import { screen, within } from "@testing-library/react";
 import { Route as ReportRoute } from "../../app/routes/report.tsx";
 import { Route as TimelineRoute } from "../../app/routes/users/$username.tsx";
 import { loadStoryFeed } from "../../app/loaders/story-feed.ts";
-import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
 import { createPageRenderer } from "../render-page.ts";
 import { shareTestRuntime } from "../setup/test-runtime.ts";
 import { pageNow, seedPageDatabase, timelineAccount, today } from "./seeded-pages.ts";
+import { createPageData } from "../../app/page-data.ts";
 
 const shared = shareTestRuntime(seedPageDatabase);
 
 // The lightbox keeps its state in the search parameters, so it is tested through the pages that host it.
 const reportRenderer = createPageRenderer(
   ReportRoute,
-  () => loadStoryFeed(shared.runtime, pageNow),
+  () => createPageData(shared.runtime, pageNow),
   "/report",
 );
 
 const timelineRenderer = createPageRenderer(
   TimelineRoute,
-  ({ params }) => loadAccountTimeline(shared.runtime, params.username, pageNow),
+  () => createPageData(shared.runtime, pageNow),
   "/users/$username",
 );
 

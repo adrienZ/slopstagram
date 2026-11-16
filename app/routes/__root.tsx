@@ -1,4 +1,5 @@
-import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
+import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
+import type { PageData } from "../page-data.ts";
 import type { ReactNode } from "react";
 import { ThemeProvider } from "../components/theme-provider.tsx";
 import "../shadcn/styles.css";
@@ -28,7 +29,7 @@ export function rootHead() {
   };
 }
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<{ pages: PageData }>()({
   head: rootHead,
   component: Outlet,
   shellComponent: RootDocument,

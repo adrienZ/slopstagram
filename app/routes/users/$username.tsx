@@ -1,16 +1,10 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
-import { HTTPError } from "nitro/h3";
+import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { getProductionRuntime } from "@@/core/domains/runtime/production-runtime.ts";
 import { Card, CardHeader, CardTitle, CardDescription } from "../../shadcn/ui/card.tsx";
 
 import { ExternalLinkIcon } from "lucide-react";
 import { formatUserHandle, formatUserName, getInstagramProfileUrl } from "../../utils/helper.ts";
-import {
-  loadAccountTimeline,
-  type AccountTimelinePageData,
-} from "../../loaders/account-timeline.ts";
+import type { AccountTimelinePageData } from "../../loaders/account-timeline.ts";
 import { Lightbox } from "../../components/lightbox.tsx";
 import { StoryLayout } from "../../components/story-layout.tsx";
 import { useTimelineCalendar } from "../../hooks/use-timeline-calendar.ts";
@@ -131,25 +125,10 @@ function UserTimelineRoute() {
   );
 }
 
-// A server function call made while navigating in the browser only keeps an error's message, so the
-// router's not-found has to be thrown here, on the server, for the page to render the 404.
-const getUserTimeline = createServerFn({ method: "GET" })
-  .validator(z.string())
-  .handler(({ data }) => {
-    try {
-      return loadAccountTimeline(getProductionRuntime(), data);
-    } catch (error) {
-      if (error instanceof HTTPError && error.status === 404) {
-        notFound({ throw: true });
-      }
-
-      throw error;
-    }
-  });
-
 export const Route = createFileRoute("/users/$username")({
   validateSearch: z.object({ story: z.coerce.string().optional() }),
-  loader: async ({ params }) => await getUserTimeline({ data: params.username }),
+  loader: async ({ params, context }) =>
+    await context.pages.accountTimeline({ data: params.username }),
   head: ({ loaderData }) => ({
     meta: [
       {

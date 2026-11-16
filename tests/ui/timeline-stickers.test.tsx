@@ -10,14 +10,15 @@ import {
   seedPageDatabase,
 } from "./seeded-pages.ts";
 import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
-import { createPageRenderer } from "../render-page.ts";
+import { createPageRenderer, pageDataOf } from "../render-page.ts";
 import { shareTestRuntime } from "../setup/test-runtime.ts";
+import { createPageData } from "../../app/page-data.ts";
 
 const shared = shareTestRuntime(seedPageDatabase);
 
 const renderer = createPageRenderer(
   Route,
-  ({ params }) => loadAccountTimeline(shared.runtime, params.username, pageNow),
+  () => createPageData(shared.runtime, pageNow),
   "/users/$username",
 );
 
@@ -30,7 +31,9 @@ beforeAll(() => {
 });
 
 async function renderTimeline(props: AccountTimelinePageData) {
-  return await renderer.mountRoute(`/users/${timelineAccount}`, regroupTimeline(props));
+  return await renderer.mountRoute(`/users/${timelineAccount}`, {
+    accountTimeline: pageDataOf(regroupTimeline(props)),
+  });
 }
 
 function stickerTimeline(count = 8): AccountTimelinePageData {

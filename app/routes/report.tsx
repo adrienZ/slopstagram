@@ -1,7 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getProductionRuntime } from "@@/core/domains/runtime/production-runtime.ts";
 
 import { Lightbox } from "../components/lightbox.tsx";
 import { StoryLayout } from "../components/story-layout.tsx";
@@ -12,7 +10,7 @@ import {
 } from "../utils/story-navigation.ts";
 import { formatStoryViewTitle, storyDateSchema } from "@@/core/domains/story-feed/story-days.ts";
 import { UserSection } from "../components/user-section.tsx";
-import { loadStoryFeed, type StoryFeedPageData } from "../loaders/story-feed.ts";
+import type { StoryFeedPageData } from "../loaders/story-feed.ts";
 
 export function ReportPage({
   date,
@@ -71,10 +69,6 @@ function ReportRoute() {
   );
 }
 
-const getReport = createServerFn({ method: "GET" })
-  .validator(z.object({ date: storyDateSchema.optional(), story: z.string().optional() }))
-  .handler(({ data }) => loadStoryFeed(getProductionRuntime(), new Date(), data.date, data.story));
-
 export const Route = createFileRoute("/report")({
   validateSearch: z.object({
     story: z.coerce.string().optional(),
@@ -86,7 +80,9 @@ export const Route = createFileRoute("/report")({
   loaderDeps: ({ search }) => ({ date: search.date }),
   beforeLoad: ({ search }) => ({ selectedStory: search.story }),
   loader: async ({ deps, context }) => {
-    const report = await getReport({ data: { ...deps, story: context.selectedStory } });
+    const report = await context.pages.storyFeed({
+      data: { ...deps, story: context.selectedStory },
+    });
 
     if (
       context.selectedStory !== undefined &&

@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, expect, test, vi, type TestContext } from "vitest";
 import { screen, within } from "@testing-library/react";
 import { Route } from "../../app/routes/chat.tsx";
-import { loadChatPage } from "../../app/loaders/chat.ts";
 import { handleChatRequest } from "../../app/routes/api/chat.ts";
 import { createPageRenderer } from "../render-page.ts";
 import {
@@ -12,6 +11,7 @@ import {
   placeId,
 } from "../setup/report-world.ts";
 import { seedLongConnectionGraphDatabase } from "../setup/mention-graph-seed.ts";
+import { createPageData } from "../../app/page-data.ts";
 
 beforeEach(() => {
   // The Assistant reads the story feed of the current time.
@@ -32,7 +32,12 @@ async function mountChat(world: Awaited<ReturnType<typeof createWorld>>) {
 
     return await handleChatRequest(world.runtime, new globalThis.Request(url, init));
   });
-  const page = await createPageRenderer(Route, loadChatPage(world), "/chat").mountRoute("/chat");
+
+  const page = await createPageRenderer(
+    Route,
+    () => createPageData(world.runtime),
+    "/chat",
+  ).mountRoute("/chat");
 
   return {
     ...page,

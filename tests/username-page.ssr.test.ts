@@ -3,10 +3,10 @@ import { within } from "@testing-library/dom";
 import { JSDOM } from "jsdom";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { Route } from "../app/routes/users/$username.tsx";
-import { loadAccountTimeline } from "../app/loaders/account-timeline.ts";
 import { saveCurrentVision, storyItem } from "./mock-helpers.ts";
 import { createPageRenderer } from "./render-page.ts";
 import { shareTestRuntime } from "./setup/test-runtime.ts";
+import { createPageData } from "../app/page-data.ts";
 
 const now = new Date("2026-10-29T12:00:00.000Z");
 const owner = { pk: "700000000000075", username: "user_075" };
@@ -44,7 +44,7 @@ const shared = shareTestRuntime(seed);
 // The timeline the handler loads from the seeded database, with the username the real loader receives.
 const renderer = createPageRenderer(
   Route,
-  ({ params }) => loadAccountTimeline(shared.runtime, params.username, now),
+  () => createPageData(shared.runtime, now),
   "/users/$username",
 );
 
@@ -100,8 +100,8 @@ test("an account without stories renders an empty timeline", async () => {
   expect(page.queryByRole("button", { name: /Ouvrir aperçu/u })).toBeNull();
 });
 
-test("an account the application has never seen has no timeline", () => {
-  expect(() => loadAccountTimeline(shared.runtime, "unknown_account", now)).toThrow(
-    "no published stories found for unknown_account",
-  );
+test("an account the application has never seen renders the not-found page", async () => {
+  const { page } = await render("/users/unknown_account");
+
+  expect(page.getByRole("heading", { name: "404 : Page introuvable", level: 1 })).toBeDefined();
 });

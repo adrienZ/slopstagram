@@ -1,10 +1,8 @@
 import { screen, within } from "@testing-library/react";
 import { beforeEach, vi } from "vitest";
-import type { MentionGraphPageData } from "../../app/loaders/mention-graph.ts";
-import type { Route } from "../../app/routes/graph.tsx";
 import type { createPageRenderer } from "../render-page.ts";
 
-type GraphRenderer = ReturnType<typeof createPageRenderer<typeof Route, MentionGraphPageData>>;
+type GraphRenderer = ReturnType<typeof createPageRenderer>;
 
 export function stubGraphLayout() {
   beforeEach(() => {

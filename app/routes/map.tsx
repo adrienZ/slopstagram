@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
 import { ArrowLeftIcon } from "lucide-react";
 import { z } from "zod";
 import { useMedia } from "react-use";
@@ -7,8 +6,7 @@ import { AccountChecklist, AccountFilter } from "../components/account-filter.ts
 import { Lightbox } from "../components/lightbox.tsx";
 import { PlaceExplorer } from "../components/place-explorer.tsx";
 import { usePlaceMapFilter } from "../hooks/use-place-map-filter.ts";
-import { loadPlaceMap, type PlaceMapPageData } from "../loaders/place-map.ts";
-import { getProductionRuntime } from "@@/core/domains/runtime/production-runtime.ts";
+import type { PlaceMapPageData } from "../loaders/place-map.ts";
 import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/ui/avatar.tsx";
 import { formatUserInitials } from "../utils/helper.ts";
 import { PLACE_SEARCH_PARAM } from "../utils/place-map-link.ts";
@@ -135,17 +133,13 @@ function PlaceMapRoute() {
   );
 }
 
-const getPlaceMap = createServerFn({ method: "GET" }).handler(() =>
-  loadPlaceMap(getProductionRuntime()),
-);
-
 export const Route = createFileRoute("/map")({
   validateSearch: z.object({
     accounts: z.string().optional(),
     [PLACE_SEARCH_PARAM]: z.coerce.string().optional(),
     story: z.coerce.string().optional(),
   }),
-  loader: async () => await getPlaceMap(),
+  loader: async ({ context }) => await context.pages.placeMap(),
   head: () => ({ meta: [{ title: "Carte des lieux" }] }),
   component: PlaceMapRoute,
 });

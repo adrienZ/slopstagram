@@ -15,8 +15,9 @@ Tests go through production code paths (`docs/adr/0006-test-through-production-c
   a runtime over a fresh migrated in-memory database and in-memory stores; a test overrides only
   the external boundary it needs. Read-only tests of a file share one runtime with
   `shareTestRuntime(seed)`. Control time with vitest fake timers, not an injected clock.
-- Page tests: `createPageRenderer(route, props, path)` (`tests/render-page.ts`) renders the real
-  route and answers only its loader, which the test calls with its runtime. jsdom tests under
+- Page tests: `createPageRenderer(route, () => createPageData(runtime, now), path)` (`tests/render-page.ts`)
+  renders the real route and its loader, whose router context reads the page data over the test's
+  runtime instead of the server functions. `pageDataOf(data)` answers one page with shaped data. jsdom tests under
   `tests/ui/` seed it with `seedPageDatabase(runtime)` from `tests/ui/seeded-pages.ts`. Tests of
   the mention graph and of its Assistant tools seed it from `tests/setup/mention-graph-seed.ts`.
 - Fixtures in `tests/fixtures/` come from `npm run fixtures:capture`, which anonymizes a live

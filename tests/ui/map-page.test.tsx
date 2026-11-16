@@ -5,16 +5,17 @@ import { Route } from "../../app/routes/map.tsx";
 import { loadPlaceMap } from "../../app/loaders/place-map.ts";
 import { LocationMapContext } from "../../app/components/location-map-context.ts";
 import type { LocationMapCanvasProps } from "../../app/components/location-map-canvas.tsx";
-import { createPageRenderer } from "../render-page.ts";
+import { createPageRenderer, pageDataOf } from "../render-page.ts";
 import { createTestRuntime, shareTestRuntime } from "../setup/test-runtime.ts";
 import { mapAccounts, seedMapDatabase, sharedPlace, soloPlace } from "./seeded-pages.ts";
+import { createPageData } from "../../app/page-data.ts";
 
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
 const shared = shareTestRuntime(seedMapDatabase);
-const renderer = createPageRenderer(Route, () => loadPlaceMap(shared.runtime), "/map");
+const renderer = createPageRenderer(Route, () => createPageData(shared.runtime), "/map");
 const [ada, ben, cleo] = mapAccounts;
 const sharedPlaceId = "instagram:700000000000930";
 const placeLink = `/map?place=${encodeURIComponent(sharedPlaceId)}`;
@@ -46,7 +47,7 @@ function MapWrapper({ children }: { children: ReactNode }) {
 }
 
 async function mountMap(url = "/map") {
-  const mounted = await renderer.mountRoute(url, undefined, { wrapper: MapWrapper });
+  const mounted = await renderer.mountRoute(url, {}, { wrapper: MapWrapper });
   const map = within(await screen.findByRole("region", { name: "Carte des lieux" }));
 
   return { ...mounted, map };
@@ -119,7 +120,7 @@ test("the place select and arrow keys step through the visible places only", asy
 
 test("without any mapped place the page explains why the map is empty", async (context) => {
   const empty = loadPlaceMap(await createTestRuntime(context));
-  await renderer.mountRoute("/map", empty, { wrapper: MapWrapper });
+  await renderer.mountRoute("/map", { placeMap: pageDataOf(empty) }, { wrapper: MapWrapper });
   expect(screen.getByText("Aucun lieu avec des coordonnées à afficher.")).toBeVisible();
   expect(screen.queryByRole("region", { name: "Carte des lieux" })).not.toBeInTheDocument();
 });
@@ -162,7 +163,7 @@ test("a place link keeps only the chosen accounts' stories of that place", async
 });
 
 test("a place link no chosen account tagged shows the empty state", async () => {
-  await renderer.mountRoute(`${placeLink}&accounts=${ben}`, undefined, { wrapper: MapWrapper });
+  await renderer.mountRoute(`${placeLink}&accounts=${ben}`, {}, { wrapper: MapWrapper });
   expect(screen.getByText("Aucun lieu avec des coordonnées à afficher.")).toBeVisible();
   expect(screen.queryByRole("region", { name: "Carte des lieux" })).not.toBeInTheDocument();
 });

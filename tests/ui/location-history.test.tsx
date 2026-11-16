@@ -12,16 +12,17 @@ import {
   seedPageDatabase,
 } from "./seeded-pages.ts";
 import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
-import { createPageRenderer } from "../render-page.ts";
+import { createPageRenderer, pageDataOf } from "../render-page.ts";
 import { shareTestRuntime } from "../setup/test-runtime.ts";
 import { LocationMapContext } from "../../app/components/location-map-context.ts";
 import type { LocationMapCanvasProps } from "../../app/components/location-map-canvas.tsx";
+import { createPageData } from "../../app/page-data.ts";
 
 const shared = shareTestRuntime(seedPageDatabase);
 
 const renderer = createPageRenderer(
   Route,
-  ({ params }) => loadAccountTimeline(shared.runtime, params.username, pageNow),
+  () => createPageData(shared.runtime, pageNow),
   "/users/$username",
 );
 
@@ -166,7 +167,7 @@ test("location dialog maps the whole history by provider identity and preserves 
 
   const { user } = await renderer.mountRoute(
     `/users/${timelineAccount}`,
-    withObservedKinds(props),
+    { accountTimeline: pageDataOf(withObservedKinds(props)) },
     {
       wrapper: MapWrapper,
     },
@@ -212,7 +213,11 @@ test("location dialog maps the whole history by provider identity and preserves 
 test("a location history without coordinates keeps every label and preview available", async () => {
   const { user } = await renderer.mountRoute(
     `/users/${timelineAccount}`,
-    withObservedKinds(locationTimeline([[observation("partial", "missing", null)], []])),
+    {
+      accountTimeline: pageDataOf(
+        withObservedKinds(locationTimeline([[observation("partial", "missing", null)], []])),
+      ),
+    },
     { wrapper: MapWrapper },
   );
 
@@ -243,7 +248,7 @@ test("metadata without a displayable sticker remains mappable through its story 
 
   const { user } = await renderer.mountRoute(
     `/users/${timelineAccount}`,
-    withObservedKinds(props),
+    { accountTimeline: pageDataOf(withObservedKinds(props)) },
     {
       wrapper: MapWrapper,
     },
@@ -272,7 +277,7 @@ test("overlapping anonymous places stay distinct and can each be selected withou
 
   const { user } = await renderer.mountRoute(
     `/users/${timelineAccount}`,
-    withObservedKinds(props),
+    { accountTimeline: pageDataOf(withObservedKinds(props)) },
     {
       wrapper: MapWrapper,
     },
@@ -309,7 +314,7 @@ test("unlinked observations never supply a position for a separate legacy sticke
 
   const { user } = await renderer.mountRoute(
     `/users/${timelineAccount}`,
-    withObservedKinds(props),
+    { accountTimeline: pageDataOf(withObservedKinds(props)) },
     {
       wrapper: MapWrapper,
     },
@@ -331,7 +336,7 @@ test("a place category appears in the place list but not in the map popup", asyn
 
   const { user } = await renderer.mountRoute(
     `/users/${timelineAccount}`,
-    withObservedKinds(props),
+    { accountTimeline: pageDataOf(withObservedKinds(props)) },
     {
       wrapper: MapWrapper,
     },
@@ -357,7 +362,7 @@ test("arrow keys step through the markers of an open popup and wrap around", asy
 
   const { user } = await renderer.mountRoute(
     `/users/${timelineAccount}`,
-    withObservedKinds(props),
+    { accountTimeline: pageDataOf(withObservedKinds(props)) },
     {
       wrapper: MapWrapper,
     },
@@ -386,7 +391,7 @@ test("a single place has no previous or next buttons", async () => {
 
   const { user } = await renderer.mountRoute(
     `/users/${timelineAccount}`,
-    withObservedKinds(props),
+    { accountTimeline: pageDataOf(withObservedKinds(props)) },
     {
       wrapper: MapWrapper,
     },
@@ -415,9 +420,13 @@ test("location stickers show a crossed-out pin when the place has no coordinates
       },
     },
   });
-  await renderer.mountRoute(`/users/${timelineAccount}`, withObservedKinds(props), {
-    wrapper: MapWrapper,
-  });
+  await renderer.mountRoute(
+    `/users/${timelineAccount}`,
+    { accountTimeline: pageDataOf(withObservedKinds(props)) },
+    {
+      wrapper: MapWrapper,
+    },
+  );
 
   const card = screen.getByRole("region", {
     name: "Type de sticker : location",
@@ -433,9 +442,13 @@ test("location stickers show the place category on a separate line when known", 
     [observation("b", "place-b")],
   ]);
 
-  await renderer.mountRoute(`/users/${timelineAccount}`, withObservedKinds(props), {
-    wrapper: MapWrapper,
-  });
+  await renderer.mountRoute(
+    `/users/${timelineAccount}`,
+    { accountTimeline: pageDataOf(withObservedKinds(props)) },
+    {
+      wrapper: MapWrapper,
+    },
+  );
   const card = within(screen.getByRole("region", { name: "Type de sticker : location" }));
   expect(card.getByText("Parc")).toBeVisible();
   expect(card.getAllByText("Paris, Paris")).toHaveLength(2);

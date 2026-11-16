@@ -9,14 +9,15 @@ import {
   seedPageDatabase,
 } from "./seeded-pages.ts";
 import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
-import { createPageRenderer } from "../render-page.ts";
+import { createPageRenderer, pageDataOf } from "../render-page.ts";
 import { shareTestRuntime } from "../setup/test-runtime.ts";
+import { createPageData } from "../../app/page-data.ts";
 
 const shared = shareTestRuntime(seedPageDatabase);
 
 const renderer = createPageRenderer(
   Route,
-  ({ params }) => loadAccountTimeline(shared.runtime, params.username, pageNow),
+  () => createPageData(shared.runtime, pageNow),
   "/users/$username",
 );
 
@@ -66,14 +67,16 @@ test("timeline shows the handle, the dated gallery and the active account", asyn
 
 test("a saved display name is shown above the separate handle", async () => {
   await renderer.mountRoute(`/users/${timelineAccount}`, {
-    ...timelineProps,
-    timeline: {
-      ...timelineProps.timeline,
-      timelineUser: {
-        ...timelineProps.timeline.timelineUser,
-        full_name: "Nom Affiché",
+    accountTimeline: pageDataOf({
+      ...timelineProps,
+      timeline: {
+        ...timelineProps.timeline,
+        timelineUser: {
+          ...timelineProps.timeline.timelineUser,
+          full_name: "Nom Affiché",
+        },
       },
-    },
+    }),
   });
   expect(screen.getByRole("heading", { level: 1, name: "Nom Affiché" })).toBeVisible();
   expect(screen.getByRole("link", { name: `@${timelineAccount}` })).toBeVisible();
@@ -112,27 +115,29 @@ test("calendar navigates between months to another available day", async () => {
   };
 
   const { user } = await renderer.mountRoute(`/users/${timelineAccount}`, {
-    ...timelineProps,
-    timeline: {
-      ...timelineProps.timeline,
-      years: [
-        {
-          label: "2026",
-          months: [
-            {
-              key: "2026-02",
-              label: "février",
-              days: [{ key: "2026-02-02", label: "02", stories: [timelineEntry] }],
-            },
-            {
-              key: "2026-01",
-              label: "janvier",
-              days: [{ key: "2026-01-01", label: "01", stories: [older] }],
-            },
-          ],
-        },
-      ],
-    },
+    accountTimeline: pageDataOf({
+      ...timelineProps,
+      timeline: {
+        ...timelineProps.timeline,
+        years: [
+          {
+            label: "2026",
+            months: [
+              {
+                key: "2026-02",
+                label: "février",
+                days: [{ key: "2026-02-02", label: "02", stories: [timelineEntry] }],
+              },
+              {
+                key: "2026-01",
+                label: "janvier",
+                days: [{ key: "2026-01-01", label: "01", stories: [older] }],
+              },
+            ],
+          },
+        ],
+      },
+    }),
   });
 
   expect(screen.getByRole("button", { name: /mois précédent/iu })).not.toHaveAttribute(
@@ -153,25 +158,26 @@ test("calendar navigates between months to another available day", async () => {
 });
 
 test("an empty account keeps navigation and every sticker kind without expansion controls", async () => {
-  const { user } = await renderer.mountRoute(
-    `/users/${timelineAccount}`,
-    regroupTimeline(
-      {
-        ...timelineProps,
-        stories: [],
-        timeline: {
-          ...timelineProps.timeline,
+  const { user } = await renderer.mountRoute(`/users/${timelineAccount}`, {
+    accountTimeline: pageDataOf(
+      regroupTimeline(
+        {
+          ...timelineProps,
           stories: [],
-          years: [],
-          timelineUser: {
-            ...timelineProps.timeline.timelineUser,
-            full_name: null,
+          timeline: {
+            ...timelineProps.timeline,
+            stories: [],
+            years: [],
+            timelineUser: {
+              ...timelineProps.timeline.timelineUser,
+              full_name: null,
+            },
           },
         },
-      },
-      timelineProps.stickerGroups.map(({ kind }) => kind),
+        timelineProps.stickerGroups.map(({ kind }) => kind),
+      ),
     ),
-  );
+  });
 
   expect(screen.getByRole("heading", { name: `@${timelineAccount}`, level: 1 })).toBeVisible();
   expect(screen.getByText("Aucune story enregistrée pour cet utilisateur.")).toBeVisible();
@@ -203,7 +209,7 @@ test("an empty account keeps navigation and every sticker kind without expansion
 test("a timeline story deep link opens the preview, steps to the next story and Escape closes it", async () => {
   const { user, router } = await renderer.mountRoute(
     `/users/user_075?story=${timelineProps.stories[0].mediaPk}`,
-    timelineProps,
+    { accountTimeline: pageDataOf(timelineProps) },
   );
 
   const dialog = within(await screen.findByRole("dialog", { name: "Aperçu de l’image" }));

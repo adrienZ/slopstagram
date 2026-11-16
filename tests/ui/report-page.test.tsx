@@ -16,8 +16,9 @@ import {
   userSummary,
 } from "./seeded-pages.ts";
 import { loadStoryFeed } from "../../app/loaders/story-feed.ts";
-import { createPageRenderer } from "../render-page.ts";
+import { createPageRenderer, pageDataOf } from "../render-page.ts";
 import { shareTestRuntime } from "../setup/test-runtime.ts";
+import { createPageData } from "../../app/page-data.ts";
 
 // The report the real loader would build, with the arguments it receives, at the test's "now".
 const shared = shareTestRuntime(seedPageDatabase);
@@ -25,13 +26,13 @@ const empty = shareTestRuntime(async () => {});
 
 const emptyRenderer = createPageRenderer(
   Route,
-  ({ deps, context }) => loadStoryFeed(empty.runtime, pageNow, deps.date, context.selectedStory),
+  () => createPageData(empty.runtime, pageNow),
   "/report",
 );
 
 const renderer = createPageRenderer(
   Route,
-  ({ deps, context }) => loadStoryFeed(shared.runtime, pageNow, deps.date, context.selectedStory),
+  () => createPageData(shared.runtime, pageNow),
   "/report",
 );
 
@@ -137,9 +138,11 @@ test("the sidebar links to the Assistant's chat page, the map and the mention gr
 
 test("report calendar stops at the oldest available month across a year boundary", async () => {
   const { user } = await renderer.mountRoute("/report", {
-    ...reportProps,
-    selectedDate: "2026-02-02",
-    availableDates: ["2026-01-15", "2025-12-20", "2026-02-02"],
+    storyFeed: pageDataOf({
+      ...reportProps,
+      selectedDate: "2026-02-02",
+      availableDates: ["2026-01-15", "2025-12-20", "2026-02-02"],
+    }),
   });
 
   expect(getPreviousMonthButton()).not.toHaveAttribute("aria-disabled", "true");
@@ -158,8 +161,10 @@ test("report calendar stops at the oldest available month across a year boundary
 
 test("report calendar with no available data cannot navigate before today’s month", async () => {
   await renderer.mountRoute("/report", {
-    ...emptyTodayReportProps,
-    availableDates: [],
+    storyFeed: pageDataOf({
+      ...emptyTodayReportProps,
+      availableDates: [],
+    }),
   });
   expect(screen.getByRole("button", { name: /mois précédent/iu })).toHaveAttribute(
     "aria-disabled",
@@ -205,7 +210,7 @@ test("a story deep link opens after mount and an unknown story stays closed", as
   const preview = await screen.findByRole("dialog");
   expect(preview).toBeVisible();
   page.unmount();
-  await renderer.mountRoute("/report?story=missing", reportProps);
+  await renderer.mountRoute("/report?story=missing", { storyFeed: pageDataOf(reportProps) });
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
 
@@ -215,7 +220,7 @@ test("closing story details hides the dialog immediately while route navigation 
 
   const { user, router } = await renderer.mountRoute(
     `/report?story=${captionedStoryPk}`,
-    reportProps,
+    { storyFeed: pageDataOf(reportProps) },
     {
       beforeLoad: async () => {
         if (delayNavigation) {
@@ -258,8 +263,10 @@ test("report details link the mentions of a saved account to its page", async ()
 test("a user without a display name is titled by the handle, and without an avatar has no broken image", async () => {
   const [section] = reportProps.users;
   await renderer.mountRoute("/report", {
-    ...reportProps,
-    users: [{ ...section, user: { ...section.user, full_name: null }, avatar: undefined }],
+    storyFeed: pageDataOf({
+      ...reportProps,
+      users: [{ ...section, user: { ...section.user, full_name: null }, avatar: undefined }],
+    }),
   });
   const heading = screen.getByRole("heading", { level: 2, name: `@${section.user.username}` });
   expect(heading.closest("a")).toHaveAttribute("href", `/users/${section.user.username}`);
@@ -269,8 +276,10 @@ test("a user without a display name is titled by the handle, and without an avat
 test.each([undefined, ""])("an absent summary (%s) is omitted", async (summary) => {
   const [section] = reportProps.users;
   await renderer.mountRoute("/report", {
-    ...reportProps,
-    users: [{ ...section, summary, stories: [] }],
+    storyFeed: pageDataOf({
+      ...reportProps,
+      users: [{ ...section, summary, stories: [] }],
+    }),
   });
   expect(screen.queryByText(userSummary)).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /Ouvrir aperçu/u })).not.toBeInTheDocument();
@@ -279,8 +288,10 @@ test.each([undefined, ""])("an absent summary (%s) is omitted", async (summary) 
 test("a summary remains visible when there are no cached story previews", async () => {
   const [section] = reportProps.users;
   await renderer.mountRoute("/report", {
-    ...reportProps,
-    users: [{ ...section, summary: "A visible summary", stories: [] }],
+    storyFeed: pageDataOf({
+      ...reportProps,
+      users: [{ ...section, summary: "A visible summary", stories: [] }],
+    }),
   });
   expect(screen.getByText("A visible summary")).toBeVisible();
 });
