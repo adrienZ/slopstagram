@@ -5,7 +5,7 @@ import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { Route } from "../app/routes/users/$username.tsx";
 import { saveCurrentVision, storyItem } from "./mock-helpers.ts";
 import { createPageRenderer } from "./render-page.ts";
-import { shareTestRuntime } from "./setup/test-runtime.ts";
+import { createTestRuntime, shareTestRuntime } from "./setup/test-runtime.ts";
 import { createPageData } from "../app/page-data.ts";
 
 const now = new Date("2026-10-29T12:00:00.000Z");
@@ -104,4 +104,14 @@ test("an account the application has never seen renders the not-found page", asy
   const { page } = await render("/users/unknown_account");
 
   expect(page.getByRole("heading", { name: "404 : Page introuvable", level: 1 })).toBeDefined();
+});
+
+test("a timeline that fails to load renders the error page, not the not-found page", async (context) => {
+  const runtime = await createTestRuntime(context);
+  runtime.database.$client.exec("DROP TABLE instagram_users");
+
+  const html = await renderer.renderRoute(`/users/${owner.username}`, createPageData(runtime, now));
+  const page = within(new JSDOM(html).window.document.body);
+
+  expect(page.getByRole("heading", { name: "500 : Erreur interne", level: 1 })).toBeDefined();
 });
