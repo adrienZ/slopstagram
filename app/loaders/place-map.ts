@@ -1,4 +1,5 @@
-import "@tanstack/react-start/server-only";
+import { createServerFn } from "@tanstack/react-start";
+import { getProductionRuntime } from "@@/core/domains/runtime/production-runtime.ts";
 import type { AppleVisionRepository } from "@@/core/domains/database/repositories/apple-vision-repository.ts";
 import type { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
 import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
@@ -14,6 +15,11 @@ interface PlaceMapRuntime {
   vision: Pick<VisionRepository, "findByMediaPk">;
 }
 
+/**
+ * Served through the server function below; tests load the page over their own runtime.
+ *
+ * @internal
+ */
 export function loadPlaceMap(runtime: PlaceMapRuntime) {
   const located = runtime.stories.listWithLocationObservations();
   const { places } = groupTimelineLocations(located);
@@ -43,3 +49,7 @@ export function loadPlaceMap(runtime: PlaceMapRuntime) {
 }
 
 export type PlaceMapPageData = ReturnType<typeof loadPlaceMap>;
+
+export const getPlaceMap = createServerFn({ method: "GET" }).handler(() =>
+  loadPlaceMap(getProductionRuntime()),
+);

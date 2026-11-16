@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, test, vi, type TestContext } from "vites
 import { screen, within } from "@testing-library/react";
 import { Route } from "../../app/routes/chat.tsx";
 import { handleChatRequest } from "../../app/routes/api/chat.ts";
-import { createPageRenderer } from "../render-page.ts";
+import { createPageData, createPageRenderer } from "../render-page.ts";
 import {
   assistantGreeting,
   assistantThinking,
@@ -11,7 +11,6 @@ import {
   placeId,
 } from "../setup/report-world.ts";
 import { seedLongConnectionGraphDatabase } from "../setup/mention-graph-seed.ts";
-import { createPageData } from "../../app/page-data.ts";
 
 beforeEach(() => {
   // The Assistant reads the story feed of the current time.

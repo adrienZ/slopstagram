@@ -9,9 +9,8 @@ import {
   seedPageDatabase,
 } from "./seeded-pages.ts";
 import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
-import { createPageRenderer, pageDataOf } from "../render-page.ts";
+import { createPageData, createPageRenderer, pageDataOf } from "../render-page.ts";
 import { shareTestRuntime } from "../setup/test-runtime.ts";
-import { createPageData } from "../../app/page-data.ts";
 
 const shared = shareTestRuntime(seedPageDatabase);
 

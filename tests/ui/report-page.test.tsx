@@ -16,9 +16,8 @@ import {
   userSummary,
 } from "./seeded-pages.ts";
 import { loadStoryFeed } from "../../app/loaders/story-feed.ts";
-import { createPageRenderer, pageDataOf } from "../render-page.ts";
+import { createPageData, createPageRenderer, pageDataOf } from "../render-page.ts";
 import { shareTestRuntime } from "../setup/test-runtime.ts";
-import { createPageData } from "../../app/page-data.ts";
 
 // The report the real loader would build, with the arguments it receives, at the test's "now".
 const shared = shareTestRuntime(seedPageDatabase);

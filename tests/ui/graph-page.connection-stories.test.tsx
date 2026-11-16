@@ -2,7 +2,7 @@ import { act, fireEvent, screen, within } from "@testing-library/react";
 import { expect, test } from "vitest";
 import { Route } from "../../app/routes/graph.tsx";
 import { loadMentionGraph } from "../../app/loaders/mention-graph.ts";
-import { createPageRenderer } from "../render-page.ts";
+import { createPageData, createPageRenderer } from "../render-page.ts";
 import { shareTestRuntime } from "../setup/test-runtime.ts";
 import { mountGraph as mountGraphWith, stubGraphLayout } from "./mount-graph.ts";
 import {
@@ -12,7 +12,6 @@ import {
   graphStories,
   seedGraphDatabase,
 } from "../setup/mention-graph-seed.ts";
-import { createPageData } from "../../app/page-data.ts";
 
 const shared = shareTestRuntime(seedGraphDatabase);
 const renderer = createPageRenderer(Route, () => createPageData(shared.runtime), "/graph");

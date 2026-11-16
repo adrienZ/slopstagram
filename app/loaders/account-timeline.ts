@@ -1,5 +1,8 @@
-import "@tanstack/react-start/server-only";
+import { notFound } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
 import { HTTPError } from "nitro/h3";
+import { z } from "zod";
+import { getProductionRuntime } from "@@/core/domains/runtime/production-runtime.ts";
 import type { StoryOutputUser } from "@@/core/domains/fetch-run/report-types.ts";
 import type {
   UserTimelineStory,
@@ -300,6 +303,11 @@ export function createOwnerStoryCards(
   return withStoryStickers(createStoryCards(timelineUser, sources), stories, users);
 }
 
+/**
+ * Served through the server function below; tests load the page over their own runtime.
+ *
+ * @internal
+ */
 export function loadAccountTimeline(
   runtime: AccountTimelineRuntime,
   username: string,
@@ -350,3 +358,27 @@ export function loadAccountTimeline(
 }
 
 export type AccountTimelinePageData = ReturnType<typeof loadAccountTimeline>;
+
+/**
+ * A server function call made while navigating in the browser only keeps an error's message, so the
+ * router's not-found has to be thrown on the server for the page to render the 404.
+ *
+ * Tests map their loaded timeline the same way.
+ *
+ * @internal
+ */
+export function notFoundOn404<Data>(load: () => Data): Data {
+  try {
+    return load();
+  } catch (error) {
+    if (error instanceof HTTPError && error.status === 404) {
+      notFound({ throw: true });
+    }
+
+    throw error;
+  }
+}
+
+export const getAccountTimeline = createServerFn({ method: "GET" })
+  .validator(z.string())
+  .handler(({ data }) => notFoundOn404(() => loadAccountTimeline(getProductionRuntime(), data)));

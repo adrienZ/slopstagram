@@ -14,8 +14,12 @@ import { createElement } from "react";
 import type { ComponentType, ReactNode } from "react";
 import { ThemeProvider } from "../app/components/theme-provider.tsx";
 import { RootDocument, rootHead } from "../app/routes/__root.tsx";
-import type { PageData } from "../app/page-data.ts";
-import { routerOptions } from "../app/router.tsx";
+import { loadAccountTimeline, notFoundOn404 } from "../app/loaders/account-timeline.ts";
+import { loadChatPage } from "../app/loaders/chat.ts";
+import { loadMentionGraph } from "../app/loaders/mention-graph.ts";
+import { loadPlaceMap } from "../app/loaders/place-map.ts";
+import { loadStoryFeed } from "../app/loaders/story-feed.ts";
+import { routerOptions, type PageData } from "../app/router.tsx";
 
 /** The page's real route loader runs; `pages` answers it as the server functions do in production. It is called per render, once a test's runtime exists. */
 export function createPageRenderer(fileRoute: AnyRoute, pages: () => PageData, path: string) {
@@ -89,4 +93,24 @@ export function createPageRenderer(fileRoute: AnyRoute, pages: () => PageData, p
 /** Answers a page's route loader with data a test shaped itself. */
 export function pageDataOf<Data>(data: Data) {
   return async () => await Promise.resolve(data);
+}
+
+type PageDataRuntime = Parameters<typeof loadAccountTimeline>[0] &
+  Parameters<typeof loadChatPage>[0] &
+  Parameters<typeof loadMentionGraph>[0] &
+  Parameters<typeof loadPlaceMap>[0] &
+  Parameters<typeof loadStoryFeed>[0];
+
+/** The page data the server functions serve, read over a test's runtime instead. */
+export function createPageData(runtime: PageDataRuntime, now?: Date): PageData {
+  return {
+    accountTimeline: async ({ data }) =>
+      await Promise.resolve(notFoundOn404(() => loadAccountTimeline(runtime, data, now))),
+    chatPage: async () => await Promise.resolve(loadChatPage(runtime)),
+    mentionGraph: async ({ data }) =>
+      await Promise.resolve(loadMentionGraph(runtime, data.accounts)),
+    placeMap: async () => await Promise.resolve(loadPlaceMap(runtime)),
+    storyFeed: async ({ data }) =>
+      await Promise.resolve(loadStoryFeed(runtime, now, data.date, data.story)),
+  };
 }

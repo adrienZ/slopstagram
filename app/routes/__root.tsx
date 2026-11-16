@@ -1,5 +1,5 @@
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
-import type { PageData } from "../page-data.ts";
+import type { PageData } from "../router.tsx";
 import type { ReactNode } from "react";
 import { ThemeProvider } from "../components/theme-provider.tsx";
 import "../shadcn/styles.css";

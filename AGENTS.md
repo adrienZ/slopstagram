@@ -22,8 +22,9 @@ Keep UI components limited to rendering, local UI behavior, and presentation tra
 
 - `app/`: the TanStack Start app. `routes/` holds only route files: pages, and server routes
   (`server.handlers`, e.g. `routes/media/$.ts`) that stay thin adapters over `core/`. `loaders/`
-  holds the server-only loader of each page (it owns the page data type and returns data ready to
-  render), `utils/` display helpers shared by components.
+  holds the loader of each page (it owns the page data type and returns data ready to render) and
+  the server function its route reads through `context.pages`, `utils/` display helpers shared by
+  components.
 - `nitro/`: Nitro plugins only (startup migrations, the bunqueue server), for what has no TanStack
   Start equivalent. No routes: every route lives in `app/routes/`.
 - `core/`: domain and ingestion code, with no React and no Nitro.

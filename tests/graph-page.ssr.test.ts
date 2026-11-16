@@ -2,10 +2,9 @@ import { expect, test } from "vitest";
 import { within } from "@testing-library/dom";
 import { JSDOM } from "jsdom";
 import { Route } from "../app/routes/graph.tsx";
-import { createPageRenderer } from "./render-page.ts";
+import { createPageData, createPageRenderer } from "./render-page.ts";
 import { shareTestRuntime } from "./setup/test-runtime.ts";
 import { graphAccounts, seedGraphDatabase } from "./setup/mention-graph-seed.ts";
-import { createPageData } from "../app/page-data.ts";
 
 const shared = shareTestRuntime(seedGraphDatabase);
 

@@ -1,4 +1,7 @@
-import "@tanstack/react-start/server-only";
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { getProductionRuntime } from "@@/core/domains/runtime/production-runtime.ts";
+import { storyDateSchema } from "@@/core/domains/story-feed/story-days.ts";
 import type { AppleVisionRepository } from "@@/core/domains/database/repositories/apple-vision-repository.ts";
 import type { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
 import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
@@ -29,7 +32,7 @@ interface StoryFeedRuntime extends StoryFeedSourcesRuntime {
   users: Pick<InstagramUserRepository, "listAll">;
 }
 
-export interface StoryFeedSources {
+interface StoryFeedSources {
   appleCaptionByMediaPk: Map<string, string>;
   cachedImages: CachedReportImages;
   userSummaryByUserKey: Map<string, string>;
@@ -115,6 +118,11 @@ function readStoryFeedSources(
   };
 }
 
+/**
+ * Served through the server function below; tests load the page over their own runtime.
+ *
+ * @internal
+ */
 export function loadStoryFeed(
   runtime: StoryFeedRuntime,
   now: Date = new Date(),
@@ -159,3 +167,7 @@ export function loadStoryFeed(
 }
 
 export type StoryFeedPageData = ReturnType<typeof loadStoryFeed>;
+
+export const getStoryFeed = createServerFn({ method: "GET" })
+  .validator(z.object({ date: storyDateSchema.optional(), story: z.string().optional() }))
+  .handler(({ data }) => loadStoryFeed(getProductionRuntime(), new Date(), data.date, data.story));

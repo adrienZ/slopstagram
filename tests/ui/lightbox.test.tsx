@@ -3,10 +3,9 @@ import { screen, within } from "@testing-library/react";
 import { Route as ReportRoute } from "../../app/routes/report.tsx";
 import { Route as TimelineRoute } from "../../app/routes/users/$username.tsx";
 import { loadStoryFeed } from "../../app/loaders/story-feed.ts";
-import { createPageRenderer } from "../render-page.ts";
+import { createPageData, createPageRenderer } from "../render-page.ts";
 import { shareTestRuntime } from "../setup/test-runtime.ts";
 import { pageNow, seedPageDatabase, timelineAccount, today } from "./seeded-pages.ts";
-import { createPageData } from "../../app/page-data.ts";
 
 const shared = shareTestRuntime(seedPageDatabase);
 

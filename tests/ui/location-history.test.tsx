@@ -12,11 +12,10 @@ import {
   seedPageDatabase,
 } from "./seeded-pages.ts";
 import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
-import { createPageRenderer, pageDataOf } from "../render-page.ts";
+import { createPageData, createPageRenderer, pageDataOf } from "../render-page.ts";
 import { shareTestRuntime } from "../setup/test-runtime.ts";
 import { LocationMapContext } from "../../app/components/location-map-context.ts";
 import type { LocationMapCanvasProps } from "../../app/components/location-map-canvas.tsx";
-import { createPageData } from "../../app/page-data.ts";
 
 const shared = shareTestRuntime(seedPageDatabase);
 

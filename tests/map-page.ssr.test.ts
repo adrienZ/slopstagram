@@ -2,10 +2,9 @@ import { expect, test } from "vitest";
 import { within } from "@testing-library/dom";
 import { JSDOM } from "jsdom";
 import { Route } from "../app/routes/map.tsx";
-import { createPageRenderer } from "./render-page.ts";
+import { createPageData, createPageRenderer } from "./render-page.ts";
 import { shareTestRuntime } from "./setup/test-runtime.ts";
 import { seedMapDatabase } from "./ui/seeded-pages.ts";
-import { createPageData } from "../app/page-data.ts";
 
 const shared = shareTestRuntime(seedMapDatabase);
 

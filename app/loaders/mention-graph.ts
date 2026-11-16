@@ -1,4 +1,6 @@
-import "@tanstack/react-start/server-only";
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { getProductionRuntime } from "@@/core/domains/runtime/production-runtime.ts";
 import type { AppleVisionRepository } from "@@/core/domains/database/repositories/apple-vision-repository.ts";
 import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 import type { VisionRepository } from "@@/core/domains/database/repositories/vision-repository.ts";
@@ -62,7 +64,13 @@ function toFilterOptions(drawnUsernames: Array<DrawnUsername>) {
     }));
 }
 
-/** `source` and `target` only name the two ends: who mentioned whom is in the source stories. */
+/**
+ * `source` and `target` only name the two ends: who mentioned whom is in the source stories.
+ *
+ * Served through the server function below; tests load the page over their own runtime.
+ *
+ * @internal
+ */
 export function loadMentionGraph(runtime: MentionGraphRuntime, accountFilters: Array<string>) {
   const { drawnUsernames, selectedUsernames, unknownUsernames, graph } = filterByAccounts(
     readMentionConnections(runtime),
@@ -104,3 +112,7 @@ export function loadMentionGraph(runtime: MentionGraphRuntime, accountFilters: A
 }
 
 export type MentionGraphPageData = ReturnType<typeof loadMentionGraph>;
+
+export const getMentionGraph = createServerFn({ method: "GET" })
+  .validator(z.object({ accounts: z.array(z.string()) }))
+  .handler(({ data }) => loadMentionGraph(getProductionRuntime(), data.accounts));

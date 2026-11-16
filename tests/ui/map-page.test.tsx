@@ -5,10 +5,9 @@ import { Route } from "../../app/routes/map.tsx";
 import { loadPlaceMap } from "../../app/loaders/place-map.ts";
 import { LocationMapContext } from "../../app/components/location-map-context.ts";
 import type { LocationMapCanvasProps } from "../../app/components/location-map-canvas.tsx";
-import { createPageRenderer, pageDataOf } from "../render-page.ts";
+import { createPageData, createPageRenderer, pageDataOf } from "../render-page.ts";
 import { createTestRuntime, shareTestRuntime } from "../setup/test-runtime.ts";
 import { mapAccounts, seedMapDatabase, sharedPlace, soloPlace } from "./seeded-pages.ts";
-import { createPageData } from "../../app/page-data.ts";
 
 afterEach(() => {
   vi.unstubAllGlobals();

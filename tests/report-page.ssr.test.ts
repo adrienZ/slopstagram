@@ -4,10 +4,9 @@ import { JSDOM } from "jsdom";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { Route } from "../app/routes/report.tsx";
 import { storyItem } from "./mock-helpers.ts";
-import { createPageRenderer } from "./render-page.ts";
+import { createPageData, createPageRenderer } from "./render-page.ts";
 import { readRecordedPayloads, seedRecordedStories } from "./setup/seed.ts";
 import { createTestRuntime, shareTestRuntime } from "./setup/test-runtime.ts";
-import { createPageData } from "../app/page-data.ts";
 
 const now = new Date("2026-10-29T12:00:00.000Z");
 const HOUR = 3600;

@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { expect, test } from "vitest";
 import { Route } from "../../app/routes/graph.tsx";
-import { createPageRenderer } from "../render-page.ts";
+import { createPageData, createPageRenderer } from "../render-page.ts";
 import { shareTestRuntime } from "../setup/test-runtime.ts";
 import {
   ambiguousUsername,
@@ -13,7 +13,6 @@ import {
   sharedUsername,
 } from "../setup/mention-graph-seed.ts";
 import { stubGraphLayout } from "./mount-graph.ts";
-import { createPageData } from "../../app/page-data.ts";
 
 const shared = shareTestRuntime(seedFilterGraphDatabase);
 

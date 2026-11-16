@@ -1,10 +1,9 @@
 import { expect, test, vi } from "vitest";
 import { act, screen, within } from "@testing-library/react";
 import { Route } from "../../app/routes/report.tsx";
-import { createPageRenderer } from "../render-page.ts";
+import { createPageData, createPageRenderer } from "../render-page.ts";
 import { shareTestRuntime } from "../setup/test-runtime.ts";
 import { pageNow, seedPageDatabase } from "./seeded-pages.ts";
-import { createPageData } from "../../app/page-data.ts";
 
 // The toggle lives in the page's sidebar, so it is tested through the report page.
 const shared = shareTestRuntime(seedPageDatabase);
