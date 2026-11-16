@@ -13,7 +13,7 @@ everything lives in a local SQLite database.
 ![Node.js 24+](https://img.shields.io/badge/node-%E2%89%A524-339933?logo=nodedotjs&logoColor=white)
 ![Local AI with Ollama](https://img.shields.io/badge/AI-local%20with%20Ollama-000000?logo=ollama&logoColor=white)
 
-![An account timeline with its stickers](https://github.com/user-attachments/assets/d7132c70-8741-4646-ba8b-428ffec8bef5)
+<img width="1440" height="1400" alt="An account timeline with its stickers" src="https://github.com/user-attachments/assets/d7132c70-8741-4646-ba8b-428ffec8bef5" />
 
 ## Features
 
@@ -28,11 +28,28 @@ everything lives in a local SQLite database.
 
 The interface is in French.
 
-| Story feed                                                                                                               | Chat Assistant                                                                                                                    |
-| ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| ![The story feed, browsable day by day](https://github.com/user-attachments/assets/c33981d2-2048-4c16-99f9-3305c9803cd6) | ![The chat Assistant answering with a tool call](https://github.com/user-attachments/assets/6bca49ea-ab26-434f-9578-59780a0f4278) |
-| **Places map**                                                                                                           | **Mention graph**                                                                                                                 |
-| ![Tagged places on a map](https://github.com/user-attachments/assets/9d43e67f-6f9a-4c9b-85e6-7c78daf0c5c3)               | ![Who mentions whom](https://github.com/user-attachments/assets/889961d0-aec0-4810-8b8e-13aa8daf3dd9)                             |
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <strong>Story feed</strong><br />
+      <img width="1440" height="1350" alt="The story feed, browsable day by day" src="https://github.com/user-attachments/assets/c33981d2-2048-4c16-99f9-3305c9803cd6" />
+    </td>
+    <td width="50%" valign="top">
+      <strong>Chat Assistant</strong><br />
+      <img width="1440" height="900" alt="The chat Assistant answering with a tool call" src="https://github.com/user-attachments/assets/6bca49ea-ab26-434f-9578-59780a0f4278" />
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <strong>Places map</strong><br />
+      <img width="1440" height="900" alt="Tagged places on a map" src="https://github.com/user-attachments/assets/9d43e67f-6f9a-4c9b-85e6-7c78daf0c5c3" />
+    </td>
+    <td width="50%" valign="top">
+      <strong>Mention graph</strong><br />
+      <img width="1440" height="900" alt="Who mentions whom" src="https://github.com/user-attachments/assets/889961d0-aec0-4810-8b8e-13aa8daf3dd9" />
+    </td>
+  </tr>
+</table>
 
 ## How it works
 
