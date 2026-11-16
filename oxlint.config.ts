@@ -196,25 +196,6 @@ export default defineConfig({
   },
   overrides: [
     {
-      // SVG has no element for a button or a group, so the graph marks them with ARIA roles. Its canvas pans on
-      // drag and clears the selection on Escape; the points and connections are the interactive elements.
-      files: ["app/components/mention-graph.tsx"],
-      rules: {
-        "jsx-a11y/prefer-tag-over-role": "off",
-        "jsx-a11y/no-noninteractive-element-interactions": "off",
-      },
-    },
-    {
-      // A combobox popup: the message field keeps the focus and the keyboard (aria-activedescendant), so the
-      // list and its options only answer the pointer.
-      files: ["app/components/chat-mentions.tsx"],
-      rules: {
-        "jsx-a11y/prefer-tag-over-role": "off",
-        "jsx-a11y/no-noninteractive-element-to-interactive-role": "off",
-        "jsx-a11y/click-events-have-key-events": "off",
-      },
-    },
-    {
       // The composition root, and what it builds from; tests build their own repositories, databases and stores.
       files: [
         "core/domains/runtime/**",

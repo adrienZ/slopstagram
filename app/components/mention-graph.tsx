@@ -198,6 +198,7 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
     return (
       <g
         key={connection.id}
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG has no <button>.
         role="button"
         tabIndex={0}
         aria-label={`Connexion entre ${connection.labels.join(" et ")} : ${formatStoryCount(storyCount)}`}
@@ -232,6 +233,7 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
       <g
         key={point.id}
         ref={isSelected ? setSelectedElement : undefined}
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG has no <button>.
         role="button"
         tabIndex={0}
         aria-label={point.label}
@@ -293,9 +295,11 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
       aria-label="Graphe des mentions"
       className="tw:relative tw:h-[calc(100dvh-11rem)] tw:min-h-96 tw:overflow-hidden tw:rounded-lg tw:border tw:bg-muted/20"
     >
+      {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- The canvas pans on drag and clears the selection on Escape. */}
       <svg
         ref={attach}
         viewBox={`0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`}
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG has no <fieldset>.
         role="group"
         aria-label="Points et connexions"
         className="tw:size-full tw:cursor-move tw:touch-none tw:select-none"
@@ -319,9 +323,11 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
           </clipPath>
         </defs>
         <g transform={`translate(${view.x} ${view.y}) scale(${view.scale})`}>
+          {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG has no <fieldset>. */}
           <g role="group" aria-label="Connexions">
             {connections.map(renderConnection)}
           </g>
+          {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG has no <fieldset>. */}
           <g role="group" aria-label="Points">
             {points.map(renderPoint)}
           </g>

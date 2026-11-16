@@ -111,7 +111,6 @@ function ChatMessage({
       <MessageContent className="tw:grid tw:w-full tw:gap-3">
         {message.parts.map((part, index) => (
           // Parts have no id; their position in a message never changes.
-          // oxlint-disable-next-line react/no-array-index-key
           <AssistantPartView
             key={`${message.id}-${index}`}
             accounts={accounts}
