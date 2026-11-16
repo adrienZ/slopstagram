@@ -5,7 +5,6 @@ import { startWarmCacheService } from "@@/core/domains/fetch-run/warm-cache-serv
 import type { FetchRunQueue } from "@@/core/domains/runtime/fetch-boundaries.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 
-/** A bunqueue server process that exits when it is killed, like the real one. */
 // oxlint-disable-next-line unicorn/prefer-event-target -- the real server process is an EventEmitter.
 class FakeServer extends EventEmitter {
   exitCode: number | null = null;

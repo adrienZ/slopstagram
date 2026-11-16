@@ -86,7 +86,6 @@ function imageResponse(body: Uint8Array) {
   };
 }
 
-/** The format and width of the image stored at a key. */
 async function storedImage(images: Images, key: string) {
   const bytes = await readBytes(images, key);
   expect(bytes).not.toBeNull();

@@ -21,10 +21,6 @@ import {
 } from "./seed.ts";
 import { createTestRuntime } from "./test-runtime.ts";
 
-/**
- * A pipeline world for tests: a test runtime with fakes for the external systems only
- * (Instagram, Ollama, Apple OCR, media downloads).
- */
 export const now = new Date("2026-10-29T12:00:00.000Z");
 const HOUR = 3600;
 export const publishedBefore = { now, seconds: HOUR };
@@ -75,10 +71,6 @@ function placeBody(): JsonValue {
   };
 }
 
-/**
- * The recorded gallery, given the stickers the recording lacks: a tagged place on the image
- * story and a music sticker with a downloadable audio asset on the last story.
- */
 export async function recordedPayloads(
   editStory?: (story: RecordedStory) => void,
 ): Promise<RecordedPayloads> {
@@ -112,7 +104,6 @@ function trayEntry(reelId: string, username: string, mediaIds: Array<string>) {
   return { id: reelId, media_ids: mediaIds, user: { id: reelId, pk: reelId, username } };
 }
 
-/** The recorded tray, with a third account whose stories the gallery does not serve. */
 export function trayBody(options: { withMissingReel?: boolean } = {}): JsonValue {
   return {
     broadcasts: [],
@@ -132,18 +123,13 @@ type RecordedStory = Parameters<Parameters<typeof editRecordedStories>[1]>[0];
 
 type OllamaFailure = "server-error" | "unreachable";
 
-/**
- * How the chat model fails. A malformed tool call fails Ollama's tool call parser: before any
- * chunk, Ollama answers with an error status; once it has streamed chunks, it ends the stream
- * with an `error` line.
- */
+/** Ollama fails a malformed tool call with an error status before any chunk, or an `error` line once streaming. */
 type OllamaChatFailure =
   | OllamaFailure
   | "malformed-tool-call-before-streaming"
   | "malformed-tool-call-while-streaming";
 
 interface OllamaBehavior {
-  /** Fails the vision request of the story at this position in the run. */
   vision?: (position: number) => OllamaFailure | undefined;
   summary?: OllamaFailure;
   chat?: OllamaChatFailure;
@@ -172,21 +158,15 @@ const OllamaChatRequestSchema = z.object({
   tools: z.array(z.object({ function: z.object({ name: z.string() }) })).default([]),
 });
 
-/** What the chat model answers once it has read a tool result. */
 export const assistantAnswer =
   "Synthetic **answer** from the tool result, about @user_072 and @user_999.";
-/** What the chat model answers once it has read a found Tagged place: a link to it. */
 export function placeAnswer(place: { id: string; name: string }) {
   return `Synthetic answer about [${place.name}](place:${place.id}).`;
 }
-/**
- * What the chat model answers once it has listed or found places: like a small model, it names
- * them without their place links, and links the first one elsewhere.
- */
+/** Like a small model: names places without their links, and links the first one elsewhere. */
 export function placesAnswer(names: Array<string>) {
   return `Synthetic answer naming ${names.join(", ")}, and [${names.at(0) ?? ""}](https://example.com/elsewhere).`;
 }
-/** What the chat model answers to a message that needs no tool. */
 export const assistantGreeting = "Synthetic greeting.";
 export const assistantThinking = "Synthetic reasoning about the question.";
 
@@ -195,7 +175,6 @@ const FoundPlaceSchema = z.object({
   status: z.literal("found"),
 });
 
-/** A tool result as JSON, or null when it is not JSON. */
 function parseJson(content: string): JsonValue {
   try {
     return JsonValueSchema.parse(JSON.parse(content));
@@ -208,10 +187,6 @@ const ListedPlacesSchema = z.object({
   places: z.array(z.object({ name: z.string() })).min(1),
 });
 
-/**
- * The answer to a tool result: a link to the place it found, the places it listed or found, or
- * the synthetic answer.
- */
 function answerToolResult(content: string) {
   const result = parseJson(content);
   const found = FoundPlaceSchema.safeParse(result);
@@ -240,7 +215,6 @@ function chatMessage(message: JsonValue) {
   return ndjsonResponse({ done: false, message, model: "synthetic" }, chatDone);
 }
 
-/** Ollama's error when the chat model's tool call is not well-formed XML. */
 const malformedToolCallError =
   "XML syntax error on line 3: element <function> closed by </parameter>";
 
@@ -390,12 +364,7 @@ const questionMatchers = forEveryTool([
   },
 ]);
 
-/**
- * The chat model, in Ollama's streamed wire format. It calls the first offered tool whose matcher
- * accepts the last user message. Like a small model, it also invents a tool it was not offered: a
- * weather tool when the message starts with "weather". It answers once it has a tool result, and
- * greets any other message without a tool.
- */
+/** Like a small model, it also invents a tool it was not offered. */
 function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>) {
   // Only a tool result of the last question: earlier turns keep theirs in the conversation.
   const lastQuestion = messages.findLastIndex(({ role }) => role === "user");
@@ -418,16 +387,11 @@ function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>
   return chatMessage({ content: assistantGreeting, role: "assistant" });
 }
 
-/**
- * An Ollama server: vision requests carry the image, summary requests the story data, chat
- * requests the conversation.
- */
 function createOllama(behavior: OllamaBehavior = {}) {
   const requests: Array<{
     contextLength?: number;
     kind: "chat" | "summary" | "vision";
     prompt: string;
-    /** Whether a chat request asked the model to reason. */
     think?: boolean;
   }> = [];
   let visions = 0;
@@ -481,7 +445,6 @@ export async function createWorld(
   options: {
     backup?: RuntimeBoundaries["backup"];
     client?: RuntimeBoundaries["client"];
-    /** Edits each recorded story before the fetch, e.g. to tag more places. */
     editStory?: (story: RecordedStory) => void;
     ollama?: OllamaBehavior;
     ocr?: (position: number) => string | Error;

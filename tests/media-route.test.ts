@@ -6,7 +6,6 @@ import type { CacheStorage } from "@@/core/domains/media-store/cache-storage.ts"
 import { createMemoryCacheStorage } from "./memory-storage.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 
-/** The media route over a test runtime: its stores are the in-memory ones, nothing touches the disk. */
 async function createMediaApp(context: TestContext, storage?: CacheStorage) {
   const runtime = await createTestRuntime(context, { storage });
   const router = getRouter();

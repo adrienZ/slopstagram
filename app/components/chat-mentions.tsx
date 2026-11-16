@@ -4,7 +4,6 @@ import { formatUserHandle } from "../utils/helper.ts";
 import { presentSticker } from "../utils/sticker-presentation.ts";
 import { MentionAvatar, Sticker } from "./sticker.tsx";
 
-/** A sent message, with the Mentions of saved accounts shown as mention stickers. */
 export function MentionedText({ accounts, text }: { accounts: Array<SidebarUser>; text: string }) {
   return splitMentions(text, accounts).map((segment, index) =>
     segment.type === "text" ? (
@@ -20,11 +19,7 @@ export function MentionedText({ accounts, text }: { accounts: Array<SidebarUser>
   );
 }
 
-/**
- * Sits behind the transparent message field and paints its Mentions of saved accounts with the
- * mention sticker's colors and shape. It repeats the field's text, font and padding, and paints
- * with a box-shadow spread instead of padding, so the text stays where the field shows it.
- */
+/** Paints with a box-shadow spread instead of padding, so the text stays where the field shows it. */
 export function MentionBackdrop({
   accounts,
   text,
@@ -55,7 +50,6 @@ export function MentionBackdrop({
   );
 }
 
-/** The saved accounts suggested for the Mention being typed, as the message field's listbox. */
 export function MentionSuggestionList({
   id,
   onHover,

@@ -12,15 +12,10 @@ type User = typeof owner;
 
 interface RollbackScenario {
   name: string;
-  /** Users behind the first saved story, the failing save and the retry; absent when the scenario has no users. */
   owners?: { saved: User; failing: User; retry?: User };
-  /** Stories saved before the failure. */
   saved: Array<StoryItem>;
-  /** A temporary trigger that makes one of the save's writes fail. */
   trigger: { name: string; on: string; when?: string };
-  /** The save that fails. */
   failing: StoryItem;
-  /** The save that succeeds once the trigger is gone. */
   retry: StoryItem;
   verifyRetry: (
     cold: StoryRepository,

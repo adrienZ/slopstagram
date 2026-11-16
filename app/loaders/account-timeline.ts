@@ -266,7 +266,6 @@ function getStoryCardSources(
   };
 }
 
-/** The story cards of one account's stories, with their stickers already presented. */
 export function createOwnerStoryCards(
   runtime: TimelineDetailsRuntime,
   stories: Array<UserTimelineStory>,

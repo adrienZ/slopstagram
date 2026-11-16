@@ -35,7 +35,6 @@ function manifest(name: string) {
 
 type StoryAudioRuntime = Parameters<typeof cacheReportAudio>[0];
 
-/** Caches the soundtrack of one story the way a fetch run does, and reads it back. */
 async function cacheStoryAudio(runtime: StoryAudioRuntime, mediaPk: string) {
   const report: StoriesManifestReport = {
     failures: [],

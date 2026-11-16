@@ -12,10 +12,7 @@ const profilePath = "/users/";
 /** The link target the Assistant writes for a Place mention: `place:<place id>`. */
 const placeScheme = "place:";
 
-/**
- * Turns a Place mention's target into a link to the place on the map, and drops the unsafe
- * targets as the renderer does by default.
- */
+/** Replaces the renderer's default transform, so it drops unsafe targets itself. */
 function transformLinkTarget(url: string): string {
   return url.startsWith(placeScheme)
     ? buildPlaceMapHref(url.slice(placeScheme.length))
@@ -24,7 +21,6 @@ function transformLinkTarget(url: string): string {
 
 const placeMapHrefPrefix = buildPlaceMapHref("");
 
-/** The markdown tree nodes the place linking reads and writes. */
 interface MarkdownNode {
   type: string;
   value?: string;
@@ -40,10 +36,7 @@ function textOf(node: MarkdownNode): string {
   return node.value ?? node.children?.map(textOf).join("") ?? "";
 }
 
-/**
- * A remark plugin writing each name of the places the Assistant read as a Place mention: a small
- * model often names a place without its `place:` link, or links it elsewhere.
- */
+/** A small model often names a place without its `place:` link, or links it elsewhere. */
 function linkPlaceNames(places: Array<MentionablePlace>) {
   const byName = new Map(places.map((place) => [place.name.toLowerCase(), place]));
   // The longest names first, so that a name containing another one wins.
@@ -95,10 +88,6 @@ function linkPlaceNames(places: Array<MentionablePlace>) {
   };
 }
 
-/**
- * Writes each `@username` of a account as a link to its profile, which the chat shows as a
- * sticker. A name that is not a account stays plain text.
- */
 function linkMentions(text: string, accounts: Array<SidebarUser>): string {
   return text.replaceAll(mentionPattern, (mention, username: string) => {
     const account = accounts.find(
@@ -140,12 +129,6 @@ function createComponents(accounts: Array<SidebarUser>): Components {
   };
 }
 
-/**
- * The Assistant's text, which the model writes as markdown, with the mentions of accounts as
- * the stickers of the story feed and its Place mentions, and the names of the places it read,
- * as links to the map. Raw HTML in it is
- * not rendered, and unsafe link targets are dropped by the renderer.
- */
 export function ChatMarkdown({
   accounts,
   children,

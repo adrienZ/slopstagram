@@ -59,7 +59,6 @@ function MapWrapper({ children }: { children: ReactNode }) {
   return <LocationMapContext value={TestMapCanvas}>{children}</LocationMapContext>;
 }
 
-/** Props whose sticker kinds also cover the kinds of the stories a test adds. */
 function withObservedKinds(props: AccountTimelinePageData): AccountTimelinePageData {
   return regroupTimeline(
     props,

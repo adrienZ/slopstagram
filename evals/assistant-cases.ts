@@ -11,7 +11,6 @@ import { askAssistant, savedUsernames } from "./assistant-world.ts";
 /** Every case runs this many times: the chat model is not deterministic. */
 const TRIALS = 2;
 
-/** One question to the Assistant and what its answer should show. */
 export interface AssistantCase {
   name: string;
   question: string;
@@ -26,7 +25,6 @@ function describeToolCalls(run: AssistantRun): string {
         .join(", ");
 }
 
-/** Declares one eval per case of an eval file, each scored by the checks and the judge. */
 export function defineAssistantEvals(cases: Array<AssistantCase>): void {
   const judge = createAssistantJudge();
   for (const assistantCase of cases) {

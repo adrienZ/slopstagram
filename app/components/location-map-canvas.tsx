@@ -1,7 +1,3 @@
-/**
- * https://syntax.fm/videos/syntax-side-dish-explainers/free-maps-for-any-app-replace-google-maps-today
- */
-
 import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 import Map, {
@@ -29,11 +25,8 @@ export interface LocationMapCanvasProps {
   onSelect: (id: string) => void;
   onClose: () => void;
   children?: ReactNode;
-  /** The content of a place's marker. Defaults to a pin. */
   renderMarker?: (place: TimelinePlace) => ReactNode;
-  /** Sizes the map. Defaults to a fixed height. */
   className?: string;
-  /** Shown when the base map fails to load. */
   tileErrorMessage?: string;
 }
 

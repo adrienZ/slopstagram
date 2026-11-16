@@ -6,10 +6,6 @@ import type { StoryCardData } from "../utils/story-cards.ts";
 import { LocationMapContext } from "./location-map-context.ts";
 import { PlaceStories } from "./place-stories.tsx";
 
-/**
- * A place select and a map of the places, whose popup previews the selected place's stories.
- * Arrow keys step through the places from the map and its popup.
- */
 export function PlaceExplorer({
   places,
   initialSelectedId,
@@ -20,7 +16,6 @@ export function PlaceExplorer({
   tileErrorMessage,
 }: {
   places: Array<TimelinePlace>;
-  /** The place whose popup is open when the explorer mounts. */
   initialSelectedId?: string;
   storyByMediaPk: Map<string, StoryCardData>;
   showOwner?: boolean;

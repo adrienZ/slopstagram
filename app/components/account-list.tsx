@@ -1,7 +1,6 @@
 import type { Account } from "@@/core/domains/accounts/accounts.ts";
 import { formatUserHandle } from "../utils/helper.ts";
 
-/** The accounts the Assistant listed, as plain text. */
 export function AccountList({
   emptyLabel = "Aucun compte.",
   label = "Comptes",

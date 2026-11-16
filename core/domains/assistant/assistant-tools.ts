@@ -40,7 +40,6 @@ type UnionToIntersection<Union> = (Union extends unknown ? (value: Union) => voi
   ? Intersection
   : never;
 
-/** What every Assistant tool reads, together. */
 export type AssistantToolsRuntime = UnionToIntersection<
   Parameters<AssistantToolRegistry[AssistantToolName]>[0]
 >;

@@ -38,11 +38,7 @@ function mediaHeaders(key: string) {
   });
 }
 
-/**
- * Answers a request for a cached image or audio file: `requestPath` is the URL-encoded path under
- * `/media/`, read as raw bytes from the runtime's media storage and sliced to answer a range.
- * Anything outside the store, of the wrong type for its folder, or missing is a 404.
- */
+/** Anything outside the store, of the wrong type for its folder, or missing is a 404. */
 export async function createMediaResponse(
   runtime: MediaRuntime,
   requestPath: string,

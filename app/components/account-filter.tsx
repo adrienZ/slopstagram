@@ -12,15 +12,12 @@ interface AccountFilterProps {
   accounts: Array<{ username: string; avatarPath?: string }>;
   selected: Array<string>;
   onToggle: (username: string) => void;
-  /** Resets every filter: the accounts and the place. */
   onClear: () => void;
   /** Set when the page keeps filters it did not apply, which still need clearing. */
   clearable?: boolean;
-  /** The place the map is narrowed to, shown as an entry that removes it. */
   place?: { name: string; onRemove: () => void };
 }
 
-/** The place filter as an entry with the place's name and a remove button. */
 function PlaceFilterEntry({ name, onRemove }: NonNullable<AccountFilterProps["place"]>) {
   return (
     <div className="tw:flex tw:items-center tw:gap-2 tw:rounded-md tw:border tw:py-1 tw:pr-1 tw:pl-2">
@@ -38,10 +35,7 @@ function PlaceFilterEntry({ name, onRemove }: NonNullable<AccountFilterProps["pl
   );
 }
 
-/**
- * The clear action, the place filter when there is one, then the accounts as checkboxes; no
- * checked account means all of them.
- */
+/** No checked account means all of them. */
 export function AccountChecklist({
   accounts,
   selected,
@@ -51,7 +45,6 @@ export function AccountChecklist({
   clearable = selected.length > 0 || place !== undefined,
   listClassName = "tw:max-h-72",
 }: AccountFilterProps & {
-  /** Sizes the scrollable list. Defaults to a fixed maximum height. */
   listClassName?: string;
 }) {
   const id = useId();
@@ -93,7 +86,6 @@ export function AccountChecklist({
   );
 }
 
-/** A popover of the filters: the place, then the accounts as checkboxes. */
 export function AccountFilter(props: AccountFilterProps) {
   const activeCount = props.selected.length + (props.place === undefined ? 0 : 1);
   return (

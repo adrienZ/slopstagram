@@ -17,7 +17,6 @@ The result lists, in the order asked, each "requestedUsername" with its "handle"
 - "missing" with reason "not_generated": the account has stories, but their summary is not generated yet; it will be after the next fetch run.
 - "error" with error "unknown_account": no account has this username.`;
 
-/** The Assistant tool reading the story feed's user summaries of accounts. Read-only. */
 export function createGetFeedUserSummariesTool(runtime: FeedUserSummaryRuntime) {
   return tool({
     description: DESCRIPTION,

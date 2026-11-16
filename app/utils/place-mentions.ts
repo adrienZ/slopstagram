@@ -8,10 +8,7 @@ export interface MentionablePlace {
   name: string;
 }
 
-/**
- * For every Assistant tool, the Tagged places its output names, or null when it names none: a tool
- * without a decision does not compile.
- */
+/** A tool without a decision does not compile. */
 type PlacesNamedByTool = {
   [Name in AssistantToolName]: ((output: ToolOutput<Name>) => Array<MentionablePlace>) | null;
 };
@@ -40,7 +37,6 @@ function placesNamedBy<Name extends AssistantToolName>(
   return placesNamedByTool[name]?.(output) ?? [];
 }
 
-/** The Tagged places the Assistant's tools listed, found or read in a message. */
 export function findReadPlaces(message: AssistantUIMessage): Array<MentionablePlace> {
   return message.parts.flatMap((part) => {
     const call = toolCallOf(part);

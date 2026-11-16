@@ -9,10 +9,7 @@ import {
   toggleAccountFilter,
 } from "../utils/account-filter-search.ts";
 
-/**
- * The places at least one chosen account tagged, each keeping only those accounts' stories,
- * so that its latest story is the chosen accounts' latest. No chosen account means all of them.
- */
+/** Each place keeps only the chosen accounts' stories, so its latest story is theirs. None chosen means all. */
 function filterPlaces(places: Array<TimelinePlace>, selected: Array<string>): Array<TimelinePlace> {
   if (selected.length === 0) {
     return places;
@@ -38,7 +35,6 @@ export function usePlaceMapFilter(
   const selected = keepAccountFilters(accounts, parseAccountFilters(search.accounts));
   const place = places.find(({ id }) => id === search.place);
 
-  /** Shows the chosen accounts, at the current place or at every place. */
   function update(usernames: Array<string>, placeFilter: "keep" | "remove") {
     void navigate({
       ...replaceFilterSearch,
@@ -52,7 +48,6 @@ export function usePlaceMapFilter(
 
   return {
     selected,
-    /** The place the map is narrowed to, before the accounts filter applies. */
     place,
     places: filterPlaces(place === undefined ? places : [place], selected),
     toggle: (username: string) => {

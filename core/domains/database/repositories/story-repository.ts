@@ -457,7 +457,6 @@ export class StoryRepository {
     });
   }
 
-  /** Every account's stories with at least one location observation, newest first. */
   listWithLocationObservations(): Array<UserTimelineStory> {
     return this.listTimelineStoriesWhere(
       inArray(
@@ -488,7 +487,6 @@ export class StoryRepository {
     });
   }
 
-  /** A page of the tagged places with coordinates, the place of the latest story first. */
   listTaggedPlaces(query: TaggedPlacePageQuery) {
     return listTaggedPlaces(this.database, query);
   }

@@ -196,7 +196,6 @@ test("searching an account by name streams the searchAccounts call and its match
   expect(chunks.text).toBe(assistantAnswer);
 });
 
-/** Tags eleven more places on a story of user_072, each with its own position. */
 function tagElevenPlaces(story: { pk: string; story_locations?: JsonValue }) {
   if (story.pk === plainStoryPk) {
     story.story_locations = Array.from({ length: 11 }, (_, index) => {
@@ -214,7 +213,6 @@ function tagElevenPlaces(story: { pk: string; story_locations?: JsonValue }) {
   }
 }
 
-/** One of the eleven places of user_072, as a list of places gives it. */
 function elevenPlace(number: number) {
   const padded = String(number).padStart(2, "0");
   return {
@@ -227,7 +225,6 @@ function elevenPlace(number: number) {
   };
 }
 
-/** The place of the world's recording, which the place lookup completes. */
 const syntheticCafe = {
   category: "Cafe",
   id: `instagram:${placeId}`,
@@ -334,7 +331,6 @@ test("reading a place streams the getTaggedPlace call, its details, then an answ
   expect(unknown.text).toBe(assistantAnswer);
 });
 
-/** A question that makes the fake chat model call each tool. */
 const stepAfterEachTool: Record<keyof AssistantTools, { question: string; thinksAfter: boolean }> =
   {
     getFeedUserSummaries: { question: "What about @user_072?", thinksAfter: false },

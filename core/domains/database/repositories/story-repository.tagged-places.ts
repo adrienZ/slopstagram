@@ -23,7 +23,6 @@ export interface TaggedPlaceRow {
 
 export interface TaggedPlaceRowPage {
   places: Array<TaggedPlaceRow>;
-  /** How many places match over every page. */
   total: number;
 }
 
@@ -66,7 +65,6 @@ function selectTaggings(database: TaggedPlaceDatabase, { usernames, ids }: Tagge
     .as("taggings");
 }
 
-/** A page of the tagged places with coordinates, the place of the latest story first. */
 export function listTaggedPlaces(
   database: TaggedPlaceDatabase,
   { offset, limit, ...filter }: TaggedPlacePageQuery,
@@ -111,7 +109,6 @@ export function listTaggedPlaces(
   };
 }
 
-/** The searchable text of every tagged place with coordinates, the place of the latest story first. */
 export function listTaggedPlaceLabels(
   database: TaggedPlaceDatabase,
 ): Array<{ id: string; name: string | null; address: string | null; category: string | null }> {
@@ -129,7 +126,6 @@ export function listTaggedPlaceLabels(
     .all();
 }
 
-/** The latest stories tagging a place, the latest first. */
 export function listTaggedPlaceStories(
   database: TaggedPlaceDatabase,
   id: string,
