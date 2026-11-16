@@ -94,7 +94,6 @@ export function createAssistantJudge(): AssistantJudge | null {
           output: Output.object({ schema: VerdictSchema }),
           prompt: judgePrompt(run),
         });
-        // Taking a mention for a relationship is the one mistake the mention tools exist to avoid.
         return {
           metadata: verdict,
           score: verdict.mentionsNotTakenForAcquaintance ? verdict.score : 0,

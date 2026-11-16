@@ -210,17 +210,17 @@ function keepNeighborhoods(
   };
 }
 
-/** A username the filters offer, and the drawn Accounts it selects. */
-interface AccountFilterOption {
+/** A username of the drawn Accounts, ignoring case, and the Accounts it names. */
+interface DrawnUsername {
   username: string;
   accounts: Array<AccountTarget>;
 }
 
 /**
- * One option per username ignoring case, as stickers name Accounts: a username several drawn
- * Accounts share selects all of them, since nothing tells which one is meant.
+ * Ignoring case, as stickers name Accounts: a username several drawn Accounts share names all of
+ * them, since nothing tells which one is meant.
  */
-function toAccountFilterOptions(targets: Array<MentionTarget>): Array<AccountFilterOption> {
+function listDrawnUsernames(targets: Array<MentionTarget>): Array<DrawnUsername> {
   const accounts = targets.flatMap((target) => (target.kind === "account" ? [target] : []));
   return [...groupByUsername(accounts)].map(([username, shared]) => ({
     username: shared.length === 1 ? shared[0].username : username,
@@ -233,25 +233,25 @@ function toAccountFilterOptions(targets: Array<MentionTarget>): Array<AccountFil
  * shared link never shows a partial graph as the one asked for.
  */
 export function filterByAccounts(graph: MentionConnections, usernames: Array<string>) {
-  const options = toAccountFilterOptions(graph.targets);
-  const optionsByUsername = new Map(
-    options.map((option) => [option.username.toLowerCase(), option]),
+  const drawnUsernames = listDrawnUsernames(graph.targets);
+  const drawnByUsername = new Map(
+    drawnUsernames.map((drawn) => [drawn.username.toLowerCase(), drawn]),
   );
   const requested = [...new Set(usernames)];
   const unknownUsernames = requested.filter(
-    (username) => !optionsByUsername.has(username.toLowerCase()),
+    (username) => !drawnByUsername.has(username.toLowerCase()),
   );
   const selected =
     unknownUsernames.length > 0
       ? []
       : [
           ...new Set(
-            requested.flatMap((username) => optionsByUsername.get(username.toLowerCase()) ?? []),
+            requested.flatMap((username) => drawnByUsername.get(username.toLowerCase()) ?? []),
           ),
         ];
   const selectedIds = new Set(selected.flatMap(({ accounts }) => accounts.map(({ id }) => id)));
   return {
-    options,
+    drawnUsernames,
     selectedUsernames: selected.map(({ username }) => username),
     unknownUsernames,
     graph: selectedIds.size === 0 ? graph : keepNeighborhoods(graph, selectedIds),

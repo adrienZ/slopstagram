@@ -51,8 +51,8 @@ function toGraphPoint(target: MentionTarget): MentionGraphPoint {
 }
 
 /** A username several drawn Accounts share has no avatar: one would picture only one of them. */
-function toFilterOptions(options: ReturnType<typeof filterByAccounts>["options"]) {
-  return options
+function toFilterOptions(drawnUsernames: ReturnType<typeof filterByAccounts>["drawnUsernames"]) {
+  return drawnUsernames
     .toSorted((left, right) => left.username.localeCompare(right.username))
     .map(({ username, accounts: [first, ...others] }) => ({
       username,
@@ -62,7 +62,7 @@ function toFilterOptions(options: ReturnType<typeof filterByAccounts>["options"]
 
 /** `source` and `target` only name the two ends: who mentioned whom is in the source stories. */
 export function loadMentionGraph(runtime: MentionGraphRuntime, accountFilters: Array<string>) {
-  const { options, selectedUsernames, unknownUsernames, graph } = filterByAccounts(
+  const { drawnUsernames, selectedUsernames, unknownUsernames, graph } = filterByAccounts(
     readMentionConnections(runtime, runtime.users.listAll()),
     accountFilters,
   );
@@ -81,7 +81,7 @@ export function loadMentionGraph(runtime: MentionGraphRuntime, accountFilters: A
     ...new Set(connections.flatMap(({ storyPks }) => storyPks)),
   ]);
   const sidebarUsers = loadSidebarUsers(runtime);
-  const accountOptions = toFilterOptions(options);
+  const accountOptions = toFilterOptions(drawnUsernames);
   return {
     accounts: accountOptions,
     selectedAccounts: keepAccountFilters(accountOptions, selectedUsernames),

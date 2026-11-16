@@ -33,7 +33,6 @@ function connectionWidth(storyCount: number): number {
   return 1.5 + 1.5 * Math.log2(storyCount);
 }
 
-/** A click that ends a drag or a pan selects nothing; the keyboard always does. */
 function activationHandlers(isClick: () => boolean, action: () => void) {
   return {
     onClick: (event: MouseEvent) => {
