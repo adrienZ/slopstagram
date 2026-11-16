@@ -21,10 +21,7 @@ type SummarizeStoryFeedRuntime = Parameters<typeof resolveUserSummariesForReport
   Parameters<typeof createStoryFeed>[0] &
   Parameters<typeof readStoryFeedVision>[0];
 
-/**
- * A summary is found by hashing the feed account and the vision of its stories, so the fetch run
- * writes it here, from the same feed and vision `readFeedUserSummaries` reads with.
- */
+/** Writes from the same feed and vision `readFeedUserSummaries` hashes to find a summary. */
 export async function summarizeStoryFeed(
   runtime: SummarizeStoryFeedRuntime,
   now: Date,
@@ -58,10 +55,15 @@ export type FeedUserSummary =
   | { reason: "no_stories_in_last_24h" | "not_generated"; status: "missing"; username: string }
   | { error: "unknown_account"; status: "error" };
 
+interface AccountsAndStoryFeed {
+  accounts: Array<InstagramUserEntry>;
+  feed: Array<StoryOutputUser>;
+}
+
 /** Ignores an `@` prefix and letter case. */
 function readFeedUserSummary(
   runtime: FeedUserSummariesRuntime,
-  { accounts, feed }: { accounts: Array<InstagramUserEntry>; feed: Array<StoryOutputUser> },
+  { accounts, feed }: AccountsAndStoryFeed,
   username: string,
 ): FeedUserSummary {
   const wanted = username.trim().replace(/^@/u, "").toLowerCase();
@@ -127,10 +129,13 @@ export function readFeedUserSummariesByUsername(
   usernames: Array<string>,
   now: Date,
 ): Array<RequestedFeedUserSummary> {
-  const loaded = { accounts: runtime.users.listAll(), feed: createStoryFeed(runtime, now) };
+  const accountsAndStoryFeed: AccountsAndStoryFeed = {
+    accounts: runtime.users.listAll(),
+    feed: createStoryFeed(runtime, now),
+  };
 
   return usernames.map((requestedUsername) => {
-    const outcome = readFeedUserSummary(runtime, loaded, requestedUsername);
+    const outcome = readFeedUserSummary(runtime, accountsAndStoryFeed, requestedUsername);
 
     const username =
       outcome.status === "error" ? requestedUsername.trim().replace(/^@/u, "") : outcome.username;

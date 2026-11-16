@@ -26,8 +26,7 @@ Every folder below lives in `domains/`.
 - `music/`: music assets and media, music observations, story audio, DASH audio.
 - `vision/`: the Ollama client, vision analysis, Apple OCR and the Apple caption step.
 - `accounts/`: user summaries, Instagram user persistence and report user keys.
-- `story-feed/`: the story feed, story days, the feed user summaries (written by the fetch run,
-  read by the feed and its Assistant tool).
+- `story-feed/`: the story feed, story days, the feed user summary read and its Assistant tool.
 - `mention-connections/`: the Mention connections derived from the stored mention stickers, how
   their labels resolve to Accounts, and the Assistant tools that read them.
 - `assistant/`: the chat Assistant. It composes the Assistant tools of the domains below it,
