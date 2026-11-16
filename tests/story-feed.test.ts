@@ -27,6 +27,7 @@ async function createFixture(context: TestContext) {
       );
     }),
   );
+
   return {
     runtime,
     stories,
@@ -91,6 +92,7 @@ test("today uses the rolling feed, including yesterday's recent stories; past da
   const { runtime } = await createFixture(context);
   const now = new Date("2026-10-22T10:00:00Z");
   const options = { hasPreview: (pk: string) => pk !== "no-image" };
+
   for (const selectedDate of [undefined, "2026-10-22", "2026-10-23"]) {
     const feed = createReportFeed(runtime, now, selectedDate, options);
     expect(feed.selectedDate).toBe("2026-10-22");
@@ -99,6 +101,7 @@ test("today uses the rolling feed, including yesterday's recent stories; past da
       ["bob-newest", "alice-older", "alice-newer"],
     );
   }
+
   const past = createReportFeed(runtime, now, "2026-10-21", options);
   expect(past.selectedDate).toBe("2026-10-21");
   expect(past.users.flatMap((user) => user.stories.map((story) => story.media_pk))).toStrictEqual([
@@ -113,17 +116,21 @@ test("available report dates require visible stories and include today for a rol
     { pk: "no-preview", taken_at: Date.parse("2026-10-20T10:00:00Z") / 1000 },
     { pk: "alice", username: "alice" },
   );
+
   const options = {
     hasPreview: (pk: string) => pk !== "no-preview" && pk !== "no-image",
   };
+
   const feed = createReportFeed(runtime, new Date("2026-10-24T10:00:00Z"), undefined, options);
   expect(feed.availableDates).toStrictEqual(["2026-10-21", "2026-10-22"]);
+
   const afterMidnight = createReportFeed(
     runtime,
     new Date("2026-10-22T00:00:00Z"),
     undefined,
     options,
   );
+
   expect(afterMidnight.availableDates).toStrictEqual(["2026-10-21", "2026-10-22"]);
   expect(
     afterMidnight.users
@@ -141,6 +148,7 @@ test("story deep links retrieve historical stories with exact IDs and select the
   );
   const now = new Date("2026-10-22T10:00:00Z");
   const options = { hasPreview: () => true, selectedStory: mediaPk };
+
   for (const requestedDate of [undefined, "2026-10-21"]) {
     const feed = createReportFeed(runtime, now, requestedDate, options);
     expect(feed.selectedDate).toBe("2026-09-08");
@@ -148,10 +156,12 @@ test("story deep links retrieve historical stories with exact IDs and select the
       feed.users.flatMap((user) => user.stories).some((story) => story.media_pk === mediaPk),
     ).toBeTruthy();
   }
+
   const unknown = createReportFeed(runtime, now, undefined, {
     ...options,
     selectedStory: "missing",
   });
+
   expect(unknown.selectedDate).toBe("2026-10-22");
 });
 
@@ -159,15 +169,19 @@ test("deep links to recent stories retain the rolling feed even when the story w
   const { runtime } = await createFixture(context);
   const now = new Date("2026-10-22T10:00:00Z");
   const options = { hasPreview: () => true };
+
   const yesterday = createReportFeed(runtime, now, undefined, {
     ...options,
     selectedStory: "alice-older",
   });
+
   expect(yesterday.selectedDate).toBe("2026-10-22");
+
   const mismatchedDate = createReportFeed(runtime, now, "2026-10-20", {
     ...options,
     selectedStory: "alice-newer",
   });
+
   expect(mismatchedDate.selectedDate).toBe("2026-10-22");
   expect(
     mismatchedDate.users
@@ -180,12 +194,15 @@ test("hides a summary after stories expire until a matching summary is generated
   const { feed, runtime } = await createFixture(context);
   const users = feed("2026-10-22T10:00:00Z");
   let generations = 0;
+
   const options = {
     runUserSummary: async () => {
       generations += 1;
+
       return JSON.stringify({ summary: "Activités des stories visibles." });
     },
   };
+
   await resolveUserSummariesForReport(runtime, { output: { users } }, options);
   expect(readFeedUserSummaries(runtime, users).get("alice")).toBe(
     "Activités des stories visibles.",
@@ -236,6 +253,7 @@ test("story day ranges follow Paris midnight through both daylight-saving change
     expect(range.start.toISOString()).toBe(start);
     expect(range.end.toISOString()).toBe(end);
   }
+
   expect(getStoryDate(new Date("2026-10-22T22:30:00Z"))).toBe("2026-10-23");
   expect(() => getStoryDayRange("2026-02-30")).toThrow();
 });

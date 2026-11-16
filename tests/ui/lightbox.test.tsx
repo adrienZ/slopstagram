@@ -16,6 +16,7 @@ const reportRenderer = createPageRenderer(
   () => loadStoryFeed(shared.runtime, pageNow),
   "/report",
 );
+
 const timelineRenderer = createPageRenderer(
   TimelineRoute,
   ({ params }) => loadAccountTimeline(shared.runtime, params.username, pageNow),
@@ -32,9 +33,11 @@ beforeAll(() => {
 test("buttons and arrow keys wrap through the gallery while preserving other search parameters", async () => {
   const [first, second] = stories;
   const last = stories.at(-1);
+
   const { user, router } = await reportRenderer.mountRoute(
     `/report?date=${today}&story=${first.mediaPk}`,
   );
+
   const dialog = within(await screen.findByRole("dialog"));
   expect(dialog.getByRole("img", { name: first.alt })).toBeVisible();
   await user.click(dialog.getByRole("button", { name: "Image précédente" }));

@@ -26,6 +26,7 @@ test("reads the user summary the story feed shows, ignoring an @ prefix and lett
     summary,
     username: user.username,
   }));
+
   expect(feedSummaries).toStrictEqual([
     { summary: "Summary of user_072", username: "user_072" },
     { summary: "Summary of user_008", username: "user_008" },

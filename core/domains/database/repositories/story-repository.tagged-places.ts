@@ -71,6 +71,7 @@ export function listTaggedPlaces(
 ): TaggedPlaceRowPage {
   const taggings = selectTaggings(database, filter);
   const latestTakenAt = max(taggings.takenAt);
+
   const rows = database
     .select({
       id: taggings.placeId,
@@ -86,19 +87,23 @@ export function listTaggedPlaces(
     .limit(limit)
     .offset(offset)
     .all();
+
   const total =
     database
       .select({ total: countDistinct(taggings.placeId) })
       .from(taggings)
       .get()?.total ?? 0;
+
   const pageTaggings = selectTaggings(database, { ...filter, ids: rows.map(({ id }) => id) });
   const ownerTakenAt = max(pageTaggings.takenAt);
+
   const owners = database
     .select({ id: pageTaggings.placeId, username: pageTaggings.username })
     .from(pageTaggings)
     .groupBy(pageTaggings.placeId, pageTaggings.username)
     .orderBy(desc(ownerTakenAt), pageTaggings.username)
     .all();
+
   return {
     places: rows.map((row) => ({
       ...row,
@@ -113,6 +118,7 @@ export function listTaggedPlaceLabels(
   database: TaggedPlaceDatabase,
 ): Array<{ id: string; name: string | null; address: string | null; category: string | null }> {
   const taggings = selectTaggings(database, {});
+
   return database
     .select({
       id: taggings.placeId,
@@ -132,6 +138,7 @@ export function listTaggedPlaceStories(
   limit: number,
 ): Array<{ takenAt: number; username: string }> {
   const taggings = selectTaggings(database, { ids: [id] });
+
   return database
     .selectDistinct({
       mediaPk: taggings.mediaPk,

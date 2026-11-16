@@ -19,10 +19,12 @@ export function presentSticker(
   place?: StickerPlace,
 ): StickerPresentation {
   const username = label.trim().replace(/^@/u, "").toLowerCase();
+
   const user =
     kind === "mention"
       ? users.find((candidate) => candidate.username.toLowerCase() === username)
       : undefined;
+
   return {
     kind,
     title: label,

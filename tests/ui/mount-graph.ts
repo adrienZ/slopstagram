@@ -23,6 +23,7 @@ export async function mountGraph(renderer: GraphRenderer) {
   const mounted = await renderer.mountRoute("/graph");
   const region = within(await screen.findByRole("region", { name: "Graphe des mentions" }));
   const drawing = region.getByRole("group", { name: "Points et connexions" });
+
   return {
     ...mounted,
     region,

@@ -14,6 +14,7 @@ import { createTestRuntime } from "./setup/test-runtime.ts";
 describe("fetchStories edge cases", () => {
   test("preserves tray and media order in the manifest", async (context) => {
     const runtime = await createTestRuntime(context);
+
     const client = createClient(
       [
         { id: "r2", media_ids: ["m2", "m3"], user: { username: "two" } },
@@ -42,6 +43,7 @@ describe("fetchStories edge cases", () => {
 
   test("extracts sticker summaries from story payload", async (context) => {
     const runtime = await createTestRuntime(context);
+
     const client = createClient(
       [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
       [
@@ -115,6 +117,7 @@ describe("fetchStories edge cases", () => {
 
   test("unwraps instagram redirect links inside sticker summaries", async (context) => {
     const runtime = await createTestRuntime(context);
+
     const client = createClient(
       [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
       [
@@ -170,6 +173,7 @@ describe("fetchStories edge cases", () => {
   test("falls back after chunk failure and records failed stories", async (context) => {
     const logger = createCapturingLogger();
     const runtime = await createTestRuntime(context, { logger });
+
     const client = createClient(
       [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
       [reelsResponse({}, 500), reelsResponse({}, 500)],
@@ -205,6 +209,7 @@ describe("fetchStories edge cases", () => {
 
   test("records missing stories when Instagram omits expected media", async (context) => {
     const runtime = await createTestRuntime(context);
+
     const client = createClient(
       [{ id: "r1", media_ids: ["m1", "m2"], user: { username: "one" } }],
       [
@@ -226,6 +231,7 @@ describe("fetchStories edge cases", () => {
 
   test("stops further live fetches after rate limiting", async (context) => {
     const runtime = await createTestRuntime(context);
+
     const client = createClient(
       [
         { id: "r1", media_ids: ["m1"], user: { username: "one" } },

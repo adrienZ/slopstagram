@@ -9,20 +9,24 @@ const ReceivedTextSchema = z.string().refine((value) => value.trim().length > 0)
 function receivedText(record: JsonObject, keys: Array<string>): string | null {
   for (const key of keys) {
     const parsed = ReceivedTextSchema.safeParse(record[key]);
+
     if (parsed.success) {
       return parsed.data;
     }
   }
+
   return null;
 }
 
 function coordinate(record: JsonObject, keys: Array<string>, bound: number): number | null {
   for (const key of keys) {
     const parsed = z.number().min(-bound).max(bound).safeParse(record[key]);
+
     if (parsed.success) {
       return parsed.data;
     }
   }
+
   return null;
 }
 
@@ -30,6 +34,7 @@ function findLocationRecord(value: JsonValue | undefined): JsonObject | null {
   if (value === undefined || !isJsonObject(value)) {
     return null;
   }
+
   for (const key of [
     "location",
     "venue",
@@ -40,10 +45,12 @@ function findLocationRecord(value: JsonValue | undefined): JsonObject | null {
     "sticker_data",
   ]) {
     const nested = findLocationRecord(value[key]);
+
     if (nested) {
       return nested;
     }
   }
+
   // The outer ID is an occurrence identifier; callers start at a location
   // container, never at the outer sticker, when inspecting identifier-only data.
   return [
@@ -76,6 +83,7 @@ export function getLocationObservation(value: JsonValue): LocationObservationInp
   if (!isJsonObject(value)) {
     return null;
   }
+
   const container =
     value.location ??
     value.venue ??
@@ -83,6 +91,7 @@ export function getLocationObservation(value: JsonValue): LocationObservationInp
     value.story_location ??
     value.location_sticker ??
     value.bloks_sticker;
+
   const directPlace = [
     "pk",
     "name",
@@ -99,10 +108,13 @@ export function getLocationObservation(value: JsonValue): LocationObservationInp
     "facebook_places_id",
     "external_source",
   ].some((key) => Object.hasOwn(value, key));
+
   const record = findLocationRecord(container ?? (directPlace ? value : undefined));
+
   if (!record) {
     return null;
   }
+
   const fields: LocationFields = {
     instagramPlaceId: getProviderIdentifier(record.pk ?? record.id),
     name: receivedText(record, ["name", "location_name", "title"]),
@@ -113,6 +125,7 @@ export function getLocationObservation(value: JsonValue): LocationObservationInp
     facebookPlacesId: getProviderIdentifier(record.facebook_places_id),
     externalSource: receivedText(record, ["external_source"]),
   };
+
   return Object.values(fields).some((field) => field !== null)
     ? { providerOccurrenceId: getProviderIdentifier(value.id), fields }
     : null;
@@ -122,13 +135,17 @@ export function getLocationSourceUpdates(
   story: StoryItem,
 ): Array<{ source: string; observations: Array<LocationObservationInput> }> {
   const updates = [];
+
   for (const source of ["story_locations", "story_bloks_stickers"] as const) {
     const values = story[source];
+
     if (!Array.isArray(values)) {
       continue;
     }
+
     const observations: Array<LocationObservationInput> = [];
     let malformed = false;
+
     for (const value of values) {
       if (
         source === "story_bloks_stickers" &&
@@ -137,6 +154,7 @@ export function getLocationSourceUpdates(
         isJsonObject(value.bloks_sticker.sticker_data)
       ) {
         const data = value.bloks_sticker.sticker_data;
+
         if (
           Object.hasOwn(data, "ig_mention") &&
           (!isJsonObject(data.ig_mention) ||
@@ -145,7 +163,9 @@ export function getLocationSourceUpdates(
           malformed = true;
         }
       }
+
       const observation = getLocationObservation(value);
+
       if (observation) {
         observations.push(observation);
       } else if (source === "story_locations") {
@@ -160,9 +180,11 @@ export function getLocationSourceUpdates(
         malformed = true;
       }
     }
+
     if (!malformed) {
       updates.push({ source, observations });
     }
   }
+
   return updates;
 }

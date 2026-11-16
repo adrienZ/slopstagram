@@ -25,6 +25,7 @@ test("the server renders the neighborhood an account filter in the URL names", a
     ({ deps }) => loadMentionGraph(shared.runtime, deps.accounts),
     "/graph",
   );
+
   const html = await renderer.renderRoute(`/graph?accounts=${graphAccounts[1]}`);
   const page = within(new JSDOM(html).window.document.body);
   const points = within(page.getByRole("group", { name: "Points" })).getAllByRole("button");

@@ -2,10 +2,13 @@ import type { SidebarUser } from "../loaders/sidebar-users.ts";
 import { findMentions } from "./mentions.ts";
 
 const MAX_SUGGESTIONS = 8;
+
 /** An `@` that starts a word, followed by the username typed so far, right before the caret. */
 const TYPED_MENTION = /(?<![\w@])@(?<query>[\w.]*)$/u;
+
 /** The rest of the username after the caret, replaced too when a suggestion is picked. */
 const USERNAME_TAIL = /^[\w.]*/u;
+
 export interface TypedMention {
   query: string;
   start: number;
@@ -13,6 +16,7 @@ export interface TypedMention {
 
 export function findTypedMention(text: string, caret: number): TypedMention | null {
   const query = TYPED_MENTION.exec(text.slice(0, caret))?.groups?.query;
+
   return query === undefined ? null : { query, start: caret - query.length - 1 };
 }
 
@@ -23,8 +27,10 @@ export function suggestAccounts(
   if (mention === null) {
     return [];
   }
+
   const query = mention.query.toLowerCase();
   const matching = accounts.filter(({ username }) => username.toLowerCase().includes(query));
+
   return [
     ...matching.filter(({ username }) => username.toLowerCase().startsWith(query)),
     ...matching.filter(({ username }) => !username.toLowerCase().startsWith(query)),
@@ -45,6 +51,7 @@ export function insertMention(
   const tail = USERNAME_TAIL.exec(text.slice(caret))?.[0] ?? "";
   const inserted = `${text.slice(0, mention.start)}@${username} `;
   const rest = text.slice(caret + tail.length).replace(/^ /u, "");
+
   return { caret: inserted.length, text: `${inserted}${rest}` };
 }
 
@@ -56,20 +63,26 @@ export type MentionSegment =
 export function splitMentions(text: string, accounts: Array<SidebarUser>): Array<MentionSegment> {
   const segments: Array<MentionSegment> = [];
   let end = 0;
+
   for (const mention of findMentions(text)) {
     const wanted = mention.username.toLowerCase();
     const account = accounts.find(({ username }) => username.toLowerCase() === wanted);
+
     if (account === undefined) {
       continue;
     }
+
     if (mention.index > end) {
       segments.push({ text: text.slice(end, mention.index), type: "text" });
     }
+
     segments.push({ account, text: mention.text, type: "mention" });
     end = mention.index + mention.text.length;
   }
+
   if (end < text.length) {
     segments.push({ text: text.slice(end), type: "text" });
   }
+
   return segments;
 }

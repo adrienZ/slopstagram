@@ -8,6 +8,7 @@ export function MentionGraphExplorer(graph: MentionGraphPageData["graph"]) {
   const { points, connections } = graph;
   const selection = useMentionGraphSelection(graph);
   const { selectedConnection } = selection;
+
   return (
     <>
       <MentionGraph

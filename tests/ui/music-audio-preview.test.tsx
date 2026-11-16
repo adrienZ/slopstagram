@@ -44,6 +44,7 @@ function mockPlayback(context: TestContext) {
       });
       this.dispatchEvent(new globalThis.Event("play"));
     });
+
   const pause = vi
     .spyOn(globalThis.HTMLMediaElement.prototype, "pause")
     .mockImplementation(function pauseAudio(this: HTMLMediaElement) {
@@ -53,10 +54,12 @@ function mockPlayback(context: TestContext) {
       });
       this.dispatchEvent(new globalThis.Event("pause"));
     });
+
   context.onTestFinished(() => {
     play.mockRestore();
     pause.mockRestore();
   });
+
   return { play, pause };
 }
 
@@ -67,9 +70,11 @@ test("the compact player displays duration before playback, then plays, pauses a
   expect(audio).toHaveAttribute("preload", "metadata");
   expect(audio).not.toHaveAttribute("autoplay");
   expect(play).not.toHaveBeenCalled();
+
   const seek = screen.getByRole("slider", {
     name: "Avancer dans l’audio : Audio de la story",
   });
+
   expect(seek).toBeDisabled();
   Object.defineProperty(audio, "duration", { configurable: true, value: 20 });
   fireEvent.durationChange(audio);
@@ -160,6 +165,7 @@ test("missing or failed audio keeps its sticker label without a player", async (
 test("detail-modal audio seeking keeps the selected story and navigation stops playback", async (context) => {
   const { pause } = mockPlayback(context);
   const [entry, ...others] = timelineProps.timeline.stories;
+
   const { router } = await renderer.mountRoute(
     `/users/${timelineAccount}?story=${entry.story.pk}`,
     regroupTimeline({
@@ -205,6 +211,7 @@ test("detail-modal audio seeking keeps the selected story and navigation stops p
       },
     }),
   );
+
   const dialog = within(await screen.findByRole("dialog", { name: "Aperçu de l’image" }));
   const audio = dialog.getByLabelText("Écouter : Audio de la story");
   Object.defineProperty(audio, "duration", { configurable: true, value: 20 });
@@ -238,6 +245,7 @@ test("a rejected play request falls back to the sticker label", async (context) 
   const play = vi
     .spyOn(globalThis.HTMLMediaElement.prototype, "play")
     .mockRejectedValue(new Error("unavailable"));
+
   context.onTestFinished(() => {
     play.mockRestore();
   });

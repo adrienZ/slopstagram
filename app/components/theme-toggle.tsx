@@ -12,6 +12,7 @@ import {
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const ThemeIcon = { light: SunIcon, dark: MoonIcon, system: MonitorIcon }[theme];
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

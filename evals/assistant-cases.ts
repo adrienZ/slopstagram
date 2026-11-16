@@ -27,6 +27,7 @@ function describeToolCalls(run: AssistantRun): string {
 
 export function defineAssistantEvals(cases: Array<AssistantCase>): void {
   const judge = createAssistantJudge();
+
   for (const assistantCase of cases) {
     const expected: AssistantExpectation = { ...assistantCase.expected, savedUsernames };
     const checks = createAssistantChecks(expected);
@@ -49,6 +50,7 @@ export function defineAssistantEvals(cases: Array<AssistantCase>): void {
       ],
     });
   }
+
   afterAll(() => {
     judge?.close();
   });

@@ -70,6 +70,7 @@ function StickerTable({
       </Empty>
     );
   }
+
   return (
     <Table className="tw:table-fixed" aria-label={`Stickers : ${kind}`}>
       <TableHeader>
@@ -83,6 +84,7 @@ function StickerTable({
       <TableBody>
         {stories.map((story) => {
           const card = storyByMediaPk.get(story.mediaPk);
+
           return (
             <TableRow key={story.mediaPk}>
               <TableCell
@@ -150,13 +152,16 @@ function StickerKindCard({
 }) {
   const [page, setPage] = useState(1);
   const hasStories = group.stories.length > 0;
+
   const canExpand =
     hasStories ||
     (group.kind === "location" &&
       (locations.places.length > 0 || locations.unpositionedLocationCount > 0));
+
   const pageCount = Math.max(1, Math.ceil(group.stories.length / STICKER_PAGE_SIZE));
   const stickerStoryCount = group.stories.filter(({ labels }) => labels.length > 0).length;
   const occurrences = group.stories.reduce((count, story) => count + story.labels.length, 0);
+
   return (
     <Dialog>
       <Card

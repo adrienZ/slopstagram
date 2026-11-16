@@ -63,10 +63,12 @@ export async function validateAssistantMessages(
   if (messages.length === 0) {
     return null;
   }
+
   const validated = await safeValidateUIMessages<AssistantUIMessage>({
     messages,
     tools: createAssistantTools(runtime),
   });
+
   return validated.success ? validated.data : null;
 }
 
@@ -77,6 +79,7 @@ function createFailureDescriber(
     logger.warn(
       `the chat model did not answer: ${error instanceof Error ? error.message : String(error)}`,
     );
+
     return "The chat model did not answer.";
   };
 }
@@ -87,16 +90,20 @@ export async function streamAssistantReply(
 ): Promise<Response> {
   const ollama = createOllama({ baseURL: getOllamaHost(), fetch: runtime.fetchOllama });
   const tools = createAssistantTools(runtime);
+
   function chatModel(think: boolean): AssistantModel {
     // The tool schemas nearly fill Ollama's default 4K context before reasoning starts.
     const model = ollama(getAssistantModel(), { options: { num_ctx: 8192 }, think });
+
     return runtime.wrapModel?.(model) ?? model;
   }
+
   const result = streamText({
     // Reasoning is what lets a small model decide to call the tools.
     model: chatModel(true),
     prepareStep: ({ steps }) => {
       const lastTools = steps.at(-1)?.toolCalls.map(({ toolName }) => toolName) ?? [];
+
       return writesAnswerAfter(lastTools) ? { model: chatModel(false) } : undefined;
     },
     instructions: ASSISTANT_INSTRUCTIONS,
@@ -104,7 +111,9 @@ export async function streamAssistantReply(
     stopWhen: stepCountIs(MAX_STEPS),
     tools,
   });
+
   const describeFailure = createFailureDescriber(runtime.logger);
+
   return createUIMessageStreamResponse({
     // The merged stream turns a model stream that breaks mid-answer, such as Ollama ending
     // with an error line on a malformed tool call, into the same error part.

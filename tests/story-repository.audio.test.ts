@@ -23,6 +23,7 @@ async function saveAudioStory(context: Parameters<typeof createStoryFixtures>[0]
   });
   const current = storyRepository.findStoryAudio("story");
   assert.ok(current);
+
   return { current, storyRepository };
 }
 

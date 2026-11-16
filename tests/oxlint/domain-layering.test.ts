@@ -6,6 +6,7 @@ import domainLayering from "../../oxlint/plugins/rules/domain-layering.ts";
 RuleTester.describe = (text, fn) => {
   describe(text, fn);
 };
+
 RuleTester.it = (text, fn) => {
   it(text, fn);
 };

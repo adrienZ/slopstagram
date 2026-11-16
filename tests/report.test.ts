@@ -63,6 +63,7 @@ test("creates a report by running the whole pipeline over recorded Instagram pay
   // Music asset lookup, then audio and artwork caching.
   const musicObservations =
     world.stories.findByMediaPk(musicStoryPk)?.annotations?.musicObservations ?? [];
+
   expect(musicObservations).toHaveLength(1);
   const [music] = musicObservations;
   expect(music.metadata).toMatchObject({
@@ -73,9 +74,11 @@ test("creates a report by running the whole pipeline over recorded Instagram pay
     title: "Synthetic Song",
   });
   assert.ok(music.metadata.audioCachePath !== null);
+
   const audioFile: unknown = await world.storage.audio.getItemRaw(
     music.metadata.audioCachePath.slice("audio/".length),
   );
+
   assert.ok(audioFile instanceof Uint8Array);
   expect(audioFile.byteLength).toBeGreaterThan(0);
 
@@ -104,6 +107,7 @@ test("creates a report by running the whole pipeline over recorded Instagram pay
 
   // Apple captions and vision analysis, one per story, in report order.
   const order = savedStories.map((story) => story.media_pk);
+
   for (const [position, mediaPk] of order.entries()) {
     expect(world.appleVision.findByMediaPk(mediaPk)).toBe(`Synthetic caption ${position}`);
     expect(world.vision.findByMediaPk(mediaPk)?.result).toStrictEqual({
@@ -114,9 +118,11 @@ test("creates a report by running the whole pipeline over recorded Instagram pay
 
   // User summaries, written from the stored vision analyses.
   const feed = createStoryFeed({ stories: world.stories }, now);
+
   const summaries = readUserSummaries({ summaries: world.summaries }, feed, {
     visionByPreviewUrl: readStoryFeedVision({ vision: world.vision }, feed),
   });
+
   expect(Object.fromEntries(summaries)).toStrictEqual({
     user_008: "Summary of user_008",
     user_072: "Summary of user_072",
@@ -133,9 +139,11 @@ test("records a failed vision analysis and still completes the run", async (cont
   const result = await world.run();
 
   expect(world.runs.list()[0].status).toBe("succeeded");
+
   const order = world.reports
     .findByKey(result.reportKey)
     ?.output.users.flatMap((user) => user.stories.map((story) => story.media_pk));
+
   assert.ok(order);
   expect(world.vision.findByMediaPk(order[0])?.result.visual).toBe("Synthetic scene 0");
   // The failure is not stored as an analysis, so the next run tries the story again.
@@ -163,11 +171,13 @@ test("records an unreachable vision server in the log and completes the run", as
   const result = await world.run();
 
   expect(world.runs.list()[0].status).toBe("succeeded");
+
   for (const story of world.reports
     .findByKey(result.reportKey)
     ?.output.users.flatMap((user) => user.stories) ?? []) {
     expect(world.vision.findByMediaPk(story.media_pk)).toBeNull();
   }
+
   expect(
     world.logger.messages.filter((line) => line.startsWith("warn: vision unavailable")),
   ).toHaveLength(3);
@@ -188,16 +198,20 @@ test("skips the remaining captions when Apple OCR is unavailable", async (contex
 
   expect(world.runs.list()[0].status).toBe("succeeded");
   expect(world.calls.filter((call) => call === "ocr")).toHaveLength(1);
+
   const mediaPks =
     world.reports
       .findByKey(result.reportKey)
       ?.output.users.flatMap((user) => user.stories.map((story) => story.media_pk)) ?? [];
+
   expect(mediaPks).toHaveLength(3);
+
   for (const mediaPk of mediaPks) {
     expect(world.appleVision.findByMediaPk(mediaPk)).toBeNull();
     // Vision analysis still runs.
     expect(world.vision.findByMediaPk(mediaPk)).not.toBeNull();
   }
+
   expect(world.logger.messages).toContain(
     "warn: apple ocr unavailable; skipping remaining captions: unsupported platform linux",
   );
@@ -212,10 +226,12 @@ test("keeps captioning the other stories when Apple OCR fails on one", async (co
   const result = await world.run();
 
   expect(world.runs.list()[0].status).toBe("succeeded");
+
   const mediaPks =
     world.reports
       .findByKey(result.reportKey)
       ?.output.users.flatMap((user) => user.stories.map((story) => story.media_pk)) ?? [];
+
   expect(mediaPks.map((mediaPk) => world.appleVision.findByMediaPk(mediaPk))).toStrictEqual([
     null,
     "Synthetic caption 1",

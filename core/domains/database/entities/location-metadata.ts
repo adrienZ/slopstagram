@@ -104,6 +104,7 @@ const StoredLocationSchema = createSelectSchema(metadataLocations, {
   lastLookupAttemptAt: (schema) => schema.nullable().default(null),
   lastLookupFailure: (schema) => schema.nullable().default(null),
 });
+
 const LocationMetadataSchema = z.discriminatedUnion("status", [
   StoredLocationSchema.extend({ status: z.literal("partial") }),
   StoredLocationSchema.extend({
@@ -112,20 +113,27 @@ const LocationMetadataSchema = z.discriminatedUnion("status", [
     longitude: z.number().min(-180).max(180),
   }),
 ]);
+
 export const StoryLocationObservationSchema = createSelectSchema(storyLocationObservations)
   .omit({ mediaPk: true, sortOrder: true, locationId: true })
   .extend({ metadata: LocationMetadataSchema });
+
 export const PlaceDetailsSchema = createSelectSchema(metadataLocationDetails, {
   priceRange: (schema) => schema.int(),
 }).omit({ locationId: true });
+
 export type PlaceDetails = z.infer<typeof PlaceDetailsSchema>;
+
 // Fields stories can write. Lookup results and bookkeeping are written only by place lookups.
 export type LocationFields = Omit<
   typeof metadataLocations.$inferSelect,
   "id" | "category" | "zip" | "lastLookupAttemptAt" | "lastLookupFailure"
 >;
+
 export type LocationMetadata = z.infer<typeof LocationMetadataSchema>;
+
 export type StoryLocationObservation = z.infer<typeof StoryLocationObservationSchema>;
+
 export function classifyLocation(row: typeof metadataLocations.$inferSelect): LocationMetadata {
   return row.latitude !== null && row.longitude !== null
     ? { ...row, latitude: row.latitude, longitude: row.longitude, status: "usable" }

@@ -35,13 +35,16 @@ const VerdictSchema = z.object({
 function findOnPath(command: string): string | null {
   for (const directory of (process.env.PATH ?? "").split(path.delimiter)) {
     const candidate = path.join(directory, command);
+
     try {
       accessSync(candidate, constants.X_OK);
+
       return candidate;
     } catch {
       // Not in this directory.
     }
   }
+
   return null;
 }
 
@@ -67,10 +70,13 @@ export interface AssistantJudge {
 /** Null on CI: the runners have `codex` but no login. Read-only sandbox in an empty dir, so it sees only the run it grades. */
 export function createAssistantJudge(): AssistantJudge | null {
   const codexPath = findOnPath("codex");
+
   if (codexPath === null || process.env.CI !== undefined) {
     return null;
   }
+
   const workspace = mkdtempSync(path.join(tmpdir(), "slopstagram-judge-"));
+
   const model = wrapAISDKModel(
     codexCli(JUDGE_MODEL, {
       approvalMode: "never",
@@ -81,6 +87,7 @@ export function createAssistantJudge(): AssistantJudge | null {
       skipGitRepoCheck: true,
     }),
   );
+
   return {
     close: () => {
       rmSync(workspace, { force: true, recursive: true });
@@ -94,6 +101,7 @@ export function createAssistantJudge(): AssistantJudge | null {
           output: Output.object({ schema: VerdictSchema }),
           prompt: judgePrompt(run),
         });
+
         return {
           metadata: verdict,
           score: verdict.mentionsNotTakenForAcquaintance ? verdict.score : 0,

@@ -31,6 +31,7 @@ function getNestedString(value: JsonValue, keys: ReadonlyArray<string>): string 
   for (const key of keys) {
     const candidate = value[key];
     const stringCandidate = z.string().safeParse(candidate);
+
     if (stringCandidate.success && stringCandidate.data.trim().length > 0) {
       return stringCandidate.data.trim();
     }
@@ -49,11 +50,13 @@ function getMentionStickerLabel(value: JsonValue): string | null {
   }
 
   const username = getNestedString(mention, ["username"]);
+
   if (username !== null && username.length > 0) {
     return `@${username}`;
   }
 
   const fullName = getNestedString(mention, ["full_name"]);
+
   return fullName !== null && fullName.length > 0 ? fullName : null;
 }
 
@@ -61,9 +64,11 @@ function getMusicStickers(value: JsonValue): Array<Sticker> | null {
   const info = getNestedRecord(value, "music_asset_info");
   const title = getNestedString(info, ["title"]);
   const artist = getNestedString(info, ["display_artist"]);
+
   if (title !== null) {
     return [{ kind: "music", label: artist === null ? title : `${title} - ${artist}` }];
   }
+
   return getMusicObservation(value) === null ? null : [];
 }
 
@@ -88,6 +93,7 @@ function unwrapInstagramRedirectUrl(value: string): string {
     }
 
     const redirect = url.searchParams.get("u");
+
     return redirect === null || redirect.length === 0 ? value : decodeURIComponent(redirect);
   } catch {
     return value;
@@ -101,10 +107,12 @@ function getLinkStickerLabel(value: JsonValue, visited = new Set<JsonValue>()): 
 
   visited.add(value);
   const rawDirectUrl = getNestedString(value, ["url", "uri", "link_url", "webUri", "web_uri"]);
+
   const directUrl =
     rawDirectUrl !== null && rawDirectUrl.length > 0
       ? unwrapInstagramRedirectUrl(rawDirectUrl)
       : null;
+
   const directTitle = getNestedString(value, ["title", "link_title", "display_url"]);
 
   if (
@@ -183,6 +191,7 @@ function getLocationFromValue(value: JsonValue): { address: string; name: string
   }
 
   const name = getNestedString(location, ["name", "location_name", "title"]) ?? "";
+
   const address =
     getNestedString(location, ["address", "full_address", "street_address", "subtitle"]) ?? "";
 
@@ -211,13 +220,17 @@ function extractSourceSticker(
   if (!isJsonObject(value)) {
     return null;
   }
+
   if (source === "story_bloks_stickers") {
     const data = getNestedRecord(getNestedRecord(value, "bloks_sticker"), "sticker_data");
+
     if (!data || Object.keys(data).length === 0) {
       return null;
     }
+
     const mention = getMentionStickerLabel(value);
     const location = getLocationFromValue(value);
+
     if (
       (Object.hasOwn(data, "ig_mention") && mention === null) ||
       (Object.hasOwn(data, "location") &&
@@ -226,6 +239,7 @@ function extractSourceSticker(
     ) {
       return null;
     }
+
     return [
       ...(mention === null ? [] : [{ kind: "mention", label: mention }]),
       ...(location
@@ -238,10 +252,13 @@ function extractSourceSticker(
         : []),
     ];
   }
+
   let label: string | null;
+
   if (source === "story_locations") {
     const location = getLocationFromValue(value);
     label = location ? [location.name, location.address].filter(Boolean).join(", ") : null;
+
     if (label === null && getLocationObservation(value) !== null) {
       return [];
     }
@@ -252,6 +269,7 @@ function extractSourceSticker(
   } else {
     label = getLinkStickerLabel(value);
   }
+
   return label === null ? null : [{ kind, label }];
 }
 
@@ -266,35 +284,44 @@ export function getStoryAnnotationUpdates(
   reportMalformed?: (source: string) => void,
 ): Array<AnnotationUpdate> {
   const updates: Array<AnnotationUpdate> = [];
+
   for (const { source, kinds } of annotationSources) {
     const value = story[source];
+
     if (value === undefined || value === null) {
       continue;
     }
+
     const values = source === "link" && !Array.isArray(value) ? [value] : value;
+
     if (!Array.isArray(values)) {
       reportMalformed?.(source);
       continue;
     }
+
     const entries = values.map((entry) => {
       const stickers = extractSourceSticker(source, kinds[0], entry);
       // Only the outer sticker ID identifies the occurrence. Nested place,
       // mention, hashtag and audio IDs identify shared entities instead.
       const id = isJsonObject(entry) ? entry.id : undefined;
       const providerOccurrenceId = ProviderIdentifierSchema.safeParse(id);
+
       return (
         stickers?.map((sticker) => {
           if (providerOccurrenceId.success) {
             return { ...sticker, providerOccurrenceId: providerOccurrenceId.data };
           }
+
           return sticker;
         }) ?? null
       );
     });
+
     if (entries.some((entry) => entry === null)) {
       reportMalformed?.(source);
       continue;
     }
+
     updates.push({
       source,
       // An unlabelled observation does not make a source a complete replacement of
@@ -308,19 +335,24 @@ export function getStoryAnnotationUpdates(
       stickers: entries.flatMap((entry) => entry ?? []).map((sticker) => ({ ...sticker, source })),
     });
   }
+
   return updates;
 }
 
 export function getStoryAnnotations(story: StoryItem): StoryAnnotations {
   const { annotations } = story;
+
   if (annotations !== undefined) {
     const locations = annotations.stickers
       .filter((sticker) => sticker.kind === "location")
       .map((sticker) => sticker.label);
+
     return { ...annotations, locations: locations.length > 0 ? locations : annotations.locations };
   }
+
   const updates = getStoryAnnotationUpdates(story);
   const stickers = updates.flatMap((update) => update.stickers);
+
   return {
     locations: stickers
       .filter((sticker) => sticker.kind === "location")

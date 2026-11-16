@@ -31,6 +31,7 @@ const shared = useSharedTestRuntime(async (runtime) => {
           },
         ];
       }
+
       if (story.pk === second) {
         story.story_locations = [
           { id: "700000000000922", location: { ...withoutInstagramId } },
@@ -50,6 +51,7 @@ function assistantPlaces() {
   const listed = listTaggedPlaces(runtime).places;
   const found = listed.map(({ id }) => getTaggedPlace(runtime, id));
   const searched = searchTaggedPlaces(runtime, { query: SEARCH_TEXT }).places;
+
   return { listed, found, searched };
 }
 

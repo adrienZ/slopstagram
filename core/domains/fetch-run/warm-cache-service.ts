@@ -36,6 +36,7 @@ function startBunqueueServer(
   return {
     async close() {
       closing = true;
+
       if (server.exitCode !== null || server.signalCode !== null) {
         return;
       }

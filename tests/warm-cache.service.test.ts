@@ -17,6 +17,7 @@ class FakeServer extends EventEmitter {
     process.nextTick(() => {
       this.emit("exit", null, signal);
     });
+
     return true;
   }
 }
@@ -24,24 +25,29 @@ class FakeServer extends EventEmitter {
 function createFakeQueue(options: { closeError?: Error; cronError?: Error } = {}) {
   const crons: Array<string> = [];
   const state = { closed: false };
+
   function queue(...[,]: Parameters<FetchRunQueue>): ReturnType<FetchRunQueue> {
     return {
       async close() {
         state.closed = true;
+
         if (options.closeError !== undefined) {
           throw options.closeError;
         }
       },
       async cron(id, pattern) {
         crons.push(`${id} ${pattern}`);
+
         if (options.cronError !== undefined) {
           throw options.cronError;
         }
+
         return null;
       },
       on() {},
     };
   }
+
   return { crons, state, queue };
 }
 
@@ -52,6 +58,7 @@ async function startService(
   const fakeQueue = createFakeQueue(queueOptions);
   const server = new FakeServer();
   const errors: Array<string> = [];
+
   const service = startWarmCacheService({
     runtime: await createTestRuntime(context, { queue: fakeQueue.queue }),
     spawnServer: () => server,
@@ -59,6 +66,7 @@ async function startService(
       errors.push(error.message);
     },
   });
+
   return { ...fakeQueue, server, errors, service };
 }
 

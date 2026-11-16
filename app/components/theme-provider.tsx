@@ -13,6 +13,7 @@ const ThemeContext = createContext<{ theme: Theme; setTheme: typeof setTheme } |
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const theme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getServerTheme);
+
   return (
     <ThemeContext value={{ theme, setTheme }}>
       <ScriptOnce>{themeScript}</ScriptOnce>
@@ -23,8 +24,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
 export function useTheme() {
   const context = useContext(ThemeContext);
+
   if (context === null) {
     throw new Error("useTheme must be used within ThemeProvider");
   }
+
   return context;
 }

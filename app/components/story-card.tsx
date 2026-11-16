@@ -20,6 +20,7 @@ export function StoryCard({
   onOpenStory?: OpenStory;
 }) {
   const open = useOpenStory(onOpenStory);
+
   return (
     <div className="tw:min-w-0 tw:flex-none tw:snap-start">
       <button

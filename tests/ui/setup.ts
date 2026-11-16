@@ -39,10 +39,12 @@ beforeEach(() => {
   const queries = new Map<string, TestMediaQuery>();
   vi.stubGlobal("matchMedia", (query: string) => {
     let media = queries.get(query);
+
     if (media === undefined) {
       media = new TestMediaQuery(query);
       queries.set(query, media);
     }
+
     return media;
   });
   vi.stubGlobal("CSS", { escape: cssEscape });

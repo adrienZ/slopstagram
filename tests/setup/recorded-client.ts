@@ -6,8 +6,11 @@ import { StoryReelSchema } from "@@/core/domains/instagram/story-schemas.ts";
 import type { RecordedPayloads } from "./seed.ts";
 
 type InstagramSession = Parameters<typeof createInstagramClient>[0];
+
 type BrowserFetch = InstagramSession["page"]["evaluate"];
+
 export type BrowserFetchInput = Parameters<BrowserFetch>[1];
+
 export type BrowserFetchResponse = Awaited<ReturnType<BrowserFetch>>;
 
 export const RecordedGalleryPageSchema = z.object({
@@ -59,6 +62,7 @@ function trayOf(galleryPages: Array<JsonValue>): JsonValue {
   const reels = galleryPages.flatMap(
     (page) => RecordedReelsSchema.parse(page).data.xdt_api__v1__feed__reels_media__connection.edges,
   );
+
   return {
     broadcasts: [],
     status: "ok",
@@ -77,6 +81,7 @@ export function createRecordedClient(recorded: RecordedPayloads): InstagramClien
     page,
     parsed: RecordedGalleryPageSchema.safeParse(page),
   }));
+
   function reels(): Array<StoryReel> {
     return pages.flatMap(({ parsed }) =>
       parsed.success
@@ -84,16 +89,21 @@ export function createRecordedClient(recorded: RecordedPayloads): InstagramClien
         : [],
     );
   }
+
   return createFakeInstagramClient((input) => {
     if (input.mediaQuery !== undefined) {
       const refused = pages.find(({ parsed }) => !parsed.success);
+
       if (refused !== undefined) {
         return jsonBody(refused.page);
       }
+
       const { reelIds } = input.mediaQuery;
+
       const requested = reels().filter(
         (reel) => reel.id !== undefined && reelIds.includes(reel.id),
       );
+
       return jsonBody(
         JsonValueSchema.parse({
           data: {
@@ -105,12 +115,15 @@ export function createRecordedClient(recorded: RecordedPayloads): InstagramClien
         }),
       );
     }
+
     if (input.placeQuery !== undefined) {
       return recorded.place === undefined ? notFound() : jsonBody(recorded.place);
     }
+
     if (input.musicAssetId !== undefined) {
       return recorded.musicAsset === undefined ? notFound() : jsonBody(recorded.musicAsset);
     }
+
     return jsonBody(recorded.tray ?? trayOf(recorded.galleryPages));
   });
 }
@@ -118,6 +131,7 @@ export function createRecordedClient(recorded: RecordedPayloads): InstagramClien
 export function createFailingClient(status: number, onRequest?: () => void): InstagramClient {
   async function refuse() {
     onRequest?.();
+
     return await Promise.resolve({
       headers: {},
       json: () => ({ status: "fail" }),
@@ -125,6 +139,7 @@ export function createFailingClient(status: number, onRequest?: () => void): Ins
       status,
     });
   }
+
   return {
     getMusicAsset: refuse,
     getPlace: refuse,

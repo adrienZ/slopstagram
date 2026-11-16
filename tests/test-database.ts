@@ -10,6 +10,7 @@ import { createMemoryStorage } from "./memory-storage.ts";
 export function createMigratedDatabase() {
   const database = createDrizzle(":memory:");
   migrateDatabase(database);
+
   return database;
 }
 
@@ -18,6 +19,7 @@ export function createTestDatabase(context: Pick<TestContext, "onTestFinished">)
   context.onTestFinished(() => {
     database.$client.close();
   });
+
   return database;
 }
 

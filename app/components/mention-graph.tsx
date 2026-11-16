@@ -18,7 +18,9 @@ import { Popover, PopoverAnchor, PopoverContent } from "../shadcn/ui/popover.tsx
 import { formatStoryCount, formatUserInitials, getUserTimelineUrl } from "../utils/helper.ts";
 
 type GraphPoint = MentionGraphPageData["graph"]["points"][number];
+
 type AccountPoint = Extract<GraphPoint, { kind: "account" }>;
+
 type GraphConnection = MentionGraphPageData["graph"]["connections"][number];
 
 const ACCOUNT_RADIUS = 20;
@@ -38,6 +40,7 @@ function activationHandlers(isClick: () => boolean, action: () => void) {
   return {
     onClick: (event: MouseEvent) => {
       event.stopPropagation();
+
       if (isClick()) {
         action();
       }
@@ -77,6 +80,7 @@ function PointMark({ point, clipPathId }: { point: GraphPoint; clipPathId: strin
   if (point.kind === "unknown") {
     return <circle r={UNKNOWN_RADIUS} className="tw:fill-muted-foreground" />;
   }
+
   // The initials show through wherever the photo is missing or fails to load.
   return (
     <>
@@ -157,14 +161,17 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
   const [selectedElement, setSelectedElement] = useState<SVGGElement | null>(null);
   const pointsById = new Map(points.map((point) => [point.id, point]));
   const selected = selectedPointId === null ? undefined : pointsById.get(selectedPointId);
+
   const neighbours = new Set<string>(
     connections.flatMap(({ source, target }) => {
       if (source === selectedPointId) {
         return [target];
       }
+
       return target === selectedPointId ? [source] : [];
     }),
   );
+
   const hovered =
     hoveredPointId === null || hoveredPointId === selectedPointId
       ? undefined
@@ -184,6 +191,7 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
     const highlighted = isHighlighted(connection);
     const storyCount = connection.storyPks.length;
     const line = { x1: source.x, y1: source.y, x2: target.x, y2: target.y };
+
     return (
       <g
         key={connection.id}
@@ -216,6 +224,7 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
     const { x, y } = positionOf(point.id);
     const isSelected = point.id === selectedPointId;
     const dimmed = selectedPointId !== null && !isSelected && !neighbours.has(point.id);
+
     return (
       <g
         key={point.id}
@@ -261,6 +270,7 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
 
   function renderHoverLabel(point: GraphPoint): ReactNode {
     const { x, y } = positionOf(point.id);
+
     return (
       <text
         role="tooltip"

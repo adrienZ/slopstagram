@@ -79,9 +79,11 @@ test("pagination shows three story groups, keeps occurrences together, and has c
   expect(card.getByText("@person-0")).toBeVisible();
   expect(card.getAllByText("@person-2")).toHaveLength(2);
   expect(card.queryByText("@person-3")).not.toBeInTheDocument();
+
   const previous = card.getByRole("button", {
     name: "Page précédente : mention",
   });
+
   const next = card.getByRole("button", { name: "Page suivante : mention" });
   expect(previous).toBeDisabled();
   await user.click(next);
@@ -113,9 +115,11 @@ test("sticker cards stay expanded and have no collapse control", async () => {
 test("full history opens all results and a nested preview returns to the kind modal", async () => {
   const { user } = await renderTimeline(stickerTimeline());
   await user.click(screen.getByRole("button", { name: "Tout afficher : mention" }));
+
   const modal = await screen.findByRole("dialog", {
     name: "Stickers · mention",
   });
+
   expect(within(modal).getByText("16 stickers dans 8 stories · historique complet")).toBeVisible();
   expect(within(modal).getAllByRole("row")).toHaveLength(9);
   expect(within(modal).getAllByText("@person-7")).toHaveLength(2);
@@ -242,6 +246,7 @@ test("music shows its cached cover in the card, expanded modal and story details
 
 test("music without audio stays hidden and another asset does not borrow its cover", async () => {
   const props = stickerTimeline(1);
+
   const metadata = {
     status: "partial" as const,
     id: "partial",
@@ -257,6 +262,7 @@ test("music without audio stays hidden and another asset does not borrow its cov
     audioState: "unavailable" as const,
     artworkState: "available" as const,
   };
+
   props.timeline.stories[0].story.annotations = {
     locations: [],
     stickers: [{ kind: "music", label: "Legacy label" }],

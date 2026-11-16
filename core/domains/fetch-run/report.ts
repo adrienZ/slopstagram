@@ -76,11 +76,13 @@ export async function createReport(runtime: CreateReportRuntime): Promise<Create
     await runtime.reports.save(outputFileName, report);
     run.reportKey = outputFileName;
     const { counts } = report.metadata;
+
     if (counts.stories > 0 && counts.fetched === 0) {
       throw new Error(
         `No story media could be fetched (${counts.failed}/${counts.stories} failed). ${report.failures[0]?.message ?? "Instagram returned no story media"}`,
       );
     }
+
     await cacheReportAudio(runtime, report);
     const cachedImages = await cacheReportImages(runtime, report);
     await resolveAppleCaptionsForReport(runtime, report, cachedImages);
@@ -103,6 +105,8 @@ export async function createReport(runtime: CreateReportRuntime): Promise<Create
 
     return { outputFileName, reportKey: outputFileName, report };
   });
+
   backUpAfterFetchRun(runtime, new Date());
+
   return result;
 }

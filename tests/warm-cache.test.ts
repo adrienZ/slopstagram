@@ -23,6 +23,7 @@ afterEach(() => {
 
 async function listCacheFiles(storage: Runtime["storage"]): Promise<Array<string>> {
   const [images, audio] = await Promise.all([storage.images.getKeys(), storage.audio.getKeys()]);
+
   return [
     ...images.map((key) => `images/${key.replaceAll(":", "/")}`),
     ...audio.map((key) => `audio/${key}`),
@@ -47,15 +48,19 @@ test("runWarmCacheJob runs the whole pipeline and stores the report, database ro
   // The stories, with their enrichment, are stored in the database.
   const saved = world.reports.findByKey(result.reportKey);
   assert.ok(saved);
+
   const mediaPks = saved.output.users.flatMap((user) =>
     user.stories.map((story) => story.media_pk),
   );
+
   expect(mediaPks.toSorted()).toStrictEqual(storyPks);
+
   for (const [position, mediaPk] of mediaPks.entries()) {
     expect(world.stories.findByMediaPk(mediaPk)).not.toBeNull();
     expect(world.appleVision.findByMediaPk(mediaPk)).toBe(`Synthetic caption ${position}`);
     expect(world.vision.findByMediaPk(mediaPk)?.result.visual).toBe(`Synthetic scene ${position}`);
   }
+
   expect(world.users.listAll().map(({ username }) => username)).toStrictEqual([
     "user_008",
     "user_072",
@@ -105,16 +110,19 @@ test("startWarmCacheQueue schedules the hourly job, runs it and forwards errors"
   let errorListener: ((error: Error) => void) | undefined;
   const queueError = new Error("queue failed");
   const capturedErrors: Array<Error> = [];
+
   const world = await createWorld(context, {
     queue(name, nextProcessor) {
       processor = nextProcessor;
       calls.push(`queue:${name}`);
+
       return {
         async close() {
           calls.push("close");
         },
         async cron(id, pattern) {
           calls.push(`cron:${id}:${pattern}`);
+
           return null;
         },
         on(_event, listener) {

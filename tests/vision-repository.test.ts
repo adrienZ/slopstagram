@@ -11,6 +11,7 @@ describe("VisionRepository", () => {
       database.$client.close();
     });
     const repository = new VisionRepository(database);
+
     const entry = {
       model: "vision-model",
       prompt_hash: "prompt-hash",
@@ -20,9 +21,11 @@ describe("VisionRepository", () => {
     await repository.save("story-2", entry);
 
     expect(repository.findByMediaPk("story-2")).toStrictEqual(entry);
+
     const storedResult = database.$client
       .prepare("SELECT text, visual FROM vision WHERE mediaPk = ?")
       .get("story-2");
+
     assert.ok(storedResult);
     expect(storedResult.text).toBe("readable text");
     expect(storedResult.visual).toBe("a market");

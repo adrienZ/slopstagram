@@ -26,6 +26,7 @@ function readStoredStory(repository: StoryRepository, mediaPk = "m1") {
   const stored = repository.findByMediaPk(mediaPk);
   assert.ok(stored);
   assert.ok(stored.annotations);
+
   return { ...stored, annotations: stored.annotations };
 }
 
@@ -37,11 +38,13 @@ test("upgrading existing occurrences preserves duplicates, order and provenance"
     rmSync(staging, { recursive: true, force: true });
   });
   const migrations = fileURLToPath(new URL("../core/domains/database/migrations", import.meta.url));
+
   for (const name of readdirSync(migrations)) {
     if (name < "20261024001923") {
       cpSync(path.join(migrations, name), path.join(staging, name), { recursive: true });
     }
   }
+
   migrate(database, { migrationsFolder: staging });
   database.$client.exec(`
     INSERT INTO stories (mediaPk) VALUES ('old');
@@ -78,6 +81,7 @@ test("provider-identified occurrences keep their identities through reordering a
   const repository = new StoryRepository(database);
   const owner = { full_name: "One", id: "u1", pk: "u1", username: "one" };
   await new InstagramUserRepository(database).save(owner);
+
   async function ingest(ids: Array<string>, extra: Partial<StoryItem> = {}) {
     return await fetchStories({
       logger: createCapturingLogger(),
@@ -109,6 +113,7 @@ test("provider-identified occurrences keep their identities through reordering a
       ),
     });
   }
+
   const report = await ingest(["sticker-a", "sticker-b"]);
   const before = readStoredStory(new StoryRepository(database));
   const original = before.annotations.stickers;
@@ -118,6 +123,7 @@ test("provider-identified occurrences keep their identities through reordering a
     "sticker-a",
     "sticker-b",
   ]);
+
   const reorderedReport = await ingest(["sticker-b", "sticker-a"], {
     story_bloks_stickers: [
       {
@@ -128,6 +134,7 @@ test("provider-identified occurrences keep their identities through reordering a
       },
     ],
   });
+
   const cold = new StoryRepository(database);
   const reordered = readStoredStory(cold);
   expect(reordered.annotations.stickers.slice(1)).toStrictEqual([original[1], original[0]]);
@@ -155,10 +162,12 @@ test("uncertain replacements never inherit identities from labels or shared asse
   });
   const repository = new StoryRepository(database);
   const music = { music_asset_info: { id: "audio", audio_asset_id: "audio", title: "Same" } };
+
   const locations = [
     { location: { pk: "place", name: "Same" } },
     { location: { pk: "place", name: "Same" } },
   ];
+
   await repository.save({ pk: "m1", story_music_stickers: [music], story_locations: locations });
   const before = readStoredStory(new StoryRepository(database)).annotations;
   expect(
@@ -188,6 +197,7 @@ test("uncertain replacements never inherit identities from labels or shared asse
   const location = readStoredStory(repository).annotations.stickers.find(
     (sticker) => sticker.kind === "location",
   );
+
   assert.ok(location);
   await repository.save({
     pk: "m1",
@@ -212,6 +222,7 @@ test("story annotations survive ingestion, cold reports, and repeated saves", as
   const owner = { full_name: "One", id: "id-1", pk: "user-1", username: "one" };
   await new InstagramUserRepository(database).save(owner);
   const tray = [{ id: "r1", media_ids: ["m1"], user: owner }];
+
   const item = storyItemWithStickers("m1", {
     story_bloks_stickers: [
       { bloks_sticker: { sticker_data: { ig_mention: { username: "friend" } } } },
@@ -223,12 +234,14 @@ test("story annotations survive ingestion, cold reports, and repeated saves", as
     story_music_stickers: [{ music_asset_info: { title: "Song", display_artist: "Artist" } }],
     taken_at: 1_767_225_600,
   });
+
   const report = await fetchStories({
     logger: createCapturingLogger(),
     stories: repository,
     storage: createMemoryCacheStorage(),
     client: createClient(tray, [reelsResponse({ r1: { ...reel("r1", [item]), user: owner } })]),
   });
+
   expect(report.manifest.users[0]?.stories[0]?.locations).toStrictEqual(["Paris", "Paris"]);
   expect(report.manifest.users[0]?.stories[0]?.stickers).toStrictEqual([
     "@friend",
@@ -247,11 +260,13 @@ test("story annotations survive ingestion, cold reports, and repeated saves", as
   expect(users).toStrictEqual(report.manifest.users);
   expect(stored.story_bloks_stickers).toBe(undefined);
   expect(stored.story_locations).toBe(undefined);
+
   const coldReport = {
     ...report,
     manifest: { users },
     output: { users: createOutputUsers(users) },
   };
+
   await reportRepository.save("cold", coldReport);
   expect(reportRepository.findByKey("cold")).toStrictEqual(report);
 
@@ -281,6 +296,7 @@ for (const unifiedLocations of [false, true]) {
     const owner = { full_name: "One", id: "id-1", pk: "user-1", username: "one" };
     await new InstagramUserRepository(database).save(owner);
     const tray = [{ id: "r1", media_ids: ["m1"], user: owner }];
+
     const original = await fetchStories({
       logger: createCapturingLogger(),
       stories: repository,
@@ -299,6 +315,7 @@ for (const unifiedLocations of [false, true]) {
         }),
       ]),
     });
+
     await reports.save("historical", original);
 
     // Existing relational data may contain repeated labels and kinds unknown to the extractor.
@@ -308,6 +325,7 @@ for (const unifiedLocations of [false, true]) {
       { kind: "custom", label: "mention:@same", mediaPk: "m1", sortOrder: 8 },
       { kind: "mention", label: "@same", mediaPk: "m1", sortOrder: 2 },
     ];
+
     if (unifiedLocations) {
       stickers.push(
         { kind: "location", label: "Unified place", mediaPk: "m1", sortOrder: 6 },
@@ -315,15 +333,18 @@ for (const unifiedLocations of [false, true]) {
         { kind: "location", label: "First unified place", mediaPk: "m1", sortOrder: 3 },
       );
     }
+
     database.$client.exec("DELETE FROM story_stickers WHERE mediaPk = 'm1'");
     await database.insert(storyStickers).values(stickers);
 
     const cold = new StoryRepository(database);
     const stored = cold.findByMediaPk("m1");
     assert.ok(stored);
+
     const expectedLocations = unifiedLocations
       ? ["First unified place", "Unified place", "Unified place"]
       : [];
+
     const users = createManifestUsers(tray, new Map([[stored.pk, stored]]), new Map());
     expect(users[0]?.stories[0]?.locations).toStrictEqual(expectedLocations);
     expect(users[0]?.stories[0]?.stickers).toStrictEqual(["@same", "mention:@same", "@same"]);
@@ -355,6 +376,7 @@ test("partial ingestion merges sources for fresh reports, cold reads, and resave
   await new InstagramUserRepository(database).save(owner);
   const tray = [{ id: "r1", media_ids: ["m1"], user: owner }];
   const storage = createMemoryStorage<StoryItem>();
+
   async function ingest(item: StoryItem) {
     return await fetchStories({
       logger: createCapturingLogger(),
@@ -363,6 +385,7 @@ test("partial ingestion merges sources for fresh reports, cold reads, and resave
       client: createClient(tray, [reelsResponse({ r1: { ...reel("r1", [item]), user: owner } })]),
     });
   }
+
   const original = await ingest(
     storyItemWithStickers("m1", {
       taken_at: 1_767_225_600,
@@ -381,13 +404,16 @@ test("partial ingestion merges sources for fresh reports, cold reads, and resave
       story_cta: [{ url: "https://example.com" }],
     }),
   );
+
   await reports.save("before-partial", original);
+
   const partial = storyItemWithStickers("m1", {
     taken_at: 1_767_225_600,
     story_locations: [],
     story_hashtags: [{ hashtag: "new" }],
     story_music_stickers: null,
   });
+
   const updated = await ingest(partial);
   expect(updated.manifest.users[0]?.stories[0]?.locations).toStrictEqual(["Paris"]);
   expect(updated.manifest.users[0]?.stories[0]?.stickers).toStrictEqual([
@@ -502,12 +528,14 @@ test("legacy provenance survives partial observations until one complete observa
   expect(
     repository.findByMediaPk("legacy")?.annotations?.stickers.map((sticker) => sticker.label),
   ).toStrictEqual(["Old place", "old", "other:untouched"]);
+
   const links = {
     story_link_stickers: [],
     story_cta: [],
     story_bloks_tappables: [],
     text_post_share_to_ig_story_stickers: [],
   };
+
   await repository.save({ pk: "legacy", ...links });
   expect(
     repository.findByMediaPk("legacy")?.annotations?.stickers.map((sticker) => sticker.label),

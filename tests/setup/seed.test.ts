@@ -20,6 +20,7 @@ const videoStoryPk = "700000000000100";
 const musicStoryPk = "700000000000900";
 const locationStoryPk = "700000000000903";
 const secondReelStoryPk = "700000000000090";
+
 const storyPks = [
   imageStoryPk,
   secondReelStoryPk,
@@ -35,6 +36,7 @@ const storyPks = [
 
 async function recordedGalleryPage() {
   const { galleryPages } = await readRecordedPayloads(["instagram-story-data.json"]);
+
   return RecordedGalleryPageSchema.parse(galleryPages[0]);
 }
 
@@ -84,9 +86,11 @@ test("seeding stores the reels of every recorded gallery page", async (context) 
   const runtime = await createTestRuntime(context);
   const { stories } = runtime;
   const pages = await Promise.all([recordedGalleryPage(), recordedGalleryPage()]);
+
   const [pageOne, pageTwo] = pages.map((page, index) => {
     const connection = connectionOf(page);
     connection.edges = [connection.edges[index]];
+
     return toPayload(page);
   });
 
@@ -100,6 +104,7 @@ test("seeding a recorded tray fetches only the reels it lists", async (context) 
   const runtime = await createTestRuntime(context);
   const { stories } = runtime;
   const { galleryPages } = await readRecordedPayloads(["instagram-story-data.json"]);
+
   const tray = {
     broadcasts: [],
     status: "ok",
@@ -161,15 +166,18 @@ test("seeded stories can be shifted in time to be past", async (context) => {
   await seedRecordedStories(runtime, undefined, { publishedBefore: { now, seconds: 26 * HOUR } });
 
   expect(stories.listActive(now)).toEqual([]);
+
   const yesterday = stories.listPublishedBetween(
     new Date(now.getTime() - 48 * 3_600_000),
     new Date(now.getTime() - 24 * 3_600_000),
   );
+
   expect(yesterday).toHaveLength(10);
 });
 
 function gaps(repository: StoryRepository): Array<number> {
   const times = storyPks.map((pk) => repository.findByMediaPk(pk)?.taken_at ?? 0);
+
   return times.map((time) => time - times[0]);
 }
 

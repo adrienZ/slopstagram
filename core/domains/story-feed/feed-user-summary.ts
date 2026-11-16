@@ -41,17 +41,23 @@ function readFeedUserSummary(
 ): FeedUserSummary {
   const wanted = username.trim().replace(/^@/u, "").toLowerCase();
   const account = runtime.users.listAll().find((user) => user.username.toLowerCase() === wanted);
+
   if (account === undefined) {
     return { error: "unknown_account", status: "error" };
   }
+
   const feedUser = createStoryFeed(runtime, now).find((user) => user.username === account.username);
+
   if (feedUser === undefined) {
     return { reason: "no_stories_in_last_24h", status: "missing", username: account.username };
   }
+
   const summary = readFeedUserSummaries(runtime, [feedUser]).get(getReportUserKey(feedUser));
+
   if (summary === undefined) {
     return { reason: "not_generated", status: "missing", username: account.username };
   }
+
   return {
     status: "found",
     storyCount: feedUser.stories.length,
@@ -98,8 +104,10 @@ export function readFeedUserSummariesByUsername(
 ): Array<RequestedFeedUserSummary> {
   return usernames.map((requestedUsername) => {
     const outcome = readFeedUserSummary(runtime, requestedUsername, now);
+
     const username =
       outcome.status === "error" ? requestedUsername.trim().replace(/^@/u, "") : outcome.username;
+
     return { handle: `@${username}`, outcome, requestedUsername };
   });
 }

@@ -63,9 +63,11 @@ function createManifestStory(
     stickers: getStoryStickers(mediaPk, cachedItems),
     status: failureIndex === undefined ? "ok" : "failed",
   };
+
   if (failureIndex !== undefined) {
     story.failure_index = failureIndex;
   }
+
   return story;
 }
 

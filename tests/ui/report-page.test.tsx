@@ -22,11 +22,13 @@ import { useSharedTestRuntime } from "../setup/test-runtime.ts";
 // The report the real loader would build, with the arguments it receives, at the test's "now".
 const shared = useSharedTestRuntime(seedPageDatabase);
 const empty = useSharedTestRuntime(async () => {});
+
 const emptyRenderer = createPageRenderer(
   Route,
   ({ deps, context }) => loadStoryFeed(empty.runtime, pageNow, deps.date, context.selectedStory),
   "/report",
 );
+
 const renderer = createPageRenderer(
   Route,
   ({ deps, context }) => loadStoryFeed(shared.runtime, pageNow, deps.date, context.selectedStory),
@@ -62,9 +64,11 @@ test("the feed renders ranked users, separate handles, summaries, and local prev
   expect(screen.getAllByRole("button", { name: /Ouvrir aperçu/u })).toHaveLength(
     reportProps.users.flatMap(({ stories }) => stories).length,
   );
+
   for (const image of screen.getAllByRole("img")) {
     expect(image.getAttribute("src")).toMatch(/^\/media\//u);
   }
+
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
 
@@ -137,6 +141,7 @@ test("report calendar stops at the oldest available month across a year boundary
     selectedDate: "2026-02-02",
     availableDates: ["2026-01-15", "2025-12-20", "2026-02-02"],
   });
+
   expect(getPreviousMonthButton()).not.toHaveAttribute("aria-disabled", "true");
   await user.click(getPreviousMonthButton());
   expect(getPreviousMonthButton()).not.toHaveAttribute("aria-disabled", "true");
@@ -168,13 +173,17 @@ test("report calendar with no available data cannot navigate before today’s mo
 
 test("opening a preview updates the real router and closing restores focus and search", async () => {
   const { user, router } = await renderer.mountRoute(`/report?date=${today}`);
+
   const preview = screen.getByRole("button", {
     name: `Ouvrir aperçu ${captionedStoryPk}`,
   });
+
   await user.click(preview);
+
   const dialog = await screen.findByRole("dialog", {
     name: "Aperçu de l’image",
   });
+
   expect(router.state.location.search).toMatchObject({ date: today });
   // The raw location keeps a small numeric id as a number; the URL shows what the page reads.
   expect(router.state.location.searchStr).toContain(captionedStoryPk);
@@ -202,6 +211,7 @@ test("a story deep link opens after mount and an unknown story stays closed", as
 test("closing story details hides the dialog immediately while route navigation is pending", async (context) => {
   let delayNavigation = false;
   const { promise: pending, resolve: release } = Promise.withResolvers<null>();
+
   const { user, router } = await renderer.mountRoute(
     `/report?story=${captionedStoryPk}`,
     reportProps,
@@ -213,6 +223,7 @@ test("closing story details hides the dialog immediately while route navigation 
       },
     },
   );
+
   context.onTestFinished(() => {
     release(null);
   });
@@ -229,13 +240,17 @@ test("closing story details hides the dialog immediately while route navigation 
 test("report details link the mentions of a saved account to its page", async () => {
   await renderer.mountRoute(`/report?story=${captionedStoryPk}`);
   const details = within(await screen.findByRole("dialog", { name: "Aperçu de l’image" }));
+
   const mentions = details.getAllByRole("link", {
     name: `@${mentionedAccount}`,
   });
+
   expect(mentions.length).toBeGreaterThan(0);
+
   for (const mention of mentions) {
     expect(mention).toHaveAttribute("href", `/users/${mentionedAccount}`);
   }
+
   expect(details.queryByRole("rowheader", { name: /^Story$/u })).not.toBeInTheDocument();
 });
 

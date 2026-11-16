@@ -37,6 +37,7 @@ const UserSummaryResponseSchema = z
     summary: z.string(),
   })
   .strict();
+
 const USER_SUMMARY_OUTPUT_SCHEMA = z.toJSONSchema(UserSummaryResponseSchema);
 
 type RunUserSummary = (prompt: string) => Promise<string>;
@@ -110,6 +111,7 @@ function collectFallbackDetails(
       story.preview_image_url !== null && story.preview_image_url.length > 0
         ? visionByPreviewUrl?.get(story.preview_image_url)
         : undefined;
+
     const values = [vision?.visual ?? "", story.stickers.join(", "), story.locations.join(", ")];
 
     for (const value of values) {
@@ -185,6 +187,7 @@ function createSummaryPrompt(
 function createTimeoutFetch(fetchOllama: HttpFetch, timeoutMs: number): OllamaFetch {
   async function timeoutFetch(input: RequestInfo | URL, init?: RequestInit) {
     const controller = new globalThis.AbortController();
+
     const timeout = setTimeout(() => {
       controller.abort();
     }, timeoutMs);
@@ -310,6 +313,7 @@ export function readUserSummaries(
       model,
       visionByPreviewUrl: options.visionByPreviewUrl,
     });
+
     const summary = getStoredSummary({ ...source, repository });
 
     if (summary !== null) {
@@ -332,6 +336,7 @@ async function runSummaryForUser(
     resolved.logger.warn(
       `user summary returned empty response for ${source.userKey}; using report fallback`,
     );
+
     return createFallbackSummary(user, resolved.visionByPreviewUrl);
   }
 
@@ -341,6 +346,7 @@ async function runSummaryForUser(
     source_hash: source.sourceHash,
     user_key: source.userKey,
   });
+
   return result;
 }
 
@@ -359,6 +365,7 @@ async function resolveUserSummary(
       prefix: "user-summary",
       suffix: `repository hit ${userKey}`,
     });
+
     return [userKey, storedSummary];
   }
 
@@ -372,6 +379,7 @@ async function resolveUserSummary(
       prefix: "user-summary",
       suffix: `summarized ${userKey}`,
     });
+
     return [userKey, summary];
   } catch (error) {
     const statusError = z.object({ status_code: z.number() }).safeParse(error);
@@ -382,6 +390,7 @@ async function resolveUserSummary(
         status === null ? "" : ` HTTP ${status}`
       }: ${message}`,
     );
+
     return [userKey, USER_SUMMARY_UNAVAILABLE];
   }
 }
@@ -402,6 +411,7 @@ export async function resolveUserSummariesForReport(
       report.output.users.length,
       resolved,
     );
+
     summaryByUserKey.set(userKey, summary);
   }
 

@@ -46,6 +46,7 @@ export class UserSummaryRepository {
       .from(instagramUsers)
       .where(eq(instagramUsers.username, value.user_key))
       .all();
+
     if (users.length !== 1) {
       throw new Error(`Expected one Instagram user for summary owner ${value.user_key}`);
     }
@@ -57,6 +58,7 @@ export class UserSummaryRepository {
       result: value.result,
       sourceHash: value.source_hash,
     });
+
     await this.database
       .insert(userSummaries)
       .values(entry)

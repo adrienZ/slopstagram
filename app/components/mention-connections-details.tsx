@@ -35,12 +35,15 @@ export function MentionConnectionSummaries({ list }: { list: MentionConnectionLi
   if (list.status === "unknown_person") {
     return <p>Personne ne s’appelle {list.query} dans les mentions.</p>;
   }
+
   if (list.status === "ambiguous") {
     return <AmbiguousCandidates {...list} />;
   }
+
   if (list.connections.length === 0) {
     return <p>Aucune connexion de mention.</p>;
   }
+
   return (
     <>
       <ul aria-label="Connexions de mention" className="tw:grid tw:gap-1">
@@ -64,6 +67,7 @@ export function MentionPeople({ page }: { page: MentionPeoplePage }) {
   if (page.people.length === 0) {
     return <p>Aucune personne trouvée.</p>;
   }
+
   return (
     <>
       <ul aria-label="Personnes trouvées" className="tw:grid tw:gap-1">
@@ -88,10 +92,13 @@ export function MentionConnectionDetails({ read }: { read: MentionConnectionRead
   if (read.status === "unknown_person") {
     return <p>Personne ne s’appelle {read.queries.join(", ")} dans les mentions.</p>;
   }
+
   if (read.status === "ambiguous") {
     return read.matches.map((match) => <AmbiguousCandidates key={match.query} {...match} />);
   }
+
   const [first, second] = read.people;
+
   if (read.status === "no_observation") {
     return (
       <p>
@@ -99,6 +106,7 @@ export function MentionConnectionDetails({ read }: { read: MentionConnectionRead
       </p>
     );
   }
+
   return (
     <section aria-label="Connexion de mention lue" className="tw:grid tw:gap-1">
       <p className="tw:font-medium">{read.mentions.map(formatMention).join(", ")}</p>

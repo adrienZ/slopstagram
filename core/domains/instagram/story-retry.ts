@@ -30,9 +30,11 @@ const TRANSIENT_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
 
 export function chunk<T>(items: Array<T>, size: number): Array<Array<T>> {
   const chunks: Array<Array<T>> = [];
+
   for (let index = 0; index < items.length; index += size) {
     chunks.push(items.slice(index, index + size));
   }
+
   return chunks;
 }
 
@@ -50,11 +52,13 @@ function getRetryAfterMs(headers: Record<string, string>): number | null {
   }
 
   const seconds = Number(retryAfter);
+
   if (Number.isFinite(seconds)) {
     return Math.min(Math.max(0, seconds * 1000), MAX_RATE_LIMIT_DELAY_MS);
   }
 
   const retryAt = Date.parse(retryAfter);
+
   return Number.isNaN(retryAt)
     ? null
     : Math.min(Math.max(0, retryAt - Date.now()), MAX_RATE_LIMIT_DELAY_MS);
@@ -105,6 +109,7 @@ async function handleFailedResponse<T>(
 
   if (attemptCount >= options.maxAttempts || !TRANSIENT_STATUS_CODES.has(response.status)) {
     options.logger.warn(`${label} failed after ${attemptCount} attempt(s): ${failure.message}`);
+
     return { failure, ok: false };
   }
 
@@ -113,6 +118,7 @@ async function handleFailedResponse<T>(
     `${label} attempt ${attemptCount} failed with HTTP ${response.status}; retrying in ${delayMs}ms`,
   );
   await sleep(delayMs);
+
   return null;
 }
 
@@ -128,6 +134,7 @@ async function handleThrownRequest<T>(
 
   if (attemptCount >= options.maxAttempts || isNonRetryableError(error)) {
     options.logger.warn(`${label} failed after ${attemptCount} attempt(s): ${failure.message}`);
+
     return { failure, ok: false };
   }
 
@@ -136,6 +143,7 @@ async function handleThrownRequest<T>(
     `${label} attempt ${attemptCount} threw ${failure.message}; retrying in ${delayMs}ms`,
   );
   await sleep(delayMs);
+
   return null;
 }
 
@@ -155,12 +163,15 @@ export async function requestWithRetry<T>(
     try {
       // oxlint-disable-next-line no-await-in-loop -- Retry attempts must wait for the prior request result.
       const response = await runRequest();
+
       if (response.ok) {
         return { ok: true, value: response.json() };
       }
+
       lastFailure = createHttpFailure(response, attemptIndex + 1);
       // oxlint-disable-next-line no-await-in-loop -- Retry backoff determines whether the next attempt may run.
       const result = await handleFailedResponse(response, attemptIndex, options, label);
+
       if (result !== null) {
         return result;
       }
@@ -169,6 +180,7 @@ export async function requestWithRetry<T>(
       lastFailure = createThrownFailure(requestError, attemptIndex + 1);
       // oxlint-disable-next-line no-await-in-loop -- Retry backoff determines whether the next attempt may run.
       const result = await handleThrownRequest<T>(requestError, attemptIndex, options, label);
+
       if (result !== null) {
         return result;
       }

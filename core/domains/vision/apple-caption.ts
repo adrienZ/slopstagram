@@ -48,10 +48,12 @@ export async function resolveAppleCaptionsForReport(
       await recognizeAppleCaption(runtime, preview.mediaPk, preview.cachedPath);
     } catch (error) {
       const ocrError = error instanceof Error ? error : new Error("unknown OCR failure");
+
       if (isAppleOcrUnavailable(ocrError)) {
         runtime.logger.warn(
           `apple ocr unavailable; skipping remaining captions: ${ocrError.message}`,
         );
+
         return;
       }
 

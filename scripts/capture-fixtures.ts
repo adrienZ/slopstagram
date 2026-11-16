@@ -20,10 +20,12 @@ const IDENTIFIER_KEYS = new Set([
   "organic_tracking_token",
   "strong_id__",
 ]);
+
 const IDENTIFIER_KEY_PATTERN = /(?:^|_)(?:fbid|id|ids|pk)(?:__)?$/u;
 const LATITUDE_KEY_PATTERN = /(?:^|_)(?:lat|latitude)$/u;
 const LONGITUDE_KEY_PATTERN = /(?:^|_)(?:lng|lon|longitude)$/u;
 const SLUG_KEY_PATTERN = /(?:^|_)slug$/u;
+
 // Keys whose string values are structural (enums, fixed labels), so they carry no personal data.
 const STRUCTURAL_KEYS = new Set([
   "__typename",
@@ -39,12 +41,14 @@ const STRUCTURAL_KEYS = new Set([
   "sticker_type",
   "type",
 ]);
+
 // Public music asset metadata of licensed catalog tracks is recorded as is. The music sticker and
 // the music asset response both carry it under `music_asset_info`. Only these direct scalar fields
 // are kept: the people around the track (artist account, profile pictures, usernames) and every URL
 // stay redacted. Original (user-made) audio is not public catalog data: its title and display
 // artist are usually the creator's name, so they are replaced (see isLicensedCatalogTrack).
 const MUSIC_ASSET_INFO_KEY = "music_asset_info";
+
 const PUBLIC_AUDIO_KEYS = new Set([
   "audio_asset_id",
   "audio_asset_start_time_in_ms",
@@ -58,8 +62,10 @@ const PUBLIC_AUDIO_KEYS = new Set([
   "should_mute_audio",
   "title",
 ]);
+
 // Human-readable audio text; only kept for licensed catalog tracks.
 const AUDIO_TEXT_KEYS = new Set(["display_artist", "title"]);
+
 // Any of these present on music asset info marks the audio as user-made, so its text is replaced.
 const ORIGINAL_AUDIO_KEYS = [
   "is_original",
@@ -68,7 +74,9 @@ const ORIGINAL_AUDIO_KEYS = [
   "original_audio_title",
   "original_sound_info",
 ];
+
 const MIN_ACCOUNT_NAME_LENGTH = 3;
+
 // Free text, and a manifest full of media URLs, that tests do not need.
 const OMITTED_KEYS = new Set(["video_dash_manifest", "caption", "accessibility_caption"]);
 const FIXTURE_ID_BASE = 700_000_000_000_000n;
@@ -76,16 +84,19 @@ const CAPTURED_REEL_COUNT = 3;
 const METADATA_FILE_NAME = "capture-metadata.json";
 const LATITUDE_STEPS = 600;
 const LONGITUDE_STEPS = 1600;
+
 // What the redactor writes. The fixture privacy guard accepts these shapes and nothing else, so
 // the redaction rules above stay the single source of truth for what counts as synthetic.
 const SYNTHETIC_ID_PATTERN = /^7000000\d{8}$/u;
 const SYNTHETIC_USERNAME_PATTERN = /^user_\d{3,}$/u;
 const SYNTHETIC_AUDIO_TEXT_PATTERN = /^Fixture audio (?:title|artist) \d+$/u;
+
 // Hand-written fixtures: "fixture" followed by words and a number, e.g. `Fixture caption 1`,
 // `Fixture "quoted" 2`, `fixture_user_1` or `images/avatars/fixture-avatar-1.jpg`, optionally after a
 // `kind:` prefix.
 const SYNTHETIC_MARKER_PATTERN =
   /^(?:[a-z-]+\/)*(?:[a-z]+:)?fixture[\s_-](?:"?[a-z]+"?[\s_-])*\d+(?:\.[a-z0-9]+)?$/iu;
+
 // Hosts that can never serve real data: IANA reserved example domains.
 const RESERVED_HOST_PATTERN = /(?:^|\.)example\.(?:com|org|net|test)$|\.test$/u;
 const MAX_COORDINATE_DECIMALS = 1;
@@ -119,8 +130,10 @@ function collectAccountNames(value: JsonValue, names = new Set<string>()): Set<s
   } else if (isJsonObject(value)) {
     for (const [key, entry] of Object.entries(value)) {
       const text = z.string().safeParse(entry);
+
       if ((key === "username" || key === "full_name") && text.success) {
         const name = normalizedName(text.data);
+
         if (name.length >= MIN_ACCOUNT_NAME_LENGTH) {
           names.add(name);
         }
@@ -129,6 +142,7 @@ function collectAccountNames(value: JsonValue, names = new Set<string>()): Set<s
       }
     }
   }
+
   return names;
 }
 
@@ -137,6 +151,7 @@ function isLicensedCatalogTrack(info: JsonObject, accountNames: ReadonlySet<stri
   if (info.is_original_sound !== false) {
     return false;
   }
+
   const markedOriginal = ORIGINAL_AUDIO_KEYS.some(
     (key) =>
       key !== "is_original_sound" &&
@@ -144,12 +159,15 @@ function isLicensedCatalogTrack(info: JsonObject, accountNames: ReadonlySet<stri
       info[key] !== null &&
       info[key] !== false,
   );
+
   if (markedOriginal) {
     return false;
   }
+
   const texts = [info.title, info.display_artist]
     .map((text) => z.string().safeParse(text))
     .flatMap((text) => (text.success ? [normalizedName(text.data)] : []));
+
   return texts.every((text) => [...accountNames].every((name) => !text.includes(name)));
 }
 
@@ -160,10 +178,12 @@ export function createRedactor() {
   function replacement(kind: string, original: string, create: (index: number) => string): string {
     const key = `${kind}:${original}`;
     let value = replacements.get(key);
+
     if (value === undefined) {
       value = create(replacements.size + 1);
       replacements.set(key, value);
     }
+
     return value;
   }
 
@@ -171,18 +191,23 @@ export function createRedactor() {
     if (isIdentifierKey(key)) {
       return replacement("id", text, (index) => String(FIXTURE_ID_BASE + BigInt(index)));
     }
+
     if (STRUCTURAL_KEYS.has(key) || text.length === 0) {
       return text;
     }
+
     if (key === "username") {
       return replacement("username", text, (index) => `user_${String(index).padStart(3, "0")}`);
     }
+
     if (SLUG_KEY_PATTERN.test(key)) {
       return replacement("slug", text, (index) => `fixture-slug-${index}`);
     }
+
     if (/^https?:\/\//u.test(text)) {
       return replacement("url", text, anonymizedUrl);
     }
+
     return replacement("text", text, (index) => `Fixture text ${index}`);
   }
 
@@ -195,6 +220,7 @@ export function createRedactor() {
         ),
       );
     }
+
     if (LONGITUDE_KEY_PATTERN.test(key)) {
       return Number(
         replacement("longitude", String(original), (index) =>
@@ -202,6 +228,7 @@ export function createRedactor() {
         ),
       );
     }
+
     return null;
   }
 
@@ -210,7 +237,9 @@ export function createRedactor() {
     if (Array.isArray(entry)) {
       return entry.map((item) => redactAudioText(item, kind));
     }
+
     const text = z.string().safeParse(entry);
+
     return text.success && text.data.length > 0
       ? replacement(`audio-${kind}`, text.data, (index) => `Fixture audio ${kind} ${index}`)
       : entry;
@@ -226,6 +255,7 @@ export function createRedactor() {
     if (!AUDIO_TEXT_KEYS.has(entryKey) || isLicensedCatalogTrack(info, names)) {
       return entry;
     }
+
     return redactAudioText(entry, entryKey === "title" ? "title" : "artist");
   }
 
@@ -233,8 +263,10 @@ export function createRedactor() {
     if (Array.isArray(value)) {
       return value.map((entry) => redact(entry, key, names));
     }
+
     if (isJsonObject(value)) {
       const isMusicInfo = key === MUSIC_ASSET_INFO_KEY;
+
       return Object.fromEntries(
         Object.entries(value)
           .filter(([entryKey]) => !OMITTED_KEYS.has(entryKey))
@@ -246,18 +278,25 @@ export function createRedactor() {
           ]),
       );
     }
+
     const text = z.string().safeParse(value);
+
     if (text.success) {
       return redactText(text.data, key);
     }
+
     const number = z.number().safeParse(value);
+
     if (!number.success) {
       return value;
     }
+
     const coordinate = redactCoordinate(number.data, key);
+
     if (coordinate !== null) {
       return coordinate;
     }
+
     return isIdentifierKey(key) ? Number(redactText(String(number.data), key)) : number.data;
   }
 
@@ -272,6 +311,7 @@ export interface UnsafeFixtureValue {
 
 function isSyntheticUrl(text: string): boolean {
   const url = globalThis.URL.parse(text);
+
   return url !== null && RESERVED_HOST_PATTERN.test(url.hostname);
 }
 
@@ -281,6 +321,7 @@ function isSyntheticText(text: string): boolean {
 
 function isSyntheticCoordinate(value: number, range: { max: number; min: number }): boolean {
   const decimals = (String(value).split(".")[1] ?? "").length;
+
   return value >= range.min && value < range.max && decimals <= MAX_COORDINATE_DECIMALS;
 }
 
@@ -288,9 +329,11 @@ function numberProblem(value: number, key: string): string | null {
   if (LATITUDE_KEY_PATTERN.test(key) && !isSyntheticCoordinate(value, LATITUDE_RANGE)) {
     return "latitude is not a synthetic coordinate";
   }
+
   if (LONGITUDE_KEY_PATTERN.test(key) && !isSyntheticCoordinate(value, LONGITUDE_RANGE)) {
     return "longitude is not a synthetic coordinate";
   }
+
   return isIdentifierKey(key) && !SYNTHETIC_ID_PATTERN.test(String(value))
     ? "identifier is not synthetic"
     : null;
@@ -301,19 +344,23 @@ function textProblem(text: string, key: string): string | null {
   if (text.length === 0 || STRUCTURAL_KEYS.has(key)) {
     return null;
   }
+
   if (OMITTED_KEYS.has(key)) {
     return "free text that fixtures must omit";
   }
+
   if (isIdentifierKey(key)) {
     return SYNTHETIC_ID_PATTERN.test(text) || isSyntheticText(text)
       ? null
       : "identifier is not synthetic";
   }
+
   if (key === "username") {
     return SYNTHETIC_USERNAME_PATTERN.test(text) || isSyntheticText(text)
       ? null
       : "username is not synthetic";
   }
+
   return isSyntheticText(text) ? null : "text is not synthetic";
 }
 
@@ -335,19 +382,23 @@ export function findUnsafeFixtureValues(payload: JsonValue): Array<UnsafeFixture
         ? null
         : "audio text of a track that is not a licensed catalog track";
     }
+
     return /^\d+$/u.test(entry) ? null : "audio metadata is not an identifier or a number";
   }
 
   function problemOf(value: JsonValue, key: string, parent: JsonObject | null): string | null {
     const text = z.string().safeParse(value);
     const number = z.number().safeParse(value);
+
     if (parent !== null) {
       // Public audio metadata: numbers and booleans are kept as recorded.
       return text.success ? audioProblem(parent, key, text.data) : null;
     }
+
     if (text.success) {
       return textProblem(text.data, key);
     }
+
     return number.success ? numberProblem(number.data, key) : null;
   }
 
@@ -361,35 +412,45 @@ export function findUnsafeFixtureValues(payload: JsonValue): Array<UnsafeFixture
       for (const [index, entry] of value.entries()) {
         visit(entry, key, `${at}[${index}]`, publicAudioOf);
       }
+
       return;
     }
+
     if (isJsonObject(value)) {
       for (const [entryKey, entry] of Object.entries(value)) {
         const entryAt = `${at}.${entryKey}`;
         const problem = keyProblem(entryKey);
+
         if (problem !== null) {
           unsafe.push({ path: entryAt, reason: problem });
         }
+
         // Only direct scalar fields of music asset info are public, like in `redact`.
         const isPublicAudio =
           key === MUSIC_ASSET_INFO_KEY &&
           PUBLIC_AUDIO_KEYS.has(entryKey) &&
           isPublicAudioValue(entry);
+
         visit(entry, entryKey, entryAt, isPublicAudio ? value : null);
       }
+
       return;
     }
+
     const problem = problemOf(value, key, publicAudioOf);
+
     if (problem !== null) {
       unsafe.push({ path: at, reason: problem });
     }
   }
 
   visit(payload, "", "$", null);
+
   return unsafe;
 }
 
 type Session = Parameters<typeof createInstagramClient>[0];
+
 type Evaluate = Session["page"]["evaluate"];
 
 export interface CapturedPayloads {
@@ -405,13 +466,17 @@ function findFirst(value: JsonValue, key: string): string | null {
   if (Array.isArray(value)) {
     return value.map((entry) => findFirst(entry, key)).find((found) => found !== null) ?? null;
   }
+
   if (!isJsonObject(value)) {
     return null;
   }
+
   const direct = z.union([z.string(), z.number()]).safeParse(value[key]);
+
   if (direct.success) {
     return String(direct.data);
   }
+
   return (
     Object.values(value)
       .map((entry) => findFirst(entry, key))
@@ -422,6 +487,7 @@ function findFirst(value: JsonValue, key: string): string | null {
 /** Only the first tray entries are kept, so other people in the tray never reach the recording. */
 export async function captureInstagramPayloads(session: Session): Promise<CapturedPayloads> {
   const bodies: Array<{ requestUrl: string; body: string; isGalleryPage: boolean }> = [];
+
   async function recording(...args: Parameters<Evaluate>): Promise<Awaited<ReturnType<Evaluate>>> {
     const response = await session.page.evaluate(...args);
     bodies.push({
@@ -429,8 +495,10 @@ export async function captureInstagramPayloads(session: Session): Promise<Captur
       body: response.body,
       isGalleryPage: args[1].mediaQuery !== undefined,
     });
+
     return response;
   }
+
   const client = createInstagramClient({ page: { evaluate: recording } });
 
   const trayResponse = await client.getTray();
@@ -445,13 +513,16 @@ export async function captureInstagramPayloads(session: Session): Promise<Captur
       ),
     ),
   );
-  const galleryPages = bodies
-    .filter(({ isGalleryPage }) => isGalleryPage)
-    .map(({ body }) => JsonValueSchema.parse(JSON.parse(body)));
+
+  const galleryPages = bodies.flatMap(({ isGalleryPage, body }) =>
+    isGalleryPage ? [JsonValueSchema.parse(JSON.parse(body))] : [],
+  );
+
   const placeId = findFirst(JsonValueSchema.parse(galleryPages), "pk");
   const audioId = findFirst(JsonValueSchema.parse(galleryPages), "audio_asset_id");
   const place = placeId === null ? null : await client.getPlace?.(placeId);
   const music = audioId === null ? null : await client.getMusicAsset?.(audioId);
+
   return {
     tray: JsonValueSchema.parse({
       ...trayBody,
@@ -466,6 +537,7 @@ export async function captureInstagramPayloads(session: Session): Promise<Captur
 
 export function redactPayloads(payloads: CapturedPayloads): CapturedPayloads {
   const redact = createRedactor();
+
   return {
     tray: redact(payloads.tray),
     galleryPages: payloads.galleryPages.map((page) => redact(page)),
@@ -497,6 +569,7 @@ export function buildFixtureMetadata(payloads: CapturedPayloads, capturedAt: Dat
       `Reels media gallery page ${index + 1} for the captured tray entries.`,
     ]),
   ];
+
   if (payloads.place !== null) {
     files.push([
       "instagram-place.json",
@@ -504,6 +577,7 @@ export function buildFixtureMetadata(payloads: CapturedPayloads, capturedAt: Dat
       "One tagged place lookup response. Place names, addresses, ids, slugs and coordinates are synthetic.",
     ]);
   }
+
   if (payloads.musicAsset !== null) {
     files.push([
       "instagram-music-asset.json",
@@ -511,6 +585,7 @@ export function buildFixtureMetadata(payloads: CapturedPayloads, capturedAt: Dat
       "One music asset lookup response. Asset ids and durations are kept as recorded; titles and artists are kept only for licensed catalog tracks and are synthetic for original audio; people and URLs are synthetic.",
     ]);
   }
+
   return {
     metadata: {
       capturedAt: capturedAt.toISOString(),
@@ -523,20 +598,26 @@ export function buildFixtureMetadata(payloads: CapturedPayloads, capturedAt: Dat
 async function main(): Promise<void> {
   const outputDirectory = path.resolve(process.argv[2] ?? "tests/fixtures");
   const session = await openInstagramSession({ headless: true });
+
   try {
     const captured = redactPayloads(await captureInstagramPayloads(session));
     const { metadata, files } = buildFixtureMetadata(captured, new Date());
+
     const refused = files.flatMap(([name, body]) =>
       findUnsafeFixtureValues(body).map(({ path: at, reason }) => `${name} ${at}: ${reason}`),
     );
+
     if (refused.length > 0) {
       throw new Error(`Refusing to write fixtures with unsafe values:\n${refused.join("\n")}`);
     }
+
     await mkdir(outputDirectory, { recursive: true });
+
     for (const [name, body] of [...files, [METADATA_FILE_NAME, metadata]] as const) {
       // oxlint-disable-next-line no-await-in-loop -- A handful of small files.
       await writeFile(path.join(outputDirectory, name), `${JSON.stringify(body, null, 2)}\n`);
     }
+
     process.stdout.write(
       `captured ${metadata.capturedAt}: ${metadata.files.map(({ name }) => name).join(", ")}\n`,
     );

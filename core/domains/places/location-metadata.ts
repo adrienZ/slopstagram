@@ -16,6 +16,7 @@ function mergeFields(
   incoming: LocationFields,
 ): LocationFields {
   const known = previous ?? incoming;
+
   return {
     instagramPlaceId: incoming.instagramPlaceId ?? known.instagramPlaceId,
     name: incoming.name ?? known.name,
@@ -57,6 +58,7 @@ export interface PlaceLookupInput extends PlaceFillInput {
 // A location sticker found by a lookup reads like the ones observed in stories: name, then address.
 export function locationStickerLabel(place: { name: string | null; address: string | null }) {
   const label = [place.name, place.address].filter((part) => part !== null).join(", ");
+
   return label.length > 0 ? label : null;
 }
 
@@ -71,6 +73,7 @@ function fillText(known: string | null, incoming: string | null | undefined) {
   if (known !== null || incoming === null || incoming === undefined) {
     return known;
   }
+
   return incoming.trim().length > 0 ? incoming : null;
 }
 
@@ -78,6 +81,7 @@ function fillCoordinate(known: number | null, incoming: number | null | undefine
   if (known !== null || incoming === null || incoming === undefined) {
     return known;
   }
+
   return Math.abs(incoming) <= bound ? incoming : null;
 }
 
@@ -129,6 +133,7 @@ export function planLocationMetadataWrite(
     mergeFields(previous?.metadata, known ?? observation.fields),
     observation.fields,
   );
+
   return { ...fields, id: known?.id ?? previous?.metadata.id ?? randomUUID() };
 }
 
@@ -145,9 +150,11 @@ function findPreviousObservation(
         entry.providerOccurrenceId === observation.providerOccurrenceId) ||
       (occurrenceId !== undefined && entry.occurrenceId === occurrenceId),
   );
+
   if (candidates.length !== 1 || retained.has(candidates[0].id)) {
     return undefined;
   }
+
   return uniqueProvider || candidates[0].occurrenceId === occurrenceId ? candidates[0] : undefined;
 }
 
@@ -155,7 +162,9 @@ function compatiblePlace(previous: StoryLocationObservation | undefined, fields:
   if (previous === undefined) {
     return previous;
   }
+
   const knownId = previous.metadata.instagramPlaceId;
+
   return knownId === null || fields.instagramPlaceId === null || knownId === fields.instagramPlaceId
     ? previous
     : undefined;
@@ -172,15 +181,18 @@ function findObservedSticker(
     observation.providerOccurrenceId === null
       ? []
       : stickers.filter((entry) => entry.providerOccurrenceId === observation.providerOccurrenceId);
+
   if (matches.length === 1) {
     return matches[0];
   }
+
   if (
     story.annotations === undefined &&
     (observation.fields.name !== null || observation.fields.address !== null)
   ) {
     return incoming[labeledIndex];
   }
+
   return null;
 }
 
@@ -205,32 +217,41 @@ export function planStoryLocationUpdates(
   const writes: Array<LocationObservationWrite> = [];
   const removedObservationIds: Array<string> = [];
   const malformed = new Set<string>();
+
   const updates = getStoryAnnotationUpdates(story, (source) => {
     malformed.add(source);
   });
+
   const replaced = new Set(
     updates.filter((update) => update.preservePrevious !== true).map(({ source }) => source),
   );
+
   for (const { source, observations } of getLocationSourceUpdates(story)) {
     if (malformed.has(source)) {
       continue;
     }
+
     const previous = previousObservations.filter((entry) => entry.source === source);
     const retained = new Set<string>();
+
     const stickers = annotations.stickers.filter(
       (entry) => entry.kind === "location" && entry.source === source,
     );
+
     const incomingCount =
       updates
         .find((update) => update.source === source)
         ?.stickers.filter((sticker) => sticker.kind === "location").length ?? 0;
+
     // During this live save, incoming contributions are appended after retained
     // ones. This uses the current extraction order, never a previous dense index.
     const incomingStickers = incomingCount === 0 ? [] : stickers.slice(-incomingCount);
     let labeledIndex = 0;
+
     for (const [sortOrder, observation] of observations.entries()) {
       const { providerOccurrenceId, fields } = observation;
       const labeled = fields.name !== null || fields.address !== null;
+
       const sticker = findObservedSticker(
         story,
         observation,
@@ -238,13 +259,16 @@ export function planStoryLocationUpdates(
         incomingStickers,
         labeledIndex,
       );
+
       if (labeled) {
         labeledIndex += 1;
       }
+
       const uniqueProvider =
         providerOccurrenceId !== null &&
         observations.filter((entry) => entry.providerOccurrenceId === providerOccurrenceId)
           .length === 1;
+
       const old = findPreviousObservation(
         previous,
         observation,
@@ -252,10 +276,12 @@ export function planStoryLocationUpdates(
         uniqueProvider,
         retained,
       );
+
       // A provider occurrence can be reused for a changed place. Never merge the
       // old place's fields unless its shared identity agrees or was unknown.
       const id = old?.id ?? randomUUID();
       retained.add(id);
+
       const entry = {
         id,
         mediaPk: story.pk,
@@ -264,13 +290,16 @@ export function planStoryLocationUpdates(
         providerOccurrenceId,
         occurrenceId: sticker?.occurrenceId ?? old?.occurrenceId ?? null,
       };
+
       writes.push({ entry, observation, previous: compatiblePlace(old, fields) });
     }
+
     for (const old of previous) {
       if (replaced.has(source) && !retained.has(old.id)) {
         removedObservationIds.push(old.id);
       }
     }
   }
+
   return { writes, removedObservationIds };
 }

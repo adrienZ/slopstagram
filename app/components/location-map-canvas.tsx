@@ -35,6 +35,7 @@ type Bounds = [[number, number], [number, number]];
 function getBounds(places: Array<TimelinePlace>): Bounds {
   const longitudes = places.map((place) => place.longitude);
   const latitudes = places.map((place) => place.latitude);
+
   return [
     [Math.min(...longitudes), Math.min(...latitudes)],
     [Math.max(...longitudes), Math.max(...latitudes)],
@@ -47,6 +48,7 @@ const fitBoundsOptions = { padding: 48, maxZoom: 13 };
 function FitBounds({ bounds }: { bounds: Bounds }) {
   const { current: map } = useMap();
   const fitted = useRef(false);
+
   return (
     <span
       hidden
@@ -78,10 +80,12 @@ export default function LocationMapCanvas({
   // The initial view already fits the places: re-fit only once they change, e.g. when filtered.
   const [fittedBoundsKey, setFittedBoundsKey] = useState(boundsKey);
   const [boundsChanged, setBoundsChanged] = useState(false);
+
   if (boundsKey !== fittedBoundsKey) {
     setFittedBoundsKey(boundsKey);
     setBoundsChanged(true);
   }
+
   return (
     <div
       role="region"
@@ -149,6 +153,7 @@ export default function LocationMapCanvas({
             onClose={onClose}
             onOpen={() => {
               const map = mapRef.current;
+
               if (map !== null) {
                 map.easeTo({
                   center: [selected.longitude, selected.latitude],

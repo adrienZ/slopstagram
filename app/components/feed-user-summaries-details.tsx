@@ -8,9 +8,11 @@ function describeOutcome(outcome: FeedUserSummary, handle: string): string {
   if (outcome.status === "found") {
     return outcome.summary;
   }
+
   if (outcome.status === "error") {
     return `Aucun compte ne s’appelle ${handle}.`;
   }
+
   return outcome.reason === "no_stories_in_last_24h"
     ? "Aucune story publiée dans les dernières 24 heures."
     : "Le résumé n’est pas encore généré : il le sera au prochain relevé des stories.";
@@ -27,6 +29,7 @@ export function FeedUserSummariesDetails({
         const handle = formatUserHandle(
           outcome.status === "error" ? requestedUsername : outcome.username,
         );
+
         return (
           <li key={requestedUsername} className="tw:grid tw:gap-1">
             <span className="tw:flex tw:flex-wrap tw:items-center tw:gap-2">

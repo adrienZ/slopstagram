@@ -12,6 +12,7 @@ interface MusicStickerProps {
 
 function MusicStickerContent({ label, preview, preload = true }: MusicStickerProps) {
   const [failed, setFailed] = useState(false);
+
   if (preview === undefined || preview === null || preview.audioUrl === null || failed) {
     return (
       <Badge
@@ -24,6 +25,7 @@ function MusicStickerContent({ label, preview, preload = true }: MusicStickerPro
       </Badge>
     );
   }
+
   return (
     <MusicAudioPreview
       preview={preview}

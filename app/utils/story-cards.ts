@@ -50,6 +50,7 @@ export function withStoryStickers(
   const detailsByMediaPk = new Map(
     stories.map(({ story }) => {
       const places = stickerPlaces(story.annotations);
+
       return [
         story.pk,
         {
@@ -69,6 +70,7 @@ export function withStoryStickers(
       ];
     }),
   );
+
   return cards.map((card) => ({ ...card, stickerDetails: detailsByMediaPk.get(card.mediaPk) }));
 }
 
@@ -80,6 +82,7 @@ function getMediaType(story: StoryOutputUser["stories"][number]): string {
   if (story.media_type === STORY_MEDIA_TYPES.IMAGE) {
     return "Image";
   }
+
   return story.media_type === STORY_MEDIA_TYPES.VIDEO ? "Vidéo" : "—";
 }
 
@@ -89,6 +92,7 @@ export function createStoryCards(
 ): Array<StoryCardData> {
   const userName = formatUserName(user);
   const profilePicUrl = user.profile_pic_url?.trim();
+
   const avatar =
     profilePicUrl === undefined
       ? undefined
@@ -96,13 +100,17 @@ export function createStoryCards(
 
   return user.stories.flatMap((story, index) => {
     const source = story.preview_image_url?.trim();
+
     if (source === undefined || source.length === 0) {
       return [];
     }
+
     const preview = sources.cachedImages.storyPreviewPathByUrl.get(source);
+
     if (preview === undefined || preview.length === 0) {
       return [];
     }
+
     const vision = sources.visionByPreviewUrl.get(source);
     const visionOutdated = sources.outdatedVisionByPreviewUrl?.get(source);
 
@@ -124,9 +132,11 @@ export function createStoryCards(
       visionOcr: textOrDash(vision?.text),
       visionDescription: textOrDash(vision?.visual),
     };
+
     if (visionOutdated !== undefined) {
       card.visionOutdated = visionOutdated;
     }
+
     return [card];
   });
 }

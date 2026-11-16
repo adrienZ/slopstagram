@@ -20,6 +20,7 @@ export async function openInstagramSession(
   options: OpenInstagramSessionOptions = {},
 ): Promise<InstagramSession> {
   const profilePath = path.resolve(options.profilePath ?? DEFAULT_PROFILE_PATH);
+
   const context = await chromium.launchPersistentContext(profilePath, {
     ...cliConfig.browser.launchOptions,
     headless: options.headless ?? true,
@@ -31,6 +32,7 @@ export async function openInstagramSession(
       waitUntil: "domcontentloaded",
       timeout: 30_000,
     });
+
     return { context, page };
   } catch (error) {
     // A browser left running keeps the profile locked, so every later run would fail to launch.

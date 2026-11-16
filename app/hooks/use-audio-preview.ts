@@ -6,6 +6,7 @@ export function useAudioPreview(preview: MusicPreview, preload: boolean, onError
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
   const lastPlaying = useRef<HTMLAudioElement>(null);
+
   const [audio, state, controls, audioRef] = useAudio({
     src: preview.audioUrl ?? "",
     "aria-label": `Écouter : ${preview.description}`,
@@ -13,6 +14,7 @@ export function useAudioPreview(preview: MusicPreview, preload: boolean, onError
     hidden: true,
     onPlay(event: SyntheticEvent<HTMLAudioElement>) {
       lastPlaying.current = event.currentTarget;
+
       for (const other of event.currentTarget.ownerDocument.querySelectorAll("audio")) {
         if (other !== event.currentTarget && !other.paused) {
           other.pause();
@@ -27,6 +29,7 @@ export function useAudioPreview(preview: MusicPreview, preload: boolean, onError
       onError?.();
     },
   });
+
   useUnmount(() => {
     if (lastPlaying.current !== null && !lastPlaying.current.paused) {
       lastPlaying.current.pause();
@@ -37,14 +40,18 @@ export function useAudioPreview(preview: MusicPreview, preload: boolean, onError
     Number.isFinite(state.duration) && state.duration > 0
       ? state.duration
       : (preview.durationMs ?? 0) / 1000;
+
   const currentTime = Number.isFinite(state.time) ? state.time : 0;
 
   async function toggle() {
     if (!state.paused) {
       controls.pause();
+
       return;
     }
+
     setLoading(true);
+
     try {
       await controls.play();
     } catch {
@@ -59,7 +66,9 @@ export function useAudioPreview(preview: MusicPreview, preload: boolean, onError
     if (duration <= 0 || audioRef.current === null) {
       return;
     }
+
     const time = Math.max(0, Math.min(duration, value));
+
     if (Number.isFinite(state.duration) && state.duration > 0) {
       controls.seek(time);
     } else {

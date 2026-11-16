@@ -20,6 +20,7 @@ async function createStoredSummary(context: TestContext) {
   assert.ok(stored);
   const entry = runtime.summaries.findBySourceHash(stored.sourceHash);
   assert.ok(entry);
+
   return {
     entry,
     feed: () => readFeedUserSummaries(runtime, report.output.users),
@@ -33,6 +34,7 @@ test("feed and collection normalize stored summaries identically without rewriti
   const storedResult = "  Cafe\u0301\n  et\tmarche\u0301.  ";
   await runtime.summaries.save({ ...entry, result: storedResult });
   const feedSummaries = feed();
+
   const collectionSummaries = await resolveUserSummariesForReport(runtime, report, {
     runUserSummary: async () => {
       expect.unreachable("a usable stored summary must not be regenerated");
@@ -55,9 +57,11 @@ for (const [name, result] of [
     await runtime.summaries.save({ ...entry, result });
     expect(feed().size).toBe(0);
     let generations = 0;
+
     const summaries = await resolveUserSummariesForReport(runtime, report, {
       runUserSummary: async () => {
         generations += 1;
+
         return JSON.stringify({ summary: "Résumé régénéré." });
       },
     });
@@ -75,9 +79,11 @@ for (const field of ["prompt_hash", "user_key"] as const) {
     await runtime.summaries.save({ ...entry, [field]: "mismatched" });
     expect(feed().size).toBe(0);
     let generations = 0;
+
     const summaries = await resolveUserSummariesForReport(runtime, report, {
       runUserSummary: async () => {
         generations += 1;
+
         return JSON.stringify({ summary: "Résumé corrigé." });
       },
     });
@@ -92,6 +98,7 @@ test("changed story content hides the old summary until collection regenerates i
   const { entry, feed, report, runtime } = await createStoredSummary(context);
   report.output.users[0].stories[0].stickers.push("#food");
   expect(feed().size).toBe(0);
+
   const summaries = await resolveUserSummariesForReport(runtime, report, {
     runUserSummary: async () => JSON.stringify({ summary: "Une story de cuisine." }),
   });
@@ -104,6 +111,7 @@ test("a changed model requires its own summary for both reading and generation",
   const { entry, feed, report, runtime } = await createStoredSummary(context);
   const options = { model: "new-model" };
   expect(readUserSummaries(runtime, report.output.users, options).size).toBe(0);
+
   const summaries = await resolveUserSummariesForReport(runtime, report, {
     ...options,
     runUserSummary: async () => JSON.stringify({ summary: "Résumé du nouveau modèle." }),
@@ -119,11 +127,13 @@ for (const outcome of ["empty", "error"] as const) {
     const report = createSummaryReport();
     const runtime = await createTestRuntime(context);
     await saveSummaryUsers(runtime);
+
     const summaries = await resolveUserSummariesForReport(runtime, report, {
       runUserSummary: async () => {
         if (outcome === "error") {
           throw new Error("model unavailable");
         }
+
         return "";
       },
     });

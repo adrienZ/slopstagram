@@ -68,7 +68,9 @@ async function cacheStoryAudio(runtime: StoryAudioRuntime, mediaPk: string) {
       ],
     },
   };
+
   await cacheReportAudio(runtime, report);
+
   return runtime.stories.findStoryAudio(mediaPk) ?? null;
 }
 
@@ -79,12 +81,14 @@ test("web story ingestion preserves DASH audio separately from shared music, inc
     database.$client.close();
   });
   const repository = new StoryRepository(database);
+
   const info = {
     title: "Song",
     display_artist: "Artist",
     should_mute_audio: false,
     should_mute_audio_reason: "",
   };
+
   for (const pk of ["first", "second"]) {
     // oxlint-disable-next-line no-await-in-loop -- Exercise independent observations of the same song.
     await repository.save({
@@ -93,6 +97,7 @@ test("web story ingestion preserves DASH audio separately from shared music, inc
       story_music_stickers: [{ id: pk, music_asset_info: info }],
     });
   }
+
   const cold = new StoryRepository(database);
   const first = cold.findByMediaPk("first");
   const second = cold.findByMediaPk("second");
@@ -120,6 +125,7 @@ test("web story ingestion preserves DASH audio separately from shared music, inc
   expect(cold.findByMediaPk("first")?.annotations?.storyAudio).toStrictEqual(
     first.annotations.storyAudio,
   );
+
   for (const pk of ["first", "second"]) {
     // oxlint-disable-next-line no-await-in-loop -- Promote two observations to the same shared music asset.
     await repository.save({
@@ -127,6 +133,7 @@ test("web story ingestion preserves DASH audio separately from shared music, inc
       story_music_stickers: [{ id: pk, music_asset_info: { ...info, audio_asset_id: "shared" } }],
     });
   }
+
   const promoted = cold.findByMediaPk("first")?.annotations;
   const shared = cold.findByMediaPk("second")?.annotations;
   expect(promoted?.musicObservations?.[0].metadata.id).toBe(
@@ -139,19 +146,25 @@ test("web story ingestion preserves DASH audio separately from shared music, inc
 test("DASH selection decodes XML, resolves received base URLs and selects supported audio deterministically", () => {
   const xml = manifest("first");
   expect(dashAudioSource(xml)?.sourceUrl).toBe("https://example.com/first.mp4?a=1&b=2");
+
   const inherited = xml
     .replace("<Period>", "<BaseURL>https://example.com/media/</BaseURL><Period>")
     .replace("https://example.com/first.mp4", "first.mp4");
+
   expect(dashAudioSource(inherited)?.sourceUrl).toBe("https://example.com/media/first.mp4?a=1&b=2");
+
   const namespaced = xml
     .replaceAll(
       /<(?<slash>\/?)(?<tag>MPD|Period|AdaptationSet|Representation|BaseURL|SegmentBase|Initialization)\b/gu,
       "<$<slash>d:$<tag>",
     )
     .replace("xmlns=", "xmlns:d=");
+
   expect(dashAudioSource(namespaced)?.codecs).toBe("mp4a.40.5");
+
   const lower =
     '<Representation mimeType="audio/mp4" codecs="mp4a.40.2" bandwidth="1"><BaseURL>https://example.com/lower.mp4</BaseURL></Representation>';
+
   expect(
     dashAudioSource(
       xml.replace(
@@ -164,6 +177,7 @@ test("DASH selection decodes XML, resolves received base URLs and selects suppor
 
 test("malformed, protected, segmented, relative-only and video-only manifests do not become audio sources", () => {
   const xml = manifest("first");
+
   for (const value of [
     "",
     "<MPD>",
@@ -197,6 +211,7 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
     video_dash_manifest: manifest("story"),
     story_music_stickers: [{ music_asset_info: { title: "Song", display_artist: "Artist" } }],
   });
+
   const item = {
     media_pk: "story",
     status: "ok" as const,
@@ -205,6 +220,7 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
     stickers: [],
     preview_image_url: null,
   };
+
   const report: StoriesManifestReport = {
     failures: [],
     manifest: { users: [] },
@@ -228,11 +244,14 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
       ],
     },
   };
+
   const audio = await readFile(new globalThis.URL("fixtures/audio-clip.m4a", import.meta.url));
+
   const media = await startMediaServer(context, (_request, response) => {
     response.writeHead(200, { "content-type": "video/mp4" });
     response.end(audio);
   });
+
   await cacheReportAudio(
     {
       stories: repository,
@@ -247,20 +266,24 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
   expect(saved.cachePath).not.toBe(null);
   assert.ok(saved.cachePath !== null);
   expect(saved.state).toBe("available");
+
   const previews = musicStickerItems(
     new StoryRepository(database).findByMediaPk("story")?.annotations,
   ).map(({ preview }) => preview);
+
   expect(previews.length).toBe(1);
   expect(previews[0]?.description).toBe("Song — Artist");
   expect(previews[0]?.sourceKind).toBe("story_audio");
   expect(path.extname(saved.cachePath)).toBe(".m4a");
   expect(await readFile(path.join(directory, saved.cachePath))).toStrictEqual(audio);
   expect(saved.durationMs).toBe(1023);
+
   const ranged = await createMediaResponse(
     { storage: createFileCacheStorage(directory) },
     saved.cachePath,
     { range: "bytes=0-4" },
   );
+
   expect(ranged.status).toBe(206);
   expect(ranged.headers.get("content-type")).toBe("audio/mp4");
   expect(Buffer.from(await ranged.arrayBuffer())).toStrictEqual(audio.subarray(0, 5));
@@ -269,6 +292,7 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
     video_dash_manifest: manifest("fresh"),
     story_music_stickers: [{ music_asset_info: { title: "Song" } }],
   });
+
   const reused = await cacheStoryAudio(
     {
       stories: repository,
@@ -277,6 +301,7 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
     },
     "story",
   );
+
   expect(reused?.cachePath).toBe(saved.cachePath);
   expect(media.requests).toStrictEqual(["/story.mp4?a=1&b=2"]);
   await repository.save({
@@ -304,6 +329,7 @@ test("expired and interrupted DASH downloads fail silently without publishing in
     story_music_stickers: [{ music_asset_info: { title: "Song" } }],
   });
   let interrupted = false;
+
   const media = await startMediaServer(context, (_request, response) => {
     if (interrupted) {
       response.writeHead(200, { "content-type": "video/mp4", "content-length": 1000 });
@@ -315,6 +341,7 @@ test("expired and interrupted DASH downloads fail silently without publishing in
       response.end("expired");
     }
   });
+
   const failed = await cacheStoryAudio(
     {
       stories: repository,
@@ -323,11 +350,13 @@ test("expired and interrupted DASH downloads fail silently without publishing in
     },
     "story",
   );
+
   expect(failed?.state).toBe("failed");
   assert.ok(failed);
   expect(failed.cachePath).toBe(null);
   const story = repository.findByMediaPk("story");
   assert.ok(story);
+
   const groups = groupTimelineStickers(
     [
       {
@@ -342,9 +371,11 @@ test("expired and interrupted DASH downloads fail silently without publishing in
     ],
     ["music"],
   );
+
   expect(groups[0].stories[0].musicItems?.[0].preview).toBe(null);
   expect(groups[0].stories[0].labels[0].label).toBe("Song");
   interrupted = true;
+
   const interruptedResult = await cacheStoryAudio(
     {
       stories: repository,
@@ -353,6 +384,7 @@ test("expired and interrupted DASH downloads fail silently without publishing in
     },
     "story",
   );
+
   expect(interruptedResult?.state).toBe("failed");
   expect(await readdir(directory)).toStrictEqual([]);
 });
@@ -375,11 +407,13 @@ test("reels shared into a story do not create or retain a downloadable soundtrac
     database.$client.close();
   });
   const repository = new StoryRepository(database);
+
   const story = {
     pk: "reel-share",
     video_dash_manifest: manifest("reel"),
     story_music_stickers: [{ music_asset_info: { title: "Song", display_artist: "Artist" } }],
   };
+
   await repository.save(story);
   expect(repository.findByMediaPk(story.pk)?.annotations?.storyAudio).toBeTruthy();
   await repository.save({ ...story, story_feed_media: [{ id: "reel", product_type: "clips" }] });
@@ -399,6 +433,7 @@ test("fresh story ingestion caches the story excerpt and prefers it over the lon
     database.$client.close();
     await rm(directory, { recursive: true, force: true });
   });
+
   const story: StoryItem = {
     pk: "fresh",
     video_dash_manifest: manifest("fresh"),
@@ -415,20 +450,26 @@ test("fresh story ingestion caches the story excerpt and prefers it over the lon
       },
     ],
   };
+
   const owner = { id: "user", pk: "user", username: "one" };
+
   const client = createClient(
     [{ id: "reel", media_ids: [story.pk], user: owner }],
     [reelsResponse({ reel: { ...reel("reel", [story]), user: owner } })],
   );
+
   const repository = new StoryRepository(database);
+
   const report = await fetchStories({
     logger: createCapturingLogger(),
     stories: repository,
     storage: createMemoryCacheStorage(),
     client,
   });
+
   const storyBytes = await readFile(new globalThis.URL("fixtures/audio-clip.m4a", import.meta.url));
   const musicBytes = wavAudio(70);
+
   const media = await startMediaServer(context, (request, response) => {
     if (request.url?.startsWith("/fresh.mp4") === true) {
       response.writeHead(200, { "content-type": "video/mp4" });
@@ -438,6 +479,7 @@ test("fresh story ingestion caches the story excerpt and prefers it over the lon
       response.end(musicBytes);
     }
   });
+
   await cacheReportAudio(
     {
       stories: repository,

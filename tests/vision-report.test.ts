@@ -9,6 +9,7 @@ const VisionJsonSchemaPropertySchema = z.object({
   description: z.string().optional(),
   type: z.string().optional(),
 });
+
 const VisionRequestBodySchema = z.object({
   format: z.object({
     additionalProperties: z.unknown().optional(),
@@ -28,6 +29,7 @@ async function cachePreview(
   sources: Array<string> = [previewSource],
 ) {
   await runtime.storage.images.setItemRaw("story.jpg", Buffer.from("jpeg-bytes"));
+
   return {
     profilePicPathByUrl: new Map<string, string>(),
     storyPreviewPathByUrl: new Map(sources.map((source) => [source, "images/story.jpg"])),
@@ -47,16 +49,20 @@ describe("resolveVisionForReport", () => {
   ]) {
     test(`skips ${entry.name} cached previews without contacting vision`, async (context) => {
       let fetchCount = 0;
+
       const runtime = await createTestRuntime(context, {
         fetchOllama: async () => {
           fetchCount += 1;
           throw new Error("vision must not be called for invalid previews");
         },
       });
+
       const paths = new Map<string, string>();
+
       if (entry.cachedPath !== undefined) {
         paths.set(previewSource, entry.cachedPath);
       }
+
       const result = await resolveVisionForReport(runtime, createVisionReport(), {
         profilePicPathByUrl: new Map(),
         storyPreviewPathByUrl: paths,
@@ -160,6 +166,7 @@ describe("resolveVisionForReport", () => {
       createVisionReport(firstPreviewSource),
       cachedImages,
     );
+
     const second = await resolveVisionForReport(
       runtime,
       createVisionReport(secondPreviewSource),
@@ -179,14 +186,17 @@ describe("resolveVisionForReport", () => {
 
   test("returns a stored response without reading the cached preview", async (context) => {
     let fetchCount = 0;
+
     const runtime = await createTestRuntime(context, {
       fetchOllama: async () => {
         fetchCount += 1;
+
         return globalThis.Response.json({
           response: JSON.stringify({ description: "stored scene", ocrText: [] }),
         });
       },
     });
+
     const cachedImages = await cachePreview(runtime);
     await resolveVisionForReport(runtime, createVisionReport(), cachedImages);
     await runtime.storage.images.removeItem("story.jpg");
@@ -203,6 +213,7 @@ describe("resolveVisionForReport", () => {
         throw new TypeError("fetch failed");
       },
     });
+
     const cachedImages = await cachePreview(runtime);
     const result = await resolveVisionForReport(runtime, createVisionReport(), cachedImages);
 
@@ -227,6 +238,7 @@ describe("resolveVisionForReport", () => {
           },
         ),
     });
+
     const cachedImages = await cachePreview(runtime);
     const result = await resolveVisionForReport(runtime, createVisionReport(), cachedImages);
 
@@ -251,6 +263,7 @@ describe("resolveVisionForReport", () => {
           },
         ),
     });
+
     const cachedImages = await cachePreview(runtime);
     const result = await resolveVisionForReport(runtime, createVisionReport(), cachedImages);
 
@@ -264,6 +277,7 @@ describe("resolveVisionForReport", () => {
     const runtime = await createTestRuntime(context, {
       fetchOllama: async () => globalThis.Response.json({ done: true }),
     });
+
     const cachedImages = await cachePreview(runtime);
     const result = await resolveVisionForReport(runtime, createVisionReport(), cachedImages);
 
@@ -278,6 +292,7 @@ describe("resolveVisionForReport", () => {
           status: 400,
         }),
     });
+
     const cachedImages = await cachePreview(runtime);
     const result = await resolveVisionForReport(runtime, createVisionReport(), cachedImages);
 

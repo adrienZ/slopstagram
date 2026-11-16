@@ -53,6 +53,7 @@ export class InstagramUserRepository {
       pk: value.pk,
       username: value.username,
     });
+
     await this.database
       .insert(instagramUsers)
       .values(entry)

@@ -24,6 +24,7 @@ async function cachePreviews(
       );
     }),
   );
+
   return {
     profilePicPathByUrl: new Map<string, string>(),
     storyPreviewPathByUrl: new Map(
@@ -38,6 +39,7 @@ async function cachePreviews(
 test("reads cached local previews and stops after the first unavailable result", async (context) => {
   const logger = createCapturingLogger();
   const recognizedImages: Array<string> = [];
+
   const runtime = await createTestRuntime(context, {
     logger,
     runAppleOcr: async (image) => {
@@ -45,10 +47,12 @@ test("reads cached local previews and stops after the first unavailable result",
       throw new AppleOcrUnavailableError("Vision is unavailable");
     },
   });
+
   const client = createClient(
     [{ id: "r1", media_ids: ["m1", "m2"], user: { username: "one" } }],
     [reelsResponse({ r1: reel("r1", [storyItem("m1"), storyItem("m2")]) })],
   );
+
   const report = await fetchStories({ ...runtime, client });
   const cachedImages = await cachePreviews(runtime, ["m1", "m2"]);
 
@@ -66,14 +70,17 @@ test("reads cached local previews and stops after the first unavailable result",
 
 test("resolves local OCR without embedding it in the report", async (context) => {
   const logger = createCapturingLogger();
+
   const runtime = await createTestRuntime(context, {
     logger,
     runAppleOcr: async () => await Promise.resolve("local OCR text"),
   });
+
   const client = createClient(
     [{ id: "r1", media_ids: ["m1"], user: { username: "one" } }],
     [reelsResponse({ r1: reel("r1", [storyItem("m1")]) })],
   );
+
   const report = await fetchStories({ ...runtime, client });
   const cachedImages = await cachePreviews(runtime, ["m1"]);
 

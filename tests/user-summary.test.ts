@@ -45,15 +45,18 @@ describe("resolveUserSummariesForReport", () => {
   ] as const) {
     test(`generates and reuses summaries with ${expectedModel} on ${platform}/${architecture}`, async (context) => {
       const report = createSummaryReport();
+
       const runtime = await createTestRuntime(context, {
         fetchOllama: async (_url, init) => {
           const body = UserSummaryRequestSchema.parse(JSON.parse(requestBodyToString(init?.body)));
           expect(body.model).toBe(expectedModel);
+
           return new globalThis.Response(
             JSON.stringify({ response: JSON.stringify({ summary: "Platform summary." }) }),
           );
         },
       });
+
       await saveSummaryUsers(runtime);
       vi.spyOn(process, "platform", "get").mockImplementation(() => platform);
       vi.spyOn(process, "arch", "get").mockImplementation(() => architecture);
@@ -71,6 +74,7 @@ describe("resolveUserSummariesForReport", () => {
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
     expect(userKey).toBe("summaryuser");
+
     const visionByPreviewUrl = new Map([
       [
         "https://example.com/story.jpg",
@@ -80,6 +84,7 @@ describe("resolveUserSummariesForReport", () => {
         },
       ],
     ]);
+
     let runCount = 0;
 
     const first = await resolveUserSummariesForReport(runtime, report, {
@@ -102,10 +107,12 @@ describe("resolveUserSummariesForReport", () => {
         });
       },
     });
+
     const second = await resolveUserSummariesForReport(runtime, report, {
       visionByPreviewUrl,
       runUserSummary: async () => {
         runCount += 1;
+
         return "should not be used";
       },
     });
@@ -129,13 +136,16 @@ describe("resolveUserSummariesForReport", () => {
     const first = await resolveUserSummariesForReport(runtime, report, {
       runUserSummary: async () => {
         runCount += 1;
+
         return JSON.stringify({ summary: "default model summary" });
       },
     });
+
     const second = await resolveUserSummariesForReport(runtime, report, {
       model: "different-model",
       runUserSummary: async () => {
         runCount += 1;
+
         return JSON.stringify({ summary: "custom model summary" });
       },
     });
@@ -147,6 +157,7 @@ describe("resolveUserSummariesForReport", () => {
 
   test("runs the default Ollama client with qwen3.5 and OLLAMA_HOST", async (context) => {
     vi.stubEnv("OLLAMA_HOST", "http://summary.example:11434/api/generate");
+
     const runtime = await createTestRuntime(context, {
       fetchOllama: async (url, init) => {
         expect(url).toBe("http://summary.example:11434/api/generate");
@@ -173,6 +184,7 @@ describe("resolveUserSummariesForReport", () => {
         );
       },
     });
+
     await saveSummaryUsers(runtime);
     const report = createSummaryReport();
     const userKey = getReportUserKey(report.output.users[0]);
@@ -187,19 +199,23 @@ describe("resolveUserSummariesForReport", () => {
     { timeout: 1000 },
     async (context) => {
       let requestSignal: AbortSignal | null | undefined;
+
       const runtime = await createTestRuntime(context, {
         fetchOllama: async (_url, init) => {
           requestSignal = init?.signal;
           assert.ok(requestSignal);
           await delay(10_000, undefined, { signal: requestSignal });
+
           return globalThis.Response.json({ response: "too late" });
         },
       });
+
       await saveSummaryUsers(runtime);
 
       const summaries = await resolveUserSummariesForReport(runtime, createSummaryReport(), {
         timeoutMs: 5,
       });
+
       expect(summaries.get("summaryuser")).toBe("résumé indisponible");
       assert.ok(requestSignal);
       expect(requestSignal.aborted).toBe(true);
@@ -226,6 +242,7 @@ describe("resolveUserSummariesForReport", () => {
     const runtime = await createTestRuntime(context, {
       fetchOllama: async () => globalThis.Response.json({ done: true }),
     });
+
     await saveSummaryUsers(runtime);
     const summaries = await resolveUserSummariesForReport(runtime, createSummaryReport());
 
@@ -244,6 +261,7 @@ describe("resolveUserSummariesForReport", () => {
     const summaries = await resolveUserSummariesForReport(runtime, report, {
       runUserSummary: async () => "",
     });
+
     expect(summaries.get(userKey)).toBe(
       "Summary User a partagé 1 story. Éléments visibles: location:Paris; Paris Market, 10 Rue Food, Paris.",
     );

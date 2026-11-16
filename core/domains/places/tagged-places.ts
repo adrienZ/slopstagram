@@ -116,6 +116,7 @@ export function listTaggedPlaces(
     name,
     account: runtime.users.findByUsername(normalizeSearchQuery(name)),
   }));
+
   const { places, total } = runtime.stories.listTaggedPlaces({
     usernames:
       usernames === undefined || usernames.length === 0
@@ -124,6 +125,7 @@ export function listTaggedPlaces(
     offset,
     limit: PLACE_PAGE_SIZE,
   });
+
   return {
     ...toPage(places, total, offset),
     unknownUsernames: requested.flatMap(({ name, account }) => (account === null ? [name] : [])),
@@ -136,24 +138,30 @@ export function searchTaggedPlaces(
   { query, offset = 0 }: { query: string; offset?: number },
 ): TaggedPlacePage {
   const wanted = normalizeSearchQuery(query);
+
   const matches =
     wanted === ""
       ? []
       : runtime.stories.listTaggedPlaceLabels().flatMap((label) => {
           const ranks = [label.name, label.address, label.category].flatMap((text) => {
             const rank = text === null ? null : rankTextMatch(text, wanted);
+
             return rank === null ? [] : [rank];
           });
+
           return ranks.length === 0 ? [] : [{ id: label.id, rank: Math.min(...ranks) }];
         });
+
   const ids = matches
     .toSorted((left, right) => left.rank - right.rank)
     .slice(offset, offset + PLACE_PAGE_SIZE)
     .map(({ id }) => id);
+
   const { places } =
     ids.length === 0
       ? { places: [] }
       : runtime.stories.listTaggedPlaces({ ids, offset: 0, limit: PLACE_PAGE_SIZE });
+
   return toPage(
     places.toSorted((left, right) => ids.indexOf(left.id) - ids.indexOf(right.id)),
     matches.length,
@@ -163,12 +171,15 @@ export function searchTaggedPlaces(
 
 export function getTaggedPlace(runtime: TaggedPlacesReadRuntime, id: string): TaggedPlaceRead {
   const wanted = id.trim();
+
   const place = runtime.stories
     .listTaggedPlaces({ ids: [wanted], offset: 0, limit: 1 })
     .places.at(0);
+
   if (place === undefined) {
     return { status: "unknown", id };
   }
+
   return {
     status: "found",
     place: {

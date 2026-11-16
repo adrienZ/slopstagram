@@ -1,7 +1,9 @@
 import type { RuleTester } from "oxlint/plugins-dev";
 
 type Rule = Parameters<RuleTester["run"]>[1];
+
 type RuleVisitor = ReturnType<NonNullable<Rule["create"]>>;
+
 type ModuleNode =
   | Parameters<NonNullable<RuleVisitor["ImportDeclaration"]>>[0]
   | Parameters<NonNullable<RuleVisitor["ExportNamedDeclaration"]>>[0]
@@ -36,12 +38,15 @@ const aiSdkImports = {
   },
   create(context) {
     const allowed = allowedImporters.some((pattern) => pattern.test(context.filename));
+
     function check(node: ModuleNode) {
       const source = node.source?.value;
+
       if (!allowed && source !== undefined && aiSdkSource.test(source)) {
         context.report({ messageId: "restricted", node, data: { source } });
       }
     }
+
     return {
       ExportAllDeclaration: check,
       ExportNamedDeclaration: check,

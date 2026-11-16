@@ -15,6 +15,7 @@ interface ActiveProgressBar {
   bar: ProgressBar;
   key: string;
 }
+
 type WrappedLogMethod = ((message?: string, ...args: Array<string>) => void) & {
   raw: (...args: Array<string>) => void;
 };
@@ -49,6 +50,7 @@ function wrapLogMethods(instance: ConsolaInstance, stopActiveBar: () => void): v
     const log = Object.assign(instance[typeName].bind(instance), {
       raw: instance[typeName].raw.bind(instance),
     });
+
     instance[typeName] = wrapLogMethod(log, stopActiveBar);
   }
 }

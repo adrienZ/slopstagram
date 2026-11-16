@@ -9,6 +9,7 @@ import { Sticker } from "./sticker.tsx";
 
 const mentionPattern = /(?<![\w/:.@])@(?<username>\w+(?:\.\w+)*)/gu;
 const profilePath = "/users/";
+
 /** The link target the Assistant writes for a Place mention: `place:<place id>`. */
 const placeScheme = "place:";
 
@@ -41,15 +42,19 @@ function linkPlaceNames(places: Array<MentionablePlace>) {
   const byName = new Map(places.map((place) => [place.name.toLowerCase(), place]));
   // The longest names first, so that a name containing another one wins.
   const names = [...byName.keys()].toSorted((left, right) => right.length - left.length);
+
   const pattern = new RegExp(
     String.raw`(?<![\p{L}\p{N}])(?:${names.map(escapeRegExp).join("|")})(?![\p{L}\p{N}])`,
     "giu",
   );
+
   function split(value: string): Array<MarkdownNode> {
     const nodes: Array<MarkdownNode> = [];
     let end = 0;
+
     for (const match of value.matchAll(pattern)) {
       const place = byName.get(match[0].toLowerCase());
+
       if (place !== undefined) {
         nodes.push(
           { type: "text", value: value.slice(end, match.index) },
@@ -62,25 +67,34 @@ function linkPlaceNames(places: Array<MentionablePlace>) {
         end = match.index + match[0].length;
       }
     }
+
     nodes.push({ type: "text", value: value.slice(end) });
+
     return nodes.filter((node) => node.type !== "text" || node.value !== "");
   }
+
   function visit(node: MarkdownNode): void {
     if (node.type === "link") {
       const place = byName.get(textOf(node).trim().toLowerCase());
+
       if (place !== undefined) {
         node.url = `${placeScheme}${place.id}`;
       }
+
       return;
     }
+
     node.children = node.children?.flatMap((child) => {
       if (child.type === "text") {
         return split(child.value ?? "");
       }
+
       visit(child);
+
       return [child];
     });
   }
+
   return () => (tree: MarkdownNode) => {
     if (names.length > 0) {
       visit(tree);
@@ -93,6 +107,7 @@ function linkMentions(text: string, accounts: Array<SidebarUser>): string {
     const account = accounts.find(
       (candidate) => candidate.username.toLowerCase() === username.toLowerCase(),
     );
+
     return account === undefined ? mention : `[${mention}](${profilePath}${account.username})`;
   });
 }
@@ -111,6 +126,7 @@ function createComponents(accounts: Array<SidebarUser>): Components {
           />
         );
       }
+
       // A Place mention opens the map in the same tab.
       return href?.startsWith(placeMapHrefPrefix) === true ? (
         <a href={href} className="tw:underline">
@@ -141,6 +157,7 @@ export function ChatMarkdown({
 }) {
   const components = useMemo(() => createComponents(accounts), [accounts]);
   const remarkPlugins = useMemo(() => [linkPlaceNames(places)], [places]);
+
   return (
     <div className="tw:grid tw:gap-3">
       <ReactMarkdown

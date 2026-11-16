@@ -11,6 +11,7 @@ function parseManifest(xml: string): Element | undefined {
   if (xml.length > 1024 * 1024) {
     return undefined;
   }
+
   const parser = new SaxesParser({ xmlns: true });
   const stack: Array<Element> = [];
   let root: Element | undefined;
@@ -21,6 +22,7 @@ function parseManifest(xml: string): Element | undefined {
     if (stack.length > 32 || (tag.uri !== "" && tag.uri !== "urn:mpeg:dash:schema:mpd:2011")) {
       throw new Error("Unsupported DASH structure");
     }
+
     const element: Element = {
       name: tag.local,
       attributes: Object.fromEntries(
@@ -29,18 +31,21 @@ function parseManifest(xml: string): Element | undefined {
       children: [],
       text: "",
     };
+
     stack.at(-1)?.children.push(element);
     root ??= element;
     stack.push(element);
   });
   parser.on("text", (text) => {
     const current = stack.at(-1);
+
     if (current) {
       current.text += text;
     }
   });
   parser.on("cdata", (text) => {
     const current = stack.at(-1);
+
     if (current) {
       current.text += text;
     }
@@ -48,8 +53,10 @@ function parseManifest(xml: string): Element | undefined {
   parser.on("closetag", () => {
     stack.pop();
   });
+
   try {
     parser.write(xml).close();
+
     return root;
   } catch {
     return undefined;
@@ -58,17 +65,22 @@ function parseManifest(xml: string): Element | undefined {
 
 function resolveBase(elements: Array<Element>): string | null {
   let base: string | undefined;
+
   try {
     for (const element of elements) {
       const received = element.children.find(({ name }) => name === "BaseURL")?.text.trim();
+
       if (received !== undefined && received.length > 0) {
         base = new globalThis.URL(received, base).href;
       }
     }
+
     if (base === undefined) {
       return null;
     }
+
     const url = new globalThis.URL(base);
+
     return url.protocol === "https:" && url.username === "" && url.password === ""
       ? url.href
       : null;
@@ -81,14 +93,18 @@ function resolveBase(elements: Array<Element>): string | null {
 // Segmented/live/DRM presentations require a DASH player and are deliberately ignored.
 export function dashAudioSource(xml: string) {
   const root = parseManifest(xml);
+
   if (root?.name !== "MPD" || root.attributes.type === "dynamic") {
     return null;
   }
+
   const periods = root.children.filter(({ name }) => name === "Period");
   const period = periods.at(0);
+
   if (periods.length !== 1 || period === undefined) {
     return null;
   }
+
   const candidates = period.children
     .filter(({ name }) => name === "AdaptationSet")
     .flatMap((adaptation) =>
@@ -96,6 +112,7 @@ export function dashAudioSource(xml: string) {
         .filter(({ name }) => name === "Representation")
         .flatMap((representation) => {
           const elements = [root, period, adaptation, representation];
+
           if (
             elements.some((element) =>
               element.children.some(({ name }) =>
@@ -105,8 +122,10 @@ export function dashAudioSource(xml: string) {
           ) {
             return [];
           }
+
           const attributes = { ...adaptation.attributes, ...representation.attributes };
           const { codecs = "" } = attributes;
+
           if (
             attributes.contentType === "video" ||
             attributes.mimeType !== "audio/mp4" ||
@@ -114,8 +133,10 @@ export function dashAudioSource(xml: string) {
           ) {
             return [];
           }
+
           const sourceUrl = resolveBase(elements);
           const bandwidth = Number(attributes.bandwidth);
+
           return sourceUrl === null
             ? []
             : [
@@ -128,7 +149,9 @@ export function dashAudioSource(xml: string) {
               ];
         }),
     );
+
   const selected = candidates.toSorted((left, right) => right.bandwidth - left.bandwidth).at(0);
+
   return selected === undefined
     ? null
     : { sourceUrl: selected.sourceUrl, mimeType: selected.mimeType, codecs: selected.codecs };

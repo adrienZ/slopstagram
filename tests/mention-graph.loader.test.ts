@@ -112,6 +112,7 @@ async function seedGraphStories(
       storyPk: `70000000000097${position}`,
     })),
   });
+
   return runtime;
 }
 
@@ -121,12 +122,14 @@ test("a connection lasts only as long as one of its source stories is stored", a
     graphStories.cleo,
     ...cleoStoriesMentioningAda,
   ]);
+
   expect(describeConnections(loadGraph(withoutBen))).toContainEqual([ada, ben, 1]);
 
   const onlyCleo = await seedGraphStories(context, [
     graphStories.cleo,
     ...cleoStoriesMentioningAda,
   ]);
+
   const graph = loadGraph(onlyCleo);
   expect(graph.stories.map(({ mediaPk }) => mediaPk).toSorted()).toStrictEqual(
     [graphStories.cleo, ...cleoStoriesMentioningAda].toSorted(),
@@ -170,6 +173,7 @@ test("an undated story, which no page can show, is no source story", async (cont
   const runtime = await seedGraphStories(context, [graphStories.ada, graphStories.ben], {
     undatedStoryPks: [graphStories.ben],
   });
+
   const graph = loadGraph(runtime);
   expect(describeConnections(graph)).toContainEqual([ada, ben, 1]);
   expect(graph.stories.map(({ mediaPk }) => mediaPk)).toStrictEqual([graphStories.ada]);

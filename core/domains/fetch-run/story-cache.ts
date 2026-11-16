@@ -21,9 +21,11 @@ export async function storeReturnedReels(
       // oxlint-disable-next-line no-await-in-loop -- Persist each observation before exposing its merged annotations.
       await storyRepository.save(item, reel.user);
       const stored = storyRepository.findByMediaPk(item.pk);
+
       const effectiveItem = stored?.annotations
         ? { ...item, annotations: stored.annotations }
         : item;
+
       // oxlint-disable-next-line no-await-in-loop -- Cache the effective saved annotations for this story.
       await storage.stories.setItem(getMediaCacheKey(item.pk), effectiveItem);
       cachedItems.set(item.pk, effectiveItem);

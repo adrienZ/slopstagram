@@ -16,11 +16,14 @@ export interface MusicObservationInput {
 const SourceUrlSchema = z.url({ protocol: /^https$/u }).pipe(
   z.string().refine((value) => {
     const url = new globalThis.URL(value);
+
     return url.username === "" && url.password === "";
   }),
 );
+
 function sourceUrl(value: JsonValue | undefined): string | null {
   const parsed = SourceUrlSchema.safeParse(value);
+
   return parsed.success ? parsed.data : null;
 }
 
@@ -28,14 +31,18 @@ export function getMusicObservation(value: JsonValue): MusicObservationInput | n
   if (!isJsonObject(value)) {
     return null;
   }
+
   const info = value.music_asset_info ?? {};
   const providerOccurrenceId = getProviderIdentifier(value.id);
+
   if (!isJsonObject(info)) {
     return null;
   }
+
   const title = TextSchema.safeParse(info.title);
   const artist = TextSchema.safeParse(info.display_artist);
   const duration = DurationSchema.safeParse(info.duration_in_ms);
+
   const fields: MusicFields = {
     instagramAudioAssetId: getProviderIdentifier(info.audio_asset_id),
     title: title.success ? title.data : null,
@@ -47,6 +54,7 @@ export function getMusicObservation(value: JsonValue): MusicObservationInput | n
     artworkSourceUrl:
       sourceUrl(info.cover_artwork_uri) ?? sourceUrl(info.cover_artwork_thumbnail_uri),
   };
+
   // An outer ID is useful provenance even when every audio field is missing.
   return providerOccurrenceId !== null || Object.values(fields).some((field) => field !== null)
     ? { providerOccurrenceId, fields }
@@ -57,7 +65,9 @@ export function getMusicSourceUpdate(story: StoryItem): Array<MusicObservationIn
   if (!Array.isArray(story.story_music_stickers)) {
     return null;
   }
+
   const observations = story.story_music_stickers.map(getMusicObservation);
+
   return observations.some((entry) => entry === null)
     ? null
     : observations.filter((entry) => entry !== null);

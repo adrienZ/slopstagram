@@ -14,10 +14,12 @@ test("the account timeline keeps outdated vision results and reports how they ar
   const owner = { pk: "vision-pk", username: "vision-user" };
   await runtime.stories.save({ media_type: 1, pk: "current", taken_at: 1_767_225_600 }, owner);
   await runtime.stories.save({ media_type: 1, pk: "outdated", taken_at: 1_767_225_500 }, owner);
+
   const current = await saveCurrentVision(runtime, "current", {
     text: "current text",
     visual: "current description",
   });
+
   await runtime.vision.save("outdated", {
     model: "retired-model",
     prompt_hash: current.prompt_hash,

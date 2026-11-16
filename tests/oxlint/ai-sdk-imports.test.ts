@@ -6,6 +6,7 @@ import aiSdkImports from "../../oxlint/plugins/rules/ai-sdk-imports.ts";
 RuleTester.describe = (text, fn) => {
   describe(text, fn);
 };
+
 RuleTester.it = (text, fn) => {
   it(text, fn);
 };

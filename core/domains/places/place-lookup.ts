@@ -55,10 +55,13 @@ const detailsSchema = z.object({
 
 function parseDetails(info: z.infer<typeof locationInfoSchema>): PlaceLookupInput["details"] {
   const parsed = detailsSchema.safeParse(info);
+
   if (!parsed.success) {
     return undefined;
   }
+
   const { phone, price_range: priceRange, slug, ig_business: business } = parsed.data;
+
   return {
     phone,
     priceRange,
@@ -75,19 +78,25 @@ type PlaceResponseResult = { place: PlaceLookupInput } | { failure: string };
 
 function parsePlaceResponse(body: JsonValue, placeId: string): PlaceResponseResult {
   const graphQlErrors = graphQlErrorsSchema.safeParse(body);
+
   if (graphQlErrors.success) {
     return {
       failure: `Instagram returned GraphQL errors: ${JSON.stringify(graphQlErrors.data.errors)}`,
     };
   }
+
   const parsed = responseSchema.safeParse(body);
+
   if (!parsed.success) {
     return { failure: `Instagram returned an invalid place response: ${parsed.error.message}` };
   }
+
   const info = parsed.data.data.xdt_location_get_web_info.native_location_data.location_info;
+
   if (info === null || info.location_id !== placeId) {
     return { failure: `Instagram returned no place data for ${placeId}` };
   }
+
   return {
     place: {
       name: info.name,
@@ -103,6 +112,7 @@ function parsePlaceResponse(body: JsonValue, placeId: string): PlaceResponseResu
 }
 
 const RETRY_FAILED_LOOKUP_AFTER_MS = 12 * 60 * 60 * 1000;
+
 // Three months are counted as 90 days, so a place is refreshed on a fixed schedule.
 const REFRESH_LOOKUP_AFTER_MS = 90 * 24 * 60 * 60 * 1000;
 
@@ -110,8 +120,10 @@ function needsLookup(metadata: StoryLocationObservation["metadata"], now: Date) 
   if (metadata.lastLookupAttemptAt === null) {
     return true;
   }
+
   const staleAfter =
     metadata.lastLookupFailure === null ? REFRESH_LOOKUP_AFTER_MS : RETRY_FAILED_LOOKUP_AFTER_MS;
+
   return now.getTime() - metadata.lastLookupAttemptAt >= staleAfter;
 }
 
@@ -121,6 +133,7 @@ function listPlacesToLookUp(
   now: Date,
 ) {
   const placeIds = new Set<string>();
+
   for (const mediaPk of mediaPks) {
     for (const { metadata } of repository.findByMediaPk(mediaPk)?.annotations
       ?.locationObservations ?? []) {
@@ -133,6 +146,7 @@ function listPlacesToLookUp(
       }
     }
   }
+
   return placeIds;
 }
 
@@ -149,15 +163,20 @@ export async function lookUpTaggedPlaces(
   ) {
     return;
   }
+
   for (const placeId of listPlacesToLookUp(savedMediaPks, repository, new Date())) {
     let outcome: PlaceResponseResult;
+
     try {
       // oxlint-disable-next-line no-await-in-loop -- Keep requests sequential and stop on rate limits.
       const response = await client.getPlace(placeId);
+
       if (response.status === 429 || response.status === 401 || response.status === 403) {
         logger.warn(`place lookup stopped after Instagram HTTP ${response.status}`);
+
         return;
       }
+
       outcome = response.ok
         ? parsePlaceResponse(response.json(), placeId)
         : { failure: `Instagram answered HTTP ${response.status}` };
@@ -166,6 +185,7 @@ export async function lookUpTaggedPlaces(
       // Only the message is kept: an error object can carry request headers or cookies.
       outcome = { failure: error instanceof Error ? error.message : String(error) };
     }
+
     try {
       if ("place" in outcome) {
         repository.recordPlaceLookup(placeId, outcome.place, new Date());

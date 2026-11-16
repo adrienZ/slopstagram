@@ -40,9 +40,11 @@ function placesNamedBy<Name extends AssistantToolName>(
 export function findReadPlaces(message: AssistantUIMessage): Array<MentionablePlace> {
   return message.parts.flatMap((part) => {
     const call = toolCallOf(part);
+
     if (call === undefined || call.invalid || call.part.state !== "output-available") {
       return [];
     }
+
     return placesNamedBy(call.name, call.part.output);
   });
 }

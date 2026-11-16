@@ -12,13 +12,17 @@ function notFound(): Response {
 
 function byteRange(range: string, size: number): { start: number; end: number } | null {
   const match = /^bytes=(?<first>\d*)-(?<last>\d*)$/u.exec(range);
+
   if (!match?.groups || size === 0 || (match.groups.first === "" && match.groups.last === "")) {
     return null;
   }
+
   const suffix = match.groups.first === "";
   const start = suffix ? Math.max(0, size - Number(match.groups.last)) : Number(match.groups.first);
+
   const end =
     suffix || match.groups.last === "" ? size - 1 : Math.min(Number(match.groups.last), size - 1);
+
   return Number.isSafeInteger(start) &&
     Number.isSafeInteger(end) &&
     start >= 0 &&
@@ -45,37 +49,49 @@ export async function createMediaResponse(
   options: { range?: string | null; method?: string } = {},
 ): Promise<Response> {
   const file = media.fromRequest(requestPath);
+
   if (file === null) {
     return notFound();
   }
+
   let bytes: Uint8Array | null;
+
   try {
     bytes = await readBytes(runtime.storage[file.store], file.key);
   } catch {
     // A storage that cannot read the key has no such file to serve.
     return notFound();
   }
+
   if (bytes === null || bytes.byteLength === 0) {
     return notFound();
   }
+
   const size = bytes.byteLength;
   const headers = mediaHeaders(file.key);
   const rangeHeader = options.range ?? "";
+
   const range =
     options.method !== "HEAD" && rangeHeader.length > 0 ? byteRange(rangeHeader, size) : undefined;
+
   if (range === null) {
     headers.set("content-range", `bytes */${size}`);
+
     return new globalThis.Response(null, { status: 416, headers });
   }
+
   const start = range?.start ?? 0;
   const end = range?.end ?? size - 1;
   headers.set("content-length", String(end - start + 1));
+
   if (range) {
     headers.set("content-range", `bytes ${start}-${end}/${size}`);
   }
+
   if (options.method === "HEAD") {
     return new globalThis.Response(null, { headers });
   }
+
   return new globalThis.Response(new Uint8Array(bytes.subarray(start, end + 1)), {
     status: range ? 206 : 200,
     headers,

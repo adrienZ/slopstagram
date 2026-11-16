@@ -8,6 +8,7 @@ import { StoryRepository } from "@@/core/domains/database/repositories/story-rep
 function withLabelOnlyAnnotations(story: StoryItem): StoryItem {
   assert.ok(story.annotations);
   const { locationObservations: _metadata, ...annotations } = story.annotations;
+
   return {
     ...story,
     annotations: {
@@ -109,27 +110,33 @@ describe("StoryRepository", () => {
         { height: 1920, type: 0, url: "https://example.com/video.mp4", width: 1080 },
       ],
     });
+
     const [storedStory] = database.$client
       .prepare("SELECT accessibilityCaption, mediaType, originalHeight, originalWidth FROM stories")
       .all()
       .map((row) => Object.fromEntries(Object.entries(row)));
+
     expect(storedStory).toStrictEqual({
       accessibilityCaption: "Updated",
       mediaType: 2,
       originalHeight: 1920,
       originalWidth: 1080,
     });
+
     const imageVersions = database.$client
       .prepare("SELECT height, url, width FROM story_image_versions")
       .all()
       .map((row) => Object.fromEntries(Object.entries(row)));
+
     expect(imageVersions).toStrictEqual([
       { height: 100, url: "https://example.com/image.jpg", width: 80 },
     ]);
+
     const stickers = database.$client
       .prepare("SELECT kind, label FROM story_stickers")
       .all()
       .map((row) => Object.fromEntries(Object.entries(row)));
+
     expect(stickers).toStrictEqual([
       { kind: "hashtag", label: "#structured" },
       { kind: "location", label: "Paris" },

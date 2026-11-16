@@ -36,6 +36,7 @@ export function readLocationObservations(
     .where(eq(storyLocationObservations.mediaPk, mediaPk))
     .orderBy(asc(storyLocationObservations.source), asc(storyLocationObservations.sortOrder))
     .all();
+
   return rows.map(({ story_location_observations: observation, metadata_location: location }) => ({
     id: observation.id,
     source: observation.source,
@@ -52,6 +53,7 @@ function saveMetadata(
 ) {
   const identifier =
     observation.fields.instagramPlaceId ?? previous?.metadata.instagramPlaceId ?? null;
+
   const known =
     identifier === null
       ? undefined
@@ -60,12 +62,14 @@ function saveMetadata(
           .from(metadataLocations)
           .where(eq(metadataLocations.instagramPlaceId, identifier))
           .get();
+
   const entry = planLocationMetadataWrite(observation, known, previous);
   database
     .insert(metadataLocations)
     .values(entry)
     .onConflictDoUpdate({ target: metadataLocations.id, set: entry })
     .run();
+
   if (previous && previous.metadata.id !== entry.id) {
     database
       .update(storyLocationObservations)
@@ -74,6 +78,7 @@ function saveMetadata(
       .run();
     database.delete(metadataLocations).where(eq(metadataLocations.id, previous.metadata.id)).run();
   }
+
   return { locationId: entry.id };
 }
 
@@ -84,6 +89,7 @@ export function enrichStoryLocations(
 ): void {
   const previous = readLocationObservations(database, story.pk);
   const plan = planStoryLocationUpdates(story, annotations, previous);
+
   for (const write of plan.writes) {
     const metadata = saveMetadata(database, write.observation, write.previous);
     const entry = { ...write.entry, ...metadata };
@@ -93,6 +99,7 @@ export function enrichStoryLocations(
       .onConflictDoUpdate({ target: storyLocationObservations.id, set: entry })
       .run();
   }
+
   for (const id of plan.removedObservationIds) {
     database.delete(storyLocationObservations).where(eq(storyLocationObservations.id, id)).run();
   }
@@ -109,15 +116,19 @@ function fillTaggedPlace(
     .from(metadataLocations)
     .where(eq(metadataLocations.instagramPlaceId, instagramPlaceId))
     .get();
+
   if (known === undefined) {
     return null;
   }
+
   const update = {
     ...planPlaceFill(known, incoming),
     lastLookupAttemptAt: lookedUpAt,
     lastLookupFailure: null,
   };
+
   database.update(metadataLocations).set(update).where(eq(metadataLocations.id, known.id)).run();
+
   return known.id;
 }
 
@@ -135,11 +146,14 @@ function labelObservedStickers(database: LocationDatabase, locationId: string): 
       ),
     )
     .all();
+
   for (const { observation, place } of unlinked) {
     const label = locationStickerLabel(place);
+
     if (label === null) {
       continue;
     }
+
     const shown = database
       .select({
         sortOrder: storyStickers.sortOrder,
@@ -149,9 +163,11 @@ function labelObservedStickers(database: LocationDatabase, locationId: string): 
       .from(storyStickers)
       .where(eq(storyStickers.mediaPk, observation.mediaPk))
       .all();
+
     if (shown.some((sticker) => sticker.kind === "location" && sticker.label === label)) {
       continue;
     }
+
     const sticker = {
       kind: "location",
       label,
@@ -160,11 +176,13 @@ function labelObservedStickers(database: LocationDatabase, locationId: string): 
       source: observation.source,
       providerOccurrenceId: observation.providerOccurrenceId,
     };
+
     const { occurrenceId } = database
       .insert(storyStickers)
       .values(sticker)
       .returning({ occurrenceId: storyStickers.occurrenceId })
       .get();
+
     database
       .update(storyLocationObservations)
       .set({ occurrenceId })
@@ -181,10 +199,13 @@ export function recordPlaceLookup(
 ): void {
   const { details: incomingDetails, ...place } = incoming;
   const locationId = fillTaggedPlace(database, instagramPlaceId, place, lookedUpAt);
+
   if (locationId === null) {
     return;
   }
+
   labelObservedStickers(database, locationId);
+
   if (incomingDetails !== undefined) {
     const details = { locationId, ...planPlaceDetails(incomingDetails) };
     database
@@ -219,9 +240,12 @@ export function readPlaceDetails(
     .innerJoin(metadataLocations, eq(metadataLocationDetails.locationId, metadataLocations.id))
     .where(eq(metadataLocations.instagramPlaceId, instagramPlaceId))
     .get();
+
   if (row === undefined) {
     return null;
   }
+
   const { locationId: _locationId, ...details } = row.metadata_location_details;
+
   return details;
 }

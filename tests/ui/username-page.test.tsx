@@ -44,15 +44,19 @@ test("timeline shows the handle, the dated gallery and the active account", asyn
   const pages = within(screen.getByRole("navigation", { name: "Pages" }));
   expect(pages.getByRole("link", { name: "Carte" })).toHaveAttribute("href", "/map");
   const gallery = within(screen.getByRole("region", { name: "Galerie des stories" }));
+
   const days = timelineProps.timeline.years.flatMap(({ months }) =>
     months.flatMap((month) => month.days),
   );
+
   expect(days.map(({ key }) => key)).toEqual(["2026-07-26", "2026-07-25"]);
+
   for (const { key, stories } of days) {
     const day = gallery.getByRole("region", { name: key });
     expect(day).toHaveAttribute("id", `story-day-${key}`);
     const previews = within(day).getAllByRole("img");
     expect(previews).toHaveLength(stories.length);
+
     for (const preview of previews) {
       expect(preview).toHaveAttribute("loading", "lazy");
       expect(preview.getAttribute("src")).toMatch(/^\/media\/story-previews\//u);
@@ -101,10 +105,12 @@ test("timeline calendar scrolls to the selected day without changing the route",
 
 test("calendar navigates between months to another available day", async () => {
   const scroll = vi.spyOn(globalThis.Element.prototype, "scrollIntoView");
+
   const older = {
     ...timelineEntry,
     story: { ...timelineEntry.story, pk: "older" },
   };
+
   const { user } = await renderer.mountRoute(`/users/${timelineAccount}`, {
     ...timelineProps,
     timeline: {
@@ -128,6 +134,7 @@ test("calendar navigates between months to another available day", async () => {
       ],
     },
   });
+
   expect(screen.getByRole("button", { name: /mois précédent/iu })).not.toHaveAttribute(
     "aria-disabled",
     "true",
@@ -165,6 +172,7 @@ test("an empty account keeps navigation and every sticker kind without expansion
       timelineProps.stickerGroups.map(({ kind }) => kind),
     ),
   );
+
   expect(screen.getByRole("heading", { name: `@${timelineAccount}`, level: 1 })).toBeVisible();
   expect(screen.getByText("Aucune story enregistrée pour cet utilisateur.")).toBeVisible();
   expect(
@@ -197,6 +205,7 @@ test("a timeline story deep link opens the preview, steps to the next story and 
     `/users/user_075?story=${timelineProps.stories[0].mediaPk}`,
     timelineProps,
   );
+
   const dialog = within(await screen.findByRole("dialog", { name: "Aperçu de l’image" }));
   expect(dialog.getByText(`1 / ${timelineProps.stories.length}`)).toBeVisible();
   await user.click(dialog.getByRole("button", { name: "Image suivante" }));

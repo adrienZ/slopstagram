@@ -11,6 +11,7 @@ import { createCapturingLogger, createClient, reel, reelsResponse } from "./mock
 
 function present<T>(value: T | null | undefined): T {
   assert.ok(value !== null && value !== undefined);
+
   return value;
 }
 
@@ -20,12 +21,14 @@ function setup(context: { onTestFinished: (callback: () => void) => void }) {
   context.onTestFinished(() => {
     database.$client.close();
   });
+
   return { database, repository: new StoryRepository(database, createCapturingLogger()) };
 }
 
 function read(repository: StoryRepository, pk: string) {
   const story = repository.findByMediaPk(pk);
   assert.ok(story?.annotations);
+
   return story.annotations;
 }
 
@@ -65,6 +68,7 @@ test("external-ID-only locations survive cold reads as separate partial observat
     ["000123", null],
     [null, "facebook_places"],
   ]);
+
   for (const observation of observations) {
     expect(observation.source).toBe("story_locations");
     expect(observation.occurrenceId).toBe(null);
@@ -75,6 +79,7 @@ test("external-ID-only locations survive cold reads as separate partial observat
     expect(observation.metadata.latitude).toBe(null);
     expect(observation.metadata.longitude).toBe(null);
   }
+
   expect(logger.messages).toStrictEqual([]);
 });
 
@@ -98,6 +103,7 @@ test("external-only observations do not block other location updates during live
     owner,
   );
   const [before] = read(repository, "m1").stickers;
+
   const item: StoryItem = {
     pk: "m1",
     taken_at: 1_767_225_600,
@@ -116,6 +122,7 @@ test("external-only observations do not block other location updates during live
       { facebook_places_id: "000456" },
     ],
   };
+
   const report = await fetchStories({
     logger,
     stories: repository,
@@ -125,6 +132,7 @@ test("external-only observations do not block other location updates during live
       [reelsResponse({ r1: { ...reel("r1", [item]), user: owner } })],
     ),
   });
+
   expect(report.manifest.users[0].stories[0].locations).toStrictEqual(["Updated"]);
   const [history] = new StoryRepository(database).listByUsername("one");
   const stored = present(history.story.annotations);
@@ -194,6 +202,7 @@ test("live ingestion shares tagged places and exposes exact metadata with occurr
   });
   const owner = { id: "u1", pk: "u1", username: "one", full_name: "One" };
   await new InstagramUserRepository(database).save(owner);
+
   const location = {
     pk: "00012345678901234567890",
     name: "Paris",
@@ -203,6 +212,7 @@ test("live ingestion shares tagged places and exposes exact metadata with occurr
     facebook_places_id: "00042",
     external_source: "facebook_places",
   };
+
   const items: Array<StoryItem> = [
     {
       pk: "m1",
@@ -223,6 +233,7 @@ test("live ingestion shares tagged places and exposes exact metadata with occurr
       story_locations: [{ id: "d", location: { ...location, pk: "different" } }],
     },
   ];
+
   const report = await fetchStories({
     logger: createCapturingLogger(),
     stories: new StoryRepository(database, createCapturingLogger()),
@@ -232,6 +243,7 @@ test("live ingestion shares tagged places and exposes exact metadata with occurr
       [reelsResponse({ r1: { ...reel("r1", items), user: owner } })],
     ),
   });
+
   expect(report.manifest.users[0].stories[0].locations).toStrictEqual([
     "Paris, Paris",
     "Paris, Paris",
@@ -239,9 +251,11 @@ test("live ingestion shares tagged places and exposes exact metadata with occurr
   const history = new StoryRepository(database).listByUsername("one");
   const first = present(present(history.find(({ story }) => story.pk === "m1")).story.annotations);
   const shared = present(present(history.find(({ story }) => story.pk === "m2")).story.annotations);
+
   const homonym = present(
     present(history.find(({ story }) => story.pk === "m3")).story.annotations,
   );
+
   const places = present(first.locationObservations);
   expect(places.length).toBe(2);
   expect(places.map(({ occurrenceId }) => occurrenceId)).toStrictEqual(
@@ -302,6 +316,7 @@ test("ID-only observations preserve known contributions and promote every certai
   const promoted = read(new StoryRepository(database), "m1");
   const shared = read(new StoryRepository(database), "m2");
   expect(promoted.stickers).toStrictEqual(original.stickers);
+
   for (const annotations of [promoted, shared]) {
     expect(present(annotations.locationObservations)[0].metadata.status).toBe("usable");
     expect(present(annotations.locationObservations)[0].metadata.id).toBe(
@@ -311,6 +326,7 @@ test("ID-only observations preserve known contributions and promote every certai
     expect(present(annotations.locationObservations)[0].metadata.longitude).toBe(0);
     expect(present(annotations.locationObservations)[0].metadata.address).toBe(null);
   }
+
   // A later sparse live response cannot erase the name, coordinates or links.
   await repository.save({
     pk: "m2",
@@ -322,6 +338,7 @@ test("ID-only observations preserve known contributions and promote every certai
 
 test("coordinates are validated and partial places without provider identity never merge by text", async (context) => {
   const { database, repository } = setup(context);
+
   const observations: Array<JsonObject> = [
     { pk: "north", name: "Same", lat: 90, lng: 180 },
     { pk: "south", name: "Same", lat: -90, lng: -180 },
@@ -332,6 +349,7 @@ test("coordinates are validated and partial places without provider identity nev
     { name: "Same" },
     { name: "Same" },
   ];
+
   await repository.save({
     pk: "m1",
     story_locations: observations.map((location, index) => ({
@@ -391,14 +409,18 @@ test("place links survive reordering and cold saves while explicit source cleari
     ],
   });
   const before = read(repository, "m1");
+
   const byProvider = new Map(
     present(before.locationObservations).map((entry) => [entry.providerOccurrenceId, entry]),
   );
+
   await repository.save({ pk: "m1", story_locations: [b, a] });
   const reordered = read(new StoryRepository(database), "m1");
+
   for (const entry of present(reordered.locationObservations)) {
     expect(entry).toStrictEqual(byProvider.get(entry.providerOccurrenceId));
   }
+
   await repository.save(present(repository.findByMediaPk("m1")));
   expect(read(new StoryRepository(database), "m1")).toStrictEqual(reordered);
   await repository.save({ pk: "m1", story_locations: [] });
@@ -413,10 +435,12 @@ test("place links survive reordering and cold saves while explicit source cleari
 
 test("mixed labelled and ID-only locations keep valid labels and preserve earlier contributions", async (context) => {
   const { database, repository } = setup(context);
+
   const first = {
     id: "a",
     location: { pk: "one", name: "One", lat: 1, lng: 2 },
   };
+
   const partial = { id: "b", location: { pk: "two" } };
   await repository.save({ pk: "m1", story_locations: [first, partial] });
   const stored = read(new StoryRepository(database), "m1");
@@ -461,6 +485,7 @@ test("malformed and omitted sources preserve metadata while live nonempty values
     ],
   });
   const before = read(repository, "m1");
+
   for (const value of [
     null,
     "malformed",
@@ -470,6 +495,7 @@ test("malformed and omitted sources preserve metadata while live nonempty values
     await repository.save({ pk: "m1", story_locations: value });
     expect(read(new StoryRepository(database), "m1")).toStrictEqual(before);
   }
+
   await repository.save({
     pk: "m1",
     story_hashtags: [{ hashtag: "other-source" }],
@@ -511,9 +537,11 @@ test("current extraction links repeated unidentifiable occurrences without guess
     story_locations: [{ location }, { location }, partial],
   });
   const before = read(repository, "m1");
+
   const located = present(before.locationObservations).filter(
     ({ metadata }) => metadata.status === "usable",
   );
+
   expect(located.length).toBe(2);
   expect(located[0].metadata.id).not.toBe(located[1].metadata.id);
   expect(located.map(({ occurrenceId }) => occurrenceId)).toStrictEqual(
@@ -525,6 +553,7 @@ test("current extraction links repeated unidentifiable occurrences without guess
   });
   const after = read(new StoryRepository(database), "m1");
   expect(after.stickers.length).toBe(2);
+
   for (const entry of present(after.locationObservations)) {
     expect(
       after.stickers.some(({ occurrenceId }) => occurrenceId === entry.occurrenceId),

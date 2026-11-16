@@ -192,6 +192,7 @@ function latestTakenAt(connections: Array<MentionConnection>): number | null {
   const dates = connections.flatMap(({ observations }) =>
     observations.flatMap(({ takenAt }) => (takenAt === null ? [] : [takenAt])),
   );
+
   return dates.length === 0 ? null : Math.max(...dates);
 }
 
@@ -204,9 +205,11 @@ function otherOf(
 
 function describePerson(target: MentionTarget): MentionPerson {
   const { id, label } = target;
+
   if (target.kind === "ambiguous-username") {
     return { kind: target.kind, id, label, accounts: target.accounts.map((each) => each.label) };
   }
+
   return { kind: target.kind, id, label, fullName: target.fullName };
 }
 
@@ -217,9 +220,11 @@ function createMentionReader(runtime: MentionConnectionsRuntime) {
   /** Every end of a connection is one of the graph's targets, so a missing one is a bug. */
   function targetOf(id: MentionTarget["id"]): MentionTarget {
     const target = targetsById.get(id);
+
     if (target === undefined) {
       throw new Error(`No Mention target ${id} in the Mention connections`);
     }
+
     return target;
   }
 
@@ -233,6 +238,7 @@ function createMentionReader(runtime: MentionConnectionsRuntime) {
 
   function summarizePerson(target: MentionTarget): MentionPersonSummary {
     const connections = connectionsOf(target.id);
+
     return {
       person: describePerson(target),
       connectionCount: connections.length,
@@ -251,6 +257,7 @@ function createMentionReader(runtime: MentionConnectionsRuntime) {
       observations,
       ({ authorId, mentionedId }) => `${authorId} ${mentionedId}`,
     );
+
     return [...directions.values()].map((stories) => ({
       author: labelOf(stories[0].authorId),
       mentioned: labelOf(stories[0].mentionedId),
@@ -265,12 +272,15 @@ function createMentionReader(runtime: MentionConnectionsRuntime) {
     | { status: "unknown_person"; query: string }
     | { status: "ambiguous"; match: AmbiguousMentionQuery } {
     const targets = findMentionTargets(graph, query);
+
     if (targets.length === 0) {
       return { status: "unknown_person", query };
     }
+
     if (targets.length === 1) {
       return { status: "found", target: targets[0] };
     }
+
     return {
       status: "ambiguous",
       match: {
@@ -302,16 +312,22 @@ export function listMentionConnections(
 ): MentionConnectionList {
   const reader = createMentionReader(runtime);
   const found = person === undefined ? undefined : reader.findPerson(person);
+
   if (found?.status === "unknown_person") {
     return found;
   }
+
   if (found?.status === "ambiguous") {
     return { status: "ambiguous", ...found.match };
   }
+
   const target = found?.target;
+
   const connections =
     target === undefined ? reader.graph.connections : reader.connectionsOf(target.id);
+
   const page = pageOf(connections, offset, PAGE_SIZE);
+
   return {
     status: "listed",
     person: target === undefined ? null : describePerson(target),
@@ -320,6 +336,7 @@ export function listMentionConnections(
         target === undefined || connection.targetIds[0] === target.id
           ? connection.targetIds
           : connection.targetIds.toReversed();
+
       return {
         people: [describePerson(reader.targetOf(first)), describePerson(reader.targetOf(second))],
         storyCount: connection.observations.length,
@@ -344,21 +361,26 @@ export function searchMentionPeople(
 ): MentionPeoplePage {
   const reader = createMentionReader(runtime);
   const wanted = normalizeSearchQuery(query);
+
   const matches =
     wanted === ""
       ? []
       : reader.graph.targets.flatMap((target) => {
           const ranks = [target.label, target.fullName].flatMap((text) => {
             const rank = text === null ? null : rankTextMatch(text.replace(/^@/u, ""), wanted);
+
             return rank === null ? [] : [rank];
           });
+
           return ranks.length === 0 ? [] : [{ target, rank: Math.min(...ranks) }];
         });
+
   const page = pageOf(
     matches.toSorted((left, right) => left.rank - right.rank),
     offset,
     PAGE_SIZE,
   );
+
   return {
     people: page.items.map(({ target }) => reader.summarizePerson(target)),
     total: page.total,
@@ -382,22 +404,30 @@ export function getMentionConnection(
   const queries = [firstPerson, secondPerson];
   const found = queries.map((query) => reader.findPerson(query));
   const unknown = queries.filter((_, index) => found[index].status === "unknown_person");
+
   if (unknown.length > 0) {
     return { status: "unknown_person", queries: unknown };
   }
+
   const ambiguous = found.flatMap((each) => (each.status === "ambiguous" ? [each.match] : []));
+
   if (ambiguous.length > 0) {
     return { status: "ambiguous", matches: ambiguous };
   }
+
   const [first, second] = found.flatMap((each) => (each.status === "found" ? [each.target] : []));
   const people: [MentionPerson, MentionPerson] = [describePerson(first), describePerson(second)];
+
   const connection = reader
     .connectionsOf(first.id)
     .find(({ targetIds }) => targetIds.includes(second.id) && first.id !== second.id);
+
   if (connection === undefined) {
     return { status: "no_observation", people };
   }
+
   const page = pageOf(connection.observations, offset, STORY_PAGE_SIZE);
+
   return {
     status: "found",
     people,

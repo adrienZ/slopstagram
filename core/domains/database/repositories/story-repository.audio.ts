@@ -11,8 +11,10 @@ export function findStoryAudio(database: AudioDatabase, mediaPk: string) {
 export function saveStoryAudio(database: AudioDatabase, mediaPk: string, entry: StoryAudio | null) {
   if (entry === null) {
     database.delete(storyAudio).where(eq(storyAudio.mediaPk, mediaPk)).run();
+
     return;
   }
+
   database
     .insert(storyAudio)
     .values(entry)

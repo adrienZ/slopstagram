@@ -18,6 +18,7 @@ export function keepAccountFilters(
   selected: Iterable<string>,
 ): Array<string> {
   const chosen = new Set(selected);
+
   return accounts.flatMap(({ username }) => (chosen.has(username) ? [username] : []));
 }
 

@@ -19,6 +19,7 @@ async function createMediaApp(context: TestContext, storage?: CacheStorage) {
       const request = new globalThis.Request(`http://localhost${url}`, init);
       const [, params, route] = router.getMatchedRoutes(url);
       expect(route).toBe(mediaRoute);
+
       return await handleMediaRequest(runtime, request, params._splat);
     },
   };
@@ -52,6 +53,7 @@ test("the media route rejects traversal, non-JPEG images and audio outside the a
     "/media/avatars/audio.mp3",
     "/media/avatars/missing.jpg",
   ];
+
   const responses = await Promise.all(urls.map(async (url) => await app.request(url)));
 
   expect(responses.map((response) => response.status)).toStrictEqual(urls.map(() => 404));
@@ -60,9 +62,11 @@ test("the media route rejects traversal, non-JPEG images and audio outside the a
 /** Stores that hand back bytes for any key, as a driver that does not reject `..` would. */
 function createPermissiveStorage(): CacheStorage {
   const storage = createMemoryCacheStorage();
+
   for (const store of [storage.audio, storage.images]) {
     Object.assign(store, { getItemRaw: async () => await Promise.resolve(Buffer.from("secret")) });
   }
+
   return storage;
 }
 
@@ -71,6 +75,7 @@ test("the media route answers 404 for a key containing .. without relying on the
 
   const served = await app.request("/media/avatars/alice.jpg");
   expect(served.status).toBe(200);
+
   const urls = [
     "/media/..%2fsecret.jpg",
     "/media/avatars/..%2f..%2fsecret.jpg",
@@ -78,6 +83,7 @@ test("the media route answers 404 for a key containing .. without relying on the
     "/media/audio/..%2fsecret.m4a",
     "/media/audio/..%2f..%2fsecret.m4a",
   ];
+
   const responses = await Promise.all(urls.map(async (url) => await app.request(url)));
 
   expect(responses.map((response) => response.status)).toStrictEqual(urls.map(() => 404));

@@ -105,6 +105,7 @@ function getDateKeyParts(date: Date): DateParts {
 
 function getTimelineDate(story: UserTimelineStory): Date | null {
   const date = new Date(story.taken_at * 1000);
+
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
@@ -113,6 +114,7 @@ function groupStoriesByPublishedDate(stories: Array<UserTimelineStory>): Array<U
 
   for (const story of stories) {
     const date = getTimelineDate(story);
+
     if (date === null) {
       continue;
     }
@@ -121,8 +123,10 @@ function groupStoriesByPublishedDate(stories: Array<UserTimelineStory>): Array<U
     const keys = getDateKeyParts(date);
     const monthKey = `${keys.year}-${keys.month}`;
     const dayKey = `${monthKey}-${keys.day}`;
+
     const months =
       years.get(year) ?? new Map<string, { days: Array<UserTimelineDay>; label: string }>();
+
     const monthEntry = months.get(monthKey) ?? { days: [], label: month };
     const { days } = monthEntry;
     const currentDay = days.find((entry) => entry.key === dayKey);
@@ -180,9 +184,11 @@ function readTimelineDetails(
     if (appleCaption !== null) {
       appleCaptionByMediaPk.set(storyPk, appleCaption);
     }
+
     if (vision !== null) {
       visionByPreviewUrl.set(previewUrl, vision.result);
       const outdated = describeOutdatedVision(vision);
+
       if (outdated !== null) {
         outdatedVisionByPreviewUrl.set(previewUrl, outdated);
       }
@@ -194,11 +200,14 @@ function readTimelineDetails(
 
 function createUserTimeline(runtime: UserTimelineRuntime, username: string): UserTimeline | null {
   const stories = runtime.stories.listByUsername(username);
+
   if (stories.length === 0) {
     const user = runtime.users.findByUsername(username);
+
     if (user === null) {
       return null;
     }
+
     return {
       appleCaptionByMediaPk: new Map(),
       avatarPath: media.image.avatar(user.pk).url,
@@ -272,10 +281,13 @@ export function createOwnerStoryCards(
   users: Array<SidebarUser>,
 ): Array<StoryCardData> {
   const first = stories.at(0);
+
   if (first === undefined) {
     return [];
   }
+
   const timelineUser = createStoredStoryUser(first, stories);
+
   const sources = getStoryCardSources(
     {
       ...readTimelineDetails(runtime, stories),
@@ -284,6 +296,7 @@ export function createOwnerStoryCards(
     },
     getTimelinePreviewPaths(stories),
   );
+
   return withStoryStickers(createStoryCards(timelineUser, sources), stories, users);
 }
 
@@ -293,22 +306,28 @@ export function loadAccountTimeline(
   now: Date = new Date(),
 ) {
   const timeline = createUserTimeline(runtime, username);
+
   if (timeline === null) {
     throw new HTTPError({ status: 404, message: `no published stories found for ${username}` });
   }
+
   const previewPaths = getTimelinePreviewPaths(timeline.stories);
   const sidebarUsers = loadSidebarUsers(runtime);
+
   const cards = withStoryStickers(
     createStoryCards(timeline.timelineUser, getStoryCardSources(timeline, previewPaths)),
     timeline.stories,
     sidebarUsers,
   );
+
   const cardByMediaPk = new Map(cards.map((card) => [card.mediaPk, card]));
+
   const stories = timeline.years.flatMap((year) =>
     year.months.flatMap((month) =>
       month.days.flatMap((day) =>
         day.stories.flatMap((entry) => {
           const card = cardByMediaPk.get(entry.story.pk);
+
           return card === undefined ? [] : [card];
         }),
       ),

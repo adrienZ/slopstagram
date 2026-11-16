@@ -48,10 +48,12 @@ function AssistantPartView({
       </ChatMarkdown>
     );
   }
+
   if (part.type === "reasoning") {
     if (part.state !== "streaming" && part.text.trim() === "") {
       return null;
     }
+
     return (
       <TraceCollapsible>
         <TraceCollapsibleTrigger>
@@ -68,7 +70,9 @@ function AssistantPartView({
       </TraceCollapsible>
     );
   }
+
   const call = toolCallOf(part);
+
   return call === undefined ? null : <ToolTrace call={call} />;
 }
 
@@ -99,7 +103,9 @@ function ChatMessage({
       </Message>
     );
   }
+
   const places = findReadPlaces(message);
+
   return (
     <Message align="start">
       <MessageContent className="tw:grid tw:w-full tw:gap-3">
@@ -120,6 +126,7 @@ function ChatMessage({
 
 export function ChatPanel({ accounts }: { accounts: Array<SidebarUser> }) {
   const chat = useAssistantChat();
+
   const mentions = useMentionSuggestions({
     accounts,
     draft: chat.draft,
@@ -194,6 +201,7 @@ export function ChatPanel({ accounts }: { accounts: Array<SidebarUser> }) {
                 if (mentions.onKeyDown(event)) {
                   return;
                 }
+
                 if (event.key === "Enter" && !event.shiftKey) {
                   event.preventDefault();
                   chat.send();

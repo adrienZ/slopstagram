@@ -6,6 +6,7 @@ useFixedDate(now);
 
 test("a fetch run backs up the database once, after it finished", async (context) => {
   let statusAtBackup: string | undefined;
+
   const world = await createWorld(context, {
     backup: () => {
       statusAtBackup = world.runs.list()[0]?.status;

@@ -6,12 +6,14 @@ import { getOllamaClient } from "./ollama.ts";
 import type { VisionEntry, VisionResult } from "@@/core/domains/database/entities/vision.ts";
 
 const VISION_MODEL = "minicpm-v4.6";
+
 const VISION_PROMPT = `
     Describe the image in detail.
     First, extract any text that appears in the image. Provide a list of all visible text. Only if there is text.
     Then, provide a short description of the visual elements of the image. ignore all texts.
     \`\`\`json
   `;
+
 const VISION_SERVER_NOT_RUNNING = "vision server not running";
 
 const VisionResponseSchema = z
@@ -26,6 +28,7 @@ const VisionResponseSchema = z
       .describe("Exact all OCR texts if any. Do not include any non-text image description."),
   })
   .strict();
+
 const VISION_OUTPUT_SCHEMA = z.toJSONSchema(VisionResponseSchema);
 
 const VISION_PROMPT_HASH = createHash("sha256").update(VISION_PROMPT).digest("hex");
@@ -60,6 +63,7 @@ export function describeOutdatedVision(entry: VisionEntry | null): OutdatedVisio
   if (entry === null || readCurrentVisionResult(entry) !== null) {
     return null;
   }
+
   return {
     currentModel: VISION_MODEL,
     currentPromptHash: VISION_PROMPT_HASH,
@@ -88,8 +92,11 @@ export function createFailureResult(message: string): VisionResult {
 
 function parseOcrText(value: Array<string>): string {
   return value
-    .map((entry) => normalizeVisionText(entry))
-    .filter((entry) => entry.length > 0)
+    .flatMap((entry) => {
+      const text = normalizeVisionText(entry);
+
+      return text.length > 0 ? [text] : [];
+    })
     .join("\n");
 }
 
@@ -132,6 +139,7 @@ function isServerUnavailableError(error: Error): boolean {
 const VisionHttpErrorSchema = z
   .object({ status_code: z.number() })
   .transform(({ status_code }) => ({ status_code }));
+
 type VisionRequestError = Error | z.output<typeof VisionHttpErrorSchema>;
 
 function getVisionHttpStatus(error: VisionRequestError): number | null {
@@ -150,6 +158,7 @@ function getStoredVisionResult(runtime: VisionRuntime, mediaPk: string): VisionR
 
 async function runVisionRequest(runtime: VisionRuntime, image: VisionImage): Promise<VisionResult> {
   const client = getOllamaClient({ fetch: runtime.fetchOllama });
+
   const payload = await client.generate({
     format: VISION_OUTPUT_SCHEMA,
     images: [await image.read()],
@@ -160,6 +169,7 @@ async function runVisionRequest(runtime: VisionRuntime, image: VisionImage): Pro
     prompt: VISION_PROMPT,
     stream: false,
   });
+
   const result = parseVisionResponse(payload.response ?? "");
 
   await runtime.vision.save(image.mediaPk, {
@@ -186,11 +196,13 @@ function handleVisionError(
 
   if (error instanceof Error && isServerUnavailableError(error)) {
     runtime.logger.warn(`vision unavailable for ${itemLabel}`);
+
     return createFailureResult(VISION_SERVER_NOT_RUNNING);
   }
 
   const message = error instanceof Error ? error.message : "unknown request error";
   runtime.logger.warn(`could not run vision for ${itemLabel}: ${message}`);
+
   return createFailureResult(`vision failed: ${message}`);
 }
 
@@ -209,6 +221,7 @@ export async function analyzeImage(
   } catch (error) {
     const httpError = VisionHttpErrorSchema.safeParse(error);
     let requestError: VisionRequestError;
+
     if (httpError.success) {
       requestError = httpError.data;
     } else if (error instanceof Error) {
@@ -216,6 +229,7 @@ export async function analyzeImage(
     } else {
       requestError = new Error("unknown request error");
     }
+
     return handleVisionError(runtime, requestError, image.itemLabel);
   }
 }

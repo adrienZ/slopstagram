@@ -29,15 +29,19 @@ export function PlaceMapPage({
     accounts: selectedAccounts,
     place: selectedPlace,
   });
+
   const placeFilter =
     filter.place === undefined
       ? undefined
       : { name: filter.place.name, onRemove: filter.removePlace };
+
   const isDesktop = useMedia("(min-width: 1024px)", false);
   const storyByMediaPk = new Map(stories.map((story) => [story.mediaPk, story]));
   const avatarByUsername = new Map(accounts.map((account) => [account.username, account]));
+
   function renderMarker(place: TimelinePlace) {
     const username = place.stories[0]?.username ?? "";
+
     return (
       <Avatar className="tw:size-10">
         <AvatarImage src={avatarByUsername.get(username)?.avatarPath} alt="" />
@@ -47,6 +51,7 @@ export function PlaceMapPage({
       </Avatar>
     );
   }
+
   return (
     <>
       <header className="tw:flex tw:h-14 tw:shrink-0 tw:items-center tw:gap-3 tw:border-b tw:px-4">
@@ -115,6 +120,7 @@ export const Route = createFileRoute("/map")({
   head: () => ({ meta: [{ title: "Carte des lieux" }] }),
   component: () => {
     const search = Route.useSearch();
+
     return (
       <PlaceMapPage
         {...Route.useLoaderData()}

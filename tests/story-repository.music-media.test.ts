@@ -17,6 +17,7 @@ async function saveMusicStory(context: Parameters<typeof createStoryFixtures>[0]
   });
   const metadata = storyRepository.listMusicObservations("story").at(0)?.metadata;
   assert.ok(metadata);
+
   return { metadata, storyRepository };
 }
 

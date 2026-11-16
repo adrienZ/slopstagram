@@ -29,14 +29,17 @@ async function mountChat(world: Awaited<ReturnType<typeof createWorld>>) {
   vi.stubGlobal("fetch", async (input: string, init?: RequestInit) => {
     await gate?.promise;
     const url = new globalThis.URL(input, "http://localhost");
+
     return await handleChatRequest(world.runtime, new globalThis.Request(url, init));
   });
   const page = await createPageRenderer(Route, loadChatPage(world), "/chat").mountRoute("/chat");
+
   return {
     ...page,
     world,
     hold: () => {
       gate = Promise.withResolvers();
+
       return gate;
     },
     ask: async (text: string) => {
@@ -49,6 +52,7 @@ async function mountChat(world: Awaited<ReturnType<typeof createWorld>>) {
 async function fetchedWorld(context: TestContext, options: Parameters<typeof createWorld>[1] = {}) {
   const world = await createWorld(context, options);
   await world.run();
+
   return world;
 }
 
@@ -141,9 +145,11 @@ test("searching an account traces the search, which lists the matches", async (c
 
   await screen.findByText("answer");
   await chat.user.click(screen.getByRole("button", { name: /^searchAccounts\b/u }));
+
   const items = within(screen.getByRole("list", { name: "Comptes trouvés" })).getAllByRole(
     "listitem",
   );
+
   expect(items.map((item) => item.textContent)).toStrictEqual(["@user_008", "@user_072"]);
 });
 
@@ -219,6 +225,7 @@ test("searching a place traces the search, which lists the matches or says there
 async function mentionWorld(context: TestContext) {
   const world = await createWorld(context);
   await seedLongConnectionGraphDatabase(world.runtime);
+
   return world;
 }
 
@@ -229,9 +236,11 @@ test("asking for the mention connections traces the read, which lists who mentio
 
   await screen.findByText("answer");
   await chat.user.click(screen.getByRole("button", { name: /^listMentionConnections\b/u }));
+
   const items = within(screen.getByRole("list", { name: "Connexions de mention" })).getAllByRole(
     "listitem",
   );
+
   expect(items.map((item) => item.textContent)).toStrictEqual([
     "@ben_graph – @cleo_graph · @cleo_graph → @ben_graph (1 story)",
     "@ben_graph – @ada_graph · @ben_graph → @ada_graph (1 story), @ada_graph → @ben_graph (1 story)",

@@ -94,21 +94,27 @@ function toStoryItem(
   if (story.accessibilityCaption !== null) {
     item.accessibility_caption = story.accessibilityCaption;
   }
+
   if (story.id !== null) {
     item.id = story.id;
   }
+
   if (story.mediaType !== null) {
     item.media_type = story.mediaType;
   }
+
   if (story.originalHeight !== null) {
     item.original_height = story.originalHeight;
   }
+
   if (story.originalWidth !== null) {
     item.original_width = story.originalWidth;
   }
+
   if (story.takenAt !== null) {
     item.taken_at = story.takenAt;
   }
+
   if (imageVersions.length > 0) {
     item.image_versions2 = {
       candidates: imageVersions.map((version) => ({
@@ -118,6 +124,7 @@ function toStoryItem(
       })),
     };
   }
+
   if (videoVersions.length > 0) {
     item.video_versions = videoVersions.map((version) => ({
       height: version.height ?? undefined,
@@ -156,9 +163,11 @@ function replaceStoryVersions(database: AnnotationDatabase, story: StoryItem): v
       width: version.width ?? null,
     }),
   );
+
   if (imageVersionEntries.length > 0) {
     database.insert(storyImageVersions).values(imageVersionEntries).run();
   }
+
   const videoVersionEntries = (story.video_versions ?? []).map((version, sortOrder) => ({
     height: version.height ?? null,
     mediaPk: story.pk,
@@ -167,6 +176,7 @@ function replaceStoryVersions(database: AnnotationDatabase, story: StoryItem): v
     url: version.url ?? null,
     width: version.width ?? null,
   }));
+
   if (videoVersionEntries.length > 0) {
     database.insert(storyVideoVersions).values(videoVersionEntries).run();
   }
@@ -190,22 +200,29 @@ function readStoryAnnotations(database: AnnotationDatabase, mediaPk: string): St
     .map(({ providerOccurrenceId, ...sticker }) =>
       providerOccurrenceId === null ? sticker : { ...sticker, providerOccurrenceId },
     );
+
   const locations = stickers
     .filter((sticker) => sticker.kind === "location")
     .map((sticker) => sticker.label);
+
   const locationObservations = readLocationObservations(database, mediaPk);
   const annotations: StoryAnnotations = { locations, stickers };
   const audio = findStoryAudio(database, mediaPk);
+
   if (audio) {
     annotations.storyAudio = audio;
   }
+
   if (locationObservations.length > 0) {
     annotations.locationObservations = locationObservations;
   }
+
   const musicObservations = readMusicObservations(database, mediaPk);
+
   if (musicObservations.length > 0) {
     annotations.musicObservations = musicObservations;
   }
+
   return annotations;
 }
 
@@ -215,6 +232,7 @@ function replaceStoryAnnotations(
   logger: Pick<Logger, "warn">,
 ): void {
   const previous = readStoryAnnotations(database, story.pk);
+
   const updates =
     story.annotations === undefined
       ? getStoryAnnotationUpdates(story, (source) => {
@@ -223,6 +241,7 @@ function replaceStoryAnnotations(
           );
         })
       : [];
+
   const { stickerEntries } = planStoryAnnotations(previous, story, updates);
   database
     .delete(storyStickers)
@@ -238,6 +257,7 @@ function replaceStoryAnnotations(
           ),
     )
     .run();
+
   for (const entry of stickerEntries) {
     database
       .insert(storyStickers)
@@ -248,6 +268,7 @@ function replaceStoryAnnotations(
       })
       .run();
   }
+
   const current = readStoryAnnotations(database, story.pk);
   enrichStoryLocations(database, story, current);
   enrichStoryMusic(database, story, current);
@@ -265,12 +286,14 @@ function readStoryItem(database: DrizzleDatabase, story: StoryRow): StoryItem {
     .where(eq(storyImageVersions.mediaPk, story.mediaPk))
     .orderBy(asc(storyImageVersions.sortOrder))
     .all();
+
   const videoVersions = database
     .select()
     .from(storyVideoVersions)
     .where(eq(storyVideoVersions.mediaPk, story.mediaPk))
     .orderBy(asc(storyVideoVersions.sortOrder))
     .all();
+
   return toStoryItem(
     story,
     imageVersions,
@@ -290,6 +313,7 @@ function getTimelineStory(
 
   const item = readStoryItem(database, story);
   const cachedItems = new Map([[item.pk, item]]);
+
   return {
     full_name: user.fullName,
     locations: getStoryLocations(item.pk, cachedItems),
@@ -316,6 +340,7 @@ export class StoryRepository {
 
   findByMediaPk(mediaPk: string): StoryItem | null {
     const story = this.database.select().from(stories).where(eq(stories.mediaPk, mediaPk)).get();
+
     if (story === undefined) {
       return null;
     }
@@ -328,6 +353,7 @@ export class StoryRepository {
       const previous = readMusicObservations(database, mediaPk).find(
         ({ id }) => id === observationId,
       );
+
       if (previous !== undefined && previous.metadata.instagramAudioAssetId !== null) {
         refreshMusicAsset(database, previous, observation);
       }
@@ -453,6 +479,7 @@ export class StoryRepository {
 
     return rows.flatMap(({ story, user }) => {
       const timelineStory = getTimelineStory(this.database, story, user);
+
       return timelineStory === null ? [] : [timelineStory];
     });
   }
@@ -483,6 +510,7 @@ export class StoryRepository {
 
     return rows.flatMap(({ story, user }) => {
       const entry = getTimelineStory(this.database, story, user);
+
       return entry === null ? [] : [entry];
     });
   }
@@ -511,6 +539,7 @@ export class StoryRepository {
 
   listActive(now: Date): Array<UserTimelineStory> {
     const publishedBefore = now.getTime() / 1000;
+
     const rows = this.database
       .select({ story: stories, user: instagramUsers })
       .from(stories)
@@ -523,6 +552,7 @@ export class StoryRepository {
 
     return rows.flatMap(({ story, user }) => {
       const entry = getTimelineStory(this.database, story, user);
+
       return entry === null ? [] : [entry];
     });
   }
@@ -543,6 +573,7 @@ export class StoryRepository {
 
     return rows.flatMap(({ story, user }) => {
       const entry = getTimelineStory(this.database, story, user);
+
       return entry === null ? [] : [entry];
     });
   }

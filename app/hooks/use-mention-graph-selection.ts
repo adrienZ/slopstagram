@@ -9,11 +9,14 @@ export function useMentionGraphSelection({ connections, stories }: MentionGraphP
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
   const [openStoryPk, setOpenStoryPk] = useState<string>();
+
   const storyByPk = useMemo(
     () => new Map(stories.map((story) => [story.mediaPk, story])),
     [stories],
   );
+
   const selectedConnection = connections.find(({ id }) => id === selectedConnectionId);
+
   const connectionStories =
     selectedConnection?.storyPks.flatMap((storyPk) => storyByPk.get(storyPk) ?? []) ?? [];
 
@@ -26,6 +29,7 @@ export function useMentionGraphSelection({ connections, stories }: MentionGraphP
     selectedPointId,
     selectPoint: (id: string | null) => {
       setSelectedPointId(id);
+
       if (id !== null) {
         closeConnection();
       }

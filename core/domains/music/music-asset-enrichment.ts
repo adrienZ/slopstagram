@@ -11,6 +11,7 @@ type MusicAssetRepository = Pick<StoryRepository, "findByMediaPk"> &
 const metadataSchema = z.object({
   music_info: z.object({ music_asset_info: JsonValueSchema.optional() }).nullish(),
 });
+
 const responseSchema = z.object({
   metadata: metadataSchema.nullish(),
   payload: z.object({ metadata: metadataSchema.nullish() }).nullish(),
@@ -41,24 +42,33 @@ async function lookupAsset(
 ) {
   try {
     const response = await getMusicAsset(audioId);
+
     if (response.status === 429 || response.status === 401 || response.status === 403) {
       logger.warn(`music asset lookup stopped after Instagram HTTP ${response.status}`);
+
       return "stop" as const;
     }
+
     if (!response.ok) {
       return null;
     }
+
     const parsed = responseSchema.safeParse(response.json());
+
     const info = parsed.success
       ? (parsed.data.metadata ?? parsed.data.payload?.metadata)?.music_info?.music_asset_info
       : undefined;
+
     if (info === undefined || (isJsonObject(info) && info.should_mute_audio === true)) {
       return null;
     }
+
     const received = getMusicObservation({ music_asset_info: info });
+
     return received?.fields.instagramAudioAssetId === audioId ? received : null;
   } catch {
     logger.warn("music asset lookup failed; continuing story ingestion");
+
     return null;
   }
 }
@@ -72,15 +82,20 @@ export async function enrichCurrentMusicAssets(
   if (client.getMusicAsset === undefined || repository?.refreshMusicAsset === undefined) {
     return;
   }
+
   const seen = new Set<string>();
+
   for (const story of stories) {
     if (skipStory(story)) {
       continue;
     }
+
     const current = repository.findByMediaPk(story.pk);
+
     for (const observation of current?.annotations?.musicObservations ?? []) {
       const { metadata } = observation;
       const audioId = metadata.instagramAudioAssetId;
+
       if (
         audioId === null ||
         seen.has(audioId) ||
@@ -88,12 +103,15 @@ export async function enrichCurrentMusicAssets(
       ) {
         continue;
       }
+
       seen.add(audioId);
       // oxlint-disable-next-line no-await-in-loop -- Keep requests sequential and stop on rate limits.
       const received = await lookupAsset(client.getMusicAsset, audioId, logger);
+
       if (received === "stop") {
         return;
       }
+
       if (received !== null) {
         repository.refreshMusicAsset(story.pk, observation.id, received);
       }

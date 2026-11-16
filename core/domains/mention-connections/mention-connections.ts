@@ -9,8 +9,11 @@ export interface MentionConnectionsRuntime {
 }
 
 type AccountId = `account:${string}`;
+
 type UsernameId = `username:${string}`;
+
 type NameId = `name:${string}`;
+
 type MentionTargetId = AccountId | UsernameId | NameId;
 
 /** A story's author, or the only current Account whose username a sticker names. */
@@ -116,15 +119,18 @@ function createUsernameResolver(accounts: Array<AccountTarget>) {
   ): AccountTarget | UnknownUsernameTarget | AmbiguousUsernameTarget {
     const username = caseInsensitiveUsername.toLowerCase();
     const matches = accountsByUsername.get(username) ?? [];
+
     if (matches.length === 1) {
       return matches[0];
     }
+
     const target: UsernameTarget = {
       id: `username:${username}`,
       label: `@${username}`,
       username,
       fullName: null,
     };
+
     return matches.length === 0
       ? { kind: "unknown-username", ...target }
       : { kind: "ambiguous-username", ...target, accounts: matches };
@@ -160,21 +166,26 @@ export function readMentionConnections(runtime: MentionConnectionsRuntime): Ment
 
   for (const occurrence of runtime.stories.listMentionOccurrences()) {
     const author = toAccountTarget(occurrence.author);
+
     const mentioned = occurrence.label.startsWith("@")
       ? resolveUsername(occurrence.label.slice(1))
       : toNameTarget(occurrence.label, occurrence.storyPk);
+
     if (namesAuthor(mentioned, author)) {
       continue;
     }
+
     for (const target of [author, mentioned]) {
       if (!targets.has(target.id)) {
         targets.set(target.id, target);
       }
     }
+
     const targetIds = toConnectionTargetIds(author.id, mentioned.id);
     const id = targetIds.join(" ");
     const connection = connections.get(id) ?? { id, targetIds, observations: [] };
     connections.set(id, connection);
+
     if (!connection.observations.some(({ storyPk }) => storyPk === occurrence.storyPk)) {
       connection.observations.push({
         storyPk: occurrence.storyPk,
@@ -194,16 +205,19 @@ function keepNeighborhoods(
   selectedIds: ReadonlySet<string>,
 ): MentionConnections {
   const kept = new Set(selectedIds);
+
   for (const {
     targetIds: [first, second],
   } of connections) {
     if (selectedIds.has(first)) {
       kept.add(second);
     }
+
     if (selectedIds.has(second)) {
       kept.add(first);
     }
   }
+
   return {
     accounts,
     targets: targets.filter(({ id }) => kept.has(id)),
@@ -223,6 +237,7 @@ export interface DrawnUsername {
  */
 function listDrawnUsernames(targets: Array<MentionTarget>): Array<DrawnUsername> {
   const accounts = targets.flatMap((target) => (target.kind === "account" ? [target] : []));
+
   return [...groupByUsername(accounts)].map(([username, shared]) => ({
     username: shared.length === 1 ? shared[0].username : username,
     accounts: shared,
@@ -235,13 +250,17 @@ function listDrawnUsernames(targets: Array<MentionTarget>): Array<DrawnUsername>
  */
 export function filterByAccounts(graph: MentionConnections, usernames: Array<string>) {
   const drawnUsernames = listDrawnUsernames(graph.targets);
+
   const drawnByUsername = new Map(
     drawnUsernames.map((drawn) => [drawn.username.toLowerCase(), drawn]),
   );
+
   const requested = [...new Set(usernames)];
+
   const unknownUsernames = requested.filter(
     (username) => !drawnByUsername.has(username.toLowerCase()),
   );
+
   const selected =
     unknownUsernames.length > 0
       ? []
@@ -250,7 +269,9 @@ export function filterByAccounts(graph: MentionConnections, usernames: Array<str
             requested.flatMap((username) => drawnByUsername.get(username.toLowerCase()) ?? []),
           ),
         ];
+
   const selectedIds = new Set(selected.flatMap(({ accounts }) => accounts.map(({ id }) => id)));
+
   return {
     drawnUsernames,
     selectedUsernames: selected.map(({ username }) => username),
@@ -273,23 +294,31 @@ export function findMentionTargets(
 ): Array<MentionTarget> {
   const wanted = query.trim();
   const target = [...targets, ...accounts].find(({ id }) => id === wanted);
+
   if (target !== undefined) {
     return [target];
   }
+
   const named = createUsernameResolver(accounts)(wanted.replace(/^@/u, ""));
+
   if (named.kind === "account") {
     return [named];
   }
+
   if (named.kind === "ambiguous-username") {
     return [...targets.filter(({ id }) => id === named.id), ...named.accounts];
   }
+
   if (targets.some(({ id }) => id === named.id)) {
     return [named];
   }
+
   const name = normalizeSearchQuery(wanted);
+
   if (name === "") {
     return [];
   }
+
   return [...targets.filter(({ kind }) => kind === "name"), ...accounts].filter(
     ({ fullName }) => fullName !== null && normalizeSearchQuery(fullName) === name,
   );

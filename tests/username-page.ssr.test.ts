@@ -25,10 +25,12 @@ async function seed(runtime: Runtime) {
     { ...storyItem(earlierStoryPk), taken_at: Date.parse("2026-10-27T10:00:00Z") / 1000 },
     owner,
   );
+
   const current = await saveCurrentVision(runtime, laterStoryPk, {
     text: "Current synthetic OCR text",
     visual: "Current synthetic description",
   });
+
   await runtime.vision.save(earlierStoryPk, {
     model: "retired-model",
     prompt_hash: current.prompt_hash,
@@ -54,6 +56,7 @@ function readHydrationData(html: string): string {
 
 async function render(url: string) {
   const html = await renderer.renderRoute(url);
+
   return { html, page: within(new JSDOM(html).window.document.body) };
 }
 

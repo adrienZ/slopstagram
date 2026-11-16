@@ -29,6 +29,7 @@ export function describeOutcome(read: FeedUserSummary): FeedUserSummaryOutcome {
   if (read.status === "missing") {
     return read.reason;
   }
+
   return read.status === "error" ? read.error : read.status;
 }
 
@@ -70,6 +71,7 @@ const SYNTHETIC_USERNAME = /\buser_\d+\b/giu;
 function findUsernames(text: string): Array<string> {
   const mentioned = findMentions(text).map(({ username }) => username);
   const bare = [...text.matchAll(SYNTHETIC_USERNAME)].map(([username]) => username);
+
   return [...new Set([...mentioned, ...bare].map(normalizeUsername))];
 }
 
@@ -151,6 +153,7 @@ function isFrench(text: string): boolean {
   const words = text.toLowerCase().split(/[^\p{L}]+/u);
   const french = words.filter((word) => FRENCH_WORDS.has(word) || FRENCH_LETTERS.test(word));
   const english = words.filter((word) => ENGLISH_WORDS.has(word));
+
   return french.length > english.length;
 }
 
@@ -172,6 +175,7 @@ function expectedTools(expected: AssistantExpectation): AssistantCheck {
         expectedCalls: expected.tools.map((toolName) => ({ toolName })),
         mode: "flexible",
       });
+
       return { metadata: { calls: describeCalls(run) }, score };
     },
   };
@@ -183,9 +187,11 @@ function expectedArguments(username: string): AssistantCheck {
     description: `Every getFeedUserSummaries call asked for ${username} only (an "@" prefix and letter case ignored, as the tool does).`,
     check: (run) => {
       const calls = run.toolCalls.filter(({ toolName }) => toolName === "getFeedUserSummaries");
+
       const usernames = calls.map(
         ({ input }) => UsernamesInputSchema.safeParse(input).data?.usernames ?? null,
       );
+
       const passed =
         usernames.length > 0 &&
         usernames.every(
@@ -194,6 +200,7 @@ function expectedArguments(username: string): AssistantCheck {
             called.length > 0 &&
             called.every((name) => normalizeUsername(name) === normalizeUsername(username)),
         );
+
       return result(passed, { usernames });
     },
   };
@@ -208,9 +215,12 @@ function expectedOutcome(outcome: FeedUserSummaryOutcome): AssistantCheck {
         .filter(({ toolName }) => toolName === "getFeedUserSummaries")
         .flatMap(({ output }) => {
           const read = RequestedFeedUserSummariesSchema.safeParse(output);
+
           return read.success ? read.data.map((entry) => describeOutcome(entry.outcome)) : [null];
         });
+
       const passed = outcomes.length > 0 && outcomes.every((seen) => seen === outcome);
+
       return result(passed, { outcomes });
     },
   };
@@ -226,7 +236,9 @@ function knownUsernames(expected: AssistantExpectation): AssistantCheck {
         ...expected.savedUsernames.map(normalizeUsername),
         ...findUsernames(run.question),
       ]);
+
       const invented = findUsernames(run.text).filter((username) => !known.has(username));
+
       return result(invented.length === 0, { invented });
     },
   };

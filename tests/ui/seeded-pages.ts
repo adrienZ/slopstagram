@@ -15,8 +15,10 @@ import {
 } from "../setup/seed.ts";
 
 export const pageNow = new Date("2026-07-26T12:00:00.000Z");
+
 /** Publication of the newest recorded story, before `pageNow`. */
 const PUBLISHED_BEFORE_SECONDS = 3600;
+
 /** Moves a recorded story out of the rolling 24 hour feed, onto the previous day. */
 const PAST_STORY_AGE_SECONDS = 26 * 3600;
 export const today = "2026-07-26";
@@ -28,11 +30,13 @@ export const namedAccount = {
   username: "user_072",
   fullName: "Fixture text 69",
 };
+
 export const timelineAccount = namedAccount.username;
 export const outsideFeedAccount = "user_901";
 export const mentionedAccount = "user_114";
 
 export const captionedStoryPk = "700000000000107";
+
 /** Published the previous day, so it is only reachable by its day. */
 const pastStoryPk = "700000000000116";
 export const hostileCaption = "</script><script>caption</script>";
@@ -56,6 +60,7 @@ export async function seedPageDatabase(runtime: Runtime): Promise<void> {
     .where(eq(stories.mediaPk, pastStoryPk))
     .run();
   await runtime.appleVision.save(captionedStoryPk, appleCaption);
+
   for (const [pk, username] of [
     ["700000000000901", outsideFeedAccount],
     ["700000000000114", mentionedAccount],
@@ -68,6 +73,7 @@ export async function seedPageDatabase(runtime: Runtime): Promise<void> {
       username,
     });
   }
+
   await resolveUserSummariesForReport(
     runtime,
     { output: { users: createReportFeed(runtime, pageNow).users } },
@@ -104,11 +110,13 @@ export function regroupTimeline<
 
 /** The recorded accounts, renamed so that each has distinct initials, in recording order. */
 export const mapAccounts = ["ada_map", "ben_map", "cleo_map"] as const;
+
 export const sharedPlace = {
   name: "Fixture place 1",
   oldestPk: "700000000000079",
   latestPk: "700000000000903",
 };
+
 export const soloPlace = { name: "Fixture place 2", pk: "700000000000090" };
 
 /** No place lookup is recorded, so places keep their sticker positions. */
@@ -119,6 +127,7 @@ export async function seedMapDatabase(runtime: Runtime): Promise<void> {
       user.username = mapAccounts[position] ?? user.username;
     },
   );
+
   await seedRecordedStories(
     runtime,
     editRecordedStories(recorded, (story) => {
@@ -130,6 +139,7 @@ export async function seedMapDatabase(runtime: Runtime): Promise<void> {
           },
         ];
       }
+
       if (story.pk === soloPlace.pk) {
         story.story_locations = [
           {

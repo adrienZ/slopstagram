@@ -41,6 +41,7 @@ export function PlaceStories({
       <ul className="tw:grid tw:max-h-60 tw:grid-cols-3 tw:gap-1.5 tw:overflow-y-auto">
         {place.stories.map((story) => {
           const card = storyByMediaPk.get(story.mediaPk);
+
           return (
             <li key={story.mediaPk} className="tw:min-w-0 tw:space-y-1">
               {card === undefined ? (

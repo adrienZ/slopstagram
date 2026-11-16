@@ -31,6 +31,7 @@ test("two test runtimes do not share a database", async (context) => {
 
 test("a test runtime closes its database when its test ends", async (context) => {
   const handlers: Array<OnTestFinishedHandler> = [];
+
   const runtime = await createTestRuntime({
     onTestFinished: (handler) => {
       handlers.push(handler);

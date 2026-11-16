@@ -27,6 +27,7 @@ async function renderFeed(runtime: Runtime, url: string) {
     ({ deps, context }) => loadStoryFeed(runtime, now, deps.date, context.selectedStory),
     "/report",
   );
+
   return await renderer.renderRoute(url);
 }
 
@@ -49,16 +50,19 @@ test("today's feed lists the seeded accounts with their story previews and sideb
     "Fixture text 63",
     "Fixture text 5",
   ]);
+
   for (const mediaPk of ["700000000000079", "700000000000116", "700000000000900"]) {
     expect(page.getByRole("button", { name: `Ouvrir aperçu ${mediaPk}` })).toBeDefined();
     expect(page.getByAltText(`aperçu ${mediaPk}`).getAttribute("src")).toBe(
       `/media/story-previews/${mediaPk}.jpg`,
     );
   }
+
   for (const username of ["user_008", "user_066", "user_072"]) {
     // One link in the sidebar and one on the account's section.
     expect(document.querySelectorAll(`a[href="/users/${username}"]`)).toHaveLength(2);
   }
+
   expect(page.queryByRole("dialog")).toBeNull();
   expect(html).toContain("$_TSR");
 });
@@ -68,6 +72,7 @@ test("report SSR isolates loader data between concurrent requests", async () => 
     renderFeed(shared.runtime, "/report"),
     renderFeed(shared.runtime, `/report?date=${emptyDay}`),
   ]);
+
   const todayPage = within(readDocument(today).body);
   const emptyPage = within(readDocument(empty).body);
 
@@ -80,9 +85,11 @@ test("report SSR isolates loader data between concurrent requests", async () => 
 test("invalid report dates preserve story IDs while falling back to today", () => {
   const validate = Route.options.validateSearch;
   expect(validate).toBeDefined();
+
   if (!validate || !("parse" in validate)) {
     throw new Error("Missing search schema");
   }
+
   expect(validate.parse({ date: "2026-02-30", story: "12345678901234567890" })).toEqual({
     date: undefined,
     story: "12345678901234567890",
