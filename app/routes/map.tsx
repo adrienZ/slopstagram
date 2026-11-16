@@ -30,6 +30,14 @@ export function PlaceMapPage({
     place: selectedPlace,
   });
 
+  function handleToggle(username: string) {
+    filter.toggle(username);
+  }
+
+  function handleClear() {
+    filter.clear();
+  }
+
   const placeFilter =
     filter.place === undefined
       ? undefined
@@ -73,8 +81,8 @@ export function PlaceMapPage({
               <AccountChecklist
                 accounts={accounts}
                 selected={filter.selected}
-                onToggle={filter.toggle}
-                onClear={filter.clear}
+                onToggle={handleToggle}
+                onClear={handleClear}
                 place={placeFilter}
                 listClassName="tw:min-h-0 tw:flex-1"
               />
@@ -84,8 +92,8 @@ export function PlaceMapPage({
           <AccountFilter
             accounts={accounts}
             selected={filter.selected}
-            onToggle={filter.toggle}
-            onClear={filter.clear}
+            onToggle={handleToggle}
+            onClear={handleClear}
             place={placeFilter}
           />
         )}
@@ -111,11 +119,14 @@ export function PlaceMapPage({
 }
 
 function PlaceMapRoute() {
+  const { places, accounts, stories } = Route.useLoaderData();
   const search = Route.useSearch();
 
   return (
     <PlaceMapPage
-      {...Route.useLoaderData()}
+      places={places}
+      accounts={accounts}
+      stories={stories}
       selectedAccounts={search.accounts}
       selectedPlace={search[PLACE_SEARCH_PARAM]}
       selectedStory={search.story}

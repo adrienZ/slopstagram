@@ -1,10 +1,10 @@
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createDrizzle } from "@@/core/domains/database/client.ts";
 import { migrateDatabase } from "@@/core/domains/database/migrate.ts";
 import { AppleVisionRepository } from "@@/core/domains/database/repositories/apple-vision-repository.ts";
 
 describe(AppleVisionRepository, () => {
-  test("stores and updates captions in SQLite", async (context) => {
+  it("stores and updates captions in SQLite", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
     context.onTestFinished(() => {

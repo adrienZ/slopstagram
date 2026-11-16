@@ -1,10 +1,10 @@
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createDrizzle } from "@@/core/domains/database/client.ts";
 import { migrateDatabase } from "@@/core/domains/database/migrate.ts";
 import { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
 
 describe(InstagramUserRepository, () => {
-  test("lists all accounts alphabetically, including accounts without stories", async (context) => {
+  it("lists all accounts alphabetically, including accounts without stories", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
     context.onTestFinished(() => {
@@ -20,7 +20,7 @@ describe(InstagramUserRepository, () => {
     expect(repository.listAll().map((user) => user.username)).toStrictEqual(["alice", "zebra"]);
   });
 
-  test("stores and updates Instagram users in SQLite", async (context) => {
+  it("stores and updates Instagram users in SQLite", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
     context.onTestFinished(() => {

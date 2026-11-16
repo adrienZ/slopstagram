@@ -1,4 +1,4 @@
-import { assert, describe, test, expect } from "vitest";
+import { assert, describe, expect, it } from "vitest";
 import { fetchStories } from "@@/core/domains/fetch-run/stories.ts";
 import {
   createCapturingLogger,
@@ -12,7 +12,7 @@ import {
 import { createTestRuntime } from "./setup/test-runtime.ts";
 
 describe("fetchStories edge cases", () => {
-  test("preserves tray and media order in the manifest", async (context) => {
+  it("preserves tray and media order in the manifest", async (context) => {
     const runtime = await createTestRuntime(context);
 
     const client = createClient(
@@ -41,7 +41,7 @@ describe("fetchStories edge cases", () => {
     ]);
   });
 
-  test("extracts sticker summaries from story payload", async (context) => {
+  it("extracts sticker summaries from story payload", async (context) => {
     const runtime = await createTestRuntime(context);
 
     const client = createClient(
@@ -115,7 +115,7 @@ describe("fetchStories edge cases", () => {
     ]);
   });
 
-  test("unwraps instagram redirect links inside sticker summaries", async (context) => {
+  it("unwraps instagram redirect links inside sticker summaries", async (context) => {
     const runtime = await createTestRuntime(context);
 
     const client = createClient(
@@ -145,7 +145,7 @@ describe("fetchStories edge cases", () => {
     ]);
   });
 
-  test("stops when the tray cannot be fetched, without requesting any reel", async (context) => {
+  it("stops when the tray cannot be fetched, without requesting any reel", async (context) => {
     const logger = createCapturingLogger();
     const runtime = await createTestRuntime(context, { logger });
     const client = createClient([], []);
@@ -170,7 +170,7 @@ describe("fetchStories edge cases", () => {
     );
   });
 
-  test("falls back after chunk failure and records failed stories", async (context) => {
+  it("falls back after chunk failure and records failed stories", async (context) => {
     const logger = createCapturingLogger();
     const runtime = await createTestRuntime(context, { logger });
 
@@ -207,7 +207,7 @@ describe("fetchStories edge cases", () => {
     ).toBeTruthy();
   });
 
-  test("records missing stories when Instagram omits expected media", async (context) => {
+  it("records missing stories when Instagram omits expected media", async (context) => {
     const runtime = await createTestRuntime(context);
 
     const client = createClient(
@@ -229,7 +229,7 @@ describe("fetchStories edge cases", () => {
     expect(report.failures[0]?.media_pk).toBe("m2");
   });
 
-  test("stops further live fetches after rate limiting", async (context) => {
+  it("stops further live fetches after rate limiting", async (context) => {
     const runtime = await createTestRuntime(context);
 
     const client = createClient(

@@ -133,6 +133,14 @@ export function ChatPanel({ accounts }: { accounts: Array<SidebarUser> }) {
     setDraft: chat.setDraft,
   });
 
+  function handleHover(index: number) {
+    mentions.setActive(index);
+  }
+
+  function handlePick(username: string) {
+    mentions.pick(username);
+  }
+
   return (
     <div className="tw:mx-auto tw:flex tw:h-[calc(100svh-3.5rem)] tw:w-full tw:max-w-3xl tw:flex-col tw:gap-4 tw:px-4 tw:pt-6 tw:pb-4">
       <MessageScrollerProvider autoScroll>
@@ -184,8 +192,8 @@ export function ChatPanel({ accounts }: { accounts: Array<SidebarUser> }) {
           <MentionSuggestionList
             id={mentions.listbox.id}
             options={mentions.listbox.options}
-            onHover={mentions.setActive}
-            onPick={mentions.pick}
+            onHover={handleHover}
+            onPick={handlePick}
           />
         )}
         <InputGroup>

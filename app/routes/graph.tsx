@@ -21,6 +21,14 @@ export function MentionGraphPage({
   const filter = useMentionGraphFilter(selectedAccounts);
   const { theme } = useTheme();
 
+  function handleToggle(username: string) {
+    filter.toggle(username);
+  }
+
+  function handleClear() {
+    filter.clear();
+  }
+
   return (
     <>
       <header className="tw:flex tw:h-14 tw:shrink-0 tw:items-center tw:gap-3 tw:border-b tw:px-4">
@@ -56,8 +64,8 @@ export function MentionGraphPage({
               <AccountFilter
                 accounts={accounts}
                 selected={selectedAccounts}
-                onToggle={filter.toggle}
-                onClear={filter.clear}
+                onToggle={handleToggle}
+                onClear={handleClear}
                 clearable={selectedAccounts.length > 0 || unknownAccounts.length > 0}
               />
             </div>
@@ -71,7 +79,16 @@ export function MentionGraphPage({
 }
 
 function MentionGraphRoute() {
-  return <MentionGraphPage {...Route.useLoaderData()} />;
+  const { accounts, selectedAccounts, unknownAccounts, graph } = Route.useLoaderData();
+
+  return (
+    <MentionGraphPage
+      accounts={accounts}
+      selectedAccounts={selectedAccounts}
+      unknownAccounts={unknownAccounts}
+      graph={graph}
+    />
+  );
 }
 
 export const Route = createFileRoute("/graph")({

@@ -6,14 +6,14 @@ import { loadPlaceMap } from "../../app/loaders/place-map.ts";
 import { LocationMapContext } from "../../app/components/location-map-context.ts";
 import type { LocationMapCanvasProps } from "../../app/components/location-map-canvas.tsx";
 import { createPageRenderer } from "../render-page.ts";
-import { createTestRuntime, useSharedTestRuntime } from "../setup/test-runtime.ts";
+import { createTestRuntime, shareTestRuntime } from "../setup/test-runtime.ts";
 import { mapAccounts, seedMapDatabase, sharedPlace, soloPlace } from "./seeded-pages.ts";
 
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const shared = useSharedTestRuntime(seedMapDatabase);
+const shared = shareTestRuntime(seedMapDatabase);
 const renderer = createPageRenderer(Route, () => loadPlaceMap(shared.runtime), "/map");
 const [ada, ben, cleo] = mapAccounts;
 const sharedPlaceId = "instagram:700000000000930";
@@ -68,7 +68,8 @@ test("a place popup lists every account's stories with their owner and date", as
   expect(popup.getAllByRole("button", { name: /Ouvrir aperçu/u })).toHaveLength(2);
   expect(popup.getAllByRole("time")).toHaveLength(2);
   await user.click(popup.getByRole("button", { name: `Ouvrir aperçu ${sharedPlace.oldestPk}` }));
-  expect(await screen.findByRole("dialog", { name: "Aperçu de l’image" })).toBeVisible();
+  const preview = await screen.findByRole("dialog", { name: "Aperçu de l’image" });
+  expect(preview).toBeVisible();
 });
 
 test("the account filter keeps the places of any chosen account, in the URL", async () => {

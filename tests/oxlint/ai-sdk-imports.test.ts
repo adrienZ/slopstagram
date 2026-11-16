@@ -1,15 +1,15 @@
-import { describe, test } from "vitest";
+import { describe, it } from "vitest";
 import { RuleTester } from "oxlint/plugins-dev";
 import aiSdkImports from "../../oxlint/plugins/rules/ai-sdk-imports.ts";
 
 // The tester registers its cases through vitest's suite functions.
 RuleTester.describe = (text, fn) => {
-  describe(text, fn);
+  describe(text, () => {
+    fn();
+  });
 };
 
-RuleTester.it = (text, fn) => {
-  test(text, fn);
-};
+RuleTester.it = it;
 
 new RuleTester().run("ai-sdk-imports", aiSdkImports, {
   valid: [

@@ -19,10 +19,10 @@ import {
   reel,
   response,
   reelsResponse,
-  useFixedDate,
+  fixDate,
 } from "./mock-helpers.ts";
 
-useFixedDate();
+fixDate();
 
 const owner = { username: "one", pk: "owner" };
 

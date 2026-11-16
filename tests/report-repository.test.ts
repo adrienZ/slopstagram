@@ -1,4 +1,4 @@
-import { assert, describe, test, expect } from "vitest";
+import { assert, describe, expect, it } from "vitest";
 import { createDrizzle } from "@@/core/domains/database/client.ts";
 import { migrateDatabase } from "@@/core/domains/database/migrate.ts";
 import { ReportRepository } from "@@/core/domains/database/repositories/report-repository.ts";
@@ -78,7 +78,7 @@ function createReportWithStory(name: string): StoriesManifestReport {
 }
 
 describe(ReportRepository, () => {
-  test.for([
+  it.for([
     { field: "mediaType", sql: "UPDATE report_stories SET mediaType = ? WHERE reportKey = ?" },
     { field: "status", sql: "UPDATE report_stories SET status = ? WHERE reportKey = ?" },
     { field: "reason", sql: "UPDATE report_failures SET reason = ? WHERE reportKey = ?" },
@@ -111,7 +111,7 @@ describe(ReportRepository, () => {
     },
   );
 
-  test("reads the current story caption instead of a conflicting report caption", async (context) => {
+  it("reads the current story caption instead of a conflicting report caption", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
     context.onTestFinished(() => {
@@ -135,7 +135,7 @@ describe(ReportRepository, () => {
     expect(stories.findByMediaPk("shared-story")?.accessibility_caption).toBe("Updated caption");
   });
 
-  test("stores report snapshots and lists their keys in creation order", async (context) => {
+  it("stores report snapshots and lists their keys in creation order", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
     context.onTestFinished(() => {
@@ -155,7 +155,7 @@ describe(ReportRepository, () => {
     expect(repository.findByKey(older.metadata.report_name)).toStrictEqual(older);
   });
 
-  test("links a story to each report while keeping report metadata as columns", async (context) => {
+  it("links a story to each report while keeping report metadata as columns", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
     context.onTestFinished(() => {
@@ -195,7 +195,7 @@ describe(ReportRepository, () => {
     });
   });
 
-  test.for([undefined, null, "", " \t\n "])(
+  it.for([undefined, null, "", " \t\n "])(
     "uses N/A for an absent story caption (%j) without falling back to the report",
     async (caption, context) => {
       const database = createDrizzle(":memory:");
@@ -222,7 +222,7 @@ describe(ReportRepository, () => {
     },
   );
 
-  test("keeps a failed report story when no associated story was saved", async (context) => {
+  it("keeps a failed report story when no associated story was saved", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
     context.onTestFinished(() => {

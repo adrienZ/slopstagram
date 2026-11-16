@@ -1,4 +1,4 @@
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createDrizzle } from "@@/core/domains/database/client.ts";
 import { migrateDatabase } from "@@/core/domains/database/migrate.ts";
 import { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
@@ -14,7 +14,7 @@ const entry = {
 };
 
 describe(UserSummaryRepository, () => {
-  test("stores summaries by Instagram PK and follows username changes", async (context) => {
+  it("stores summaries by Instagram PK and follows username changes", async (context) => {
     const database = createDrizzle(":memory:");
     context.onTestFinished(() => {
       database.$client.close();
@@ -46,7 +46,7 @@ describe(UserSummaryRepository, () => {
     expect(repository.findBySourceHash(entry.source_hash)?.user_key).toBe("renamed-user");
   });
 
-  test("rejects new summaries with missing or ambiguous owners", async (context) => {
+  it("rejects new summaries with missing or ambiguous owners", async (context) => {
     const database = createDrizzle(":memory:");
     context.onTestFinished(() => {
       database.$client.close();

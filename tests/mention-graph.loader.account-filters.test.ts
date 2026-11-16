@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { loadMentionGraph, type MentionGraphPageData } from "../app/loaders/mention-graph.ts";
-import { useSharedTestRuntime } from "./setup/test-runtime.ts";
+import { shareTestRuntime } from "./setup/test-runtime.ts";
 import {
   filterAccount,
   filterAccountStory,
@@ -11,7 +11,7 @@ import {
   sharedUsername,
 } from "./setup/mention-graph-seed.ts";
 
-const shared = useSharedTestRuntime(seedFilterGraphDatabase);
+const shared = shareTestRuntime(seedFilterGraphDatabase);
 const [adaGraph, benGraph, cleoGraph] = graphAccounts;
 const [ada, ben, cleo] = graphAccounts.map((username) => `@${username}`);
 const eve = `@${filterAccount}`;

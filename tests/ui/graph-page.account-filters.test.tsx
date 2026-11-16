@@ -3,7 +3,7 @@ import { expect, test } from "vitest";
 import { Route } from "../../app/routes/graph.tsx";
 import { loadMentionGraph } from "../../app/loaders/mention-graph.ts";
 import { createPageRenderer } from "../render-page.ts";
-import { useSharedTestRuntime } from "../setup/test-runtime.ts";
+import { shareTestRuntime } from "../setup/test-runtime.ts";
 import {
   ambiguousUsername,
   filterAccount,
@@ -15,7 +15,7 @@ import {
 } from "../setup/mention-graph-seed.ts";
 import { stubGraphLayout } from "./mount-graph.ts";
 
-const shared = useSharedTestRuntime(seedFilterGraphDatabase);
+const shared = shareTestRuntime(seedFilterGraphDatabase);
 
 const renderer = createPageRenderer(
   Route,
@@ -149,11 +149,12 @@ test.each([
   "%s in the URL skips every filter with an error toast, until a filter is chosen",
   async (_case, username) => {
     const { user } = await mountGraph(`/graph?accounts=${benGraph},${username}`);
-    expect(
-      await screen.findByText(
-        `Compte absent du graphe : @${username}. Le graphe complet est affiché.`,
-      ),
-    ).toBeVisible();
+
+    const notice = await screen.findByText(
+      `Compte absent du graphe : @${username}. Le graphe complet est affiché.`,
+    );
+
+    expect(notice).toBeVisible();
     expect(shownConnections()).toHaveLength(everyConnectionCount);
     const filters = await openFilters(user);
     expect(checkedAccounts(filters)).toStrictEqual([]);
@@ -191,11 +192,12 @@ test("filters the graph skipped can still be cleared, which removes them from th
 
 test("the toast names every username the graph lacks", async () => {
   await mountGraph(`/graph?accounts=nobody_graph,${adaGraph},${lonelyAccount}`);
-  expect(
-    await screen.findByText(
-      `Comptes absents du graphe : @nobody_graph, @${lonelyAccount}. Le graphe complet est affiché.`,
-    ),
-  ).toBeVisible();
+
+  const notice = await screen.findByText(
+    `Comptes absents du graphe : @nobody_graph, @${lonelyAccount}. Le graphe complet est affiché.`,
+  );
+
+  expect(notice).toBeVisible();
 });
 
 test("a filtered graph keeps its selection and story modal out of the URL, and a new filter clears them", async () => {
@@ -211,7 +213,8 @@ test("a filtered graph keeps its selection and story modal out of the URL, and a
   );
 
   await user.click(evidence.getByRole("button", { name: `Ouvrir aperçu ${graphStories.ada}` }));
-  expect(await screen.findByRole("dialog", { name: "Aperçu de l’image" })).toBeVisible();
+  const preview = await screen.findByRole("dialog", { name: "Aperçu de l’image" });
+  expect(preview).toBeVisible();
   expect(router.state.location.href).toBe(href);
   await user.click(screen.getByRole("button", { name: "Fermer l’aperçu" }));
 

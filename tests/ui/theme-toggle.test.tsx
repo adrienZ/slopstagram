@@ -3,11 +3,11 @@ import { act, screen, within } from "@testing-library/react";
 import { Route } from "../../app/routes/report.tsx";
 import { loadStoryFeed } from "../../app/loaders/story-feed.ts";
 import { createPageRenderer } from "../render-page.ts";
-import { useSharedTestRuntime } from "../setup/test-runtime.ts";
+import { shareTestRuntime } from "../setup/test-runtime.ts";
 import { pageNow, seedPageDatabase } from "./seeded-pages.ts";
 
 // The toggle lives in the page's sidebar, so it is tested through the report page.
-const shared = useSharedTestRuntime(seedPageDatabase);
+const shared = shareTestRuntime(seedPageDatabase);
 const renderer = createPageRenderer(Route, () => loadStoryFeed(shared.runtime, pageNow), "/report");
 
 const storageKey = "slopstagram-theme";

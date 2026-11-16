@@ -7,11 +7,11 @@ import {
   cachedAudioFile,
 } from "@@/core/domains/media-store/cached-media-files.ts";
 import { media } from "@@/core/domains/media-store/media-urls.ts";
-import { createTestRuntime, useSharedTestRuntime } from "./setup/test-runtime.ts";
+import { createTestRuntime, shareTestRuntime } from "./setup/test-runtime.ts";
 import { pageNow, seedPageDatabase, timelineAccount } from "./ui/seeded-pages.ts";
 import { saveSummaryUsers } from "./test-database.ts";
 
-const shared = useSharedTestRuntime(seedPageDatabase);
+const shared = shareTestRuntime(seedPageDatabase);
 
 /** The key the media route resolves for a URL: the router hands the route its splat. */
 function keyOfUrl(url: string) {

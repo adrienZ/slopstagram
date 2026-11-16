@@ -17,11 +17,11 @@ import {
 } from "./seeded-pages.ts";
 import { loadStoryFeed } from "../../app/loaders/story-feed.ts";
 import { createPageRenderer } from "../render-page.ts";
-import { useSharedTestRuntime } from "../setup/test-runtime.ts";
+import { shareTestRuntime } from "../setup/test-runtime.ts";
 
 // The report the real loader would build, with the arguments it receives, at the test's "now".
-const shared = useSharedTestRuntime(seedPageDatabase);
-const empty = useSharedTestRuntime(async () => {});
+const shared = shareTestRuntime(seedPageDatabase);
+const empty = shareTestRuntime(async () => {});
 
 const emptyRenderer = createPageRenderer(
   Route,
@@ -202,7 +202,8 @@ test("opening a preview updates the real router and closing restores focus and s
 
 test("a story deep link opens after mount and an unknown story stays closed", async () => {
   const page = await renderer.mountRoute(`/report?story=${captionedStoryPk}`);
-  expect(await screen.findByRole("dialog")).toBeVisible();
+  const preview = await screen.findByRole("dialog");
+  expect(preview).toBeVisible();
   page.unmount();
   await renderer.mountRoute("/report?story=missing", reportProps);
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

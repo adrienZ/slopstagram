@@ -7,14 +7,14 @@ import { loadStoryFeed } from "../app/loaders/story-feed.ts";
 import { storyItem } from "./mock-helpers.ts";
 import { createPageRenderer } from "./render-page.ts";
 import { readRecordedPayloads, seedRecordedStories } from "./setup/seed.ts";
-import { createTestRuntime, useSharedTestRuntime } from "./setup/test-runtime.ts";
+import { createTestRuntime, shareTestRuntime } from "./setup/test-runtime.ts";
 
 const now = new Date("2026-10-29T12:00:00.000Z");
 const HOUR = 3600;
 const emptyDay = "2026-10-28";
 const emptyDayText = "Aucune story publiée ce jour-là.";
 
-const shared = useSharedTestRuntime(async (runtime) => {
+const shared = shareTestRuntime(async (runtime) => {
   await seedRecordedStories(runtime, await readRecordedPayloads(), {
     publishedBefore: { now, seconds: HOUR },
   });

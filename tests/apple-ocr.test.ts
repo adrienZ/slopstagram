@@ -1,10 +1,10 @@
 import { Buffer } from "node:buffer";
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { recognizeAppleCaption } from "@@/core/domains/vision/apple-ocr.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 
 describe(recognizeAppleCaption, () => {
-  test("uses stored OCR by media key", async (context) => {
+  it("uses stored OCR by media key", async (context) => {
     let runCount = 0;
 
     const runtime = await createTestRuntime(context, {
@@ -23,7 +23,7 @@ describe(recognizeAppleCaption, () => {
     expect(runCount).toBe(0);
   });
 
-  test("stores OCR result when the repository has no entry", async (context) => {
+  it("stores OCR result when the repository has no entry", async (context) => {
     let receivedImage: Uint8Array | undefined;
 
     const runtime = await createTestRuntime(context, {
@@ -43,7 +43,7 @@ describe(recognizeAppleCaption, () => {
     expect(runtime.appleVision.findByMediaPk("story-2")).toBe("fresh caption");
   });
 
-  test("normalizes OCR text before storing it", async (context) => {
+  it("normalizes OCR text before storing it", async (context) => {
     const runtime = await createTestRuntime(context, {
       runAppleOcr: async () => "\r\n  fresh caption  \n",
     });
@@ -56,7 +56,7 @@ describe(recognizeAppleCaption, () => {
     expect(runtime.appleVision.findByMediaPk("story-3")).toBe("fresh caption");
   });
 
-  test("fails when the cached image is missing", async (context) => {
+  it("fails when the cached image is missing", async (context) => {
     const runtime = await createTestRuntime(context, { runAppleOcr: async () => "unused" });
 
     await expect(recognizeAppleCaption(runtime, "story-5", "images/story-5.jpg")).rejects.toThrow(
@@ -65,7 +65,7 @@ describe(recognizeAppleCaption, () => {
     expect(runtime.appleVision.findByMediaPk("story-5")).toBeNull();
   });
 
-  test("reports OCR as unavailable without loading it on Windows", async (context) => {
+  it("reports OCR as unavailable without loading it on Windows", async (context) => {
     const runtime = await createTestRuntime(context, { runAppleOcr: undefined });
     await runtime.storage.images.setItemRaw("story-4.jpg", Buffer.from("local-image"));
 

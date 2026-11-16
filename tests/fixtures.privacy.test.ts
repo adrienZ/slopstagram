@@ -1,7 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, URL } from "node:url";
-import { describe, expect, test } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createRedactor, findUnsafeFixtureValues } from "../scripts/capture-fixtures.ts";
 import { JsonValueSchema } from "@@/core/utils/json-value.ts";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
@@ -30,12 +30,12 @@ function describeUnsafe(payload: JsonValue): Array<string> {
 }
 
 describe("committed fixtures hold no personal data", () => {
-  test("the guard scans something", () => {
+  it("the guard scans something", () => {
     expect(jsonNames).toContain("instagram-story-data.json");
     expect(mediaNames.length).toBeGreaterThan(0);
   });
 
-  test("every committed file is a JSON payload or a known media clip", () => {
+  it("every committed file is a JSON payload or a known media clip", () => {
     const unknown = fixtureNames.filter(
       (name) =>
         name !== METADATA_FILE_NAME && !jsonNames.includes(name) && !mediaNames.includes(name),
@@ -44,7 +44,7 @@ describe("committed fixtures hold no personal data", () => {
     expect(unknown).toStrictEqual([]);
   });
 
-  test.each(jsonNames)("%s has only structural, synthetic or public audio values", async (name) => {
+  it.each(jsonNames)("%s has only structural, synthetic or public audio values", async (name) => {
     const payload = JsonValueSchema.parse(
       JSON.parse(await readFile(path.join(fixturesDirectory, name), "utf-8")),
     );
@@ -53,7 +53,7 @@ describe("committed fixtures hold no personal data", () => {
     expect(describeUnsafe(payload)).toStrictEqual([]);
   });
 
-  test.each(mediaNames)("%s carries no personal metadata tags", async (name) => {
+  it.each(mediaNames)("%s carries no personal metadata tags", async (name) => {
     const file = await readFile(path.join(fixturesDirectory, name));
     const bytes = file.toString("latin1");
 
@@ -81,7 +81,7 @@ describe("the fixture privacy guard", () => {
     music_asset_info: { display_artist: "Unsafe Person", is_original_sound: true, title: "Mine" },
   };
 
-  test("fails on every value that is not structural, synthetic or public audio", () => {
+  it("fails on every value that is not structural, synthetic or public audio", () => {
     expect(describeUnsafe(unsafe).toSorted()).toStrictEqual(
       [
         "$.caption: free text that fixtures must omit",
@@ -99,7 +99,7 @@ describe("the fixture privacy guard", () => {
     );
   });
 
-  test("never repeats the offending values in its report", () => {
+  it("never repeats the offending values in its report", () => {
     const report = JSON.stringify(findUnsafeFixtureValues(unsafe));
 
     for (const value of ["private caption", "Unsafe", "unsafe_name", "123456789012345", "token"]) {
@@ -107,7 +107,7 @@ describe("the fixture privacy guard", () => {
     }
   });
 
-  test("accepts public metadata of a licensed catalog track", () => {
+  it("accepts public metadata of a licensed catalog track", () => {
     const licensed = {
       music_asset_info: {
         audio_asset_id: "1088211046447259",
@@ -121,7 +121,7 @@ describe("the fixture privacy guard", () => {
     expect(describeUnsafe(licensed)).toStrictEqual([]);
   });
 
-  test("refuses audio text that names a person of the same payload", () => {
+  it("refuses audio text that names a person of the same payload", () => {
     const namesTheCreator = {
       owner: { username: "creator_handle" },
       music_asset_info: {
@@ -136,7 +136,7 @@ describe("the fixture privacy guard", () => {
     );
   });
 
-  test("accepts explicit hand-written synthetic values", () => {
+  it("accepts explicit hand-written synthetic values", () => {
     const handWritten = {
       full_name: "Fixture user 1",
       quoted_name: 'Fixture "user" 2',
@@ -152,7 +152,7 @@ describe("the fixture privacy guard", () => {
     expect(describeUnsafe(handWritten)).toStrictEqual([]);
   });
 
-  test("accepts everything the redactor writes, so the two share one set of rules", () => {
+  it("accepts everything the redactor writes, so the two share one set of rules", () => {
     const made: JsonValue = {
       data: {
         reels: [

@@ -23,7 +23,9 @@ export function ChatPage({ accounts }: ChatPageData) {
 }
 
 function ChatRoute() {
-  return <ChatPage {...Route.useLoaderData()} />;
+  const { accounts } = Route.useLoaderData();
+
+  return <ChatPage accounts={accounts} />;
 }
 
 export const Route = createFileRoute("/chat")({

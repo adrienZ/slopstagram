@@ -1,7 +1,7 @@
 import { expect, test, type TestContext } from "vitest";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { loadMentionGraph, type MentionGraphPageData } from "../app/loaders/mention-graph.ts";
-import { createTestRuntime, useSharedTestRuntime } from "./setup/test-runtime.ts";
+import { createTestRuntime, shareTestRuntime } from "./setup/test-runtime.ts";
 import {
   ambiguousUsername,
   graphAccountFullName,
@@ -14,7 +14,7 @@ import {
   unknownUsername,
 } from "./setup/mention-graph-seed.ts";
 
-const shared = useSharedTestRuntime(seedGraphDatabase);
+const shared = shareTestRuntime(seedGraphDatabase);
 const [ada, ben, cleo] = graphAccounts.map((username) => `@${username}`);
 const unknown = `@${unknownUsername}`;
 const ambiguous = `@${ambiguousUsername} (plusieurs comptes)`;

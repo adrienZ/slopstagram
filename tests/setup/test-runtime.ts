@@ -48,7 +48,7 @@ export async function createTestRuntime(
   return await createRuntimeOver(createTestDatabase(context), boundaries);
 }
 
-export function useSharedTestRuntime(
+export function shareTestRuntime(
   seed: (runtime: Runtime) => Promise<void>,
   boundaries: RuntimeBoundaries = {},
 ) {

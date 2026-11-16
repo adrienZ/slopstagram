@@ -3,7 +3,7 @@ import { expect, test } from "vitest";
 import { Route } from "../../app/routes/graph.tsx";
 import { loadMentionGraph } from "../../app/loaders/mention-graph.ts";
 import { createPageRenderer } from "../render-page.ts";
-import { createTestRuntime, useSharedTestRuntime } from "../setup/test-runtime.ts";
+import { createTestRuntime, shareTestRuntime } from "../setup/test-runtime.ts";
 import {
   ambiguousUsername,
   graphAccountFullName,
@@ -15,7 +15,7 @@ import {
 } from "../setup/mention-graph-seed.ts";
 import { mountGraph as mountGraphWith, stubGraphLayout } from "./mount-graph.ts";
 
-const shared = useSharedTestRuntime(seedGraphDatabase);
+const shared = shareTestRuntime(seedGraphDatabase);
 const renderer = createPageRenderer(Route, () => loadMentionGraph(shared.runtime, []), "/graph");
 
 async function mountGraph() {
@@ -123,7 +123,8 @@ test("a known Account opens its profile and highlights its connections, the back
 test("Escape closes the profile and clears the selection", async () => {
   const { user, canvas, drawing } = await mountGraph();
   await user.click(canvas.getByRole("button", { name: cleo }));
-  expect(await screen.findByRole("dialog", { name: `Profil de ${cleo}` })).toBeVisible();
+  const profile = await screen.findByRole("dialog", { name: `Profil de ${cleo}` });
+  expect(profile).toBeVisible();
   await user.keyboard("{Escape}");
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(highlightedConnections(drawing)).toStrictEqual([]);
@@ -132,7 +133,8 @@ test("Escape closes the profile and clears the selection", async () => {
 test("an unknown point shows its label on hover and highlights its connections without a profile", async () => {
   const { user, canvas, drawing } = await mountGraph();
   await user.click(canvas.getByRole("button", { name: ada }));
-  expect(await screen.findByRole("dialog", { name: `Profil de ${ada}` })).toBeVisible();
+  const profile = await screen.findByRole("dialog", { name: `Profil de ${ada}` });
+  expect(profile).toBeVisible();
 
   const point = canvas.getByRole("button", { name: unknown });
   await user.hover(point);

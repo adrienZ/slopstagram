@@ -6,9 +6,9 @@ import {
 } from "@@/core/domains/story-feed/feed-user-summary.ts";
 import { loadStoryFeed } from "../app/loaders/story-feed.ts";
 import { createWorld, now } from "./setup/report-world.ts";
-import { useFixedDate } from "./mock-helpers.ts";
+import { fixDate } from "./mock-helpers.ts";
 
-useFixedDate(now);
+fixDate(now);
 
 function readFeedUserSummary(
   runtime: FeedUserSummaryRuntime,

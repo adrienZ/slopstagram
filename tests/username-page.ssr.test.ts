@@ -6,7 +6,7 @@ import { Route } from "../app/routes/users/$username.tsx";
 import { loadAccountTimeline } from "../app/loaders/account-timeline.ts";
 import { saveCurrentVision, storyItem } from "./mock-helpers.ts";
 import { createPageRenderer } from "./render-page.ts";
-import { useSharedTestRuntime } from "./setup/test-runtime.ts";
+import { shareTestRuntime } from "./setup/test-runtime.ts";
 
 const now = new Date("2026-10-29T12:00:00.000Z");
 const owner = { pk: "700000000000075", username: "user_075" };
@@ -39,7 +39,7 @@ async function seed(runtime: Runtime) {
   await runtime.appleVision.save(laterStoryPk, "Synthetic Apple caption");
 }
 
-const shared = useSharedTestRuntime(seed);
+const shared = shareTestRuntime(seed);
 
 // The timeline the handler loads from the seeded database, with the username the real loader receives.
 const renderer = createPageRenderer(

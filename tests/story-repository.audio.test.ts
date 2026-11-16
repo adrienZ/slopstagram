@@ -1,4 +1,4 @@
-import { assert, describe, expect, test } from "vitest";
+import { assert, describe, expect, it } from "vitest";
 import { createStoryFixtures } from "./test-database.ts";
 
 function manifest(sourceUrl: string) {
@@ -28,7 +28,7 @@ async function saveAudioStory(context: Parameters<typeof createStoryFixtures>[0]
 }
 
 describe("StoryRepository story audio", () => {
-  test("finds the story audio of a story, and nothing for a story without audio", async (context) => {
+  it("finds the story audio of a story, and nothing for a story without audio", async (context) => {
     const { current, storyRepository } = await saveAudioStory(context);
 
     expect(current).toMatchObject({
@@ -40,7 +40,7 @@ describe("StoryRepository story audio", () => {
     expect(storyRepository.findStoryAudio("unknown")).toBeUndefined();
   });
 
-  test("saves story audio media only while the source still matches", async (context) => {
+  it("saves story audio media only while the source still matches", async (context) => {
     const { current, storyRepository } = await saveAudioStory(context);
 
     storyRepository.saveStoryAudioMedia(
@@ -62,7 +62,7 @@ describe("StoryRepository story audio", () => {
     });
   });
 
-  test("defaults the duration to none", async (context) => {
+  it("defaults the duration to none", async (context) => {
     const { current, storyRepository } = await saveAudioStory(context);
 
     storyRepository.saveStoryAudioMedia(current, null, "unavailable");

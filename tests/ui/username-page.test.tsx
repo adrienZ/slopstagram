@@ -10,9 +10,9 @@ import {
 } from "./seeded-pages.ts";
 import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
 import { createPageRenderer } from "../render-page.ts";
-import { useSharedTestRuntime } from "../setup/test-runtime.ts";
+import { shareTestRuntime } from "../setup/test-runtime.ts";
 
-const shared = useSharedTestRuntime(seedPageDatabase);
+const shared = shareTestRuntime(seedPageDatabase);
 
 const renderer = createPageRenderer(
   Route,
@@ -147,7 +147,7 @@ test("calendar navigates between months to another available day", async () => {
   await user.click(screen.getByRole("button", { name: /mois précédent/iu }));
   await user.click(screen.getByRole("button", { name: /jeudi 1 janvier 2026/u }));
   await waitFor(() => {
-    expect(scroll).toHaveBeenCalled();
+    expect(scroll).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
   });
   expect(scroll.mock.instances[0]).toBe(screen.getByRole("region", { name: "2026-01-01" }));
 });
@@ -225,7 +225,7 @@ test("mobile calendar opens in a sheet and closes after choosing a day", async (
   expect(within(sidebar).getByRole("button", { name: /dimanche 26 juillet 2026/u })).toBeEnabled();
   await user.click(within(sidebar).getByRole("button", { name: /dimanche 26 juillet 2026/u }));
   await waitFor(() => {
-    expect(scroll).toHaveBeenCalled();
+    expect(scroll).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
   });
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });

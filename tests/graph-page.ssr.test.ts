@@ -4,10 +4,10 @@ import { JSDOM } from "jsdom";
 import { Route } from "../app/routes/graph.tsx";
 import { loadMentionGraph } from "../app/loaders/mention-graph.ts";
 import { createPageRenderer } from "./render-page.ts";
-import { useSharedTestRuntime } from "./setup/test-runtime.ts";
+import { shareTestRuntime } from "./setup/test-runtime.ts";
 import { graphAccounts, seedGraphDatabase } from "./setup/mention-graph-seed.ts";
 
-const shared = useSharedTestRuntime(seedGraphDatabase);
+const shared = shareTestRuntime(seedGraphDatabase);
 
 test("the server renders the settled graph, every point placed", async () => {
   const renderer = createPageRenderer(Route, () => loadMentionGraph(shared.runtime, []), "/graph");

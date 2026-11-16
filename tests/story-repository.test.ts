@@ -1,4 +1,4 @@
-import { assert, describe, test, expect } from "vitest";
+import { assert, describe, expect, it } from "vitest";
 import { createDrizzle } from "@@/core/domains/database/client.ts";
 import { migrateDatabase } from "@@/core/domains/database/migrate.ts";
 import { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
@@ -19,7 +19,7 @@ function withLabelOnlyAnnotations(story: StoryItem): StoryItem {
 }
 
 describe(StoryRepository, () => {
-  test("lists only stories published in the last 24 hours without deleting the archive", async (context) => {
+  it("lists only stories published in the last 24 hours without deleting the archive", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
     context.onTestFinished(() => {
@@ -55,7 +55,7 @@ describe(StoryRepository, () => {
     ).toBeTruthy();
   });
 
-  test("stores story details in relational tables", async (context) => {
+  it("stores story details in relational tables", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
     context.onTestFinished(() => {
@@ -147,7 +147,7 @@ describe(StoryRepository, () => {
     );
   });
 
-  test("lists a user's stories by their Instagram publication date", async (context) => {
+  it("lists a user's stories by their Instagram publication date", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);
     context.onTestFinished(() => {

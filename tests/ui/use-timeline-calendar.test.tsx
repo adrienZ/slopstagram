@@ -18,7 +18,7 @@ test("a requested gap chooses the nearest earlier available day", async () => {
   });
   expect(result.current.selectedDate).toBe("2026-07-23");
   await waitFor(() => {
-    expect(scroll).toHaveBeenCalled();
+    expect(scroll).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
   });
   expect(result.current.disabledDates[0](new Date("2026-07-24T12:00:00Z"))).toBe(true);
   expect(result.current.disabledDates[0](new Date("2026-07-23T12:00:00Z"))).toBe(false);
@@ -37,7 +37,7 @@ test("requests before the oldest day select the oldest day even if its element i
   });
   expect(result.current.selectedDate).toBe("2026-07-23");
   await waitFor(() => {
-    expect(frame).toHaveBeenCalled();
+    expect(frame).toHaveBeenCalledWith(expect.any(Function));
   });
 });
 

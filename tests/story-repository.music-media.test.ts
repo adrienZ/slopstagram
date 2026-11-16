@@ -1,4 +1,4 @@
-import { assert, describe, expect, test } from "vitest";
+import { assert, describe, expect, it } from "vitest";
 import { createStoryFixtures } from "./test-database.ts";
 
 const STICKER_ASSET = {
@@ -22,7 +22,7 @@ async function saveMusicStory(context: Parameters<typeof createStoryFixtures>[0]
 }
 
 describe("StoryRepository music media", () => {
-  test("lists the music observations of a story in sticker order, and none for an unknown story", async (context) => {
+  it("lists the music observations of a story in sticker order, and none for an unknown story", async (context) => {
     const { metadata, storyRepository } = await saveMusicStory(context);
 
     const observations = storyRepository.listMusicObservations("story");
@@ -32,7 +32,7 @@ describe("StoryRepository music media", () => {
     expect(storyRepository.listMusicObservations("unknown")).toStrictEqual([]);
   });
 
-  test("finds music metadata for a reference, and nothing for an unknown reference", async (context) => {
+  it("finds music metadata for a reference, and nothing for an unknown reference", async (context) => {
     const { metadata, storyRepository } = await saveMusicStory(context);
 
     expect(storyRepository.findMusicMetadata(metadata)).toMatchObject({
@@ -43,7 +43,7 @@ describe("StoryRepository music media", () => {
     expect(storyRepository.findMusicMetadata({ id: "unknown", status: "usable" })).toBeUndefined();
   });
 
-  test("saves music media only when the source still matches", async (context) => {
+  it("saves music media only when the source still matches", async (context) => {
     const { metadata, storyRepository } = await saveMusicStory(context);
 
     storyRepository.saveMusicMedia(
@@ -83,7 +83,7 @@ describe("StoryRepository music media", () => {
     });
   });
 
-  test("defaults the audio duration to none and matches a missing source", async (context) => {
+  it("defaults the audio duration to none and matches a missing source", async (context) => {
     const { storyRepository } = createStoryFixtures(context);
     await storyRepository.save({
       pk: "story",

@@ -5,10 +5,10 @@ import { Route as TimelineRoute } from "../../app/routes/users/$username.tsx";
 import { loadStoryFeed } from "../../app/loaders/story-feed.ts";
 import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
 import { createPageRenderer } from "../render-page.ts";
-import { useSharedTestRuntime } from "../setup/test-runtime.ts";
+import { shareTestRuntime } from "../setup/test-runtime.ts";
 import { pageNow, seedPageDatabase, timelineAccount, today } from "./seeded-pages.ts";
 
-const shared = useSharedTestRuntime(seedPageDatabase);
+const shared = shareTestRuntime(seedPageDatabase);
 
 // The lightbox keeps its state in the search parameters, so it is tested through the pages that host it.
 const reportRenderer = createPageRenderer(

@@ -315,7 +315,8 @@ test("a greeting is answered without reading any data", async (context) => {
 
   await chat.ask("Bonjour !");
 
-  expect(await screen.findByText(assistantGreeting)).toBeVisible();
+  const greeting = await screen.findByText(assistantGreeting);
+  expect(greeting).toBeVisible();
   // No tool part: no trace line and no sticker.
   const thread = within(screen.getByRole("region", { name: "Messages" }));
   expect(thread.queryByText(/^(?:get|list|search)\w+$/u)).not.toBeInTheDocument();
@@ -331,7 +332,8 @@ test("an unreachable chat model is reported, and an empty message is not sent", 
   // Enter sends the message.
   await chat.user.type(screen.getByRole("textbox", { name: "Message" }), "Hello{Enter}");
 
-  expect(await screen.findByRole("alert")).toHaveTextContent("Le modèle n’a pas répondu.");
+  const alert = await screen.findByRole("alert");
+  expect(alert).toHaveTextContent("Le modèle n’a pas répondu.");
 });
 
 test("typing @ suggests the saved accounts, filtered as I type, and the keyboard picks one", async (context) => {

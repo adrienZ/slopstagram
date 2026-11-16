@@ -13,11 +13,11 @@ import {
 } from "./seeded-pages.ts";
 import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
 import { createPageRenderer } from "../render-page.ts";
-import { useSharedTestRuntime } from "../setup/test-runtime.ts";
+import { shareTestRuntime } from "../setup/test-runtime.ts";
 import { LocationMapContext } from "../../app/components/location-map-context.ts";
 import type { LocationMapCanvasProps } from "../../app/components/location-map-canvas.tsx";
 
-const shared = useSharedTestRuntime(seedPageDatabase);
+const shared = shareTestRuntime(seedPageDatabase);
 
 const renderer = createPageRenderer(
   Route,
@@ -194,7 +194,8 @@ test("location dialog maps the whole history by provider identity and preserves 
   const selected = within(map.getByRole("region", { name: "Stories du lieu : Même nom" }));
   expect(selected.getAllByRole("button", { name: /Ouvrir aperçu/u })).toHaveLength(2);
   await user.click(selected.getByRole("button", { name: "Ouvrir aperçu location-1" }));
-  expect(await screen.findByRole("dialog", { name: "Aperçu de l’image" })).toBeVisible();
+  const preview = await screen.findByRole("dialog", { name: "Aperçu de l’image" });
+  expect(preview).toBeVisible();
   await user.keyboard("{Escape}");
   expect(screen.getByRole("dialog", { name: "Stickers · location" })).toBeVisible();
   await user.click(map.getByRole("button", { name: "Fermer les aperçus du lieu" }));
@@ -228,7 +229,8 @@ test("a location history without coordinates keeps every label and preview avail
   expect(modal.queryByRole("region", { name: "Carte des lieux" })).not.toBeInTheDocument();
   expect(modal.getAllByText("Paris, Paris")).toHaveLength(2);
   await user.click(modal.getByRole("button", { name: "Ouvrir aperçu location-0" }));
-  expect(await screen.findByRole("dialog", { name: "Aperçu de l’image" })).toBeVisible();
+  const preview = await screen.findByRole("dialog", { name: "Aperçu de l’image" });
+  expect(preview).toBeVisible();
 });
 
 test("metadata without a displayable sticker remains mappable through its story provenance", async () => {
@@ -317,7 +319,8 @@ test("unlinked observations never supply a position for a separate legacy sticke
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
   expect(modal.getByText("1 sticker sans position confirmée")).toBeVisible();
   expect(modal.getByText("1 localisation sans coordonnées")).toBeVisible();
-  expect(await modal.findByRole("button", { name: "Même nom" })).toBeVisible();
+  const namesake = await modal.findByRole("button", { name: "Même nom" });
+  expect(namesake).toBeVisible();
   expect(modal.getByText("Paris, Paris")).toBeVisible();
 });
 

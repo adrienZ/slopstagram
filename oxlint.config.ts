@@ -123,37 +123,15 @@ const testConventions = defineConfig({
   overrides: [
     {
       files: ["tests/**"],
-      plugins: ["vitest", "react"],
+      plugins: ["vitest"],
       rules: {
         // Tests are named after the module they cover and sit at the top level of their file.
         "vitest/require-top-level-describe": "off",
-        "vitest/consistent-test-it": ["error", { fn: "test", withinDescribe: "test" }],
         // Tests go through production code paths, so one test asserts the whole result it gets back.
         "vitest/max-expects": "off",
-        // useSharedTestRuntime and its kin are vitest fixtures, not React hooks.
-        "react-hooks/rules-of-hooks": "off",
         // Both weaken `toBe(false)` and `toBe(true)` into truthiness checks.
         "vitest/prefer-to-be-falsy": "off",
         "vitest/prefer-to-be-truthy": "off",
-        // Its fix turns `toHaveBeenCalled()` into `toHaveBeenCalledWith()`, which asserts a call without arguments.
-        "vitest/prefer-called-with": "off",
-      },
-    },
-    {
-      // RuleTester registers its cases and assertions through vitest's suite functions.
-      files: ["tests/oxlint/**"],
-      plugins: ["vitest"],
-      rules: {
-        "vitest/valid-describe-callback": "off",
-        "vitest/expect-expect": "off",
-      },
-    },
-    {
-      files: ["tests/ui/**"],
-      plugins: ["vitest"],
-      rules: {
-        // jest-dom matchers are not typed as promises on `.resolves`, so awaiting them fails typescript/await-thenable.
-        "vitest/prefer-expect-resolves": "off",
       },
     },
   ],
@@ -175,8 +153,6 @@ const ultraciteSoftenerConfig = defineConfig({
     // require-await only when useful using type aware rule
     "require-await": "off",
     "typescript/require-await": "error",
-    // Handlers are named after what they do (`toggle`, `zoomIn`), not after the event that calls them.
-    "react/jsx-handler-names": "off",
   },
 });
 

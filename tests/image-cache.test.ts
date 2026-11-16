@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer";
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import sharp from "sharp";
 import { readBytes } from "@@/core/domains/media-store/cache-storage.ts";
 import { cacheReportImages } from "@@/core/domains/media-store/image-cache.ts";
@@ -95,7 +95,7 @@ async function storedImage(images: Images, key: string) {
 }
 
 describe(cacheReportImages, () => {
-  test("caches profile pictures as local report-relative files, converted to JPEG", async () => {
+  it("caches profile pictures as local report-relative files, converted to JPEG", async () => {
     const source = "https://example.com/avatar?id=1";
     const previewSource = "https://example.com/story-preview.webp";
     const previewKey = "story-pk";
@@ -143,7 +143,7 @@ describe(cacheReportImages, () => {
     ).resolves.toBeNull();
   });
 
-  test("refreshes cached profile pictures from the latest API response", async () => {
+  it("refreshes cached profile pictures from the latest API response", async () => {
     const source = "https://example.com/avatar.webp";
     const storage = createMemoryCacheStorage();
     await storage.images.setItemRaw(`avatars/${PROFILE_PK}.jpg`, Buffer.from("jpeg-avatar"));
@@ -161,7 +161,7 @@ describe(cacheReportImages, () => {
     });
   });
 
-  test("reuses cached story previews without fetching again", async () => {
+  it("reuses cached story previews without fetching again", async () => {
     const source = "https://example.com/avatar.jpg";
     const previewSource = "https://example.com/story-preview.webp";
     const previewKey = "story-pk";
@@ -192,7 +192,7 @@ describe(cacheReportImages, () => {
     ).resolves.toStrictEqual(Buffer.from("jpeg-story"));
   });
 
-  test("reuses story preview cache when the signed CDN URL changes", async () => {
+  it("reuses story preview cache when the signed CDN URL changes", async () => {
     const source = "https://example.com/avatar.jpg";
     const firstPreviewSource = "https://example.com/story-preview.webp?signature=old";
     const secondPreviewSource = "https://example.com/story-preview.webp?signature=new";
@@ -229,7 +229,7 @@ describe(cacheReportImages, () => {
     });
   });
 
-  test("keeps nothing and logs a warning when the fetched bytes are not an image", async () => {
+  it("keeps nothing and logs a warning when the fetched bytes are not an image", async () => {
     const source = "https://example.com/avatar.webp";
     const storage = createMemoryCacheStorage();
     const logger = createCapturingLogger();

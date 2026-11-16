@@ -18,9 +18,9 @@ import {
   storyPks,
   trayBody,
 } from "./setup/report-world.ts";
-import { useFixedDate } from "./mock-helpers.ts";
+import { fixDate } from "./mock-helpers.ts";
 
-useFixedDate(now);
+fixDate(now);
 
 test("creates a report by running the whole pipeline over recorded Instagram payloads", async (context) => {
   const world = await createWorld(context);

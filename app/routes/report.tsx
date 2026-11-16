@@ -54,7 +54,20 @@ export function ReportPage({
 }
 
 function ReportRoute() {
-  return <ReportPage {...Route.useLoaderData()} selectedStory={Route.useSearch().story} />;
+  const { date, selectedDate, today, availableDates, sidebarUsers, users } = Route.useLoaderData();
+  const { story } = Route.useSearch();
+
+  return (
+    <ReportPage
+      date={date}
+      selectedDate={selectedDate}
+      today={today}
+      availableDates={availableDates}
+      sidebarUsers={sidebarUsers}
+      users={users}
+      selectedStory={story}
+    />
+  );
 }
 
 export const Route = createFileRoute("/report")({

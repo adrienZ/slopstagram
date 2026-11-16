@@ -108,7 +108,22 @@ export function UserTimelinePage(props: AccountTimelinePageData & { selectedStor
 }
 
 function UserTimelineRoute() {
-  return <UserTimelinePage {...Route.useLoaderData()} selectedStory={Route.useSearch().story} />;
+  const { today, sidebarUsers, stickerGroups, locations, timeline, stories } =
+    Route.useLoaderData();
+
+  const { story } = Route.useSearch();
+
+  return (
+    <UserTimelinePage
+      today={today}
+      sidebarUsers={sidebarUsers}
+      stickerGroups={stickerGroups}
+      locations={locations}
+      timeline={timeline}
+      stories={stories}
+      selectedStory={story}
+    />
+  );
 }
 
 export const Route = createFileRoute("/users/$username")({

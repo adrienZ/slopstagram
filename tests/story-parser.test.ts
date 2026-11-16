@@ -1,9 +1,9 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, it } from "vitest";
 import { getLargestVersion } from "@@/core/domains/instagram/story-parser.ts";
 import type { StoryVersion } from "@@/core/domains/instagram/instagram-types.ts";
 
 describe(getLargestVersion, () => {
-  test("returns the candidate with the largest area", () => {
+  it("returns the candidate with the largest area", () => {
     const versions: Array<StoryVersion> = [
       { height: 100, url: "small", width: 50 },
       { height: 90, url: "medium", width: 100 },
@@ -17,7 +17,7 @@ describe(getLargestVersion, () => {
     });
   });
 
-  test("returns null for empty input", () => {
+  it("returns null for empty input", () => {
     expect(getLargestVersion([])).toBeNull();
     expect(getLargestVersion(null)).toBeNull();
   });

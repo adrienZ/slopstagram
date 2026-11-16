@@ -3,7 +3,7 @@ import { expect, test } from "vitest";
 import { Route } from "../../app/routes/graph.tsx";
 import { loadMentionGraph } from "../../app/loaders/mention-graph.ts";
 import { createPageRenderer } from "../render-page.ts";
-import { useSharedTestRuntime } from "../setup/test-runtime.ts";
+import { shareTestRuntime } from "../setup/test-runtime.ts";
 import { mountGraph as mountGraphWith, stubGraphLayout } from "./mount-graph.ts";
 import {
   cleoStoriesMentioningAda,
@@ -13,7 +13,7 @@ import {
   seedGraphDatabase,
 } from "../setup/mention-graph-seed.ts";
 
-const shared = useSharedTestRuntime(seedGraphDatabase);
+const shared = shareTestRuntime(seedGraphDatabase);
 const renderer = createPageRenderer(Route, () => loadMentionGraph(shared.runtime, []), "/graph");
 
 async function mountGraph() {
@@ -145,7 +145,8 @@ test("selecting another point closes the stories, and points keep their profile"
   await user.click(other);
   expect(region.queryByRole("region", { name: /^Stories de la connexion/u })).toBeNull();
   expect(other).toHaveAttribute("aria-pressed", "true");
-  expect(await screen.findByRole("dialog", { name: `Profil de ${ben}` })).toBeVisible();
+  const profile = await screen.findByRole("dialog", { name: `Profil de ${ben}` });
+  expect(profile).toBeVisible();
 });
 
 test("opening a story keeps the selected point and its profile", async () => {
