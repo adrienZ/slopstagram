@@ -123,6 +123,7 @@ const testConventions = defineConfig({
   overrides: [
     {
       files: ["tests/**"],
+      // The vitest preset enables its plugin in its own override only, and oxlint drops plugin rules an override does not enable.
       plugins: ["vitest"],
       rules: {
         // Tests are named after the module they cover and sit at the top level of their file.
