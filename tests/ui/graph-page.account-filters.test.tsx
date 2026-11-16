@@ -80,6 +80,13 @@ test("an account in the URL opens its neighborhood, with the links among its nei
   expect(checkedAccounts(await openFilters(user))).toEqual([ben]);
 });
 
+test("an account in the URL is matched ignoring case, as mention stickers are", async () => {
+  const { user } = await mountGraph(`/graph?accounts=${benGraph.toUpperCase()}`);
+  expect(shownPoints()).toEqual([cleo, ada, ben]);
+  expect(screen.queryByText(/^Compte absent du graphe/u)).not.toBeInTheDocument();
+  expect(checkedAccounts(await openFilters(user))).toEqual([ben]);
+});
+
 test("several accounts show the union of their neighborhoods and every link among its points", async () => {
   await mountGraph(`/graph?accounts=${benGraph},${filterAccount}`);
   expect(shownPoints()).toEqual([cleo, eve, ada, ben]);
@@ -135,7 +142,6 @@ test.each([
   ["an unknown username", "nobody_graph"],
   ["an Account without any connection", lonelyAccount],
   ["a username only Accounts without a connection share", ambiguousUsername],
-  ["a username in another case", adaGraph.toUpperCase()],
 ])(
   "%s in the URL skips every filter with an error toast, until a filter is chosen",
   async (_case, username) => {

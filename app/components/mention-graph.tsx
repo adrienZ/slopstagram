@@ -1,4 +1,11 @@
-import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import {
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 import { cn } from "cn";
 import { LocateFixedIcon, MinusIcon, PlusIcon } from "lucide-react";
 import type { MentionGraphPageData } from "../loaders/mention-graph.ts";
@@ -7,7 +14,7 @@ import { GRAPH_HEIGHT, GRAPH_WIDTH, useGraphViewport } from "../hooks/use-graph-
 import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/ui/avatar.tsx";
 import { Button } from "../shadcn/ui/button.tsx";
 import { Popover, PopoverAnchor, PopoverContent } from "../shadcn/ui/popover.tsx";
-import { formatUserInitials, getUserTimelineUrl } from "../utils/helper.ts";
+import { formatStoryCount, formatUserInitials, getUserTimelineUrl } from "../utils/helper.ts";
 
 type GraphPoint = MentionGraphPageData["graph"]["points"][number];
 type AccountPoint = Extract<GraphPoint, { kind: "account" }>;
@@ -21,20 +28,27 @@ function radiusOf(point: GraphPoint): number {
   return point.kind === "account" ? ACCOUNT_RADIUS : UNKNOWN_RADIUS;
 }
 
-function formatStoryCount(count: number): string {
-  return `${count} ${count > 1 ? "stories" : "story"}`;
-}
-
 // Thicker for more source stories, but slowly, so a busy pair does not hide its neighbours.
 function connectionWidth(storyCount: number): number {
   return 1.5 + 1.5 * Math.log2(storyCount);
 }
 
-function onActivate(event: KeyboardEvent, action: () => void) {
-  if (event.key === "Enter" || event.key === " ") {
-    event.preventDefault();
-    action();
-  }
+/** A click that ends a drag or a pan selects nothing; the keyboard always does. */
+function activationHandlers(isClick: () => boolean, action: () => void) {
+  return {
+    onClick: (event: MouseEvent) => {
+      event.stopPropagation();
+      if (isClick()) {
+        action();
+      }
+    },
+    onKeyDown: (event: KeyboardEvent) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        action();
+      }
+    },
+  };
 }
 
 function AccountProfile({ point }: { point: AccountPoint }) {
@@ -186,17 +200,9 @@ export function MentionGraph({
         aria-pressed={connection.id === selectedConnectionId}
         data-highlighted={highlighted}
         className="tw:cursor-pointer tw:outline-none"
-        onClick={(event) => {
-          event.stopPropagation();
-          if (viewport.isClick()) {
-            onSelectConnection(connection.id);
-          }
-        }}
-        onKeyDown={(event) => {
-          onActivate(event, () => {
-            onSelectConnection(connection.id);
-          });
-        }}
+        {...activationHandlers(viewport.isClick, () => {
+          onSelectConnection(connection.id);
+        })}
       >
         <line
           {...line}
@@ -233,17 +239,9 @@ export function MentionGraph({
         onPointerDown={(event) => {
           viewport.startPointDrag(event, point.id);
         }}
-        onClick={(event) => {
-          event.stopPropagation();
-          if (viewport.isClick()) {
-            onSelectPoint(point.id);
-          }
-        }}
-        onKeyDown={(event) => {
-          onActivate(event, () => {
-            onSelectPoint(point.id);
-          });
-        }}
+        {...activationHandlers(viewport.isClick, () => {
+          onSelectPoint(point.id);
+        })}
         onPointerEnter={() => {
           setHoveredPointId(point.id);
         }}

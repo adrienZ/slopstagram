@@ -1,9 +1,6 @@
 import type { TaggedPlaceRead, TaggedPlaceSummary } from "@@/core/domains/places/tagged-places.ts";
+import { formatStoryCount } from "../utils/helper.ts";
 import { formatStickerStoryDate } from "../utils/timeline-stickers.ts";
-
-function formatStoryCount(count: number): string {
-  return `${count} ${count > 1 ? "stories" : "story"}`;
-}
 
 function describePlace(place: TaggedPlaceSummary): string {
   return [place.name, place.category].filter((part) => part !== null).join(" · ");

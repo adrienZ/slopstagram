@@ -2,59 +2,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ArrowLeftIcon } from "lucide-react";
 import { z } from "zod";
 import { AccountFilter } from "../components/account-filter.tsx";
-import { ErrorToast } from "../components/error-toast.tsx";
-import { Lightbox } from "../components/lightbox.tsx";
-import { MentionConnectionStories } from "../components/mention-connection-stories.tsx";
-import { MentionGraph } from "../components/mention-graph.tsx";
+import { MentionGraphExplorer } from "../components/mention-graph-explorer.tsx";
 import { useTheme } from "../components/theme-provider.tsx";
+import { UnknownAccountsToast } from "../components/unknown-accounts-toast.tsx";
 import { useMentionGraphFilter } from "../hooks/use-mention-graph-filter.ts";
-import { useMentionGraphSelection } from "../hooks/use-mention-graph-selection.ts";
 import type { MentionGraphPageData } from "../loaders/mention-graph.ts";
 import { getMentionGraph } from "../query-service.ts";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "../shadcn/ui/empty.tsx";
 import { Toaster } from "../shadcn/ui/sonner.tsx";
-import { formatUserHandle } from "../utils/helper.ts";
 import { formatAccountFilters, parseAccountFilters } from "../utils/account-filter-search.ts";
-
-function MentionGraphExplorer(graph: MentionGraphPageData["graph"]) {
-  const { points, connections } = graph;
-  const selection = useMentionGraphSelection(graph);
-  const { selectedConnection } = selection;
-  return (
-    <>
-      <MentionGraph
-        points={points}
-        connections={connections}
-        selectedPointId={selection.selectedPointId}
-        onSelectPoint={selection.selectPoint}
-        selectedConnectionId={selection.selectedConnectionId}
-        onSelectConnection={selection.selectConnection}
-        overlay={
-          selectedConnection !== undefined && (
-            <MentionConnectionStories
-              key={selectedConnection.id}
-              labels={selectedConnection.labels}
-              stories={selection.connectionStories}
-              onClose={selection.closeConnection}
-              onOpenStory={selection.openStory}
-            />
-          )
-        }
-      />
-      <Lightbox
-        stories={selection.connectionStories}
-        selectedStory={selection.openStoryPk}
-        linkToProfile
-        onOpenStory={selection.openStory}
-      />
-    </>
-  );
-}
-
-function formatUnknownAccounts(usernames: Array<string>): string {
-  const handles = usernames.map((username) => formatUserHandle(username)).join(", ");
-  return `${usernames.length > 1 ? "Comptes absents" : "Compte absent"} du graphe : ${handles}. Le graphe complet est affiché.`;
-}
 
 export function MentionGraphPage({
   accounts,
@@ -64,8 +20,6 @@ export function MentionGraphPage({
 }: MentionGraphPageData) {
   const filter = useMentionGraphFilter(selectedAccounts);
   const { theme } = useTheme();
-  const unknownAccountsMessage =
-    unknownAccounts.length > 0 ? formatUnknownAccounts(unknownAccounts) : undefined;
   return (
     <>
       <header className="tw:flex tw:h-14 tw:shrink-0 tw:items-center tw:gap-3 tw:border-b tw:px-4">
@@ -110,9 +64,7 @@ export function MentionGraphPage({
         )}
       </main>
       <Toaster theme={theme} />
-      {unknownAccountsMessage !== undefined && (
-        <ErrorToast key={unknownAccountsMessage} message={unknownAccountsMessage} />
-      )}
+      {unknownAccounts.length > 0 && <UnknownAccountsToast usernames={unknownAccounts} />}
     </>
   );
 }

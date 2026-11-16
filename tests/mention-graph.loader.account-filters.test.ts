@@ -64,17 +64,23 @@ test("a username several drawn Accounts share keeps the neighborhoods of all of 
   ]);
 });
 
-test("a username the graph does not draw, or not in this case, skips every filter and is reported", () => {
-  const unfiltered = loadMentionGraph(shared.runtime, []);
-  const graph = loadMentionGraph(shared.runtime, [
-    benGraph,
-    "nobody_graph",
-    "nobody_graph",
-    adaGraph.toUpperCase(),
+test("usernames are matched ignoring case, and select each Account once", () => {
+  const graph = loadMentionGraph(shared.runtime, [benGraph.toUpperCase(), benGraph]);
+  expect(graph.selectedAccounts).toStrictEqual([benGraph]);
+  expect(graph.unknownAccounts).toStrictEqual([]);
+  expect(describeConnections(graph)).toStrictEqual([
+    [ada, cleo],
+    [ben, cleo],
+    [ada, ben],
   ]);
+});
+
+test("a username the graph does not draw skips every filter and is reported", () => {
+  const unfiltered = loadMentionGraph(shared.runtime, []);
+  const graph = loadMentionGraph(shared.runtime, [benGraph, "nobody_graph", "nobody_graph"]);
   expect(graph).toStrictEqual({
     ...unfiltered,
     selectedAccounts: [],
-    unknownAccounts: ["nobody_graph", adaGraph.toUpperCase()],
+    unknownAccounts: ["nobody_graph"],
   });
 });
