@@ -25,18 +25,19 @@ function noBackup(): void {
   // The test runtime copies nothing; a test that cares passes a fake.
 }
 
+// `??` rather than a spread: a boundary passed as `undefined` would replace its fake, and
+// createRuntime would fall back to the real one (the media cache in data/, bunqueue).
 async function createRuntimeOver(database: DrizzleDatabase, boundaries: RuntimeBoundaries) {
   return createRuntime(database, {
-    backup: noBackup,
-    client: await createRecordedInstagramClient(),
-    fetchImage: unexpected("fetchImage"),
-    fetchMedia: unexpected("fetchMedia"),
-    fetchOllama: unexpected("fetchOllama"),
-    logger: createMockLogger(),
-    queue: noQueue,
-    runAppleOcr: unexpected("runAppleOcr"),
-    storage: createMemoryCacheStorage(),
-    ...boundaries,
+    backup: boundaries.backup ?? noBackup,
+    client: boundaries.client ?? (await createRecordedInstagramClient()),
+    fetchImage: boundaries.fetchImage ?? unexpected("fetchImage"),
+    fetchMedia: boundaries.fetchMedia ?? unexpected("fetchMedia"),
+    fetchOllama: boundaries.fetchOllama ?? unexpected("fetchOllama"),
+    logger: boundaries.logger ?? createMockLogger(),
+    queue: boundaries.queue ?? noQueue,
+    runAppleOcr: boundaries.runAppleOcr ?? unexpected("runAppleOcr"),
+    storage: boundaries.storage ?? createMemoryCacheStorage(),
   });
 }
 

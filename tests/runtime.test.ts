@@ -1,4 +1,11 @@
+import { Buffer } from "node:buffer";
+import { randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
+import { rm } from "node:fs/promises";
+import path from "node:path";
 import { expect, test, type OnTestFinishedHandler } from "vitest";
+import { BASE_CACHE_DIR } from "@@/core/domains/media-store/cache-storage.ts";
+import { IMAGES_STORAGE_DIR } from "@@/core/domains/media-store/media-urls.ts";
 import { fetchStories } from "@@/core/domains/fetch-run/stories.ts";
 import { getProductionRuntime } from "@@/core/domains/runtime/production-runtime.ts";
 import { createCapturingLogger } from "./mock-helpers.ts";
@@ -71,6 +78,22 @@ test("a test runtime logs through the logger a test passes", async (context) => 
 test("a test runtime has no queue unless a test passes one", async (context) => {
   const runtime = await createTestRuntime(context);
 
+  expect(() =>
+    runtime.queue("warm-cache", async () => await Promise.reject(new Error("unused"))),
+  ).toThrow("no fake for queue");
+});
+
+test("a test runtime keeps its fakes for a boundary passed as undefined", async (context) => {
+  const key = `test-runtime-${randomUUID()}.jpg`;
+  const realCacheFile = path.join(BASE_CACHE_DIR, IMAGES_STORAGE_DIR, key);
+  context.onTestFinished(async () => {
+    await rm(realCacheFile, { force: true });
+  });
+  const runtime = await createTestRuntime(context, { queue: undefined, storage: undefined });
+
+  await runtime.storage.images.setItemRaw(key, Buffer.from("jpeg-bytes"));
+
+  expect(existsSync(realCacheFile)).toBe(false);
   expect(() =>
     runtime.queue("warm-cache", async () => await Promise.reject(new Error("unused"))),
   ).toThrow("no fake for queue");

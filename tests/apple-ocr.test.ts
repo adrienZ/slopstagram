@@ -66,7 +66,7 @@ describe(recognizeAppleCaption, () => {
   });
 
   it("reports OCR as unavailable without loading it on Windows", async (context) => {
-    const runtime = await createTestRuntime(context, { runAppleOcr: undefined });
+    const runtime = { ...(await createTestRuntime(context)), runAppleOcr: undefined };
     await runtime.storage.images.setItemRaw("story-4.jpg", Buffer.from("local-image"));
 
     await expect(
