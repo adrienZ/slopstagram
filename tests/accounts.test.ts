@@ -39,12 +39,16 @@ test("a search matches usernames and full names, ignoring case, accents and a le
     ["user_three", null],
   ]);
 
-  expect(usernamesOf(searchAccounts(runtime, "USER_ONE"))).toStrictEqual(["user_one"]);
-  expect(usernamesOf(searchAccounts(runtime, "@user_three"))).toStrictEqual(["user_three"]);
-  expect(usernamesOf(searchAccounts(runtime, "alpha"))).toStrictEqual(["user_one"]);
-  expect(usernamesOf(searchAccounts(runtime, "eloise beta"))).toStrictEqual(["user_two"]);
-  expect(usernamesOf(searchAccounts(runtime, "éloïse"))).toStrictEqual(["user_two"]);
-  expect(usernamesOf(searchAccounts(runtime, "nobody"))).toStrictEqual([]);
+  const searches = ["USER_ONE", "@user_three", "alpha", "eloise beta", "éloïse", "nobody"];
+
+  expect(searches.map((search) => usernamesOf(searchAccounts(runtime, search)))).toStrictEqual([
+    ["user_one"],
+    ["user_three"],
+    ["user_one"],
+    ["user_two"],
+    ["user_two"],
+    [],
+  ]);
 });
 
 test("a search ranks the exact username, then the prefixes, then the full names", async (context) => {

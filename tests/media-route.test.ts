@@ -36,10 +36,12 @@ test("the media route serves cached JPEG images", async (context) => {
   const response = await app.request("/media/story-previews/story-1.jpg");
 
   expect(response.status).toBe(200);
-  expect(response.headers.get("content-type")).toBe("image/jpeg");
-  expect(response.headers.get("cache-control")).toBe("private, max-age=3600");
-  expect(response.headers.get("x-content-type-options")).toBe("nosniff");
-  expect(response.headers.get("content-length")).toBe("10");
+  expect(Object.fromEntries(response.headers)).toMatchObject({
+    "content-type": "image/jpeg",
+    "cache-control": "private, max-age=3600",
+    "x-content-type-options": "nosniff",
+    "content-length": "10",
+  });
   await expect(response.text()).resolves.toBe("jpeg-bytes");
 });
 
