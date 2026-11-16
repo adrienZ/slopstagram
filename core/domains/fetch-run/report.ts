@@ -8,7 +8,7 @@ import type { ReportRepository } from "@@/core/domains/database/repositories/rep
 import type { StoriesManifestReport } from "./report-types.ts";
 import { resolveUserSummariesForReport } from "@@/core/domains/accounts/user-summary.ts";
 import { resolveVisionForReport } from "@@/core/domains/vision/vision-report.ts";
-import { fetchStories } from "./stories.ts";
+import { fetchStoriesInSession, type FetchStoriesInSessionRuntime } from "./session-stories.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import pkg from "../../../package.json" with { type: "json" };
 
@@ -43,12 +43,9 @@ function formatFilenameTimestamp(date: Date): string {
   return `${year}-${month}-${day}T${hours}-${minutes}-${seconds}${formatTimezoneOffset(date)}`;
 }
 
-type CreateReportRuntime = { reports: Pick<ReportRepository, "save"> } & Pick<
-  Runtime,
-  "backup" | "withInstagramClient"
-> &
+type CreateReportRuntime = { reports: Pick<ReportRepository, "save"> } & Pick<Runtime, "backup"> &
   Parameters<typeof recordFetchRun>[0] &
-  Omit<Parameters<typeof fetchStories>[0], "client"> &
+  FetchStoriesInSessionRuntime &
   Parameters<typeof cacheReportAudio>[0] &
   Parameters<typeof cacheReportImages>[0] &
   Parameters<typeof resolveAppleCaptionsForReport>[0] &
@@ -73,11 +70,7 @@ export async function createReport(runtime: CreateReportRuntime): Promise<Create
     const timestamp = formatFilenameTimestamp(run.startedAt);
     const outputFileName = `stories-report-${timestamp}-${run.id}.json`;
     runtime.logger.box(`${pkg.name} - report ${outputFileName}`);
-
-    const report = await runtime.withInstagramClient(
-      async (client) => await fetchStories({ ...runtime, client }, { reportName: outputFileName }),
-    );
-
+    const report = await fetchStoriesInSession(runtime, { reportName: outputFileName });
     run.report = report;
     // Keep the observation and failures even if enrichment or every media fetch fails.
     await runtime.reports.save(outputFileName, report);

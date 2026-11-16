@@ -1,7 +1,10 @@
 import { test, vi, expect } from "vitest";
 import { z } from "zod";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
-import { createInstagramClient } from "@@/core/domains/instagram/story-client.ts";
+import {
+  createInstagramClient,
+  scopeInstagramClientToSession,
+} from "@@/core/domains/instagram/story-client.ts";
 
 interface BrowserFetchCall {
   appId: string;
@@ -72,6 +75,51 @@ test("createInstagramClient fetches tray through the authenticated browser page"
       requestUrl: "https://www.instagram.com/api/v1/feed/reels_tray/",
     },
   ]);
+});
+
+function scopeToRecordedSession(events: Array<string>) {
+  const session = createSession({
+    broadcasts: [],
+    status: "ok",
+    story_ranking_token: "ranking-token",
+    tray: [],
+  });
+
+  return scopeInstagramClientToSession({
+    close: async (closed) => {
+      events.push(closed === session ? "close" : "close another session");
+    },
+    open: async () => {
+      events.push("open");
+
+      return session;
+    },
+  });
+}
+
+test("a session-scoped client fetches through a session it opens, then closes it", async () => {
+  const events: Array<string> = [];
+
+  const status = await scopeToRecordedSession(events)(async (client) => {
+    events.push("run");
+    const response = await client.getTray();
+
+    return response.status;
+  });
+
+  expect(status).toBe(200);
+  expect(events).toStrictEqual(["open", "run", "close"]);
+});
+
+test("a session-scoped client closes its session when the fetch fails", async () => {
+  const events: Array<string> = [];
+
+  await expect(
+    scopeToRecordedSession(events)(async () => {
+      throw new Error("tray fetch failed");
+    }),
+  ).rejects.toThrow("tray fetch failed");
+  expect(events).toStrictEqual(["open", "close"]);
 });
 
 test("music lookup uses the authenticated session and preserves large numeric audio IDs", async () => {

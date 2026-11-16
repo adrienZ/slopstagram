@@ -22,6 +22,7 @@ import type { StoryRepository } from "@@/core/domains/database/repositories/stor
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 
 const MAX_MEDIA_BYTES = 60 * 1024 * 1024;
+const MEDIA_DOWNLOAD_TIMEOUT_MS = 20_000;
 
 interface CachedMusicMedia {
   cachePath: string | null;
@@ -34,6 +35,12 @@ type MusicStorageRuntime = Pick<Runtime, "fetchMedia" | "storage">;
 type MusicMediaRuntime = MusicStorageRuntime & {
   stories: Pick<StoryRepository, "findMusicMetadata" | "saveMusicMedia">;
 };
+
+async function fetchMediaWithTimeout(runtime: MusicStorageRuntime, url: string) {
+  return await runtime.fetchMedia(url, {
+    signal: globalThis.AbortSignal.timeout(MEDIA_DOWNLOAD_TIMEOUT_MS),
+  });
+}
 
 async function fileExists(storage: AudioCacheStorage, file: MediaFile | null) {
   if (file === null) {
@@ -99,7 +106,7 @@ async function downloadMedia(
     return { cachePath: null, state: "unsupported", durationMs: null };
   }
 
-  const response = await runtime.fetchMedia(source);
+  const response = await fetchMediaWithTimeout(runtime, source);
 
   if (!response.ok) {
     await response.body?.cancel();
@@ -231,7 +238,7 @@ async function downloadArtwork(source: string, id: string, runtime: MusicStorage
       return { cachePath: null, state: "unsupported" as const };
     }
 
-    const response = await runtime.fetchMedia(url.href);
+    const response = await fetchMediaWithTimeout(runtime, url.href);
 
     if (!response.ok || response.headers.get("content-type")?.startsWith("image/") !== true) {
       await response.body?.cancel();

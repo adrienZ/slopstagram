@@ -17,7 +17,7 @@ export default defineConfig({
         autoUpdate: (value) => Math.floor(value),
         statements: 93,
         branches: 87,
-        functions: 93,
+        functions: 94,
         lines: 93,
       },
     },

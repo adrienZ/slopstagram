@@ -15,14 +15,14 @@ import { fetchMissingStories } from "./story-live-fetch.ts";
 import { createManifestUsers, createOutputUsers } from "./story-output.ts";
 import { requestWithRetry, type RetryOptions } from "@@/core/domains/instagram/story-retry.ts";
 
-type FetchStoriesRuntime = Pick<Runtime, "logger" | "storage"> & {
+export type FetchStoriesRuntime = Pick<Runtime, "logger" | "storage"> & {
   stories: Pick<StoryRepository, "findByMediaPk" | "save"> &
     Partial<
       Pick<StoryRepository, "recordFailedPlaceLookup" | "recordPlaceLookup" | "refreshMusicAsset">
     >;
 };
 
-interface FetchStoriesOptions {
+export interface FetchStoriesOptions {
   maxAttempts?: number;
   reelIdsPerRequest?: number;
   reportName?: string;

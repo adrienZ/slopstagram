@@ -2,6 +2,7 @@ import { z } from "zod";
 import { StoryReelSchema, StoryTrayEntrySchema } from "./story-schemas.ts";
 import type { InstagramClient, ReelsMediaResponse, StoryReel } from "./instagram-types.ts";
 import { JsonValueSchema } from "@@/core/utils/json-value.ts";
+import type { WithInstagramClient } from "@@/core/domains/runtime/fetch-boundaries.ts";
 
 const ReelTrayResponseSchema = z.object({
   broadcasts: z.array(z.unknown()),
@@ -349,6 +350,25 @@ export function createInstagramClient(session: InstagramClientSession): Instagra
         ReelTrayResponseSchema,
       );
     },
+  };
+}
+
+interface InstagramSessionLifecycle<Session extends InstagramClientSession> {
+  open: () => Promise<Session>;
+  close: (session: Session) => Promise<void>;
+}
+
+export function scopeInstagramClientToSession<Session extends InstagramClientSession>(
+  lifecycle: InstagramSessionLifecycle<Session>,
+): WithInstagramClient {
+  return async (run) => {
+    const session = await lifecycle.open();
+
+    try {
+      return await run(createInstagramClient(session));
+    } finally {
+      await lifecycle.close(session);
+    }
   };
 }
 
