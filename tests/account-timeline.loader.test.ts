@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { loadAccountTimeline } from "../app/loaders/account-timeline.ts";
-import { useSharedTestRuntime } from "./setup/test-runtime.ts";
+import { shareTestRuntime } from "./setup/test-runtime.ts";
 import {
   captionedStoryPk,
   mentionedAccount,
@@ -9,7 +9,7 @@ import {
   timelineAccount,
 } from "./ui/seeded-pages.ts";
 
-const shared = useSharedTestRuntime(seedPageDatabase);
+const shared = shareTestRuntime(seedPageDatabase);
 
 test("returns the sticker groups of the account's stories, one per kind", () => {
   const { stickerGroups } = loadAccountTimeline(shared.runtime, timelineAccount, pageNow);
@@ -48,18 +48,21 @@ test("returns story cards, newest first, with their stickers already presented",
     "700000000000100",
     "700000000000116",
   ]);
-  expect(stories.find(({ mediaPk }) => mediaPk === captionedStoryPk)?.stickerDetails).toEqual({
-    stickers: [
-      {
-        kind: "mention",
-        title: `@${mentionedAccount}`,
-        label: `@${mentionedAccount}`,
-        profileUrl: `/users/${mentionedAccount}`,
-        avatarUrl: "/media/avatars/700000000000114.jpg",
-      },
-    ],
-    music: [],
-  });
+  expect(stories.find(({ mediaPk }) => mediaPk === captionedStoryPk)?.stickerDetails).toStrictEqual(
+    {
+      stickers: [
+        {
+          kind: "mention",
+          title: `@${mentionedAccount}`,
+          label: `@${mentionedAccount}`,
+          profileUrl: `/users/${mentionedAccount}`,
+          avatarUrl: "/media/avatars/700000000000114.jpg",
+          place: undefined,
+        },
+      ],
+      music: [],
+    },
+  );
   expect(
     stories.find(({ mediaPk }) => mediaPk === "700000000000900")?.stickerDetails?.music,
   ).toHaveLength(1);

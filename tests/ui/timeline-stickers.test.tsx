@@ -11,9 +11,9 @@ import {
 } from "./seeded-pages.ts";
 import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
 import { createPageRenderer } from "../render-page.ts";
-import { useSharedTestRuntime } from "../setup/test-runtime.ts";
+import { shareTestRuntime } from "../setup/test-runtime.ts";
 
-const shared = useSharedTestRuntime(seedPageDatabase);
+const shared = shareTestRuntime(seedPageDatabase);
 
 const renderer = createPageRenderer(
   Route,
@@ -124,7 +124,8 @@ test("full history opens all results and a nested preview returns to the kind mo
   expect(within(modal).getAllByRole("row")).toHaveLength(9);
   expect(within(modal).getAllByText("@person-7")).toHaveLength(2);
   await user.click(within(modal).getByRole("button", { name: "Ouvrir aperçu sticker-7" }));
-  expect(await screen.findByRole("dialog", { name: "Aperçu de l’image" })).toBeVisible();
+  const preview = await screen.findByRole("dialog", { name: "Aperçu de l’image" });
+  expect(preview).toBeVisible();
   const details = within(screen.getByRole("dialog", { name: "Aperçu de l’image" }));
   expect(details.getAllByText("@person-7")).toHaveLength(2);
   expect(

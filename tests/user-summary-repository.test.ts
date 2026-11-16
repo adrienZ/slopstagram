@@ -1,4 +1,4 @@
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createDrizzle } from "@@/core/domains/database/client.ts";
 import { migrateDatabase } from "@@/core/domains/database/migrate.ts";
 import { InstagramUserRepository } from "@@/core/domains/database/repositories/instagram-user-repository.ts";
@@ -13,8 +13,8 @@ const entry = {
   user_key: "summary-user",
 };
 
-describe("UserSummaryRepository", () => {
-  test("stores summaries by Instagram PK and follows username changes", async (context) => {
+describe(UserSummaryRepository, () => {
+  it("stores summaries by Instagram PK and follows username changes", async (context) => {
     const database = createDrizzle(":memory:");
     context.onTestFinished(() => {
       database.$client.close();
@@ -46,7 +46,7 @@ describe("UserSummaryRepository", () => {
     expect(repository.findBySourceHash(entry.source_hash)?.user_key).toBe("renamed-user");
   });
 
-  test("rejects new summaries with missing or ambiguous owners", async (context) => {
+  it("rejects new summaries with missing or ambiguous owners", async (context) => {
     const database = createDrizzle(":memory:");
     context.onTestFinished(() => {
       database.$client.close();
@@ -59,6 +59,6 @@ describe("UserSummaryRepository", () => {
       { id: "second-id", pk: "second-pk", username: entry.user_key },
     ]);
     await expect(repository.save(entry)).rejects.toThrow(/Expected one Instagram user/u);
-    expect(database.select().from(userSummaries).all().length).toBe(0);
+    expect(database.select().from(userSummaries).all()).toHaveLength(0);
   });
 });

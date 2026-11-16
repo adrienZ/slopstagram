@@ -68,16 +68,18 @@ test("story cards supply complete lightbox details and normalize absent values",
   const sources = createSources();
   const user = createUser();
   const [first] = createStoryCards(user, sources);
-  expect(first.userName).toBe("Story User (@story-user)");
-  expect(first.avatar).toBe("/media/avatar.jpg");
-  expect(first.url).toBe("https://www.instagram.com/stories/story-user/first/");
-  expect(first.mediaType).toBe("Image");
-  expect(first.igCaption).toBe("caption");
-  expect(first.appleCaption).toBe("apple <text>");
-  expect(first.stickers).toBe("link:A & B");
-  expect(first.locations).toBe("Paris\nLyon");
-  expect(first.visionOcr).toBe("OCR text");
-  expect(first.visionDescription).toBe("Vue de Paris");
+  expect(first).toMatchObject({
+    userName: "Story User (@story-user)",
+    avatar: "/media/avatar.jpg",
+    url: "https://www.instagram.com/stories/story-user/first/",
+    mediaType: "Image",
+    igCaption: "caption",
+    appleCaption: "apple <text>",
+    stickers: "link:A & B",
+    locations: "Paris\nLyon",
+    visionOcr: "OCR text",
+    visionDescription: "Vue de Paris",
+  });
 
   user.profile_pic_url = null;
   user.stories[0].media_type = "video";
@@ -87,7 +89,7 @@ test("story cards supply complete lightbox details and normalize absent values",
   sources.appleCaptionByMediaPk.clear();
   sources.visionByPreviewUrl.clear();
   const [empty] = createStoryCards(user, sources);
-  expect(empty.avatar).toBe(undefined);
+  expect(empty.avatar).toBeUndefined();
   expect(empty.mediaType).toBe("Vidéo");
 
   for (const key of [

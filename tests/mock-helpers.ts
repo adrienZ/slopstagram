@@ -237,7 +237,7 @@ export function fixedNow(): Date {
 }
 
 /** Fakes only `Date` in every test of the file, starting at `at`; timers still run for real. */
-export function useFixedDate(at: Date = fixedNow()): void {
+export function fixDate(at: Date = fixedNow()): void {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(at);

@@ -42,7 +42,7 @@ export function AccountChecklist({
   onToggle,
   onClear,
   place,
-  clearable = selected.length > 0 || place !== undefined,
+  clearable,
   listClassName = "tw:max-h-72",
 }: AccountFilterProps & {
   listClassName?: string;
@@ -51,7 +51,12 @@ export function AccountChecklist({
 
   return (
     <>
-      <Button variant="ghost" size="sm" disabled={!clearable} onClick={onClear}>
+      <Button
+        variant="ghost"
+        size="sm"
+        disabled={!(clearable ?? (selected.length > 0 || place !== undefined))}
+        onClick={onClear}
+      >
         Effacer les filtres
       </Button>
       {place !== undefined && <PlaceFilterEntry {...place} />}

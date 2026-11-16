@@ -8,7 +8,8 @@ test("an unknown URL renders the not-found page of the application router", asyn
   router.update({ history: createMemoryHistory({ initialEntries: ["/no-such-page"] }) });
   await router.load();
   render(<RouterProvider router={router} />);
-  expect(await screen.findByRole("heading", { name: "404 : Page introuvable" })).toBeVisible();
+  const heading = await screen.findByRole("heading", { name: "404 : Page introuvable" });
+  expect(heading).toBeVisible();
 });
 
 test("the default error component renders the internal error page", () => {

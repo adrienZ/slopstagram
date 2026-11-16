@@ -11,7 +11,6 @@ export function MentionedText({ accounts, text }: { accounts: Array<SidebarUser>
     ) : (
       <Sticker
         // Segments have no id; their position in a sent message never changes.
-        // oxlint-disable-next-line react/no-array-index-key
         key={`${index}-${segment.account.username}`}
         sticker={presentSticker("mention", formatUserHandle(segment.account.username), accounts)}
       />
@@ -38,7 +37,6 @@ export function MentionBackdrop({
         ) : (
           <mark
             // Segments have no id and are rebuilt from the text on each keystroke.
-            // oxlint-disable-next-line react/no-array-index-key
             key={`${index}-${segment.account.username}`}
             className="tw:rounded-4xl tw:bg-secondary tw:text-secondary-foreground tw:shadow-[0_0_0_3px_var(--secondary)] tw:box-decoration-clone"
           >
@@ -64,14 +62,17 @@ export function MentionSuggestionList({
   return (
     <ul
       id={id}
+      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role, jsx-a11y/no-noninteractive-element-to-interactive-role -- A combobox popup: the message field keeps the focus and the keyboard (aria-activedescendant).
       role="listbox"
       aria-label="Suggestions de mentions"
       className="tw:absolute tw:inset-x-0 tw:bottom-full tw:z-10 tw:mb-2 tw:max-h-[50svh] tw:overflow-y-auto tw:rounded-lg tw:border tw:bg-popover tw:p-1 tw:text-popover-foreground tw:shadow-md"
     >
       {options.map(({ account, active, id: optionId, index }) => (
+        // oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- Picked from the message field's keyboard, as the listbox.
         <li
           key={account.username}
           id={optionId}
+          // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role, jsx-a11y/no-noninteractive-element-to-interactive-role -- Picked from the message field's keyboard, as the listbox.
           role="option"
           aria-selected={active}
           className="tw:flex tw:cursor-default tw:items-center tw:gap-2 tw:rounded-md tw:px-2 tw:py-1.5 tw:text-sm tw:aria-selected:bg-accent tw:aria-selected:text-accent-foreground"

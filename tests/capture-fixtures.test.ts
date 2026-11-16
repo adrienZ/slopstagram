@@ -229,7 +229,7 @@ test("redacted captures still parse with the production client, and tray and gal
   const { reels_media: reels } = reelsResponse.json();
 
   expect(entries).toHaveLength(3);
-  expect(reels.map((reel) => reel.items?.map(({ pk }) => pk))).toEqual(
+  expect(reels.map((reel) => reel.items?.map(({ pk }) => pk))).toStrictEqual(
     entries.map(({ media_ids: mediaIds }) => mediaIds),
   );
 });
@@ -251,8 +251,8 @@ test("fixture metadata states the capture date and what each file covers", async
   const { metadata, files } = buildFixtureMetadata(redacted, new Date("2026-10-29T10:00:00Z"));
 
   expect(metadata.capturedAt).toBe("2026-10-29T10:00:00.000Z");
-  expect(metadata.files.map(({ name }) => name)).toEqual(files.map(([name]) => name));
-  expect(metadata.files.map(({ name }) => name)).toEqual([
+  expect(metadata.files.map(({ name }) => name)).toStrictEqual(files.map(([name]) => name));
+  expect(metadata.files.map(({ name }) => name)).toStrictEqual([
     "instagram-reels-tray.json",
     "instagram-story-data.json",
     "instagram-place.json",
@@ -270,7 +270,7 @@ test("fixture metadata omits the place and music files when they were not captur
     new Date("2026-10-29T10:00:00Z"),
   );
 
-  expect(metadata.files.map(({ name }) => name)).toEqual([
+  expect(metadata.files.map(({ name }) => name)).toStrictEqual([
     "instagram-reels-tray.json",
     "instagram-story-data.json",
     "instagram-story-data-2.json",

@@ -111,7 +111,6 @@ function ChatMessage({
       <MessageContent className="tw:grid tw:w-full tw:gap-3">
         {message.parts.map((part, index) => (
           // Parts have no id; their position in a message never changes.
-          // oxlint-disable-next-line react/no-array-index-key
           <AssistantPartView
             key={`${message.id}-${index}`}
             accounts={accounts}
@@ -132,6 +131,14 @@ export function ChatPanel({ accounts }: { accounts: Array<SidebarUser> }) {
     draft: chat.draft,
     setDraft: chat.setDraft,
   });
+
+  function handleHover(index: number) {
+    mentions.setActive(index);
+  }
+
+  function handlePick(username: string) {
+    mentions.pick(username);
+  }
 
   return (
     <div className="tw:mx-auto tw:flex tw:h-[calc(100svh-3.5rem)] tw:w-full tw:max-w-3xl tw:flex-col tw:gap-4 tw:px-4 tw:pt-6 tw:pb-4">
@@ -184,8 +191,8 @@ export function ChatPanel({ accounts }: { accounts: Array<SidebarUser> }) {
           <MentionSuggestionList
             id={mentions.listbox.id}
             options={mentions.listbox.options}
-            onHover={mentions.setActive}
-            onPick={mentions.pick}
+            onHover={handleHover}
+            onPick={handlePick}
           />
         )}
         <InputGroup>

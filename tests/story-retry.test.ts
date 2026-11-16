@@ -63,21 +63,19 @@ const retryAfterCases: Array<{ name: string; headers: Record<string, string>; de
   { name: "missing header", headers: {}, delay: 550 },
 ];
 
-for (const entry of retryAfterCases) {
-  test(`handles rate limiting with ${entry.name}`, async () => {
-    let attempts = 0;
+test.for(retryAfterCases)("handles rate limiting with $name", async (entry) => {
+  let attempts = 0;
 
-    const { delays, result } = await runWithRetry(async () => {
-      attempts += 1;
+  const { delays, result } = await runWithRetry(async () => {
+    attempts += 1;
 
-      return attempts === 1 ? response("limited", 429, entry.headers) : response("recovered");
-    });
-
-    expect(result).toStrictEqual({ ok: true, value: "recovered" });
-    expect(attempts).toBe(2);
-    expect(delays).toStrictEqual([entry.delay]);
+    return attempts === 1 ? response("limited", 429, entry.headers) : response("recovered");
   });
-}
+
+  expect(result).toStrictEqual({ ok: true, value: "recovered" });
+  expect(attempts).toBe(2);
+  expect(delays).toStrictEqual([entry.delay]);
+});
 
 test("does not retry permanent HTTP failures", async () => {
   let attempts = 0;

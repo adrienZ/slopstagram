@@ -7,13 +7,13 @@ import {
 } from "@@/core/domains/places/tagged-places.ts";
 import { pageNow } from "./ui/seeded-pages.ts";
 import { editRecordedStories, readRecordedPayloads, seedRecordedStories } from "./setup/seed.ts";
-import { useSharedTestRuntime } from "./setup/test-runtime.ts";
+import { shareTestRuntime } from "./setup/test-runtime.ts";
 
 const withInstagramId = { name: "Fixture place with id", lat: 48.8, lng: 12.5 };
 const withoutInstagramId = { name: "Fixture place without id", lat: 45.1, lng: 5.7 };
 const SEARCH_TEXT = "fixture place";
 
-const shared = useSharedTestRuntime(async (runtime) => {
+const shared = shareTestRuntime(async (runtime) => {
   const recorded = await readRecordedPayloads(["instagram-story-data.json"]);
   const pks: Array<string> = [];
   editRecordedStories(recorded, (story) => {
@@ -65,7 +65,7 @@ test("the Assistant's place reads and the map name the same places by the same i
   const mapped = byName(loadPlaceMap(shared.runtime).places);
   const { listed, found, searched } = assistantPlaces();
 
-  expect(mapped.map(({ name }) => name)).toEqual(
+  expect(mapped.map(({ name }) => name)).toStrictEqual(
     expect.arrayContaining([withInstagramId.name, withoutInstagramId.name]),
   );
   expect(byName(listed)).toStrictEqual(mapped);

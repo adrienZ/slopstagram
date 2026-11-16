@@ -89,8 +89,9 @@ export function PlaceExplorer({
         </select>
       </div>
       {/* Arrow keys step through markers from the map and its popup, not the place select. */}
-      <div ref={mapRef} onKeyDown={navigateMarkers}>
-        <Suspense fallback={<p role="status">Chargement de la carte…</p>}>
+      <div ref={mapRef} role="presentation" onKeyDown={navigateMarkers}>
+        <Suspense fallback={<output>Chargement de la carte…</output>}>
+          {/* oxlint-disable-next-line react/static-components -- Tests swap the map canvas through context; it never changes between renders. */}
           <LocationMapCanvas
             places={places}
             selectedId={selected?.id}

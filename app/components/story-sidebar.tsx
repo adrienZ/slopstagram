@@ -43,12 +43,14 @@ export interface StorySidebarProps {
   selectedUsername?: string;
 }
 
+const NO_DISABLED_DATES: Array<Matcher> = [];
+
 export function StorySidebar({
   selectedDate,
   oldestDate,
   today,
   onSelectDate,
-  disabledDates = [],
+  disabledDates = NO_DISABLED_DATES,
   users,
   selectedUsername,
 }: StorySidebarProps) {

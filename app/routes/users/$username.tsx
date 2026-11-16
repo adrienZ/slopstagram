@@ -107,6 +107,25 @@ export function UserTimelinePage(props: AccountTimelinePageData & { selectedStor
   );
 }
 
+function UserTimelineRoute() {
+  const { today, sidebarUsers, stickerGroups, locations, timeline, stories } =
+    Route.useLoaderData();
+
+  const { story } = Route.useSearch();
+
+  return (
+    <UserTimelinePage
+      today={today}
+      sidebarUsers={sidebarUsers}
+      stickerGroups={stickerGroups}
+      locations={locations}
+      timeline={timeline}
+      stories={stories}
+      selectedStory={story}
+    />
+  );
+}
+
 export const Route = createFileRoute("/users/$username")({
   validateSearch: z.object({ story: z.coerce.string().optional() }),
   loader: async ({ params }) => await getUserTimeline({ data: params.username }),
@@ -119,7 +138,5 @@ export const Route = createFileRoute("/users/$username")({
       },
     ],
   }),
-  component: () => (
-    <UserTimelinePage {...Route.useLoaderData()} selectedStory={Route.useSearch().story} />
-  ),
+  component: UserTimelineRoute,
 });

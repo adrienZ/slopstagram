@@ -7,14 +7,14 @@ import { loadStoryFeed } from "../app/loaders/story-feed.ts";
 import { storyItem } from "./mock-helpers.ts";
 import { createPageRenderer } from "./render-page.ts";
 import { readRecordedPayloads, seedRecordedStories } from "./setup/seed.ts";
-import { createTestRuntime, useSharedTestRuntime } from "./setup/test-runtime.ts";
+import { createTestRuntime, shareTestRuntime } from "./setup/test-runtime.ts";
 
 const now = new Date("2026-10-29T12:00:00.000Z");
 const HOUR = 3600;
 const emptyDay = "2026-10-28";
 const emptyDayText = "Aucune story publiée ce jour-là.";
 
-const shared = useSharedTestRuntime(async (runtime) => {
+const shared = shareTestRuntime(async (runtime) => {
   await seedRecordedStories(runtime, await readRecordedPayloads(), {
     publishedBefore: { now, seconds: HOUR },
   });
@@ -45,11 +45,9 @@ test("today's feed lists the seeded accounts with their story previews and sideb
     page.getByRole("heading", { name: "Stories des dernières 24 heures", level: 1 }),
   ).toBeDefined();
   expect(page.getByText("Fil chargé le 29 octobre 2026 à 13:00 UTC+1")).toBeDefined();
-  expect(page.getAllByRole("heading", { level: 2 }).map(({ textContent }) => textContent)).toEqual([
-    "Fixture text 69",
-    "Fixture text 63",
-    "Fixture text 5",
-  ]);
+  expect(
+    page.getAllByRole("heading", { level: 2 }).map(({ textContent }) => textContent),
+  ).toStrictEqual(["Fixture text 69", "Fixture text 63", "Fixture text 5"]);
 
   for (const mediaPk of ["700000000000079", "700000000000116", "700000000000900"]) {
     expect(page.getByRole("button", { name: `Ouvrir aperçu ${mediaPk}` })).toBeDefined();
@@ -79,7 +77,7 @@ test("report SSR isolates loader data between concurrent requests", async () => 
   expect(todayPage.getAllByRole("heading", { level: 2 })).toHaveLength(3);
   expect(todayPage.queryByText(emptyDayText)).toBeNull();
   expect(emptyPage.getByText(emptyDayText)).toBeDefined();
-  expect(emptyPage.queryAllByRole("heading", { level: 2 })).toEqual([]);
+  expect(emptyPage.queryAllByRole("heading", { level: 2 })).toStrictEqual([]);
 });
 
 test("invalid report dates preserve story IDs while falling back to today", () => {
@@ -90,14 +88,15 @@ test("invalid report dates preserve story IDs while falling back to today", () =
     throw new Error("Missing search schema");
   }
 
-  expect(validate.parse({ date: "2026-02-30", story: "12345678901234567890" })).toEqual({
+  expect(validate.parse({ date: "2026-02-30", story: "12345678901234567890" })).toStrictEqual({
     date: undefined,
     story: "12345678901234567890",
   });
 });
 
-for (const mediaPk of ["12345", "12345678901234568000", "12345678901234567890"]) {
-  test(`SSR preserves numeric Instagram ID ${mediaPk} without precision loss`, async (context) => {
+test.for(["12345", "12345678901234568000", "12345678901234567890"])(
+  "SSR preserves numeric Instagram ID %s without precision loss",
+  async (mediaPk, context) => {
     const runtime = await createTestRuntime(context);
     const takenAt = Date.parse("2026-01-15T10:00:00Z") / 1000;
     const owner = { pk: "700000000000900", username: "user_900" };
@@ -110,5 +109,5 @@ for (const mediaPk of ["12345", "12345678901234568000", "12345678901234567890"])
       within(readDocument(html).body).getByRole("button", { name: `Ouvrir aperçu ${mediaPk}` }),
     ).toBeDefined();
     expect(html).toContain(mediaPk);
-  });
-}
+  },
+);

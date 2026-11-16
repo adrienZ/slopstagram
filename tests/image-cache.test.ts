@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer";
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import sharp from "sharp";
 import { readBytes } from "@@/core/domains/media-store/cache-storage.ts";
 import { cacheReportImages } from "@@/core/domains/media-store/image-cache.ts";
@@ -94,8 +94,8 @@ async function storedImage(images: Images, key: string) {
   return { format, width };
 }
 
-describe("cacheReportImages", () => {
-  test("caches profile pictures as local report-relative files, converted to JPEG", async () => {
+describe(cacheReportImages, () => {
+  it("caches profile pictures as local report-relative files, converted to JPEG", async () => {
     const source = "https://example.com/avatar?id=1";
     const previewSource = "https://example.com/story-preview.webp";
     const previewKey = "story-pk";
@@ -127,19 +127,23 @@ describe("cacheReportImages", () => {
     expect(report.output.users[0]?.stories[0]?.preview_image_url).toBe(
       `images/story-previews/${previewKey}.jpg`,
     );
-    expect(await storedImage(storage.images, `avatars/${PROFILE_PK}.jpg`)).toStrictEqual({
+    await expect(storedImage(storage.images, `avatars/${PROFILE_PK}.jpg`)).resolves.toStrictEqual({
       format: "jpeg",
       width: 4,
     });
-    expect(await storedImage(storage.images, `story-previews/${previewKey}.jpg`)).toStrictEqual({
+    await expect(
+      storedImage(storage.images, `story-previews/${previewKey}.jpg`),
+    ).resolves.toStrictEqual({
       format: "jpeg",
       width: 4,
     });
-    expect(await storage.images.getItemRaw(`avatars/${PROFILE_PK}.json`)).toBe(null);
-    expect(await storage.images.getItemRaw(`story-previews/${previewKey}.json`)).toBe(null);
+    await expect(storage.images.getItemRaw(`avatars/${PROFILE_PK}.json`)).resolves.toBeNull();
+    await expect(
+      storage.images.getItemRaw(`story-previews/${previewKey}.json`),
+    ).resolves.toBeNull();
   });
 
-  test("refreshes cached profile pictures from the latest API response", async () => {
+  it("refreshes cached profile pictures from the latest API response", async () => {
     const source = "https://example.com/avatar.webp";
     const storage = createMemoryCacheStorage();
     await storage.images.setItemRaw(`avatars/${PROFILE_PK}.jpg`, Buffer.from("jpeg-avatar"));
@@ -151,13 +155,13 @@ describe("cacheReportImages", () => {
     );
 
     expect(cachedImages.profilePicPathByUrl.get(source)).toBe(`images/avatars/${PROFILE_PK}.jpg`);
-    expect(await storedImage(storage.images, `avatars/${PROFILE_PK}.jpg`)).toStrictEqual({
+    await expect(storedImage(storage.images, `avatars/${PROFILE_PK}.jpg`)).resolves.toStrictEqual({
       format: "jpeg",
       width: 6,
     });
   });
 
-  test("reuses cached story previews without fetching again", async () => {
+  it("reuses cached story previews without fetching again", async () => {
     const source = "https://example.com/avatar.jpg";
     const previewSource = "https://example.com/story-preview.webp";
     const previewKey = "story-pk";
@@ -183,12 +187,12 @@ describe("cacheReportImages", () => {
     expect(cachedImages.storyPreviewPathByUrl.get(previewSource)).toBe(
       `images/story-previews/${previewKey}.jpg`,
     );
-    expect(await imageCacheStorage.getItemRaw(`story-previews/${previewKey}.jpg`)).toStrictEqual(
-      Buffer.from("jpeg-story"),
-    );
+    await expect(
+      imageCacheStorage.getItemRaw(`story-previews/${previewKey}.jpg`),
+    ).resolves.toStrictEqual(Buffer.from("jpeg-story"));
   });
 
-  test("reuses story preview cache when the signed CDN URL changes", async () => {
+  it("reuses story preview cache when the signed CDN URL changes", async () => {
     const source = "https://example.com/avatar.jpg";
     const firstPreviewSource = "https://example.com/story-preview.webp?signature=old";
     const secondPreviewSource = "https://example.com/story-preview.webp?signature=new";
@@ -217,13 +221,15 @@ describe("cacheReportImages", () => {
     expect(second.storyPreviewPathByUrl.get(secondPreviewSource)).toBe(
       `images/story-previews/${previewKey}.jpg`,
     );
-    expect(await storedImage(storage.images, `story-previews/${previewKey}.jpg`)).toStrictEqual({
+    await expect(
+      storedImage(storage.images, `story-previews/${previewKey}.jpg`),
+    ).resolves.toStrictEqual({
       format: "jpeg",
       width: 4,
     });
   });
 
-  test("keeps nothing and logs a warning when the fetched bytes are not an image", async () => {
+  it("keeps nothing and logs a warning when the fetched bytes are not an image", async () => {
     const source = "https://example.com/avatar.webp";
     const storage = createMemoryCacheStorage();
     const logger = createCapturingLogger();
@@ -238,7 +244,7 @@ describe("cacheReportImages", () => {
     );
 
     expect(cachedImages.profilePicPathByUrl.size).toBe(0);
-    expect(await storage.images.getItemRaw(`avatars/${PROFILE_PK}.jpg`)).toBe(null);
+    await expect(storage.images.getItemRaw(`avatars/${PROFILE_PK}.jpg`)).resolves.toBeNull();
     expect(logger.messages.some((message) => message.includes("to JPEG"))).toBe(true);
   });
 });

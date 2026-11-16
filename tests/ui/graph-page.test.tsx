@@ -3,7 +3,7 @@ import { expect, test } from "vitest";
 import { Route } from "../../app/routes/graph.tsx";
 import { loadMentionGraph } from "../../app/loaders/mention-graph.ts";
 import { createPageRenderer } from "../render-page.ts";
-import { createTestRuntime, useSharedTestRuntime } from "../setup/test-runtime.ts";
+import { createTestRuntime, shareTestRuntime } from "../setup/test-runtime.ts";
 import {
   ambiguousUsername,
   graphAccountFullName,
@@ -15,7 +15,7 @@ import {
 } from "../setup/mention-graph-seed.ts";
 import { mountGraph as mountGraphWith, stubGraphLayout } from "./mount-graph.ts";
 
-const shared = useSharedTestRuntime(seedGraphDatabase);
+const shared = shareTestRuntime(seedGraphDatabase);
 const renderer = createPageRenderer(Route, () => loadMentionGraph(shared.runtime, []), "/graph");
 
 async function mountGraph() {
@@ -64,7 +64,9 @@ function drawnAt(drawing: HTMLElement, point: Element) {
 
 test("Accounts show their initials, anyone else an abstract point, unconnected Accounts nothing", async () => {
   const { canvas, points } = await mountGraph();
-  expect(points.getAllByRole("button").map((point) => point.getAttribute("aria-label"))).toEqual([
+  expect(
+    points.getAllByRole("button").map((point) => point.getAttribute("aria-label")),
+  ).toStrictEqual([
     cleo,
     ada,
     ben,
@@ -105,7 +107,7 @@ test("a known Account opens its profile and highlights its connections, the back
     `/users/${graphAccounts[0]}`,
   );
   expect(point).toHaveAttribute("aria-pressed", "true");
-  expect(highlightedConnections(drawing)).toEqual([
+  expect(highlightedConnections(drawing)).toStrictEqual([
     `Connexion entre ${ada} et ${cleo} : 5 stories`,
     `Connexion entre ${ada} et ${ben} : 2 stories`,
     `Connexion entre ${ada} et ${unknown} : 1 story`,
@@ -115,22 +117,24 @@ test("a known Account opens its profile and highlights its connections, the back
   await user.click(drawing);
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(point).toHaveAttribute("aria-pressed", "false");
-  expect(highlightedConnections(drawing)).toEqual([]);
+  expect(highlightedConnections(drawing)).toStrictEqual([]);
 });
 
 test("Escape closes the profile and clears the selection", async () => {
   const { user, canvas, drawing } = await mountGraph();
   await user.click(canvas.getByRole("button", { name: cleo }));
-  expect(await screen.findByRole("dialog", { name: `Profil de ${cleo}` })).toBeVisible();
+  const profile = await screen.findByRole("dialog", { name: `Profil de ${cleo}` });
+  expect(profile).toBeVisible();
   await user.keyboard("{Escape}");
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  expect(highlightedConnections(drawing)).toEqual([]);
+  expect(highlightedConnections(drawing)).toStrictEqual([]);
 });
 
 test("an unknown point shows its label on hover and highlights its connections without a profile", async () => {
   const { user, canvas, drawing } = await mountGraph();
   await user.click(canvas.getByRole("button", { name: ada }));
-  expect(await screen.findByRole("dialog", { name: `Profil de ${ada}` })).toBeVisible();
+  const profile = await screen.findByRole("dialog", { name: `Profil de ${ada}` });
+  expect(profile).toBeVisible();
 
   const point = canvas.getByRole("button", { name: unknown });
   await user.hover(point);
@@ -138,7 +142,7 @@ test("an unknown point shows its label on hover and highlights its connections w
   await user.click(point);
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(point).toHaveAttribute("aria-pressed", "true");
-  expect(highlightedConnections(drawing)).toEqual([
+  expect(highlightedConnections(drawing)).toStrictEqual([
     `Connexion entre ${cleo} et ${unknown} : 1 story`,
     `Connexion entre ${ada} et ${unknown} : 1 story`,
   ]);
@@ -158,7 +162,7 @@ test("the keyboard selects a point, shows its label, and Escape clears the selec
   expect(highlightedConnections(drawing)).toHaveLength(2);
   await user.keyboard("{Escape}");
   expect(point).toHaveAttribute("aria-pressed", "false");
-  expect(highlightedConnections(drawing)).toEqual([]);
+  expect(highlightedConnections(drawing)).toStrictEqual([]);
 });
 
 test("a press that barely moves is still a click", async () => {
@@ -170,7 +174,7 @@ test("a press that barely moves is still a click", async () => {
   fireEvent.pointerUp(drawing, { pointerId: 4, clientX: at.x + 2, clientY: at.y + 1 });
   fireEvent.click(point);
   expect(point).toHaveAttribute("aria-pressed", "true");
-  expect(drawnAt(drawing, point)).toEqual(at);
+  expect(drawnAt(drawing, point)).toStrictEqual(at);
 });
 
 test("the controls zoom in and out, the wheel zooms, and recentering fits the graph again", async () => {
@@ -214,7 +218,7 @@ test("a dragged point follows the pointer and pulls its neighbours, then is let 
   await waitFor(() => {
     expect(drawnAt(drawing, point).x).toBeCloseTo(950, 0);
     expect(drawnAt(drawing, point).y).toBeCloseTo(650, 0);
-    expect(drawnAt(drawing, neighbour)).not.toEqual(neighbourBefore);
+    expect(drawnAt(drawing, neighbour)).not.toStrictEqual(neighbourBefore);
   });
   fireEvent.pointerUp(drawing, { pointerId: 3, clientX: 950, clientY: 650 });
   fireEvent.click(point);

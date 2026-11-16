@@ -19,10 +19,10 @@ import {
   reel,
   response,
   reelsResponse,
-  useFixedDate,
+  fixDate,
 } from "./mock-helpers.ts";
 
-useFixedDate();
+fixDate();
 
 const owner = { username: "one", pk: "owner" };
 
@@ -158,13 +158,15 @@ test("a place that stories only identify by its id becomes usable after a lookup
 
   await ingest(repository, client);
   const place = storedPlace(repository, "m1");
-  expect(place.status).toBe("usable");
-  expect(place.name).toBe("V and B Amiens Les Halles");
-  expect(place.address).toBe("1 Rue des Halles");
-  expect(place.latitude).toBe(49.8943);
-  expect(place.longitude).toBe(2.2957);
-  expect(place.instagramPlaceId).toBe("700000000000633");
-  expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
+  expect(place).toMatchObject({
+    status: "usable",
+    name: "V and B Amiens Les Halles",
+    address: "1 Rue des Halles",
+    latitude: 49.8943,
+    longitude: 2.2957,
+    instagramPlaceId: "700000000000633",
+    lastLookupAttemptAt: fixedNow().getTime(),
+  });
   expect(client.lookups).toStrictEqual(["700000000000633"]);
 });
 
@@ -194,8 +196,8 @@ test("an empty category from Instagram is stored as a missing category", async (
   });
 
   await ingest(repository, client);
-  expect(storedPlace(repository, "m1").category).toBe(null);
-  expect(storedPlace(repository, "m2").category).toBe(null);
+  expect(storedPlace(repository, "m1").category).toBeNull();
+  expect(storedPlace(repository, "m2").category).toBeNull();
 });
 
 test("a category never decides whether a place is usable", async (context) => {
@@ -267,8 +269,8 @@ test("empty strings are stored as a missing city and a missing zip code", async 
   await ingest(repository, client);
 
   for (const pk of ["m1", "m2"]) {
-    expect(storedPlace(repository, pk).city).toBe(null);
-    expect(storedPlace(repository, pk).zip).toBe(null);
+    expect(storedPlace(repository, pk).city).toBeNull();
+    expect(storedPlace(repository, pk).zip).toBeNull();
   }
 });
 
@@ -291,7 +293,7 @@ test("a story never supplies the zip code", async (context) => {
   });
 
   await ingest(repository, client);
-  expect(storedPlace(repository, "m1").zip).toBe(null);
+  expect(storedPlace(repository, "m1").zip).toBeNull();
 });
 
 test("a city and a zip code never decide whether a place is usable", async (context) => {
@@ -341,12 +343,14 @@ test("story values are never overwritten and only gaps are filled", async (conte
 
   await ingest(repository, client);
   const place = storedPlace(repository, "m1");
-  expect(place.name).toBe("Story name");
-  expect(place.address).toBe("Story address");
-  expect(place.latitude).toBe(10);
-  expect(place.longitude).toBe(21);
-  expect(place.status).toBe("usable");
-  expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
+  expect(place).toMatchObject({
+    name: "Story name",
+    address: "Story address",
+    latitude: 10,
+    longitude: 21,
+    status: "usable",
+    lastLookupAttemptAt: fixedNow().getTime(),
+  });
 });
 
 test("blank text and out-of-range coordinates from Instagram fill nothing", async (context) => {
@@ -361,11 +365,13 @@ test("blank text and out-of-range coordinates from Instagram fill nothing", asyn
 
   for (const pk of ["m1", "m2"]) {
     const place = storedPlace(repository, pk);
-    expect(place.name).toBe(null);
-    expect(place.address).toBe(null);
-    expect(place.latitude).toBe(null);
-    expect(place.longitude).toBe(null);
-    expect(place.status).toBe("partial");
+    expect(place).toMatchObject({
+      name: null,
+      address: null,
+      latitude: null,
+      longitude: null,
+      status: "partial",
+    });
   }
 });
 
@@ -378,9 +384,11 @@ test("a place with only one coordinate filled stays partial", async (context) =>
 
   await ingest(repository, client);
   const place = storedPlace(repository, "m1");
-  expect(place.status).toBe("partial");
-  expect(place.latitude).toBe(48);
-  expect(place.longitude).toBe(null);
+  expect(place).toMatchObject({
+    status: "partial",
+    latitude: 48,
+    longitude: null,
+  });
 });
 
 test("only places referenced by the stories saved in the run are looked up", async (context) => {
@@ -393,8 +401,8 @@ test("only places referenced by the stories saved in the run are looked up", asy
 
   await ingest(repository, client);
   expect(client.lookups).toStrictEqual(["111"]);
-  expect(storedPlace(repository, "old").lastLookupAttemptAt).toBe(null);
-  expect(storedPlace(repository, "old").name).toBe(null);
+  expect(storedPlace(repository, "old").lastLookupAttemptAt).toBeNull();
+  expect(storedPlace(repository, "old").name).toBeNull();
 });
 
 test("a place that was already looked up is not looked up again", async (context) => {
@@ -422,7 +430,7 @@ test("a place with a non-numeric id is skipped without a request or a failure", 
 
   await fetchStories({ logger, stories: repository, storage: createMemoryCacheStorage(), client });
   expect(client.lookups).toStrictEqual([]);
-  expect(storedPlace(repository, "m1").lastLookupAttemptAt).toBe(null);
+  expect(storedPlace(repository, "m1").lastLookupAttemptAt).toBeNull();
   expect(
     logger.messages.filter(
       (message) =>
@@ -461,9 +469,11 @@ test("each kind of unusable lookup applies no values, keeps the story and is rec
 
   for (const pk of Object.keys(unusable)) {
     const place = storedPlace(repository, `m${pk}`);
-    expect(place.status).toBe("partial");
-    expect(place.name).toBe(null);
-    expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
+    expect(place).toMatchObject({
+      status: "partial",
+      name: null,
+      lastLookupAttemptAt: fixedNow().getTime(),
+    });
     failures[pk] = place.lastLookupFailure;
   }
 
@@ -487,7 +497,7 @@ test("a thrown lookup never blocks the story or the lookups after it", async (co
 
   const report = await ingest(repository, client);
   expect(report.metadata.counts.fetched).toBe(2);
-  expect(repository.findByMediaPk("m1")).not.toBe(null);
+  expect(repository.findByMediaPk("m1")).not.toBeNull();
   expect(storedPlace(repository, "m2").name).toBe("Second");
   expect(client.lookups).toStrictEqual(["1", "2"]);
 });
@@ -503,10 +513,12 @@ test("a thrown lookup is recorded with its attempt time and raw error", async (c
 
   await ingest(repository, client);
   const place = storedPlace(repository, "m1");
-  expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
-  expect(place.lastLookupFailure).toBe("socket hang up");
-  expect(place.name).toBe("Known");
-  expect(place.status).toBe("usable");
+  expect(place).toMatchObject({
+    lastLookupAttemptAt: fixedNow().getTime(),
+    lastLookupFailure: "socket hang up",
+    name: "Known",
+    status: "usable",
+  });
 });
 
 test("a blocked session stops the remaining lookups and records nothing", async (context) => {
@@ -520,9 +532,9 @@ test("a blocked session stops the remaining lookups and records nothing", async 
     // oxlint-disable-next-line no-await-in-loop -- Each status uses its own database.
     await ingest(repository, client);
     expect(client.lookups).toStrictEqual(["1"]);
-    expect(storedPlace(repository, "m1").lastLookupAttemptAt).toBe(null);
-    expect(storedPlace(repository, "m1").lastLookupFailure).toBe(null);
-    expect(storedPlace(repository, "m2").lastLookupAttemptAt).toBe(null);
+    expect(storedPlace(repository, "m1").lastLookupAttemptAt).toBeNull();
+    expect(storedPlace(repository, "m1").lastLookupFailure).toBeNull();
+    expect(storedPlace(repository, "m2").lastLookupAttemptAt).toBeNull();
   }
 });
 
@@ -617,7 +629,7 @@ test("a later successful lookup clears the stored failure", async (context) => {
     }),
     laterBy(12 * HOUR),
   );
-  expect(storedPlace(repository, "m2").lastLookupFailure).toBe(null);
+  expect(storedPlace(repository, "m2").lastLookupFailure).toBeNull();
 });
 
 test("a later story observation keeps the recorded lookup", async (context) => {
@@ -630,9 +642,11 @@ test("a later story observation keeps the recorded lookup", async (context) => {
   );
   await repository.save(storyAt("m1", { pk: "111", name: "From story" }));
   const place = storedPlace(repository, "m1");
-  expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
-  expect(place.category).toBe("Bistro");
-  expect(place.name).toBe("From story");
+  expect(place).toMatchObject({
+    lastLookupAttemptAt: fixedNow().getTime(),
+    category: "Bistro",
+    name: "From story",
+  });
 });
 
 test("a later story observation replaces the looked-up name, address and coordinates", async (context) => {
@@ -661,10 +675,12 @@ test("a later story observation replaces the looked-up name, address and coordin
     }),
   );
   const place = storedPlace(repository, "m1");
-  expect(place.name).toBe("Newer name");
-  expect(place.address).toBe("Newer address");
-  expect(place.latitude).toBe(2);
-  expect(place.longitude).toBe(3);
+  expect(place).toMatchObject({
+    name: "Newer name",
+    address: "Newer address",
+    latitude: 2,
+    longitude: 3,
+  });
 });
 
 test("a later story observation keeps the looked-up zip code and a story city replaces a looked-up one", async (context) => {
@@ -743,10 +759,12 @@ test("a place without a linked business account has no business information", as
   ]) {
     const details = repository.findPlaceDetails(id);
     assert.ok(details);
-    expect(details.phone).toBe(phone);
-    expect(details.businessAccountId).toBe(null);
-    expect(details.businessAccountUsername).toBe(null);
-    expect(details.businessAccountPictureUrl).toBe(null);
+    expect(details).toMatchObject({
+      phone,
+      businessAccountId: null,
+      businessAccountUsername: null,
+      businessAccountPictureUrl: null,
+    });
   }
 });
 
@@ -785,7 +803,7 @@ test("an unusable lookup stores no details", async (context) => {
   });
 
   await ingest(repository, client);
-  expect(repository.findPlaceDetails("5")).toBe(null);
+  expect(repository.findPlaceDetails("5")).toBeNull();
 });
 
 test("a later lookup replaces the stored details and clears a business account that is gone", async (context) => {
@@ -833,10 +851,10 @@ test("the details of a place are deleted with the place", async (context) => {
       "111": () => response(placeBody("111", { phone: "0102" })),
     }),
   );
-  expect(database.select().from(metadataLocationDetails).all().length).toBe(1);
+  expect(database.select().from(metadataLocationDetails).all()).toHaveLength(1);
   database.delete(storyLocationObservations).run();
   database.delete(metadataLocations).where(eq(metadataLocations.instagramPlaceId, "111")).run();
-  expect(database.select().from(metadataLocationDetails).all().length).toBe(0);
+  expect(database.select().from(metadataLocationDetails).all()).toHaveLength(0);
 });
 
 test("a malformed detail never blocks the place fill and keeps the earlier details", async (context) => {
@@ -862,10 +880,12 @@ test("a malformed detail never blocks the place fill and keeps the earlier detai
 
   await ingest(repository, malformed);
   const place = storedPlace(repository, "m2");
-  expect(place.name).toBe("Chez Paul");
-  expect(place.status).toBe("usable");
-  expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
-  expect(repository.findPlaceDetails("222")).toBe(null);
+  expect(place).toMatchObject({
+    name: "Chez Paul",
+    status: "usable",
+    lastLookupAttemptAt: fixedNow().getTime(),
+  });
+  expect(repository.findPlaceDetails("222")).toBeNull();
   expect(repository.findPlaceDetails("111")?.phone).toBe("0102");
 });
 
@@ -936,7 +956,7 @@ test("a story that already shows the place keeps its single location sticker", a
     }),
   );
   expect(shownLocations(repository, "m1")).toStrictEqual(["Story name"]);
-  expect(locationStickers(repository, "m1").length).toBe(1);
+  expect(locationStickers(repository, "m1")).toHaveLength(1);
 });
 
 test("a lookup that names nothing or fails adds no location sticker", async (context) => {
@@ -962,7 +982,7 @@ test("a later save of the story keeps the location sticker made by a lookup", as
   );
   await repository.save(storyAt("m1", { pk: "111" }));
   expect(shownLocations(repository, "m1")).toStrictEqual(["Chez Paul"]);
-  expect(locationStickers(repository, "m1").length).toBe(1);
+  expect(locationStickers(repository, "m1")).toHaveLength(1);
 });
 
 test("a later lookup of the same place never adds a second location sticker", async (context) => {
@@ -974,7 +994,7 @@ test("a later lookup of the same place never adds a second location sticker", as
     }),
   );
   repository.recordPlaceLookup("111", { name: "Chez Paul", address: "Later address" }, fixedNow());
-  expect(locationStickers(repository, "m1").length).toBe(1);
+  expect(locationStickers(repository, "m1")).toHaveLength(1);
   expect(shownLocations(repository, "m1")).toStrictEqual(["Chez Paul"]);
 });
 
@@ -995,7 +1015,7 @@ test("a story that tags the same place twice gets a single location sticker", as
       "111": () => response(placeBody("111", { name: "Chez Paul" })),
     }),
   );
-  expect(locationStickers(repository, "m1").length).toBe(1);
+  expect(locationStickers(repository, "m1")).toHaveLength(1);
   expect(shownLocations(repository, "m1")).toStrictEqual(["Chez Paul"]);
 });
 
@@ -1008,8 +1028,8 @@ test("a lookup recorded for an unknown place changes nothing", async (context) =
     fixedNow(),
   );
   expect(locationStickers(repository, "m1")).toStrictEqual([]);
-  expect(repository.findPlaceDetails("999")).toBe(null);
-  expect(storedPlace(repository, "m1").name).toBe(null);
+  expect(repository.findPlaceDetails("999")).toBeNull();
+  expect(storedPlace(repository, "m1").name).toBeNull();
 });
 
 test("a story that tags two places gets one location sticker per place, in lookup order", async (context) => {
@@ -1132,11 +1152,13 @@ test("a refresh fills only missing values and never replaces values from stories
     laterBy(REFRESH_AFTER),
   );
   const place = storedPlace(repository, "m2");
-  expect(place.name).toBe("Story name");
-  expect(place.address).toBe("First address");
-  expect(place.latitude).toBe(10);
-  expect(place.longitude).toBe(20);
-  expect(place.city).toBe("Amiens");
+  expect(place).toMatchObject({
+    name: "Story name",
+    address: "First address",
+    latitude: 10,
+    longitude: 20,
+    city: "Amiens",
+  });
 });
 
 test("a refresh without a usable result leaves the category and details untouched", async (context) => {

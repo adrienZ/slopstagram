@@ -7,11 +7,11 @@ import {
   cachedAudioFile,
 } from "@@/core/domains/media-store/cached-media-files.ts";
 import { media } from "@@/core/domains/media-store/media-urls.ts";
-import { createTestRuntime, useSharedTestRuntime } from "./setup/test-runtime.ts";
+import { createTestRuntime, shareTestRuntime } from "./setup/test-runtime.ts";
 import { pageNow, seedPageDatabase, timelineAccount } from "./ui/seeded-pages.ts";
 import { saveSummaryUsers } from "./test-database.ts";
 
-const shared = useSharedTestRuntime(seedPageDatabase);
+const shared = shareTestRuntime(seedPageDatabase);
 
 /** The key the media route resolves for a URL: the router hands the route its splat. */
 function keyOfUrl(url: string) {
@@ -66,10 +66,12 @@ test("a stored path resolves to the URL serving it, and a path without a known s
     "/media/avatars/alice.jpg",
   );
   expect(media.audio.fromStoredPath("audio/a.m4a")?.url).toBe("/media/audio/a.m4a");
-  expect(media.image.fromStoredPath("images/")).toBeNull();
-  expect(media.image.fromStoredPath("audio/a.m4a")).toBeNull();
-  expect(media.audio.fromStoredPath("images/avatars/alice.jpg")).toBeNull();
-  expect(media.image.fromStoredPath("https://example.com/a.jpg")).toBeNull();
+  expect([
+    media.image.fromStoredPath("images/"),
+    media.image.fromStoredPath("audio/a.m4a"),
+    media.audio.fromStoredPath("images/avatars/alice.jpg"),
+    media.image.fromStoredPath("https://example.com/a.jpg"),
+  ]).toStrictEqual([null, null, null, null]);
 });
 
 test("a cached audio URL resolves back to the key of its file, and the key back to its stored path", () => {
@@ -102,13 +104,14 @@ test("a music artwork URL resolves back to the key of its image in the media sto
 test("a path that is not a valid music key has no file", () => {
   const hash = "c".repeat(64);
 
-  expect(media.audio.fromStoredPath(null)).toBeNull();
-  expect(media.audio.fromStoredPath(`audio/${hash}.jpg`)).toBeNull();
-  expect(media.audio.fromStoredPath(`audio/${hash}.txt`)).toBeNull();
-  expect(media.audio.fromStoredPath(`images/${hash}.m4a`)).toBeNull();
-  expect(media.image.artwork(null)).toBeNull();
-  expect(media.image.artwork(`music/${hash}.gif`)).toBeNull();
-  expect(media.image.artwork(`audio/${hash}.jpg`)).toBeNull();
+  expect(
+    [null, `audio/${hash}.jpg`, `audio/${hash}.txt`, `images/${hash}.m4a`].map((path) =>
+      media.audio.fromStoredPath(path),
+    ),
+  ).toStrictEqual([null, null, null, null]);
+  expect(
+    [null, `music/${hash}.gif`, `audio/${hash}.jpg`].map((key) => media.image.artwork(key)),
+  ).toStrictEqual([null, null, null]);
 });
 
 test("the files the pipeline writes resolve back through the media record, by their stored path or key", () => {

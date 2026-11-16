@@ -22,8 +22,14 @@ export function ChatPage({ accounts }: ChatPageData) {
   );
 }
 
+function ChatRoute() {
+  const { accounts } = Route.useLoaderData();
+
+  return <ChatPage accounts={accounts} />;
+}
+
 export const Route = createFileRoute("/chat")({
   loader: async () => await getChatPage(),
   head: () => ({ meta: [{ title: "Assistant" }] }),
-  component: () => <ChatPage {...Route.useLoaderData()} />,
+  component: ChatRoute,
 });

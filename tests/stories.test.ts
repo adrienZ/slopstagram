@@ -1,4 +1,4 @@
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { getMediaCacheKey } from "@@/core/domains/media-store/cache-storage.ts";
 import { fetchStories } from "@@/core/domains/fetch-run/stories.ts";
 import {
@@ -14,8 +14,8 @@ function storedStory(pk: string) {
   return { ...storyItem(pk), annotations: { locations: [], stickers: [] } };
 }
 
-describe("fetchStories", () => {
-  test("fetches API media even when story storage has existing entries", async (context) => {
+describe(fetchStories, () => {
+  it("fetches API media even when story storage has existing entries", async (context) => {
     const runtime = await createTestRuntime(context);
     await runtime.stories.save(storyItem("m1"));
     await runtime.stories.save(storyItem("m2"));
@@ -126,12 +126,12 @@ describe("fetchStories", () => {
         username: "two",
       },
     ]);
-    expect(await runtime.storage.stories.getItem(getMediaCacheKey("m1"))).toStrictEqual(
+    await expect(runtime.storage.stories.getItem(getMediaCacheKey("m1"))).resolves.toStrictEqual(
       storedStory("m1"),
     );
   });
 
-  test("stores every returned media item as a side effect", async (context) => {
+  it("stores every returned media item as a side effect", async (context) => {
     const runtime = await createTestRuntime(context);
     await runtime.stories.save(storyItem("m1", "Cached image caption"));
 
@@ -152,7 +152,7 @@ describe("fetchStories", () => {
 
     expect(client.reelsCalls).toStrictEqual([["r1", "r2"]]);
     expect(runtime.stories.findByMediaPk("m2")).toStrictEqual(storedStory("m2"));
-    expect(await runtime.storage.stories.getItem(getMediaCacheKey("m2"))).toStrictEqual(
+    await expect(runtime.storage.stories.getItem(getMediaCacheKey("m2"))).resolves.toStrictEqual(
       storedStory("m2"),
     );
     expect(
@@ -179,7 +179,7 @@ describe("fetchStories", () => {
     expect(report.metadata.counts.fetched).toBe(2);
   });
 
-  test("groups final output by user with story accessibility captions", async (context) => {
+  it("groups final output by user with story accessibility captions", async (context) => {
     const runtime = await createTestRuntime(context);
 
     const client = createClient(

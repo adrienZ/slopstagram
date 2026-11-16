@@ -1,4 +1,4 @@
-import { describe, test, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { persistReportInstagramUsers } from "@@/core/domains/accounts/instagram-user.ts";
 import type { StoriesManifestReport } from "@@/core/domains/fetch-run/report-types.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
@@ -49,7 +49,7 @@ function createReportWithInstagramUser(): StoriesManifestReport {
 }
 
 describe("Instagram user report persistence", () => {
-  test("persists user data outside a report", async (context) => {
+  it("persists user data outside a report", async (context) => {
     const report = createReportWithInstagramUser();
     const runtime = await createTestRuntime(context);
 

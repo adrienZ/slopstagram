@@ -111,12 +111,14 @@ test("web story ingestion preserves DASH audio separately from shared music, inc
   assert.ok(first.annotations.storyAudio);
   expect(first.annotations.storyAudio.sourceUrl).toBe("https://example.com/first.mp4?a=1&b=2");
   expect(first.annotations.storyAudio.sourceUrl).not.toBe(second.annotations.storyAudio.sourceUrl);
-  expect(first.annotations.storyAudio.mimeType).toBe("audio/mp4");
-  expect(first.annotations.storyAudio.codecs).toBe("mp4a.40.5");
-  expect(first.annotations.storyAudio.state).toBe("pending");
-  expect(first.annotations.musicObservations?.[0].metadata.instagramAudioAssetId).toBe(null);
+  expect(first.annotations.storyAudio).toMatchObject({
+    mimeType: "audio/mp4",
+    codecs: "mp4a.40.5",
+    state: "pending",
+  });
+  expect(first.annotations.musicObservations?.[0].metadata.instagramAudioAssetId).toBeNull();
   assert.ok(first.annotations.musicObservations);
-  expect(first.annotations.musicObservations[0].metadata.audioSourceUrl).toBe(null);
+  expect(first.annotations.musicObservations[0].metadata.audioSourceUrl).toBeNull();
   await repository.save({ pk: "first", video_dash_manifest: "<broken>" });
   expect(cold.findByMediaPk("first")?.annotations?.storyAudio).toStrictEqual(
     first.annotations.storyAudio,
@@ -193,7 +195,7 @@ test("malformed, protected, segmented, relative-only and video-only manifests do
     xml.replace("</MPD>", "<Period/></MPD>"),
     `<!DOCTYPE MPD [<!ENTITY audio "https://example.com/secret">]>${xml}`,
   ]) {
-    expect(dashAudioSource(value)).toBe(null);
+    expect(dashAudioSource(value)).toBeNull();
   }
 });
 
@@ -263,7 +265,7 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
   expect(media.requests).toStrictEqual(["/story.mp4?a=1&b=2"]);
   const saved = new StoryRepository(database).findByMediaPk("story")?.annotations?.storyAudio;
   assert.ok(saved);
-  expect(saved.cachePath).not.toBe(null);
+  expect(saved.cachePath).not.toBeNull();
   assert.ok(saved.cachePath !== null);
   expect(saved.state).toBe("available");
 
@@ -271,11 +273,11 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
     new StoryRepository(database).findByMediaPk("story")?.annotations,
   ).map(({ preview }) => preview);
 
-  expect(previews.length).toBe(1);
+  expect(previews).toHaveLength(1);
   expect(previews[0]?.description).toBe("Song — Artist");
   expect(previews[0]?.sourceKind).toBe("story_audio");
   expect(path.extname(saved.cachePath)).toBe(".m4a");
-  expect(await readFile(path.join(directory, saved.cachePath))).toStrictEqual(audio);
+  await expect(readFile(path.join(directory, saved.cachePath))).resolves.toStrictEqual(audio);
   expect(saved.durationMs).toBe(1023);
 
   const ranged = await createMediaResponse(
@@ -309,9 +311,9 @@ test("report audio processing caches MPD audio served as video/mp4, supports ran
     video_dash_manifest: manifest("fresh"),
     story_music_stickers: [{ music_asset_info: { title: "Song", should_mute_audio: true } }],
   });
-  expect(new StoryRepository(database).findByMediaPk("story")?.annotations?.storyAudio).toBe(
-    undefined,
-  );
+  expect(
+    new StoryRepository(database).findByMediaPk("story")?.annotations?.storyAudio,
+  ).toBeUndefined();
 });
 
 test("expired and interrupted DASH downloads fail silently without publishing incomplete files", async (context) => {
@@ -353,7 +355,7 @@ test("expired and interrupted DASH downloads fail silently without publishing in
 
   expect(failed?.state).toBe("failed");
   assert.ok(failed);
-  expect(failed.cachePath).toBe(null);
+  expect(failed.cachePath).toBeNull();
   const story = repository.findByMediaPk("story");
   assert.ok(story);
 
@@ -372,7 +374,7 @@ test("expired and interrupted DASH downloads fail silently without publishing in
     ["music"],
   );
 
-  expect(groups[0].stories[0].musicItems?.[0].preview).toBe(null);
+  expect(groups[0].stories[0].musicItems?.[0].preview).toBeNull();
   expect(groups[0].stories[0].labels[0].label).toBe("Song");
   interrupted = true;
 
@@ -386,7 +388,7 @@ test("expired and interrupted DASH downloads fail silently without publishing in
   );
 
   expect(interruptedResult?.state).toBe("failed");
-  expect(await readdir(directory)).toStrictEqual([]);
+  await expect(readdir(directory)).resolves.toStrictEqual([]);
 });
 
 test("ordinary video soundtracks are not classified as music without received music annotations", async (context) => {
@@ -397,7 +399,7 @@ test("ordinary video soundtracks are not classified as music without received mu
   });
   const repository = new StoryRepository(database);
   await repository.save({ pk: "ordinary", video_dash_manifest: manifest("ordinary") });
-  expect(repository.findByMediaPk("ordinary")?.annotations?.storyAudio).toBe(undefined);
+  expect(repository.findByMediaPk("ordinary")?.annotations?.storyAudio).toBeUndefined();
 });
 
 test("reels shared into a story do not create or retain a downloadable soundtrack", async (context) => {
@@ -418,11 +420,11 @@ test("reels shared into a story do not create or retain a downloadable soundtrac
   expect(repository.findByMediaPk(story.pk)?.annotations?.storyAudio).toBeTruthy();
   await repository.save({ ...story, story_feed_media: [{ id: "reel", product_type: "clips" }] });
   const cold = new StoryRepository(database).findByMediaPk(story.pk);
-  expect(cold?.annotations?.storyAudio).toBe(undefined);
+  expect(cold?.annotations?.storyAudio).toBeUndefined();
   assert.ok(cold?.annotations);
   expect(cold.annotations.stickers[0].kind).toBe("music");
   await repository.save({ ...story, pk: "direct-reel", product_type: "clips" });
-  expect(repository.findByMediaPk("direct-reel")?.annotations?.storyAudio).toBe(undefined);
+  expect(repository.findByMediaPk("direct-reel")?.annotations?.storyAudio).toBeUndefined();
 });
 
 test("fresh story ingestion caches the story excerpt and prefers it over the longer music asset", async (context) => {
@@ -497,13 +499,15 @@ test("fresh story ingestion caches the story excerpt and prefers it over the lon
   expect(music.audioDurationMs).toBe(70_000);
   expect(annotations.storyAudio.durationMs).toBe(1023);
   const previews = musicStickerItems(annotations);
-  expect(previews.length).toBe(1);
+  expect(previews).toHaveLength(1);
   assert.ok(previews[0].preview);
-  expect(previews[0].preview.sourceKind).toBe("story_audio");
-  expect(previews[0].preview.audioUrl).toBe(`/media/${annotations.storyAudio.cachePath}`);
-  expect(previews[0].preview.durationMs).toBe(1023);
-  expect(await readFile(path.join(directory, annotations.storyAudio.cachePath))).toStrictEqual(
-    storyBytes,
-  );
+  expect(previews[0].preview).toMatchObject({
+    sourceKind: "story_audio",
+    audioUrl: `/media/${annotations.storyAudio.cachePath}`,
+    durationMs: 1023,
+  });
+  await expect(
+    readFile(path.join(directory, annotations.storyAudio.cachePath)),
+  ).resolves.toStrictEqual(storyBytes);
   expect(media.requests).toStrictEqual(["/song.wav", "/fresh.mp4?a=1&b=2"]);
 });

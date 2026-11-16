@@ -1,9 +1,9 @@
 import { expect, test } from "vitest";
 import { loadPlaceMap } from "../app/loaders/place-map.ts";
-import { useSharedTestRuntime } from "./setup/test-runtime.ts";
+import { shareTestRuntime } from "./setup/test-runtime.ts";
 import { mapAccounts, seedMapDatabase, sharedPlace, soloPlace } from "./ui/seeded-pages.ts";
 
-const shared = useSharedTestRuntime(seedMapDatabase);
+const shared = shareTestRuntime(seedMapDatabase);
 const [ada, ben, cleo] = mapAccounts;
 
 test("returns one place per tagged place across accounts, its latest story first", () => {

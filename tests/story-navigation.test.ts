@@ -7,7 +7,7 @@ afterEach(() => {
 
 test("report dates perform a document navigation using the Paris publication day", () => {
   // Document navigation is the external boundary: no server functions or router are mocked.
-  const assign = vi.fn();
+  const assign = vi.fn<(url: string) => void>();
   vi.stubGlobal("location", { assign });
   navigateToReportDate(new Date("2026-07-25T23:30:00Z"));
   expect(assign).toHaveBeenCalledExactlyOnceWith("/report?date=2026-07-26");

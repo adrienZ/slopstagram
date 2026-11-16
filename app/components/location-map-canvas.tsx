@@ -87,8 +87,7 @@ export default function LocationMapCanvas({
   }
 
   return (
-    <div
-      role="region"
+    <section
       aria-label="Carte des lieux"
       className={cn("tw:relative tw:overflow-hidden tw:rounded-lg tw:border", className)}
     >
@@ -168,13 +167,10 @@ export default function LocationMapCanvas({
         )}
       </Map>
       {failed && (
-        <p
-          role="status"
-          className="tw:absolute tw:top-2 tw:left-2 tw:max-w-2/3 tw:rounded tw:bg-background tw:p-2 tw:text-sm"
-        >
+        <output className="tw:absolute tw:top-2 tw:left-2 tw:max-w-2/3 tw:rounded tw:bg-background tw:p-2 tw:text-sm">
           {tileErrorMessage}
-        </p>
+        </output>
       )}
-    </div>
+    </section>
   );
 }

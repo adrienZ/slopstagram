@@ -26,5 +26,5 @@ test.for([
   );
 
   expect(answer.toolInputs).toHaveLength(1);
-  expect(answer.toolOutputs).toEqual([expect.objectContaining({ status })]);
+  expect(answer.toolOutputs).toStrictEqual([expect.objectContaining({ status })]);
 });

@@ -18,9 +18,9 @@ import {
   storyPks,
   trayBody,
 } from "./setup/report-world.ts";
-import { useFixedDate } from "./mock-helpers.ts";
+import { fixDate } from "./mock-helpers.ts";
 
-useFixedDate(now);
+fixDate(now);
 
 test("creates a report by running the whole pipeline over recorded Instagram payloads", async (context) => {
   const world = await createWorld(context);
@@ -263,11 +263,13 @@ test("records a failed fetch attempt even when Instagram returns no tray", async
   await expect(world.run()).rejects.toThrow(/HTTP 401/u);
 
   const [run] = world.runs.list();
-  expect(run.status).toBe("failed");
-  expect(run.finishedAt).toBe("2026-10-29T12:00:03.000Z");
-  expect(run.error).toBe("Instagram request failed with HTTP 401");
-  expect(run.storiesCount).toBeNull();
-  expect(run.reportKey).toBeNull();
+  expect(run).toMatchObject({
+    status: "failed",
+    finishedAt: "2026-10-29T12:00:03.000Z",
+    error: "Instagram request failed with HTTP 401",
+    storiesCount: null,
+    reportKey: null,
+  });
   expect(world.reports.listKeys()).toStrictEqual([]);
 });
 
@@ -282,9 +284,11 @@ test("preserves a totally failed observation and its errors before rejecting the
   await expect(world.run()).rejects.toThrow(/No story media could be fetched.*media unavailable/u);
 
   const [run] = world.runs.list();
-  expect(run.status).toBe("failed");
-  expect(run.failedCount).toBe(3);
-  expect(run.storiesCount).toBe(3);
+  expect(run).toMatchObject({
+    status: "failed",
+    failedCount: 3,
+    storiesCount: 3,
+  });
   assert.ok(run.reportKey !== null);
   const saved = world.reports.findByKey(run.reportKey);
   expect(saved?.failures.map(({ message }) => message)).toStrictEqual([

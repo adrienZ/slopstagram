@@ -1,5 +1,5 @@
 import process from "node:process";
-import { assert, describe, test, vi, expect } from "vitest";
+import { assert, describe, vi, expect, it } from "vitest";
 import { setTimeout as delay } from "node:timers/promises";
 import { z } from "zod";
 import {
@@ -35,15 +35,16 @@ function requestBodyToString(body: BodyInit | null | undefined): string {
   return z.string().parse(body);
 }
 
-describe("resolveUserSummariesForReport", () => {
-  for (const [platform, architecture, expectedModel] of [
+describe(resolveUserSummariesForReport, () => {
+  it.for([
     ["darwin", "arm64", "qwen3.5:0.8b-mlx"],
     ["darwin", "x64", "qwen3.5:0.8b"],
     ["linux", "x64", "qwen3.5:0.8b"],
     ["win32", "x64", "qwen3.5:0.8b"],
     ["win32", "arm64", "qwen3.5:0.8b"],
-  ] as const) {
-    test(`generates and reuses summaries with ${expectedModel} on ${platform}/${architecture}`, async (context) => {
+  ] as const)(
+    "generates and reuses summaries on %s/%s with %s",
+    async ([platform, architecture, expectedModel], context) => {
       const report = createSummaryReport();
 
       const runtime = await createTestRuntime(context, {
@@ -58,17 +59,17 @@ describe("resolveUserSummariesForReport", () => {
       });
 
       await saveSummaryUsers(runtime);
-      vi.spyOn(process, "platform", "get").mockImplementation(() => platform);
-      vi.spyOn(process, "arch", "get").mockImplementation(() => architecture);
+      vi.spyOn(process, "platform", "get").mockReturnValue(platform);
+      vi.spyOn(process, "arch", "get").mockReturnValue(architecture);
 
       const summaries = await resolveUserSummariesForReport(runtime, report);
 
       expect(summaries.get("summaryuser")).toBe("Platform summary.");
       expect(readUserSummaries(runtime, report.output.users)).toStrictEqual(summaries);
-    });
-  }
+    },
+  );
 
-  test("reuses successful user summaries from the repository", async (context) => {
+  it("reuses successful user summaries from the repository", async (context) => {
     const runtime = await createTestRuntime(context);
     await saveSummaryUsers(runtime);
     const report = createSummaryReport();
@@ -126,7 +127,7 @@ describe("resolveUserSummariesForReport", () => {
     expect(runCount).toBe(1);
   });
 
-  test("uses the Ollama model in the repository identity", async (context) => {
+  it("uses the Ollama model in the repository identity", async (context) => {
     const runtime = await createTestRuntime(context);
     await saveSummaryUsers(runtime);
     const report = createSummaryReport();
@@ -155,7 +156,7 @@ describe("resolveUserSummariesForReport", () => {
     expect(runCount).toBe(2);
   });
 
-  test("runs the default Ollama client with qwen3.5 and OLLAMA_HOST", async (context) => {
+  it("runs the default Ollama client with qwen3.5 and OLLAMA_HOST", async (context) => {
     vi.stubEnv("OLLAMA_HOST", "http://summary.example:11434/api/generate");
 
     const runtime = await createTestRuntime(context, {
@@ -168,10 +169,18 @@ describe("resolveUserSummariesForReport", () => {
           num_predict: 300,
           temperature: 0.2,
         });
-        expect(body.think).toBe(false);
-        expect(body.format.additionalProperties).toBe(false);
-        expect(body.format.type).toBe("object");
-        expect(body.format.properties.summary.type).toBe("string");
+        expect(body).toMatchObject({
+          think: false,
+          format: {
+            additionalProperties: false,
+            type: "object",
+            properties: {
+              summary: {
+                type: "string",
+              },
+            },
+          },
+        });
         expect(body.format.required.toSorted()).toStrictEqual(["summary"]);
         expect(String(body.prompt)).not.toMatch(/May be food/u);
         expect(String(body.prompt)).not.toMatch(/menu prices/u);
@@ -194,7 +203,7 @@ describe("resolveUserSummariesForReport", () => {
     expect(summaries.get(userKey)).toBe("sdk summary");
   });
 
-  test(
+  it(
     "honors a custom timeout for a blocked summary request",
     { timeout: 1000 },
     async (context) => {
@@ -223,7 +232,7 @@ describe("resolveUserSummariesForReport", () => {
     },
   );
 
-  test("returns fallback text when user summary fails", async (context) => {
+  it("returns fallback text when user summary fails", async (context) => {
     const runtime = await createTestRuntime(context);
     await saveSummaryUsers(runtime);
     const report = createSummaryReport();
@@ -238,7 +247,7 @@ describe("resolveUserSummariesForReport", () => {
     expect(summaries.get(userKey)).toBe("résumé indisponible");
   });
 
-  test("uses report fallback and does not store a missing Ollama response", async (context) => {
+  it("uses report fallback and does not store a missing Ollama response", async (context) => {
     const runtime = await createTestRuntime(context, {
       fetchOllama: async () => globalThis.Response.json({ done: true }),
     });
@@ -252,7 +261,7 @@ describe("resolveUserSummariesForReport", () => {
     expect(countSummaries(runtime)).toBe(0);
   });
 
-  test("uses report fallback and does not store empty user summary responses", async (context) => {
+  it("uses report fallback and does not store empty user summary responses", async (context) => {
     const runtime = await createTestRuntime(context);
     await saveSummaryUsers(runtime);
     const report = createSummaryReport();

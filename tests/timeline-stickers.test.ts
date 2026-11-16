@@ -15,12 +15,12 @@ test("links mentions only to saved accounts and preserves the canonical username
       { username: "alice", avatarPath: "/media/avatars/unused.jpg" },
       { username: "bob", avatarPath: "/media/avatars/unused.jpg" },
     ]).profileUrl,
-  ).toBe(undefined);
+  ).toBeUndefined();
   expect(
     presentSticker("music", "@alice", [
       { username: "alice", avatarPath: "/media/avatars/unused.jpg" },
     ]).profileUrl,
-  ).toBe(undefined);
+  ).toBeUndefined();
   expect(
     presentSticker("mention", "@ALICE", [
       { username: "alice", avatarPath: "/media/avatars/alice.jpg" },

@@ -4,13 +4,13 @@ import userEvent from "@testing-library/user-event";
 import { Route } from "../../app/routes/users/$username.tsx";
 import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
 import { createPageRenderer } from "../render-page.ts";
-import { useSharedTestRuntime } from "../setup/test-runtime.ts";
+import { shareTestRuntime } from "../setup/test-runtime.ts";
 import { MusicAudioPreview } from "../../app/components/music-audio-preview.tsx";
 import { MusicSticker } from "../../app/components/music-sticker.tsx";
 import { pageNow, regroupTimeline, seedPageDatabase, timelineAccount } from "./seeded-pages.ts";
 import type { MusicPreview } from "../../app/utils/music-preview.ts";
 
-const shared = useSharedTestRuntime(seedPageDatabase);
+const shared = shareTestRuntime(seedPageDatabase);
 
 // The detail modal is tested through the timeline page that hosts it.
 const renderer = createPageRenderer(
@@ -227,7 +227,7 @@ test("detail-modal audio seeking keeps the selected story and navigation stops p
   await userEvent.click(dialog.getByRole("button", { name: "Image suivante" }));
   expect(router.state.location.href).not.toContain(`story=${entry.story.pk}`);
   expect(dialog.queryByRole("slider")).not.toBeInTheDocument();
-  expect(pause).toHaveBeenCalled();
+  expect(pause).toHaveBeenCalledWith();
 });
 
 test("stored playback duration is visible without preloading the audio", async () => {

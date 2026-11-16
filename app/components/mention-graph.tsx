@@ -153,9 +153,12 @@ interface MentionGraphProps extends Pick<MentionGraphPageData["graph"], "points"
  */
 export function MentionGraph({ points, connections, selection, overlay }: MentionGraphProps) {
   const { selectedPointId, selectPoint, selectedConnectionId, selectConnection } = selection;
-  const regionRef = useRef<HTMLDivElement>(null);
+  const regionRef = useRef<HTMLElement>(null);
   const layout = useForceLayout(points, connections);
-  const viewport = useGraphViewport(layout);
+
+  const { attach, view, startPan, startPointDrag, isClick, zoomIn, zoomOut, recenter } =
+    useGraphViewport(layout);
+
   const clipPathId = useId();
   const [hoveredPointId, setHoveredPointId] = useState<string | null>(null);
   const [selectedElement, setSelectedElement] = useState<SVGGElement | null>(null);
@@ -195,13 +198,14 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
     return (
       <g
         key={connection.id}
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG has no <button>.
         role="button"
         tabIndex={0}
         aria-label={`Connexion entre ${connection.labels.join(" et ")} : ${formatStoryCount(storyCount)}`}
         aria-pressed={connection.id === selectedConnectionId}
         data-highlighted={highlighted}
         className="tw:cursor-pointer tw:outline-none"
-        {...activationHandlers(viewport.isClick, () => {
+        {...activationHandlers(isClick, () => {
           selectConnection(connection.id);
         })}
       >
@@ -229,6 +233,7 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
       <g
         key={point.id}
         ref={isSelected ? setSelectedElement : undefined}
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG has no <button>.
         role="button"
         tabIndex={0}
         aria-label={point.label}
@@ -239,9 +244,9 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
           dimmed && "tw:opacity-30",
         )}
         onPointerDown={(event) => {
-          viewport.startPointDrag(event, point.id);
+          startPointDrag(event, point.id);
         }}
-        {...activationHandlers(viewport.isClick, () => {
+        {...activationHandlers(isClick, () => {
           selectPoint(point.id);
         })}
         onPointerEnter={() => {
@@ -285,21 +290,24 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
   }
 
   return (
-    <div
+    <section
       ref={regionRef}
-      role="region"
       aria-label="Graphe des mentions"
       className="tw:relative tw:h-[calc(100dvh-11rem)] tw:min-h-96 tw:overflow-hidden tw:rounded-lg tw:border tw:bg-muted/20"
     >
+      {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- The canvas pans on drag and clears the selection on Escape. */}
       <svg
-        ref={viewport.attach}
+        ref={attach}
         viewBox={`0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`}
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG has no <fieldset>.
         role="group"
         aria-label="Points et connexions"
         className="tw:size-full tw:cursor-move tw:touch-none tw:select-none"
-        onPointerDown={viewport.startPan}
+        onPointerDown={(event) => {
+          startPan(event);
+        }}
         onClick={() => {
-          if (viewport.isClick()) {
+          if (isClick()) {
             selectPoint(null);
           }
         }}
@@ -314,12 +322,12 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
             <circle cx={0.5} cy={0.5} r={0.5} />
           </clipPath>
         </defs>
-        <g
-          transform={`translate(${viewport.view.x} ${viewport.view.y}) scale(${viewport.view.scale})`}
-        >
+        <g transform={`translate(${view.x} ${view.y}) scale(${view.scale})`}>
+          {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG has no <fieldset>. */}
           <g role="group" aria-label="Connexions">
             {connections.map(renderConnection)}
           </g>
+          {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG has no <fieldset>. */}
           <g role="group" aria-label="Points">
             {points.map(renderPoint)}
           </g>
@@ -327,10 +335,10 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
         </g>
       </svg>
       <GraphControls
-        scale={viewport.view.scale}
-        onZoomIn={viewport.zoomIn}
-        onZoomOut={viewport.zoomOut}
-        onRecenter={viewport.recenter}
+        scale={view.scale}
+        onZoomIn={zoomIn}
+        onZoomOut={zoomOut}
+        onRecenter={recenter}
       />
       {overlay}
       <Popover
@@ -366,6 +374,6 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
           </PopoverContent>
         )}
       </Popover>
-    </div>
+    </section>
   );
 }

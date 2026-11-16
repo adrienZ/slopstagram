@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer";
-import { describe, test, vi, expect } from "vitest";
+import { describe, vi, expect, it } from "vitest";
 import { z } from "zod";
 import { resolveVisionForReport } from "@@/core/domains/vision/vision-report.ts";
 import { createVisionReport, previewSource } from "./mock-helpers.ts";
@@ -40,44 +40,42 @@ function requestBodyToString(body: BodyInit | null | undefined): string {
   return z.string().parse(body);
 }
 
-describe("resolveVisionForReport", () => {
-  for (const entry of [
+describe(resolveVisionForReport, () => {
+  it.for([
     { name: "missing", cachedPath: undefined, warning: "no cached preview" },
     { name: "empty", cachedPath: "", warning: "no cached preview" },
     { name: "non-JPEG", cachedPath: "images/story.webp", warning: "preview is not JPEG" },
     { name: "unstored", cachedPath: "images/gone.jpg", warning: "cached preview is missing" },
-  ]) {
-    test(`skips ${entry.name} cached previews without contacting vision`, async (context) => {
-      let fetchCount = 0;
+  ])("skips $name cached previews without contacting vision", async (entry, context) => {
+    let fetchCount = 0;
 
-      const runtime = await createTestRuntime(context, {
-        fetchOllama: async () => {
-          fetchCount += 1;
-          throw new Error("vision must not be called for invalid previews");
-        },
-      });
-
-      const paths = new Map<string, string>();
-
-      if (entry.cachedPath !== undefined) {
-        paths.set(previewSource, entry.cachedPath);
-      }
-
-      const result = await resolveVisionForReport(runtime, createVisionReport(), {
-        profilePicPathByUrl: new Map(),
-        storyPreviewPathByUrl: paths,
-      });
-
-      expect(result.get(previewSource)).toStrictEqual({
-        text: "",
-        visual: `vision failed: ${entry.warning}`,
-      });
-      expect(fetchCount).toBe(0);
-      expect(runtime.vision.findByMediaPk("story-pk")).toBeNull();
+    const runtime = await createTestRuntime(context, {
+      fetchOllama: async () => {
+        fetchCount += 1;
+        throw new Error("vision must not be called for invalid previews");
+      },
     });
-  }
 
-  test("uses OLLAMA_HOST and reuses successful vision responses from the repository", async (context) => {
+    const paths = new Map<string, string>();
+
+    if (entry.cachedPath !== undefined) {
+      paths.set(previewSource, entry.cachedPath);
+    }
+
+    const result = await resolveVisionForReport(runtime, createVisionReport(), {
+      profilePicPathByUrl: new Map(),
+      storyPreviewPathByUrl: paths,
+    });
+
+    expect(result.get(previewSource)).toStrictEqual({
+      text: "",
+      visual: `vision failed: ${entry.warning}`,
+    });
+    expect(fetchCount).toBe(0);
+    expect(runtime.vision.findByMediaPk("story-pk")).toBeNull();
+  });
+
+  it("uses OLLAMA_HOST and reuses successful vision responses from the repository", async (context) => {
     vi.stubEnv("OLLAMA_HOST", "http://vision.example:11434/api/generate/");
     let fetchCount = 0;
 
@@ -87,7 +85,7 @@ describe("resolveVisionForReport", () => {
       const body = VisionRequestBodySchema.parse(JSON.parse(requestBodyToString(init?.body)));
       const { images } = body;
 
-      expect(images.length).toBe(1);
+      expect(images).toHaveLength(1);
       expect(Buffer.from(images[0] ?? "", "base64").toString()).toBe("jpeg-bytes");
       expect(String(body.prompt)).toMatch(
         /Provide a list of all visible text\. Only if there is text\./u,
@@ -137,7 +135,7 @@ describe("resolveVisionForReport", () => {
     expect(fetchCount).toBe(1);
   });
 
-  test("reuses stored responses for the same story when the signed CDN URL changes", async (context) => {
+  it("reuses stored responses for the same story when the signed CDN URL changes", async (context) => {
     const firstPreviewSource = "https://example.com/story-preview.webp?signature=old";
     const secondPreviewSource = "https://example.com/story-preview.webp?signature=new";
     let fetchCount = 0;
@@ -184,7 +182,7 @@ describe("resolveVisionForReport", () => {
     expect(fetchCount).toBe(1);
   });
 
-  test("returns a stored response without reading the cached preview", async (context) => {
+  it("returns a stored response without reading the cached preview", async (context) => {
     let fetchCount = 0;
 
     const runtime = await createTestRuntime(context, {
@@ -207,7 +205,7 @@ describe("resolveVisionForReport", () => {
     expect(fetchCount).toBe(1);
   });
 
-  test("returns server-down text when vision is unavailable", async (context) => {
+  it("returns server-down text when vision is unavailable", async (context) => {
     const runtime = await createTestRuntime(context, {
       fetchOllama: async () => {
         throw new TypeError("fetch failed");
@@ -223,7 +221,7 @@ describe("resolveVisionForReport", () => {
     });
   });
 
-  test("normalizes missing OCR text to an empty string", async (context) => {
+  it("normalizes missing OCR text to an empty string", async (context) => {
     const runtime = await createTestRuntime(context, {
       fetchOllama: async () =>
         new globalThis.Response(
@@ -248,7 +246,7 @@ describe("resolveVisionForReport", () => {
     });
   });
 
-  test("joins multiple OCR text entries", async (context) => {
+  it("joins multiple OCR text entries", async (context) => {
     const runtime = await createTestRuntime(context, {
       fetchOllama: async () =>
         new globalThis.Response(
@@ -273,7 +271,7 @@ describe("resolveVisionForReport", () => {
     });
   });
 
-  test("treats a missing Ollama response as an empty vision result", async (context) => {
+  it("treats a missing Ollama response as an empty vision result", async (context) => {
     const runtime = await createTestRuntime(context, {
       fetchOllama: async () => globalThis.Response.json({ done: true }),
     });
@@ -284,7 +282,7 @@ describe("resolveVisionForReport", () => {
     expect(result.get(previewSource)).toStrictEqual({ text: "", visual: "" });
   });
 
-  test("returns short per-image text for non-server failures", async (context) => {
+  it("returns short per-image text for non-server failures", async (context) => {
     const runtime = await createTestRuntime(context, {
       fetchOllama: async () =>
         new globalThis.Response(JSON.stringify({ error: "bad request" }), {

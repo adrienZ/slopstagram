@@ -9,6 +9,14 @@ export function MentionGraphExplorer(graph: MentionGraphPageData["graph"]) {
   const selection = useMentionGraphSelection(graph);
   const { selectedConnection } = selection;
 
+  function handleCloseConnection() {
+    selection.closeConnection();
+  }
+
+  function handleOpenStory(mediaPk?: string) {
+    selection.openStory(mediaPk);
+  }
+
   return (
     <>
       <MentionGraph
@@ -21,8 +29,8 @@ export function MentionGraphExplorer(graph: MentionGraphPageData["graph"]) {
               key={selectedConnection.id}
               labels={selectedConnection.labels}
               stories={selection.connectionStories}
-              onClose={selection.closeConnection}
-              onOpenStory={selection.openStory}
+              onClose={handleCloseConnection}
+              onOpenStory={handleOpenStory}
             />
           )
         }
@@ -31,7 +39,7 @@ export function MentionGraphExplorer(graph: MentionGraphPageData["graph"]) {
         stories={selection.connectionStories}
         selectedStory={selection.openStoryPk}
         linkToProfile
-        onOpenStory={selection.openStory}
+        onOpenStory={handleOpenStory}
       />
     </>
   );

@@ -1,6 +1,11 @@
 import { defineConfig } from "oxlint";
 import ultracite from "ultracite/oxlint/core";
 import antiSlop from "ultracite/oxlint/anti-slop";
+import drizzle from "ultracite/oxlint/drizzle";
+import playwright from "ultracite/oxlint/playwright";
+import react from "ultracite/oxlint/react";
+import tanstack from "ultracite/oxlint/tanstack";
+import vitest from "ultracite/oxlint/vitest";
 
 interface RestrictedPath {
   name: string;
@@ -113,6 +118,28 @@ function restrictImports(
   ];
 }
 
+// Oxlint applies the overrides of an extended config after the root ones, so these follow the vitest preset in `extends`.
+const testConventions = defineConfig({
+  overrides: [
+    {
+      files: ["tests/**"],
+      // The vitest preset enables its plugin in its own override only, and oxlint drops plugin rules an override does not enable.
+      plugins: ["vitest"],
+      rules: {
+        // Tests are named after the module they cover and sit at the top level of their file.
+        "vitest/require-top-level-describe": "off",
+        // Tests go through production code paths, so one test asserts the whole result it gets back.
+        // oxlint-disable-next-line no-warning-comments
+        // TODO: Enable max-expects once the 78 tests above 5 expects are split or merged
+        "vitest/max-expects": "off",
+        // Both weaken `toBe(false)` and `toBe(true)` into truthiness checks.
+        "vitest/prefer-to-be-falsy": "off",
+        "vitest/prefer-to-be-truthy": "off",
+      },
+    },
+  ],
+});
+
 const restrictedReactImports = defineConfig({
   rules: { "no-restricted-imports": restrictImports() },
 });
@@ -133,7 +160,18 @@ const ultraciteSoftenerConfig = defineConfig({
 });
 
 export default defineConfig({
-  extends: [ultracite, antiSlop, ultraciteSoftenerConfig, restrictedReactImports],
+  extends: [
+    ultracite,
+    antiSlop,
+    react,
+    tanstack,
+    drizzle,
+    vitest,
+    playwright,
+    testConventions,
+    ultraciteSoftenerConfig,
+    restrictedReactImports,
+  ],
   ignorePatterns: [
     ...ultracite.ignorePatterns,
     ".agents/**",

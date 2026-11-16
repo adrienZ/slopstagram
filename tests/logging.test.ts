@@ -17,7 +17,7 @@ test("logger messages carry the logger prefix as their tag", () => {
 
   logger.info("tray fetched");
 
-  expect(messages.map(({ tag, args }) => ({ tag, args }))).toEqual([
+  expect(messages.map(({ tag, args }) => ({ tag, args }))).toStrictEqual([
     { tag: "fetch-stories", args: ["tray fetched"] },
   ]);
 });

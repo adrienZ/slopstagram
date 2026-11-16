@@ -17,11 +17,11 @@ import {
 } from "./seeded-pages.ts";
 import { loadStoryFeed } from "../../app/loaders/story-feed.ts";
 import { createPageRenderer } from "../render-page.ts";
-import { useSharedTestRuntime } from "../setup/test-runtime.ts";
+import { shareTestRuntime } from "../setup/test-runtime.ts";
 
 // The report the real loader would build, with the arguments it receives, at the test's "now".
-const shared = useSharedTestRuntime(seedPageDatabase);
-const empty = useSharedTestRuntime(async () => {});
+const shared = shareTestRuntime(seedPageDatabase);
+const empty = shareTestRuntime(async () => {});
 
 const emptyRenderer = createPageRenderer(
   Route,
@@ -54,7 +54,7 @@ test("the feed renders ranked users, separate handles, summaries, and local prev
   );
   expect(screen.getByText(`Fil chargé le ${reportProps.date}`)).toBeVisible();
   const headings = screen.getAllByRole("heading", { level: 2 });
-  expect(headings.map((heading) => heading.textContent)).toEqual(
+  expect(headings.map((heading) => heading.textContent)).toStrictEqual(
     reportProps.users.map(({ user }) => user.full_name),
   );
   expect(headings[0]).toHaveTextContent(namedAccount.fullName);
@@ -88,7 +88,7 @@ test("a past day lists the stories published that day without the loaded-at line
   expect(screen.queryByText(/Fil chargé le/u)).not.toBeInTheDocument();
   expect(
     screen.getAllByRole("heading", { level: 2 }).map(({ textContent }) => textContent),
-  ).toEqual([namedAccount.fullName]);
+  ).toStrictEqual([namedAccount.fullName]);
 });
 
 test("calendar disables future and empty days, preserving today's marker on a past selection", async () => {
@@ -196,13 +196,14 @@ test("opening a preview updates the real router and closing restores focus and s
   ).toHaveAttribute("target", "_blank");
   await user.click(within(dialog).getByRole("button", { name: "Fermer l’aperçu" }));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  expect(router.state.location.search).toEqual({ date: today });
+  expect({ ...router.state.location.search }).toStrictEqual({ date: today });
   expect(preview).toHaveFocus();
 });
 
 test("a story deep link opens after mount and an unknown story stays closed", async () => {
   const page = await renderer.mountRoute(`/report?story=${captionedStoryPk}`);
-  expect(await screen.findByRole("dialog")).toBeVisible();
+  const preview = await screen.findByRole("dialog");
+  expect(preview).toBeVisible();
   page.unmount();
   await renderer.mountRoute("/report?story=missing", reportProps);
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

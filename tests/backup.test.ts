@@ -19,7 +19,9 @@ test("copies the database into the backup folder under a name ending with the ti
 
   createDatabaseBackup(database, directory)(new Date("2026-11-03T12:00:00.123Z"));
 
-  expect(await readdir(directory)).toStrictEqual(["slopstagram-20261103T120000123Z.sqlite"]);
+  await expect(readdir(directory)).resolves.toStrictEqual([
+    "slopstagram-20261103T120000123Z.sqlite",
+  ]);
   const backup = createDrizzle(path.join(directory, "slopstagram-20261103T120000123Z.sqlite"));
   context.onTestFinished(() => {
     backup.$client.close();

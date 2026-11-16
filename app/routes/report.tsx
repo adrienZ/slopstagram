@@ -53,6 +53,23 @@ export function ReportPage({
   );
 }
 
+function ReportRoute() {
+  const { date, selectedDate, today, availableDates, sidebarUsers, users } = Route.useLoaderData();
+  const { story } = Route.useSearch();
+
+  return (
+    <ReportPage
+      date={date}
+      selectedDate={selectedDate}
+      today={today}
+      availableDates={availableDates}
+      sidebarUsers={sidebarUsers}
+      users={users}
+      selectedStory={story}
+    />
+  );
+}
+
 export const Route = createFileRoute("/report")({
   validateSearch: z.object({
     story: z.coerce.string().optional(),
@@ -90,7 +107,5 @@ export const Route = createFileRoute("/report")({
       },
     ],
   }),
-  component: () => (
-    <ReportPage {...Route.useLoaderData()} selectedStory={Route.useSearch().story} />
-  ),
+  component: ReportRoute,
 });

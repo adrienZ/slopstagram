@@ -116,11 +116,17 @@ test("returns an empty timeline for a saved account without stories", async (con
 
   const page = loadAccountTimeline(runtime, "saved-user");
 
-  expect(page.timeline.timelineUser.username).toBe("saved-user");
-  expect(page.timeline.avatarPath).toBe("/media/avatars/saved.jpg");
-  expect(page.timeline.stories).toStrictEqual([]);
-  expect(page.timeline.years).toStrictEqual([]);
-  expect(page.stories).toStrictEqual([]);
+  expect(page).toMatchObject({
+    timeline: {
+      timelineUser: {
+        username: "saved-user",
+      },
+      avatarPath: "/media/avatars/saved.jpg",
+      stories: [],
+      years: [],
+    },
+    stories: [],
+  });
 });
 
 test("assembles timeline media, captions, cached vision and local paths", async (context) => {
@@ -149,9 +155,13 @@ test("assembles timeline media, captions, cached vision and local paths", async 
     "video",
     "unknown",
   ]);
-  expect(page.timeline.avatarPath).toBe("/media/avatars/timeline-pk.jpg");
-  expect(page.timeline.timelineUser.username).toBe("timeline-user");
-  expect(page.timeline.timelineUser.full_name).toBe("Timeline User");
+  expect(page.timeline).toMatchObject({
+    avatarPath: "/media/avatars/timeline-pk.jpg",
+    timelineUser: {
+      username: "timeline-user",
+      full_name: "Timeline User",
+    },
+  });
   expect(page.timeline.timelineUser.stories).toStrictEqual([
     {
       ig_caption: "Instagram caption",

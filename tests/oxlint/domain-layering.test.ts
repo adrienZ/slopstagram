@@ -4,12 +4,12 @@ import domainLayering from "../../oxlint/plugins/rules/domain-layering.ts";
 
 // The tester registers its cases through vitest's suite functions.
 RuleTester.describe = (text, fn) => {
-  describe(text, fn);
+  describe(text, () => {
+    fn();
+  });
 };
 
-RuleTester.it = (text, fn) => {
-  it(text, fn);
-};
+RuleTester.it = it;
 
 function inDomain(module: string): string {
   return `/repo/core/domains/${module}`;
