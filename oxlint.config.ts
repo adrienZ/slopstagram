@@ -129,6 +129,8 @@ const testConventions = defineConfig({
         // Tests are named after the module they cover and sit at the top level of their file.
         "vitest/require-top-level-describe": "off",
         // Tests go through production code paths, so one test asserts the whole result it gets back.
+        // oxlint-disable-next-line no-warning-comments
+        // TODO: Enable max-expects once the 78 tests above 5 expects are split or merged
         "vitest/max-expects": "off",
         // Both weaken `toBe(false)` and `toBe(true)` into truthiness checks.
         "vitest/prefer-to-be-falsy": "off",
