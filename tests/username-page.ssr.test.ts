@@ -5,7 +5,7 @@ import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { Route } from "../app/routes/users/$username.tsx";
 import { loadAccountTimeline } from "../app/loaders/account-timeline.ts";
 import { saveCurrentVision, storyItem } from "./mock-helpers.ts";
-import { createPageRenderer } from "./render-page.ts";
+import { createPageRenderer, servePage } from "./render-page.ts";
 import { shareTestRuntime } from "./setup/test-runtime.ts";
 
 const now = new Date("2026-10-29T12:00:00.000Z");
@@ -101,7 +101,8 @@ test("an account without stories renders an empty timeline", async () => {
 });
 
 test("an account the application has never seen renders the not-found page", async () => {
-  const { page } = await render("/users/unknown_account");
+  const html = await servePage(Route, "/users/$username", "/users/unknown_account");
+  const page = within(new JSDOM(html).window.document.body);
 
   expect(page.getByRole("heading", { name: "404 : Page introuvable", level: 1 })).toBeDefined();
 });

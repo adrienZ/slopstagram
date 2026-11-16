@@ -1,4 +1,4 @@
-import { isNotFound } from "@tanstack/react-router";
+import { HTTPError } from "nitro/h3";
 import { test, expect, type TestContext } from "vitest";
 import { loadAccountTimeline } from "../app/loaders/account-timeline.ts";
 import { saveCurrentVision } from "./mock-helpers.ts";
@@ -99,10 +99,10 @@ test("sorts months and days newest first across Paris midnight", async (context)
   ]);
 });
 
-test("an unknown account is not found", async (context) => {
+test("answers 404 for an unknown user", async (context) => {
   const runtime = await createTestRuntime(context);
 
-  expect(() => loadAccountTimeline(runtime, "missing-user")).toThrow(expect.toSatisfy(isNotFound));
+  expect(() => loadAccountTimeline(runtime, "missing-user")).toThrow(HTTPError);
 });
 
 test("returns an empty timeline for a saved account without stories", async (context) => {

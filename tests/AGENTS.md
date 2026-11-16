@@ -19,6 +19,9 @@ Tests go through production code paths (`docs/adr/0006-test-through-production-c
   route and answers only its loader, which the test calls with its runtime. jsdom tests under
   `tests/ui/` seed it with `seedPageDatabase(runtime)` from `tests/ui/seeded-pages.ts`. Tests of
   the mention graph and of its Assistant tools seed it from `tests/setup/mention-graph-seed.ts`.
+  `servePage(route, path, url)` keeps the route's loader, so its server function runs, compiled by
+  the Start plugin, over the production runtime: an empty in-memory database. Use it for what the
+  server function itself does, such as answering an unknown account with the 404 page.
 - Fixtures in `tests/fixtures/` come from `npm run fixtures:capture`, which anonymizes a live
   session. Never copy them from `data/cache` or the media store, and never run the command in
   CI. Never write personal data into source, fixtures, tests, docs, commits, PRs or issues:
