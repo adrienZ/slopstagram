@@ -2,39 +2,28 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getProductionRuntime } from "@@/core/domains/runtime/production-runtime.ts";
 import { storyDateSchema } from "@@/core/domains/story-feed/story-days.ts";
+import { loadAccountTimeline } from "./loaders/account-timeline.ts";
+import { loadChatPage } from "./loaders/chat.ts";
+import { loadMentionGraph } from "./loaders/mention-graph.ts";
+import { loadPlaceMap } from "./loaders/place-map.ts";
+import { loadStoryFeed } from "./loaders/story-feed.ts";
 
 export const getReport = createServerFn({ method: "GET" })
   .validator(z.object({ date: storyDateSchema.optional(), story: z.string().optional() }))
-  .handler(async ({ data }) => {
-    const { loadStoryFeed } = await import("./loaders/story-feed.ts");
-
-    return loadStoryFeed(getProductionRuntime(), new Date(), data.date, data.story);
-  });
+  .handler(({ data }) => loadStoryFeed(getProductionRuntime(), new Date(), data.date, data.story));
 
 export const getUserTimeline = createServerFn({ method: "GET" })
   .validator(z.string())
-  .handler(async ({ data }) => {
-    const { loadAccountTimeline } = await import("./loaders/account-timeline.ts");
+  .handler(({ data }) => loadAccountTimeline(getProductionRuntime(), data));
 
-    return loadAccountTimeline(getProductionRuntime(), data);
-  });
+export const getChatPage = createServerFn({ method: "GET" }).handler(() =>
+  loadChatPage(getProductionRuntime()),
+);
 
-export const getChatPage = createServerFn({ method: "GET" }).handler(async () => {
-  const { loadChatPage } = await import("./loaders/chat.ts");
-
-  return loadChatPage(getProductionRuntime());
-});
-
-export const getPlaceMap = createServerFn({ method: "GET" }).handler(async () => {
-  const { loadPlaceMap } = await import("./loaders/place-map.ts");
-
-  return loadPlaceMap(getProductionRuntime());
-});
+export const getPlaceMap = createServerFn({ method: "GET" }).handler(() =>
+  loadPlaceMap(getProductionRuntime()),
+);
 
 export const getMentionGraph = createServerFn({ method: "GET" })
   .validator(z.object({ accounts: z.array(z.string()) }))
-  .handler(async ({ data }) => {
-    const { loadMentionGraph } = await import("./loaders/mention-graph.ts");
-
-    return loadMentionGraph(getProductionRuntime(), data.accounts);
-  });
+  .handler(({ data }) => loadMentionGraph(getProductionRuntime(), data.accounts));
