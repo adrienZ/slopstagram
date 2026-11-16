@@ -24,6 +24,11 @@ const VerdictSchema = z.object({
       "The answer addresses the question, including saying plainly when the account is unknown, has no story in the last 24 hours or has no summary yet.",
     ),
   writtenInFrench: z.boolean().describe("The answer is written in French."),
+  mentionsNotTakenForAcquaintance: z
+    .boolean()
+    .describe(
+      "The answer never says that two people know each other, or that they do not, from mention stickers. When the question asks whether they know each other, it says that a mention only shows that one story named the other person, and that no mention does not show that they do not know each other. True when the question is not about it.",
+    ),
   score: z.number().min(0).max(1).describe("The overall quality of the answer, from 0 to 1."),
 });
 
@@ -82,14 +87,17 @@ export function createAssistantJudge(): AssistantJudge | null {
     },
     scorer: {
       name: "Judge",
-      description: `${JUDGE_MODEL} grades faithfulness, relevance and language.`,
+      description: `${JUDGE_MODEL} grades faithfulness, relevance and language, and scores 0 an answer that takes a mention for a relationship.`,
       scorer: async ({ output: run }) => {
         const { output: verdict } = await generateText({
           model,
           output: Output.object({ schema: VerdictSchema }),
           prompt: judgePrompt(run),
         });
-        return { metadata: verdict, score: verdict.score };
+        return {
+          metadata: verdict,
+          score: verdict.mentionsNotTakenForAcquaintance ? verdict.score : 0,
+        };
       },
     },
   };

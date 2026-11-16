@@ -28,6 +28,32 @@ or link.
 One instance of a sticker on a story. Separate occurrences may have the same kind
 and label.
 
+**Mention connection**:
+An observed link between a story's author and a Mention target of that story's sticker,
+counted in distinct source stories and keeping who mentioned whom. It does not
+establish that the two people know each other, and two people named on the same story
+are not connected.
+_Avoid_: Relationship, friendship, Mention
+
+**Mention target**:
+Whom a mention sticker names: the Account whose current username matches its label,
+ignoring case; an unknown username, shared by every sticker naming it; or a name-only
+observation, kept apart per story since equal full names do not prove identity. A
+username several Accounts share stays its own target rather than one of them. A story's
+author is always an Account, so both ends of a connection are Mention targets.
+
+**Mention person**:
+A Mention target as the Assistant reads it: someone at one end of a Mention connection, named
+by an id, a username or a full name. A name several Mention people answer to stays ambiguous
+until the user says which one is meant, and a username several Accounts share answers to each
+of those Accounts and to the stickers naming it.
+_Avoid_: Contact, friend
+
+**Neighborhood**:
+A Mention target, the Mention targets it shares a Mention connection with, and every
+Mention connection between two of them. Filtering the mention graph by Accounts shows
+the union of their neighborhoods.
+
 **Sticker kind**:
 The category of a sticker, such as mention, music, hashtag, link, or location.
 

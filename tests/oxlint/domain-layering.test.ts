@@ -36,6 +36,11 @@ new RuleTester().run("domain-layering", domainLayering, {
       code: 'import { createGetFeedUserSummaryTool } from "@@/core/domains/story-feed/get-feed-user-summaries.tool.ts";',
       filename: inDomain("assistant/assistant.ts"),
     },
+    {
+      name: "the Assistant domain composes the Mention connection tools",
+      code: 'import { createGetMentionConnectionTool } from "@@/core/domains/mention-connections/get-mention-connection.tool.ts";',
+      filename: inDomain("assistant/assistant-tools.ts"),
+    },
   ],
   invalid: [
     {
@@ -49,6 +54,14 @@ new RuleTester().run("domain-layering", domainLayering, {
       code: 'import { createStoryFeed } from "@@/core/domains/story-feed/story-feed.ts";',
       filename: inDomain("accounts/user-summary.ts"),
       errors: [{ messageId: "upward", data: { importer: "accounts", imported: "story-feed" } }],
+    },
+    {
+      name: "the Mention connections read stickers and Accounts, never the story feed",
+      code: 'import { createStoryFeed } from "@@/core/domains/story-feed/story-feed.ts";',
+      filename: inDomain("mention-connections/mention-connections.ts"),
+      errors: [
+        { messageId: "upward", data: { importer: "mention-connections", imported: "story-feed" } },
+      ],
     },
     {
       name: "the story feed still cannot import the fetch run",

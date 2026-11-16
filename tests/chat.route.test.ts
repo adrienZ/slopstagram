@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { z } from "zod";
 import type { AssistantTools } from "@@/core/domains/assistant/assistant-tools.ts";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
 import { handleChatRequest } from "../app/routes/api/chat.ts";
+import { chatRequest, readChunks, userMessage } from "./setup/chat-stream.ts";
 import {
   assistantAnswer,
   assistantGreeting,
@@ -24,46 +24,6 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
 });
-
-const ChunkSchema = z.looseObject({ type: z.string() });
-
-function chatRequest(body: string) {
-  return new globalThis.Request("http://localhost/api/chat", { body, method: "POST" });
-}
-
-function userMessage(text: string) {
-  return JSON.stringify({
-    messages: [{ id: "message-1", parts: [{ text, type: "text" }], role: "user" }],
-  });
-}
-
-type Chunk = z.infer<typeof ChunkSchema>;
-
-function joinDeltas(events: Array<Chunk>, type: string) {
-  return events
-    .filter((chunk) => chunk.type === type)
-    .map((chunk) => z.string().parse(chunk.delta))
-    .join("");
-}
-
-async function readChunks(response: Response) {
-  const stream = await response.text();
-  const events = stream.split("\n\n").flatMap((event) => {
-    const data = event.replace(/^data: /u, "").trim();
-    return data.length === 0 || data === "[DONE]" ? [] : [ChunkSchema.parse(JSON.parse(data))];
-  });
-  return {
-    events,
-    reasoning: joinDeltas(events, "reasoning-delta"),
-    text: joinDeltas(events, "text-delta"),
-    toolInputs: events
-      .filter((chunk) => chunk.type === "tool-input-available")
-      .map((chunk) => ({ input: chunk.input, toolName: chunk.toolName })),
-    toolOutputs: events
-      .filter((chunk) => chunk.type === "tool-output-available")
-      .map((chunk) => chunk.output),
-  };
-}
 
 test("a mentioned account with a stored user summary streams the tool call, its summary, then the answer", async (context) => {
   const world = await createWorld(context);
@@ -374,10 +334,16 @@ test("reading a place streams the getTaggedPlace call, its details, then an answ
 const stepAfterEachTool: Record<keyof AssistantTools, { question: string; thinksAfter: boolean }> =
   {
     getFeedUserSummaries: { question: "What about @user_072?", thinksAfter: false },
+    getMentionConnection: {
+      question: "Connection @user_072 and @user_008",
+      thinksAfter: false,
+    },
     getTaggedPlace: { question: `Place instagram:${placeId}`, thinksAfter: false },
     listAccounts: { question: "Which accounts do you know?", thinksAfter: false },
+    listMentionConnections: { question: "Which mentions?", thinksAfter: false },
     listTaggedPlaces: { question: "Which places?", thinksAfter: false },
     searchAccounts: { question: "Search USER_07", thinksAfter: true },
+    searchMentionPeople: { question: "Search mentions user", thinksAfter: true },
     searchTaggedPlaces: { question: "Search places CAFÉ", thinksAfter: true },
   };
 
@@ -395,6 +361,11 @@ test.for(Object.entries(stepAfterEachTool))(
     expect(
       world.ollama.requests.filter(({ kind }) => kind === "chat").map(({ think }) => think),
     ).toStrictEqual([true, thinksAfter]);
+    expect(
+      world.ollama.requests
+        .filter(({ kind }) => kind === "chat")
+        .map(({ contextLength }) => contextLength),
+    ).toStrictEqual([8192, 8192]);
   },
 );
 

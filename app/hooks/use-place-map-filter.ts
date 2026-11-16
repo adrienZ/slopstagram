@@ -1,11 +1,13 @@
 import { useNavigate } from "@tanstack/react-router";
 import type { TimelinePlace } from "../utils/timeline-locations.ts";
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
-
-/** The usernames of the accounts in `chosen`, in account order; unknown names are dropped. */
-function keepAccounts(accounts: Array<SidebarUser>, chosen: Set<string>): Array<string> {
-  return accounts.flatMap(({ username }) => (chosen.has(username) ? [username] : []));
-}
+import {
+  formatAccountFilters,
+  keepAccountFilters,
+  parseAccountFilters,
+  replaceViewSearch,
+  toggleAccountFilter,
+} from "../search-params.ts";
 
 /** Each place keeps only the chosen accounts' stories, so its latest story is theirs. None chosen means all. */
 function filterPlaces(places: Array<TimelinePlace>, selected: Array<string>): Array<TimelinePlace> {
@@ -30,20 +32,17 @@ export function usePlaceMapFilter(
   search: { accounts?: string; place?: string },
 ) {
   const navigate = useNavigate({ from: "/map" });
-  const selected = keepAccounts(accounts, new Set(search.accounts?.split(",")));
+  const selected = keepAccountFilters(accounts, parseAccountFilters(search.accounts));
   const place = places.find(({ id }) => id === search.place);
 
-  function update(usernames: Set<string>, placeFilter: "keep" | "remove") {
-    const chosen = keepAccounts(accounts, usernames);
+  function update(usernames: Array<string>, placeFilter: "keep" | "remove") {
     void navigate({
-      to: ".",
+      ...replaceViewSearch,
       search: (previous) => ({
         ...previous,
-        accounts: chosen.length === 0 ? undefined : chosen.join(","),
+        accounts: formatAccountFilters(keepAccountFilters(accounts, usernames)),
         place: placeFilter === "keep" ? previous.place : undefined,
       }),
-      replace: true,
-      resetScroll: false,
     });
   }
 
@@ -52,17 +51,13 @@ export function usePlaceMapFilter(
     place,
     places: filterPlaces(place === undefined ? places : [place], selected),
     toggle: (username: string) => {
-      const next = new Set(selected);
-      if (!next.delete(username)) {
-        next.add(username);
-      }
-      update(next, "keep");
+      update(toggleAccountFilter(selected, username), "keep");
     },
     removePlace: () => {
-      update(new Set(selected), "remove");
+      update(selected, "remove");
     },
     clear: () => {
-      update(new Set(), "remove");
+      update([], "remove");
     },
   };
 }

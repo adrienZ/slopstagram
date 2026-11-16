@@ -1,7 +1,6 @@
 import { useId } from "react";
 import { cn } from "cn";
 import { FilterIcon, MapPinIcon, XIcon } from "lucide-react";
-import type { SidebarUser } from "../loaders/sidebar-users.ts";
 import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/ui/avatar.tsx";
 import { Badge } from "../shadcn/ui/badge.tsx";
 import { Button } from "../shadcn/ui/button.tsx";
@@ -10,10 +9,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "../shadcn/ui/popover.ts
 import { formatUserHandle, formatUserInitials } from "../utils/helper.ts";
 
 interface AccountFilterProps {
-  accounts: Array<SidebarUser>;
+  accounts: Array<{ username: string; avatarPath?: string }>;
   selected: Array<string>;
   onToggle: (username: string) => void;
   onClear: () => void;
+  /** Set when the page keeps filters it did not apply, which still need clearing. */
+  clearable?: boolean;
   place?: { name: string; onRemove: () => void };
 }
 
@@ -41,6 +42,7 @@ export function AccountChecklist({
   onToggle,
   onClear,
   place,
+  clearable = selected.length > 0 || place !== undefined,
   listClassName = "tw:max-h-72",
 }: AccountFilterProps & {
   listClassName?: string;
@@ -48,12 +50,7 @@ export function AccountChecklist({
   const id = useId();
   return (
     <>
-      <Button
-        variant="ghost"
-        size="sm"
-        disabled={selected.length === 0 && place === undefined}
-        onClick={onClear}
-      >
+      <Button variant="ghost" size="sm" disabled={!clearable} onClick={onClear}>
         Effacer les filtres
       </Button>
       {place !== undefined && <PlaceFilterEntry {...place} />}

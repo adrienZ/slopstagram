@@ -168,6 +168,78 @@ export function editRecordedUsers(
   };
 }
 
+export function mentionStickers(mentions: Array<{ username?: string; full_name?: string }>) {
+  return mentions.map((mention) => ({ bloks_sticker: { sticker_data: { ig_mention: mention } } }));
+}
+
+/** The page is parsed again afterwards, so the copies share nothing with the story they copy. */
+export function addRecordedReels(
+  recorded: RecordedPayloads,
+  reels: Array<{ userPk: string; username: string; storyPk: string }>,
+): RecordedPayloads {
+  const [firstPage, ...otherPages] = recorded.galleryPages;
+  return {
+    ...recorded,
+    galleryPages: [
+      updateGalleryPage(firstPage, (connection) => {
+        const [template] = connection.edges;
+        const [story] = template.node.items ?? [];
+        const storyUser = story.user;
+        for (const { userPk, username, storyPk } of reels) {
+          connection.edges.push({
+            ...template,
+            node: {
+              ...template.node,
+              id: userPk,
+              user: { ...template.node.user, pk: userPk, id: userPk, username },
+              items: [
+                {
+                  ...story,
+                  pk: storyPk,
+                  id: storyPk,
+                  user: isJsonObject(storyUser)
+                    ? { ...storyUser, pk: userPk, id: userPk }
+                    : storyUser,
+                },
+              ],
+            },
+          });
+        }
+      }),
+      ...otherPages,
+    ],
+  };
+}
+
+export function addRecordedStories(
+  recorded: RecordedPayloads,
+  stories: Array<{ userPk: string; storyPk: string }>,
+): RecordedPayloads {
+  const copiedUserPks = new Set<string>();
+  const galleryPages = recorded.galleryPages.map((payload) =>
+    updateGalleryPage(payload, ({ edges }) => {
+      for (const { node } of edges) {
+        const items = node.items ?? [];
+        const added = stories.filter(({ userPk }) => userPk === node.user?.pk);
+        if (added.length > 0 && items.length > 0) {
+          node.items = [
+            ...items,
+            ...added.map(({ storyPk }) => ({ ...items[0], pk: storyPk, id: storyPk })),
+          ];
+          copiedUserPks.add(added[0].userPk);
+        }
+      }
+    }),
+  );
+  const missing = stories.filter(({ userPk }) => !copiedUserPks.has(userPk));
+  if (missing.length > 0) {
+    throw new Error(
+      `No recorded story to copy for ${missing.map(({ userPk }) => userPk).join(", ")}`,
+    );
+  }
+  return { ...recorded, galleryPages };
+}
+
 /** The tray is dropped too, so the client derives it from the remaining stories. */
 export function keepRecordedStories(
   recorded: RecordedPayloads,

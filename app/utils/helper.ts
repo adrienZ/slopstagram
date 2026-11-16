@@ -18,6 +18,10 @@ export function formatReportDate(value: string): string {
         .replace(",", " à");
 }
 
+export function formatStoryCount(count: number): string {
+  return `${count} ${count > 1 ? "stories" : "story"}`;
+}
+
 export function formatUserHandle(username: string): string {
   return `@${username.trim().replace(/^@/u, "")}`;
 }

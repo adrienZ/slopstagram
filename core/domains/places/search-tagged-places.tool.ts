@@ -1,7 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
+import { PageOffsetSchema } from "@@/core/utils/paging.ts";
 import {
-  PlaceOffsetSchema,
   searchTaggedPlaces,
   TaggedPlacePageSchema,
   type TaggedPlacesReadRuntime,
@@ -23,7 +23,7 @@ export function createSearchTaggedPlacesTool(runtime: TaggedPlacesReadRuntime) {
         .describe(
           'The name, address or category, or part of it, to look for. Example: "louvre" for "did anyone go to the Louvre?".',
         ),
-      offset: PlaceOffsetSchema,
+      offset: PageOffsetSchema,
     }),
     outputSchema: TaggedPlacePageSchema,
     execute: (input) => searchTaggedPlaces(runtime, input),

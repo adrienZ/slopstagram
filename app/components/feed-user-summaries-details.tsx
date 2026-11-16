@@ -2,11 +2,7 @@ import type {
   FeedUserSummary,
   RequestedFeedUserSummary,
 } from "@@/core/domains/story-feed/feed-user-summary.ts";
-import { formatUserHandle } from "../utils/helper.ts";
-
-function formatStoryCount(count: number): string {
-  return `${count} ${count > 1 ? "stories" : "story"} dans les dernières 24 heures`;
-}
+import { formatStoryCount, formatUserHandle } from "../utils/helper.ts";
 
 function describeOutcome(outcome: FeedUserSummary, handle: string): string {
   if (outcome.status === "found") {
@@ -35,7 +31,9 @@ export function FeedUserSummariesDetails({
           <li key={requestedUsername} className="tw:grid tw:gap-1">
             <span className="tw:flex tw:flex-wrap tw:items-center tw:gap-2">
               <span className="tw:font-medium">{handle}</span>
-              {outcome.status === "found" && <span>{formatStoryCount(outcome.storyCount)}</span>}
+              {outcome.status === "found" && (
+                <span>{formatStoryCount(outcome.storyCount)} dans les dernières 24 heures</span>
+              )}
             </span>
             <p className="tw:leading-relaxed">{describeOutcome(outcome, handle)}</p>
           </li>
