@@ -40,7 +40,7 @@ const UserSummaryResponseSchema = z
 
 const USER_SUMMARY_OUTPUT_SCHEMA = z.toJSONSchema(UserSummaryResponseSchema);
 
-type RunUserSummary = (prompt: string) => Promise<string>;
+export type RunUserSummary = (prompt: string) => Promise<string>;
 
 type ResolveUserSummariesRuntime = Pick<Runtime, "fetchOllama" | "logger"> & {
   summaries: Pick<UserSummaryRepository, "findBySourceHash" | "save">;

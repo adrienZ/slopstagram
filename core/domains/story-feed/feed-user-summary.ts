@@ -8,6 +8,7 @@ import { getReportUserKey } from "@@/core/domains/accounts/report-user-key.ts";
 import {
   readUserSummaries,
   resolveUserSummariesForReport,
+  type RunUserSummary,
 } from "@@/core/domains/accounts/user-summary.ts";
 import type { InstagramUserEntry } from "@@/core/domains/database/entities/instagram-user.ts";
 import { createStoryFeed, readStoryFeedVision } from "./story-feed.ts";
@@ -25,13 +26,14 @@ type SummarizeStoryFeedRuntime = Parameters<typeof resolveUserSummariesForReport
 export async function summarizeStoryFeed(
   runtime: SummarizeStoryFeedRuntime,
   now: Date,
+  runUserSummary?: RunUserSummary,
 ): Promise<void> {
   const users = createStoryFeed(runtime, now);
 
   await resolveUserSummariesForReport(
     runtime,
     { output: { users } },
-    { visionByPreviewUrl: readStoryFeedVision(runtime, users) },
+    { runUserSummary, visionByPreviewUrl: readStoryFeedVision(runtime, users) },
   );
 }
 

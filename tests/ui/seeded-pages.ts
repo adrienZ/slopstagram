@@ -74,17 +74,9 @@ export async function seedPageDatabase(runtime: Runtime): Promise<void> {
   }
 
   await summarizeStoryFeed(
-    {
-      ...runtime,
-      fetchOllama: async () =>
-        await Promise.resolve(
-          globalThis.Response.json({
-            done: true,
-            response: JSON.stringify({ summary: userSummary }),
-          }),
-        ),
-    },
+    runtime,
     pageNow,
+    async () => await Promise.resolve(JSON.stringify({ summary: userSummary })),
   );
 }
 
