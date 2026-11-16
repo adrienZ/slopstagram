@@ -14,7 +14,7 @@ type NameId = `name:${string}`;
 type MentionTargetId = AccountId | UsernameId | NameId;
 
 /** A story's author, or the only current Account whose username a sticker names. */
-export interface AccountTarget {
+interface AccountTarget {
   kind: "account";
   id: AccountId;
   label: string;
@@ -28,6 +28,7 @@ interface UsernameTarget {
   id: UsernameId;
   label: string;
   username: string;
+  fullName: null;
 }
 
 interface UnknownUsernameTarget extends UsernameTarget {
@@ -40,7 +41,7 @@ interface UnknownUsernameTarget extends UsernameTarget {
  */
 interface AmbiguousUsernameTarget extends UsernameTarget {
   kind: "ambiguous-username";
-  accountPks: Array<string>;
+  accounts: Array<AccountTarget>;
 }
 
 /** Equal full names do not prove identity, so each story's name stays its own target. */
@@ -48,6 +49,7 @@ interface NameTarget {
   kind: "name";
   id: NameId;
   label: string;
+  fullName: string;
   storyPk: string;
 }
 
@@ -78,17 +80,18 @@ export interface MentionConnections {
   connections: Array<MentionConnection>;
 }
 
-function toAccountTarget(
-  account: Pick<InstagramUserEntry, "pk" | "username" | "full_name">,
-): AccountTarget {
-  return {
-    kind: "account",
-    id: `account:${account.pk}`,
-    label: `@${account.username}`,
-    pk: account.pk,
-    username: account.username,
-    fullName: account.full_name,
-  };
+function toAccountTarget({
+  pk,
+  username,
+  fullName,
+}: Pick<AccountTarget, "pk" | "username" | "fullName">): AccountTarget {
+  return { kind: "account", id: `account:${pk}`, label: `@${username}`, pk, username, fullName };
+}
+
+function toAccountTargets(accounts: Array<InstagramUserEntry>): Array<AccountTarget> {
+  return accounts.map(({ pk, username, full_name: fullName }) =>
+    toAccountTarget({ pk, username, fullName }),
+  );
 }
 
 function toConnectionTargetIds(
@@ -98,8 +101,13 @@ function toConnectionTargetIds(
   return a < b ? [a, b] : [b, a];
 }
 
-function createUsernameResolver(accounts: Array<InstagramUserEntry>) {
-  const accountsByUsername = Map.groupBy(accounts, ({ username }) => username.toLowerCase());
+/** Accounts by username ignoring case, the way a sticker's username names them. */
+function groupByUsername(accounts: Array<AccountTarget>): Map<string, Array<AccountTarget>> {
+  return Map.groupBy(accounts, ({ username }) => username.toLowerCase());
+}
+
+function createUsernameResolver(accounts: Array<AccountTarget>) {
+  const accountsByUsername = groupByUsername(accounts);
 
   return function resolveUsername(
     caseInsensitiveUsername: string,
@@ -107,12 +115,17 @@ function createUsernameResolver(accounts: Array<InstagramUserEntry>) {
     const username = caseInsensitiveUsername.toLowerCase();
     const matches = accountsByUsername.get(username) ?? [];
     if (matches.length === 1) {
-      return toAccountTarget(matches[0]);
+      return matches[0];
     }
-    const target: UsernameTarget = { id: `username:${username}`, label: `@${username}`, username };
+    const target: UsernameTarget = {
+      id: `username:${username}`,
+      label: `@${username}`,
+      username,
+      fullName: null,
+    };
     return matches.length === 0
       ? { kind: "unknown-username", ...target }
-      : { kind: "ambiguous-username", ...target, accountPks: matches.map(({ pk }) => pk) };
+      : { kind: "ambiguous-username", ...target, accounts: matches };
   };
 }
 
@@ -121,6 +134,7 @@ function toNameTarget(label: string, storyPk: string): NameTarget {
     kind: "name",
     id: `name:${storyPk}:${encodeURIComponent(label.toLowerCase())}`,
     label,
+    fullName: label,
     storyPk,
   };
 }
@@ -128,7 +142,7 @@ function toNameTarget(label: string, storyPk: string): NameTarget {
 function namesAuthor(target: MentionTarget, author: AccountTarget): boolean {
   return (
     target.id === author.id ||
-    (target.kind === "ambiguous-username" && target.accountPks.includes(author.pk))
+    (target.kind === "ambiguous-username" && target.accounts.some(({ id }) => id === author.id))
   );
 }
 
@@ -140,7 +154,7 @@ export function readMentionConnections(
   runtime: Pick<MentionConnectionsRuntime, "stories">,
   accounts: Array<InstagramUserEntry>,
 ): MentionConnections {
-  const resolveUsername = createUsernameResolver(accounts);
+  const resolveUsername = createUsernameResolver(toAccountTargets(accounts));
   const targets = new Map<MentionTargetId, MentionTarget>();
   const connections = new Map<string, MentionConnection>();
 
@@ -196,36 +210,52 @@ function keepNeighborhoods(
   };
 }
 
+/** A username of the drawn Accounts, ignoring case, and the Accounts it names. */
+interface DrawnUsername {
+  username: string;
+  accounts: Array<AccountTarget>;
+}
+
 /**
- * A username several drawn Accounts share selects all of them, since nothing tells which one is
- * meant. One username no drawn Account has skips every filter, so a shared link never shows a
- * partial graph as the one asked for.
+ * Ignoring case, as stickers name Accounts: a username several drawn Accounts share names all of
+ * them, since nothing tells which one is meant.
+ */
+function listDrawnUsernames(targets: Array<MentionTarget>): Array<DrawnUsername> {
+  const accounts = targets.flatMap((target) => (target.kind === "account" ? [target] : []));
+  return [...groupByUsername(accounts)].map(([username, shared]) => ({
+    username: shared.length === 1 ? shared[0].username : username,
+    accounts: shared,
+  }));
+}
+
+/**
+ * Usernames are matched ignoring case. One username no drawn Account has skips every filter, so a
+ * shared link never shows a partial graph as the one asked for.
  */
 export function filterByAccounts(graph: MentionConnections, usernames: Array<string>) {
-  const accounts = graph.targets.flatMap((target) => (target.kind === "account" ? [target] : []));
-  const accountsByUsername = Map.groupBy(accounts, ({ username }) => username);
-  const requested = [...new Set(usernames)];
-  const unknownUsernames = requested.filter((username) => !accountsByUsername.has(username));
-  const selectedUsernames = unknownUsernames.length > 0 ? [] : requested;
-  const selectedIds = new Set(
-    selectedUsernames.flatMap((username) =>
-      (accountsByUsername.get(username) ?? []).map(({ id }) => id),
-    ),
+  const drawnUsernames = listDrawnUsernames(graph.targets);
+  const drawnByUsername = new Map(
+    drawnUsernames.map((drawn) => [drawn.username.toLowerCase(), drawn]),
   );
+  const requested = [...new Set(usernames)];
+  const unknownUsernames = requested.filter(
+    (username) => !drawnByUsername.has(username.toLowerCase()),
+  );
+  const selected =
+    unknownUsernames.length > 0
+      ? []
+      : [
+          ...new Set(
+            requested.flatMap((username) => drawnByUsername.get(username.toLowerCase()) ?? []),
+          ),
+        ];
+  const selectedIds = new Set(selected.flatMap(({ accounts }) => accounts.map(({ id }) => id)));
   return {
-    accounts,
-    selectedUsernames,
+    drawnUsernames,
+    selectedUsernames: selected.map(({ username }) => username),
     unknownUsernames,
     graph: selectedIds.size === 0 ? graph : keepNeighborhoods(graph, selectedIds),
   };
-}
-
-/** An Account's full name, or the one a name-only sticker carries. */
-export function fullNameOf(target: MentionTarget): string | null {
-  if (target.kind === "name") {
-    return target.label;
-  }
-  return target.kind === "account" ? target.fullName : null;
 }
 
 /**
@@ -242,20 +272,17 @@ export function findMentionTargets(
   query: string,
 ): Array<MentionTarget> {
   const wanted = query.trim();
-  const accountTargets = accounts.map(toAccountTarget);
+  const accountTargets = toAccountTargets(accounts);
   const target = [...targets, ...accountTargets].find(({ id }) => id === wanted);
   if (target !== undefined) {
     return [target];
   }
-  const named = createUsernameResolver(accounts)(wanted.replace(/^@/u, ""));
+  const named = createUsernameResolver(accountTargets)(wanted.replace(/^@/u, ""));
   if (named.kind === "account") {
     return [named];
   }
   if (named.kind === "ambiguous-username") {
-    return [
-      ...targets.filter(({ id }) => id === named.id),
-      ...accountTargets.filter(({ pk }) => named.accountPks.includes(pk)),
-    ];
+    return [...targets.filter(({ id }) => id === named.id), ...named.accounts];
   }
   if (targets.some(({ id }) => id === named.id)) {
     return [named];
@@ -265,9 +292,6 @@ export function findMentionTargets(
     return [];
   }
   return [...targets.filter(({ kind }) => kind === "name"), ...accountTargets].filter(
-    (candidate) => {
-      const fullName = fullNameOf(candidate);
-      return fullName !== null && normalizeSearchQuery(fullName) === name;
-    },
+    ({ fullName }) => fullName !== null && normalizeSearchQuery(fullName) === name,
   );
 }

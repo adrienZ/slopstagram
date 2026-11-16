@@ -47,17 +47,28 @@ const unknown = {
   kind: "unknown-username",
   id: `username:${unknownUsername}`,
   label: `@${unknownUsername}`,
+  fullName: null,
 };
 /** The same full name, named by a sticker of the third account's story and of the first's. */
 const nameOnCleoStory = {
-  person: { kind: "name", id: "name:700000000000100:fixture%20name", label: mentionedName },
+  person: {
+    kind: "name",
+    id: "name:700000000000100:fixture%20name",
+    label: mentionedName,
+    fullName: mentionedName,
+  },
   connectionCount: 1,
   storyCount: 1,
   latestStoryDate: "2026-07-26T06:38:35.000Z",
   connectedTo: [cleo.label],
 };
 const nameOnAdaStory = {
-  person: { kind: "name", id: "name:700000000000079:fixture%20name", label: mentionedName },
+  person: {
+    kind: "name",
+    id: "name:700000000000079:fixture%20name",
+    label: mentionedName,
+    fullName: mentionedName,
+  },
   connectionCount: 1,
   storyCount: 1,
   latestStoryDate: "2026-07-26T02:10:50.000Z",

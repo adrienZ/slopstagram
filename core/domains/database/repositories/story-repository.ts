@@ -408,7 +408,7 @@ export class StoryRepository {
           author: {
             pk: instagramUsers.pk,
             username: instagramUsers.username,
-            full_name: instagramUsers.fullName,
+            fullName: instagramUsers.fullName,
           },
           label: storyStickers.label,
         })

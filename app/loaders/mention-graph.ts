@@ -6,7 +6,6 @@ import { media } from "@@/core/domains/media-store/media-urls.ts";
 import {
   filterByAccounts,
   readMentionConnections,
-  type AccountTarget,
   type MentionConnectionsRuntime,
   type MentionTarget,
 } from "@@/core/domains/mention-connections/mention-connections.ts";
@@ -52,10 +51,10 @@ function toGraphPoint(target: MentionTarget): MentionGraphPoint {
 }
 
 /** A username several drawn Accounts share has no avatar: one would picture only one of them. */
-function toFilterOptions(accounts: Array<AccountTarget>) {
-  return [...Map.groupBy(accounts, ({ username }) => username)]
-    .toSorted(([left], [right]) => left.localeCompare(right))
-    .map(([username, [first, ...others]]) => ({
+function toFilterOptions(drawnUsernames: ReturnType<typeof filterByAccounts>["drawnUsernames"]) {
+  return drawnUsernames
+    .toSorted((left, right) => left.username.localeCompare(right.username))
+    .map(({ username, accounts: [first, ...others] }) => ({
       username,
       avatarPath: others.length === 0 ? media.image.avatar(first.pk).url : undefined,
     }));
@@ -63,7 +62,7 @@ function toFilterOptions(accounts: Array<AccountTarget>) {
 
 /** `source` and `target` only name the two ends: who mentioned whom is in the source stories. */
 export function loadMentionGraph(runtime: MentionGraphRuntime, accountFilters: Array<string>) {
-  const { accounts, selectedUsernames, unknownUsernames, graph } = filterByAccounts(
+  const { drawnUsernames, selectedUsernames, unknownUsernames, graph } = filterByAccounts(
     readMentionConnections(runtime, runtime.users.listAll()),
     accountFilters,
   );
@@ -82,7 +81,7 @@ export function loadMentionGraph(runtime: MentionGraphRuntime, accountFilters: A
     ...new Set(connections.flatMap(({ storyPks }) => storyPks)),
   ]);
   const sidebarUsers = loadSidebarUsers(runtime);
-  const accountOptions = toFilterOptions(accounts);
+  const accountOptions = toFilterOptions(drawnUsernames);
   return {
     accounts: accountOptions,
     selectedAccounts: keepAccountFilters(accountOptions, selectedUsernames),
