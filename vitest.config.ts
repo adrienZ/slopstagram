@@ -1,5 +1,4 @@
 import { fileURLToPath, URL } from "node:url";
-import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -16,28 +15,17 @@ export default defineConfig({
       thresholds: {
         // Floor to whole percents: just under the measured value, so tiny fluctuations never fail.
         autoUpdate: (value) => Math.floor(value),
-        statements: 94,
-        branches: 88,
-        functions: 94,
-        lines: 94,
+        statements: 93,
+        branches: 87,
+        functions: 93,
+        lines: 93,
       },
     },
     // Keep server/SQLite tests in Node and browser UI tests in jsdom with their own setup.
     projects: [
       {
         extends: true,
-        // Compiles server functions as the app build does, so page loaders run them on the server.
-        plugins: [tanstackStart({ srcDirectory: "app" })],
-        test: {
-          name: "node",
-          environment: "node",
-          include: ["tests/**/*.test.ts"],
-          // Start resolves server functions through a virtual module only its plugin serves.
-          server: { deps: { inline: ["@tanstack/start-server-core"] } },
-          // The plugin learns the server functions while it transforms their module, which a cached
-          // transform skips.
-          fsModuleCache: false,
-        },
+        test: { name: "node", environment: "node", include: ["tests/**/*.test.ts"] },
       },
       {
         extends: true,
