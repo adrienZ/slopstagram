@@ -49,7 +49,7 @@ test("timeline shows the handle, the dated gallery and the active account", asyn
     months.flatMap((month) => month.days),
   );
 
-  expect(days.map(({ key }) => key)).toEqual(["2026-07-26", "2026-07-25"]);
+  expect(days.map(({ key }) => key)).toStrictEqual(["2026-07-26", "2026-07-25"]);
 
   for (const { key, stories } of days) {
     const day = gallery.getByRole("region", { name: key });
@@ -179,7 +179,7 @@ test("an empty account keeps navigation and every sticker kind without expansion
     screen
       .getAllByRole("region", { name: /^Type de sticker :/u })
       .map((card) => within(card).getByRole("heading").textContent),
-  ).toEqual(timelineProps.stickerGroups.map(({ kind }) => kind));
+  ).toStrictEqual(timelineProps.stickerGroups.map(({ kind }) => kind));
   expect(screen.getAllByText("Aucun sticker")).toHaveLength(timelineProps.stickerGroups.length);
   expect(
     screen.queryByRole("button", {
@@ -212,7 +212,7 @@ test("a timeline story deep link opens the preview, steps to the next story and 
   expect(dialog.getByText(`2 / ${timelineProps.stories.length}`)).toBeVisible();
   await user.keyboard("{Escape}");
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  expect(router.state.location.search).toEqual({});
+  expect({ ...router.state.location.search }).toStrictEqual({});
 });
 
 test("mobile calendar opens in a sheet and closes after choosing a day", async () => {

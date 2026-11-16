@@ -1,6 +1,11 @@
 import { defineConfig } from "oxlint";
 import ultracite from "ultracite/oxlint/core";
 import antiSlop from "ultracite/oxlint/anti-slop";
+import drizzle from "ultracite/oxlint/drizzle";
+import playwright from "ultracite/oxlint/playwright";
+import react from "ultracite/oxlint/react";
+import tanstack from "ultracite/oxlint/tanstack";
+import vitest from "ultracite/oxlint/vitest";
 
 interface RestrictedPath {
   name: string;
@@ -113,6 +118,47 @@ function restrictImports(
   ];
 }
 
+// Oxlint applies the overrides of an extended config after the root ones, so these follow the vitest preset in `extends`.
+const testConventions = defineConfig({
+  overrides: [
+    {
+      files: ["tests/**"],
+      plugins: ["vitest", "react"],
+      rules: {
+        // Tests are named after the module they cover and sit at the top level of their file.
+        "vitest/require-top-level-describe": "off",
+        "vitest/consistent-test-it": ["error", { fn: "test", withinDescribe: "test" }],
+        // Tests go through production code paths, so one test asserts the whole result it gets back.
+        "vitest/max-expects": "off",
+        // useSharedTestRuntime and its kin are vitest fixtures, not React hooks.
+        "react-hooks/rules-of-hooks": "off",
+        // Both weaken `toBe(false)` and `toBe(true)` into truthiness checks.
+        "vitest/prefer-to-be-falsy": "off",
+        "vitest/prefer-to-be-truthy": "off",
+        // Its fix turns `toHaveBeenCalled()` into `toHaveBeenCalledWith()`, which asserts a call without arguments.
+        "vitest/prefer-called-with": "off",
+      },
+    },
+    {
+      // RuleTester registers its cases and assertions through vitest's suite functions.
+      files: ["tests/oxlint/**"],
+      plugins: ["vitest"],
+      rules: {
+        "vitest/valid-describe-callback": "off",
+        "vitest/expect-expect": "off",
+      },
+    },
+    {
+      files: ["tests/ui/**"],
+      plugins: ["vitest"],
+      rules: {
+        // jest-dom matchers are not typed as promises on `.resolves`, so awaiting them fails typescript/await-thenable.
+        "vitest/prefer-expect-resolves": "off",
+      },
+    },
+  ],
+});
+
 const restrictedReactImports = defineConfig({
   rules: { "no-restricted-imports": restrictImports() },
 });
@@ -129,11 +175,24 @@ const ultraciteSoftenerConfig = defineConfig({
     // require-await only when useful using type aware rule
     "require-await": "off",
     "typescript/require-await": "error",
+    // Handlers are named after what they do (`toggle`, `zoomIn`), not after the event that calls them.
+    "react/jsx-handler-names": "off",
   },
 });
 
 export default defineConfig({
-  extends: [ultracite, antiSlop, ultraciteSoftenerConfig, restrictedReactImports],
+  extends: [
+    ultracite,
+    antiSlop,
+    react,
+    tanstack,
+    drizzle,
+    vitest,
+    playwright,
+    testConventions,
+    ultraciteSoftenerConfig,
+    restrictedReactImports,
+  ],
   ignorePatterns: [
     ...ultracite.ignorePatterns,
     ".agents/**",
@@ -160,6 +219,25 @@ export default defineConfig({
     "slopstagram/ai-sdk-imports": "error",
   },
   overrides: [
+    {
+      // SVG has no element for a button or a group, so the graph marks them with ARIA roles. Its canvas pans on
+      // drag and clears the selection on Escape; the points and connections are the interactive elements.
+      files: ["app/components/mention-graph.tsx"],
+      rules: {
+        "jsx-a11y/prefer-tag-over-role": "off",
+        "jsx-a11y/no-noninteractive-element-interactions": "off",
+      },
+    },
+    {
+      // A combobox popup: the message field keeps the focus and the keyboard (aria-activedescendant), so the
+      // list and its options only answer the pointer.
+      files: ["app/components/chat-mentions.tsx"],
+      rules: {
+        "jsx-a11y/prefer-tag-over-role": "off",
+        "jsx-a11y/no-noninteractive-element-to-interactive-role": "off",
+        "jsx-a11y/click-events-have-key-events": "off",
+      },
+    },
     {
       // The composition root, and what it builds from; tests build their own repositories, databases and stores.
       files: [

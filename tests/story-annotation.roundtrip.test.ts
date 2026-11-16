@@ -207,7 +207,7 @@ test("uncertain replacements never inherit identities from labels or shared asse
     },
   });
   const clones = readStoredStory(repository).annotations.stickers;
-  expect(clones.length).toBe(2);
+  expect(clones).toHaveLength(2);
   expect(clones.every((sticker) => sticker.occurrenceId !== location.occurrenceId)).toBeTruthy();
 });
 
@@ -258,8 +258,8 @@ test("story annotations survive ingestion, cold reports, and repeated saves", as
   assert.ok(stored);
   const users = createManifestUsers(tray, new Map([[stored.pk, stored]]), new Map());
   expect(users).toStrictEqual(report.manifest.users);
-  expect(stored.story_bloks_stickers).toBe(undefined);
-  expect(stored.story_locations).toBe(undefined);
+  expect(stored.story_bloks_stickers).toBeUndefined();
+  expect(stored.story_locations).toBeUndefined();
 
   const coldReport = {
     ...report,
@@ -284,85 +284,86 @@ test("story annotations survive ingestion, cold reports, and repeated saves", as
   expect(reportRepository.findByKey("original")).toStrictEqual(report);
 });
 
-for (const unifiedLocations of [false, true]) {
-  test(`cold reads preserve occurrences using ${unifiedLocations ? "unified locations" : "no unified locations"}`, async (context) => {
-    const database = createDrizzle(":memory:");
-    migrateDatabase(database);
-    context.onTestFinished(() => {
-      database.$client.close();
-    });
-    const repository = new StoryRepository(database);
-    const reports = new ReportRepository(database);
-    const owner = { full_name: "One", id: "id-1", pk: "user-1", username: "one" };
-    await new InstagramUserRepository(database).save(owner);
-    const tray = [{ id: "r1", media_ids: ["m1"], user: owner }];
-
-    const original = await fetchStories({
-      logger: createCapturingLogger(),
-      stories: repository,
-      storage: createMemoryCacheStorage(),
-      client: createClient(tray, [
-        reelsResponse({
-          r1: {
-            ...reel("r1", [
-              storyItemWithStickers("m1", {
-                story_locations: [{ location: { name: "Historical place" } }],
-                taken_at: 1_767_225_600,
-              }),
-            ]),
-            user: owner,
-          },
-        }),
-      ]),
-    });
-
-    await reports.save("historical", original);
-
-    // Existing relational data may contain repeated labels and kinds unknown to the extractor.
-    // Insert out of order to ensure reads use persisted occurrence order.
-    const stickers = [
-      { kind: "mention", label: "@same", mediaPk: "m1", sortOrder: 9 },
-      { kind: "custom", label: "mention:@same", mediaPk: "m1", sortOrder: 8 },
-      { kind: "mention", label: "@same", mediaPk: "m1", sortOrder: 2 },
-    ];
-
-    if (unifiedLocations) {
-      stickers.push(
-        { kind: "location", label: "Unified place", mediaPk: "m1", sortOrder: 6 },
-        { kind: "location", label: "Unified place", mediaPk: "m1", sortOrder: 5 },
-        { kind: "location", label: "First unified place", mediaPk: "m1", sortOrder: 3 },
-      );
-    }
-
-    database.$client.exec("DELETE FROM story_stickers WHERE mediaPk = 'm1'");
-    await database.insert(storyStickers).values(stickers);
-
-    const cold = new StoryRepository(database);
-    const stored = cold.findByMediaPk("m1");
-    assert.ok(stored);
-
-    const expectedLocations = unifiedLocations
-      ? ["First unified place", "Unified place", "Unified place"]
-      : [];
-
-    const users = createManifestUsers(tray, new Map([[stored.pk, stored]]), new Map());
-    expect(users[0]?.stories[0]?.locations).toStrictEqual(expectedLocations);
-    expect(users[0]?.stories[0]?.stickers).toStrictEqual(["@same", "mention:@same", "@same"]);
-    expect(stored.annotations?.stickers.map((sticker) => sticker.kind)).toStrictEqual(
-      unifiedLocations
-        ? ["mention", "location", "location", "location", "custom", "mention"]
-        : ["mention", "custom", "mention"],
-    );
-    await cold.save(stored, owner);
-    await cold.save(stored, owner);
-    expect(cold.findByMediaPk("m1")).toStrictEqual(stored);
-    const [timeline] = cold.listByUsername("one");
-    expect(timeline.locations).toStrictEqual(expectedLocations);
-    expect(timeline.stickers).toStrictEqual(users[0]?.stories[0]?.stickers);
-    expect(timeline.story).toStrictEqual(stored);
-    expect(reports.findByKey("historical")).toStrictEqual(original);
+test.for([
+  { unifiedLocations: false, label: "no unified locations" },
+  { unifiedLocations: true, label: "unified locations" },
+])("cold reads preserve occurrences using $label", async ({ unifiedLocations }, context) => {
+  const database = createDrizzle(":memory:");
+  migrateDatabase(database);
+  context.onTestFinished(() => {
+    database.$client.close();
   });
-}
+  const repository = new StoryRepository(database);
+  const reports = new ReportRepository(database);
+  const owner = { full_name: "One", id: "id-1", pk: "user-1", username: "one" };
+  await new InstagramUserRepository(database).save(owner);
+  const tray = [{ id: "r1", media_ids: ["m1"], user: owner }];
+
+  const original = await fetchStories({
+    logger: createCapturingLogger(),
+    stories: repository,
+    storage: createMemoryCacheStorage(),
+    client: createClient(tray, [
+      reelsResponse({
+        r1: {
+          ...reel("r1", [
+            storyItemWithStickers("m1", {
+              story_locations: [{ location: { name: "Historical place" } }],
+              taken_at: 1_767_225_600,
+            }),
+          ]),
+          user: owner,
+        },
+      }),
+    ]),
+  });
+
+  await reports.save("historical", original);
+
+  // Existing relational data may contain repeated labels and kinds unknown to the extractor.
+  // Insert out of order to ensure reads use persisted occurrence order.
+  const stickers = [
+    { kind: "mention", label: "@same", mediaPk: "m1", sortOrder: 9 },
+    { kind: "custom", label: "mention:@same", mediaPk: "m1", sortOrder: 8 },
+    { kind: "mention", label: "@same", mediaPk: "m1", sortOrder: 2 },
+  ];
+
+  if (unifiedLocations) {
+    stickers.push(
+      { kind: "location", label: "Unified place", mediaPk: "m1", sortOrder: 6 },
+      { kind: "location", label: "Unified place", mediaPk: "m1", sortOrder: 5 },
+      { kind: "location", label: "First unified place", mediaPk: "m1", sortOrder: 3 },
+    );
+  }
+
+  database.$client.exec("DELETE FROM story_stickers WHERE mediaPk = 'm1'");
+  await database.insert(storyStickers).values(stickers);
+
+  const cold = new StoryRepository(database);
+  const stored = cold.findByMediaPk("m1");
+  assert.ok(stored);
+
+  const expectedLocations = unifiedLocations
+    ? ["First unified place", "Unified place", "Unified place"]
+    : [];
+
+  const users = createManifestUsers(tray, new Map([[stored.pk, stored]]), new Map());
+  expect(users[0]?.stories[0]?.locations).toStrictEqual(expectedLocations);
+  expect(users[0]?.stories[0]?.stickers).toStrictEqual(["@same", "mention:@same", "@same"]);
+  expect(stored.annotations?.stickers.map((sticker) => sticker.kind)).toStrictEqual(
+    unifiedLocations
+      ? ["mention", "location", "location", "location", "custom", "mention"]
+      : ["mention", "custom", "mention"],
+  );
+  await cold.save(stored, owner);
+  await cold.save(stored, owner);
+  expect(cold.findByMediaPk("m1")).toStrictEqual(stored);
+  const [timeline] = cold.listByUsername("one");
+  expect(timeline.locations).toStrictEqual(expectedLocations);
+  expect(timeline.stickers).toStrictEqual(users[0]?.stories[0]?.stickers);
+  expect(timeline.story).toStrictEqual(stored);
+  expect(reports.findByKey("historical")).toStrictEqual(original);
+});
 
 test("partial ingestion merges sources for fresh reports, cold reads, and resaves", async (context) => {
   const database = createDrizzle(":memory:");

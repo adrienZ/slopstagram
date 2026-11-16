@@ -40,42 +40,40 @@ function requestBodyToString(body: BodyInit | null | undefined): string {
   return z.string().parse(body);
 }
 
-describe("resolveVisionForReport", () => {
-  for (const entry of [
+describe(resolveVisionForReport, () => {
+  test.for([
     { name: "missing", cachedPath: undefined, warning: "no cached preview" },
     { name: "empty", cachedPath: "", warning: "no cached preview" },
     { name: "non-JPEG", cachedPath: "images/story.webp", warning: "preview is not JPEG" },
     { name: "unstored", cachedPath: "images/gone.jpg", warning: "cached preview is missing" },
-  ]) {
-    test(`skips ${entry.name} cached previews without contacting vision`, async (context) => {
-      let fetchCount = 0;
+  ])("skips $name cached previews without contacting vision", async (entry, context) => {
+    let fetchCount = 0;
 
-      const runtime = await createTestRuntime(context, {
-        fetchOllama: async () => {
-          fetchCount += 1;
-          throw new Error("vision must not be called for invalid previews");
-        },
-      });
-
-      const paths = new Map<string, string>();
-
-      if (entry.cachedPath !== undefined) {
-        paths.set(previewSource, entry.cachedPath);
-      }
-
-      const result = await resolveVisionForReport(runtime, createVisionReport(), {
-        profilePicPathByUrl: new Map(),
-        storyPreviewPathByUrl: paths,
-      });
-
-      expect(result.get(previewSource)).toStrictEqual({
-        text: "",
-        visual: `vision failed: ${entry.warning}`,
-      });
-      expect(fetchCount).toBe(0);
-      expect(runtime.vision.findByMediaPk("story-pk")).toBeNull();
+    const runtime = await createTestRuntime(context, {
+      fetchOllama: async () => {
+        fetchCount += 1;
+        throw new Error("vision must not be called for invalid previews");
+      },
     });
-  }
+
+    const paths = new Map<string, string>();
+
+    if (entry.cachedPath !== undefined) {
+      paths.set(previewSource, entry.cachedPath);
+    }
+
+    const result = await resolveVisionForReport(runtime, createVisionReport(), {
+      profilePicPathByUrl: new Map(),
+      storyPreviewPathByUrl: paths,
+    });
+
+    expect(result.get(previewSource)).toStrictEqual({
+      text: "",
+      visual: `vision failed: ${entry.warning}`,
+    });
+    expect(fetchCount).toBe(0);
+    expect(runtime.vision.findByMediaPk("story-pk")).toBeNull();
+  });
 
   test("uses OLLAMA_HOST and reuses successful vision responses from the repository", async (context) => {
     vi.stubEnv("OLLAMA_HOST", "http://vision.example:11434/api/generate/");
@@ -87,7 +85,7 @@ describe("resolveVisionForReport", () => {
       const body = VisionRequestBodySchema.parse(JSON.parse(requestBodyToString(init?.body)));
       const { images } = body;
 
-      expect(images.length).toBe(1);
+      expect(images).toHaveLength(1);
       expect(Buffer.from(images[0] ?? "", "base64").toString()).toBe("jpeg-bytes");
       expect(String(body.prompt)).toMatch(
         /Provide a list of all visible text\. Only if there is text\./u,

@@ -103,7 +103,7 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
   expect(before.stickers.map(({ label }) => label)).toStrictEqual(["Original"]);
   expect(before.musicObservations?.[0].metadata.status).toBe("usable");
   assert.ok(before.musicObservations);
-  expect(before.musicObservations[0].occurrenceId).not.toBe(null);
+  expect(before.musicObservations[0].occurrenceId).not.toBeNull();
   await cacheReportAudio(
     {
       stories: repository,
@@ -121,7 +121,7 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
   expect(first.audioDurationMs).toBe(1023);
   assert.ok(first.audioCachePath !== null);
   assert.ok(first.artworkCachePath !== null);
-  expect(await readFile(path.join(directory, first.audioCachePath))).toStrictEqual(audio);
+  await expect(readFile(path.join(directory, first.audioCachePath))).resolves.toStrictEqual(audio);
 
   const artwork = await createMediaResponse(
     { storage: createFileCacheStorage(directory) },
@@ -213,7 +213,7 @@ test("lookup rejects mismatched and original-sound results and stops on rate lim
     expect(
       repository.findByMediaPk(story.pk)?.annotations?.musicObservations?.[0].metadata
         .audioSourceUrl,
-    ).toBe(null);
+    ).toBeNull();
   }
 
   expect(logger.messages.some((message) => message.includes("429"))).toBeTruthy();
@@ -245,7 +245,7 @@ test("generic video/mp4 responses with a video track are never cached as music",
   );
 
   expect(cached.state).toBe("unsupported");
-  expect(cached.cachePath).toBe(null);
+  expect(cached.cachePath).toBeNull();
 });
 
 test("lookup skips stories without an audio ID, muted stories, and shared reels", async (context) => {

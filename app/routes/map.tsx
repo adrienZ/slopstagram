@@ -110,6 +110,19 @@ export function PlaceMapPage({
   );
 }
 
+function PlaceMapRoute() {
+  const search = Route.useSearch();
+
+  return (
+    <PlaceMapPage
+      {...Route.useLoaderData()}
+      selectedAccounts={search.accounts}
+      selectedPlace={search[PLACE_SEARCH_PARAM]}
+      selectedStory={search.story}
+    />
+  );
+}
+
 export const Route = createFileRoute("/map")({
   validateSearch: z.object({
     accounts: z.string().optional(),
@@ -118,16 +131,5 @@ export const Route = createFileRoute("/map")({
   }),
   loader: async () => await getPlaceMap(),
   head: () => ({ meta: [{ title: "Carte des lieux" }] }),
-  component: () => {
-    const search = Route.useSearch();
-
-    return (
-      <PlaceMapPage
-        {...Route.useLoaderData()}
-        selectedAccounts={search.accounts}
-        selectedPlace={search[PLACE_SEARCH_PARAM]}
-        selectedStory={search.story}
-      />
-    );
-  },
+  component: PlaceMapRoute,
 });

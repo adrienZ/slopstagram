@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { getLargestVersion } from "@@/core/domains/instagram/story-parser.ts";
 import type { StoryVersion } from "@@/core/domains/instagram/instagram-types.ts";
 
-describe("getLargestVersion", () => {
+describe(getLargestVersion, () => {
   test("returns the candidate with the largest area", () => {
     const versions: Array<StoryVersion> = [
       { height: 100, url: "small", width: 50 },
@@ -10,7 +10,7 @@ describe("getLargestVersion", () => {
       { height: 200, url: "large", width: 80 },
     ];
 
-    expect(getLargestVersion(versions)).toEqual({
+    expect(getLargestVersion(versions)).toStrictEqual({
       height: 200,
       url: "large",
       width: 80,

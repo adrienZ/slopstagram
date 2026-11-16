@@ -30,5 +30,5 @@ test("the server renders the neighborhood an account filter in the URL names", a
   const page = within(new JSDOM(html).window.document.body);
   const points = within(page.getByRole("group", { name: "Points" })).getAllByRole("button");
   const [ada, ben, cleo] = graphAccounts.map((username) => `@${username}`);
-  expect(points.map((point) => point.getAttribute("aria-label"))).toEqual([cleo, ada, ben]);
+  expect(points.map((point) => point.getAttribute("aria-label"))).toStrictEqual([cleo, ada, ben]);
 });

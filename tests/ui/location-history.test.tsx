@@ -36,7 +36,7 @@ beforeAll(() => {
 // Only the WebGL/tile boundary is replaced; the page and grouping run unchanged.
 function TestMapCanvas({ places, onSelect, children }: LocationMapCanvasProps) {
   return (
-    <div role="region" aria-label="Carte des lieux">
+    <section aria-label="Carte des lieux">
       {places.map((place) => (
         <button
           key={place.id}
@@ -51,7 +51,7 @@ function TestMapCanvas({ places, onSelect, children }: LocationMapCanvasProps) {
         </button>
       ))}
       {children}
-    </div>
+    </section>
   );
 }
 

@@ -87,7 +87,7 @@ test("story cards supply complete lightbox details and normalize absent values",
   sources.appleCaptionByMediaPk.clear();
   sources.visionByPreviewUrl.clear();
   const [empty] = createStoryCards(user, sources);
-  expect(empty.avatar).toBe(undefined);
+  expect(empty.avatar).toBeUndefined();
   expect(empty.mediaType).toBe("Vidéo");
 
   for (const key of [

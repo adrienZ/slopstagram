@@ -76,26 +76,26 @@ function checkedAccounts(filters: Awaited<ReturnType<typeof openFilters>>): Arra
 
 test("an account in the URL opens its neighborhood, with the links among its neighbors", async () => {
   const { user } = await mountGraph(`/graph?accounts=${benGraph}`);
-  expect(shownPoints()).toEqual([cleo, ada, ben]);
-  expect(shownConnections()).toEqual([
+  expect(shownPoints()).toStrictEqual([cleo, ada, ben]);
+  expect(shownConnections()).toStrictEqual([
     `Connexion entre ${ada} et ${cleo} : 5 stories`,
     `Connexion entre ${ben} et ${cleo} : 1 story`,
     `Connexion entre ${ada} et ${ben} : 2 stories`,
   ]);
-  expect(checkedAccounts(await openFilters(user))).toEqual([ben]);
+  expect(checkedAccounts(await openFilters(user))).toStrictEqual([ben]);
 });
 
 test("an account in the URL is matched ignoring case, as mention stickers are", async () => {
   const { user } = await mountGraph(`/graph?accounts=${benGraph.toUpperCase()}`);
-  expect(shownPoints()).toEqual([cleo, ada, ben]);
+  expect(shownPoints()).toStrictEqual([cleo, ada, ben]);
   expect(screen.queryByText(/^Compte absent du graphe/u)).not.toBeInTheDocument();
-  expect(checkedAccounts(await openFilters(user))).toEqual([ben]);
+  expect(checkedAccounts(await openFilters(user))).toStrictEqual([ben]);
 });
 
 test("several accounts show the union of their neighborhoods and every link among its points", async () => {
   await mountGraph(`/graph?accounts=${benGraph},${filterAccount}`);
-  expect(shownPoints()).toEqual([cleo, eve, ada, ben]);
-  expect(shownConnections()).toEqual([
+  expect(shownPoints()).toStrictEqual([cleo, eve, ada, ben]);
+  expect(shownConnections()).toStrictEqual([
     `Connexion entre ${cleo} et ${eve} : 1 story`,
     `Connexion entre ${ada} et ${cleo} : 5 stories`,
     `Connexion entre ${ben} et ${cleo} : 1 story`,
@@ -108,39 +108,37 @@ test("the filters on the left add and remove accounts in the URL, and clearing s
   expect(shownConnections()).toHaveLength(everyConnectionCount);
   const filters = await openFilters(user);
   // Only the Accounts the graph draws can be chosen.
-  expect(filters.getAllByRole("checkbox").map((box) => box.getAttribute("aria-label"))).toEqual([
-    ada,
-    ben,
-    cleo,
-    eve,
-    twin,
-  ]);
+  expect(
+    filters.getAllByRole("checkbox").map((box) => box.getAttribute("aria-label")),
+  ).toStrictEqual([ada, ben, cleo, eve, twin]);
 
   await user.click(filters.getByRole("checkbox", { name: eve }));
   await waitFor(() => {
-    expect(shownPoints()).toEqual([cleo, eve]);
+    expect(shownPoints()).toStrictEqual([cleo, eve]);
   });
-  expect(router.state.location.search).toEqual({ accounts: filterAccount });
+  expect({ ...router.state.location.search }).toStrictEqual({ accounts: filterAccount });
 
   await user.click(filters.getByRole("checkbox", { name: ben }));
   await waitFor(() => {
     expect(shownConnections()).toHaveLength(4);
   });
-  expect(router.state.location.search).toEqual({ accounts: `${filterAccount},${benGraph}` });
-  expect(checkedAccounts(filters)).toEqual([ben, eve]);
+  expect({ ...router.state.location.search }).toStrictEqual({
+    accounts: `${filterAccount},${benGraph}`,
+  });
+  expect(checkedAccounts(filters)).toStrictEqual([ben, eve]);
 
   await user.click(filters.getByRole("checkbox", { name: eve }));
   await waitFor(() => {
-    expect(shownPoints()).toEqual([cleo, ada, ben]);
+    expect(shownPoints()).toStrictEqual([cleo, ada, ben]);
   });
-  expect(router.state.location.search).toEqual({ accounts: benGraph });
+  expect({ ...router.state.location.search }).toStrictEqual({ accounts: benGraph });
 
   await user.click(filters.getByRole("button", { name: "Effacer les filtres" }));
   await waitFor(() => {
     expect(shownConnections()).toHaveLength(everyConnectionCount);
   });
-  expect(router.state.location.search).toEqual({});
-  expect(checkedAccounts(filters)).toEqual([]);
+  expect({ ...router.state.location.search }).toStrictEqual({});
+  expect(checkedAccounts(filters)).toStrictEqual([]);
 });
 
 test.each([
@@ -158,7 +156,7 @@ test.each([
     ).toBeVisible();
     expect(shownConnections()).toHaveLength(everyConnectionCount);
     const filters = await openFilters(user);
-    expect(checkedAccounts(filters)).toEqual([]);
+    expect(checkedAccounts(filters)).toStrictEqual([]);
 
     await user.click(filters.getByRole("checkbox", { name: cleo }));
     await waitFor(() => {
@@ -171,9 +169,9 @@ test("an account filter whose username two drawn Accounts share shows both of th
   const { user } = await mountGraph(`/graph?accounts=${sharedUsername}`);
   expect(
     shownPoints().toSorted((left, right) => String(left).localeCompare(String(right))),
-  ).toEqual([cleo, twin, twin]);
+  ).toStrictEqual([cleo, twin, twin]);
   expect(shownConnections()).toHaveLength(2);
-  expect(checkedAccounts(await openFilters(user))).toEqual([twin]);
+  expect(checkedAccounts(await openFilters(user))).toStrictEqual([twin]);
 });
 
 test("filters the graph skipped can still be cleared, which removes them from the URL", async () => {
@@ -183,7 +181,7 @@ test("filters the graph skipped can still be cleared, which removes them from th
 
   await user.click(filters.getByRole("button", { name: "Effacer les filtres" }));
   await waitFor(() => {
-    expect(router.state.location.search).toEqual({});
+    expect({ ...router.state.location.search }).toStrictEqual({});
   });
   await waitFor(() => {
     expect(screen.queryByText(/^Compte absent du graphe/u)).not.toBeInTheDocument();
@@ -220,7 +218,9 @@ test("a filtered graph keeps its selection and story modal out of the URL, and a
   const filters = await openFilters(user);
   await user.click(filters.getByRole("checkbox", { name: cleo }));
   await waitFor(() => {
-    expect(router.state.location.search).toEqual({ accounts: `${benGraph},${cleoGraph}` });
+    expect({ ...router.state.location.search }).toStrictEqual({
+      accounts: `${benGraph},${cleoGraph}`,
+    });
   });
   await waitFor(() => {
     expect(shownPoints()).toContain(eve);
@@ -230,5 +230,5 @@ test("a filtered graph keeps its selection and story modal out of the URL, and a
     drawing()
       .points.getAllByRole("button")
       .filter((point) => point.getAttribute("aria-pressed") === "true"),
-  ).toEqual([]);
+  ).toStrictEqual([]);
 });

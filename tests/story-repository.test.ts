@@ -18,7 +18,7 @@ function withLabelOnlyAnnotations(story: StoryItem): StoryItem {
   };
 }
 
-describe("StoryRepository", () => {
+describe(StoryRepository, () => {
   test("lists only stories published in the last 24 hours without deleting the archive", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);

@@ -57,9 +57,9 @@ export function useAudioPreview(preview: MusicPreview, preload: boolean, onError
     } catch {
       setFailed(true);
       onError?.();
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   }
 
   function seek(value: number) {

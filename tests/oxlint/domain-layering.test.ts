@@ -1,4 +1,4 @@
-import { describe, it } from "vitest";
+import { describe, test } from "vitest";
 import { RuleTester } from "oxlint/plugins-dev";
 import domainLayering from "../../oxlint/plugins/rules/domain-layering.ts";
 
@@ -8,7 +8,7 @@ RuleTester.describe = (text, fn) => {
 };
 
 RuleTester.it = (text, fn) => {
-  it(text, fn);
+  test(text, fn);
 };
 
 function inDomain(module: string): string {

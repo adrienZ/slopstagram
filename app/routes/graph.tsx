@@ -70,10 +70,14 @@ export function MentionGraphPage({
   );
 }
 
+function MentionGraphRoute() {
+  return <MentionGraphPage {...Route.useLoaderData()} />;
+}
+
 export const Route = createFileRoute("/graph")({
   validateSearch: z.object({ accounts: z.string().optional() }),
   loaderDeps: ({ search }) => ({ accounts: parseAccountFilters(search.accounts) }),
   loader: async ({ deps }) => await getMentionGraph({ data: deps }),
   head: () => ({ meta: [{ title: "Graphe des mentions" }] }),
-  component: () => <MentionGraphPage {...Route.useLoaderData()} />,
+  component: MentionGraphRoute,
 });

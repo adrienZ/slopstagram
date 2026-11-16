@@ -48,18 +48,21 @@ test("returns story cards, newest first, with their stickers already presented",
     "700000000000100",
     "700000000000116",
   ]);
-  expect(stories.find(({ mediaPk }) => mediaPk === captionedStoryPk)?.stickerDetails).toEqual({
-    stickers: [
-      {
-        kind: "mention",
-        title: `@${mentionedAccount}`,
-        label: `@${mentionedAccount}`,
-        profileUrl: `/users/${mentionedAccount}`,
-        avatarUrl: "/media/avatars/700000000000114.jpg",
-      },
-    ],
-    music: [],
-  });
+  expect(stories.find(({ mediaPk }) => mediaPk === captionedStoryPk)?.stickerDetails).toStrictEqual(
+    {
+      stickers: [
+        {
+          kind: "mention",
+          title: `@${mentionedAccount}`,
+          label: `@${mentionedAccount}`,
+          profileUrl: `/users/${mentionedAccount}`,
+          avatarUrl: "/media/avatars/700000000000114.jpg",
+          place: undefined,
+        },
+      ],
+      music: [],
+    },
+  );
   expect(
     stories.find(({ mediaPk }) => mediaPk === "700000000000900")?.stickerDetails?.music,
   ).toHaveLength(1);

@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, URL } from "node:url";
 import { expect, test } from "vitest";
-import type { z } from "zod";
+import { ZodError, type z } from "zod";
 import { type JsonValue, JsonValueSchema } from "@@/core/utils/json-value.ts";
 import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 import {
@@ -55,7 +55,7 @@ test("seeding stores the recorded stories, users, stickers and previews like a f
   const report = await seedRecordedStories(runtime);
 
   expect(report.metadata.counts).toMatchObject({ failed: 0, fetched: 10, reels: 3, stories: 10 });
-  expect(users.listAll().map(({ username }) => username)).toEqual([
+  expect(users.listAll().map(({ username }) => username)).toStrictEqual([
     "user_008",
     "user_066",
     "user_072",
@@ -66,8 +66,10 @@ test("seeding stores the recorded stories, users, stickers and previews like a f
   expect(stories.findByMediaPk(musicStoryPk)?.annotations?.stickers.length).toBeGreaterThan(0);
   expect(stories.listStickerKinds().length).toBeGreaterThan(0);
   expect(stories.findByMediaPk(videoStoryPk)?.media_type).toBe(2);
-  expect(stories.findByMediaPk(musicStoryPk)?.annotations?.musicObservations).not.toEqual([]);
-  expect(stories.findByMediaPk(locationStoryPk)?.annotations?.locationObservations).not.toEqual([]);
+  expect(stories.findByMediaPk(musicStoryPk)?.annotations?.musicObservations).not.toStrictEqual([]);
+  expect(
+    stories.findByMediaPk(locationStoryPk)?.annotations?.locationObservations,
+  ).not.toStrictEqual([]);
 });
 
 test("seeding a chosen set of recorded payloads stores only that set", async (context) => {
@@ -154,7 +156,7 @@ test("seeded stories can be shifted in time to be active", async (context) => {
   await seedRecordedStories(runtime, undefined, { publishedBefore: { now, seconds: HOUR } });
 
   const active = stories.listActive(now);
-  expect(active.map(({ story }) => story.pk).toSorted()).toEqual(storyPks);
+  expect(active.map(({ story }) => story.pk).toSorted()).toStrictEqual(storyPks);
   const newest = Math.max(...active.map(({ taken_at: takenAt }) => takenAt));
   expect(newest).toBe(now.getTime() / 1000 - HOUR);
 });
@@ -165,7 +167,7 @@ test("seeded stories can be shifted in time to be past", async (context) => {
 
   await seedRecordedStories(runtime, undefined, { publishedBefore: { now, seconds: 26 * HOUR } });
 
-  expect(stories.listActive(now)).toEqual([]);
+  expect(stories.listActive(now)).toStrictEqual([]);
 
   const yesterday = stories.listPublishedBetween(
     new Date(now.getTime() - 48 * 3_600_000),
@@ -188,7 +190,7 @@ test("shifting keeps the gaps between recorded stories", async (context) => {
   await seedRecordedStories(unshifted);
   await seedRecordedStories(shifted, undefined, { publishedBefore: { now, seconds: HOUR } });
 
-  expect(gaps(shifted.stories)).toEqual(gaps(unshifted.stories));
+  expect(gaps(shifted.stories)).toStrictEqual(gaps(unshifted.stories));
 });
 
 async function readFailure(name: string) {
@@ -204,7 +206,7 @@ test("the recorded tray failure is refused by the production tray parser", async
 
   const response = await client.getTray();
 
-  expect(() => response.json()).toThrow();
+  expect(() => response.json()).toThrow(ZodError);
 });
 
 test("the recorded failed pagination page, which announces more pages without a cursor, stops the fetch", async () => {

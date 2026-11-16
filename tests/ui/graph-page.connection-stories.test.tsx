@@ -49,7 +49,7 @@ test("a connection opens the stories where one end mentioned the other, each onc
     name: `Stories de la connexion entre ${ada} et ${ben}`,
   });
 
-  expect(shownStories(panel)).toEqual([graphStories.ben, graphStories.ada]);
+  expect(shownStories(panel)).toStrictEqual([graphStories.ben, graphStories.ada]);
   expect(within(panel).queryByRole("button", { name: "Stories suivantes" })).toBeNull();
 });
 
@@ -63,17 +63,17 @@ test("the stories show three at a time, with arrows to the other pages", async (
 
   const previous = within(panel).getByRole("button", { name: "Stories précédentes" });
   const next = within(panel).getByRole("button", { name: "Stories suivantes" });
-  expect(shownStories(panel)).toEqual(cleoStoriesMentioningAda.slice(0, 3));
+  expect(shownStories(panel)).toStrictEqual(cleoStoriesMentioningAda.slice(0, 3));
   expect(within(panel).getByText("1 / 2")).toBeVisible();
   expect(previous).toBeDisabled();
 
   await user.click(next);
-  expect(shownStories(panel)).toEqual([cleoStoryMentioningAdaTwice, graphStories.cleo]);
+  expect(shownStories(panel)).toStrictEqual([cleoStoryMentioningAdaTwice, graphStories.cleo]);
   expect(within(panel).getByText("2 / 2")).toBeVisible();
   expect(next).toBeDisabled();
 
   await user.click(previous);
-  expect(shownStories(panel)).toEqual(cleoStoriesMentioningAda.slice(0, 3));
+  expect(shownStories(panel)).toStrictEqual(cleoStoriesMentioningAda.slice(0, 3));
 });
 
 test("a thumbnail opens its story in a modal that stays out of the URL", async () => {

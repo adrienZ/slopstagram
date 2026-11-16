@@ -13,7 +13,7 @@ const entry = {
   user_key: "summary-user",
 };
 
-describe("UserSummaryRepository", () => {
+describe(UserSummaryRepository, () => {
   test("stores summaries by Instagram PK and follows username changes", async (context) => {
     const database = createDrizzle(":memory:");
     context.onTestFinished(() => {
@@ -59,6 +59,6 @@ describe("UserSummaryRepository", () => {
       { id: "second-id", pk: "second-pk", username: entry.user_key },
     ]);
     await expect(repository.save(entry)).rejects.toThrow(/Expected one Instagram user/u);
-    expect(database.select().from(userSummaries).all().length).toBe(0);
+    expect(database.select().from(userSummaries).all()).toHaveLength(0);
   });
 });

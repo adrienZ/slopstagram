@@ -55,7 +55,7 @@ test("music processing publishes audio only and reuses it without provider reque
   assert.ok(result);
   expect(result.artworkState).toBe("pending");
   assert.ok(result.audioCachePath !== null);
-  expect(await readFile(path.join(root, result.audioCachePath))).toStrictEqual(wavAudio());
+  await expect(readFile(path.join(root, result.audioCachePath))).resolves.toStrictEqual(wavAudio());
   expect(result.audioDurationMs).toBe(1000);
 
   const retry = await processMusicMedia(
@@ -121,9 +121,9 @@ test("partial audio stays separate and promotion preserves its source and proces
 
   assert.ok(result);
   expect(result.audioState).toBe("unsupported");
-  expect(result.audioCachePath).toBe(null);
+  expect(result.audioCachePath).toBeNull();
   expect(result.artworkState).toBe("pending");
-  expect(result.artworkCachePath).toBe(null);
+  expect(result.artworkCachePath).toBeNull();
   expect(
     repository.findByMediaPk("story")?.annotations?.musicObservations?.[0].metadata.status,
   ).toBe("partial");
@@ -150,7 +150,7 @@ test("partial audio stays separate and promotion preserves its source and proces
   );
 
   assert.ok(recovered);
-  expect(recovered.audioCachePath).not.toBe(null);
+  expect(recovered.audioCachePath).not.toBeNull();
   assert.ok(recovered.audioCachePath !== null);
   await rm(path.join(root, recovered.audioCachePath));
   status = 403;
@@ -166,7 +166,7 @@ test("partial audio stays separate and promotion preserves its source and proces
 
   expect(missing?.audioState).toBe("failed");
   assert.ok(missing);
-  expect(missing.audioCachePath).toBe(null);
+  expect(missing.audioCachePath).toBeNull();
   expect(missing.artworkCachePath).toBe(result.artworkCachePath);
 });
 
@@ -224,9 +224,9 @@ test("missing sources do not fetch and failed transfers never publish partial fi
 
   expect(failed?.audioState).toBe("failed");
   assert.ok(failed);
-  expect(failed.audioCachePath).toBe(null);
+  expect(failed.audioCachePath).toBeNull();
   const { readdir } = await import("node:fs/promises");
-  expect(await readdir(root)).toStrictEqual([]);
+  await expect(readdir(root)).resolves.toStrictEqual([]);
 });
 
 test("the cached file duration survives partial promotion and remains distinct from the full song duration", async (context) => {

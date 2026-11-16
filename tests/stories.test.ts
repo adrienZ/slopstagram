@@ -14,7 +14,7 @@ function storedStory(pk: string) {
   return { ...storyItem(pk), annotations: { locations: [], stickers: [] } };
 }
 
-describe("fetchStories", () => {
+describe(fetchStories, () => {
   test("fetches API media even when story storage has existing entries", async (context) => {
     const runtime = await createTestRuntime(context);
     await runtime.stories.save(storyItem("m1"));
@@ -126,7 +126,7 @@ describe("fetchStories", () => {
         username: "two",
       },
     ]);
-    expect(await runtime.storage.stories.getItem(getMediaCacheKey("m1"))).toStrictEqual(
+    await expect(runtime.storage.stories.getItem(getMediaCacheKey("m1"))).resolves.toStrictEqual(
       storedStory("m1"),
     );
   });
@@ -152,7 +152,7 @@ describe("fetchStories", () => {
 
     expect(client.reelsCalls).toStrictEqual([["r1", "r2"]]);
     expect(runtime.stories.findByMediaPk("m2")).toStrictEqual(storedStory("m2"));
-    expect(await runtime.storage.stories.getItem(getMediaCacheKey("m2"))).toStrictEqual(
+    await expect(runtime.storage.stories.getItem(getMediaCacheKey("m2"))).resolves.toStrictEqual(
       storedStory("m2"),
     );
     expect(

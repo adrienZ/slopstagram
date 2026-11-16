@@ -1,4 +1,4 @@
-import { createContext, useContext, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useSyncExternalStore, type ReactNode } from "react";
 import { ScriptOnce } from "@tanstack/react-router";
 import {
   getServerTheme,
@@ -13,9 +13,10 @@ const ThemeContext = createContext<{ theme: Theme; setTheme: typeof setTheme } |
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const theme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getServerTheme);
+  const value = useMemo(() => ({ theme, setTheme }), [theme]);
 
   return (
-    <ThemeContext value={{ theme, setTheme }}>
+    <ThemeContext value={value}>
       <ScriptOnce>{themeScript}</ScriptOnce>
       {children}
     </ThemeContext>

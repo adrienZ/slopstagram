@@ -35,15 +35,16 @@ function requestBodyToString(body: BodyInit | null | undefined): string {
   return z.string().parse(body);
 }
 
-describe("resolveUserSummariesForReport", () => {
-  for (const [platform, architecture, expectedModel] of [
+describe(resolveUserSummariesForReport, () => {
+  test.for([
     ["darwin", "arm64", "qwen3.5:0.8b-mlx"],
     ["darwin", "x64", "qwen3.5:0.8b"],
     ["linux", "x64", "qwen3.5:0.8b"],
     ["win32", "x64", "qwen3.5:0.8b"],
     ["win32", "arm64", "qwen3.5:0.8b"],
-  ] as const) {
-    test(`generates and reuses summaries with ${expectedModel} on ${platform}/${architecture}`, async (context) => {
+  ] as const)(
+    "generates and reuses summaries on %s/%s with %s",
+    async ([platform, architecture, expectedModel], context) => {
       const report = createSummaryReport();
 
       const runtime = await createTestRuntime(context, {
@@ -58,15 +59,15 @@ describe("resolveUserSummariesForReport", () => {
       });
 
       await saveSummaryUsers(runtime);
-      vi.spyOn(process, "platform", "get").mockImplementation(() => platform);
-      vi.spyOn(process, "arch", "get").mockImplementation(() => architecture);
+      vi.spyOn(process, "platform", "get").mockReturnValue(platform);
+      vi.spyOn(process, "arch", "get").mockReturnValue(architecture);
 
       const summaries = await resolveUserSummariesForReport(runtime, report);
 
       expect(summaries.get("summaryuser")).toBe("Platform summary.");
       expect(readUserSummaries(runtime, report.output.users)).toStrictEqual(summaries);
-    });
-  }
+    },
+  );
 
   test("reuses successful user summaries from the repository", async (context) => {
     const runtime = await createTestRuntime(context);

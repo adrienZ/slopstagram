@@ -1,4 +1,4 @@
-import { describe, it } from "vitest";
+import { describe, test } from "vitest";
 import { RuleTester } from "oxlint/plugins-dev";
 import aiSdkImports from "../../oxlint/plugins/rules/ai-sdk-imports.ts";
 
@@ -8,7 +8,7 @@ RuleTester.describe = (text, fn) => {
 };
 
 RuleTester.it = (text, fn) => {
-  it(text, fn);
+  test(text, fn);
 };
 
 new RuleTester().run("ai-sdk-imports", aiSdkImports, {

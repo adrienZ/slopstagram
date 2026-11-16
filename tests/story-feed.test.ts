@@ -1,4 +1,5 @@
 import { test, type TestContext, expect } from "vitest";
+import { ZodError } from "zod";
 import { createStoryFeed, createReportFeed } from "@@/core/domains/story-feed/story-feed.ts";
 import { getStoryDate, getStoryDayRange } from "@@/core/domains/story-feed/story-days.ts";
 import { readFeedUserSummaries } from "@@/core/domains/story-feed/feed-user-summary.ts";
@@ -255,5 +256,5 @@ test("story day ranges follow Paris midnight through both daylight-saving change
   }
 
   expect(getStoryDate(new Date("2026-10-22T22:30:00Z"))).toBe("2026-10-23");
-  expect(() => getStoryDayRange("2026-02-30")).toThrow();
+  expect(() => getStoryDayRange("2026-02-30")).toThrow(ZodError);
 });

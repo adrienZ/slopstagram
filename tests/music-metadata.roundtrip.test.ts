@@ -86,7 +86,7 @@ test("live ingestion shares exact audio identities across occurrences in cold ac
   );
 
   const observations = present(first.musicObservations);
-  expect(observations.length).toBe(2);
+  expect(observations).toHaveLength(2);
   expect(observations.map(({ occurrenceId }) => occurrenceId)).toStrictEqual(
     first.stickers.map(({ occurrenceId }) => occurrenceId),
   );
@@ -149,7 +149,7 @@ test("incomplete music keeps provenance without invented labels and never infers
     "Song - Artist",
   ]);
   const observations = present(stored.musicObservations);
-  expect(observations.length).toBe(5);
+  expect(observations).toHaveLength(5);
   expect(new Set(observations.map(({ metadata }) => metadata.id)).size).toBe(5);
   expect(observations.map(({ occurrenceId }) => occurrenceId)).toStrictEqual([
     null,
@@ -178,8 +178,8 @@ test("incomplete music keeps provenance without invented labels and never infers
     null,
   ]);
   expect(observations[0].providerOccurrenceId).toBe("sticker-only");
-  expect(observations[0].metadata.title).toBe(null);
-  expect(observations[0].metadata.artist).toBe(null);
+  expect(observations[0].metadata.title).toBeNull();
+  expect(observations[0].metadata.artist).toBeNull();
   expect(logger.messages).toStrictEqual([]);
 });
 
@@ -190,9 +190,9 @@ test("an outer music sticker ID alone is retained as an anonymous partial observ
   expect(stored.stickers).toStrictEqual([]);
   const [observation] = present(stored.musicObservations);
   expect(observation.providerOccurrenceId).toBe("outer-only");
-  expect(observation.occurrenceId).toBe(null);
+  expect(observation.occurrenceId).toBeNull();
   expect(observation.metadata.status).toBe("partial");
-  expect(observation.metadata.instagramAudioAssetId).toBe(null);
+  expect(observation.metadata.instagramAudioAssetId).toBeNull();
 });
 
 test("certain partial music promotes every established link and sparse live updates never demote it", async (context) => {
@@ -220,7 +220,7 @@ test("certain partial music promotes every established link and sparse live upda
   expect(observation.metadata.id).toBe(shared.metadata.id);
   expect(observation.metadata.title).toBe("Song");
   expect(observation.metadata.artist).toBe("Artist");
-  expect(observation.metadata.durationMs).toBe(null);
+  expect(observation.metadata.durationMs).toBeNull();
   expect(observation.occurrenceId).toBe(before.stickers[0].occurrenceId);
   expect(
     present(read(new StoryRepository(database), "m2").musicObservations)[0].metadata,
@@ -292,7 +292,7 @@ test("music links survive reordered live input and cold resaves, with source cle
   expect(read(new StoryRepository(database), "m1")).toStrictEqual(reordered);
   await repository.save({ pk: "m1", story_music_stickers: [] });
   const cleared = read(new StoryRepository(database), "m1");
-  expect(cleared.musicObservations).toBe(undefined);
+  expect(cleared.musicObservations).toBeUndefined();
   expect(cleared.locationObservations).toStrictEqual(before.locationObservations);
   expect(cleared.stickers).toStrictEqual(before.stickers.filter(({ kind }) => kind === "location"));
 });
@@ -354,8 +354,8 @@ test("changed audio identity cannot inherit the previous recording's missing fie
   expect(after.metadata.id).not.toBe(before.metadata.id);
   expect(after.metadata.instagramAudioAssetId).toBe("new");
   expect(after.metadata.status).toBe("partial");
-  expect(after.metadata.artist).toBe(null);
-  expect(after.metadata.durationMs).toBe(null);
+  expect(after.metadata.artist).toBeNull();
+  expect(after.metadata.durationMs).toBeNull();
 });
 
 test("uncertain repeated music stays separate while current raw occurrences receive their own links", async (context) => {
@@ -375,7 +375,7 @@ test("uncertain repeated music stays separate while current raw occurrences rece
   });
   const before = read(new StoryRepository(database), "m1");
   const observations = present(before.musicObservations);
-  expect(before.stickers.length).toBe(3);
+  expect(before.stickers).toHaveLength(3);
   expect(observations.map(({ occurrenceId }) => occurrenceId)).toStrictEqual([
     ...before.stickers.map(({ occurrenceId }) => occurrenceId),
     null,
@@ -386,7 +386,7 @@ test("uncertain repeated music stays separate while current raw occurrences rece
     story_music_stickers: [{ music_asset_info: anonymous }, { music_asset_info: anonymous }],
   });
   const after = read(new StoryRepository(database), "m1");
-  expect(after.stickers.length).toBe(2);
+  expect(after.stickers).toHaveLength(2);
 
   for (const entry of present(after.musicObservations)) {
     expect(
@@ -437,8 +437,8 @@ test("numeric IDs are accepted only when exact and invalid durations remain unkn
   expect(observations[0].metadata.status).toBe("usable");
 
   for (const entry of observations.slice(1)) {
-    expect(entry.metadata.instagramAudioAssetId).toBe(null);
-    expect(entry.metadata.durationMs).toBe(null);
+    expect(entry.metadata.instagramAudioAssetId).toBeNull();
+    expect(entry.metadata.durationMs).toBeNull();
     expect(entry.metadata.status).toBe("partial");
   }
 });

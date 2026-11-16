@@ -145,10 +145,12 @@ function createComponents(accounts: Array<SidebarUser>): Components {
   };
 }
 
+const NO_PLACES: Array<MentionablePlace> = [];
+
 export function ChatMarkdown({
   accounts,
   children,
-  places = [],
+  places = NO_PLACES,
 }: {
   accounts: Array<SidebarUser>;
   children: string;

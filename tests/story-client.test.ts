@@ -85,7 +85,7 @@ test("music lookup uses the authenticated session and preserves large numeric au
   );
 
   const { getMusicAsset } = client;
-  expect(getMusicAsset).not.toBe(undefined);
+  expect(getMusicAsset).toBeDefined();
 
   if (getMusicAsset === undefined) {
     throw new Error("Music asset lookup unavailable");
@@ -112,7 +112,7 @@ test("looks up a place with the location container query from the authenticated 
     createSession(body, calls, "text/javascript; charset=utf-8"),
   );
 
-  expect(getPlace).not.toBe(undefined);
+  expect(getPlace).toBeDefined();
 
   if (getPlace === undefined) {
     throw new Error("Place lookup unavailable");
@@ -165,7 +165,7 @@ test("sends the place query from the page with the page's own tokens", async (co
 
   const result = await getPlace("700000000000633");
   expect(result.json()).toStrictEqual({ ok: true });
-  expect(requests.length).toBe(1);
+  expect(requests).toHaveLength(1);
   const [request] = requests;
   expect(request.url).toBe("https://www.instagram.com/api/graphql");
   expect(request.method).toBe("POST");
@@ -405,8 +405,8 @@ test("fetches the tray with a plain GET from the page", async (context) => {
   expect(response.ok).toBe(true);
   expect(requests[0].url).toBe("https://www.instagram.com/api/v1/feed/reels_tray/");
   expect(requests[0].method).toBe("GET");
-  expect(requests[0].body).toBe(undefined);
-  expect(requests[0].signal).toBe(undefined);
+  expect(requests[0].body).toBeUndefined();
+  expect(requests[0].signal).toBeUndefined();
 });
 
 test("posts the music asset lookup from the page with the csrf token", async (context) => {
@@ -516,8 +516,8 @@ test("reads all gallery pages without dropping reels", async () => {
       { id: "r2", items: [{ pk: "story2" }] },
     ],
   });
-  expect(calls.length).toBe(2);
-  expect(calls[0].mediaQuery?.after).toBe(undefined);
+  expect(calls).toHaveLength(2);
+  expect(calls[0].mediaQuery?.after).toBeUndefined();
   expect(calls[1].mediaQuery?.after).toBe("cursor-1");
 });
 
@@ -595,6 +595,6 @@ test("an empty reel request returns no reels without querying Instagram", async 
   const response = await createInstagramClient(createSession({}, calls)).getReelsMedia([]);
 
   expect(response.ok).toBe(true);
-  expect(response.json()).toEqual({ reels_media: [] });
-  expect(calls).toEqual([]);
+  expect(response.json()).toStrictEqual({ reels_media: [] });
+  expect(calls).toStrictEqual([]);
 });

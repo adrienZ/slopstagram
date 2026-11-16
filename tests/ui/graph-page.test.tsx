@@ -64,7 +64,9 @@ function drawnAt(drawing: HTMLElement, point: Element) {
 
 test("Accounts show their initials, anyone else an abstract point, unconnected Accounts nothing", async () => {
   const { canvas, points } = await mountGraph();
-  expect(points.getAllByRole("button").map((point) => point.getAttribute("aria-label"))).toEqual([
+  expect(
+    points.getAllByRole("button").map((point) => point.getAttribute("aria-label")),
+  ).toStrictEqual([
     cleo,
     ada,
     ben,
@@ -105,7 +107,7 @@ test("a known Account opens its profile and highlights its connections, the back
     `/users/${graphAccounts[0]}`,
   );
   expect(point).toHaveAttribute("aria-pressed", "true");
-  expect(highlightedConnections(drawing)).toEqual([
+  expect(highlightedConnections(drawing)).toStrictEqual([
     `Connexion entre ${ada} et ${cleo} : 5 stories`,
     `Connexion entre ${ada} et ${ben} : 2 stories`,
     `Connexion entre ${ada} et ${unknown} : 1 story`,
@@ -115,7 +117,7 @@ test("a known Account opens its profile and highlights its connections, the back
   await user.click(drawing);
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(point).toHaveAttribute("aria-pressed", "false");
-  expect(highlightedConnections(drawing)).toEqual([]);
+  expect(highlightedConnections(drawing)).toStrictEqual([]);
 });
 
 test("Escape closes the profile and clears the selection", async () => {
@@ -124,7 +126,7 @@ test("Escape closes the profile and clears the selection", async () => {
   expect(await screen.findByRole("dialog", { name: `Profil de ${cleo}` })).toBeVisible();
   await user.keyboard("{Escape}");
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  expect(highlightedConnections(drawing)).toEqual([]);
+  expect(highlightedConnections(drawing)).toStrictEqual([]);
 });
 
 test("an unknown point shows its label on hover and highlights its connections without a profile", async () => {
@@ -138,7 +140,7 @@ test("an unknown point shows its label on hover and highlights its connections w
   await user.click(point);
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(point).toHaveAttribute("aria-pressed", "true");
-  expect(highlightedConnections(drawing)).toEqual([
+  expect(highlightedConnections(drawing)).toStrictEqual([
     `Connexion entre ${cleo} et ${unknown} : 1 story`,
     `Connexion entre ${ada} et ${unknown} : 1 story`,
   ]);
@@ -158,7 +160,7 @@ test("the keyboard selects a point, shows its label, and Escape clears the selec
   expect(highlightedConnections(drawing)).toHaveLength(2);
   await user.keyboard("{Escape}");
   expect(point).toHaveAttribute("aria-pressed", "false");
-  expect(highlightedConnections(drawing)).toEqual([]);
+  expect(highlightedConnections(drawing)).toStrictEqual([]);
 });
 
 test("a press that barely moves is still a click", async () => {
@@ -170,7 +172,7 @@ test("a press that barely moves is still a click", async () => {
   fireEvent.pointerUp(drawing, { pointerId: 4, clientX: at.x + 2, clientY: at.y + 1 });
   fireEvent.click(point);
   expect(point).toHaveAttribute("aria-pressed", "true");
-  expect(drawnAt(drawing, point)).toEqual(at);
+  expect(drawnAt(drawing, point)).toStrictEqual(at);
 });
 
 test("the controls zoom in and out, the wheel zooms, and recentering fits the graph again", async () => {
@@ -214,7 +216,7 @@ test("a dragged point follows the pointer and pulls its neighbours, then is let 
   await waitFor(() => {
     expect(drawnAt(drawing, point).x).toBeCloseTo(950, 0);
     expect(drawnAt(drawing, point).y).toBeCloseTo(650, 0);
-    expect(drawnAt(drawing, neighbour)).not.toEqual(neighbourBefore);
+    expect(drawnAt(drawing, neighbour)).not.toStrictEqual(neighbourBefore);
   });
   fireEvent.pointerUp(drawing, { pointerId: 3, clientX: 950, clientY: 650 });
   fireEvent.click(point);

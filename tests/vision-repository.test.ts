@@ -3,7 +3,7 @@ import { createDrizzle } from "@@/core/domains/database/client.ts";
 import { migrateDatabase } from "@@/core/domains/database/migrate.ts";
 import { VisionRepository } from "@@/core/domains/database/repositories/vision-repository.ts";
 
-describe("VisionRepository", () => {
+describe(VisionRepository, () => {
   test("stores scalar result columns in SQLite", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);

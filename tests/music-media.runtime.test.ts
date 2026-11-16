@@ -50,7 +50,7 @@ test("music media caching reads and writes the runtime stories and stores", asyn
   const audio = await processMusicMedia(runtime, reference);
 
   expect(artwork?.artworkState).toBe("available");
-  expect(await runtime.storage.images.getKeys()).toHaveLength(1);
+  await expect(runtime.storage.images.getKeys()).resolves.toHaveLength(1);
   expect(audio?.audioState).toBe("available");
   expect(runtime.stories.findMusicMetadata(reference)?.audioState).toBe("available");
 });

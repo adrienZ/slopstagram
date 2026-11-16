@@ -101,7 +101,7 @@ test("runWarmCacheJob stores nothing in the cache when Instagram refuses the req
 
   expect(world.runs.list()).toMatchObject([{ reportKey: null, status: "failed" }]);
   expect(world.reports.listKeys()).toStrictEqual([]);
-  expect(await listCacheFiles(world.storage)).toStrictEqual([]);
+  await expect(listCacheFiles(world.storage)).resolves.toStrictEqual([]);
 });
 
 test("startWarmCacheQueue schedules the hourly job, runs it and forwards errors", async (context) => {

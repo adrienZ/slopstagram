@@ -53,6 +53,10 @@ export function ReportPage({
   );
 }
 
+function ReportRoute() {
+  return <ReportPage {...Route.useLoaderData()} selectedStory={Route.useSearch().story} />;
+}
+
 export const Route = createFileRoute("/report")({
   validateSearch: z.object({
     story: z.coerce.string().optional(),
@@ -90,7 +94,5 @@ export const Route = createFileRoute("/report")({
       },
     ],
   }),
-  component: () => (
-    <ReportPage {...Route.useLoaderData()} selectedStory={Route.useSearch().story} />
-  ),
+  component: ReportRoute,
 });

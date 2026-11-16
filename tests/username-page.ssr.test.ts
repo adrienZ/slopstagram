@@ -70,7 +70,7 @@ test("an account's stories are grouped by the day they were published", async ()
   // Newest day first, each day holding the stories published that day.
   expect(
     gallery.getAllByRole("heading", { level: 4 }).map(({ textContent }) => textContent),
-  ).toEqual(["29 octobre 2026", "27 octobre 2026"]);
+  ).toStrictEqual(["29 octobre 2026", "27 octobre 2026"]);
   const laterDay = within(gallery.getByRole("region", { name: "2026-10-29" }));
   const earlierDay = within(gallery.getByRole("region", { name: "2026-10-27" }));
   expect(laterDay.getByRole("button", { name: `Ouvrir aperçu ${laterStoryPk}` })).toBeDefined();

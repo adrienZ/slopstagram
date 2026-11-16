@@ -28,8 +28,7 @@ function AudioPlayer({ preview, preload = true, onError }: MusicAudioPreviewProp
   const hasArtwork = preview.artworkUrl !== null && preview.artworkUrl !== failedArtworkUrl;
 
   return (
-    <div
-      role="group"
+    <fieldset
       aria-label={`Lecteur audio : ${preview.description}`}
       title={preview.sourceKind === "story_audio" ? "Audio de la story" : undefined}
       className="tw:flex tw:w-56 tw:min-w-0 tw:max-w-full tw:items-center tw:gap-2 tw:overflow-hidden tw:rounded-lg tw:border tw:border-border tw:bg-muted/40 tw:p-2"
@@ -95,7 +94,7 @@ function AudioPlayer({ preview, preload = true, onError }: MusicAudioPreviewProp
           </div>
         </div>
       </div>
-    </div>
+    </fieldset>
   );
 }
 

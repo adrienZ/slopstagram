@@ -132,7 +132,7 @@ const scenarios: Array<RollbackScenario> = [
     failing: { pk: "m1", story_hashtags: [{ hashtag: "fail" }], story_music_stickers: [] },
     retry: { pk: "m1", story_hashtags: [{ hashtag: "ok" }], story_music_stickers: [] },
     verifyRetry: (cold) => {
-      expect(annotationsOf(cold, "m1").stickers.map(({ label }) => label)).toEqual(["#ok"]);
+      expect(annotationsOf(cold, "m1").stickers.map(({ label }) => label)).toStrictEqual(["#ok"]);
     },
   },
 ];
@@ -161,15 +161,17 @@ test.for(scenarios)(
         BEGIN SELECT RAISE(ABORT, 'injected write failure'); END`,
     );
 
-    await expect(repository.save(scenario.failing, owners?.failing)).rejects.toThrow();
+    await expect(repository.save(scenario.failing, owners?.failing)).rejects.toThrow(
+      "Failed query",
+    );
 
     const cold = new StoryRepository(database);
     expect(scenario.saved.map(({ pk }) => cold.findByMediaPk(pk))).toStrictEqual(before);
 
-    if (owners) {
-      expect(cold.listByUsername(owners.saved.username)).toHaveLength(1);
-      expect(cold.listByUsername(owners.failing.username)).toHaveLength(0);
-    }
+    expect(
+      owners &&
+        [owners.saved, owners.failing].map(({ username }) => cold.listByUsername(username).length),
+    ).toStrictEqual(owners && [1, 0]);
 
     database.$client.exec(`DROP TRIGGER ${trigger.name}`);
     await repository.save(scenario.retry, owners?.retry);

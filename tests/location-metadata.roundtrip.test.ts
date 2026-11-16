@@ -54,7 +54,7 @@ test("external-ID-only locations survive cold reads as separate partial observat
   expect(stored.locations).toStrictEqual([]);
   expect(stored.stickers).toStrictEqual([]);
   const observations = present(stored.locationObservations);
-  expect(observations.length).toBe(3);
+  expect(observations).toHaveLength(3);
   expect(new Set(observations.map(({ metadata }) => metadata.id)).size).toBe(3);
   expect(observations.map(({ providerOccurrenceId }) => providerOccurrenceId)).toStrictEqual([
     "both",
@@ -71,13 +71,13 @@ test("external-ID-only locations survive cold reads as separate partial observat
 
   for (const observation of observations) {
     expect(observation.source).toBe("story_locations");
-    expect(observation.occurrenceId).toBe(null);
+    expect(observation.occurrenceId).toBeNull();
     expect(observation.metadata.status).toBe("partial");
-    expect(observation.metadata.instagramPlaceId).toBe(null);
-    expect(observation.metadata.name).toBe(null);
-    expect(observation.metadata.address).toBe(null);
-    expect(observation.metadata.latitude).toBe(null);
-    expect(observation.metadata.longitude).toBe(null);
+    expect(observation.metadata.instagramPlaceId).toBeNull();
+    expect(observation.metadata.name).toBeNull();
+    expect(observation.metadata.address).toBeNull();
+    expect(observation.metadata.latitude).toBeNull();
+    expect(observation.metadata.longitude).toBeNull();
   }
 
   expect(logger.messages).toStrictEqual([]);
@@ -137,7 +137,7 @@ test("external-only observations do not block other location updates during live
   const [history] = new StoryRepository(database).listByUsername("one");
   const stored = present(history.story.annotations);
   expect(stored.locations).toStrictEqual(["Updated"]);
-  expect(stored.stickers.length).toBe(1);
+  expect(stored.stickers).toHaveLength(1);
   expect(stored.stickers[0].occurrenceId).toBe(before.occurrenceId);
   const [located, external, direct] = present(stored.locationObservations);
   expect(located.metadata.status).toBe("usable");
@@ -149,8 +149,8 @@ test("external-only observations do not block other location updates during live
   expect(external.metadata.externalSource).toBe("facebook_places");
   expect(direct.metadata.status).toBe("partial");
   expect(direct.metadata.facebookPlacesId).toBe("000456");
-  expect(direct.metadata.instagramPlaceId).toBe(null);
-  expect(direct.providerOccurrenceId).toBe(null);
+  expect(direct.metadata.instagramPlaceId).toBeNull();
+  expect(direct.providerOccurrenceId).toBeNull();
   expect(
     logger.messages.some((message) => message.includes("Malformed story annotation source")),
   ).toBe(false);
@@ -185,7 +185,7 @@ test("promotion remains shared when another source omits the already known place
     story_locations: [{ id: "a", location: { address: "Received address" } }],
   });
   const observations = present(read(new StoryRepository(database), "m1").locationObservations);
-  expect(observations.length).toBe(2);
+  expect(observations).toHaveLength(2);
   expect(observations[0].metadata).toStrictEqual(observations[1].metadata);
   expect(observations[0].metadata.status).toBe("usable");
   expect(observations[0].metadata.name).toBe("Updated");
@@ -257,7 +257,7 @@ test("live ingestion shares tagged places and exposes exact metadata with occurr
   );
 
   const places = present(first.locationObservations);
-  expect(places.length).toBe(2);
+  expect(places).toHaveLength(2);
   expect(places.map(({ occurrenceId }) => occurrenceId)).toStrictEqual(
     first.stickers.map(({ occurrenceId }) => occurrenceId),
   );
@@ -303,7 +303,7 @@ test("ID-only observations preserve known contributions and promote every certai
     original.locationObservations?.[0].metadata.id,
   );
   expect(present(partial.locationObservations)[0].providerOccurrenceId).toBe("b");
-  expect(present(partial.locationObservations)[0].occurrenceId).toBe(null);
+  expect(present(partial.locationObservations)[0].occurrenceId).toBeNull();
   await repository.save({
     pk: "m1",
     story_locations: [{ id: "a", location: { pk: "place" } }],
@@ -324,7 +324,7 @@ test("ID-only observations preserve known contributions and promote every certai
     );
     expect(present(annotations.locationObservations)[0].metadata.latitude).toBe(0);
     expect(present(annotations.locationObservations)[0].metadata.longitude).toBe(0);
-    expect(present(annotations.locationObservations)[0].metadata.address).toBe(null);
+    expect(present(annotations.locationObservations)[0].metadata.address).toBeNull();
   }
 
   // A later sparse live response cannot erase the name, coordinates or links.
@@ -358,7 +358,7 @@ test("coordinates are validated and partial places without provider identity nev
     })),
   });
   const stored = read(new StoryRepository(database), "m1");
-  expect(stored.stickers.length).toBe(8);
+  expect(stored.stickers).toHaveLength(8);
   const metadata = present(stored.locationObservations).map(({ metadata: entry }) => entry);
   expect(metadata.map(({ status }) => status)).toStrictEqual([
     "usable",
@@ -370,10 +370,10 @@ test("coordinates are validated and partial places without provider identity nev
     "partial",
     "partial",
   ]);
-  expect(metadata[2].latitude).toBe(null);
-  expect(metadata[3].longitude).toBe(null);
-  expect(metadata[5].latitude).toBe(null);
-  expect(metadata[5].longitude).toBe(null);
+  expect(metadata[2].latitude).toBeNull();
+  expect(metadata[3].longitude).toBeNull();
+  expect(metadata[5].latitude).toBeNull();
+  expect(metadata[5].longitude).toBeNull();
   expect(metadata[6].id).not.toBe(metadata[7].id);
   await repository.save({
     pk: "m1",
@@ -426,11 +426,11 @@ test("place links survive reordering and cold saves while explicit source cleari
   await repository.save({ pk: "m1", story_locations: [] });
   const cleared = read(new StoryRepository(database), "m1");
   expect(cleared.locations).toStrictEqual(["Three"]);
-  expect(present(cleared.locationObservations).length).toBe(1);
+  expect(present(cleared.locationObservations)).toHaveLength(1);
   expect(present(cleared.locationObservations)[0]).toStrictEqual(byProvider.get("c"));
   await repository.save({ pk: "m1", story_bloks_stickers: [] });
   expect(read(new StoryRepository(database), "m1").stickers).toStrictEqual([]);
-  expect(read(repository, "m1").locationObservations).toBe(undefined);
+  expect(read(repository, "m1").locationObservations).toBeUndefined();
 });
 
 test("mixed labelled and ID-only locations keep valid labels and preserve earlier contributions", async (context) => {
@@ -445,11 +445,11 @@ test("mixed labelled and ID-only locations keep valid labels and preserve earlie
   await repository.save({ pk: "m1", story_locations: [first, partial] });
   const stored = read(new StoryRepository(database), "m1");
   expect(stored.locations).toStrictEqual(["One"]);
-  expect(present(stored.locationObservations).length).toBe(2);
+  expect(present(stored.locationObservations)).toHaveLength(2);
   expect(present(stored.locationObservations)[0].occurrenceId).toBe(
     stored.stickers[0].occurrenceId,
   );
-  expect(present(stored.locationObservations)[1].occurrenceId).toBe(null);
+  expect(present(stored.locationObservations)[1].occurrenceId).toBeNull();
   await repository.save({ pk: "m1", story_locations: [partial] });
   expect(read(repository, "m1").stickers).toStrictEqual(stored.stickers);
   // Incompleteness in one occurrence must not drop the new labelled occurrence.
@@ -542,7 +542,7 @@ test("current extraction links repeated unidentifiable occurrences without guess
     ({ metadata }) => metadata.status === "usable",
   );
 
-  expect(located.length).toBe(2);
+  expect(located).toHaveLength(2);
   expect(located[0].metadata.id).not.toBe(located[1].metadata.id);
   expect(located.map(({ occurrenceId }) => occurrenceId)).toStrictEqual(
     before.stickers.map(({ occurrenceId }) => occurrenceId),
@@ -552,7 +552,7 @@ test("current extraction links repeated unidentifiable occurrences without guess
     story_locations: [{ location }, { location }],
   });
   const after = read(new StoryRepository(database), "m1");
-  expect(after.stickers.length).toBe(2);
+  expect(after.stickers).toHaveLength(2);
 
   for (const entry of present(after.locationObservations)) {
     expect(

@@ -3,7 +3,7 @@ import { createDrizzle } from "@@/core/domains/database/client.ts";
 import { migrateDatabase } from "@@/core/domains/database/migrate.ts";
 import { AppleVisionRepository } from "@@/core/domains/database/repositories/apple-vision-repository.ts";
 
-describe("AppleVisionRepository", () => {
+describe(AppleVisionRepository, () => {
   test("stores and updates captions in SQLite", async (context) => {
     const database = createDrizzle(":memory:");
     migrateDatabase(database);

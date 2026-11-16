@@ -30,7 +30,7 @@ test("migrating an empty database applies every migration, leaves a consistent s
     .get();
 
   expect(applied?.count).toBe(migrationCount);
-  expect(database.$client.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
+  expect(database.$client.prepare("PRAGMA foreign_key_check").all()).toStrictEqual([]);
   // Columns that later migrations dropped stay gone.
   expect(columnsOf(database, "report_stories")).not.toContain("igCaption");
   expect(columnsOf(database, "reports")).not.toContain("cacheHits");

@@ -29,8 +29,8 @@ test("file cache storage creates nothing until a store is written", async (conte
   const layout = await readdir(root);
 
   expect(layout.toSorted()).toStrictEqual(["audio", "images", "stories"]);
-  expect(await readdir(path.join(root, "images", "avatars"))).toStrictEqual(["a.jpg"]);
-  expect(await storage.stories.getItem("m1.json")).toStrictEqual(storyItem("m1"));
+  await expect(readdir(path.join(root, "images", "avatars"))).resolves.toStrictEqual(["a.jpg"]);
+  await expect(storage.stories.getItem("m1.json")).resolves.toStrictEqual(storyItem("m1"));
 });
 
 test("the test runtime keeps its stores in memory", async (context) => {
@@ -38,6 +38,6 @@ test("the test runtime keeps its stores in memory", async (context) => {
 
   await runtime.storage.images.setItemRaw("probe/in-memory.jpg", Buffer.from("jpeg"));
 
-  expect(await runtime.storage.images.hasItem("probe/in-memory.jpg")).toBe(true);
+  await expect(runtime.storage.images.hasItem("probe/in-memory.jpg")).resolves.toBe(true);
   expect(existsSync(path.join(BASE_CACHE_DIR, "images", "probe", "in-memory.jpg"))).toBe(false);
 });

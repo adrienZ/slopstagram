@@ -15,7 +15,7 @@ test("a test runtime ingests recorded stories into its own database", async (con
 
   const report = await fetchStories(runtime, { maxAttempts: 1 });
 
-  expect(report.failures).toEqual([]);
+  expect(report.failures).toStrictEqual([]);
   expect(runtime.stories.findByMediaPk(recordedStoryPk)).not.toBeNull();
 });
 
@@ -46,7 +46,7 @@ test("a test runtime closes its database when its test ends", async (context) =>
     }),
   );
 
-  expect(() => runtime.stories.findByMediaPk(recordedStoryPk)).toThrow();
+  expect(() => runtime.stories.findByMediaPk(recordedStoryPk)).toThrow("Failed query");
 });
 
 test("a test runtime overrides only the boundary a test passes", async (context) => {

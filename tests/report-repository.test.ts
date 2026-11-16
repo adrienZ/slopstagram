@@ -77,13 +77,14 @@ function createReportWithStory(name: string): StoriesManifestReport {
   };
 }
 
-describe("ReportRepository", () => {
-  for (const { field, sql } of [
+describe(ReportRepository, () => {
+  test.for([
     { field: "mediaType", sql: "UPDATE report_stories SET mediaType = ? WHERE reportKey = ?" },
     { field: "status", sql: "UPDATE report_stories SET status = ? WHERE reportKey = ?" },
     { field: "reason", sql: "UPDATE report_failures SET reason = ? WHERE reportKey = ?" },
-  ]) {
-    test(`rejects an invalid persisted ${field} rather than trusting TypeScript enum types`, async (context) => {
+  ])(
+    "rejects an invalid persisted $field rather than trusting TypeScript enum types",
+    async ({ sql }, context) => {
       const database = createDrizzle(":memory:");
       migrateDatabase(database);
       context.onTestFinished(() => {
@@ -107,8 +108,8 @@ describe("ReportRepository", () => {
           name: "ZodError",
         }),
       );
-    });
-  }
+    },
+  );
 
   test("reads the current story caption instead of a conflicting report caption", async (context) => {
     const database = createDrizzle(":memory:");
@@ -194,8 +195,9 @@ describe("ReportRepository", () => {
     });
   });
 
-  for (const caption of [undefined, null, "", " \t\n "]) {
-    test(`uses N/A for an absent story caption (${JSON.stringify(caption)}) without falling back to the report`, async (context) => {
+  test.for([undefined, null, "", " \t\n "])(
+    "uses N/A for an absent story caption (%j) without falling back to the report",
+    async (caption, context) => {
       const database = createDrizzle(":memory:");
       migrateDatabase(database);
       context.onTestFinished(() => {
@@ -217,8 +219,8 @@ describe("ReportRepository", () => {
       expect(stories.findByMediaPk("shared-story")?.accessibility_caption).toBe(
         caption ?? undefined,
       );
-    });
-  }
+    },
+  );
 
   test("keeps a failed report story when no associated story was saved", async (context) => {
     const database = createDrizzle(":memory:");
@@ -247,6 +249,6 @@ describe("ReportRepository", () => {
     });
     assert.ok(stored);
     expect(stored.failures).toStrictEqual(report.failures);
-    expect(new StoryRepository(database).findByMediaPk("shared-story")).toBe(null);
+    expect(new StoryRepository(database).findByMediaPk("shared-story")).toBeNull();
   });
 });

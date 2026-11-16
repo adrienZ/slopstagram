@@ -46,35 +46,34 @@ test("feed and collection normalize stored summaries identically without rewriti
   expect(runtime.summaries.findBySourceHash(entry.source_hash)?.result).toBe(storedResult);
 });
 
-for (const [name, result] of [
+test.for([
   ["empty", ""],
   ["whitespace", " \n\t "],
   ["unavailable", "résumé indisponible"],
   ["decomposed Unicode and repeated whitespace", "  re\u0301sume\u0301\n  indisponible  "],
-]) {
-  test(`feed hides and collection regenerates a matching ${name} summary`, async (context) => {
-    const { entry, feed, report, runtime } = await createStoredSummary(context);
-    await runtime.summaries.save({ ...entry, result });
-    expect(feed().size).toBe(0);
-    let generations = 0;
+])("feed hides and collection regenerates a matching %s summary", async ([, result], context) => {
+  const { entry, feed, report, runtime } = await createStoredSummary(context);
+  await runtime.summaries.save({ ...entry, result });
+  expect(feed().size).toBe(0);
+  let generations = 0;
 
-    const summaries = await resolveUserSummariesForReport(runtime, report, {
-      runUserSummary: async () => {
-        generations += 1;
+  const summaries = await resolveUserSummariesForReport(runtime, report, {
+    runUserSummary: async () => {
+      generations += 1;
 
-        return JSON.stringify({ summary: "Résumé régénéré." });
-      },
-    });
-
-    expect(generations).toBe(1);
-    expect(summaries.get(entry.user_key)).toBe("Résumé régénéré.");
-    expect(feed()).toStrictEqual(summaries);
+      return JSON.stringify({ summary: "Résumé régénéré." });
+    },
   });
-}
+
+  expect(generations).toBe(1);
+  expect(summaries.get(entry.user_key)).toBe("Résumé régénéré.");
+  expect(feed()).toStrictEqual(summaries);
+});
 
 // A summary is looked up by its source hash, so a stored one can only mismatch on these fields.
-for (const field of ["prompt_hash", "user_key"] as const) {
-  test(`feed and collection reject a stored summary with a mismatched ${field}`, async (context) => {
+test.for(["prompt_hash", "user_key"] as const)(
+  "feed and collection reject a stored summary with a mismatched %s",
+  async (field, context) => {
     const { entry, feed, report, runtime } = await createStoredSummary(context);
     await runtime.summaries.save({ ...entry, [field]: "mismatched" });
     expect(feed().size).toBe(0);
@@ -91,8 +90,8 @@ for (const field of ["prompt_hash", "user_key"] as const) {
     expect(generations).toBe(1);
     expect(summaries.get(entry.user_key)).toBe("Résumé corrigé.");
     expect(feed()).toStrictEqual(summaries);
-  });
-}
+  },
+);
 
 test("changed story content hides the old summary until collection regenerates it", async (context) => {
   const { entry, feed, report, runtime } = await createStoredSummary(context);
@@ -122,8 +121,9 @@ test("a changed model requires its own summary for both reading and generation",
   expect(feed().get(entry.user_key)).toBe("Résumé initial.");
 });
 
-for (const outcome of ["empty", "error"] as const) {
-  test(`a generation ${outcome} leaves no stored summary for the feed`, async (context) => {
+test.for(["empty", "error"] as const)(
+  "a generation %s leaves no stored summary for the feed",
+  async (outcome, context) => {
     const report = createSummaryReport();
     const runtime = await createTestRuntime(context);
     await saveSummaryUsers(runtime);
@@ -141,5 +141,5 @@ for (const outcome of ["empty", "error"] as const) {
     expect(summaries.size).toBe(1);
     expect(countSummaries(runtime)).toBe(0);
     expect(readFeedUserSummaries(runtime, report.output.users).size).toBe(0);
-  });
-}
+  },
+);

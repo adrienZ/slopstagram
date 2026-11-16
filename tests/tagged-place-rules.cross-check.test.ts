@@ -65,7 +65,7 @@ test("the Assistant's place reads and the map name the same places by the same i
   const mapped = byName(loadPlaceMap(shared.runtime).places);
   const { listed, found, searched } = assistantPlaces();
 
-  expect(mapped.map(({ name }) => name)).toEqual(
+  expect(mapped.map(({ name }) => name)).toStrictEqual(
     expect.arrayContaining([withInstagramId.name, withoutInstagramId.name]),
   );
   expect(byName(listed)).toStrictEqual(mapped);
