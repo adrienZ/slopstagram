@@ -1,5 +1,5 @@
 import "@tanstack/react-start/server-only";
-import { HTTPError } from "nitro/h3";
+import { notFound } from "@tanstack/react-router";
 import type { StoryOutputUser } from "@@/core/domains/fetch-run/report-types.ts";
 import type {
   UserTimelineStory,
@@ -308,7 +308,8 @@ export function loadAccountTimeline(
   const timeline = createUserTimeline(runtime, username);
 
   if (timeline === null) {
-    throw new HTTPError({ status: 404, message: `no published stories found for ${username}` });
+    // oxlint-disable-next-line typescript/only-throw-error -- The router renders its 404 for this object, not for an Error, and a throw keeps `timeline` narrowed.
+    throw notFound();
   }
 
   const previewPaths = getTimelinePreviewPaths(timeline.stories);

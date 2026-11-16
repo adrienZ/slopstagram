@@ -100,8 +100,8 @@ test("an account without stories renders an empty timeline", async () => {
   expect(page.queryByRole("button", { name: /Ouvrir aperçu/u })).toBeNull();
 });
 
-test("an account the application has never seen has no timeline", () => {
-  expect(() => loadAccountTimeline(shared.runtime, "unknown_account", now)).toThrow(
-    "no published stories found for unknown_account",
-  );
+test("an account the application has never seen renders the not-found page", async () => {
+  const { page } = await render("/users/unknown_account");
+
+  expect(page.getByRole("heading", { name: "404 : Page introuvable", level: 1 })).toBeDefined();
 });
