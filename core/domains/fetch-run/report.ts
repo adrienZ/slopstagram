@@ -1,12 +1,11 @@
 import { resolveAppleCaptionsForReport } from "@@/core/domains/vision/apple-caption.ts";
 import { recordFetchRun } from "./fetch-run.ts";
-import { createStoryFeed, readStoryFeedVision } from "@@/core/domains/story-feed/story-feed.ts";
+import { summarizeStoryFeed } from "@@/core/domains/story-feed/feed-user-summary.ts";
 import { cacheReportImages } from "@@/core/domains/media-store/image-cache.ts";
 import { cacheReportAudio } from "@@/core/domains/music/report-audio.ts";
 import { persistReportInstagramUsers } from "@@/core/domains/accounts/instagram-user.ts";
 import type { ReportRepository } from "@@/core/domains/database/repositories/report-repository.ts";
 import type { StoriesManifestReport } from "./report-types.ts";
-import { resolveUserSummariesForReport } from "@@/core/domains/accounts/user-summary.ts";
 import { resolveVisionForReport } from "@@/core/domains/vision/vision-report.ts";
 import { fetchStories } from "./stories.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
@@ -51,9 +50,7 @@ type CreateReportRuntime = { reports: Pick<ReportRepository, "save"> } & Pick<Ru
   Parameters<typeof resolveAppleCaptionsForReport>[0] &
   Parameters<typeof resolveVisionForReport>[0] &
   Parameters<typeof persistReportInstagramUsers>[0] &
-  Parameters<typeof createStoryFeed>[0] &
-  Parameters<typeof readStoryFeedVision>[0] &
-  Parameters<typeof resolveUserSummariesForReport>[0];
+  Parameters<typeof summarizeStoryFeed>[0];
 
 function backUpAfterFetchRun(runtime: CreateReportRuntime, at: Date): void {
   try {
@@ -88,13 +85,7 @@ export async function createReport(runtime: CreateReportRuntime): Promise<Create
     await resolveAppleCaptionsForReport(runtime, report, cachedImages);
     await resolveVisionForReport(runtime, report, cachedImages);
     await persistReportInstagramUsers(runtime, report);
-    // Generate from the same canonical, active story set used by the user app.
-    const feedUsers = createStoryFeed(runtime, new Date());
-    await resolveUserSummariesForReport(
-      runtime,
-      { output: { users: feedUsers } },
-      { visionByPreviewUrl: readStoryFeedVision(runtime, feedUsers) },
-    );
+    await summarizeStoryFeed(runtime, new Date());
     await runtime.reports.save(outputFileName, report);
     runtime.logger.info(
       [`stories=${counts.stories}`, `fetched=${counts.fetched}`, `failed=${counts.failed}`].join(

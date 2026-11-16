@@ -22,6 +22,14 @@ test("reads the user summary the story feed shows, ignoring an @ prefix and lett
   const world = await createWorld(context);
   await world.run();
 
+  // The readers only find a summary whose stories' vision they hash exactly as the run wrote it.
+  const summaryPrompts = world.ollama.requests.filter(({ kind }) => kind === "summary");
+  expect(summaryPrompts).toHaveLength(2);
+
+  for (const { prompt } of summaryPrompts) {
+    expect(prompt).toContain("Synthetic scene");
+  }
+
   const feedSummaries = loadStoryFeed(world, now).users.map(({ user, summary }) => ({
     summary,
     username: user.username,
