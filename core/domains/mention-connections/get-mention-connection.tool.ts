@@ -1,10 +1,10 @@
 import { tool } from "ai";
 import { z } from "zod";
+import { PageOffsetSchema } from "@@/core/utils/paging.ts";
 import {
-  MENTION_PERSON_KINDS,
+  MENTION_PERSON_KINDS_DESCRIPTION,
   getMentionConnection,
   MentionConnectionReadSchema,
-  MentionOffsetSchema,
 } from "./mention-connection-reads.ts";
 import type { MentionConnectionsRuntime } from "./mention-connections.ts";
 
@@ -14,7 +14,7 @@ Use it when the message asks about two people: whether they are connected, who m
 Do not use it for one person: use listMentionConnections. With only part of a name, call searchMentionPeople first.
 
 Outcomes: "found" with the connection; "nextOffset" is the offset of the next stories, null when there are no more. "no_observation": no stored story of one mentions the other. "unknown_person": no Account, username or full name in the stored mentions equals the queries listed. "ambiguous": several people have one of these full names; each match lists its "candidates", apart, with their ids.
-${MENTION_PERSON_KINDS}`;
+${MENTION_PERSON_KINDS_DESCRIPTION}`;
 
 /** The Assistant tool reading the Mention connection of two people and its source stories. Read-only. */
 export function createGetMentionConnectionTool(runtime: MentionConnectionsRuntime) {
@@ -29,7 +29,7 @@ export function createGetMentionConnectionTool(runtime: MentionConnectionsRuntim
       secondPerson: z
         .string()
         .describe('The other person, the same way. Example: "bob" for the question above.'),
-      offset: MentionOffsetSchema,
+      offset: PageOffsetSchema,
     }),
     outputSchema: MentionConnectionReadSchema,
     execute: (input) => getMentionConnection(runtime, input),

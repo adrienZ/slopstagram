@@ -1,10 +1,10 @@
 import { tool } from "ai";
 import { z } from "zod";
+import { PageOffsetSchema } from "@@/core/utils/paging.ts";
 import {
-  MENTION_PERSON_KINDS,
+  MENTION_PERSON_KINDS_DESCRIPTION,
   listMentionConnections,
   MentionConnectionListSchema,
-  MentionOffsetSchema,
 } from "./mention-connection-reads.ts";
 import type { MentionConnectionsRuntime } from "./mention-connections.ts";
 
@@ -14,7 +14,7 @@ Use it when the message asks who mentioned or was mentioned by someone, whom som
 Do not use it for two given people: use getMentionConnection. Do not use it to find someone by part of a name: use searchMentionPeople.
 
 Outcomes: "listed" holds up to 10 connections; "total" counts every connection and "nextOffset" is the offset of the next page, null on the last one; "person" is whom the list is about, null for everyone; an empty list means no stored story mentions them or was posted by them mentioning someone. "unknown_person": no Account, username or full name in the stored mentions equals the query. "ambiguous": several people have this full name; "candidates" are those people, apart, with their ids.
-${MENTION_PERSON_KINDS}`;
+${MENTION_PERSON_KINDS_DESCRIPTION}`;
 
 /** The Assistant tool listing the Mention connections, of one person or everyone. Read-only. */
 export function createListMentionConnectionsTool(runtime: MentionConnectionsRuntime) {
@@ -27,7 +27,7 @@ export function createListMentionConnectionsTool(runtime: MentionConnectionsRunt
         .describe(
           'Only the connections of this person: a username, a full name, or an id from an earlier result, copied as is. Example: "alice" for "who mentioned @alice?". Leave it out for everyone.',
         ),
-      offset: MentionOffsetSchema,
+      offset: PageOffsetSchema,
     }),
     outputSchema: MentionConnectionListSchema,
     execute: (input) => listMentionConnections(runtime, input),

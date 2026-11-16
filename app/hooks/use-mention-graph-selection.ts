@@ -46,3 +46,5 @@ export function useMentionGraphSelection({ connections, stories }: MentionGraphP
     openStory: setOpenStoryPk,
   };
 }
+
+export type MentionGraphSelection = ReturnType<typeof useMentionGraphSelection>;

@@ -74,8 +74,10 @@ export interface MentionConnection {
   observations: Array<MentionObservation>;
 }
 
-/** Both newest source story first, as the occurrences are read. */
 export interface MentionConnections {
+  /** Every current Account, connected or not, which a query may name. */
+  accounts: Array<AccountTarget>;
+  /** Both newest source story first, as the occurrences are read. */
   targets: Array<MentionTarget>;
   connections: Array<MentionConnection>;
 }
@@ -150,11 +152,9 @@ function namesAuthor(target: MentionTarget, author: AccountTarget): boolean {
  * Stickers naming the author, and people two stickers of a story name together, make no
  * connection.
  */
-export function readMentionConnections(
-  runtime: Pick<MentionConnectionsRuntime, "stories">,
-  accounts: Array<InstagramUserEntry>,
-): MentionConnections {
-  const resolveUsername = createUsernameResolver(toAccountTargets(accounts));
+export function readMentionConnections(runtime: MentionConnectionsRuntime): MentionConnections {
+  const accounts = toAccountTargets(runtime.users.listAll());
+  const resolveUsername = createUsernameResolver(accounts);
   const targets = new Map<MentionTargetId, MentionTarget>();
   const connections = new Map<string, MentionConnection>();
 
@@ -185,12 +185,12 @@ export function readMentionConnections(
     }
   }
 
-  return { targets: [...targets.values()], connections: [...connections.values()] };
+  return { accounts, targets: [...targets.values()], connections: [...connections.values()] };
 }
 
 /** The union of the Neighborhoods of `selectedIds`, in their original order. */
 function keepNeighborhoods(
-  { targets, connections }: MentionConnections,
+  { accounts, targets, connections }: MentionConnections,
   selectedIds: ReadonlySet<string>,
 ): MentionConnections {
   const kept = new Set(selectedIds);
@@ -205,13 +205,14 @@ function keepNeighborhoods(
     }
   }
   return {
+    accounts,
     targets: targets.filter(({ id }) => kept.has(id)),
     connections: connections.filter(({ targetIds }) => targetIds.every((id) => kept.has(id))),
   };
 }
 
 /** A username of the drawn Accounts, ignoring case, and the Accounts it names. */
-interface DrawnUsername {
+export interface DrawnUsername {
   username: string;
   accounts: Array<AccountTarget>;
 }
@@ -267,17 +268,15 @@ export function filterByAccounts(graph: MentionConnections, usernames: Array<str
  * so equal names on different stories come back apart. Empty when nothing matches.
  */
 export function findMentionTargets(
-  accounts: Array<InstagramUserEntry>,
-  { targets }: Pick<MentionConnections, "targets">,
+  { accounts, targets }: Pick<MentionConnections, "accounts" | "targets">,
   query: string,
 ): Array<MentionTarget> {
   const wanted = query.trim();
-  const accountTargets = toAccountTargets(accounts);
-  const target = [...targets, ...accountTargets].find(({ id }) => id === wanted);
+  const target = [...targets, ...accounts].find(({ id }) => id === wanted);
   if (target !== undefined) {
     return [target];
   }
-  const named = createUsernameResolver(accountTargets)(wanted.replace(/^@/u, ""));
+  const named = createUsernameResolver(accounts)(wanted.replace(/^@/u, ""));
   if (named.kind === "account") {
     return [named];
   }
@@ -291,7 +290,7 @@ export function findMentionTargets(
   if (name === "") {
     return [];
   }
-  return [...targets.filter(({ kind }) => kind === "name"), ...accountTargets].filter(
+  return [...targets.filter(({ kind }) => kind === "name"), ...accounts].filter(
     ({ fullName }) => fullName !== null && normalizeSearchQuery(fullName) === name,
   );
 }

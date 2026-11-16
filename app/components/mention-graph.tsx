@@ -10,6 +10,7 @@ import { cn } from "cn";
 import { LocateFixedIcon, MinusIcon, PlusIcon } from "lucide-react";
 import type { MentionGraphPageData } from "../loaders/mention-graph.ts";
 import { useForceLayout, type LayoutPosition } from "../hooks/use-force-layout.ts";
+import type { MentionGraphSelection } from "../hooks/use-mention-graph-selection.ts";
 import { GRAPH_HEIGHT, GRAPH_WIDTH, useGraphViewport } from "../hooks/use-graph-viewport.ts";
 import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/ui/avatar.tsx";
 import { Button } from "../shadcn/ui/button.tsx";
@@ -134,10 +135,10 @@ function GraphControls({
 }
 
 interface MentionGraphProps extends Pick<MentionGraphPageData["graph"], "points" | "connections"> {
-  selectedPointId: string | null;
-  onSelectPoint: (id: string | null) => void;
-  selectedConnectionId: string | null;
-  onSelectConnection: (id: string) => void;
+  selection: Pick<
+    MentionGraphSelection,
+    "selectedPointId" | "selectPoint" | "selectedConnectionId" | "selectConnection"
+  >;
   overlay?: ReactNode;
 }
 
@@ -146,15 +147,8 @@ interface MentionGraphProps extends Pick<MentionGraphPageData["graph"], "points"
  * panned, and the view zoomed. Selecting a point highlights its connections and, for a known
  * Account, opens its profile.
  */
-export function MentionGraph({
-  points,
-  connections,
-  selectedPointId,
-  onSelectPoint,
-  selectedConnectionId,
-  onSelectConnection,
-  overlay,
-}: MentionGraphProps) {
+export function MentionGraph({ points, connections, selection, overlay }: MentionGraphProps) {
+  const { selectedPointId, selectPoint, selectedConnectionId, selectConnection } = selection;
   const regionRef = useRef<HTMLDivElement>(null);
   const layout = useForceLayout(points, connections);
   const viewport = useGraphViewport(layout);
@@ -200,7 +194,7 @@ export function MentionGraph({
         data-highlighted={highlighted}
         className="tw:cursor-pointer tw:outline-none"
         {...activationHandlers(viewport.isClick, () => {
-          onSelectConnection(connection.id);
+          selectConnection(connection.id);
         })}
       >
         <line
@@ -239,7 +233,7 @@ export function MentionGraph({
           viewport.startPointDrag(event, point.id);
         }}
         {...activationHandlers(viewport.isClick, () => {
-          onSelectPoint(point.id);
+          selectPoint(point.id);
         })}
         onPointerEnter={() => {
           setHoveredPointId(point.id);
@@ -296,12 +290,12 @@ export function MentionGraph({
         onPointerDown={viewport.startPan}
         onClick={() => {
           if (viewport.isClick()) {
-            onSelectPoint(null);
+            selectPoint(null);
           }
         }}
         onKeyDown={(event) => {
           if (event.key === "Escape") {
-            onSelectPoint(null);
+            selectPoint(null);
           }
         }}
       >
@@ -333,7 +327,7 @@ export function MentionGraph({
         open={selected?.kind === "account"}
         onOpenChange={(open) => {
           if (!open) {
-            onSelectPoint(null);
+            selectPoint(null);
           }
         }}
       >

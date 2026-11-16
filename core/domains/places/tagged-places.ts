@@ -5,6 +5,7 @@ import type {
   TaggedPlaceRow,
 } from "@@/core/domains/database/repositories/story-repository.ts";
 import { taggedPlaceDisplayName } from "@@/core/domains/places/tagged-place-rules.ts";
+import { nextOffsetAfter } from "@@/core/utils/paging.ts";
 import { normalizeSearchQuery, rankTextMatch } from "@@/core/utils/search-text.ts";
 
 export interface TaggedPlacesReadRuntime {
@@ -47,13 +48,6 @@ export interface TaggedPlacePage {
   total: number;
   nextOffset: number | null;
 }
-
-export const PlaceOffsetSchema = z
-  .number()
-  .int()
-  .min(0)
-  .optional()
-  .describe('The "nextOffset" of the previous page, to read the next one. Leave it out first.');
 
 export const TaggedPlacePageSchema = z.object({
   places: z.array(TaggedPlaceSummarySchema),
@@ -102,11 +96,10 @@ function summarize(place: TaggedPlaceRow): TaggedPlaceSummary {
 }
 
 function toPage(places: Array<TaggedPlaceRow>, total: number, offset: number): TaggedPlacePage {
-  const end = offset + PLACE_PAGE_SIZE;
   return {
     places: places.map(summarize),
     total,
-    nextOffset: end < total ? end : null,
+    nextOffset: nextOffsetAfter(offset, PLACE_PAGE_SIZE, total),
   };
 }
 

@@ -1,6 +1,7 @@
 import { ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import type { StoryCardData } from "../utils/story-cards.ts";
+import type { OpenStory } from "../hooks/use-open-story.ts";
 import { Button } from "../shadcn/ui/button.tsx";
 import { StoryCard } from "./story-card.tsx";
 
@@ -15,7 +16,7 @@ export function MentionConnectionStories({
   labels: readonly [string, string];
   stories: Array<StoryCardData>;
   onClose: () => void;
-  onOpenStory: (mediaPk: string) => void;
+  onOpenStory: OpenStory;
 }) {
   const [page, setPage] = useState(0);
   const pageCount = Math.ceil(stories.length / PAGE_SIZE);

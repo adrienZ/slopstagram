@@ -13,10 +13,7 @@ export function MentionGraphExplorer(graph: MentionGraphPageData["graph"]) {
       <MentionGraph
         points={points}
         connections={connections}
-        selectedPointId={selection.selectedPointId}
-        onSelectPoint={selection.selectPoint}
-        selectedConnectionId={selection.selectedConnectionId}
-        onSelectConnection={selection.selectConnection}
+        selection={selection}
         overlay={
           selectedConnection !== undefined && (
             <MentionConnectionStories

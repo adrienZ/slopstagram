@@ -6,10 +6,11 @@ import { media } from "@@/core/domains/media-store/media-urls.ts";
 import {
   filterByAccounts,
   readMentionConnections,
+  type DrawnUsername,
   type MentionConnectionsRuntime,
   type MentionTarget,
 } from "@@/core/domains/mention-connections/mention-connections.ts";
-import { keepAccountFilters } from "../utils/account-filter-search.ts";
+import { keepAccountFilters } from "../search-params.ts";
 import { createOwnerStoryCards } from "./account-timeline.ts";
 import { loadSidebarUsers } from "./sidebar-users.ts";
 
@@ -51,7 +52,7 @@ function toGraphPoint(target: MentionTarget): MentionGraphPoint {
 }
 
 /** A username several drawn Accounts share has no avatar: one would picture only one of them. */
-function toFilterOptions(drawnUsernames: ReturnType<typeof filterByAccounts>["drawnUsernames"]) {
+function toFilterOptions(drawnUsernames: Array<DrawnUsername>) {
   return drawnUsernames
     .toSorted((left, right) => left.username.localeCompare(right.username))
     .map(({ username, accounts: [first, ...others] }) => ({
@@ -63,7 +64,7 @@ function toFilterOptions(drawnUsernames: ReturnType<typeof filterByAccounts>["dr
 /** `source` and `target` only name the two ends: who mentioned whom is in the source stories. */
 export function loadMentionGraph(runtime: MentionGraphRuntime, accountFilters: Array<string>) {
   const { drawnUsernames, selectedUsernames, unknownUsernames, graph } = filterByAccounts(
-    readMentionConnections(runtime, runtime.users.listAll()),
+    readMentionConnections(runtime),
     accountFilters,
   );
   const points = graph.targets.map(toGraphPoint);

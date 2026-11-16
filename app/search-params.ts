@@ -21,5 +21,5 @@ export function keepAccountFilters(
   return accounts.flatMap(({ username }) => (chosen.has(username) ? [username] : []));
 }
 
-/** Filters change the view, not the page: they replace the history entry and keep the scroll. */
-export const replaceFilterSearch = { to: ".", replace: true, resetScroll: false } as const;
+/** A search param that changes the view, not the page, replaces the history entry and keeps the scroll. */
+export const replaceViewSearch = { to: ".", replace: true, resetScroll: false } as const;

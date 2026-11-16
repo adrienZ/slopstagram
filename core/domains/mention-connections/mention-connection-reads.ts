@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { pageOf } from "@@/core/utils/paging.ts";
 import { normalizeSearchQuery, rankTextMatch } from "@@/core/utils/search-text.ts";
 import {
   findMentionTargets,
@@ -98,14 +99,7 @@ const AmbiguousMentionQuerySchema = z.object({
 }) satisfies z.ZodType<AmbiguousMentionQuery>;
 
 /** Stickers keep a username, not an account id, so a sticker naming an Account is a guess. */
-export const MENTION_PERSON_KINDS = `Kinds: "account" is a saved Account; when a sticker names it, it is the Account that has this username today, which may not be whom the story meant. "unknown-username" is a username no Account has, "ambiguous-username" a username several Accounts share ("accounts"), "name" a full name one story's sticker carries.`;
-
-export const MentionOffsetSchema = z
-  .number()
-  .int()
-  .min(0)
-  .optional()
-  .describe('The "nextOffset" of the previous page, to read the next one. Leave it out first.');
+export const MENTION_PERSON_KINDS_DESCRIPTION = `Kinds: "account" is a saved Account; when a sticker names it, it is the Account that has this username today, which may not be whom the story meant. "unknown-username" is a username no Account has, "ambiguous-username" a username several Accounts share ("accounts"), "name" a full name one story's sticker carries.`;
 
 export type MentionConnectionList =
   | {
@@ -151,6 +145,13 @@ interface MentionStory {
   mentioned: string;
 }
 
+const MentionStorySchema = z.object({
+  storyPk: z.string(),
+  date: z.string().nullable(),
+  author: z.string(),
+  mentioned: z.string(),
+}) satisfies z.ZodType<MentionStory>;
+
 export type MentionConnectionRead =
   | {
       status: "found";
@@ -172,14 +173,7 @@ export const MentionConnectionReadSchema = z.discriminatedUnion("status", [
     people: z.tuple([MentionPersonSchema, MentionPersonSchema]),
     storyCount: z.number(),
     mentions: z.array(MentionDirectionSchema),
-    stories: z.array(
-      z.object({
-        storyPk: z.string(),
-        date: z.string().nullable(),
-        author: z.string(),
-        mentioned: z.string(),
-      }),
-    ),
+    stories: z.array(MentionStorySchema),
     nextOffset: z.number().nullable(),
   }),
   z.object({
@@ -201,10 +195,6 @@ function latestTakenAt(connections: Array<MentionConnection>): number | null {
   return dates.length === 0 ? null : Math.max(...dates);
 }
 
-function nextOffsetAfter(offset: number, size: number, total: number): number | null {
-  return offset + size < total ? offset + size : null;
-}
-
 function otherOf(
   { targetIds: [first, second] }: MentionConnection,
   id: MentionTarget["id"],
@@ -221,17 +211,20 @@ function describePerson(target: MentionTarget): MentionPerson {
 }
 
 function createMentionReader(runtime: MentionConnectionsRuntime) {
-  const accounts = runtime.users.listAll();
-  const graph: MentionConnections = readMentionConnections(runtime, accounts);
-  const labels = new Map(graph.targets.map(({ id, label }) => [id, label]));
+  const graph: MentionConnections = readMentionConnections(runtime);
+  const targetsById = new Map(graph.targets.map((target) => [target.id, target]));
 
-  /** Every end of a connection is one of the graph's targets, so a missing label is a bug. */
-  function labelOf(id: MentionTarget["id"]): string {
-    const label = labels.get(id);
-    if (label === undefined) {
+  /** Every end of a connection is one of the graph's targets, so a missing one is a bug. */
+  function targetOf(id: MentionTarget["id"]): MentionTarget {
+    const target = targetsById.get(id);
+    if (target === undefined) {
       throw new Error(`No Mention target ${id} in the Mention connections`);
     }
-    return label;
+    return target;
+  }
+
+  function labelOf(id: MentionTarget["id"]): string {
+    return targetOf(id).label;
   }
 
   function connectionsOf(id: MentionTarget["id"]): Array<MentionConnection> {
@@ -271,7 +264,7 @@ function createMentionReader(runtime: MentionConnectionsRuntime) {
     | { status: "found"; target: MentionTarget }
     | { status: "unknown_person"; query: string }
     | { status: "ambiguous"; match: AmbiguousMentionQuery } {
-    const targets = findMentionTargets(accounts, graph, query);
+    const targets = findMentionTargets(graph, query);
     if (targets.length === 0) {
       return { status: "unknown_person", query };
     }
@@ -295,6 +288,7 @@ function createMentionReader(runtime: MentionConnectionsRuntime) {
     findPerson,
     labelOf,
     summarizePerson,
+    targetOf,
   };
 }
 
@@ -317,30 +311,24 @@ export function listMentionConnections(
   const target = found?.target;
   const connections =
     target === undefined ? reader.graph.connections : reader.connectionsOf(target.id);
-  const targetsById = new Map(reader.graph.targets.map((each) => [each.id, each]));
+  const page = pageOf(connections, offset, PAGE_SIZE);
   return {
     status: "listed",
     person: target === undefined ? null : describePerson(target),
-    connections: connections.slice(offset, offset + PAGE_SIZE).flatMap((connection) => {
-      const ids =
+    connections: page.items.map((connection) => {
+      const [first, second] =
         target === undefined || connection.targetIds[0] === target.id
           ? connection.targetIds
           : connection.targetIds.toReversed();
-      const [first, second] = ids.map((id) => targetsById.get(id));
-      if (first === undefined || second === undefined) {
-        return [];
-      }
-      return [
-        {
-          people: [describePerson(first), describePerson(second)],
-          storyCount: connection.observations.length,
-          latestStoryDate: formatDate(latestTakenAt([connection])),
-          mentions: reader.describeMentions(connection),
-        },
-      ];
+      return {
+        people: [describePerson(reader.targetOf(first)), describePerson(reader.targetOf(second))],
+        storyCount: connection.observations.length,
+        latestStoryDate: formatDate(latestTakenAt([connection])),
+        mentions: reader.describeMentions(connection),
+      };
     }),
-    total: connections.length,
-    nextOffset: nextOffsetAfter(offset, PAGE_SIZE, connections.length),
+    total: page.total,
+    nextOffset: page.nextOffset,
   };
 }
 
@@ -366,13 +354,15 @@ export function searchMentionPeople(
           });
           return ranks.length === 0 ? [] : [{ target, rank: Math.min(...ranks) }];
         });
+  const page = pageOf(
+    matches.toSorted((left, right) => left.rank - right.rank),
+    offset,
+    PAGE_SIZE,
+  );
   return {
-    people: matches
-      .toSorted((left, right) => left.rank - right.rank)
-      .slice(offset, offset + PAGE_SIZE)
-      .map(({ target }) => reader.summarizePerson(target)),
-    total: matches.length,
-    nextOffset: nextOffsetAfter(offset, PAGE_SIZE, matches.length),
+    people: page.items.map(({ target }) => reader.summarizePerson(target)),
+    total: page.total,
+    nextOffset: page.nextOffset,
   };
 }
 
@@ -407,19 +397,18 @@ export function getMentionConnection(
   if (connection === undefined) {
     return { status: "no_observation", people };
   }
+  const page = pageOf(connection.observations, offset, STORY_PAGE_SIZE);
   return {
     status: "found",
     people,
-    storyCount: connection.observations.length,
+    storyCount: page.total,
     mentions: reader.describeMentions(connection),
-    stories: connection.observations
-      .slice(offset, offset + STORY_PAGE_SIZE)
-      .map(({ storyPk, takenAt, authorId, mentionedId }) => ({
-        storyPk,
-        date: formatDate(takenAt),
-        author: reader.labelOf(authorId),
-        mentioned: reader.labelOf(mentionedId),
-      })),
-    nextOffset: nextOffsetAfter(offset, STORY_PAGE_SIZE, connection.observations.length),
+    stories: page.items.map(({ storyPk, takenAt, authorId, mentionedId }) => ({
+      storyPk,
+      date: formatDate(takenAt),
+      author: reader.labelOf(authorId),
+      mentioned: reader.labelOf(mentionedId),
+    })),
+    nextOffset: page.nextOffset,
   };
 }

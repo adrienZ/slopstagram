@@ -10,7 +10,7 @@ import type { MentionGraphPageData } from "../loaders/mention-graph.ts";
 import { getMentionGraph } from "../query-service.ts";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "../shadcn/ui/empty.tsx";
 import { Toaster } from "../shadcn/ui/sonner.tsx";
-import { formatAccountFilters, parseAccountFilters } from "../utils/account-filter-search.ts";
+import { formatAccountFilters, parseAccountFilters } from "../search-params.ts";
 
 export function MentionGraphPage({
   accounts,

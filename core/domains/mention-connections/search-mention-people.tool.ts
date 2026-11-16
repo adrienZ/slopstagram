@@ -1,8 +1,8 @@
 import { tool } from "ai";
 import { z } from "zod";
+import { PageOffsetSchema } from "@@/core/utils/paging.ts";
 import {
-  MENTION_PERSON_KINDS,
-  MentionOffsetSchema,
+  MENTION_PERSON_KINDS_DESCRIPTION,
   MentionPeoplePageSchema,
   searchMentionPeople,
 } from "./mention-connection-reads.ts";
@@ -14,7 +14,7 @@ Use it when the message names someone of the mentions by part of a name or usern
 Do not use it with a full username or two people: use listMentionConnections or getMentionConnection directly.
 
 Outcomes: "people" holds up to 10 matches, "total" counts every match and "nextOffset" is the offset of the next page, null on the last one. Equal full names from different stories are different people, with different ids. When "people" is empty, no stored mention involves anyone matching.
-${MENTION_PERSON_KINDS}`;
+${MENTION_PERSON_KINDS_DESCRIPTION}`;
 
 /** The Assistant tool searching the Mention people by name. Read-only. */
 export function createSearchMentionPeopleTool(runtime: MentionConnectionsRuntime) {
@@ -26,7 +26,7 @@ export function createSearchMentionPeopleTool(runtime: MentionConnectionsRuntime
         .describe(
           'The name or username, or part of it, to look for. Example: "bob" for "did anyone mention someone called Bob?".',
         ),
-      offset: MentionOffsetSchema,
+      offset: PageOffsetSchema,
     }),
     outputSchema: MentionPeoplePageSchema,
     execute: (input) => searchMentionPeople(runtime, input),

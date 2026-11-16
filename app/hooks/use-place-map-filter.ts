@@ -5,9 +5,9 @@ import {
   formatAccountFilters,
   keepAccountFilters,
   parseAccountFilters,
-  replaceFilterSearch,
+  replaceViewSearch,
   toggleAccountFilter,
-} from "../utils/account-filter-search.ts";
+} from "../search-params.ts";
 
 /** Each place keeps only the chosen accounts' stories, so its latest story is theirs. None chosen means all. */
 function filterPlaces(places: Array<TimelinePlace>, selected: Array<string>): Array<TimelinePlace> {
@@ -37,7 +37,7 @@ export function usePlaceMapFilter(
 
   function update(usernames: Array<string>, placeFilter: "keep" | "remove") {
     void navigate({
-      ...replaceFilterSearch,
+      ...replaceViewSearch,
       search: (previous) => ({
         ...previous,
         accounts: formatAccountFilters(keepAccountFilters(accounts, usernames)),

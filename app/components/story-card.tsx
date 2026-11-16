@@ -1,6 +1,6 @@
 import { cn } from "cn";
 import type { StoryCardData } from "../utils/story-cards.ts";
-import { useStorySearchParam } from "../hooks/use-story-search-param.ts";
+import { useOpenStory, type OpenStory } from "../hooks/use-open-story.ts";
 
 const previewSizes = {
   timeline:
@@ -17,10 +17,9 @@ export function StoryCard({
 }: {
   story: StoryCardData;
   size?: "timeline" | "feed" | "sticker" | "gallery";
-  onOpenStory?: (mediaPk: string) => void;
+  onOpenStory?: OpenStory;
 }) {
-  const openInUrl = useStorySearchParam();
-  const open = onOpenStory ?? openInUrl;
+  const open = useOpenStory(onOpenStory);
   return (
     <div className="tw:min-w-0 tw:flex-none tw:snap-start">
       <button

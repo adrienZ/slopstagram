@@ -1,8 +1,8 @@
 import { tool } from "ai";
 import { z } from "zod";
+import { PageOffsetSchema } from "@@/core/utils/paging.ts";
 import {
   listTaggedPlaces,
-  PlaceOffsetSchema,
   TaggedPlacePageSchema,
   type TaggedPlaceList,
   type TaggedPlacesRuntime,
@@ -29,7 +29,7 @@ export function createListTaggedPlacesTool(runtime: TaggedPlacesRuntime) {
         .describe(
           'Only the places of these accounts, without "@". Example: ["alice"] for "where did @alice go?". Leave it out for every account.',
         ),
-      offset: PlaceOffsetSchema,
+      offset: PageOffsetSchema,
     }),
     outputSchema: OutputSchema,
     execute: (input) => listTaggedPlaces(runtime, input),

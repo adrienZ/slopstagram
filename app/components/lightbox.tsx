@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { Sticker } from "./sticker.tsx";
 import { MusicSticker } from "./music-sticker.tsx";
 import { getUserTimelineUrl } from "../utils/helper.ts";
-import { useStorySearchParam } from "../hooks/use-story-search-param.ts";
+import { useOpenStory, type OpenStory } from "../hooks/use-open-story.ts";
 import {
   Dialog,
   DialogClose,
@@ -98,8 +98,6 @@ function LightboxNavButton(props: {
     </button>
   );
 }
-
-type OpenStory = (mediaPk?: string) => void;
 
 interface LightboxProps {
   stories: Array<StoryCardData>;
@@ -284,14 +282,14 @@ function LightboxDialog(props: {
 }
 
 export function Lightbox(props: LightboxProps) {
-  const openInUrl = useStorySearchParam();
+  const openStory = useOpenStory(props.onOpenStory);
   const story = props.stories.find((entry) => entry.mediaPk === props.selectedStory);
   return story === undefined ? null : (
     <LightboxDialog
       stories={props.stories}
       story={story}
       linkToProfile={props.linkToProfile ?? false}
-      onOpenStory={props.onOpenStory ?? openInUrl}
+      onOpenStory={openStory}
     />
   );
 }
