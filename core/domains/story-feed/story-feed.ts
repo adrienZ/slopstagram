@@ -38,22 +38,13 @@ export function createStoredStoryUser(
   };
 }
 
-interface StoryFeedOptions {
-  hasPreview?: (mediaPk: string) => boolean;
-}
-
-function groupStoryFeed(
-  publishedStories: Array<UserTimelineStory>,
-  previewExists?: (mediaPk: string) => boolean,
-): Array<StoryOutputUser> {
-  const entries = publishedStories
-    .filter((entry) => previewExists?.(entry.story.pk) ?? true)
-    .toSorted(
-      (left, right) =>
-        right.taken_at - left.taken_at ||
-        left.username.localeCompare(right.username) ||
-        left.story.pk.localeCompare(right.story.pk),
-    );
+function groupStoryFeed(publishedStories: Array<UserTimelineStory>): Array<StoryOutputUser> {
+  const entries = publishedStories.toSorted(
+    (left, right) =>
+      right.taken_at - left.taken_at ||
+      left.username.localeCompare(right.username) ||
+      left.story.pk.localeCompare(right.story.pk),
+  );
 
   const byUser = new Map<string, Array<UserTimelineStory>>();
 
@@ -77,19 +68,17 @@ function groupStoryFeed(
 export function createStoryFeed(
   runtime: { stories: Pick<StoryRepository, "listActive"> },
   now: Date,
-  options: StoryFeedOptions = {},
 ): Array<StoryOutputUser> {
-  return groupStoryFeed(runtime.stories.listActive(now), options.hasPreview);
+  return groupStoryFeed(runtime.stories.listActive(now));
 }
 
 function createStoryDayFeed(
   runtime: { stories: Pick<StoryRepository, "listPublishedBetween"> },
   day: string,
-  options: StoryFeedOptions = {},
 ): Array<StoryOutputUser> {
   const { start, end } = getStoryDayRange(day);
 
-  return groupStoryFeed(runtime.stories.listPublishedBetween(start, end), options.hasPreview);
+  return groupStoryFeed(runtime.stories.listPublishedBetween(start, end));
 }
 
 export function createReportFeed(
@@ -98,7 +87,7 @@ export function createReportFeed(
   },
   now: Date,
   requestedDate?: string,
-  options: StoryFeedOptions & { selectedStory?: string } = {},
+  options: { selectedStory?: string } = {},
 ) {
   const today = getStoryDate(now);
   const parsedDate = storyDateSchema.safeParse(requestedDate).data ?? today;
@@ -106,12 +95,10 @@ export function createReportFeed(
 
   let users =
     selectedDate === today
-      ? createStoryFeed(runtime, now, options)
-      : createStoryDayFeed(runtime, selectedDate, options);
+      ? createStoryFeed(runtime, now)
+      : createStoryDayFeed(runtime, selectedDate);
 
-  const publications = runtime.stories
-    .listPublicationTimes(now)
-    .filter(({ mediaPk }) => options.hasPreview?.(mediaPk) ?? true);
+  const publications = runtime.stories.listPublicationTimes(now);
 
   const availableDates = new Set(
     publications.map(({ takenAt }) => getStoryDate(new Date(takenAt * 1000))),
@@ -133,8 +120,8 @@ export function createReportFeed(
       selectedDate = getStoryDate(new Date(selectedStory.takenAt * 1000));
       users =
         selectedDate === today
-          ? createStoryFeed(runtime, now, options)
-          : createStoryDayFeed(runtime, selectedDate, options);
+          ? createStoryFeed(runtime, now)
+          : createStoryDayFeed(runtime, selectedDate);
     }
   }
 

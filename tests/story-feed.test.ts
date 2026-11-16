@@ -10,7 +10,7 @@ async function createFixture(context: TestContext) {
   const runtime = await createTestRuntime(context);
   const { stories, users } = runtime;
   await Promise.all(
-    ["alice", "bob", "missing-preview"].map(async (username) => {
+    ["alice", "bob"].map(async (username) => {
       await users.save({ full_name: username, id: username, pk: username, username });
     }),
   );
@@ -20,7 +20,6 @@ async function createFixture(context: TestContext) {
       { pk: "alice-newer", date: "2026-10-22T09:00:00Z", username: "alice" },
       { pk: "bob-newest", date: "2026-10-22T09:59:00Z", username: "bob" },
       { pk: "expired", date: "2026-10-21T09:00:00Z", username: "bob" },
-      { pk: "no-image", date: "2026-10-22T09:59:30Z", username: "missing-preview" },
     ].map(async ({ pk, date, username }) => {
       await stories.save(
         { pk, taken_at: Date.parse(date) / 1000, media_type: 1 },
@@ -33,10 +32,8 @@ async function createFixture(context: TestContext) {
     runtime,
     stories,
     dayFeed: (day: string) =>
-      createReportFeed(runtime, new Date("2027-01-01T00:00:00Z"), day, { hasPreview: () => true })
-        .users,
-    feed: (now: string) =>
-      createStoryFeed(runtime, new Date(now), { hasPreview: (pk) => pk !== "no-image" }),
+      createReportFeed(runtime, new Date("2027-01-01T00:00:00Z"), day).users,
+    feed: (now: string) => createStoryFeed(runtime, new Date(now)),
   };
 }
 
@@ -81,21 +78,12 @@ test("combines stored stories without a selected report, ranks accounts by recen
   expect(feed("2026-10-24T10:00:00Z")).toStrictEqual([]);
 });
 
-test("the default feed includes stored stories without checking the preview file", async (context) => {
-  const { runtime } = await createFixture(context);
-  const users = createStoryFeed(runtime, new Date("2026-10-22T10:00:00Z"));
-  expect(
-    users.some((user) => user.stories.some((story) => story.media_pk === "no-image")),
-  ).toBeTruthy();
-});
-
 test("today uses the rolling feed, including yesterday's recent stories; past dates use calendar days", async (context) => {
   const { runtime } = await createFixture(context);
   const now = new Date("2026-10-22T10:00:00Z");
-  const options = { hasPreview: (pk: string) => pk !== "no-image" };
 
   for (const selectedDate of [undefined, "2026-10-22", "2026-10-23"]) {
-    const feed = createReportFeed(runtime, now, selectedDate, options);
+    const feed = createReportFeed(runtime, now, selectedDate);
     expect(feed.selectedDate).toBe("2026-10-22");
     expect(feed.today).toBe("2026-10-22");
     expect(feed.users.flatMap((user) => user.stories.map((story) => story.media_pk))).toStrictEqual(
@@ -103,7 +91,7 @@ test("today uses the rolling feed, including yesterday's recent stories; past da
     );
   }
 
-  const past = createReportFeed(runtime, now, "2026-10-21", options);
+  const past = createReportFeed(runtime, now, "2026-10-21");
   expect(past.selectedDate).toBe("2026-10-21");
   expect(past.users.flatMap((user) => user.stories.map((story) => story.media_pk))).toStrictEqual([
     "alice-older",
@@ -111,26 +99,13 @@ test("today uses the rolling feed, including yesterday's recent stories; past da
   ]);
 });
 
-test("available report dates require visible stories and include today for a rolling result from yesterday", async (context) => {
-  const { runtime, stories } = await createFixture(context);
-  await stories.save(
-    { pk: "no-preview", taken_at: Date.parse("2026-10-20T10:00:00Z") / 1000 },
-    { pk: "alice", username: "alice" },
-  );
+test("available report dates include today for a rolling result from yesterday", async (context) => {
+  const { runtime } = await createFixture(context);
 
-  const options = {
-    hasPreview: (pk: string) => pk !== "no-preview" && pk !== "no-image",
-  };
-
-  const feed = createReportFeed(runtime, new Date("2026-10-24T10:00:00Z"), undefined, options);
+  const feed = createReportFeed(runtime, new Date("2026-10-24T10:00:00Z"));
   expect(feed.availableDates).toStrictEqual(["2026-10-21", "2026-10-22"]);
 
-  const afterMidnight = createReportFeed(
-    runtime,
-    new Date("2026-10-22T00:00:00Z"),
-    undefined,
-    options,
-  );
+  const afterMidnight = createReportFeed(runtime, new Date("2026-10-22T00:00:00Z"));
 
   expect(afterMidnight.availableDates).toStrictEqual(["2026-10-21", "2026-10-22"]);
   expect(
@@ -148,20 +123,16 @@ test("story deep links retrieve historical stories with exact IDs and select the
     { pk: "alice", username: "alice" },
   );
   const now = new Date("2026-10-22T10:00:00Z");
-  const options = { hasPreview: () => true, selectedStory: mediaPk };
 
   for (const requestedDate of [undefined, "2026-10-21"]) {
-    const feed = createReportFeed(runtime, now, requestedDate, options);
+    const feed = createReportFeed(runtime, now, requestedDate, { selectedStory: mediaPk });
     expect(feed.selectedDate).toBe("2026-09-08");
     expect(
       feed.users.flatMap((user) => user.stories).some((story) => story.media_pk === mediaPk),
     ).toBeTruthy();
   }
 
-  const unknown = createReportFeed(runtime, now, undefined, {
-    ...options,
-    selectedStory: "missing",
-  });
+  const unknown = createReportFeed(runtime, now, undefined, { selectedStory: "missing" });
 
   expect(unknown.selectedDate).toBe("2026-10-22");
 });
@@ -169,17 +140,11 @@ test("story deep links retrieve historical stories with exact IDs and select the
 test("deep links to recent stories retain the rolling feed even when the story was published yesterday", async (context) => {
   const { runtime } = await createFixture(context);
   const now = new Date("2026-10-22T10:00:00Z");
-  const options = { hasPreview: () => true };
-
-  const yesterday = createReportFeed(runtime, now, undefined, {
-    ...options,
-    selectedStory: "alice-older",
-  });
+  const yesterday = createReportFeed(runtime, now, undefined, { selectedStory: "alice-older" });
 
   expect(yesterday.selectedDate).toBe("2026-10-22");
 
   const mismatchedDate = createReportFeed(runtime, now, "2026-10-20", {
-    ...options,
     selectedStory: "alice-newer",
   });
 
