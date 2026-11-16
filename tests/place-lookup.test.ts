@@ -158,13 +158,15 @@ test("a place that stories only identify by its id becomes usable after a lookup
 
   await ingest(repository, client);
   const place = storedPlace(repository, "m1");
-  expect(place.status).toBe("usable");
-  expect(place.name).toBe("V and B Amiens Les Halles");
-  expect(place.address).toBe("1 Rue des Halles");
-  expect(place.latitude).toBe(49.8943);
-  expect(place.longitude).toBe(2.2957);
-  expect(place.instagramPlaceId).toBe("700000000000633");
-  expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
+  expect(place).toMatchObject({
+    status: "usable",
+    name: "V and B Amiens Les Halles",
+    address: "1 Rue des Halles",
+    latitude: 49.8943,
+    longitude: 2.2957,
+    instagramPlaceId: "700000000000633",
+    lastLookupAttemptAt: fixedNow().getTime(),
+  });
   expect(client.lookups).toStrictEqual(["700000000000633"]);
 });
 
@@ -341,12 +343,14 @@ test("story values are never overwritten and only gaps are filled", async (conte
 
   await ingest(repository, client);
   const place = storedPlace(repository, "m1");
-  expect(place.name).toBe("Story name");
-  expect(place.address).toBe("Story address");
-  expect(place.latitude).toBe(10);
-  expect(place.longitude).toBe(21);
-  expect(place.status).toBe("usable");
-  expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
+  expect(place).toMatchObject({
+    name: "Story name",
+    address: "Story address",
+    latitude: 10,
+    longitude: 21,
+    status: "usable",
+    lastLookupAttemptAt: fixedNow().getTime(),
+  });
 });
 
 test("blank text and out-of-range coordinates from Instagram fill nothing", async (context) => {
@@ -361,11 +365,13 @@ test("blank text and out-of-range coordinates from Instagram fill nothing", asyn
 
   for (const pk of ["m1", "m2"]) {
     const place = storedPlace(repository, pk);
-    expect(place.name).toBeNull();
-    expect(place.address).toBeNull();
-    expect(place.latitude).toBeNull();
-    expect(place.longitude).toBeNull();
-    expect(place.status).toBe("partial");
+    expect(place).toMatchObject({
+      name: null,
+      address: null,
+      latitude: null,
+      longitude: null,
+      status: "partial",
+    });
   }
 });
 
@@ -378,9 +384,11 @@ test("a place with only one coordinate filled stays partial", async (context) =>
 
   await ingest(repository, client);
   const place = storedPlace(repository, "m1");
-  expect(place.status).toBe("partial");
-  expect(place.latitude).toBe(48);
-  expect(place.longitude).toBeNull();
+  expect(place).toMatchObject({
+    status: "partial",
+    latitude: 48,
+    longitude: null,
+  });
 });
 
 test("only places referenced by the stories saved in the run are looked up", async (context) => {
@@ -461,9 +469,11 @@ test("each kind of unusable lookup applies no values, keeps the story and is rec
 
   for (const pk of Object.keys(unusable)) {
     const place = storedPlace(repository, `m${pk}`);
-    expect(place.status).toBe("partial");
-    expect(place.name).toBeNull();
-    expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
+    expect(place).toMatchObject({
+      status: "partial",
+      name: null,
+      lastLookupAttemptAt: fixedNow().getTime(),
+    });
     failures[pk] = place.lastLookupFailure;
   }
 
@@ -503,10 +513,12 @@ test("a thrown lookup is recorded with its attempt time and raw error", async (c
 
   await ingest(repository, client);
   const place = storedPlace(repository, "m1");
-  expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
-  expect(place.lastLookupFailure).toBe("socket hang up");
-  expect(place.name).toBe("Known");
-  expect(place.status).toBe("usable");
+  expect(place).toMatchObject({
+    lastLookupAttemptAt: fixedNow().getTime(),
+    lastLookupFailure: "socket hang up",
+    name: "Known",
+    status: "usable",
+  });
 });
 
 test("a blocked session stops the remaining lookups and records nothing", async (context) => {
@@ -630,9 +642,11 @@ test("a later story observation keeps the recorded lookup", async (context) => {
   );
   await repository.save(storyAt("m1", { pk: "111", name: "From story" }));
   const place = storedPlace(repository, "m1");
-  expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
-  expect(place.category).toBe("Bistro");
-  expect(place.name).toBe("From story");
+  expect(place).toMatchObject({
+    lastLookupAttemptAt: fixedNow().getTime(),
+    category: "Bistro",
+    name: "From story",
+  });
 });
 
 test("a later story observation replaces the looked-up name, address and coordinates", async (context) => {
@@ -661,10 +675,12 @@ test("a later story observation replaces the looked-up name, address and coordin
     }),
   );
   const place = storedPlace(repository, "m1");
-  expect(place.name).toBe("Newer name");
-  expect(place.address).toBe("Newer address");
-  expect(place.latitude).toBe(2);
-  expect(place.longitude).toBe(3);
+  expect(place).toMatchObject({
+    name: "Newer name",
+    address: "Newer address",
+    latitude: 2,
+    longitude: 3,
+  });
 });
 
 test("a later story observation keeps the looked-up zip code and a story city replaces a looked-up one", async (context) => {
@@ -743,10 +759,12 @@ test("a place without a linked business account has no business information", as
   ]) {
     const details = repository.findPlaceDetails(id);
     assert.ok(details);
-    expect(details.phone).toBe(phone);
-    expect(details.businessAccountId).toBeNull();
-    expect(details.businessAccountUsername).toBeNull();
-    expect(details.businessAccountPictureUrl).toBeNull();
+    expect(details).toMatchObject({
+      phone,
+      businessAccountId: null,
+      businessAccountUsername: null,
+      businessAccountPictureUrl: null,
+    });
   }
 });
 
@@ -862,9 +880,11 @@ test("a malformed detail never blocks the place fill and keeps the earlier detai
 
   await ingest(repository, malformed);
   const place = storedPlace(repository, "m2");
-  expect(place.name).toBe("Chez Paul");
-  expect(place.status).toBe("usable");
-  expect(place.lastLookupAttemptAt).toBe(fixedNow().getTime());
+  expect(place).toMatchObject({
+    name: "Chez Paul",
+    status: "usable",
+    lastLookupAttemptAt: fixedNow().getTime(),
+  });
   expect(repository.findPlaceDetails("222")).toBeNull();
   expect(repository.findPlaceDetails("111")?.phone).toBe("0102");
 });
@@ -1132,11 +1152,13 @@ test("a refresh fills only missing values and never replaces values from stories
     laterBy(REFRESH_AFTER),
   );
   const place = storedPlace(repository, "m2");
-  expect(place.name).toBe("Story name");
-  expect(place.address).toBe("First address");
-  expect(place.latitude).toBe(10);
-  expect(place.longitude).toBe(20);
-  expect(place.city).toBe("Amiens");
+  expect(place).toMatchObject({
+    name: "Story name",
+    address: "First address",
+    latitude: 10,
+    longitude: 20,
+    city: "Amiens",
+  });
 });
 
 test("a refresh without a usable result leaves the category and details untouched", async (context) => {

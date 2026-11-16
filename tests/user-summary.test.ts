@@ -169,10 +169,18 @@ describe(resolveUserSummariesForReport, () => {
           num_predict: 300,
           temperature: 0.2,
         });
-        expect(body.think).toBe(false);
-        expect(body.format.additionalProperties).toBe(false);
-        expect(body.format.type).toBe("object");
-        expect(body.format.properties.summary.type).toBe("string");
+        expect(body).toMatchObject({
+          think: false,
+          format: {
+            additionalProperties: false,
+            type: "object",
+            properties: {
+              summary: {
+                type: "string",
+              },
+            },
+          },
+        });
         expect(body.format.required.toSorted()).toStrictEqual(["summary"]);
         expect(String(body.prompt)).not.toMatch(/May be food/u);
         expect(String(body.prompt)).not.toMatch(/menu prices/u);

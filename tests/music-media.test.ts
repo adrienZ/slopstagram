@@ -120,10 +120,12 @@ test("partial audio stays separate and promotion preserves its source and proces
   );
 
   assert.ok(result);
-  expect(result.audioState).toBe("unsupported");
-  expect(result.audioCachePath).toBeNull();
-  expect(result.artworkState).toBe("pending");
-  expect(result.artworkCachePath).toBeNull();
+  expect(result).toMatchObject({
+    audioState: "unsupported",
+    audioCachePath: null,
+    artworkState: "pending",
+    artworkCachePath: null,
+  });
   expect(
     repository.findByMediaPk("story")?.annotations?.musicObservations?.[0].metadata.status,
   ).toBe("partial");
@@ -135,9 +137,11 @@ test("partial audio stays separate and promotion preserves its source and proces
   });
   const promoted = repository.findByMediaPk("story")?.annotations?.musicObservations?.[0].metadata;
   assert.ok(promoted);
-  expect(promoted.status).toBe("usable");
-  expect(promoted.artworkCachePath).toBe(result.artworkCachePath);
-  expect(promoted.audioState).toBe("unsupported");
+  expect(promoted).toMatchObject({
+    status: "usable",
+    artworkCachePath: result.artworkCachePath,
+    audioState: "unsupported",
+  });
   contentType = "audio/wav";
 
   const recovered = await processMusicMedia(

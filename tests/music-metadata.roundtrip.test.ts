@@ -177,9 +177,13 @@ test("incomplete music keeps provenance without invented labels and never infers
     null,
     null,
   ]);
-  expect(observations[0].providerOccurrenceId).toBe("sticker-only");
-  expect(observations[0].metadata.title).toBeNull();
-  expect(observations[0].metadata.artist).toBeNull();
+  expect(observations[0]).toMatchObject({
+    providerOccurrenceId: "sticker-only",
+    metadata: {
+      title: null,
+      artist: null,
+    },
+  });
   expect(logger.messages).toStrictEqual([]);
 });
 
@@ -189,10 +193,14 @@ test("an outer music sticker ID alone is retained as an anonymous partial observ
   const stored = read(new StoryRepository(database), "m1");
   expect(stored.stickers).toStrictEqual([]);
   const [observation] = present(stored.musicObservations);
-  expect(observation.providerOccurrenceId).toBe("outer-only");
-  expect(observation.occurrenceId).toBeNull();
-  expect(observation.metadata.status).toBe("partial");
-  expect(observation.metadata.instagramAudioAssetId).toBeNull();
+  expect(observation).toMatchObject({
+    providerOccurrenceId: "outer-only",
+    occurrenceId: null,
+    metadata: {
+      status: "partial",
+      instagramAudioAssetId: null,
+    },
+  });
 });
 
 test("certain partial music promotes every established link and sparse live updates never demote it", async (context) => {
@@ -216,11 +224,13 @@ test("certain partial music promotes every established link and sparse live upda
   const promoted = read(new StoryRepository(database), "m1");
   expect(promoted.stickers).toStrictEqual(before.stickers);
   const [observation] = present(promoted.musicObservations);
-  expect(observation.metadata.status).toBe("usable");
-  expect(observation.metadata.id).toBe(shared.metadata.id);
-  expect(observation.metadata.title).toBe("Song");
-  expect(observation.metadata.artist).toBe("Artist");
-  expect(observation.metadata.durationMs).toBeNull();
+  expect(observation.metadata).toMatchObject({
+    status: "usable",
+    id: shared.metadata.id,
+    title: "Song",
+    artist: "Artist",
+    durationMs: null,
+  });
   expect(observation.occurrenceId).toBe(before.stickers[0].occurrenceId);
   expect(
     present(read(new StoryRepository(database), "m2").musicObservations)[0].metadata,
@@ -243,12 +253,14 @@ test("certain partial music promotes every established link and sparse live upda
   const sparse = read(new StoryRepository(database), "m1");
   expect(sparse.stickers).toStrictEqual(before.stickers);
   const [{ metadata }] = present(sparse.musicObservations);
-  expect(metadata.id).toBe(shared.metadata.id);
-  expect(metadata.status).toBe("usable");
-  expect(metadata.instagramAudioAssetId).toBe("audio");
-  expect(metadata.title).toBe("Updated");
-  expect(metadata.artist).toBe("Artist");
-  expect(metadata.durationMs).toBe(123_456);
+  expect(metadata).toMatchObject({
+    id: shared.metadata.id,
+    status: "usable",
+    instagramAudioAssetId: "audio",
+    title: "Updated",
+    artist: "Artist",
+    durationMs: 123_456,
+  });
   expect(
     present(read(new StoryRepository(database), "m2").musicObservations)[0].metadata,
   ).toStrictEqual(metadata);
@@ -352,10 +364,12 @@ test("changed audio identity cannot inherit the previous recording's missing fie
   const [after] = present(read(new StoryRepository(database), "m1").musicObservations);
   expect(after.occurrenceId).toBe(before.occurrenceId);
   expect(after.metadata.id).not.toBe(before.metadata.id);
-  expect(after.metadata.instagramAudioAssetId).toBe("new");
-  expect(after.metadata.status).toBe("partial");
-  expect(after.metadata.artist).toBeNull();
-  expect(after.metadata.durationMs).toBeNull();
+  expect(after.metadata).toMatchObject({
+    instagramAudioAssetId: "new",
+    status: "partial",
+    artist: null,
+    durationMs: null,
+  });
 });
 
 test("uncertain repeated music stays separate while current raw occurrences receive their own links", async (context) => {
@@ -431,15 +445,21 @@ test("numeric IDs are accepted only when exact and invalid durations remain unkn
     ],
   });
   const observations = present(read(new StoryRepository(database), "m1").musicObservations);
-  expect(observations[0].providerOccurrenceId).toBe("42");
-  expect(observations[0].metadata.instagramAudioAssetId).toBe("123");
-  expect(observations[0].metadata.durationMs).toBe(1000);
-  expect(observations[0].metadata.status).toBe("usable");
+  expect(observations[0]).toMatchObject({
+    providerOccurrenceId: "42",
+    metadata: {
+      instagramAudioAssetId: "123",
+      durationMs: 1000,
+      status: "usable",
+    },
+  });
 
   for (const entry of observations.slice(1)) {
-    expect(entry.metadata.instagramAudioAssetId).toBeNull();
-    expect(entry.metadata.durationMs).toBeNull();
-    expect(entry.metadata.status).toBe("partial");
+    expect(entry.metadata).toMatchObject({
+      instagramAudioAssetId: null,
+      durationMs: null,
+      status: "partial",
+    });
   }
 });
 
@@ -463,9 +483,11 @@ test("received music media survives sparse observations and partial promotion in
   });
   const before = read(repository, "media");
   const [partial] = present(before.musicObservations);
-  expect(partial.metadata.status).toBe("partial");
-  expect(partial.metadata.audioSourceUrl).toBe("https://example.com/primary.m4a");
-  expect(partial.metadata.artworkSourceUrl).toBe("https://example.com/art.jpg");
+  expect(partial.metadata).toMatchObject({
+    status: "partial",
+    audioSourceUrl: "https://example.com/primary.m4a",
+    artworkSourceUrl: "https://example.com/art.jpg",
+  });
   await repository.save({
     pk: "media",
     story_music_stickers: [
@@ -482,9 +504,11 @@ test("received music media survives sparse observations and partial promotion in
   const after = read(new StoryRepository(database), "media");
   expect(after.stickers).toStrictEqual(before.stickers);
   const [promoted] = present(after.musicObservations);
-  expect(promoted.metadata.status).toBe("usable");
-  expect(promoted.metadata.audioSourceUrl).toBe("https://example.com/primary.m4a");
-  expect(promoted.metadata.artworkSourceUrl).toBe("https://example.com/art.jpg");
-  expect(promoted.metadata.audioState).toBe("pending");
-  expect(promoted.metadata.artworkState).toBe("pending");
+  expect(promoted.metadata).toMatchObject({
+    status: "usable",
+    audioSourceUrl: "https://example.com/primary.m4a",
+    artworkSourceUrl: "https://example.com/art.jpg",
+    audioState: "pending",
+    artworkState: "pending",
+  });
 });

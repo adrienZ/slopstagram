@@ -116,9 +116,11 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
   const second = repository.findByMediaPk("second")?.annotations?.musicObservations?.[0].metadata;
   assert.ok(first);
   expect(first.id).toBe(second?.id);
-  expect(first.audioState).toBe("available");
-  expect(first.artworkState).toBe("available");
-  expect(first.audioDurationMs).toBe(1023);
+  expect(first).toMatchObject({
+    audioState: "available",
+    artworkState: "available",
+    audioDurationMs: 1023,
+  });
   assert.ok(first.audioCachePath !== null);
   assert.ok(first.artworkCachePath !== null);
   await expect(readFile(path.join(directory, first.audioCachePath))).resolves.toStrictEqual(audio);

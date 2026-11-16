@@ -70,14 +70,18 @@ test("external-ID-only locations survive cold reads as separate partial observat
   ]);
 
   for (const observation of observations) {
-    expect(observation.source).toBe("story_locations");
-    expect(observation.occurrenceId).toBeNull();
-    expect(observation.metadata.status).toBe("partial");
-    expect(observation.metadata.instagramPlaceId).toBeNull();
-    expect(observation.metadata.name).toBeNull();
-    expect(observation.metadata.address).toBeNull();
-    expect(observation.metadata.latitude).toBeNull();
-    expect(observation.metadata.longitude).toBeNull();
+    expect(observation).toMatchObject({
+      source: "story_locations",
+      occurrenceId: null,
+      metadata: {
+        status: "partial",
+        instagramPlaceId: null,
+        name: null,
+        address: null,
+        latitude: null,
+        longitude: null,
+      },
+    });
   }
 
   expect(logger.messages).toStrictEqual([]);
@@ -140,17 +144,25 @@ test("external-only observations do not block other location updates during live
   expect(stored.stickers).toHaveLength(1);
   expect(stored.stickers[0].occurrenceId).toBe(before.occurrenceId);
   const [located, external, direct] = present(stored.locationObservations);
-  expect(located.metadata.status).toBe("usable");
-  expect(located.metadata.name).toBe("Updated");
-  expect(located.metadata.latitude).toBe(49);
-  expect(located.metadata.longitude).toBe(3);
-  expect(external.metadata.status).toBe("partial");
-  expect(external.metadata.facebookPlacesId).toBe("000123");
-  expect(external.metadata.externalSource).toBe("facebook_places");
-  expect(direct.metadata.status).toBe("partial");
-  expect(direct.metadata.facebookPlacesId).toBe("000456");
-  expect(direct.metadata.instagramPlaceId).toBeNull();
-  expect(direct.providerOccurrenceId).toBeNull();
+  expect(located.metadata).toMatchObject({
+    status: "usable",
+    name: "Updated",
+    latitude: 49,
+    longitude: 3,
+  });
+  expect(external.metadata).toMatchObject({
+    status: "partial",
+    facebookPlacesId: "000123",
+    externalSource: "facebook_places",
+  });
+  expect(direct).toMatchObject({
+    metadata: {
+      status: "partial",
+      facebookPlacesId: "000456",
+      instagramPlaceId: null,
+    },
+    providerOccurrenceId: null,
+  });
   expect(
     logger.messages.some((message) => message.includes("Malformed story annotation source")),
   ).toBe(false);
@@ -187,11 +199,13 @@ test("promotion remains shared when another source omits the already known place
   const observations = present(read(new StoryRepository(database), "m1").locationObservations);
   expect(observations).toHaveLength(2);
   expect(observations[0].metadata).toStrictEqual(observations[1].metadata);
-  expect(observations[0].metadata.status).toBe("usable");
-  expect(observations[0].metadata.name).toBe("Updated");
-  expect(observations[0].metadata.address).toBe("Received address");
-  expect(observations[0].metadata.latitude).toBe(48);
-  expect(observations[0].metadata.longitude).toBe(2);
+  expect(observations[0].metadata).toMatchObject({
+    status: "usable",
+    name: "Updated",
+    address: "Received address",
+    latitude: 48,
+    longitude: 2,
+  });
 });
 
 test("live ingestion shares tagged places and exposes exact metadata with occurrences in cold account history", async (context) => {
@@ -517,12 +531,14 @@ test("malformed and omitted sources preserve metadata while live nonempty values
     ],
   });
   const [{ metadata }] = present(read(new StoryRepository(database), "m1").locationObservations);
-  expect(metadata.status).toBe("usable");
-  expect(metadata.name).toBe("Updated");
-  expect(metadata.address).toBe("Address");
-  expect(metadata.latitude).toBe(48);
-  expect(metadata.longitude).toBe(2);
-  expect(metadata.facebookPlacesId).toBe("0001");
+  expect(metadata).toMatchObject({
+    status: "usable",
+    name: "Updated",
+    address: "Address",
+    latitude: 48,
+    longitude: 2,
+    facebookPlacesId: "0001",
+  });
   expect(read(repository, "m1").stickers.filter(({ kind }) => kind === "location")).toStrictEqual(
     before.stickers,
   );

@@ -403,10 +403,12 @@ test("fetches the tray with a plain GET from the page", async (context) => {
   const response = await createInstagramClient(runInPage).getTray();
 
   expect(response.ok).toBe(true);
-  expect(requests[0].url).toBe("https://www.instagram.com/api/v1/feed/reels_tray/");
-  expect(requests[0].method).toBe("GET");
-  expect(requests[0].body).toBeUndefined();
-  expect(requests[0].signal).toBeUndefined();
+  expect(requests[0]).toMatchObject({
+    url: "https://www.instagram.com/api/v1/feed/reels_tray/",
+    method: "GET",
+    body: undefined,
+    signal: undefined,
+  });
 });
 
 test("posts the music asset lookup from the page with the csrf token", async (context) => {

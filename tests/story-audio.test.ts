@@ -111,9 +111,11 @@ test("web story ingestion preserves DASH audio separately from shared music, inc
   assert.ok(first.annotations.storyAudio);
   expect(first.annotations.storyAudio.sourceUrl).toBe("https://example.com/first.mp4?a=1&b=2");
   expect(first.annotations.storyAudio.sourceUrl).not.toBe(second.annotations.storyAudio.sourceUrl);
-  expect(first.annotations.storyAudio.mimeType).toBe("audio/mp4");
-  expect(first.annotations.storyAudio.codecs).toBe("mp4a.40.5");
-  expect(first.annotations.storyAudio.state).toBe("pending");
+  expect(first.annotations.storyAudio).toMatchObject({
+    mimeType: "audio/mp4",
+    codecs: "mp4a.40.5",
+    state: "pending",
+  });
   expect(first.annotations.musicObservations?.[0].metadata.instagramAudioAssetId).toBeNull();
   assert.ok(first.annotations.musicObservations);
   expect(first.annotations.musicObservations[0].metadata.audioSourceUrl).toBeNull();
@@ -499,9 +501,11 @@ test("fresh story ingestion caches the story excerpt and prefers it over the lon
   const previews = musicStickerItems(annotations);
   expect(previews).toHaveLength(1);
   assert.ok(previews[0].preview);
-  expect(previews[0].preview.sourceKind).toBe("story_audio");
-  expect(previews[0].preview.audioUrl).toBe(`/media/${annotations.storyAudio.cachePath}`);
-  expect(previews[0].preview.durationMs).toBe(1023);
+  expect(previews[0].preview).toMatchObject({
+    sourceKind: "story_audio",
+    audioUrl: `/media/${annotations.storyAudio.cachePath}`,
+    durationMs: 1023,
+  });
   await expect(
     readFile(path.join(directory, annotations.storyAudio.cachePath)),
   ).resolves.toStrictEqual(storyBytes);
