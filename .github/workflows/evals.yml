@@ -1,33 +1,51 @@
 name: Evals
 
-# The evals run the real chat model on a CPU runner: they never block a push, and only start for
-# changes that can move the Assistant's answers, or by hand.
+# The evals run the real chat model on a CPU runner, so they only run for changes that can move
+# the Assistant's answers, or by hand. The evals job is a required check: on a pull request that
+# touches none of those paths it is skipped, which GitHub counts as passing. Path filters on the
+# trigger would leave the required check waiting forever instead.
 on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths:
-      - "evals/**"
-      - "core/domains/assistant/**"
-      - "core/domains/accounts/**"
-      - "core/domains/story-feed/**"
-      - "evalite.config.ts"
-      - ".github/workflows/evals.yml"
   pull_request:
     types: [opened, synchronize, reopened]
-    paths:
-      - "evals/**"
-      - "core/domains/assistant/**"
-      - "core/domains/accounts/**"
-      - "core/domains/story-feed/**"
-      - "evalite.config.ts"
-      - ".github/workflows/evals.yml"
 
 permissions:
   contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      assistant: ${{ steps.paths.outputs.assistant }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find whether the change can move the Assistant's answers
+        id: paths
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            echo "assistant=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed=$(git diff --name-only "$BASE"..."$HEAD")
+          if echo "$changed" | grep -qE '^(evals/|core/domains/(assistant|accounts|story-feed|places|mention-connections)/|evalite\.config\.ts$|\.github/workflows/evals\.yml$)'; then
+            echo "assistant=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "assistant=false" >> "$GITHUB_OUTPUT"
+          fi
+
   evals:
+    needs: changes
+    if: ${{ needs.changes.outputs.assistant == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
