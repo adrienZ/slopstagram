@@ -13,7 +13,7 @@ everything lives in a local SQLite database.
 ![Node.js 24+](https://img.shields.io/badge/node-%E2%89%A524-339933?logo=nodedotjs&logoColor=white)
 ![Local AI with Ollama](https://img.shields.io/badge/AI-local%20with%20Ollama-000000?logo=ollama&logoColor=white)
 
-![The story feed, browsable day by day](./docs/screenshots/story-feed.png)
+![The story feed, browsable day by day](https://github.com/user-attachments/assets/c33981d2-2048-4c16-99f9-3305c9803cd6)
 
 ## Features
 
@@ -28,13 +28,13 @@ everything lives in a local SQLite database.
 
 The interface is in French.
 
-![An account timeline with its stickers](./docs/screenshots/account-timeline.png)
+![An account timeline with its stickers](https://github.com/user-attachments/assets/d7132c70-8741-4646-ba8b-428ffec8bef5)
 
-| Places map                                                   | Mention graph                                              |
-| ------------------------------------------------------------ | ---------------------------------------------------------- |
-| ![Tagged places on a map](./docs/screenshots/places-map.png) | ![Who mentions whom](./docs/screenshots/mention-graph.png) |
+| Places map                                                                                                 | Mention graph                                                                                         |
+| ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| ![Tagged places on a map](https://github.com/user-attachments/assets/9d43e67f-6f9a-4c9b-85e6-7c78daf0c5c3) | ![Who mentions whom](https://github.com/user-attachments/assets/889961d0-aec0-4810-8b8e-13aa8daf3dd9) |
 
-<!-- Assistant screenshot: to capture with a stronger chat model. -->
+![The chat Assistant answering with a tool call](https://github.com/user-attachments/assets/6bca49ea-ab26-434f-9578-59780a0f4278)
 
 ## How it works
 
