@@ -28,6 +28,8 @@ const config: KnipConfig = {
     "bunqueue-dashboard",
     // Spawned by nitro/plugins/warm-cache.ts.
     "bunqueue",
+    // Oxlint's type-aware backend, found and spawned by oxlint at runtime.
+    "tsrs",
   ],
 };
 
