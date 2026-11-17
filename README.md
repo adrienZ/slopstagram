@@ -13,26 +13,21 @@ everything lives in a local SQLite database.
 ![Node.js 24+](https://img.shields.io/badge/node-%E2%89%A524-339933?logo=nodedotjs&logoColor=white)
 ![Local AI with Ollama](https://img.shields.io/badge/AI-local%20with%20Ollama-000000?logo=ollama&logoColor=white)
 
-<img width="1440" height="1400" alt="An account timeline with its stickers" src="https://github.com/user-attachments/assets/d7132c70-8741-4646-ba8b-428ffec8bef5" />
-
-## Features
-
-- 📅 **Story feed**: every story, grouped by account, browsable day by day.
-- 🎵 **Stickers decoded**: mentions, hashtags, links, places and playable music.
-- 👤 **Account timelines**: all the stories an account has posted.
-- 🗺️ **Places map**: every tagged place on a map, with its stories.
-- 🕸️ **Mention graph**: who mentions whom, filterable by account.
-- 👁️ **Local vision**: OCR, image analysis and a daily summary per account.
-- 💬 **Chat Assistant**: ask about your feed, answered by a local model with tools.
-- ⏰ **Hourly refresh**: new stories fetched while the app runs.
-
-The interface is in French.
-
 <table>
   <tr>
     <td width="50%" valign="top">
       <strong>Story feed</strong><br />
       <img width="1440" height="900" alt="The story feed, browsable day by day" src="https://github.com/user-attachments/assets/0ac3e45c-ac81-4c1e-ae41-fecf802dfbea" />
+    </td>
+    <td width="50%" valign="top">
+      <strong>Story details</strong><br />
+      <img width="1440" height="900" alt="A story with its stickers, OCR and vision analysis" src="https://github.com/user-attachments/assets/63341a52-00f5-45c6-a274-6130e75884d1" />
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <strong>Account timeline</strong><br />
+      <img width="1440" height="900" alt="An account timeline with its stickers" src="https://github.com/user-attachments/assets/081e3b6e-c2cb-4a03-aeca-b75796e62785" />
     </td>
     <td width="50%" valign="top">
       <strong>Chat Assistant</strong><br />
@@ -50,6 +45,19 @@ The interface is in French.
     </td>
   </tr>
 </table>
+
+## Features
+
+- 📅 **Story feed**: every story, grouped by account, browsable day by day.
+- 🎵 **Stickers decoded**: mentions, hashtags, links, places and playable music.
+- 👤 **Account timelines**: all the stories an account has posted.
+- 🗺️ **Places map**: every tagged place on a map, with its stories.
+- 🕸️ **Mention graph**: who mentions whom, filterable by account.
+- 👁️ **Local vision**: OCR, image analysis and a daily summary per account.
+- 💬 **Chat Assistant**: ask about your feed, answered by a local model with tools.
+- ⏰ **Hourly refresh**: new stories fetched while the app runs.
+
+The interface is in French.
 
 ## How it works
 
