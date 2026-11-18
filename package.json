@@ -82,7 +82,7 @@
     "@vitejs/plugin-react": "^6.3.0",
     "@vitest/coverage-v8": "^5.1.1",
     "ai-sdk-provider-codex-cli": "2.4.0",
-    "better-sqlite3": "11.10.0",
+    "better-sqlite3": "13.2.0",
     "bunqueue-dashboard": "^1.1.0",
     "css.escape": "^1.5.1",
     "drizzle-kit": "^1.0.0-rc.5-ab785fc",
@@ -95,7 +95,7 @@
     "oxfmt": "^0.79.0",
     "oxlint": "^1.94.0",
     "tailwindcss": "^4.3.5",
-    "tsrs": "0.25.0-ts7.1.0-beta",
+    "tsrs": "7.1.0-beta.tsrs3",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "ultracite": "^8.3.0",
@@ -107,7 +107,8 @@
   },
   "overrides": {
     "evalite": {
-      "ai": "$ai"
+      "ai": "$ai",
+      "better-sqlite3": "$better-sqlite3"
     }
   },
   "lint-staged": {
