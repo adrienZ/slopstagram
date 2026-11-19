@@ -4,7 +4,6 @@ import { summarizeStoryFeed } from "@@/core/domains/story-feed/feed-user-summary
 import { cacheReportImages } from "@@/core/domains/media-store/image-cache.ts";
 import { cacheReportAudio } from "@@/core/domains/music/report-audio.ts";
 import { persistReportInstagramUsers } from "@@/core/domains/accounts/instagram-user.ts";
-import type { ReportRepository } from "@@/core/domains/database/repositories/report-repository.ts";
 import type { StoriesManifestReport } from "./report-types.ts";
 import { resolveVisionForReport } from "@@/core/domains/vision/vision-report.ts";
 import { fetchStories } from "./stories.ts";
@@ -42,17 +41,7 @@ function formatFilenameTimestamp(date: Date): string {
   return `${year}-${month}-${day}T${hours}-${minutes}-${seconds}${formatTimezoneOffset(date)}`;
 }
 
-type CreateReportRuntime = { reports: Pick<ReportRepository, "save"> } & Pick<Runtime, "backup"> &
-  Parameters<typeof recordFetchRun>[0] &
-  Parameters<typeof fetchStories>[0] &
-  Parameters<typeof cacheReportAudio>[0] &
-  Parameters<typeof cacheReportImages>[0] &
-  Parameters<typeof resolveAppleCaptionsForReport>[0] &
-  Parameters<typeof resolveVisionForReport>[0] &
-  Parameters<typeof persistReportInstagramUsers>[0] &
-  Parameters<typeof summarizeStoryFeed>[0];
-
-function backUpAfterFetchRun(runtime: CreateReportRuntime, at: Date): void {
+function backUpAfterFetchRun(runtime: Runtime, at: Date): void {
   try {
     runtime.backup(at);
   } catch (error) {
@@ -62,7 +51,7 @@ function backUpAfterFetchRun(runtime: CreateReportRuntime, at: Date): void {
   }
 }
 
-export async function createReport(runtime: CreateReportRuntime): Promise<CreateReportResult> {
+export async function createReport(runtime: Runtime): Promise<CreateReportResult> {
   const result = await recordFetchRun(runtime, async (run) => {
     const timestamp = formatFilenameTimestamp(run.startedAt);
     const outputFileName = `stories-report-${timestamp}-${run.id}.json`;

@@ -53,7 +53,7 @@ test("a test runtime overrides only the boundary a test passes", async (context)
   const runtime = await createTestRuntime(context, { fetchOllama: answerOllama });
 
   expect(runtime.fetchOllama).toBe(answerOllama);
-  await expect(runtime.fetchImage?.("https://example.com/a.jpg")).rejects.toThrow(
+  await expect(runtime.fetchImage("https://example.com/a.jpg")).rejects.toThrow(
     "no fake for fetchImage",
   );
 });
@@ -80,7 +80,6 @@ test("the production runtime is created once and reused", () => {
   const runtime = getProductionRuntime();
 
   expect(getProductionRuntime()).toBe(runtime);
-  expect(runtime.client).toBeUndefined();
   expect(runtime.logger.options.defaults.tag).toBe("runtime");
   expect(runtime.queue).toBeTypeOf("function");
   expect(Object.keys(runtime.storage).toSorted()).toStrictEqual(["audio", "images", "stories"]);
@@ -90,4 +89,11 @@ test("the production runtime does not migrate its database", () => {
   expect(() => getProductionRuntime().stories.findByMediaPk(recordedStoryPk)).toThrow(
     "Failed query",
   );
+});
+
+test("the production runtime opens no Instagram connection when it is built", () => {
+  const runtime = getProductionRuntime();
+
+  expect(runtime).not.toHaveProperty("client");
+  expect(runtime.openInstagram).toBeTypeOf("function");
 });

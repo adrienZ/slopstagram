@@ -10,6 +10,7 @@ import {
   response,
 } from "./mock-helpers.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
+import { connect } from "./setup/test-boundaries.ts";
 
 describe("fetchStories edge cases", () => {
   it("preserves tray and media order in the manifest", async (context) => {
@@ -28,7 +29,7 @@ describe("fetchStories edge cases", () => {
       ],
     );
 
-    const report = await fetchStories({ ...runtime, client }, {});
+    const report = await fetchStories({ ...runtime, openInstagram: connect(client) }, {});
 
     expect(
       report.manifest.users.map((user) => ({
@@ -101,7 +102,7 @@ describe("fetchStories edge cases", () => {
       ],
     );
 
-    const report = await fetchStories({ ...runtime, client }, {});
+    const report = await fetchStories({ ...runtime, openInstagram: connect(client) }, {});
 
     expect(report.manifest.users[0]?.stories[0]?.stickers).toStrictEqual([
       "@friend",
@@ -138,7 +139,7 @@ describe("fetchStories edge cases", () => {
       ],
     );
 
-    const report = await fetchStories({ ...runtime, client }, {});
+    const report = await fetchStories({ ...runtime, openInstagram: connect(client) }, {});
 
     expect(report.output.users[0]?.stories[0]?.stickers).toStrictEqual([
       "Visit Link (https://link.example.test/fixture?token=fixture-token-1)",
@@ -156,7 +157,7 @@ describe("fetchStories edge cases", () => {
 
     await expect(
       fetchStories(
-        { ...runtime, client },
+        { ...runtime, openInstagram: connect(client) },
         {
           maxAttempts: 1,
         },
@@ -180,7 +181,7 @@ describe("fetchStories edge cases", () => {
     );
 
     const report = await fetchStories(
-      { ...runtime, client },
+      { ...runtime, openInstagram: connect(client) },
       {
         maxAttempts: 1,
       },
@@ -219,7 +220,7 @@ describe("fetchStories edge cases", () => {
       ],
     );
 
-    const report = await fetchStories({ ...runtime, client }, {});
+    const report = await fetchStories({ ...runtime, openInstagram: connect(client) }, {});
 
     expect(report.manifest.users[0]?.stories.map((story) => story.status)).toStrictEqual([
       "ok",
@@ -241,7 +242,7 @@ describe("fetchStories edge cases", () => {
     );
 
     const report = await fetchStories(
-      { ...runtime, client },
+      { ...runtime, openInstagram: connect(client) },
       {
         maxAttempts: 1,
         reelIdsPerRequest: 1,

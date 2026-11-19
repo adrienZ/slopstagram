@@ -9,6 +9,7 @@ import {
   reelsResponse,
 } from "./mock-helpers.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
+import { connect } from "./setup/test-boundaries.ts";
 
 function storedStory(pk: string) {
   return { ...storyItem(pk), annotations: { locations: [], stickers: [] } };
@@ -42,7 +43,7 @@ describe(fetchStories, () => {
       ],
     );
 
-    const report = await fetchStories({ ...runtime, client }, {});
+    const report = await fetchStories({ ...runtime, openInstagram: connect(client) }, {});
 
     expect(client.reelsCalls).toStrictEqual([["r1", "r2"]]);
     expect(report.metadata.counts).toStrictEqual({
@@ -148,7 +149,7 @@ describe(fetchStories, () => {
       ],
     );
 
-    const report = await fetchStories({ ...runtime, client }, {});
+    const report = await fetchStories({ ...runtime, openInstagram: connect(client) }, {});
 
     expect(client.reelsCalls).toStrictEqual([["r1", "r2"]]);
     expect(runtime.stories.findByMediaPk("m2")).toStrictEqual(storedStory("m2"));
@@ -225,7 +226,7 @@ describe(fetchStories, () => {
       ],
     );
 
-    const report = await fetchStories({ ...runtime, client }, {});
+    const report = await fetchStories({ ...runtime, openInstagram: connect(client) }, {});
 
     expect(report.output.users).toStrictEqual([
       {

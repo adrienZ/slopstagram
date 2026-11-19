@@ -104,6 +104,14 @@ test("runWarmCacheJob stores nothing in the cache when Instagram refuses the req
   await expect(listCacheFiles(world.storage)).resolves.toStrictEqual([]);
 });
 
+test("a report world built without a queue never reaches the real queue", async (context) => {
+  const world = await createWorld(context);
+
+  expect(() =>
+    world.runtime.queue("warm-cache", async () => await Promise.reject(new Error("unused"))),
+  ).toThrow("no fake for queue");
+});
+
 test("startWarmCacheQueue schedules the hourly job, runs it and forwards errors", async (context) => {
   const calls: Array<string> = [];
   let processor: Parameters<FetchRunQueue>[1] | undefined;

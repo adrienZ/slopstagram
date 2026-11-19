@@ -375,3 +375,41 @@ test("separate attempts at the same instant preserve separate runs and observati
     visionRequests,
   );
 });
+
+test("opens the Instagram connection once per fetch run and closes it after each run", async (context) => {
+  const world = await createWorld(context);
+
+  await world.run();
+
+  expect({ opened: world.instagram.opened, closed: world.instagram.closed }).toStrictEqual({
+    opened: 1,
+    closed: 1,
+  });
+
+  await world.run();
+
+  expect({ opened: world.instagram.opened, closed: world.instagram.closed }).toStrictEqual({
+    opened: 2,
+    closed: 2,
+  });
+});
+
+test("closes the Instagram connection when the tray request throws", async (context) => {
+  const world = await createWorld(context, {
+    client: {
+      ...createFailingClient(500),
+      getTray: async () => {
+        await Promise.resolve();
+        throw Object.assign(new Error("tray request dropped"), { nonRetryable: true });
+      },
+    },
+  });
+
+  await expect(world.run()).rejects.toThrow("tray request dropped");
+
+  expect({ opened: world.instagram.opened, closed: world.instagram.closed }).toStrictEqual({
+    opened: 1,
+    closed: 1,
+  });
+  expect(world.runs.list()).toMatchObject([{ status: "failed", error: "tray request dropped" }]);
+});

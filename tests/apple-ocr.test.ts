@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 import { describe, expect, it } from "vitest";
-import { recognizeAppleCaption } from "@@/core/domains/vision/apple-ocr.ts";
+import { createAppleOcrRunner, recognizeAppleCaption } from "@@/core/domains/vision/apple-ocr.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 
 describe(recognizeAppleCaption, () => {
@@ -66,11 +66,14 @@ describe(recognizeAppleCaption, () => {
   });
 
   it("reports OCR as unavailable without loading it on Windows", async (context) => {
-    const runtime = await createTestRuntime(context, { runAppleOcr: undefined });
+    const runtime = await createTestRuntime(context, {
+      runAppleOcr: createAppleOcrRunner("win32"),
+    });
+
     await runtime.storage.images.setItemRaw("story-4.jpg", Buffer.from("local-image"));
 
     await expect(
-      recognizeAppleCaption(runtime, "story-4", "images/story-4.jpg", { platform: "win32" }),
+      recognizeAppleCaption(runtime, "story-4", "images/story-4.jpg"),
     ).rejects.toMatchObject({ kind: "unavailable", message: "unsupported platform win32" });
   });
 });

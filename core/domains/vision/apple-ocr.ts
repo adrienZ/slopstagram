@@ -1,16 +1,12 @@
-import process from "node:process";
 import type { AppleVisionRepository } from "@@/core/domains/database/repositories/apple-vision-repository.ts";
 import { readCachedImage } from "@@/core/domains/media-store/image-cache.ts";
+import type { AppleOcrRunner } from "@@/core/domains/runtime/fetch-boundaries.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { NO_APPLE_CAPTION } from "@@/core/utils/report-constants.ts";
 
 export class AppleOcrUnavailableError extends Error {
   override readonly name = "AppleOcrUnavailableError";
   readonly kind = "unavailable";
-}
-
-export interface RecognizeAppleCaptionOptions {
-  platform?: NodeJS.Platform;
 }
 
 function normalizeOcrText(value: string): string {
@@ -23,24 +19,26 @@ export function isAppleOcrUnavailable(error: Error): error is AppleOcrUnavailabl
   return error instanceof AppleOcrUnavailableError;
 }
 
-async function runAppleOcr(image: Uint8Array, platform: NodeJS.Platform): Promise<string> {
-  if (platform !== "darwin") {
-    throw new AppleOcrUnavailableError(`unsupported platform ${platform}`);
-  }
+export function createAppleOcrRunner(platform: NodeJS.Platform): AppleOcrRunner {
+  return async (image) => {
+    if (platform !== "darwin") {
+      throw new AppleOcrUnavailableError(`unsupported platform ${platform}`);
+    }
 
-  // oxlint-disable-next-line typescript/consistent-type-imports keep it async for non macOS platforms
-  let macOcr: typeof import("mac-ocr");
+    // oxlint-disable-next-line typescript/consistent-type-imports keep it async for non macOS platforms
+    let macOcr: typeof import("mac-ocr");
 
-  try {
-    macOcr = await import("mac-ocr");
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "unknown import failure";
-    throw new AppleOcrUnavailableError(`mac-ocr package is unavailable: ${message}`);
-  }
+    try {
+      macOcr = await import("mac-ocr");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "unknown import failure";
+      throw new AppleOcrUnavailableError(`mac-ocr package is unavailable: ${message}`);
+    }
 
-  const result = await macOcr.ocr(image);
+    const result = await macOcr.ocr(image);
 
-  return result.text;
+    return result.text;
+  };
 }
 
 export async function recognizeAppleCaption(
@@ -49,10 +47,8 @@ export async function recognizeAppleCaption(
   },
   mediaPk: string,
   cachedPath: string,
-  { platform = process.platform }: RecognizeAppleCaptionOptions = {},
 ): Promise<string> {
   const repository = runtime.appleVision;
-  const runOcr = runtime.runAppleOcr ?? (async (image) => await runAppleOcr(image, platform));
   const storedCaption = repository.findByMediaPk(mediaPk);
 
   if (storedCaption !== null && storedCaption.length > 0) {
@@ -65,7 +61,7 @@ export async function recognizeAppleCaption(
     throw new Error(`cached image ${cachedPath} is missing`);
   }
 
-  const caption = normalizeOcrText(await runOcr(image));
+  const caption = normalizeOcrText(await runtime.runAppleOcr(image));
   await repository.save(mediaPk, caption);
 
   return caption;

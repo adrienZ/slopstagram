@@ -1,9 +1,5 @@
 import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
-import {
-  closeInstagramSession,
-  openInstagramSession,
-} from "@@/core/domains/instagram/playwright-session.ts";
 import type {
   StoriesManifestReport,
   StoryManifestReel,
@@ -12,7 +8,6 @@ import type {
   InstagramClient,
   ReelTrayResponse,
 } from "@@/core/domains/instagram/instagram-types.ts";
-import { createInstagramClient } from "@@/core/domains/instagram/story-client.ts";
 import { enrichCurrentMusicAssets } from "@@/core/domains/music/music-asset-enrichment.ts";
 import { lookUpTaggedPlaces } from "@@/core/domains/places/place-lookup.ts";
 import { createFetchState } from "./story-failure.ts";
@@ -21,10 +16,10 @@ import { createManifestUsers, createOutputUsers } from "./story-output.ts";
 import { requestWithRetry, type RetryOptions } from "@@/core/domains/instagram/story-retry.ts";
 
 type FetchStoriesRuntime = Pick<Runtime, "logger" | "storage"> & {
-  stories: Pick<StoryRepository, "findByMediaPk" | "save"> &
-    Partial<
-      Pick<StoryRepository, "recordFailedPlaceLookup" | "recordPlaceLookup" | "refreshMusicAsset">
-    >;
+  stories: Pick<
+    StoryRepository,
+    "findByMediaPk" | "recordFailedPlaceLookup" | "recordPlaceLookup" | "refreshMusicAsset" | "save"
+  >;
 };
 
 interface FetchStoriesOptions {
@@ -158,18 +153,14 @@ async function fetchStoriesManifest(
 }
 
 export async function fetchStories(
-  runtime: FetchStoriesRuntime & Pick<Runtime, "client">,
+  runtime: FetchStoriesRuntime & Pick<Runtime, "openInstagram">,
   options: FetchStoriesOptions = {},
 ): Promise<StoriesManifestReport> {
-  if (runtime.client) {
-    return await fetchStoriesManifest(runtime, runtime.client, options);
-  }
-
-  const session = await openInstagramSession();
+  const connection = await runtime.openInstagram();
 
   try {
-    return await fetchStoriesManifest(runtime, createInstagramClient(session), options);
+    return await fetchStoriesManifest(runtime, connection.client, options);
   } finally {
-    await closeInstagramSession(session);
+    await connection.close();
   }
 }

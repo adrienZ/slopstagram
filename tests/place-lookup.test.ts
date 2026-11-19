@@ -21,6 +21,7 @@ import {
   reelsResponse,
   fixDate,
 } from "./mock-helpers.ts";
+import { connect } from "./setup/test-boundaries.ts";
 
 fixDate();
 
@@ -130,7 +131,7 @@ async function ingest(
     logger: createCapturingLogger(),
     stories: repository,
     storage: createMemoryCacheStorage(),
-    client,
+    openInstagram: connect(client),
   });
 }
 
@@ -428,7 +429,12 @@ test("a place with a non-numeric id is skipped without a request or a failure", 
     {},
   );
 
-  await fetchStories({ logger, stories: repository, storage: createMemoryCacheStorage(), client });
+  await fetchStories({
+    logger,
+    stories: repository,
+    storage: createMemoryCacheStorage(),
+    openInstagram: connect(client),
+  });
   expect(client.lookups).toStrictEqual([]);
   expect(storedPlace(repository, "m1").lastLookupAttemptAt).toBeNull();
   expect(

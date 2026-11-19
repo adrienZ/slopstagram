@@ -99,11 +99,7 @@ async function downloadMedia(
     return { cachePath: null, state: "unsupported", durationMs: null };
   }
 
-  const response = await (
-    runtime.fetchMedia ??
-    (async (value) =>
-      await globalThis.fetch(value, { signal: globalThis.AbortSignal.timeout(20_000) }))
-  )(source);
+  const response = await runtime.fetchMedia(source);
 
   if (!response.ok) {
     await response.body?.cancel();
@@ -235,11 +231,7 @@ async function downloadArtwork(source: string, id: string, runtime: MusicStorage
       return { cachePath: null, state: "unsupported" as const };
     }
 
-    const response = await (
-      runtime.fetchMedia ??
-      (async (value) =>
-        await globalThis.fetch(value, { signal: globalThis.AbortSignal.timeout(20_000) }))
-    )(url.href);
+    const response = await runtime.fetchMedia(url.href);
 
     if (!response.ok || response.headers.get("content-type")?.startsWith("image/") !== true) {
       await response.body?.cancel();
