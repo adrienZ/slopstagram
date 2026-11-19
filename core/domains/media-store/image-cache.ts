@@ -48,8 +48,7 @@ async function cacheImage(
     return cachedPath;
   }
 
-  const fetchImage = runtime.fetchImage ?? globalThis.fetch;
-  const response = await fetchImage(source);
+  const response = await runtime.fetchImage(source);
 
   if (!response.ok) {
     runtime.logger.warn(`could not cache image ${source}: HTTP ${response.status}`);

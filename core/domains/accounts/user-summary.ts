@@ -13,8 +13,7 @@ import type {
   StoryOutputUser,
 } from "@@/core/domains/fetch-run/report-types.ts";
 import type { VisionResult } from "@@/core/domains/database/entities/vision.ts";
-
-type HttpFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+import type { HttpFetch } from "@@/core/domains/runtime/fetch-boundaries.ts";
 
 const USER_SUMMARY_MLX_MODEL = "qwen3.5:0.8b-mlx";
 const USER_SUMMARY_PORTABLE_MODEL = "qwen3.5:0.8b";
@@ -205,12 +204,12 @@ function createTimeoutFetch(fetchOllama: HttpFetch, timeoutMs: number): OllamaFe
 }
 
 function createDefaultOllamaRunner(options: {
-  fetchOllama?: HttpFetch;
+  fetchOllama: HttpFetch;
   model: string;
   timeoutMs: number;
 }): RunUserSummary {
   const ollama = getOllamaClient({
-    fetch: createTimeoutFetch(options.fetchOllama ?? globalThis.fetch, options.timeoutMs),
+    fetch: createTimeoutFetch(options.fetchOllama, options.timeoutMs),
   });
 
   return async (prompt) => {

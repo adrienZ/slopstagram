@@ -11,6 +11,7 @@ import {
   type RunUserSummary,
 } from "@@/core/domains/accounts/user-summary.ts";
 import type { InstagramUserEntry } from "@@/core/domains/database/entities/instagram-user.ts";
+import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { createStoryFeed, readStoryFeedVision } from "./story-feed.ts";
 
 interface FeedUserSummariesRuntime {
@@ -18,13 +19,9 @@ interface FeedUserSummariesRuntime {
   vision: Pick<VisionRepository, "findByMediaPk">;
 }
 
-type SummarizeStoryFeedRuntime = Parameters<typeof resolveUserSummariesForReport>[0] &
-  Parameters<typeof createStoryFeed>[0] &
-  Parameters<typeof readStoryFeedVision>[0];
-
 /** Writes from the same feed and vision `readFeedUserSummaries` hashes to find a summary. */
 export async function summarizeStoryFeed(
-  runtime: SummarizeStoryFeedRuntime,
+  runtime: Runtime,
   now: Date,
   runUserSummary?: RunUserSummary,
 ): Promise<void> {

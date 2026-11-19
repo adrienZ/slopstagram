@@ -1,5 +1,6 @@
 import type { EventEmitter } from "node:events";
 import { once } from "node:events";
+import type { Runtime } from "@@/core/domains/runtime/runtime.ts";
 import { startWarmCacheQueue } from "./warm-cache-queue.ts";
 
 interface BunqueueServerProcess extends EventEmitter {
@@ -9,7 +10,7 @@ interface BunqueueServerProcess extends EventEmitter {
 }
 
 export interface WarmCacheServiceOptions {
-  runtime: Parameters<typeof startWarmCacheQueue>[0];
+  runtime: Runtime;
   spawnServer: () => BunqueueServerProcess;
   onError: (error: Error) => void;
 }

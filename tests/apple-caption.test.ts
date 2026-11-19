@@ -11,6 +11,7 @@ import {
   reelsResponse,
 } from "./mock-helpers.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
+import { connect } from "./setup/test-boundaries.ts";
 
 async function cachePreviews(
   runtime: Awaited<ReturnType<typeof createTestRuntime>>,
@@ -53,7 +54,7 @@ test("reads cached local previews and stops after the first unavailable result",
     [reelsResponse({ r1: reel("r1", [storyItem("m1"), storyItem("m2")]) })],
   );
 
-  const report = await fetchStories({ ...runtime, client });
+  const report = await fetchStories({ ...runtime, openInstagram: connect(client) });
   const cachedImages = await cachePreviews(runtime, ["m1", "m2"]);
 
   await resolveAppleCaptionsForReport(runtime, report, cachedImages);
@@ -81,7 +82,7 @@ test("resolves local OCR without embedding it in the report", async (context) =>
     [reelsResponse({ r1: reel("r1", [storyItem("m1")]) })],
   );
 
-  const report = await fetchStories({ ...runtime, client });
+  const report = await fetchStories({ ...runtime, openInstagram: connect(client) });
   const cachedImages = await cachePreviews(runtime, ["m1"]);
 
   await resolveAppleCaptionsForReport(runtime, report, cachedImages);

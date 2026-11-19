@@ -5,8 +5,7 @@ import type { Logger } from "@@/core/utils/logging.ts";
 import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 import { getMusicObservation } from "./music-observation.ts";
 
-type MusicAssetRepository = Pick<StoryRepository, "findByMediaPk"> &
-  Partial<Pick<StoryRepository, "refreshMusicAsset">>;
+type MusicAssetRepository = Pick<StoryRepository, "findByMediaPk" | "refreshMusicAsset">;
 
 const metadataSchema = z.object({
   music_info: z.object({ music_asset_info: JsonValueSchema.optional() }).nullish(),
@@ -76,10 +75,10 @@ async function lookupAsset(
 export async function enrichCurrentMusicAssets(
   client: Pick<InstagramClient, "getMusicAsset">,
   stories: Iterable<StoryItem>,
-  repository: MusicAssetRepository | undefined,
+  repository: MusicAssetRepository,
   logger: Pick<Logger, "warn">,
 ) {
-  if (client.getMusicAsset === undefined || repository?.refreshMusicAsset === undefined) {
+  if (client.getMusicAsset === undefined) {
     return;
   }
 

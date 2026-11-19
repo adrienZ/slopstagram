@@ -16,6 +16,7 @@ import { createMediaResponse } from "@@/core/domains/media-store/media-response.
 import { startMediaServer } from "./media-server.ts";
 import { createMemoryCacheStorage } from "./memory-storage.ts";
 import { createCapturingLogger, createClient, reel, reelsResponse } from "./mock-helpers.ts";
+import { connect } from "./setup/test-boundaries.ts";
 
 test("ingestion looks up one shared audio ID and caches validated audio and artwork", async (context) => {
   const database = createDrizzle(":memory:");
@@ -94,7 +95,7 @@ test("ingestion looks up one shared audio ID and caches validated audio and artw
     logger: createCapturingLogger(),
     stories: repository,
     storage: createMemoryCacheStorage(),
-    client,
+    openInstagram: connect(client),
   });
 
   expect(server.requests).toStrictEqual([`/lookup/${audioId}`]);

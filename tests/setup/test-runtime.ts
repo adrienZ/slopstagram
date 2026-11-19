@@ -6,51 +6,33 @@ import {
   type RuntimeBoundaries,
 } from "@@/core/domains/runtime/runtime.ts";
 import { createRecordedInstagramClient } from "./seed.ts";
-import { createMemoryCacheStorage } from "../memory-storage.ts";
-import { createMockLogger } from "../mock-helpers.ts";
+import { connect, testBoundaries } from "./test-boundaries.ts";
 import { createMigratedDatabase, createTestDatabase } from "../test-database.ts";
 
-function unexpected(boundary: string) {
-  return async (): Promise<never> => {
-    await Promise.resolve();
-    throw new Error(`The test runtime has no fake for ${boundary}. Pass one to createTestRuntime.`);
-  };
-}
-
-function noQueue(): never {
-  throw new Error("The test runtime has no fake for queue. Pass one to createTestRuntime.");
-}
-
-function noBackup(): void {
-  // The test runtime copies nothing; a test that cares passes a fake.
-}
-
-async function createRuntimeOver(database: DrizzleDatabase, boundaries: RuntimeBoundaries) {
-  return createRuntime(database, {
-    backup: noBackup,
-    client: await createRecordedInstagramClient(),
-    fetchImage: unexpected("fetchImage"),
-    fetchMedia: unexpected("fetchMedia"),
-    fetchOllama: unexpected("fetchOllama"),
-    logger: createMockLogger(),
-    queue: noQueue,
-    runAppleOcr: unexpected("runAppleOcr"),
-    storage: createMemoryCacheStorage(),
-    ...boundaries,
-  });
+async function createRuntimeOver(
+  database: DrizzleDatabase,
+  boundaries: Partial<RuntimeBoundaries>,
+) {
+  return createRuntime(
+    database,
+    testBoundaries({
+      openInstagram: connect(await createRecordedInstagramClient()),
+      ...boundaries,
+    }),
+  );
 }
 
 /** A runtime over a fresh in-memory database and stores; other boundaries fail on use unless overridden. */
 export async function createTestRuntime(
   context: Pick<TestContext, "onTestFinished">,
-  boundaries: RuntimeBoundaries = {},
+  boundaries: Partial<RuntimeBoundaries> = {},
 ) {
   return await createRuntimeOver(createTestDatabase(context), boundaries);
 }
 
 export function shareTestRuntime(
   seed: (runtime: Runtime) => Promise<void>,
-  boundaries: RuntimeBoundaries = {},
+  boundaries: Partial<RuntimeBoundaries> = {},
 ) {
   let current: Runtime | undefined;
   beforeAll(async () => {

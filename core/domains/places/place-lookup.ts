@@ -6,8 +6,10 @@ import type { PlaceLookupInput } from "./location-metadata.ts";
 import type { InstagramClient } from "@@/core/domains/instagram/instagram-types.ts";
 import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 
-type PlaceLookupRepository = Pick<StoryRepository, "findByMediaPk"> &
-  Partial<Pick<StoryRepository, "recordFailedPlaceLookup" | "recordPlaceLookup">>;
+type PlaceLookupRepository = Pick<
+  StoryRepository,
+  "findByMediaPk" | "recordFailedPlaceLookup" | "recordPlaceLookup"
+>;
 
 // Story payloads also carry non-place identifiers, such as the generic bloks sticker one.
 const NUMERIC_PLACE_ID = /^\d+$/u;
@@ -153,14 +155,10 @@ function listPlacesToLookUp(
 export async function lookUpTaggedPlaces(
   client: Pick<InstagramClient, "getPlace">,
   savedMediaPks: Iterable<string>,
-  repository: PlaceLookupRepository | undefined,
+  repository: PlaceLookupRepository,
   logger: Pick<Logger, "warn">,
 ) {
-  if (
-    client.getPlace === undefined ||
-    repository?.recordPlaceLookup === undefined ||
-    repository.recordFailedPlaceLookup === undefined
-  ) {
+  if (client.getPlace === undefined) {
     return;
   }
 

@@ -14,7 +14,7 @@ export interface StartedWarmCacheQueue {
 }
 
 export function startWarmCacheQueue(
-  runtime: Pick<Runtime, "queue"> & Parameters<typeof runWarmCacheJob>[0],
+  runtime: Runtime,
   { onError }: StartWarmCacheQueueOptions = {},
 ): StartedWarmCacheQueue {
   const queue = runtime.queue(WARM_CACHE_QUEUE_NAME, async () => await runWarmCacheJob(runtime));

@@ -21,6 +21,7 @@ import {
   reelsResponse,
 } from "./mock-helpers.ts";
 import type { StoryItem } from "@@/core/domains/instagram/instagram-types.ts";
+import { connect } from "./setup/test-boundaries.ts";
 
 function readStoredStory(repository: StoryRepository, mediaPk = "m1") {
   const stored = repository.findByMediaPk(mediaPk);
@@ -87,29 +88,31 @@ test("provider-identified occurrences keep their identities through reordering a
       logger: createCapturingLogger(),
       stories: repository,
       storage: createMemoryCacheStorage(),
-      client: createClient(
-        [{ id: "r1", media_ids: ["m1"], user: owner }],
-        [
-          reelsResponse({
-            r1: {
-              ...reel("r1", [
-                storyItemWithStickers("m1", {
-                  taken_at: 1_767_225_600,
-                  story_music_stickers: ids.map((id) => ({
-                    id,
-                    music_asset_info: {
-                      audio_asset_id: "shared-audio",
-                      title: "Song",
-                      display_artist: "Artist",
-                    },
-                  })),
-                  ...extra,
-                }),
-              ]),
-              user: owner,
-            },
-          }),
-        ],
+      openInstagram: connect(
+        createClient(
+          [{ id: "r1", media_ids: ["m1"], user: owner }],
+          [
+            reelsResponse({
+              r1: {
+                ...reel("r1", [
+                  storyItemWithStickers("m1", {
+                    taken_at: 1_767_225_600,
+                    story_music_stickers: ids.map((id) => ({
+                      id,
+                      music_asset_info: {
+                        audio_asset_id: "shared-audio",
+                        title: "Song",
+                        display_artist: "Artist",
+                      },
+                    })),
+                    ...extra,
+                  }),
+                ]),
+                user: owner,
+              },
+            }),
+          ],
+        ),
       ),
     });
   }
@@ -239,7 +242,9 @@ test("story annotations survive ingestion, cold reports, and repeated saves", as
     logger: createCapturingLogger(),
     stories: repository,
     storage: createMemoryCacheStorage(),
-    client: createClient(tray, [reelsResponse({ r1: { ...reel("r1", [item]), user: owner } })]),
+    openInstagram: connect(
+      createClient(tray, [reelsResponse({ r1: { ...reel("r1", [item]), user: owner } })]),
+    ),
   });
 
   expect(report.manifest.users[0]?.stories[0]?.locations).toStrictEqual(["Paris", "Paris"]);
@@ -303,19 +308,21 @@ test.for([
     logger: createCapturingLogger(),
     stories: repository,
     storage: createMemoryCacheStorage(),
-    client: createClient(tray, [
-      reelsResponse({
-        r1: {
-          ...reel("r1", [
-            storyItemWithStickers("m1", {
-              story_locations: [{ location: { name: "Historical place" } }],
-              taken_at: 1_767_225_600,
-            }),
-          ]),
-          user: owner,
-        },
-      }),
-    ]),
+    openInstagram: connect(
+      createClient(tray, [
+        reelsResponse({
+          r1: {
+            ...reel("r1", [
+              storyItemWithStickers("m1", {
+                story_locations: [{ location: { name: "Historical place" } }],
+                taken_at: 1_767_225_600,
+              }),
+            ]),
+            user: owner,
+          },
+        }),
+      ]),
+    ),
   });
 
   await reports.save("historical", original);
@@ -383,7 +390,9 @@ test("partial ingestion merges sources for fresh reports, cold reads, and resave
       logger: createCapturingLogger(),
       stories: repository,
       storage: { ...createMemoryCacheStorage(), stories: storage },
-      client: createClient(tray, [reelsResponse({ r1: { ...reel("r1", [item]), user: owner } })]),
+      openInstagram: connect(
+        createClient(tray, [reelsResponse({ r1: { ...reel("r1", [item]), user: owner } })]),
+      ),
     });
   }
 

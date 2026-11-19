@@ -155,7 +155,7 @@ export async function seedAssistantWorld(): Promise<AssistantRuntime> {
 
   const runtime: AssistantRuntime = {
     ...world.runtime,
-    fetchOllama: undefined,
+    fetchOllama: globalThis.fetch,
     wrapModel: traceModel,
   };
 
