@@ -12,6 +12,7 @@ on:
       - "core/domains/accounts/**"
       - "core/domains/story-feed/**"
       - "evalite.config.ts"
+      - "package-lock.json"
       - ".github/workflows/evals.yml"
   pull_request:
     types: [opened, synchronize, reopened]
@@ -21,6 +22,7 @@ on:
       - "core/domains/accounts/**"
       - "core/domains/story-feed/**"
       - "evalite.config.ts"
+      - "package-lock.json"
       - ".github/workflows/evals.yml"
 
 permissions:
