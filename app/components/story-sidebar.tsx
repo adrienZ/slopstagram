@@ -151,8 +151,8 @@ export function StorySidebar({
                 <Collapsible defaultOpen asChild className="tw:group/users">
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
-                      <SidebarMenuButton className="tw:font-medium">
-                        Utilisateurs
+                      <SidebarMenuButton>
+                        <span className="tw:font-medium">Utilisateurs</span>
                         <ChevronRightIcon className="tw:ml-auto tw:transition-transform tw:group-data-[state=open]/users:rotate-90" />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>

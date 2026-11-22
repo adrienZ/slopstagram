@@ -98,7 +98,6 @@ export default function LocationMapCanvas({
           fitBoundsOptions,
         }}
         mapStyle="https://tiles.openfreemap.org/styles/liberty"
-        style={{ width: "100%", height: "100%" }}
         scrollZoom={false}
         onError={() => {
           setFailed(true);

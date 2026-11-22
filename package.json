@@ -65,6 +65,7 @@
   },
   "devDependencies": {
     "@playwright/cli": "^0.1.25",
+    "@shadcn/lint": "^0.2.5",
     "@tailwindcss/vite": "^4.3.5",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",

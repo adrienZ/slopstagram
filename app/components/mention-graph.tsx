@@ -282,7 +282,7 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
         x={x}
         y={y - radiusOf(point) - 8}
         textAnchor="middle"
-        className="tw:pointer-events-none tw:fill-foreground tw:stroke-background tw:stroke-[3px] tw:text-sm tw:font-medium tw:[paint-order:stroke]"
+        className="tw:pointer-events-none tw:fill-foreground tw:stroke-background tw:stroke-3 tw:text-sm tw:font-medium tw:[paint-order:stroke]"
       >
         {point.label}
       </text>

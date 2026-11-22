@@ -58,7 +58,7 @@ function LocationSticker({ label, place }: { label: string; place?: StickerPlace
       <span className="tw:flex tw:flex-col">
         <span className="tw:wrap-anywhere">{label}</span>
         {category !== undefined && (
-          <span className="tw:text-[0.8em] tw:font-normal tw:text-muted-foreground tw:wrap-anywhere">
+          <span className="tw:text-xs tw:font-normal tw:text-muted-foreground tw:wrap-anywhere">
             {category}
           </span>
         )}

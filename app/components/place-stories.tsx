@@ -52,15 +52,12 @@ export function PlaceStories({
               {showOwner && (
                 <a
                   href={getUserTimelineUrl(story.username)}
-                  className="tw:block tw:truncate tw:text-[10px] tw:font-medium tw:hover:underline"
+                  className="tw:block tw:truncate tw:text-xs tw:font-medium tw:hover:underline"
                 >
                   {formatUserHandle(story.username)}
                 </a>
               )}
-              <time
-                className="tw:block tw:text-[10px] tw:text-muted-foreground"
-                dateTime={story.date}
-              >
+              <time className="tw:block tw:text-xs tw:text-muted-foreground" dateTime={story.date}>
                 {formatStickerStoryDate(story.date)}
               </time>
             </li>

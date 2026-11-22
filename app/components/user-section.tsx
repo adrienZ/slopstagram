@@ -38,7 +38,7 @@ export function UserSection({ user, avatar, summary, stories }: UserSectionProps
                 <div className="tw:size-20 tw:shrink-0 tw:rounded-full tw:bg-muted" />
               )}
               <div className="tw:min-w-0">
-                <h2 className="tw:text-[21px] tw:font-bold tw:wrap-anywhere tw:group-hover:underline tw:group-focus-visible:underline">
+                <h2 className="tw:text-xl tw:font-bold tw:wrap-anywhere tw:group-hover:underline tw:group-focus-visible:underline">
                   {displayName !== undefined && displayName.length > 0
                     ? displayName
                     : formatUserHandle(user.username)}

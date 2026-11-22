@@ -118,8 +118,10 @@ export function ToolTrace({ call }: { call: ToolCall }) {
       <TraceIcon>{view?.icon ?? <WrenchIcon />}</TraceIcon>
       <TraceTitle>{call.name}</TraceTitle>
       {/* What the Assistant asked the tool. */}
-      <TraceDescription className="tw:min-w-0 tw:shrink tw:truncate tw:font-mono tw:text-xs">
-        {JSON.stringify(call.part.input ?? {})}
+      <TraceDescription className="tw:min-w-0 tw:shrink">
+        <span className="tw:block tw:truncate tw:font-mono tw:text-xs">
+          {JSON.stringify(call.part.input ?? {})}
+        </span>
       </TraceDescription>
     </TraceLine>
   );
