@@ -1,17 +1,14 @@
 import type { ReactNode } from "react";
-import { afterEach, expect, test, vi } from "vitest";
+import { expect, test, vi } from "vitest";
 import { screen, within } from "@testing-library/react";
 import { Route } from "../../app/routes/map.tsx";
 import { loadPlaceMap } from "../../app/loaders/place-map.ts";
 import { LocationMapContext } from "../../app/components/location-map-context.ts";
 import type { LocationMapCanvasProps } from "../../app/components/location-map-canvas.tsx";
 import { createPageRenderer } from "../render-page.ts";
+import { mockJsdomPolyfillValue } from "../setup/define-property.ts";
 import { createTestRuntime, shareTestRuntime } from "../setup/test-runtime.ts";
 import { mapAccounts, seedMapDatabase, sharedPlace, soloPlace } from "./seeded-pages.ts";
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
 
 const shared = shareTestRuntime(seedMapDatabase);
 const renderer = createPageRenderer(Route, () => loadPlaceMap(shared.runtime), "/map");
@@ -195,12 +192,14 @@ test("one clear action resets the place and the accounts together", async () => 
 
 test("on desktop the account filters are an inline list beside the map", async () => {
   // jsdom has no matchMedia: answer the desktop breakpoint only.
-  vi.stubGlobal("matchMedia", (query: string) => ({
-    matches: true,
-    media: query,
-    addEventListener: vi.fn<() => void>(),
-    removeEventListener: vi.fn<() => void>(),
-  }));
+  mockJsdomPolyfillValue(globalThis, "matchMedia", {
+    value: (query: string) => ({
+      matches: true,
+      media: query,
+      addEventListener: vi.fn<() => void>(),
+      removeEventListener: vi.fn<() => void>(),
+    }),
+  });
   const { user, map, router } = await mountMap();
   expect(screen.queryByRole("button", { name: /Filtrer par compte/u })).not.toBeInTheDocument();
   const filters = within(screen.getByRole("complementary", { name: "Filtres" }));

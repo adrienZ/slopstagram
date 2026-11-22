@@ -6,7 +6,7 @@ export default defineConfig({
     ".claude/",
     "AGENTS.md",
     ".vscode",
-    "tests/fixtures/",
+    "test/fixtures/",
     "audit.json",
     ".nitro",
     "app/routeTree.gen.ts",

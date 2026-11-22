@@ -9,7 +9,8 @@ export default defineConfig({
     execArgv: ["--disable-warning=ExperimentalWarning"],
     coverage: {
       // Count files no test loads, so untested modules lower the figure instead of vanishing.
-      include: ["core/**", "app/**", "nitro/**"],
+      // The fixtures capture script is tested through its exports, so Sonar needs its lcov entry.
+      include: ["core/**", "app/**", "nitro/**", "scripts/fixtures-capture.ts"],
       exclude: ["app/shadcn/**", "app/routeTree.gen.ts", "core/domains/database/migrations/**"],
       // Thresholds rewrite themselves upward when coverage improves, so the bar never drops.
       thresholds: {
@@ -25,17 +26,19 @@ export default defineConfig({
     projects: [
       {
         extends: true,
-        test: { name: "node", environment: "node", include: ["tests/**/*.test.ts"] },
+        test: { name: "node", environment: "node", include: ["test/**/*.test.ts"] },
       },
       {
         extends: true,
         test: {
           name: "ui",
           // Vite resolves dynamic imports when transforming for jsdom, and Linux lacks `mac-ocr`.
-          alias: { "mac-ocr": fileURLToPath(new URL("tests/ui/mac-ocr.stub.ts", import.meta.url)) },
+          alias: {
+            "mac-ocr": fileURLToPath(new URL("test/ui/mac-ocr.test-utils.ts", import.meta.url)),
+          },
           environment: "jsdom",
-          include: ["tests/**/*.test.tsx"],
-          setupFiles: ["./tests/ui/setup.ts"],
+          include: ["test/**/*.test.tsx"],
+          setupFiles: ["./test/ui/setup.ts"],
         },
       },
     ],

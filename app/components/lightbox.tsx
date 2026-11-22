@@ -86,7 +86,7 @@ function LightboxNavButton(props: {
   return (
     <button
       className={cn(
-        "tw:absolute tw:top-1/2 tw:size-10.5 tw:cursor-pointer tw:rounded-lg tw:border tw:border-background/40 tw:bg-foreground/70 tw:text-[28px] tw:text-background",
+        "tw:absolute tw:top-1/2 tw:size-10.5 tw:cursor-pointer tw:rounded-lg tw:border tw:border-background/40 tw:bg-foreground/70 tw:text-3xl tw:text-background",
         props.direction < 0 ? "tw:left-4" : "tw:right-4",
       )}
       type="button"
@@ -142,7 +142,7 @@ function LightboxDialog(props: {
       }}
     >
       <DialogContent
-        className="tw:block tw:h-auto tw:max-h-[calc(100dvh-56px)] tw:w-[calc(100%-56px)] tw:max-w-none tw:gap-0 tw:rounded-lg tw:bg-transparent tw:p-0 tw:text-base tw:ring-0 tw:max-[760px]:max-h-[calc(100dvh-24px)] tw:max-[760px]:w-[calc(100%-24px)] tw:sm:max-w-none"
+        className="tw:block tw:h-auto tw:max-h-[calc(100dvh-56px)] tw:w-[calc(100%-56px)] tw:max-w-none tw:gap-0 tw:rounded-lg tw:bg-transparent tw:p-0 tw:ring-0 tw:max-[760px]:max-h-[calc(100dvh-24px)] tw:max-[760px]:w-[calc(100%-24px)] tw:sm:max-w-none"
         id="image-lightbox"
         aria-describedby={undefined}
         showCloseButton={false}
@@ -164,7 +164,7 @@ function LightboxDialog(props: {
         <DialogTitle className="tw:sr-only">Aperçu de l’image</DialogTitle>
         <DialogClose asChild>
           <button
-            className="tw:absolute tw:top-4 tw:right-4 tw:z-1 tw:size-10.5 tw:cursor-pointer tw:rounded-lg tw:border tw:border-background/40 tw:bg-foreground/70 tw:text-[28px] tw:text-background"
+            className="tw:absolute tw:top-4 tw:right-4 tw:z-1 tw:size-10.5 tw:cursor-pointer tw:rounded-lg tw:border tw:border-background/40 tw:bg-foreground/70 tw:text-3xl tw:text-background"
             type="button"
             aria-label="Fermer l’aperçu"
           >

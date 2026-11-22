@@ -38,7 +38,7 @@ function TimelineHeader({
           />
           <div className="tw:min-w-0">
             <CardTitle>
-              <h1 className="tw:text-[28px] tw:font-bold tw:wrap-anywhere">
+              <h1 className="tw:text-3xl tw:font-bold tw:wrap-anywhere">
                 {displayName !== undefined && displayName.length > 0 ? displayName : handle}
               </h1>
             </CardTitle>

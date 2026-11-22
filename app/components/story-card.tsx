@@ -37,7 +37,7 @@ export function StoryCard({
         }}
       >
         <img
-          className={cn("tw:block tw:rounded-lg tw:shadow-[0_1px_3px_#0003]", previewSizes[size])}
+          className={cn("tw:block tw:rounded-lg tw:shadow-sm", previewSizes[size])}
           src={story.preview}
           alt={story.alt}
           loading={size === "gallery" ? "lazy" : undefined}

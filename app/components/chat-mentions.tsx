@@ -38,7 +38,7 @@ export function MentionBackdrop({
           <mark
             // Segments have no id and are rebuilt from the text on each keystroke.
             key={`${index}-${segment.account.username}`}
-            className="tw:rounded-4xl tw:bg-secondary tw:text-secondary-foreground tw:shadow-[0_0_0_3px_var(--secondary)] tw:box-decoration-clone"
+            className="tw:rounded-4xl tw:bg-secondary tw:text-secondary-foreground tw:ring-3 tw:ring-secondary tw:box-decoration-clone"
           >
             {segment.text}
           </mark>

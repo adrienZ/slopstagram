@@ -1,7 +1,53 @@
-import { test, vi, expect } from "vitest";
+import { http, HttpResponse } from "msw";
+import { expect, onTestFinished, test, vi } from "vitest";
 import { z } from "zod";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
 import { createInstagramClient } from "@@/core/domains/instagram/story-client.ts";
+import { mockJsdomPolyfillValue } from "./setup/define-property.ts";
+import { createMockServer } from "./setup/mock-server.ts";
+
+const server = createMockServer();
+
+interface PageRequest {
+  url: string;
+  body?: string;
+  headers: Headers;
+  method: string;
+}
+
+function observeAbortTimeouts() {
+  const timeout = vi.spyOn(globalThis.AbortSignal, "timeout");
+  onTestFinished(() => {
+    timeout.mockRestore();
+  });
+
+  return timeout;
+}
+
+// The page's own `fetch` and `require` run in this process: only the answer of instagram.com is faked.
+function answerFromPage(
+  responseBody: string,
+  modules: Array<[string, Record<string, string> | null]> = [],
+): Array<PageRequest> {
+  const requests: Array<PageRequest> = [];
+  const pageModules = new Map(modules);
+
+  mockJsdomPolyfillValue(globalThis, "require", { value: (name: string) => pageModules.get(name) });
+  server.use(
+    http.all("https://www.instagram.com/*", async ({ request }) => {
+      requests.push({
+        url: request.url,
+        method: request.method,
+        headers: request.headers,
+        body: request.method === "GET" ? undefined : await request.text(),
+      });
+
+      return new HttpResponse(responseBody, { headers: { "content-type": "text/javascript" } });
+    }),
+  );
+
+  return requests;
+}
 
 interface BrowserFetchCall {
   appId: string;
@@ -129,31 +175,12 @@ test("looks up a place with the location container query from the authenticated 
   ]);
 });
 
-test("sends the place query from the page with the page's own tokens", async (context) => {
-  const requests: Array<{ url: string; body: string; headers: Headers; method: string }> = [];
-
-  const pageModules = new Map([
+test("sends the place query from the page with the page's own tokens", async () => {
+  const requests = answerFromPage('{"ok":true}', [
     ["LSD", { token: "lsd-token" }],
     ["DTSGInitialData", { token: "dtsg-token" }],
     ["CurrentUserInitialData", { NON_FACEBOOK_USER_ID: "user-1" }],
   ]);
-
-  vi.stubGlobal("require", (name: string) => pageModules.get(name));
-  vi.stubGlobal(
-    "fetch",
-    async (url: string, init: { body: string; headers: Headers; method: string }) => {
-      requests.push({ url, ...init });
-
-      return await Promise.resolve(
-        new globalThis.Response('{"ok":true}', {
-          headers: { "content-type": "text/javascript" },
-        }),
-      );
-    },
-  );
-  context.onTestFinished(() => {
-    vi.unstubAllGlobals();
-  });
 
   const { getPlace } = createInstagramClient({
     page: { evaluate: async (pageFunction, input) => await pageFunction(input) },
@@ -180,24 +207,15 @@ test("sends the place query from the page with the page's own tokens", async (co
   });
 });
 
-test("sends empty place query tokens when the page has none", async (context) => {
-  const bodies: Array<string> = [];
-  vi.stubGlobal("require", () => null);
-  vi.stubGlobal("fetch", async (_url: string, init: { body: string }) => {
-    bodies.push(init.body);
-
-    return await Promise.resolve(new globalThis.Response("{}"));
-  });
-  context.onTestFinished(() => {
-    vi.unstubAllGlobals();
-  });
+test("sends empty place query tokens when the page has none", async () => {
+  const requests = answerFromPage("{}");
 
   const { getPlace } = createInstagramClient({
     page: { evaluate: async (pageFunction, input) => await pageFunction(input) },
   });
 
   await getPlace?.("1");
-  const params = Object.fromEntries(new globalThis.URLSearchParams(bodies[0]));
+  const params = Object.fromEntries(new globalThis.URLSearchParams(requests[0].body));
   expect([params.fb_dtsg, params.lsd, params.av]).toStrictEqual(["", "", ""]);
 });
 
@@ -307,43 +325,12 @@ test("createInstagramClient fetches reels media with the web viewer GraphQL quer
   ]);
 });
 
-interface PageRequest {
-  url: string;
-  body?: string;
-  headers: Headers;
-  method: string;
-  signal?: AbortSignal;
-}
-
-function stubBrowserPage(
-  context: { onTestFinished: (callback: () => void) => void },
-  responseBody: string,
-  modules: Array<[string, Record<string, string>]> = [],
-): Array<PageRequest> {
-  const requests: Array<PageRequest> = [];
-  const pageModules = new Map(modules);
-  vi.stubGlobal("require", (name: string) => pageModules.get(name));
-  vi.stubGlobal("fetch", async (url: string, init: Omit<PageRequest, "url">) => {
-    requests.push({ url, ...init });
-
-    return await Promise.resolve(
-      new globalThis.Response(responseBody, { headers: { "content-type": "text/javascript" } }),
-    );
-  });
-  context.onTestFinished(() => {
-    vi.unstubAllGlobals();
-  });
-
-  return requests;
-}
-
 const runInPage: Parameters<typeof createInstagramClient>[0] = {
   page: { evaluate: async (pageFunction, input) => await pageFunction(input) },
 };
 
-test("sends the reels media query from the page with the page's own tokens", async (context) => {
-  const requests = stubBrowserPage(
-    context,
+test("sends the reels media query from the page with the page's own tokens", async () => {
+  const requests = answerFromPage(
     JSON.stringify({
       data: {
         xdt_api__v1__feed__reels_media__connection: {
@@ -383,8 +370,8 @@ test("sends the reels media query from the page with the page's own tokens", asy
   });
 });
 
-test("sends empty reels media query tokens when the page has none", async (context) => {
-  const requests = stubBrowserPage(context, "{}");
+test("sends empty reels media query tokens when the page has none", async () => {
+  const requests = answerFromPage("{}");
 
   await expect(createInstagramClient(runInPage).getReelsMedia(["r1"])).rejects.toThrow(
     /Instagram returned/u,
@@ -394,11 +381,12 @@ test("sends empty reels media query tokens when the page has none", async (conte
   expect([params.fb_dtsg, params.lsd, params.av]).toStrictEqual(["", "", ""]);
 });
 
-test("fetches the tray with a plain GET from the page", async (context) => {
-  const requests = stubBrowserPage(
-    context,
+test("fetches the tray with a plain GET from the page", async () => {
+  const requests = answerFromPage(
     JSON.stringify({ broadcasts: [], status: "ok", story_ranking_token: "token", tray: [] }),
   );
+
+  const timeout = observeAbortTimeouts();
 
   const response = await createInstagramClient(runInPage).getTray();
 
@@ -407,13 +395,16 @@ test("fetches the tray with a plain GET from the page", async (context) => {
     url: "https://www.instagram.com/api/v1/feed/reels_tray/",
     method: "GET",
     body: undefined,
-    signal: undefined,
   });
+  expect(timeout).not.toHaveBeenCalled();
 });
 
-test("posts the music asset lookup from the page with the csrf token", async (context) => {
-  const requests = stubBrowserPage(context, "{}");
-  vi.stubGlobal("document", { cookie: "mid=1; csrftoken=csrf-token; other=2" });
+test("posts the music asset lookup from the page with the csrf token", async () => {
+  const requests = answerFromPage("{}");
+  const timeout = observeAbortTimeouts();
+  mockJsdomPolyfillValue(globalThis, "document", {
+    value: { cookie: "mid=1; csrftoken=csrf-token; other=2" },
+  });
 
   const { getMusicAsset } = createInstagramClient(runInPage);
 
@@ -433,7 +424,7 @@ test("posts the music asset lookup from the page with the csrf token", async (co
     original_sound_audio_asset_id: "audio-1",
     max_id: "",
   });
-  expect(request.signal).toBeInstanceOf(globalThis.AbortSignal);
+  expect(timeout).toHaveBeenCalledExactlyOnceWith(20_000);
 });
 
 test("preserves large numeric media identifiers in GraphQL responses", async () => {

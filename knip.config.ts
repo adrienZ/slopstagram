@@ -8,15 +8,15 @@ const config: KnipConfig = {
     "app/routeTree.gen.ts",
   ],
   // Only `!` files ship: tests, evals and the DevTools dock don't.
-  project: ["**/*.{ts,tsx,css}!", "!{tests,evals,devtools}/**!"],
+  project: ["**/*.{ts,tsx,css}!", "!{test,evals,devtools}/**!"],
   // Only real entry points: listing every module as an entry hides unused files and exports.
   entry: [
     "scripts/*.ts!",
     "app/router.tsx!",
     "app/routes/**/*.{ts,tsx}!",
     "nitro/plugins/*.ts!",
-    "tests/**/*.test.ts",
-    "tests/**/*.test.tsx",
+    "test/**/*.test.ts",
+    "test/**/*.test.tsx",
     "evals/*.eval.ts",
     "oxlint/plugins/**/*.ts",
     "*.config.ts",

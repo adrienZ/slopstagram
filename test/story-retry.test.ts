@@ -2,13 +2,14 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { requestWithRetry } from "@@/core/domains/instagram/story-retry.ts";
 import type { InstagramClientResponse } from "@@/core/domains/instagram/instagram-types.ts";
 import { createMockLogger, fixedNow, response } from "./mock-helpers.ts";
+import { mockJsdomPolyfillValue } from "./setup/define-property.ts";
 
 beforeEach(() => {
   // fakeNodeBuiltins also fakes the retry wait, which imports setTimeout from node:timers/promises.
   vi.useFakeTimers({ fakeNodeBuiltins: true, toFake: ["setTimeout", "clearTimeout", "Date"] });
   vi.setSystemTime(fixedNow());
   // Jitter adds Math.floor(0.5 * 100) = 50ms to every backoff.
-  vi.spyOn(Math, "random").mockReturnValue(0.5);
+  mockJsdomPolyfillValue(Math, "random", { value: () => 0.5 });
 });
 
 afterEach(() => {

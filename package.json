@@ -10,7 +10,7 @@
     "postinstall": "npm audit --json > audit.json || true",
     "auth": "tsx scripts/auth.ts",
     "create:report": "tsx scripts/create-report.ts",
-    "fixtures:capture": "tsx scripts/capture-fixtures.ts",
+    "fixtures:capture": "tsx scripts/fixtures-capture.ts",
     "bunqueue:server": "bunqueue start",
     "dev": "vite dev --port 5173",
     "build": "vite build",
@@ -64,7 +64,9 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@interfere/landmines": "^0.1.1",
     "@playwright/cli": "^0.1.25",
+    "@shadcn/lint": "^0.2.5",
     "@tailwindcss/vite": "^4.3.5",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
@@ -91,6 +93,7 @@
     "jsdom": "^31.0.1",
     "knip": "^6.42.1",
     "lint-staged": "^17.6.0",
+    "msw": "^3.0.7",
     "nitro": "^3.0.261103-rc",
     "oxfmt": "^0.79.0",
     "oxlint": "^1.94.0",

@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { StickerPresentation } from "../utils/sticker-presentation.ts";
 import type { StickerPlace } from "../utils/timeline-stickers.ts";
 
-const badgeClass = "tw:h-auto tw:max-w-full tw:gap-1 tw:py-1 tw:whitespace-normal";
+const badgeClass = "tw:h-auto tw:max-w-full tw:whitespace-normal";
 
 export function MentionAvatar({ src }: { src: string }) {
   const [failed, setFailed] = useState(false);
@@ -58,7 +58,7 @@ function LocationSticker({ label, place }: { label: string; place?: StickerPlace
       <span className="tw:flex tw:flex-col">
         <span className="tw:wrap-anywhere">{label}</span>
         {category !== undefined && (
-          <span className="tw:text-[0.8em] tw:font-normal tw:text-muted-foreground tw:wrap-anywhere">
+          <span className="tw:text-xs tw:font-normal tw:text-muted-foreground tw:wrap-anywhere">
             {category}
           </span>
         )}

@@ -19,7 +19,7 @@ const allowedImporters = [
   /\.tool\.ts$/u,
   /\/core\/domains\/assistant\//u,
   /\/app\/hooks\/use-assistant-chat\.ts$/u,
-  /\/tests\//u,
+  /\/test\//u,
   /\/evals\//u,
 ];
 

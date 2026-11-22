@@ -10,6 +10,7 @@ import {
 } from "./seeded-pages.ts";
 import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
 import { createPageRenderer } from "../render-page.ts";
+import { mockJsdomPolyfillValue } from "../setup/define-property.ts";
 import { shareTestRuntime } from "../setup/test-runtime.ts";
 
 const shared = shareTestRuntime(seedPageDatabase);
@@ -90,7 +91,7 @@ test("timeline calendar scrolls to the selected day without changing the route",
   expect(scroll.mock.instances[0]).toBe(screen.getByRole("region", { name: "2026-07-26" }));
   expect(router.state.location.href).toBe(`/users/${timelineAccount}`);
   const preference = globalThis.matchMedia("(prefers-reduced-motion: reduce)");
-  vi.spyOn(preference, "matches", "get").mockReturnValue(true);
+  mockJsdomPolyfillValue(preference, "matches", { get: () => true });
   act(() => {
     preference.dispatchEvent(new globalThis.Event("change"));
   });
@@ -216,7 +217,7 @@ test("a timeline story deep link opens the preview, steps to the next story and 
 });
 
 test("mobile calendar opens in a sheet and closes after choosing a day", async () => {
-  vi.stubGlobal("innerWidth", 390);
+  mockJsdomPolyfillValue(globalThis, "innerWidth", { value: 390 });
   const scroll = vi.spyOn(globalThis.Element.prototype, "scrollIntoView");
   const { user } = await renderer.mountRoute(`/users/${timelineAccount}`);
   expect(screen.queryByRole("navigation", { name: "Utilisateurs" })).not.toBeInTheDocument();

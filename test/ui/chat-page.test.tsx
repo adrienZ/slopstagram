@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, expect, test, vi, type TestContext } from "vitest";
 import { screen, within } from "@testing-library/react";
+import { http } from "msw";
 import { Route } from "../../app/routes/chat.tsx";
 import { loadChatPage } from "../../app/loaders/chat.ts";
 import { handleChatRequest } from "../../app/routes/api/chat.ts";
 import { createPageRenderer } from "../render-page.ts";
+import { createMockServer } from "../setup/mock-server.ts";
 import {
   assistantGreeting,
   assistantThinking,
@@ -12,6 +14,8 @@ import {
   placeId,
 } from "../setup/report-world.ts";
 import { seedLongConnectionGraphDatabase } from "../setup/mention-graph-seed.ts";
+
+const server = createMockServer();
 
 beforeEach(() => {
   // The Assistant reads the story feed of the current time.
@@ -26,12 +30,13 @@ afterEach(() => {
 /** The browser's fetch is the boundary: chat requests reach the real route handler. */
 async function mountChat(world: Awaited<ReturnType<typeof createWorld>>) {
   let gate: PromiseWithResolvers<void> | undefined;
-  vi.stubGlobal("fetch", async (input: string, init?: RequestInit) => {
-    await gate?.promise;
-    const url = new globalThis.URL(input, "http://localhost");
+  server.use(
+    http.post("*/api/chat", async ({ request }) => {
+      await gate?.promise;
 
-    return await handleChatRequest(world.runtime, new globalThis.Request(url, init));
-  });
+      return await handleChatRequest(world.runtime, request);
+    }),
+  );
   const page = await createPageRenderer(Route, loadChatPage(world), "/chat").mountRoute("/chat");
 
   return {

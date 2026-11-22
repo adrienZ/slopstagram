@@ -42,8 +42,10 @@ function AudioPlayer({ preview, preload = true, onError }: MusicAudioPreviewProp
             width={40}
             height={40}
             loading="lazy"
-            className="tw:absolute tw:inset-0 tw:size-10 tw:animate-spin tw:rounded-full tw:object-cover tw:[animation-duration:8s] tw:motion-reduce:animate-none"
-            style={{ animationPlayState: player.playing ? "running" : "paused" }}
+            className={cn(
+              "tw:absolute tw:inset-0 tw:size-10 tw:animate-spin tw:rounded-full tw:object-cover tw:[animation-duration:8s] tw:motion-reduce:animate-none",
+              player.playing ? "tw:running" : "tw:paused",
+            )}
             onError={() => {
               setFailedArtworkUrl(preview.artworkUrl);
             }}
@@ -53,7 +55,7 @@ function AudioPlayer({ preview, preload = true, onError }: MusicAudioPreviewProp
           type="button"
           variant={hasArtwork ? "ghost" : "secondary"}
           size="icon"
-          className="tw:relative tw:size-10 tw:rounded-full"
+          className="tw:relative tw:size-10"
           aria-label={`${player.playing ? "Mettre en pause" : "Lire"} : ${preview.description}`}
           aria-pressed={player.playing}
           disabled={player.loading}
@@ -87,7 +89,7 @@ function AudioPlayer({ preview, preload = true, onError }: MusicAudioPreviewProp
               event.stopPropagation();
             }}
           />
-          <div className="tw:flex tw:shrink-0 tw:gap-0.5 tw:text-[10px] tw:text-muted-foreground tw:tabular-nums">
+          <div className="tw:flex tw:shrink-0 tw:gap-0.5 tw:text-xs tw:text-muted-foreground tw:tabular-nums">
             <span>{audioTime(player.currentTime)}</span>
             <span aria-hidden="true">/</span>
             <span>{player.duration > 0 ? audioTime(player.duration) : "—:——"}</span>

@@ -1,9 +1,10 @@
-import { beforeAll, expect, test, vi, type TestContext } from "vitest";
+import { beforeAll, expect, test, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route } from "../../app/routes/users/$username.tsx";
 import { loadAccountTimeline } from "../../app/loaders/account-timeline.ts";
 import { createPageRenderer } from "../render-page.ts";
+import { mockJsdomPolyfillValue } from "../setup/define-property.ts";
 import { shareTestRuntime } from "../setup/test-runtime.ts";
 import { MusicAudioPreview } from "../../app/components/music-audio-preview.tsx";
 import { MusicSticker } from "../../app/components/music-sticker.tsx";
@@ -34,37 +35,15 @@ const preview: MusicPreview = {
   durationMs: null,
 };
 
-function mockPlayback(context: TestContext) {
-  const play = vi
-    .spyOn(globalThis.HTMLMediaElement.prototype, "play")
-    .mockImplementation(async function playAudio(this: HTMLMediaElement) {
-      Object.defineProperty(this, "paused", {
-        configurable: true,
-        value: false,
-      });
-      this.dispatchEvent(new globalThis.Event("play"));
-    });
-
-  const pause = vi
-    .spyOn(globalThis.HTMLMediaElement.prototype, "pause")
-    .mockImplementation(function pauseAudio(this: HTMLMediaElement) {
-      Object.defineProperty(this, "paused", {
-        configurable: true,
-        value: true,
-      });
-      this.dispatchEvent(new globalThis.Event("pause"));
-    });
-
-  context.onTestFinished(() => {
-    play.mockRestore();
-    pause.mockRestore();
-  });
+function observePlayback() {
+  const play = vi.spyOn(globalThis.HTMLMediaElement.prototype, "play");
+  const pause = vi.spyOn(globalThis.HTMLMediaElement.prototype, "pause");
 
   return { play, pause };
 }
 
-test("the compact player displays duration before playback, then plays, pauses and seeks", async (context) => {
-  const { play } = mockPlayback(context);
+test("the compact player displays duration before playback, then plays, pauses and seeks", async () => {
+  const { play } = observePlayback();
   render(<MusicAudioPreview preview={preview} />);
   const audio = screen.getByLabelText("Écouter : Audio de la story");
   expect(audio).toHaveAttribute("preload", "metadata");
@@ -103,8 +82,8 @@ test("the compact player displays duration before playback, then plays, pauses a
   expect(screen.getByRole("button", { name: "Lire : Audio de la story" })).toBeVisible();
 });
 
-test("a broken cover disappears without interrupting audio playback", async (context) => {
-  mockPlayback(context);
+test("a broken cover disappears without interrupting audio playback", async () => {
+  observePlayback();
   render(
     <MusicSticker
       label="Song - Artist"
@@ -128,8 +107,8 @@ test("a broken cover disappears without interrupting audio playback", async (con
   expect(screen.queryByText("Song - Artist")).not.toBeInTheDocument();
 });
 
-test("starting another preview pauses the currently playing preview", async (context) => {
-  mockPlayback(context);
+test("starting another preview pauses the currently playing preview", async () => {
+  observePlayback();
   render(
     <>
       <MusicAudioPreview preview={{ ...preview, description: "First" }} />
@@ -162,8 +141,8 @@ test("missing or failed audio keeps its sticker label without a player", async (
   expect(screen.queryByRole("button")).not.toBeInTheDocument();
 });
 
-test("detail-modal audio seeking keeps the selected story and navigation stops playback", async (context) => {
-  const { pause } = mockPlayback(context);
+test("detail-modal audio seeking keeps the selected story and navigation stops playback", async () => {
+  const { pause } = observePlayback();
   const [entry, ...others] = timelineProps.timeline.stories;
 
   const { router } = await renderer.mountRoute(
@@ -241,13 +220,11 @@ test("stored playback duration is visible without preloading the audio", async (
   expect(screen.getByText("0:30")).toBeVisible();
 });
 
-test("a rejected play request falls back to the sticker label", async (context) => {
-  const play = vi
-    .spyOn(globalThis.HTMLMediaElement.prototype, "play")
-    .mockRejectedValue(new Error("unavailable"));
-
-  context.onTestFinished(() => {
-    play.mockRestore();
+test("a rejected play request falls back to the sticker label", async () => {
+  mockJsdomPolyfillValue(globalThis.HTMLMediaElement.prototype, "play", {
+    value: async () => {
+      throw new Error("unavailable");
+    },
   });
   render(<MusicSticker label="Song" preview={preview} />);
   await userEvent.click(screen.getByRole("button", { name: "Lire : Audio de la story" }));

@@ -53,8 +53,10 @@ export function PlaceMapPage({
     return (
       <Avatar className="tw:size-10">
         <AvatarImage src={avatarByUsername.get(username)?.avatarPath} alt="" />
-        <AvatarFallback className="tw:bg-primary tw:text-primary-foreground">
-          {formatUserInitials(username)}
+        <AvatarFallback>
+          <span className="tw:flex tw:size-full tw:items-center tw:justify-center tw:rounded-full tw:bg-primary tw:text-primary-foreground">
+            {formatUserInitials(username)}
+          </span>
         </AvatarFallback>
       </Avatar>
     );

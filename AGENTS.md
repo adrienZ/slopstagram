@@ -73,7 +73,7 @@ directly or through SDK calls. Tests may migrate their isolated databases.
 
 ## Testing
 
-Test rules live in `tests/AGENTS.md`.
+Test rules live in `test/AGENTS.md`.
 
 ## Evals
 
