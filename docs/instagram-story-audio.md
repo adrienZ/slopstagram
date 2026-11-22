@@ -269,8 +269,8 @@ Les tests de régression utilisent SQLite isolée, des réponses HTTP détermini
 un répertoire temporaire et les interactions de la carte/modale. Le rejeu depuis
 le cache historique reste une opération locale ponctuelle ; aucun outil de
 backfill permanent n'est ajouté au code.
-[Tests ingestion, téléchargement et service audio](../tests/story-audio.test.ts),
-[tests d'interface](../tests/ui/stickers.test.tsx).
+[Tests ingestion, téléchargement et service audio](../test/story-audio.test.ts),
+[tests d'interface](../test/ui/stickers.test.tsx).
 
 Les journaux locaux cités sont des résumés de diagnostic temporaires, sans URL
 CDN réelle. Ils ne sont pas des fixtures durables ni une documentation publique

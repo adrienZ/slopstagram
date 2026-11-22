@@ -25,17 +25,19 @@ export default defineConfig({
     projects: [
       {
         extends: true,
-        test: { name: "node", environment: "node", include: ["tests/**/*.test.ts"] },
+        test: { name: "node", environment: "node", include: ["test/**/*.test.ts"] },
       },
       {
         extends: true,
         test: {
           name: "ui",
           // Vite resolves dynamic imports when transforming for jsdom, and Linux lacks `mac-ocr`.
-          alias: { "mac-ocr": fileURLToPath(new URL("tests/ui/mac-ocr.stub.ts", import.meta.url)) },
+          alias: {
+            "mac-ocr": fileURLToPath(new URL("test/ui/mac-ocr.test-utils.ts", import.meta.url)),
+          },
           environment: "jsdom",
-          include: ["tests/**/*.test.tsx"],
-          setupFiles: ["./tests/ui/setup.ts"],
+          include: ["test/**/*.test.tsx"],
+          setupFiles: ["./test/ui/setup.ts"],
         },
       },
     ],

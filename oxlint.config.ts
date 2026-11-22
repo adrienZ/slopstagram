@@ -2,6 +2,7 @@ import { defineConfig } from "oxlint";
 import ultracite from "ultracite/oxlint/core";
 import antiSlop from "ultracite/oxlint/anti-slop";
 import drizzle from "ultracite/oxlint/drizzle";
+import landmines from "ultracite/oxlint/landmines";
 import playwright from "ultracite/oxlint/playwright";
 import react from "ultracite/oxlint/react";
 import shadcn from "ultracite/oxlint/shadcn";
@@ -123,7 +124,7 @@ function restrictImports(
 const testConventions = defineConfig({
   overrides: [
     {
-      files: ["tests/**"],
+      files: ["test/**"],
       // The vitest preset enables its plugin in its own override only, and oxlint drops plugin rules an override does not enable.
       plugins: ["vitest"],
       rules: {
@@ -172,6 +173,7 @@ export default defineConfig({
     vitest,
     playwright,
     shadcn,
+    landmines,
     testConventions,
     ultraciteSoftenerConfig,
     restrictedReactImports,
@@ -183,7 +185,7 @@ export default defineConfig({
     "app/routeTree.gen.ts",
     "app/shadcn/**",
   ],
-  jsPlugins: ["./oxlint/plugins/slopstagram.ts", ...shadcn.jsPlugins],
+  jsPlugins: ["./oxlint/plugins/slopstagram.ts", ...shadcn.jsPlugins, ...landmines.jsPlugins],
   options: {
     maxWarnings: 0,
     typeAware: true,
@@ -215,6 +217,8 @@ export default defineConfig({
     ],
     // Tailwind has no animation-duration utility and the theme stylesheet is generated.
     "shadcn/no-arbitrary-values": ["error", { allow: ["layout", "motion"] }],
+    "landmines-style/no-comments": "off",
+    "landmines-types/no-explicit-return-types": "off",
   },
   overrides: [
     {
@@ -223,7 +227,7 @@ export default defineConfig({
         "core/domains/runtime/**",
         "core/domains/database/**",
         "core/domains/media-store/cache-storage.ts",
-        "tests/**",
+        "test/**",
       ],
       rules: { "no-restricted-imports": restrictImports([], { root: true }) },
     },
@@ -265,10 +269,10 @@ export default defineConfig({
     },
     {
       files: [
-        "tests/**/*.test.ts",
-        "tests/**/*.test.tsx",
-        "tests/**/*.spec.ts",
-        "tests/mock-helpers.ts",
+        "test/**/*.test.ts",
+        "test/**/*.test.tsx",
+        "test/**/*.spec.ts",
+        "test/mock-helpers.ts",
       ],
       rules: {
         // Sonar (typescript:S2699) only counts `expect` as an assertion. `assert.ok` stays for type narrowing.

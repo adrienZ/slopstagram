@@ -1,14 +1,11 @@
-import { afterEach, expect, test, vi } from "vitest";
+import { expect, test, vi } from "vitest";
 import { navigateToReportDate, getDisabledStoryDates } from "../app/utils/story-navigation.ts";
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
+import { mockJsdomPolyfillValue } from "./setup/define-property.ts";
 
 test("report dates perform a document navigation using the Paris publication day", () => {
   // Document navigation is the external boundary: no server functions or router are mocked.
   const assign = vi.fn<(url: string) => void>();
-  vi.stubGlobal("location", { assign });
+  mockJsdomPolyfillValue(globalThis, "location", { value: { assign } });
   navigateToReportDate(new Date("2026-07-25T23:30:00Z"));
   expect(assign).toHaveBeenCalledExactlyOnceWith("/report?date=2026-07-26");
 });

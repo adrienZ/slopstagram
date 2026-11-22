@@ -8,6 +8,7 @@ import {
 } from "@@/core/domains/accounts/user-summary.ts";
 import { getReportUserKey } from "@@/core/domains/accounts/report-user-key.ts";
 import { createSummaryReport } from "./mock-helpers.ts";
+import { mockJsdomPolyfillValue } from "./setup/define-property.ts";
 import { createTestRuntime } from "./setup/test-runtime.ts";
 import { countSummaries, saveSummaryUsers } from "./test-database.ts";
 
@@ -59,8 +60,8 @@ describe(resolveUserSummariesForReport, () => {
       });
 
       await saveSummaryUsers(runtime);
-      vi.spyOn(process, "platform", "get").mockReturnValue(platform);
-      vi.spyOn(process, "arch", "get").mockReturnValue(architecture);
+      mockJsdomPolyfillValue(process, "platform", { value: platform });
+      mockJsdomPolyfillValue(process, "arch", { value: architecture });
 
       const summaries = await resolveUserSummariesForReport(runtime, report);
 
@@ -203,34 +204,30 @@ describe(resolveUserSummariesForReport, () => {
     expect(summaries.get(userKey)).toBe("sdk summary");
   });
 
-  it(
-    "honors a custom timeout for a blocked summary request",
-    { timeout: 1000 },
-    async (context) => {
-      let requestSignal: AbortSignal | null | undefined;
+  it("honors a custom timeout for a blocked summary request", async (context) => {
+    let requestSignal: AbortSignal | null | undefined;
 
-      const runtime = await createTestRuntime(context, {
-        fetchOllama: async (_url, init) => {
-          requestSignal = init?.signal;
-          assert.ok(requestSignal);
-          await delay(10_000, undefined, { signal: requestSignal });
+    const runtime = await createTestRuntime(context, {
+      fetchOllama: async (_url, init) => {
+        requestSignal = init?.signal;
+        assert.ok(requestSignal);
+        await delay(10_000, undefined, { signal: requestSignal });
 
-          return globalThis.Response.json({ response: "too late" });
-        },
-      });
+        return globalThis.Response.json({ response: "too late" });
+      },
+    });
 
-      await saveSummaryUsers(runtime);
+    await saveSummaryUsers(runtime);
 
-      const summaries = await resolveUserSummariesForReport(runtime, createSummaryReport(), {
-        timeoutMs: 5,
-      });
+    const summaries = await resolveUserSummariesForReport(runtime, createSummaryReport(), {
+      timeoutMs: 5,
+    });
 
-      expect(summaries.get("summaryuser")).toBe("résumé indisponible");
-      assert.ok(requestSignal);
-      expect(requestSignal.aborted).toBe(true);
-      expect(countSummaries(runtime)).toBe(0);
-    },
-  );
+    expect(summaries.get("summaryuser")).toBe("résumé indisponible");
+    assert.ok(requestSignal);
+    expect(requestSignal.aborted).toBe(true);
+    expect(countSummaries(runtime)).toBe(0);
+  });
 
   it("returns fallback text when user summary fails", async (context) => {
     const runtime = await createTestRuntime(context);

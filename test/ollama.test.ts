@@ -1,5 +1,9 @@
+import { http, HttpResponse } from "msw";
 import { test, vi, expect } from "vitest";
 import { getOllamaClient } from "@@/core/domains/vision/ollama.ts";
+import { createMockServer } from "./setup/mock-server.ts";
+
+const server = createMockServer();
 
 test("an explicit host overrides OLLAMA_HOST and accepts a generation endpoint", async () => {
   vi.stubEnv("OLLAMA_HOST", "http://environment.example:11434");
@@ -35,11 +39,11 @@ test("uses and normalizes OLLAMA_HOST when no host override is supplied", async 
 test("reuses the default localhost client and isolates host and transport overrides", async () => {
   // oxlint-disable-next-line no-useless-undefined -- Vitest requires undefined to remove the environment variable.
   vi.stubEnv("OLLAMA_HOST", undefined);
-  vi.spyOn(globalThis, "fetch").mockImplementation(async (url: RequestInfo | URL) => {
-    expect(url).toBe("http://127.0.0.1:11434/api/generate");
-
-    return globalThis.Response.json({ response: "default response" });
-  });
+  server.use(
+    http.post("http://127.0.0.1:11434/api/generate", () =>
+      HttpResponse.json({ response: "default response" }),
+    ),
+  );
   const shared = getOllamaClient();
 
   const custom = getOllamaClient({

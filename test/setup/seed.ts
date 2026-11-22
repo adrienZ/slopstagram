@@ -39,7 +39,7 @@ export async function readRecordedPayloads(names?: Array<string>): Promise<Recor
   const missing = selected.filter((name) => !available.has(name));
 
   if (missing.length > 0) {
-    throw new Error(`Recorded payloads not found in tests/fixtures: ${missing.join(", ")}`);
+    throw new Error(`Recorded payloads not found in test/fixtures: ${missing.join(", ")}`);
   }
 
   const galleryNames = selected.filter((name) => GALLERY_FILE.test(name)).toSorted();

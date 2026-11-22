@@ -17,13 +17,13 @@ import {
   placeId,
   plainStoryPk,
   recordedPayloads,
-} from "../tests/setup/report-world.ts";
+} from "../test/setup/report-world.ts";
 import {
   createRecordedInstagramClient,
   addRecordedReels,
   editRecordedStories,
   mentionStickers,
-} from "../tests/setup/seed.ts";
+} from "../test/setup/seed.ts";
 import { traceModel } from "./assistant-trace.ts";
 import { describeOutcome, type AssistantRun, type AssistantToolCall } from "./assistant-scorers.ts";
 

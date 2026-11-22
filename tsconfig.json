@@ -27,7 +27,7 @@
     "app/**/*.tsx",
     "nitro/**/*.ts",
     "types/**/*.d.ts",
-    "tests/**/*.ts",
-    "tests/**/*.tsx"
+    "test/**/*.ts",
+    "test/**/*.tsx"
   ]
 }

@@ -1,8 +1,9 @@
-import { expect, test, vi } from "vitest";
+import { expect, test } from "vitest";
 import { act, screen, within } from "@testing-library/react";
 import { Route } from "../../app/routes/report.tsx";
 import { loadStoryFeed } from "../../app/loaders/story-feed.ts";
 import { createPageRenderer } from "../render-page.ts";
+import { mockJsdomPolyfillValue } from "../setup/define-property.ts";
 import { shareTestRuntime } from "../setup/test-runtime.ts";
 import { pageNow, seedPageDatabase } from "./seeded-pages.ts";
 
@@ -11,6 +12,10 @@ const shared = shareTestRuntime(seedPageDatabase);
 const renderer = createPageRenderer(Route, () => loadStoryFeed(shared.runtime, pageNow), "/report");
 
 const storageKey = "slopstagram-theme";
+
+function blockStorage(): never {
+  throw new globalThis.DOMException("Blocked", "SecurityError");
+}
 
 test("theme choices persist, apply document colors, and update the trigger icon", async () => {
   const { user } = await renderer.mountRoute("/report");
@@ -32,15 +37,16 @@ test("theme choices persist, apply document colors, and update the trigger icon"
   await user.click(trigger);
   await user.click(screen.getByRole("menuitemradio", { name: "Système" }));
   const preference = globalThis.matchMedia("(prefers-color-scheme: dark)");
-  const matches = vi.spyOn(preference, "matches", "get");
+  let prefersDark = false;
+  mockJsdomPolyfillValue(preference, "matches", { get: () => prefersDark });
   act(() => {
-    matches.mockReturnValue(true);
+    prefersDark = true;
     preference.dispatchEvent(new globalThis.Event("change"));
   });
   expect(globalThis.document.documentElement).toHaveClass("dark");
   expect(trigger.querySelector("svg")).toHaveClass("lucide-monitor");
   act(() => {
-    matches.mockReturnValue(false);
+    prefersDark = false;
     preference.dispatchEvent(new globalThis.Event("change"));
   });
   expect(globalThis.document.documentElement).toHaveClass("light");
@@ -69,12 +75,9 @@ test("cross-tab storage changes update the selected theme and clearing storage r
 });
 
 test("theme selection still works when browser storage is blocked", async () => {
-  vi.spyOn(globalThis.Storage.prototype, "getItem").mockImplementation(() => {
-    throw new globalThis.DOMException("Blocked", "SecurityError");
-  });
-  vi.spyOn(globalThis.Storage.prototype, "setItem").mockImplementation(() => {
-    throw new globalThis.DOMException("Blocked", "SecurityError");
-  });
+  mockJsdomPolyfillValue(globalThis.Storage.prototype, "getItem", { value: blockStorage });
+  mockJsdomPolyfillValue(globalThis.Storage.prototype, "setItem", { value: blockStorage });
+
   const { user } = await renderer.mountRoute("/report");
   act(() => {
     globalThis.window.dispatchEvent(new globalThis.StorageEvent("storage", { key: storageKey }));

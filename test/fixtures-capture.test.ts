@@ -6,7 +6,7 @@ import {
   captureInstagramPayloads,
   createRedactor,
   redactPayloads,
-} from "../scripts/capture-fixtures.ts";
+} from "../scripts/fixtures-capture.ts";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
 import { createInstagramClient } from "@@/core/domains/instagram/story-client.ts";
 
@@ -490,14 +490,14 @@ test("the capture command is on demand only and never reads the local cache", as
     .object({ scripts: z.record(z.string(), z.string()) })
     .parse(JSON.parse(await readFile("package.json", "utf-8")));
 
-  const script = await readFile("scripts/capture-fixtures.ts", "utf-8");
+  const script = await readFile("scripts/fixtures-capture.ts", "utf-8");
   const imports = script.match(/from "[^"]+"/gu) ?? [];
 
-  expect(packageJson.scripts["fixtures:capture"]).toBe("tsx scripts/capture-fixtures.ts");
+  expect(packageJson.scripts["fixtures:capture"]).toBe("tsx scripts/fixtures-capture.ts");
 
   for (const name of ["check", "check:ci", "test", "test:reporter", "postinstall", "prepare"]) {
     expect(packageJson.scripts[name]).not.toContain("fixtures:capture");
-    expect(packageJson.scripts[name]).not.toContain("capture-fixtures");
+    expect(packageJson.scripts[name]).not.toContain("fixtures-capture");
   }
 
   expect(script).not.toContain("data/cache");

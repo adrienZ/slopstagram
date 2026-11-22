@@ -596,7 +596,7 @@ export function buildFixtureMetadata(payloads: CapturedPayloads, capturedAt: Dat
 }
 
 async function main(): Promise<void> {
-  const outputDirectory = path.resolve(process.argv[2] ?? "tests/fixtures");
+  const outputDirectory = path.resolve(process.argv[2] ?? "test/fixtures");
   const session = await openInstagramSession({ headless: true });
 
   try {
