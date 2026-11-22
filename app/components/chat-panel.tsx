@@ -108,16 +108,18 @@ function ChatMessage({
 
   return (
     <Message align="start">
-      <MessageContent className="tw:grid tw:w-full tw:gap-3">
-        {message.parts.map((part, index) => (
-          // Parts have no id; their position in a message never changes.
-          <AssistantPartView
-            key={`${message.id}-${index}`}
-            accounts={accounts}
-            part={part}
-            places={places}
-          />
-        ))}
+      <MessageContent>
+        <div className="tw:grid tw:gap-3">
+          {message.parts.map((part, index) => (
+            // Parts have no id; their position in a message never changes.
+            <AssistantPartView
+              key={`${message.id}-${index}`}
+              accounts={accounts}
+              part={part}
+              places={places}
+            />
+          ))}
+        </div>
       </MessageContent>
     </Message>
   );

@@ -18,7 +18,7 @@ function MusicStickerContent({ label, preview, preload = true }: MusicStickerPro
       <Badge
         variant="secondary"
         title={label}
-        className="tw:h-auto tw:max-w-full tw:gap-1 tw:py-1 tw:whitespace-normal"
+        className="tw:h-auto tw:max-w-full tw:whitespace-normal"
       >
         <Music2Icon aria-hidden="true" />
         <span className="tw:wrap-anywhere">{label}</span>

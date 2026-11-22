@@ -161,8 +161,6 @@ const ultraciteSoftenerConfig = defineConfig({
   },
 });
 
-const restyleAllow = ["layout", "spacing", "color"];
-
 export default defineConfig({
   extends: [
     ultracite,
@@ -202,16 +200,20 @@ export default defineConfig({
     "slopstagram/no-barrel-files": "error",
     "slopstagram/domain-layering": "error",
     "slopstagram/ai-sdk-imports": "error",
-    // The preset only lets pages place components; this project also lets them adjust spacing and color.
     "shadcn/no-restyle": [
       "error",
       {
-        allow: restyleAllow,
+        allow: ["layout", "spacing", "color"],
         contracts: [
           // The lightbox is a bare dialog: the image is the content.
-          { pattern: "^DialogContent$", allow: [...restyleAllow, "rounded-lg", "ring-0"] },
-          { pattern: "^Calendar$", allow: [...restyleAllow, "rounded-md", "ring-1", "ring-inset"] },
-          { pattern: "^Button$", allow: [...restyleAllow, "rounded-full"] },
+          {
+            pattern: "^DialogContent$",
+            allow: ["layout", "spacing", "color", "rounded-lg", "ring-0"],
+          },
+          {
+            pattern: "^Calendar$",
+            allow: ["layout", "spacing", "color", "rounded-md", "ring-1", "ring-inset"],
+          },
         ],
       },
     ],

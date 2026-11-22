@@ -62,7 +62,7 @@ function StickerTable({
 }: StickerTableProps) {
   if (stories.length === 0) {
     return (
-      <Empty className="tw:min-h-48 tw:px-2">
+      <Empty className="tw:min-h-48">
         <EmptyHeader>
           <EmptyTitle>Aucun sticker</EmptyTitle>
           <EmptyDescription>Aucun sticker de type {kind} pour cet utilisateur.</EmptyDescription>
@@ -174,7 +174,7 @@ function StickerKindCard({
               {`${occurrences} stickers · ${stickerStoryCount} stories`}
             </CardDescription>
             {canExpand && (
-              <CardAction className="tw:flex tw:gap-0.5">
+              <CardAction className="tw:flex">
                 <DialogTrigger asChild>
                   <Button
                     variant="ghost"
