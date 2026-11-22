@@ -9,7 +9,8 @@ export default defineConfig({
     execArgv: ["--disable-warning=ExperimentalWarning"],
     coverage: {
       // Count files no test loads, so untested modules lower the figure instead of vanishing.
-      include: ["core/**", "app/**", "nitro/**"],
+      // The fixtures capture script is tested through its exports, so Sonar needs its lcov entry.
+      include: ["core/**", "app/**", "nitro/**", "scripts/fixtures-capture.ts"],
       exclude: ["app/shadcn/**", "app/routeTree.gen.ts", "core/domains/database/migrations/**"],
       // Thresholds rewrite themselves upward when coverage improves, so the bar never drops.
       thresholds: {
