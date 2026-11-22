@@ -213,6 +213,8 @@ export default defineConfig({
         ],
       },
     ],
+    // Tailwind has no animation-duration utility and the theme stylesheet is generated.
+    "shadcn/no-arbitrary-values": ["error", { allow: ["layout", "motion"] }],
   },
   overrides: [
     {

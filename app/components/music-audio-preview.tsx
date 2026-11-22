@@ -43,8 +43,6 @@ function AudioPlayer({ preview, preload = true, onError }: MusicAudioPreviewProp
             height={40}
             loading="lazy"
             className={cn(
-              // Tailwind has no animation-duration utility and the theme stylesheet is generated.
-              // oxlint-disable-next-line shadcn/no-arbitrary-values
               "tw:absolute tw:inset-0 tw:size-10 tw:animate-spin tw:rounded-full tw:object-cover tw:[animation-duration:8s] tw:motion-reduce:animate-none",
               player.playing ? "tw:running" : "tw:paused",
             )}
