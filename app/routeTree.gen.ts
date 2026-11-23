@@ -14,6 +14,7 @@ import { Route as GraphRouteImport } from './routes/graph'
 import { Route as MapRouteImport } from './routes/map'
 import { Route as ReportRouteImport } from './routes/report'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiMcpRouteImport } from './routes/api/mcp'
 import { Route as MediaSplatRouteImport } from './routes/media/$'
 import { Route as UsersUsernameRouteImport } from './routes/users/$username'
 
@@ -42,6 +43,11 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMcpRoute = ApiMcpRouteImport.update({
+  id: '/api/mcp',
+  path: '/api/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MediaSplatRoute = MediaSplatRouteImport.update({
   id: '/media/$',
   path: '/media/$',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/map': typeof MapRoute
   '/report': typeof ReportRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/mcp': typeof ApiMcpRoute
   '/media/$': typeof MediaSplatRoute
   '/users/$username': typeof UsersUsernameRoute
 }
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/map': typeof MapRoute
   '/report': typeof ReportRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/mcp': typeof ApiMcpRoute
   '/media/$': typeof MediaSplatRoute
   '/users/$username': typeof UsersUsernameRoute
 }
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/map': typeof MapRoute
   '/report': typeof ReportRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/mcp': typeof ApiMcpRoute
   '/media/$': typeof MediaSplatRoute
   '/users/$username': typeof UsersUsernameRoute
 }
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/map'
     | '/report'
     | '/api/chat'
+    | '/api/mcp'
     | '/media/$'
     | '/users/$username'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/map'
     | '/report'
     | '/api/chat'
+    | '/api/mcp'
     | '/media/$'
     | '/users/$username'
   id:
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/map'
     | '/report'
     | '/api/chat'
+    | '/api/mcp'
     | '/media/$'
     | '/users/$username'
   fileRoutesById: FileRoutesById
@@ -117,6 +129,7 @@ export interface RootRouteChildren {
   MapRoute: typeof MapRoute
   ReportRoute: typeof ReportRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiMcpRoute: typeof ApiMcpRoute
   MediaSplatRoute: typeof MediaSplatRoute
   UsersUsernameRoute: typeof UsersUsernameRoute
 }
@@ -158,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/mcp': {
+      id: '/api/mcp'
+      path: '/api/mcp'
+      fullPath: '/api/mcp'
+      preLoaderRoute: typeof ApiMcpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/media/$': {
       id: '/media/$'
       path: '/media/$'
@@ -181,6 +201,7 @@ const rootRouteChildren: RootRouteChildren = {
   MapRoute: MapRoute,
   ReportRoute: ReportRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiMcpRoute: ApiMcpRoute,
   MediaSplatRoute: MediaSplatRoute,
   UsersUsernameRoute: UsersUsernameRoute,
 }
