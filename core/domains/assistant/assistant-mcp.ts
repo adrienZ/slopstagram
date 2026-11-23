@@ -6,6 +6,7 @@ import {
   type CallToolResult,
   type McpHttpHandler,
 } from "@modelcontextprotocol/server";
+import packageJson from "@@/package.json" with { type: "json" };
 import { JsonValueSchema, type JsonValue } from "@@/core/utils/json-value.ts";
 import { createAssistantTools, type AssistantToolsRuntime } from "./assistant-tools.ts";
 
@@ -47,7 +48,7 @@ function registerTools(server: McpServer, tools: ToolSet) {
     server.registerTool(
       name,
       {
-        description: z.string().safeParse(tool.description).data,
+        description: z.string().parse(tool.description),
         inputSchema: toZod(tool.inputSchema),
         outputSchema: tool.outputSchema === undefined ? undefined : toZod(tool.outputSchema),
       },
@@ -60,9 +61,8 @@ function registerTools(server: McpServer, tools: ToolSet) {
 export function createAssistantMcpHandler(runtime: AssistantToolsRuntime): McpHttpHandler {
   const tools = createAssistantTools(runtime);
 
-  // The SDK builds a fresh server per request; the tools are built once.
   return createMcpHandler(() => {
-    const server = new McpServer({ name: "slopstagram", version: "1.0.0" });
+    const server = new McpServer({ name: "slopstagram", version: packageJson.version });
     registerTools(server, tools);
 
     return server;
