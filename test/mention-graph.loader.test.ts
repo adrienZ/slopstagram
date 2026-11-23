@@ -42,7 +42,7 @@ test("connects each story's author to whom its stickers name, one line per pair"
 });
 
 test("shows only connected points: Accounts with their profile, anyone else as a label", () => {
-  const { points } = loadGraph(shared.runtime);
+  const points = loadGraph(shared.runtime).points.map(({ x: _x, y: _y, ...point }) => point);
   expect(points).toStrictEqual([
     {
       kind: "account",
@@ -177,4 +177,19 @@ test("an undated story, which no page can show, is no source story", async (cont
   const graph = loadGraph(runtime);
   expect(describeConnections(graph)).toContainEqual([ada, ben, 1]);
   expect(graph.stories.map(({ mediaPk }) => mediaPk)).toStrictEqual([graphStories.ada]);
+});
+
+test("lays every point out once, identically each time the same graph is loaded", () => {
+  const { points } = loadGraph(shared.runtime);
+  expect(points.every(({ x, y }) => Number.isFinite(x) && Number.isFinite(y))).toBe(true);
+  expect(new Set(points.map(({ x, y }) => `${x} ${y}`)).size).toBe(points.length);
+  expect(loadGraph(shared.runtime).points).toStrictEqual(points);
+});
+
+test("lays a filtered graph out on its own, not as part of the whole graph", () => {
+  const whole = loadGraph(shared.runtime).points;
+  const filtered = loadMentionGraph(shared.runtime, [graphAccounts[1]]).graph.points;
+  const [kept] = filtered;
+  expect(filtered.length).toBeLessThan(whole.length);
+  expect(whole.find(({ id }) => id === kept.id)).not.toStrictEqual(kept);
 });
