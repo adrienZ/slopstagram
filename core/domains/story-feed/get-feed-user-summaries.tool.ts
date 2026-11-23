@@ -1,4 +1,4 @@
-import { tool } from "ai";
+import { defineAssistantTool } from "@@/core/utils/assistant-tool.ts";
 import { z } from "zod";
 import {
   readFeedUserSummariesByUsername,
@@ -18,7 +18,7 @@ The result lists, in the order asked, each "requestedUsername" with its "handle"
 - "error" with error "unknown_account": no account has this username.`;
 
 export function createGetFeedUserSummariesTool(runtime: FeedUserSummaryRuntime) {
-  return tool({
+  return defineAssistantTool({
     description: DESCRIPTION,
     inputSchema: z.object({
       usernames: z

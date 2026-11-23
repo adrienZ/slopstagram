@@ -71,7 +71,10 @@ the browser bundle.
 The registry's tools are also served over MCP at `/api/mcp`, so another agent (Claude Code or
 Claude Desktop) reads the same data as the chat. `core/domains/assistant/assistant-mcp.ts` is the
 adapter: it registers every tool of the registry with its description and zod schemas and returns
-the tool's output as the structured result. A tool still returns data and never writes, so the
+the tool's output as the structured result. A tool is declared with `defineAssistantTool`
+(`core/utils/assistant-tool.ts`), which the AI SDK accepts as is and which keeps the description,
+the zod schemas and the execute function required in the type, so the adapter reads them without
+checking. A tool module no longer imports the AI SDK. A tool still returns data and never writes, so the
 endpoint is read-only, and a new tool in the registry is served without another change. The AI SDK
 stays inside the Assistant domain, and the route imports only the adapter.
 

@@ -1,4 +1,4 @@
-import { tool } from "ai";
+import { defineAssistantTool } from "@@/core/utils/assistant-tool.ts";
 import { z } from "zod";
 import { PageOffsetSchema } from "@@/core/utils/paging.ts";
 import {
@@ -15,7 +15,7 @@ Do not use it to list every place or the places of an account: use listTaggedPla
 Outcomes: "places" holds up to 10 matches, "total" counts every match and "nextOffset" is the offset of the next page, null on the last one. When "places" is empty, say that no place matches. When several places match, name them and ask which one is meant.`;
 
 export function createSearchTaggedPlacesTool(runtime: TaggedPlacesReadRuntime) {
-  return tool({
+  return defineAssistantTool({
     description: DESCRIPTION,
     inputSchema: z.object({
       query: z
