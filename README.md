@@ -175,6 +175,29 @@ npm run dev
 
 Open <http://localhost:5173/>. While the server runs, it fetches new stories every hour.
 
+## MCP server
+
+The tools the chat Assistant reads your data with are also served over
+[MCP](https://modelcontextprotocol.io) at `http://localhost:5173/api/mcp`.
+
+With the dev server running, add it to Claude Code:
+
+```bash
+claude mcp add --transport http slopstagram http://localhost:5173/api/mcp
+```
+
+| Tool                     | Reads                                                         |
+| ------------------------ | ------------------------------------------------------------- |
+| `listAccounts`           | Every account whose stories are collected                     |
+| `searchAccounts`         | Accounts whose username or full name contains a query         |
+| `getFeedUserSummaries`   | The summary of what accounts published in the last 24 hours   |
+| `listMentionConnections` | Who mentioned whom in stories, of one person or of everyone   |
+| `getMentionConnection`   | The mentions between two people, with their source stories    |
+| `searchMentionPeople`    | People at either end of a mention whose name contains a query |
+| `listTaggedPlaces`       | The places accounts tagged on their stories                   |
+| `searchTaggedPlaces`     | Places whose name, address or category contains a query       |
+| `getTaggedPlace`         | One place with its owners and latest stories                  |
+
 ## Development
 
 Cached media, the SQLite databases, and the Playwright profile are stored in `./data`.
