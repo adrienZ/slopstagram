@@ -225,6 +225,7 @@ function LightboxDialog(props: {
             <h2 className="tw:my-5 tw:text-2xl tw:leading-normal tw:font-bold">Détails</h2>
             <table className="tw:w-full tw:table-fixed tw:border-collapse tw:bg-card tw:text-card-foreground tw:max-[760px]:block tw:max-[760px]:w-auto">
               <tbody className="tw:max-[760px]:block">
+                <LightboxDetailsRow label="Date" value={props.story.publishedAt} />
                 <LightboxDetailsRow label="Type" value={props.story.mediaType} />
                 <LightboxDetailsRow
                   label="Stickers"
