@@ -1,4 +1,4 @@
-import { defineAssistantTool } from "@@/core/utils/assistant-tool.ts";
+import { tool } from "ai";
 import { z } from "zod";
 import {
   AccountSchema,
@@ -20,7 +20,7 @@ Do not use it when the message mentions an account as @username, or to list ever
 Outcomes: "accounts" holds up to 10 matches, the closest first, and "total" counts every match: say so when there are more. When it is empty, say that no account matches. When several accounts match, do not pick one: name them and ask which one is meant.`;
 
 export function createSearchAccountsTool(runtime: AccountsRuntime) {
-  return defineAssistantTool({
+  return tool({
     description: DESCRIPTION,
     inputSchema: z.object({
       query: z

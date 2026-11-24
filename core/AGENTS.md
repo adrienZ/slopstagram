@@ -40,7 +40,7 @@ An Assistant tool is one file, one tool: `<tool-name>.tool.ts` in kebab case (`l
 for `listAccounts`), next to the domain module it exposes. Never put two tools in one file; code
 they share lives in the domain module. It exports a
 `create<Name>Tool(runtime)` factory over the runtime narrowed to the repository methods it calls,
-returning a `defineAssistantTool` (`utils/assistant-tool.ts`, the AI SDK's `tool` with its required fields typed) with an English description for agents, an input schema with
+returning an AI SDK `tool` with an English description for agents, an input schema with
 `.describe()` examples, an output schema and an execute function. It returns data, never UI, and
 never writes; errors are typed outcomes in the output.
 

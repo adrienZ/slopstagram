@@ -1,4 +1,4 @@
-import { defineAssistantTool } from "@@/core/utils/assistant-tool.ts";
+import { tool } from "ai";
 import { z } from "zod";
 import {
   getTaggedPlace,
@@ -14,7 +14,7 @@ Do not use it to list places.
 Outcomes: "status" is "found" with the place, or "unknown" when no place has this id: say so. When "hasMoreStories" is true, say that older stories tag the place too.`;
 
 export function createGetTaggedPlaceTool(runtime: TaggedPlacesReadRuntime) {
-  return defineAssistantTool({
+  return tool({
     description: DESCRIPTION,
     inputSchema: z.object({
       id: z

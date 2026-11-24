@@ -1,4 +1,4 @@
-import { defineAssistantTool } from "@@/core/utils/assistant-tool.ts";
+import { tool } from "ai";
 import { z } from "zod";
 import { PageOffsetSchema } from "@@/core/utils/paging.ts";
 import {
@@ -18,7 +18,7 @@ ${MENTION_PERSON_KINDS_DESCRIPTION}`;
 
 /** The Assistant tool reading the Mention connection of two people and its source stories. Read-only. */
 export function createGetMentionConnectionTool(runtime: MentionConnectionsRuntime) {
-  return defineAssistantTool({
+  return tool({
     description: DESCRIPTION,
     inputSchema: z.object({
       firstPerson: z

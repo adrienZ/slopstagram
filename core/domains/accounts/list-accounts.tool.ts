@@ -1,4 +1,4 @@
-import { defineAssistantTool } from "@@/core/utils/assistant-tool.ts";
+import { tool } from "ai";
 import { z } from "zod";
 import { listAccounts, AccountSchema, type Account, type AccountsRuntime } from "./accounts.ts";
 
@@ -14,7 +14,7 @@ Do not use it when the message mentions an account, usually as @username: read t
 Outcomes: "accounts" lists the accounts by username, and is empty when no account has been collected yet: say so.`;
 
 export function createListAccountsTool(runtime: AccountsRuntime) {
-  return defineAssistantTool({
+  return tool({
     description: DESCRIPTION,
     inputSchema: z.object({}),
     outputSchema: OutputSchema,

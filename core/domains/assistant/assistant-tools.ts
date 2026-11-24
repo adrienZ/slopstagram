@@ -1,4 +1,4 @@
-import type { AssistantTool } from "@@/core/utils/assistant-tool.ts";
+import type { ToolSet } from "ai";
 import { createListAccountsTool } from "@@/core/domains/accounts/list-accounts.tool.ts";
 import { createSearchAccountsTool } from "@@/core/domains/accounts/search-accounts.tool.ts";
 import { createGetMentionConnectionTool } from "@@/core/domains/mention-connections/get-mention-connection.tool.ts";
@@ -48,9 +48,7 @@ export type AssistantTools = {
   [Name in AssistantToolName]: ReturnType<AssistantToolRegistry[Name]>;
 };
 
-export function createAssistantTools(
-  runtime: AssistantToolsRuntime,
-): Record<string, AssistantTool> {
+export function createAssistantTools(runtime: AssistantToolsRuntime): ToolSet {
   return Object.fromEntries(
     Object.entries(assistantToolRegistry).map(([name, create]) => [name, create(runtime)]),
   );
