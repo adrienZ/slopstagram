@@ -6,7 +6,7 @@ import { presentSticker, type StickerPresentation } from "./sticker-presentation
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
 import { stickerPlace, stickerPlaces } from "./timeline-stickers.ts";
 import { musicStickerItems, type MusicStickerItem } from "./music-preview.ts";
-import { formatUserName, getStoryUrl } from "./helper.ts";
+import { formatReportDate, formatUserName, getStoryUrl } from "./helper.ts";
 import type { CachedReportImages } from "@@/core/domains/media-store/image-cache.ts";
 import type { VisionResult } from "@@/core/domains/database/entities/vision.ts";
 
@@ -24,6 +24,7 @@ export interface StoryCardData {
     music: Array<MusicStickerItem>;
   };
   mediaPk: string;
+  publishedAt?: string;
   username: string;
   preview: string;
   alt: string;
@@ -71,7 +72,19 @@ export function withStoryStickers(
     }),
   );
 
-  return cards.map((card) => ({ ...card, stickerDetails: detailsByMediaPk.get(card.mediaPk) }));
+  const publishedAtByMediaPk = new Map(
+    stories.flatMap(({ story }) =>
+      story.taken_at === undefined
+        ? []
+        : [[story.pk, formatReportDate(new Date(story.taken_at * 1000).toISOString())]],
+    ),
+  );
+
+  return cards.map((card) => ({
+    ...card,
+    publishedAt: publishedAtByMediaPk.get(card.mediaPk),
+    stickerDetails: detailsByMediaPk.get(card.mediaPk),
+  }));
 }
 
 function textOrDash(value: string | undefined): string {

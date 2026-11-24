@@ -79,3 +79,11 @@ test("the preview is repeated as a blurred backdrop behind the image", async () 
   expect(dialog.getByTestId("lightbox-backdrop")).toHaveAttribute("src", preview);
   expect(dialog.getByTestId("lightbox-backdrop")).toHaveAttribute("aria-hidden", "true");
 });
+
+test("the details give the date and time the story was published", async () => {
+  const [{ mediaPk }] = stories;
+  await reportRenderer.mountRoute(`/report?story=${mediaPk}`);
+  const dialog = within(await screen.findByRole("dialog"));
+  const row = dialog.getByRole("rowheader", { name: "Date" }).closest("tr");
+  expect(row).toHaveTextContent(/\d{4} à \d{2}:\d{2}/u);
+});
