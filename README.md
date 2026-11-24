@@ -94,6 +94,9 @@ flowchart TD
     start --> graphPage["/graph<br/>mention graph"]
     start --> chat["/chat<br/>Assistant"]
     chat --> api["/api/chat"]
+    start --> mcp["/api/mcp<br/>MCP server"]
+    api --> tools["Assistant tools<br/>(read-only)"]
+    mcp --> tools
 ```
 
 ## Privacy and disclaimer
