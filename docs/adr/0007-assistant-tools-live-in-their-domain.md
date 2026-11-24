@@ -65,15 +65,3 @@ registry's names, and a tool module missing from the registry is reported by
 Assistant domain through its types only, outside the server routes, and never imports a tool
 module; a lint rule enforces it, so the AI SDK, the tool schemas and the repositories stay out of
 the browser bundle.
-
-## Amended on 2026-11-23: the tools are also served over MCP
-
-The registry's tools are also served over MCP at `/api/mcp`, so another agent (Claude Code or
-Claude Desktop) reads the same data as the chat. `core/domains/assistant/assistant-mcp.ts` is the
-adapter: it registers every tool of the registry with its description and zod schemas and returns
-the tool's output as the structured result. A tool still returns data and never writes, so the
-endpoint is read-only, and a new tool in the registry is served without another change. The AI SDK
-stays inside the Assistant domain, and the route imports only the adapter.
-
-The server has no sign-in, so the route answers only requests whose `Host` and `Origin` are
-localhost. The Assistant does not call this endpoint: it already holds the tools.

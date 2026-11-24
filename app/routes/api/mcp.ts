@@ -13,8 +13,8 @@ export async function handleMcpRequest(
   runtime: AssistantToolsRuntime,
   request: Request,
 ): Promise<Response> {
-  // The tools read the user's Instagram data and the server has no sign-in: a web page must not
-  // reach it through the browser (DNS rebinding), so only localhost may call it.
+  // The MCP spec requires validating Origin against DNS rebinding, and the SDK handler leaves it to
+  // the caller. The server has no sign-in, so only localhost may reach the user's Instagram data.
   const rejected =
     hostHeaderValidationResponse(request, localhostAllowedHostnames()) ??
     originValidationResponse(request, localhostAllowedOrigins());
