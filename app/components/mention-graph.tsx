@@ -1,8 +1,8 @@
 import { ClientOnly } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import {
+  lazy,
   Suspense,
-  useContext,
   useMemo,
   useRef,
   useState,
@@ -20,13 +20,11 @@ import {
   formatUserInitials,
   getUserTimelineUrl,
 } from "../utils/helper.ts";
-import {
-  MentionGraphCanvasContext,
-  type GraphConnection,
-  type GraphPoint,
-  type PointLocator,
-} from "./mention-graph-canvas-context.ts";
+import type { GraphConnection, GraphPoint, PointLocator } from "./mention-graph-canvas-props.ts";
 import { MentionGraphLoading } from "./mention-graph-loading.tsx";
+
+// Loaded on its own: force-graph is only needed once the page shows the graph.
+const MentionGraphCanvas = lazy(async () => await import("./mention-graph-canvas.tsx"));
 
 type AccountPoint = Extract<GraphPoint, { kind: "account" }>;
 
@@ -70,7 +68,6 @@ interface MentionGraphProps extends Pick<MentionGraphPageData["graph"], "points"
 export function MentionGraph({ points, connections, selection, overlay }: MentionGraphProps) {
   const { selectedPointId, selectPoint, selectedConnectionId, selectConnection } = selection;
   const { t } = useTranslation();
-  const MentionGraphCanvas = useContext(MentionGraphCanvasContext);
   const regionRef = useRef<HTMLElement>(null);
   const locatorRef = useRef<PointLocator | null>(null);
   const [hoveredPointId, setHoveredPointId] = useState<string | null>(null);
@@ -153,7 +150,6 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
       {/* force-graph reads `window` as soon as it loads, so the server leaves the canvas out. */}
       <ClientOnly fallback={<MentionGraphLoading />}>
         <Suspense fallback={<MentionGraphLoading />}>
-          {/* oxlint-disable-next-line react/static-components -- Tests swap the canvas through context; it never changes between renders. */}
           <MentionGraphCanvas
             points={points}
             connections={connections}

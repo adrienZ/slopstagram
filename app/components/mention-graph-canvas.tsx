@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useLatest } from "react-use";
 import { Button } from "../shadcn/ui/button.tsx";
 import { MentionGraphLoading } from "./mention-graph-loading.tsx";
-import type { MentionGraphCanvasProps } from "./mention-graph-canvas-context.ts";
+import type { MentionGraphCanvasProps } from "./mention-graph-canvas-props.ts";
 import {
   connectionWidth,
   createPainter,

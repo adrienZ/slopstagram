@@ -1,5 +1,4 @@
-import { createContext, lazy } from "react";
-import type { ComponentType, RefObject } from "react";
+import type { RefObject } from "react";
 import type { MentionGraphPageData } from "../loaders/mention-graph.ts";
 
 export type GraphPoint = MentionGraphPageData["graph"]["points"][number];
@@ -21,8 +20,3 @@ export interface MentionGraphCanvasProps {
   onHoverPoint: (id: string | null) => void;
   locatorRef: RefObject<PointLocator | null>;
 }
-
-/** The canvas the mention graph draws on, which tests replace since jsdom has no canvas. */
-export const MentionGraphCanvasContext = createContext<ComponentType<MentionGraphCanvasProps>>(
-  lazy(async () => await import("./mention-graph-canvas.tsx")),
-);

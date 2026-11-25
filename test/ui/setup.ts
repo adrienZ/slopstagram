@@ -5,6 +5,8 @@ import cssEscape from "css.escape";
 import "../../app/i18n/index.ts";
 import { setTheme } from "../../app/components/theme.ts";
 import { defineJsdomPolyfill, mockJsdomPolyfillValue } from "../setup/define-property.ts";
+import { installCanvas2d } from "./canvas-2d.ts";
+import { installResizeObserver } from "./resize-observer.ts";
 
 // jsdom does not evaluate media queries. Tests can spy on the native-shaped
 // matches getter and dispatch change events without mocking application code.
@@ -50,6 +52,10 @@ function pause(this: HTMLMediaElement) {
 defineJsdomPolyfill(globalThis.HTMLMediaElement.prototype, "play", { value: play });
 
 defineJsdomPolyfill(globalThis.HTMLMediaElement.prototype, "pause", { value: pause });
+
+installCanvas2d();
+
+installResizeObserver();
 
 beforeEach(() => {
   const queries = new Map<string, TestMediaQuery>();

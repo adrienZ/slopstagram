@@ -4,7 +4,7 @@ import type {
   GraphConnection,
   GraphPoint,
   MentionGraphCanvasProps,
-} from "./mention-graph-canvas-context.ts";
+} from "./mention-graph-canvas-props.ts";
 
 export interface GraphNode extends NodeObject {
   id: string;
