@@ -1,3 +1,4 @@
+import { i18n } from "../i18n/index.ts";
 import type { ReactNode } from "react";
 import {
   AtSignIcon,
@@ -66,8 +67,8 @@ const assistantToolViews: AssistantToolViews = {
     icon: <SearchIcon />,
     Result: ({ output }) => (
       <AccountList
-        emptyLabel="Aucun compte trouvé."
-        label="Comptes trouvés"
+        emptyLabel={i18n.t("assistant.noAccountFound")}
+        label={i18n.t("assistant.accountsFound")}
         listed={output.accounts}
       />
     ),
@@ -80,8 +81,8 @@ const assistantToolViews: AssistantToolViews = {
     icon: <SearchIcon />,
     Result: ({ output }) => (
       <TaggedPlaceList
-        emptyLabel="Aucun lieu trouvé."
-        label="Lieux trouvés"
+        emptyLabel={i18n.t("assistant.noPlaceFound")}
+        label={i18n.t("assistant.placesFound")}
         places={output.places}
         total={output.total}
       />

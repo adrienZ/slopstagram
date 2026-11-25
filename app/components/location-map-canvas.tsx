@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 import Map, {
@@ -70,8 +71,9 @@ export default function LocationMapCanvas({
   children,
   renderMarker,
   className = "tw:h-80 tw:sm:h-96",
-  tileErrorMessage = "Fond de carte indisponible. Les lieux et le tableau restent accessibles.",
+  tileErrorMessage,
 }: LocationMapCanvasProps) {
+  const { t } = useTranslation();
   const [failed, setFailed] = useState(false);
   const mapRef = useRef<MapRef>(null);
   const selected = places.find((place) => place.id === selectedId);
@@ -88,7 +90,7 @@ export default function LocationMapCanvas({
 
   return (
     <section
-      aria-label="Carte des lieux"
+      aria-label={t("map.canvas")}
       className={cn("tw:relative tw:overflow-hidden tw:rounded-lg tw:border", className)}
     >
       <Map
@@ -117,7 +119,7 @@ export default function LocationMapCanvas({
           >
             <button
               type="button"
-              aria-label={`Voir le lieu : ${place.name}`}
+              aria-label={t("map.viewPlace", { name: place.name })}
               aria-pressed={selectedId === place.id}
               title={place.name}
               data-place-id={place.id}
@@ -167,7 +169,7 @@ export default function LocationMapCanvas({
       </Map>
       {failed && (
         <output className="tw:absolute tw:top-2 tw:left-2 tw:max-w-2/3 tw:rounded tw:bg-background tw:p-2 tw:text-sm">
-          {tileErrorMessage}
+          {tileErrorMessage ?? t("map.tileError")}
         </output>
       )}
     </section>

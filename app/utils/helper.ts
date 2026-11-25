@@ -1,3 +1,4 @@
+import { i18n } from "../i18n/index.ts";
 import type { StoryOutputUser } from "@@/core/domains/fetch-run/report-types.ts";
 
 export function formatReportDate(value: string): string {
@@ -20,7 +21,11 @@ export function formatReportDate(value: string): string {
 }
 
 export function formatStoryCount(count: number): string {
-  return `${count} ${count > 1 ? "stories" : "story"}`;
+  return i18n.t("common.storyCount", { count });
+}
+
+export function formatConjunction(items: ReadonlyArray<string>): string {
+  return new Intl.ListFormat(i18n.language, { style: "long", type: "conjunction" }).format(items);
 }
 
 export function formatUserHandle(username: string): string {

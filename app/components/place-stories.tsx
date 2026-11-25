@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
 import type { TimelinePlace } from "../utils/timeline-locations.ts";
 import type { StoryCardData } from "../utils/story-cards.ts";
@@ -22,16 +23,18 @@ export function PlaceStories({
   /** Steps to the previous or next place; absent when there is no other place. */
   onStep?: (step: 1 | -1) => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <section
-      aria-label={`Stories du lieu : ${place.name}`}
+      aria-label={t("place.stories", { name: place.name })}
       className="tw:w-56 tw:space-y-1 tw:text-foreground"
     >
       <div className="tw:flex tw:items-start tw:justify-between tw:gap-2">
         <h3 className="tw:min-w-0 tw:text-sm tw:font-semibold tw:wrap-anywhere">{place.name}</h3>
         <button
           type="button"
-          aria-label="Fermer les aperçus du lieu"
+          aria-label={t("place.closePreviews")}
           className="tw:shrink-0 tw:cursor-pointer tw:rounded tw:p-1 tw:hover:bg-muted tw:focus-visible:outline-2 tw:focus-visible:outline-ring"
           onClick={onClose}
         >
@@ -45,7 +48,7 @@ export function PlaceStories({
           return (
             <li key={story.mediaPk} className="tw:min-w-0 tw:space-y-1">
               {card === undefined ? (
-                <span>Preview unavailable</span>
+                <span>{t("common.previewUnavailable")}</span>
               ) : (
                 <StoryCard story={card} size="gallery" />
               )}
@@ -68,7 +71,7 @@ export function PlaceStories({
         <div className="tw:flex tw:justify-between">
           <button
             type="button"
-            aria-label="Lieu précédent"
+            aria-label={t("place.previous")}
             className={footerButtonClassName}
             onClick={() => {
               onStep(-1);
@@ -78,7 +81,7 @@ export function PlaceStories({
           </button>
           <button
             type="button"
-            aria-label="Lieu suivant"
+            aria-label={t("place.next")}
             className={footerButtonClassName}
             onClick={() => {
               onStep(1);

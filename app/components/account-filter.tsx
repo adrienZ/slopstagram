@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useId } from "react";
 import { cn } from "cn";
 import { FilterIcon, MapPinIcon, XIcon } from "lucide-react";
@@ -19,6 +20,8 @@ interface AccountFilterProps {
 }
 
 function PlaceFilterEntry({ name, onRemove }: NonNullable<AccountFilterProps["place"]>) {
+  const { t } = useTranslation();
+
   return (
     <div className="tw:flex tw:items-center tw:gap-2 tw:rounded-md tw:border tw:py-1 tw:pr-1 tw:pl-2">
       <MapPinIcon aria-hidden="true" className="tw:size-4 tw:shrink-0" />
@@ -26,7 +29,7 @@ function PlaceFilterEntry({ name, onRemove }: NonNullable<AccountFilterProps["pl
       <Button
         variant="ghost"
         size="icon-xs"
-        aria-label={`Retirer le lieu ${name}`}
+        aria-label={t("filter.removePlace", { name })}
         onClick={onRemove}
       >
         <XIcon aria-hidden="true" />
@@ -48,6 +51,7 @@ export function AccountChecklist({
   listClassName?: string;
 }) {
   const id = useId();
+  const { t } = useTranslation();
 
   return (
     <>
@@ -57,7 +61,7 @@ export function AccountChecklist({
         disabled={!(clearable ?? (selected.length > 0 || place !== undefined))}
         onClick={onClear}
       >
-        Effacer les filtres
+        {t("filter.clear")}
       </Button>
       {place !== undefined && <PlaceFilterEntry {...place} />}
       <ul className={cn("tw:space-y-1 tw:overflow-y-auto", listClassName)}>
@@ -94,6 +98,7 @@ export function AccountChecklist({
 }
 
 export function AccountFilter(props: AccountFilterProps) {
+  const { t } = useTranslation();
   const activeCount = props.selected.length + (props.place === undefined ? 0 : 1);
 
   return (
@@ -101,11 +106,11 @@ export function AccountFilter(props: AccountFilterProps) {
       <PopoverTrigger asChild>
         <Button variant="outline">
           <FilterIcon aria-hidden="true" />
-          Filtrer par compte
+          {t("filter.byAccount")}
           {activeCount > 0 && <Badge>{activeCount}</Badge>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" aria-label="Filtres affichés">
+      <PopoverContent align="start" aria-label={t("filter.shown")}>
         <AccountChecklist {...props} />
       </PopoverContent>
     </Popover>

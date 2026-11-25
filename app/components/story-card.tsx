@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { cn } from "cn";
 import type { StoryCardData } from "../utils/story-cards.ts";
 import { useOpenStory, type OpenStory } from "../hooks/use-open-story.ts";
@@ -20,6 +21,7 @@ export function StoryCard({
   onOpenStory?: OpenStory;
 }) {
   const open = useOpenStory(onOpenStory);
+  const { t } = useTranslation();
 
   return (
     <div className="tw:min-w-0 tw:flex-none tw:snap-start">
@@ -31,7 +33,7 @@ export function StoryCard({
             "tw:block tw:w-full tw:overflow-hidden tw:rounded-md tw:focus-visible:outline-2 tw:focus-visible:outline-offset-2 tw:focus-visible:outline-ring",
         )}
         type="button"
-        aria-label={`Ouvrir aperçu ${story.mediaPk}`}
+        aria-label={t("story.openPreview", { id: story.mediaPk })}
         onClick={() => {
           open(story.mediaPk);
         }}

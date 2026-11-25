@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
 import { splitMentions } from "../utils/chat-mentions.ts";
 import { formatUserHandle } from "../utils/helper.ts";
@@ -59,12 +60,14 @@ export function MentionSuggestionList({
   onPick: (username: string) => void;
   options: Array<{ account: SidebarUser; active: boolean; id: string; index: number }>;
 }) {
+  const { t } = useTranslation();
+
   return (
     <ul
       id={id}
       // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role, jsx-a11y/no-noninteractive-element-to-interactive-role -- A combobox popup: the message field keeps the focus and the keyboard (aria-activedescendant).
       role="listbox"
-      aria-label="Suggestions de mentions"
+      aria-label={t("chat.mentionSuggestions")}
       className="tw:absolute tw:inset-x-0 tw:bottom-full tw:z-10 tw:mb-2 tw:max-h-[50svh] tw:overflow-y-auto tw:rounded-lg tw:border tw:bg-popover tw:p-1 tw:text-popover-foreground tw:shadow-md"
     >
       {options.map(({ account, active, id: optionId, index }) => (

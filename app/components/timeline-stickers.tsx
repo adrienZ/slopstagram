@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { MusicSticker } from "./music-sticker.tsx";
 import { useState } from "react";
 import { cn } from "cn";
@@ -60,25 +61,27 @@ function StickerTable({
   users,
   expanded = false,
 }: StickerTableProps) {
+  const { t } = useTranslation();
+
   if (stories.length === 0) {
     return (
       <Empty className="tw:min-h-48">
         <EmptyHeader>
-          <EmptyTitle>Aucun sticker</EmptyTitle>
-          <EmptyDescription>Aucun sticker de type {kind} pour cet utilisateur.</EmptyDescription>
+          <EmptyTitle>{t("stickers.none")}</EmptyTitle>
+          <EmptyDescription>{t("stickers.noneOfKind", { kind })}</EmptyDescription>
         </EmptyHeader>
       </Empty>
     );
   }
 
   return (
-    <Table className="tw:table-fixed" aria-label={`Stickers : ${kind}`}>
+    <Table className="tw:table-fixed" aria-label={t("stickers.table", { kind })}>
       <TableHeader>
         <TableRow>
           <TableHead scope="col" className={cn("tw:w-20", expanded && "tw:sm:w-64")}>
-            Story
+            {t("stickers.story")}
           </TableHead>
-          <TableHead scope="col">Stickers</TableHead>
+          <TableHead scope="col">{t("stickers.title")}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -100,7 +103,9 @@ function StickerTable({
                   )}
                 >
                   {card === undefined ? (
-                    <span className="tw:text-xs tw:text-muted-foreground">Preview unavailable</span>
+                    <span className="tw:text-xs tw:text-muted-foreground">
+                      {t("common.previewUnavailable")}
+                    </span>
                   ) : (
                     <StoryCard story={card} size="sticker" />
                   )}
@@ -150,6 +155,7 @@ function StickerKindCard({
   storyByMediaPk: Map<string, StoryCardData>;
   users: Array<SidebarUser>;
 }) {
+  const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const hasStories = group.stories.length > 0;
 
@@ -164,14 +170,14 @@ function StickerKindCard({
 
   return (
     <Dialog>
-      <section aria-label={`Type de sticker : ${group.kind}`} className="tw:min-w-0">
+      <section aria-label={t("stickers.kind", { kind: group.kind })} className="tw:min-w-0">
         <Card size="sm" className="tw:h-84 tw:min-w-0 tw:overflow-hidden">
           <CardHeader>
             <CardTitle>
               <h3 className="tw:capitalize">{group.kind}</h3>
             </CardTitle>
             <CardDescription>
-              {`${occurrences} stickers · ${stickerStoryCount} stories`}
+              {`${t("stickers.count", { count: occurrences })} · ${t("common.storyCount", { count: stickerStoryCount })}`}
             </CardDescription>
             {canExpand && (
               <CardAction className="tw:flex">
@@ -179,7 +185,7 @@ function StickerKindCard({
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    aria-label={`Tout afficher : ${group.kind}`}
+                    aria-label={t("stickers.expand", { kind: group.kind })}
                   >
                     <ExpandIcon />
                   </Button>
@@ -201,13 +207,13 @@ function StickerKindCard({
           </CardContent>
           {pageCount > 1 && (
             <CardFooter className="tw:shrink-0">
-              <Pagination aria-label={`Pagination : ${group.kind}`}>
+              <Pagination aria-label={t("stickers.pagination", { kind: group.kind })}>
                 <PaginationContent>
                   <PaginationItem>
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      aria-label={`Page précédente : ${group.kind}`}
+                      aria-label={t("stickers.previousPage", { kind: group.kind })}
                       disabled={page === 1}
                       onClick={() => {
                         setPage(page - 1);
@@ -228,7 +234,7 @@ function StickerKindCard({
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      aria-label={`Page suivante : ${group.kind}`}
+                      aria-label={t("stickers.nextPage", { kind: group.kind })}
                       disabled={page === pageCount}
                       onClick={() => {
                         setPage(page + 1);
@@ -247,9 +253,12 @@ function StickerKindCard({
       {canExpand && (
         <DialogContent className="tw:max-h-[90svh] tw:overflow-y-auto tw:sm:max-w-5xl">
           <DialogHeader>
-            <DialogTitle>Stickers · {group.kind}</DialogTitle>
+            <DialogTitle>{t("stickers.dialogTitle", { kind: group.kind })}</DialogTitle>
             <DialogDescription>
-              {occurrences} stickers dans {stickerStoryCount} stories · historique complet
+              {t("stickers.fullHistory", {
+                stickers: t("stickers.count", { count: occurrences }),
+                stories: t("common.storyCount", { count: stickerStoryCount }),
+              })}
             </DialogDescription>
           </DialogHeader>
           {group.kind === "location" && (
@@ -279,9 +288,11 @@ export function TimelineStickers({
   storyByMediaPk: Map<string, StoryCardData>;
   users: Array<SidebarUser>;
 }) {
+  const { t } = useTranslation();
+
   return (
-    <section aria-label="Stickers" className="tw:mb-10">
-      <h2 className="tw:mb-4 tw:text-xl tw:font-semibold">Stickers</h2>
+    <section aria-label={t("stickers.title")} className="tw:mb-10">
+      <h2 className="tw:mb-4 tw:text-xl tw:font-semibold">{t("stickers.title")}</h2>
       <div className="tw:grid tw:grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] tw:gap-4">
         {groups.map((group) => (
           <StickerKindCard

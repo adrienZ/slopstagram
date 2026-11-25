@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { TaggedPlaceRead, TaggedPlaceSummary } from "@@/core/domains/places/tagged-places.ts";
 import { formatStoryCount } from "../utils/helper.ts";
 import { formatStickerStoryDate } from "../utils/timeline-stickers.ts";
@@ -7,8 +8,8 @@ function describePlace(place: TaggedPlaceSummary): string {
 }
 
 export function TaggedPlaceList({
-  emptyLabel = "Aucun lieu.",
-  label = "Lieux",
+  emptyLabel,
+  label,
   places,
   total,
 }: {
@@ -17,13 +18,15 @@ export function TaggedPlaceList({
   places: Array<TaggedPlaceSummary>;
   total: number;
 }) {
+  const { t } = useTranslation();
+
   if (places.length === 0) {
-    return <p>{emptyLabel}</p>;
+    return <p>{emptyLabel ?? t("assistant.noPlaces")}</p>;
   }
 
   return (
     <>
-      <ul aria-label={label} className="tw:grid tw:gap-1">
+      <ul aria-label={label ?? t("assistant.places")} className="tw:grid tw:gap-1">
         {places.map((place) => (
           <li key={place.id}>
             {[
@@ -34,34 +37,32 @@ export function TaggedPlaceList({
           </li>
         ))}
       </ul>
-      {total > places.length && (
-        <p>
-          {places.length} lieux sur {total}.
-        </p>
-      )}
+      {total > places.length && <p>{t("assistant.placesOf", { shown: places.length, total })}</p>}
     </>
   );
 }
 
 export function TaggedPlaceDetails({ read }: { read: TaggedPlaceRead }) {
+  const { t } = useTranslation();
+
   if (read.status === "unknown") {
-    return <p>Aucun lieu n’a l’identifiant {read.id}.</p>;
+    return <p>{t("assistant.unknownPlace", { id: read.id })}</p>;
   }
 
   const { place } = read;
 
   return (
-    <section aria-label="Lieu lu" className="tw:grid tw:gap-1">
+    <section aria-label={t("assistant.placeRead")} className="tw:grid tw:gap-1">
       <p className="tw:font-medium">{describePlace(place)}</p>
       {place.address !== null && <p>{place.address}</p>}
-      <ul aria-label="Dernières stories" className="tw:grid tw:gap-1">
+      <ul aria-label={t("assistant.latestStories")} className="tw:grid tw:gap-1">
         {place.latestStories.map((story) => (
           <li key={`${story.date}-${story.owner}`}>
             <time dateTime={story.date}>{formatStickerStoryDate(story.date)}</time> · {story.owner}
           </li>
         ))}
       </ul>
-      {place.hasMoreStories && <p>{formatStoryCount(place.storyCount)} au total.</p>}
+      {place.hasMoreStories && <p>{t("assistant.storiesTotal", { count: place.storyCount })}</p>}
     </section>
   );
 }

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Suspense, useContext, useId, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import type { LocationMapCanvasProps } from "./location-map-canvas.tsx";
@@ -22,6 +23,7 @@ export function PlaceExplorer({
 } & Pick<LocationMapCanvasProps, "renderMarker" | "tileErrorMessage"> & {
     mapClassName?: LocationMapCanvasProps["className"];
   }) {
+  const { t } = useTranslation();
   const [selectedId, setSelectedId] = useState(initialSelectedId);
   const selectId = useId();
   const selectRef = useRef<HTMLSelectElement>(null);
@@ -67,7 +69,7 @@ export function PlaceExplorer({
     <>
       <div className="tw:flex tw:flex-col tw:gap-1">
         <label htmlFor={selectId} className="tw:text-sm">
-          Choisir un lieu
+          {t("map.choosePlace")}
         </label>
         <select
           ref={selectRef}
@@ -78,10 +80,10 @@ export function PlaceExplorer({
             setSelectedId(event.target.value);
           }}
         >
-          <option value="">Sélectionnez un lieu…</option>
+          <option value="">{t("map.selectPlace")}</option>
           {places.map((place) => (
             <option key={place.id} value={place.id}>
-              {[place.name, place.category, `${place.stories.length} stories`]
+              {[place.name, place.category, t("common.storyCount", { count: place.stories.length })]
                 .filter((part) => part !== null)
                 .join(" · ")}
             </option>
@@ -90,7 +92,7 @@ export function PlaceExplorer({
       </div>
       {/* Arrow keys step through markers from the map and its popup, not the place select. */}
       <div ref={mapRef} role="presentation" onKeyDown={navigateMarkers}>
-        <Suspense fallback={<output>Chargement de la carte…</output>}>
+        <Suspense fallback={<output>{t("map.loading")}</output>}>
           {/* oxlint-disable-next-line react/static-components -- Tests swap the map canvas through context; it never changes between renders. */}
           <LocationMapCanvas
             places={places}

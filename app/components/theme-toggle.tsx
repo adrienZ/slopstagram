@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { MoonIcon, SunIcon, MonitorIcon } from "lucide-react";
 import { useTheme } from "./theme-provider.tsx";
 import { Button } from "../shadcn/ui/button.tsx";
@@ -11,6 +12,7 @@ import {
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
+  const { t } = useTranslation();
   const ThemeIcon = { light: SunIcon, dark: MoonIcon, system: MonitorIcon }[theme];
 
   return (
@@ -19,25 +21,25 @@ export function ThemeToggle() {
         <Button
           variant="outline"
           className="tw:w-full tw:justify-start"
-          aria-label="Choisir le thème"
+          aria-label={t("theme.choose")}
         >
           <ThemeIcon data-icon="inline-start" />
-          Thème
+          {t("theme.label")}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="start">
         <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
           <DropdownMenuRadioItem value="light">
             <SunIcon />
-            Clair
+            {t("theme.light")}
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="dark">
             <MoonIcon />
-            Sombre
+            {t("theme.dark")}
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="system">
             <MonitorIcon />
-            Système
+            {t("theme.system")}
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>

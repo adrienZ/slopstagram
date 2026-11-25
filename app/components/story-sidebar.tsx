@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { Matcher } from "react-day-picker";
 import { useState } from "react";
 import { fr } from "react-day-picker/locale";
@@ -55,6 +56,7 @@ export function StorySidebar({
   selectedUsername,
 }: StorySidebarProps) {
   const { setOpenMobile } = useSidebar();
+  const { t } = useTranslation();
   const [month, setMonth] = useState(new Date(`${selectedDate}T12:00:00Z`));
   const todayDate = new Date(`${today}T12:00:00Z`);
 
@@ -65,7 +67,7 @@ export function StorySidebar({
   }
 
   return (
-    <Sidebar aria-label="Navigation des stories">
+    <Sidebar aria-label={t("sidebar.label")}>
       <SidebarHeader className="tw:p-5">
         <a href="/report" className="tw:flex tw:items-center tw:gap-3 tw:no-underline">
           <span className="tw:flex tw:size-9 tw:items-center tw:justify-center tw:rounded-lg tw:bg-sidebar-primary tw:text-sidebar-primary-foreground">
@@ -73,7 +75,7 @@ export function StorySidebar({
           </span>
           <div className="tw:grid tw:gap-0.5">
             <span className="tw:text-sm tw:font-semibold">Slopstagram</span>
-            <span className="tw:text-xs tw:text-muted-foreground">Le fil des stories</span>
+            <span className="tw:text-xs tw:text-muted-foreground">{t("sidebar.tagline")}</span>
           </div>
         </a>
       </SidebarHeader>
@@ -107,19 +109,19 @@ export function StorySidebar({
               selectDate(todayDate);
             }}
           >
-            {`Aujourd’hui · ${formatStoryDay(today)}`}
+            {t("sidebar.today", { day: formatStoryDay(today) })}
           </Button>
         </SidebarGroup>
         <SidebarSeparator />
         <SidebarGroup>
           <SidebarGroupContent>
-            <nav aria-label="Pages">
+            <nav aria-label={t("sidebar.pages")}>
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <a href="/chat">
                       <MessageCircleIcon aria-hidden="true" />
-                      <span>Assistant</span>
+                      <span>{t("common.assistant")}</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -127,7 +129,7 @@ export function StorySidebar({
                   <SidebarMenuButton asChild>
                     <a href="/map">
                       <MapIcon aria-hidden="true" />
-                      <span>Carte</span>
+                      <span>{t("common.map")}</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -135,7 +137,7 @@ export function StorySidebar({
                   <SidebarMenuButton asChild>
                     <a href="/graph">
                       <WaypointsIcon aria-hidden="true" />
-                      <span>Graphe</span>
+                      <span>{t("common.graph")}</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -146,13 +148,13 @@ export function StorySidebar({
         <SidebarSeparator />
         <SidebarGroup>
           <SidebarGroupContent>
-            <nav aria-label="Utilisateurs">
+            <nav aria-label={t("common.users")}>
               <SidebarMenu>
                 <Collapsible defaultOpen asChild className="tw:group/users">
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
                       <SidebarMenuButton>
-                        <span className="tw:font-medium">Utilisateurs</span>
+                        <span className="tw:font-medium">{t("common.users")}</span>
                         <ChevronRightIcon className="tw:ml-auto tw:transition-transform tw:group-data-[state=open]/users:rotate-90" />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>

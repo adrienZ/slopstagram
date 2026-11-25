@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { PauseIcon, PlayIcon } from "lucide-react";
 import { useState } from "react";
 import { cn } from "cn";
@@ -18,6 +19,7 @@ interface MusicAudioPreviewProps {
 }
 
 function AudioPlayer({ preview, preload = true, onError }: MusicAudioPreviewProps) {
+  const { t } = useTranslation();
   const player = useAudioPreview(preview, preload, onError);
   const [failedArtworkUrl, setFailedArtworkUrl] = useState<string | null>(null);
 
@@ -29,8 +31,8 @@ function AudioPlayer({ preview, preload = true, onError }: MusicAudioPreviewProp
 
   return (
     <fieldset
-      aria-label={`Lecteur audio : ${preview.description}`}
-      title={preview.sourceKind === "story_audio" ? "Audio de la story" : undefined}
+      aria-label={t("music.player", { description: preview.description })}
+      title={preview.sourceKind === "story_audio" ? t("music.storyAudio") : undefined}
       className="tw:flex tw:w-56 tw:min-w-0 tw:max-w-full tw:items-center tw:gap-2 tw:overflow-hidden tw:rounded-lg tw:border tw:border-border tw:bg-muted/40 tw:p-2"
     >
       {player.audio}
@@ -38,7 +40,7 @@ function AudioPlayer({ preview, preload = true, onError }: MusicAudioPreviewProp
         {hasArtwork && (
           <img
             src={preview.artworkUrl ?? undefined}
-            alt={`Pochette de ${preview.description}`}
+            alt={t("music.artwork", { description: preview.description })}
             width={40}
             height={40}
             loading="lazy"
@@ -56,7 +58,9 @@ function AudioPlayer({ preview, preload = true, onError }: MusicAudioPreviewProp
           variant={hasArtwork ? "ghost" : "secondary"}
           size="icon"
           className="tw:relative tw:size-10"
-          aria-label={`${player.playing ? "Mettre en pause" : "Lire"} : ${preview.description}`}
+          aria-label={t(player.playing ? "music.pause" : "music.play", {
+            description: preview.description,
+          })}
           aria-pressed={player.playing}
           disabled={player.loading}
           onClick={() => {
@@ -75,7 +79,7 @@ function AudioPlayer({ preview, preload = true, onError }: MusicAudioPreviewProp
         <div className="tw:flex tw:min-w-0 tw:items-center tw:gap-2">
           <input
             type="range"
-            aria-label={`Avancer dans l’audio : ${preview.description}`}
+            aria-label={t("music.seek", { description: preview.description })}
             min={0}
             max={player.duration}
             step={0.1}

@@ -1,3 +1,4 @@
+import { i18n } from "../i18n/index.ts";
 import { STORY_MEDIA_TYPES } from "@@/core/domains/stickers/story-types.ts";
 import type { OutdatedVision } from "@@/core/domains/vision/vision-analysis.ts";
 import type { StoryOutputUser } from "@@/core/domains/fetch-run/report-types.ts";
@@ -131,7 +132,7 @@ export function createStoryCards(
       mediaPk: story.media_pk,
       username: user.username,
       preview,
-      alt: `aperçu ${story.media_pk}`,
+      alt: i18n.t("story.previewAlt", { id: story.media_pk }),
       url: getStoryUrl(user.username, story.media_pk),
       userName,
       avatar: avatar === "" ? undefined : avatar,

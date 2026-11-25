@@ -1,0 +1,203 @@
+{
+  "common": {
+    "stories": "Stories",
+    "assistant": "Assistant",
+    "map": "Carte",
+    "graph": "Graphe",
+    "users": "Utilisateurs",
+    "storyCount_one": "{{count}} story",
+    "storyCount_other": "{{count}} stories",
+    "noStoriesIn24h": "Aucune story publiée dans les dernières 24 heures.",
+    "avatarAlt": "{{name}} avatar",
+    "previewUnavailable": "Preview unavailable"
+  },
+  "errors": {
+    "internal": "500 : Erreur interne",
+    "notFound": "404 : Page introuvable"
+  },
+  "sidebar": {
+    "label": "Navigation des stories",
+    "tagline": "Le fil des stories",
+    "today": "Aujourd’hui · {{day}}",
+    "pages": "Pages"
+  },
+  "layout": {
+    "toggleCalendar": "Afficher ou masquer le calendrier"
+  },
+  "theme": {
+    "choose": "Choisir le thème",
+    "label": "Thème",
+    "light": "Clair",
+    "dark": "Sombre",
+    "system": "Système"
+  },
+  "report": {
+    "loadedAt": "Fil chargé le {{date}}",
+    "noStoriesDay": "Aucune story publiée ce jour-là."
+  },
+  "user": {
+    "allUsers": "← Tous les utilisateurs",
+    "summary_one": "{{count}} story · dates de publication",
+    "summary_other": "{{count}} stories · dates de publication",
+    "noStories": "Aucune story enregistrée pour cet utilisateur.",
+    "title": "Stories de {{name}}"
+  },
+  "filter": {
+    "byAccount": "Filtrer par compte",
+    "clear": "Effacer les filtres",
+    "shown": "Filtres affichés",
+    "removePlace": "Retirer le lieu {{name}}"
+  },
+  "chat": {
+    "reasoning": "Raisonnement",
+    "intro": "Mentionne un compte avec @ et demande ce qu’il a publié dans les dernières 24 heures, ou demande quels comptes tu connais.",
+    "thinking": "L’Assistant réfléchit…",
+    "failed": "Le modèle n’a pas répondu. Vérifie que le serveur Ollama tourne, puis réessaie.",
+    "message": "Message",
+    "placeholder": "Écris un message, @ pour mentionner un compte",
+    "send": "Envoyer",
+    "mentionSuggestions": "Suggestions de mentions"
+  },
+  "assistant": {
+    "accounts": "Comptes",
+    "accountsFound": "Comptes trouvés",
+    "noAccounts": "Aucun compte.",
+    "noAccountFound": "Aucun compte trouvé.",
+    "unknownAccount": "Aucun compte ne s’appelle {{handle}}.",
+    "places": "Lieux",
+    "placesFound": "Lieux trouvés",
+    "noPlaces": "Aucun lieu.",
+    "noPlaceFound": "Aucun lieu trouvé.",
+    "placesOf": "{{shown}} lieux sur {{total}}.",
+    "unknownPlace": "Aucun lieu n’a l’identifiant {{id}}.",
+    "placeRead": "Lieu lu",
+    "latestStories": "Dernières stories",
+    "storiesTotal_one": "{{count}} story au total.",
+    "storiesTotal_other": "{{count}} stories au total.",
+    "summariesRead": "Résumés lus",
+    "summaryPending": "Le résumé n’est pas encore généré : il le sera au prochain relevé des stories.",
+    "storiesIn24h_one": "{{count}} story dans les dernières 24 heures",
+    "storiesIn24h_other": "{{count}} stories dans les dernières 24 heures"
+  },
+  "mentions": {
+    "ambiguousLabel": "Personnes nommées {{query}}",
+    "ambiguous": "{{total}} personnes s’appellent {{query}}.",
+    "connectedWith": "avec {{names}}",
+    "unknownPerson": "Personne ne s’appelle {{names}} dans les mentions.",
+    "noConnections": "Aucune connexion de mention.",
+    "connectionsLabel": "Connexions de mention",
+    "connectionsOf": "{{shown}} connexions sur {{total}}.",
+    "noPeople": "Aucune personne trouvée.",
+    "peopleLabel": "Personnes trouvées",
+    "connectionCount_one": "{{count}} connexion",
+    "connectionCount_other": "{{count}} connexions",
+    "peopleOf": "{{shown}} personnes sur {{total}}.",
+    "noObservation": "Aucune story de {{first}} ne mentionne {{second}}, ni l’inverse.",
+    "readLabel": "Connexion de mention lue",
+    "sourceStories": "Stories sources"
+  },
+  "graph": {
+    "title": "Graphe des mentions",
+    "intro": "Chaque ligne relie l’auteur d’une story à une personne qu’un sticker de cette story mentionne, sur tout l’historique conservé. Une mention ne prouve pas que deux personnes se connaissent.",
+    "emptyTitle": "Aucune mention à afficher",
+    "emptyDescription": "Une connexion apparaît dès qu’une story mentionne une autre personne.",
+    "unknownAccounts_one": "Compte absent du graphe : {{handles}}. Le graphe complet est affiché.",
+    "unknownAccounts_other": "Comptes absents du graphe : {{handles}}. Le graphe complet est affiché.",
+    "controls": "Commandes du graphe",
+    "zoomOut": "Zoom arrière",
+    "zoomLevel": "Niveau de zoom",
+    "zoomIn": "Zoom avant",
+    "recenter": "Recentrer le graphe",
+    "viewProfile": "Voir le profil",
+    "pointsAndConnections": "Points et connexions",
+    "points": "Points",
+    "connections": "Connexions",
+    "connectionLabel": "Connexion entre {{labels}} : {{stories}}",
+    "profileOf": "Profil de {{name}}",
+    "connectionStories": "Stories de la connexion entre {{labels}}",
+    "closeConnectionStories": "Fermer les stories de la connexion",
+    "previousStories": "Stories précédentes",
+    "nextStories": "Stories suivantes"
+  },
+  "map": {
+    "pageTitle": "Carte des lieux",
+    "filters": "Filtres",
+    "noPlaces": "Aucun lieu avec des coordonnées à afficher.",
+    "tileError": "Fond de carte indisponible. Les lieux et le tableau restent accessibles.",
+    "tileErrorSelect": "Fond de carte indisponible. Le choix du lieu reste accessible.",
+    "canvas": "Carte des lieux",
+    "viewPlace": "Voir le lieu : {{name}}",
+    "choosePlace": "Choisir un lieu",
+    "selectPlace": "Sélectionnez un lieu…",
+    "loading": "Chargement de la carte…"
+  },
+  "place": {
+    "stories": "Stories du lieu : {{name}}",
+    "closePreviews": "Fermer les aperçus du lieu",
+    "previous": "Lieu précédent",
+    "next": "Lieu suivant"
+  },
+  "story": {
+    "openPreview": "Ouvrir aperçu {{id}}",
+    "previewAlt": "aperçu {{id}}"
+  },
+  "timeline": {
+    "gallery": "Galerie des stories"
+  },
+  "locations": {
+    "history": "Lieux de l’historique",
+    "placesOnMap_one": "{{count}} lieu sur la carte",
+    "placesOnMap_other": "{{count}} lieux sur la carte",
+    "unpositionedStickers_one": "{{count}} sticker sans position confirmée",
+    "unpositionedStickers_other": "{{count}} stickers sans position confirmée",
+    "unpositionedLocations_one": "{{count}} localisation sans coordonnées",
+    "unpositionedLocations_other": "{{count}} localisations sans coordonnées",
+    "noCoordinates": "Aucun lieu avec des coordonnées. Les stickers restent disponibles dans le tableau."
+  },
+  "stickers": {
+    "title": "Stickers",
+    "none": "Aucun sticker",
+    "noneOfKind": "Aucun sticker de type {{kind}} pour cet utilisateur.",
+    "story": "Story",
+    "table": "Stickers : {{kind}}",
+    "kind": "Type de sticker : {{kind}}",
+    "count_one": "{{count}} sticker",
+    "count_other": "{{count}} stickers",
+    "expand": "Tout afficher : {{kind}}",
+    "pagination": "Pagination : {{kind}}",
+    "previousPage": "Page précédente : {{kind}}",
+    "nextPage": "Page suivante : {{kind}}",
+    "dialogTitle": "Stickers · {{kind}}",
+    "fullHistory": "{{stickers}} dans {{stories}} · historique complet"
+  },
+  "lightbox": {
+    "outdated": "Analyse obsolète",
+    "outdatedDescription": "Cette analyse n’a pas été produite avec le modèle et le prompt actuels.",
+    "model": "Modèle",
+    "currentModel": "Modèle actuel",
+    "prompt": "Prompt",
+    "currentPrompt": "Prompt actuel",
+    "imagePreview": "Aperçu de l’image",
+    "close": "Fermer l’aperçu",
+    "previous": "Image précédente",
+    "next": "Image suivante",
+    "storyDetails": "Détails de la story",
+    "details": "Détails",
+    "date": "Date",
+    "type": "Type",
+    "stickers": "Stickers",
+    "places": "Lieux",
+    "visionOcr": "Vision OCR",
+    "visionDescription": "Vision description",
+    "viewOnInstagram": "Voir cette story sur Instagram"
+  },
+  "music": {
+    "player": "Lecteur audio : {{description}}",
+    "storyAudio": "Audio de la story",
+    "artwork": "Pochette de {{description}}",
+    "pause": "Mettre en pause : {{description}}",
+    "play": "Lire : {{description}}",
+    "seek": "Avancer dans l’audio : {{description}}",
+    "listen": "Écouter : {{description}}"
+  }
+}

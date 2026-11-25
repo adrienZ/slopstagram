@@ -1,8 +1,10 @@
+import { useTranslation } from "react-i18next";
 import { ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import type { StoryCardData } from "../utils/story-cards.ts";
 import type { OpenStory } from "../hooks/use-open-story.ts";
 import { Button } from "../shadcn/ui/button.tsx";
+import { formatConjunction } from "../utils/helper.ts";
 import { StoryCard } from "./story-card.tsx";
 
 const PAGE_SIZE = 3;
@@ -18,9 +20,10 @@ export function MentionConnectionStories({
   onClose: () => void;
   onOpenStory: OpenStory;
 }) {
+  const { t } = useTranslation();
   const [page, setPage] = useState(0);
   const pageCount = Math.ceil(stories.length / PAGE_SIZE);
-  const title = `Stories de la connexion entre ${labels.join(" et ")}`;
+  const title = t("graph.connectionStories", { labels: formatConjunction(labels) });
 
   return (
     <section
@@ -34,7 +37,7 @@ export function MentionConnectionStories({
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label="Fermer les stories de la connexion"
+          aria-label={t("graph.closeConnectionStories")}
           onClick={onClose}
         >
           <XIcon aria-hidden="true" />
@@ -52,7 +55,7 @@ export function MentionConnectionStories({
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label="Stories précédentes"
+            aria-label={t("graph.previousStories")}
             disabled={page === 0}
             onClick={() => {
               setPage(page - 1);
@@ -64,7 +67,7 @@ export function MentionConnectionStories({
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label="Stories suivantes"
+            aria-label={t("graph.nextStories")}
             disabled={page === pageCount - 1}
             onClick={() => {
               setPage(page + 1);
