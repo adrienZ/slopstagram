@@ -490,6 +490,7 @@ export async function createWorld(
     backup?: RuntimeBoundaries["backup"];
     client?: RuntimeBoundaries["client"];
     editStory?: (story: RecordedStory) => void;
+    fetchGroq?: RuntimeBoundaries["fetchGroq"];
     ollama?: OllamaBehavior;
     ocr?: (position: number) => string | Error;
     queue?: RuntimeBoundaries["queue"];
@@ -537,6 +538,7 @@ export async function createWorld(
           : new globalThis.Response(png, { headers: { "content-type": "image/png" } }),
       );
     },
+    fetchGroq: options.fetchGroq,
     fetchOllama: ollama.fetchOllama,
     logger,
     queue: options.queue,

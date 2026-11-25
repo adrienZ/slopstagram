@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { z } from "zod";
 import type { AssistantTools } from "@@/core/domains/assistant/assistant-tools.ts";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
 import { handleChatRequest } from "../app/routes/api/chat.ts";
@@ -463,4 +464,36 @@ test("without an Ollama API key, chat requests carry no authorization", async (c
   const chats = world.ollama.requests.filter(({ kind }) => kind === "chat");
   expect(chats.length).toBeGreaterThan(0);
   expect(chats.map(({ authorization }) => authorization)).toStrictEqual(chats.map(() => null));
+});
+
+test("with a Groq key, the Assistant asks Groq's model instead of Ollama", async (context) => {
+  vi.stubEnv("GROQ_API_KEY", "demo-groq-key");
+  context.onTestFinished(() => {
+    vi.unstubAllEnvs();
+  });
+  const groqRequests: Array<{ authorization: string | null; model: unknown; url: string }> = [];
+
+  const world = await createWorld(context, {
+    fetchGroq: async (input, init) => {
+      const body: unknown = JSON.parse(z.string().parse(init?.body));
+      groqRequests.push({
+        authorization: new globalThis.Headers(init?.headers).get("authorization"),
+        model: z.object({ model: z.string() }).parse(body).model,
+        url: new globalThis.Request(input).url,
+      });
+
+      // A client error is not retried, so the reply fails at once instead of backing off.
+      return await Promise.resolve(new globalThis.Response("{}", { status: 400 }));
+    },
+  });
+
+  await readChunks(await handleChatRequest(world.runtime, chatRequest(userMessage("Hello!"))));
+
+  expect(groqRequests.length).toBeGreaterThan(0);
+  expect(groqRequests[0]).toStrictEqual({
+    authorization: "Bearer demo-groq-key",
+    model: "openai/gpt-oss-20b",
+    url: "https://api.groq.com/openai/v1/chat/completions",
+  });
+  expect(world.ollama.requests.filter(({ kind }) => kind === "chat")).toStrictEqual([]);
 });
