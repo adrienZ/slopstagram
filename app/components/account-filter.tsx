@@ -52,6 +52,7 @@ export function AccountChecklist({
 }) {
   const id = useId();
   const { t } = useTranslation();
+  const selectedUsernames = new Set(selected);
 
   return (
     <>
@@ -78,7 +79,7 @@ export function AccountChecklist({
                 <Checkbox
                   id={checkboxId}
                   aria-label={handle}
-                  checked={selected.includes(account.username)}
+                  checked={selectedUsernames.has(account.username)}
                   onCheckedChange={() => {
                     onToggle(account.username);
                   }}
