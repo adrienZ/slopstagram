@@ -23,12 +23,14 @@ export interface StickerKindGroup {
   stories: Array<StoryStickerGroup>;
 }
 
+const stickerStoryDateFormat = new Intl.DateTimeFormat("fr-FR", {
+  day: "numeric",
+  month: "short",
+  timeZone: "Europe/Paris",
+});
+
 export function formatStickerStoryDate(date: string): string {
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "numeric",
-    month: "short",
-    timeZone: "Europe/Paris",
-  }).format(new Date(date));
+  return stickerStoryDateFormat.format(new Date(date));
 }
 
 export function formatStickerLabel(kind: string, label: string): string {
