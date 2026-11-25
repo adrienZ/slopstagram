@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useLatest } from "react-use";
-import type { LayoutPosition } from "./use-force-layout.ts";
+import type { LayoutPosition } from "@@/core/domains/mention-connections/force-simulation.ts";
 
 /** The size of the graph's drawing, in SVG units: its `viewBox`. */
 export const GRAPH_WIDTH = 1000;
@@ -77,7 +77,7 @@ function toDrawing(svg: SVGSVGElement, clientX: number, clientY: number): Layout
 }
 
 interface GraphViewportOptions {
-  positions: Map<string, LayoutPosition>;
+  getPositions: () => Map<string, LayoutPosition>;
   pin: (id: string, position: LayoutPosition) => void;
   release: (id: string) => void;
 }
@@ -86,9 +86,9 @@ interface GraphViewportOptions {
  * Pan, zoom and point dragging over a force layout. A press that moves becomes a drag, and the
  * click that ends it is swallowed, so that dragging never selects or clears a point.
  */
-export function useGraphViewport({ positions, pin, release }: GraphViewportOptions) {
+export function useGraphViewport({ getPositions, pin, release }: GraphViewportOptions) {
   const svg = useRef<SVGSVGElement>(null);
-  const [view, setView] = useState(() => fitView(positions.values()));
+  const [view, setView] = useState(() => fitView(getPositions().values()));
   const latestView = useLatest(view);
   const dragged = useRef(false);
 
@@ -214,7 +214,7 @@ export function useGraphViewport({ positions, pin, release }: GraphViewportOptio
       zoom(1 / BUTTON_ZOOM_FACTOR);
     },
     recenter: () => {
-      setView(fitView(positions.values()));
+      setView(fitView(getPositions().values()));
     },
   };
 }

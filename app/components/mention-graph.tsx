@@ -10,7 +10,9 @@ import {
 import { cn } from "cn";
 import { LocateFixedIcon, MinusIcon, PlusIcon } from "lucide-react";
 import type { MentionGraphPageData } from "../loaders/mention-graph.ts";
-import { useForceLayout, type LayoutPosition } from "../hooks/use-force-layout.ts";
+import type { LayoutPosition } from "@@/core/domains/mention-connections/force-simulation.ts";
+import { useForceLayout } from "../hooks/use-force-layout.ts";
+import { toTransform, useGraphPainter } from "../hooks/use-graph-painter.ts";
 import type { MentionGraphSelection } from "../hooks/use-mention-graph-selection.ts";
 import { GRAPH_HEIGHT, GRAPH_WIDTH, useGraphViewport } from "../hooks/use-graph-viewport.ts";
 import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/ui/avatar.tsx";
@@ -166,6 +168,7 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
   const { t } = useTranslation();
   const regionRef = useRef<HTMLElement>(null);
   const layout = useForceLayout(points, connections);
+  const { trackPoint, trackLabel, trackConnection } = useGraphPainter(layout, connections);
 
   const { attach, view, startPan, startPointDrag, isClick, zoomIn, zoomOut, recenter } =
     useGraphViewport(layout);
@@ -196,7 +199,7 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
   }
 
   function positionOf(id: string): LayoutPosition {
-    return layout.positions.get(id) ?? { x: 0, y: 0 };
+    return layout.getPositions().get(id) ?? { x: 0, y: 0 };
   }
 
   function renderConnection(connection: GraphConnection): ReactNode {
@@ -209,6 +212,9 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
     return (
       <g
         key={connection.id}
+        ref={(element) => {
+          trackConnection(connection.id, element);
+        }}
         // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG has no <button>.
         role="button"
         tabIndex={0}
@@ -246,13 +252,19 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
     return (
       <g
         key={point.id}
-        ref={isSelected ? setSelectedElement : undefined}
+        ref={(element) => {
+          trackPoint(point.id, element);
+
+          if (isSelected) {
+            setSelectedElement(element);
+          }
+        }}
         // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG has no <button>.
         role="button"
         tabIndex={0}
         aria-label={point.label}
         aria-pressed={isSelected}
-        transform={`translate(${x} ${y})`}
+        transform={toTransform({ x, y })}
         className={cn(
           "tw:cursor-grab tw:outline-none tw:transition-opacity tw:active:cursor-grabbing",
           dimmed && "tw:opacity-30",
@@ -288,13 +300,14 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
   }
 
   function renderHoverLabel(point: GraphPoint): ReactNode {
-    const { x, y } = positionOf(point.id);
-
     return (
       <text
+        ref={(element) => {
+          trackLabel(point.id, element);
+        }}
         role="tooltip"
-        x={x}
-        y={y - radiusOf(point) - 8}
+        transform={toTransform(positionOf(point.id))}
+        y={-radiusOf(point) - 8}
         textAnchor="middle"
         className="tw:pointer-events-none tw:fill-foreground tw:stroke-background tw:stroke-3 tw:text-sm tw:font-medium tw:[paint-order:stroke]"
       >

@@ -79,7 +79,7 @@ export function StorySidebar({
           </div>
         </a>
       </SidebarHeader>
-      <SidebarSeparator />
+      <SidebarSeparator className="tw:data-horizontal:w-auto" />
       <SidebarContent>
         <SidebarGroup className="tw:px-2 tw:py-4">
           <SidebarGroupContent>
@@ -101,7 +101,7 @@ export function StorySidebar({
             />
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarSeparator />
+        <SidebarSeparator className="tw:data-horizontal:w-auto" />
         <SidebarGroup>
           <Button
             variant="outline"
@@ -112,7 +112,7 @@ export function StorySidebar({
             {t("sidebar.today", { day: formatStoryDay(today) })}
           </Button>
         </SidebarGroup>
-        <SidebarSeparator />
+        <SidebarSeparator className="tw:data-horizontal:w-auto" />
         <SidebarGroup>
           <SidebarGroupContent>
             <nav aria-label={t("sidebar.pages")}>
@@ -145,7 +145,7 @@ export function StorySidebar({
             </nav>
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarSeparator />
+        <SidebarSeparator className="tw:data-horizontal:w-auto" />
         <SidebarGroup>
           <SidebarGroupContent>
             <nav aria-label={t("common.users")}>

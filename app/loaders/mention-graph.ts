@@ -3,6 +3,7 @@ import type { AppleVisionRepository } from "@@/core/domains/database/repositorie
 import type { StoryRepository } from "@@/core/domains/database/repositories/story-repository.ts";
 import type { VisionRepository } from "@@/core/domains/database/repositories/vision-repository.ts";
 import { media } from "@@/core/domains/media-store/media-urls.ts";
+import { layoutGraph } from "@@/core/domains/mention-connections/graph-layout.ts";
 import {
   filterByAccounts,
   readMentionConnections,
@@ -69,8 +70,8 @@ export function loadMentionGraph(runtime: MentionGraphRuntime, accountFilters: A
     accountFilters,
   );
 
-  const points = graph.targets.map(toGraphPoint);
-  const labelById = new Map(points.map(({ id, label }) => [id, label]));
+  const graphPoints = graph.targets.map(toGraphPoint);
+  const labelById = new Map(graphPoints.map(({ id, label }) => [id, label]));
 
   const connections = graph.connections.map(
     ({ id, targetIds: [source, target], observations }) => ({
@@ -81,6 +82,13 @@ export function loadMentionGraph(runtime: MentionGraphRuntime, accountFilters: A
       storyPks: observations.map(({ storyPk }) => storyPk),
     }),
   );
+
+  const layout = layoutGraph(graphPoints, connections);
+
+  const points = graphPoints.map((point) => ({
+    ...point,
+    ...(layout.get(point.id) ?? { x: 0, y: 0 }),
+  }));
 
   const sources = runtime.stories.listTimelineStories([
     ...new Set(connections.flatMap(({ storyPks }) => storyPks)),
