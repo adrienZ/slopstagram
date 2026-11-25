@@ -103,6 +103,7 @@
     "emptyDescription": "A connection appears as soon as a story mentions another person.",
     "unknownAccounts_one": "Account missing from the graph: {{handles}}. The full graph is shown.",
     "unknownAccounts_other": "Accounts missing from the graph: {{handles}}. The full graph is shown.",
+    "loading": "Loading the graph…",
     "controls": "Graph controls",
     "zoomOut": "Zoom out",
     "zoomLevel": "Zoom level",

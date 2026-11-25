@@ -13,7 +13,6 @@ import {
   seedFilterGraphDatabase,
   sharedUsername,
 } from "../setup/mention-graph-seed.ts";
-import { stubGraphLayout } from "./mount-graph.ts";
 
 const shared = shareTestRuntime(seedFilterGraphDatabase);
 
@@ -28,8 +27,6 @@ const [ada, ben, cleo] = graphAccounts.map((username) => `@${username}`);
 const eve = `@${filterAccount}`;
 const twin = `@${sharedUsername}`;
 const everyConnectionCount = 11;
-
-stubGraphLayout();
 
 async function mountGraph(url = "/graph") {
   const mounted = await renderer.mountRoute(url);

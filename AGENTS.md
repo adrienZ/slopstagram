@@ -16,18 +16,21 @@ Humans can explore the [dashboard](https://egeominotti.github.io/bunqueue-dashbo
 
 Make sure to run `npm run check` to validate your code changes.
 
+Include audit.json updates.
 Keep UI components limited to rendering, local UI behavior, and presentation transformations; place business rules and application orchestration in hooks/composables or dedicated modules.
+
+## Pull request
+
+Provide before / after evidence, when working with UI provide screenshots when possible.
+For complex workfolws provide videos if possible.
+
 
 ### Where code goes
 
-- `app/`: the TanStack Start app. `routes/` holds only route files: pages, and server routes
-  (`server.handlers`, e.g. `routes/media/$.ts`) that stay thin adapters over `core/`. `loaders/`
-  holds the server-only loader of each page (it owns the page data type and returns data ready to
-  render), `utils/` display helpers shared by components.
+- `app/`: the TanStack Start app.
 - `nitro/`: Nitro plugins only (startup migrations, the bunqueue server), for what has no TanStack
   Start equivalent. No routes: every route lives in `app/routes/`.
 - `core/`: domain and ingestion code, with no React and no Nitro.
-- `evals/`: the local Assistant evaluations (see "Evals" below).
 
 ### Chat Assistant
 
@@ -60,7 +63,7 @@ Derive database-shaped validators from `drizzle-orm/zod` and reuse them.
 
 To close existing instance of playwright browser, you can use the `kill-all` command.
 
-instagram.com is an SPA application so make to wait loaded / idle state.
+instagram.com is an SPA application so make sure to wait loaded / idle state.
 
 ## Database
 
@@ -70,16 +73,6 @@ Run application migrations during server startup in `nitro/plugins/database.ts`
 or explicitly with Drizzle Kit's `migrate` command.
 Scripts in `scripts/` require an initialized database and must not trigger migrations,
 directly or through SDK calls. Tests may migrate their isolated databases.
-
-## Testing
-
-Test rules live in `test/AGENTS.md`.
-
-## Evals
-
-Eval rules live in `evals/AGENTS.md`.
-
-## Agent skills
 
 ### Issue tracker
 
