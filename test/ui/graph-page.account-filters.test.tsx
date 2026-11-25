@@ -13,7 +13,7 @@ import {
   seedFilterGraphDatabase,
   sharedUsername,
 } from "../setup/mention-graph-seed.ts";
-import { stubGraphLayout } from "./mount-graph.ts";
+import { GraphWrapper } from "./mount-graph.ts";
 
 const shared = shareTestRuntime(seedFilterGraphDatabase);
 
@@ -29,10 +29,8 @@ const eve = `@${filterAccount}`;
 const twin = `@${sharedUsername}`;
 const everyConnectionCount = 11;
 
-stubGraphLayout();
-
 async function mountGraph(url = "/graph") {
-  const mounted = await renderer.mountRoute(url);
+  const mounted = await renderer.mountRoute(url, undefined, { wrapper: GraphWrapper });
   await screen.findByRole("region", { name: "Graphe des mentions" });
 
   return mounted;

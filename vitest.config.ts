@@ -11,14 +11,20 @@ export default defineConfig({
       // Count files no test loads, so untested modules lower the figure instead of vanishing.
       // The fixtures capture script is tested through its exports, so Sonar needs its lcov entry.
       include: ["core/**", "app/**", "nitro/**", "scripts/fixtures-capture.ts"],
-      exclude: ["app/shadcn/**", "app/routeTree.gen.ts", "core/domains/database/migrations/**"],
+      // Canvas adapters draw through WebGL or a 2D canvas, which jsdom lacks: tests swap them out.
+      exclude: [
+        "app/shadcn/**",
+        "app/routeTree.gen.ts",
+        "core/domains/database/migrations/**",
+        "app/components/*-canvas.tsx",
+      ],
       // Thresholds rewrite themselves upward when coverage improves, so the bar never drops.
       thresholds: {
         // Floor to whole percents: just under the measured value, so tiny fluctuations never fail.
         autoUpdate: (value) => Math.floor(value),
-        statements: 93,
-        branches: 87,
-        functions: 93,
+        statements: 94,
+        branches: 88,
+        functions: 94,
         lines: 93,
       },
     },
