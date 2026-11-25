@@ -26,6 +26,7 @@ import {
   type GraphPoint,
   type PointLocator,
 } from "./mention-graph-canvas-context.ts";
+import { MentionGraphLoading } from "./mention-graph-loading.tsx";
 
 type AccountPoint = Extract<GraphPoint, { kind: "account" }>;
 
@@ -150,8 +151,8 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
         </fieldset>
       </fieldset>
       {/* force-graph reads `window` as soon as it loads, so the server leaves the canvas out. */}
-      <ClientOnly>
-        <Suspense>
+      <ClientOnly fallback={<MentionGraphLoading />}>
+        <Suspense fallback={<MentionGraphLoading />}>
           {/* oxlint-disable-next-line react/static-components -- Tests swap the canvas through context; it never changes between renders. */}
           <MentionGraphCanvas
             points={points}

@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useLatest } from "react-use";
 import { Button } from "../shadcn/ui/button.tsx";
 import { formatUserInitials } from "../utils/helper.ts";
+import { MentionGraphLoading } from "./mention-graph-loading.tsx";
 import type {
   GraphConnection,
   GraphPoint,
@@ -130,6 +131,7 @@ function createGraph(
   { points, connections }: Pick<MentionGraphCanvasProps, "points" | "connections">,
   latest: { current: MentionGraphCanvasProps },
   onZoom: (scale: number) => void,
+  onFirstFrame: () => void,
 ) {
   const nodes: Array<GraphNode> = points.map((point) => ({ id: point.id, point }));
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
@@ -323,6 +325,7 @@ function createGraph(
       if (!fitted) {
         fitted = true;
         fit(graph);
+        onFirstFrame();
       }
     })
     .onEngineStop(() => {
@@ -464,6 +467,7 @@ export default function MentionGraphCanvas(props: MentionGraphCanvasProps) {
   const latest = useLatest(props);
   const [graph, setGraph] = useState<Graph | null>(null);
   const [scale, setScale] = useState(1);
+  const [drawn, setDrawn] = useState(false);
 
   // Stable per graph, so React builds force-graph once and destroys it with the element.
   const attach = useMemo(
@@ -472,7 +476,9 @@ export default function MentionGraphCanvas(props: MentionGraphCanvasProps) {
         const created =
           container === null
             ? null
-            : createGraph(container, { points, connections }, latest, setScale);
+            : createGraph(container, { points, connections }, latest, setScale, () => {
+                setDrawn(true);
+              });
 
         // A force-graph instance is a function, which setState would call as an updater.
         setGraph(() => created?.graph ?? null);
@@ -487,6 +493,7 @@ export default function MentionGraphCanvas(props: MentionGraphCanvasProps) {
   return (
     <>
       <div ref={attach} aria-hidden="true" className="tw:size-full" />
+      {!drawn && <MentionGraphLoading />}
       {/* A new ref callback runs after every commit: force-graph redraws once the props it reads
           are current, without an effect. */}
       <span

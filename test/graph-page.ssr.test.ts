@@ -9,13 +9,14 @@ import { graphAccounts, seedGraphDatabase } from "./setup/mention-graph-seed.ts"
 
 const shared = shareTestRuntime(seedGraphDatabase);
 
-test("the server renders every point as a button before the canvas loads", async () => {
+test("the server renders every point as a button and a loading state for the canvas", async () => {
   const renderer = createPageRenderer(Route, () => loadMentionGraph(shared.runtime, []), "/graph");
   const html = await renderer.renderRoute("/graph");
   const page = within(new JSDOM(html).window.document.body);
   const points = within(page.getByRole("group", { name: "Points" })).getAllByRole("button");
   expect(points).toHaveLength(7);
   expect(page.getByRole("button", { name: `@${graphAccounts[0]}` })).toBeDefined();
+  expect(page.getByRole("status").textContent).toBe("Chargement du graphe…");
 });
 
 test("the server renders the neighborhood an account filter in the URL names", async () => {

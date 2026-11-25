@@ -103,6 +103,7 @@
     "emptyDescription": "Une connexion apparaît dès qu’une story mentionne une autre personne.",
     "unknownAccounts_one": "Compte absent du graphe : {{handles}}. Le graphe complet est affiché.",
     "unknownAccounts_other": "Comptes absents du graphe : {{handles}}. Le graphe complet est affiché.",
+    "loading": "Chargement du graphe…",
     "controls": "Commandes du graphe",
     "zoomOut": "Zoom arrière",
     "zoomLevel": "Niveau de zoom",
