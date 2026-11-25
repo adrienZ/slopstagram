@@ -21,7 +21,7 @@ export interface StoryCardSources {
 export interface StoryCardData {
   stickerDetails?: {
     text?: string;
-    stickers?: Array<StickerPresentation>;
+    stickers?: Array<StickerPresentation & { key: string }>;
     music: Array<MusicStickerItem>;
   };
   mediaPk: string;
@@ -58,15 +58,16 @@ export function withStoryStickers(
         {
           stickers: (story.annotations?.stickers ?? [])
             .filter(({ kind }) => kind !== "music")
-            .map((sticker) =>
-              presentSticker(
+            .map((sticker, position) => ({
+              ...presentSticker(
                 sticker.kind,
                 sticker.label,
                 users,
                 true,
                 stickerPlace(places, sticker),
               ),
-            ),
+              key: sticker.occurrenceId ?? `${story.pk}:${position}`,
+            })),
           music: musicStickerItems(story.annotations),
         },
       ];

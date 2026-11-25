@@ -57,8 +57,8 @@ export function insertMention(
 
 export type MentionSegment =
   | { text: string; type: "text" }
-  /** A Mention of a saved account: `text` is spelled as written. */
-  | { account: SidebarUser; text: string; type: "mention" };
+  /** A Mention of a saved account: `text` is spelled as written, `start` is its offset in the text. */
+  | { account: SidebarUser; start: number; text: string; type: "mention" };
 
 export function splitMentions(text: string, accounts: Array<SidebarUser>): Array<MentionSegment> {
   const segments: Array<MentionSegment> = [];
@@ -76,7 +76,7 @@ export function splitMentions(text: string, accounts: Array<SidebarUser>): Array
       segments.push({ text: text.slice(end, mention.index), type: "text" });
     }
 
-    segments.push({ account, text: mention.text, type: "mention" });
+    segments.push({ account, start: mention.index, text: mention.text, type: "mention" });
     end = mention.index + mention.text.length;
   }
 

@@ -240,8 +240,8 @@ function LightboxDialog(props: {
                       <>
                         {props.story.stickerDetails.text}
                         <div className="tw:flex tw:flex-wrap tw:items-start tw:gap-1.5">
-                          {props.story.stickerDetails.stickers?.map((sticker, index) => (
-                            <Sticker key={`${sticker.kind}:${index}`} sticker={sticker} />
+                          {props.story.stickerDetails.stickers?.map((sticker) => (
+                            <Sticker key={sticker.key} sticker={sticker} />
                           ))}
                           {props.story.stickerDetails.music.map(({ key, label, preview }) => (
                             <MusicSticker key={key} label={label} preview={preview} />

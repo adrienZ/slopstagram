@@ -48,6 +48,12 @@ test("returns story cards, newest first, with their stickers already presented",
     "700000000000100",
     "700000000000116",
   ]);
+
+  const storedMention = shared.runtime.stories
+    .listByUsername(timelineAccount)
+    .find(({ story }) => story.pk === captionedStoryPk)
+    ?.story.annotations?.stickers.find(({ kind }) => kind === "mention");
+
   expect(stories.find(({ mediaPk }) => mediaPk === captionedStoryPk)?.stickerDetails).toStrictEqual(
     {
       stickers: [
@@ -58,6 +64,7 @@ test("returns story cards, newest first, with their stickers already presented",
           profileUrl: `/users/${mentionedAccount}`,
           avatarUrl: "/media/avatars/700000000000114.jpg",
           place: undefined,
+          key: storedMention?.occurrenceId,
         },
       ],
       music: [],
