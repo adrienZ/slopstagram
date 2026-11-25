@@ -16,18 +16,16 @@ const VISION_PROMPT = `
 
 const VISION_SERVER_NOT_RUNNING = "vision server not running";
 
-const VisionResponseSchema = z
-  .object({
-    description: z
-      .string()
-      .describe(
-        "Required. image description. Do not mention, text, quote, summarize, or translate any visible words, letters, captions, signs, labels, or phrases.",
-      ),
-    ocrText: z
-      .array(z.string())
-      .describe("Exact all OCR texts if any. Do not include any non-text image description."),
-  })
-  .strict();
+const VisionResponseSchema = z.strictObject({
+  description: z
+    .string()
+    .describe(
+      "Required. image description. Do not mention, text, quote, summarize, or translate any visible words, letters, captions, signs, labels, or phrases.",
+    ),
+  ocrText: z
+    .array(z.string())
+    .describe("Exact all OCR texts if any. Do not include any non-text image description."),
+});
 
 const VISION_OUTPUT_SCHEMA = z.toJSONSchema(VisionResponseSchema);
 

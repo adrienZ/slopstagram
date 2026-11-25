@@ -32,11 +32,9 @@ const USER_SUMMARY_PROMPT = "Résume cet utilisateur Instagram en 2 ou 3 phrases
 const USER_SUMMARY_UNAVAILABLE = "résumé indisponible";
 const USER_SUMMARY_TIMEOUT_MS = 60_000;
 
-const UserSummaryResponseSchema = z
-  .object({
-    summary: z.string(),
-  })
-  .strict();
+const UserSummaryResponseSchema = z.strictObject({
+  summary: z.string(),
+});
 
 const USER_SUMMARY_OUTPUT_SCHEMA = z.toJSONSchema(UserSummaryResponseSchema);
 
