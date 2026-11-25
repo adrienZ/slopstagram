@@ -3,7 +3,8 @@ import type { MentionGraphPageData } from "../loaders/mention-graph.ts";
 
 /**
  * Kept out of the URL, so a refresh closes everything. Selecting a point closes the shown
- * connection, so its stories never sit beside an unrelated selection.
+ * connection, so its stories never sit beside an unrelated selection. A point with a single
+ * connection has nothing to choose between, so selecting it opens that connection's stories.
  */
 export function useMentionGraphSelection({ connections, stories }: MentionGraphPageData["graph"]) {
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
@@ -30,7 +31,16 @@ export function useMentionGraphSelection({ connections, stories }: MentionGraphP
     selectPoint: (id: string | null) => {
       setSelectedPointId(id);
 
-      if (id !== null) {
+      if (id === null) {
+        return;
+      }
+
+      const own = connections.filter(({ source, target }) => source === id || target === id);
+
+      if (own.length === 1) {
+        setSelectedConnectionId(own[0].id);
+        setOpenStoryPk(undefined);
+      } else {
         closeConnection();
       }
     },

@@ -6,11 +6,13 @@ import { createPageRenderer } from "../render-page.ts";
 import { shareTestRuntime } from "../setup/test-runtime.ts";
 import { mountGraph as mountGraphWith } from "./mount-graph.ts";
 import {
+  ambiguousUsername,
   cleoStoriesMentioningAda,
   cleoStoryMentioningAdaTwice,
   graphAccounts,
   graphStories,
   seedGraphDatabase,
+  unknownUsername,
 } from "../setup/mention-graph-seed.ts";
 
 const shared = shareTestRuntime(seedGraphDatabase);
@@ -174,4 +176,21 @@ test("the keyboard opens a connection's stories", async () => {
   expect(
     region.getByRole("region", { name: `Stories de la connexion entre ${ada} et ${cleo}` }),
   ).toBeVisible();
+});
+
+test("a point with a single connection opens that connection's stories, others only highlight", async () => {
+  const { user, region, points, lines } = await mountGraph();
+  await user.click(points.getByRole("button", { name: `@${unknownUsername}` }));
+  expect(region.queryByRole("region", { name: /^Stories de la connexion/u })).toBeNull();
+
+  const lone = points.getByRole("button", { name: `@${ambiguousUsername} (plusieurs comptes)` });
+  await user.click(lone);
+  expect(lone).toHaveAttribute("aria-pressed", "true");
+
+  const opened = lines
+    .getAllByRole("button")
+    .find((line) => line.getAttribute("aria-pressed") === "true");
+
+  expect(opened?.getAttribute("aria-label")).toContain(`@${ambiguousUsername}`);
+  expect(region.getByRole("region", { name: /^Stories de la connexion/u })).toBeVisible();
 });
