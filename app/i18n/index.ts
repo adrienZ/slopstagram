@@ -2,7 +2,7 @@ import { createInstance } from "i18next";
 import { initReactI18next } from "react-i18next";
 import fr from "./locales/fr.json" with { type: "json" };
 
-const DEFAULT_LANGUAGE = "fr";
+export const DEFAULT_LANGUAGE = "fr";
 
 type Translation = typeof fr;
 
@@ -14,7 +14,7 @@ const lazyLocales = {
   },
 };
 
-type Language = typeof DEFAULT_LANGUAGE | keyof typeof lazyLocales;
+export type Language = typeof DEFAULT_LANGUAGE | keyof typeof lazyLocales;
 
 export const i18n = createInstance();
 

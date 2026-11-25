@@ -3,22 +3,31 @@ import { z } from "zod";
 export const storyDateSchema = z.iso.date();
 export const STORY_TIME_ZONE = "Europe/Paris";
 
+const storyDateFormat = new Intl.DateTimeFormat("en-CA", {
+  timeZone: STORY_TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+const storyTimeFormat = new Intl.DateTimeFormat("en-GB", {
+  timeZone: STORY_TIME_ZONE,
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+const storyDayFormat = new Intl.DateTimeFormat("fr-FR", {
+  timeZone: STORY_TIME_ZONE,
+  dateStyle: "long",
+});
+
 export function getStoryDate(now: Date): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: STORY_TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(now);
+  return storyDateFormat.format(now);
 }
 
 function getMidnight(date: Date): Date {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: STORY_TIME_ZONE,
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(date);
+  const parts = storyTimeFormat.formatToParts(date);
 
   const hours = Number(parts.find((part) => part.type === "hour")?.value);
   const minutes = Number(parts.find((part) => part.type === "minute")?.value);
@@ -39,10 +48,7 @@ export function getReportDateUrl(day: string): string {
 }
 
 export function formatStoryDay(day: string): string {
-  return new Intl.DateTimeFormat("fr-FR", {
-    timeZone: STORY_TIME_ZONE,
-    dateStyle: "long",
-  }).format(new Date(`${day}T12:00:00Z`));
+  return storyDayFormat.format(new Date(`${day}T12:00:00Z`));
 }
 
 export function formatStoryViewTitle(selectedDate: string, today: string): string {

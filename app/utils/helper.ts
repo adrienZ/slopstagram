@@ -1,23 +1,30 @@
-import { i18n } from "../i18n/index.ts";
+import { DEFAULT_LANGUAGE, i18n, type Language } from "../i18n/index.ts";
 import type { StoryOutputUser } from "@@/core/domains/fetch-run/report-types.ts";
+
+const reportDateFormat = new Intl.DateTimeFormat("fr-FR", {
+  day: "numeric",
+  hour: "2-digit",
+  hour12: false,
+  minute: "2-digit",
+  month: "long",
+  timeZone: "Europe/Paris",
+  timeZoneName: "short",
+  year: "numeric",
+});
+
+const conjunctionFormats = {
+  en: new Intl.ListFormat("en", { style: "long", type: "conjunction" }),
+  fr: new Intl.ListFormat("fr", { style: "long", type: "conjunction" }),
+} satisfies Record<Language, Intl.ListFormat>;
+
+const conjunctionFormatByLanguage = new Map<string, Intl.ListFormat>(
+  Object.entries(conjunctionFormats),
+);
 
 export function formatReportDate(value: string): string {
   const date = new Date(value);
 
-  return Number.isNaN(date.getTime())
-    ? value
-    : new Intl.DateTimeFormat("fr-FR", {
-        day: "numeric",
-        hour: "2-digit",
-        hour12: false,
-        minute: "2-digit",
-        month: "long",
-        timeZone: "Europe/Paris",
-        timeZoneName: "short",
-        year: "numeric",
-      })
-        .format(date)
-        .replace(",", " à");
+  return Number.isNaN(date.getTime()) ? value : reportDateFormat.format(date).replace(",", " à");
 }
 
 export function formatStoryCount(count: number): string {
@@ -25,7 +32,10 @@ export function formatStoryCount(count: number): string {
 }
 
 export function formatConjunction(items: ReadonlyArray<string>): string {
-  return new Intl.ListFormat(i18n.language, { style: "long", type: "conjunction" }).format(items);
+  const format =
+    conjunctionFormatByLanguage.get(i18n.language) ?? conjunctionFormats[DEFAULT_LANGUAGE];
+
+  return format.format(items);
 }
 
 export function formatUserHandle(username: string): string {

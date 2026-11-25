@@ -40,6 +40,20 @@ interface AccountTimelineRuntime extends UserTimelineRuntime {
 
 const PARIS_TIME_ZONE = "Europe/Paris";
 
+const dateLabelFormat = new Intl.DateTimeFormat("fr-FR", {
+  day: "2-digit",
+  month: "long",
+  timeZone: PARIS_TIME_ZONE,
+  year: "numeric",
+});
+
+const dateKeyFormat = new Intl.DateTimeFormat("en-CA", {
+  day: "2-digit",
+  month: "2-digit",
+  timeZone: PARIS_TIME_ZONE,
+  year: "numeric",
+});
+
 interface UserTimelineDay {
   key: string;
   label: string;
@@ -74,12 +88,7 @@ interface DateParts {
 }
 
 function formatDateParts(date: Date): DateParts {
-  const values = new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    timeZone: PARIS_TIME_ZONE,
-    year: "numeric",
-  }).formatToParts(date);
+  const values = dateLabelFormat.formatToParts(date);
 
   return {
     day: values.find((part) => part.type === "day")?.value ?? "",
@@ -89,12 +98,7 @@ function formatDateParts(date: Date): DateParts {
 }
 
 function getDateKeyParts(date: Date): DateParts {
-  const values = new Intl.DateTimeFormat("en-CA", {
-    day: "2-digit",
-    month: "2-digit",
-    timeZone: PARIS_TIME_ZONE,
-    year: "numeric",
-  }).formatToParts(date);
+  const values = dateKeyFormat.formatToParts(date);
 
   return {
     day: values.find((part) => part.type === "day")?.value ?? "",
