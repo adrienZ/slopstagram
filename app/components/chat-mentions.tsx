@@ -8,13 +8,12 @@ import { MentionAvatar, Sticker } from "./sticker.tsx";
 export function MentionedText({ accounts, text }: { accounts: Array<SidebarUser>; text: string }) {
   return (
     <>
-      {splitMentions(text, accounts).map((segment, index) =>
+      {splitMentions(text, accounts).map((segment) =>
         segment.type === "text" ? (
           segment.text
         ) : (
           <Sticker
-            // Segments have no id; their position in a sent message never changes.
-            key={`${index}-${segment.account.username}`}
+            key={segment.start}
             sticker={presentSticker(
               "mention",
               formatUserHandle(segment.account.username),
@@ -40,13 +39,12 @@ export function MentionBackdrop({
       aria-hidden="true"
       className="tw:pointer-events-none tw:absolute tw:inset-0 tw:overflow-hidden tw:px-2.5 tw:py-2 tw:text-base tw:wrap-break-word tw:whitespace-pre-wrap tw:md:text-sm"
     >
-      {splitMentions(text, accounts).map((segment, index) =>
+      {splitMentions(text, accounts).map((segment) =>
         segment.type === "text" ? (
           segment.text
         ) : (
           <mark
-            // Segments have no id and are rebuilt from the text on each keystroke.
-            key={`${index}-${segment.account.username}`}
+            key={segment.start}
             className="tw:rounded-4xl tw:bg-secondary tw:text-secondary-foreground tw:ring-3 tw:ring-secondary tw:box-decoration-clone"
           >
             {segment.text}
