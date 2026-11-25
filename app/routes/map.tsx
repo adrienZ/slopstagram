@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { i18n } from "../i18n/index.ts";
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { ArrowLeftIcon } from "lucide-react";
 import { z } from "zod";
 import { useMedia } from "react-use";
@@ -68,13 +68,13 @@ export function PlaceMapPage({
   return (
     <>
       <header className="tw:flex tw:h-14 tw:shrink-0 tw:items-center tw:gap-3 tw:border-b tw:px-4">
-        <a
-          href="/report"
+        <Link
+          to="/report"
           className="tw:flex tw:items-center tw:gap-1 tw:text-sm tw:text-muted-foreground"
         >
           <ArrowLeftIcon aria-hidden="true" className="tw:size-4" />
           {t("common.stories")}
-        </a>
+        </Link>
         <h1 className="tw:text-sm tw:font-semibold">{t("common.map")}</h1>
       </header>
       <main className="tw:mx-auto tw:w-full tw:max-w-360 tw:gap-6 tw:px-6 tw:pt-8 tw:pb-12 tw:max-[760px]:px-4 tw:max-[760px]:py-6 tw:max-lg:space-y-3 tw:lg:grid tw:lg:grid-cols-4">

@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { i18n } from "../../i18n/index.ts";
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { Card, CardHeader, CardTitle, CardDescription } from "../../shadcn/ui/card.tsx";
 import { getUserTimeline } from "../../query-service.ts";
@@ -27,9 +27,9 @@ function TimelineHeader({
 
   return (
     <>
-      <a className="tw:mb-6 tw:inline-block tw:text-muted-foreground" href="/">
+      <Link className="tw:mb-6 tw:inline-block tw:text-muted-foreground" to="/report">
         {t("user.allUsers")}
-      </a>
+      </Link>
       <Card className="tw:mb-8">
         <CardHeader className="tw:flex tw:flex-col tw:items-start tw:gap-4.5 tw:sm:flex-row tw:sm:items-center">
           <img
