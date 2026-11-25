@@ -6,16 +6,24 @@ import { presentSticker } from "../utils/sticker-presentation.ts";
 import { MentionAvatar, Sticker } from "./sticker.tsx";
 
 export function MentionedText({ accounts, text }: { accounts: Array<SidebarUser>; text: string }) {
-  return splitMentions(text, accounts).map((segment, index) =>
-    segment.type === "text" ? (
-      segment.text
-    ) : (
-      <Sticker
-        // Segments have no id; their position in a sent message never changes.
-        key={`${index}-${segment.account.username}`}
-        sticker={presentSticker("mention", formatUserHandle(segment.account.username), accounts)}
-      />
-    ),
+  return (
+    <>
+      {splitMentions(text, accounts).map((segment, index) =>
+        segment.type === "text" ? (
+          segment.text
+        ) : (
+          <Sticker
+            // Segments have no id; their position in a sent message never changes.
+            key={`${index}-${segment.account.username}`}
+            sticker={presentSticker(
+              "mention",
+              formatUserHandle(segment.account.username),
+              accounts,
+            )}
+          />
+        ),
+      )}
+    </>
   );
 }
 
