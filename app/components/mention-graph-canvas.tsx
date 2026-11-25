@@ -34,7 +34,14 @@ interface Palette {
 const ACCOUNT_RADIUS = 20;
 const UNKNOWN_RADIUS = 7;
 const CONNECTION_HIT_WIDTH = 14;
+
+/** Ticks for the simulation to cool down from its first, hottest step. */
 const SETTLE_TICKS = 300;
+
+// Enough for a readable first frame: the rest of the settling plays on screen.
+const WARMUP_TICKS = 60;
+
+const REFIT_DURATION_MS = 400;
 const MIN_SCALE = 0.2;
 const MAX_SCALE = 4;
 const BUTTON_ZOOM_FACTOR = 1.25;
@@ -97,12 +104,25 @@ function connectionAlpha(highlighted: boolean, anySelected: boolean): number {
 }
 
 /** Shows every point, without enlarging a small graph. */
-function fit(graph: Graph) {
-  graph.zoomToFit(0, FIT_MARGIN);
+function fit(graph: Graph, durationMs = 0) {
+  const {
+    x: [left, right],
+    y: [top, bottom],
+  } = graph.getGraphBbox();
 
-  if (graph.zoom() > 1) {
-    graph.zoom(1);
-  }
+  const scale = Math.min(
+    1,
+    graph.width() / (right - left + 2 * FIT_MARGIN),
+    graph.height() / (bottom - top + 2 * FIT_MARGIN),
+  );
+
+  graph.centerAt((left + right) / 2, (top + bottom) / 2, durationMs);
+  graph.zoom(Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale)), durationMs);
+}
+
+// force-graph redraws only when a styling prop is set, not when the state it reads changes.
+function requestRedraw(graph: Graph) {
+  graph.nodeCanvasObject(graph.nodeCanvasObject());
 }
 
 function createGraph(
@@ -123,6 +143,9 @@ function createGraph(
   const avatars = new Map<string, HTMLImageElement>();
   let palette = readPalette(container);
   let fitted = false;
+  let settled = false;
+  let moved = false;
+  const listeners = new globalThis.AbortController();
   const graph: Graph = new ForceGraph<GraphNode, GraphLink>(container);
 
   function avatarOf(path: string): HTMLImageElement | undefined {
@@ -130,6 +153,9 @@ function createGraph(
 
     if (image === undefined) {
       image = new globalThis.Image();
+      image.addEventListener("load", () => {
+        requestRedraw(graph);
+      });
       image.src = path;
       avatars.set(path, image);
     }
@@ -281,24 +307,31 @@ function createGraph(
     .linkCanvasObject(drawConnection)
     .linkWidth((link) => connectionWidth(link.connection.storyPks.length))
     .linkHoverPrecision(CONNECTION_HIT_WIDTH / 2)
-    // The drawing reads the selection as it changes, not through force-graph's own props.
-    .autoPauseRedraw(false)
     .onRenderFramePre(() => {
-      // Read once a frame, so the drawing follows the light or dark theme.
+      // Read on every redraw, so the drawing follows the light or dark theme.
       palette = readPalette(container);
     })
     .onRenderFramePost(drawHoverLabel)
     .minZoom(MIN_SCALE)
     .maxZoom(MAX_SCALE)
-    .warmupTicks(SETTLE_TICKS)
-    // About as long as a released point takes to cool down. A d3AlphaMin would stop the engine
-    // before a drag can reheat it, since force-graph checks alpha before each tick.
-    .cooldownTicks(SETTLE_TICKS)
+    .warmupTicks(WARMUP_TICKS)
+    // The warmup and the settling on screen add up to a full cool-down, also as long as a released
+    // point takes. A d3AlphaMin would stop the engine before a drag can reheat it, since
+    // force-graph checks alpha before each tick.
+    .cooldownTicks(SETTLE_TICKS - WARMUP_TICKS)
     .onEngineTick(() => {
       if (!fitted) {
         fitted = true;
         fit(graph);
       }
+    })
+    .onEngineStop(() => {
+      // The first layout spreads out while it settles: fit it again, unless the view was moved.
+      if (!settled && !moved) {
+        fit(graph, REFIT_DURATION_MS);
+      }
+
+      settled = true;
     })
     .onZoom(({ k }) => {
       onZoom(k);
@@ -329,6 +362,20 @@ function createGraph(
 
   resize.observe(container);
 
+  function markMoved() {
+    moved = true;
+  }
+
+  // The theme switches the root's class, which swaps the colour tokens the drawing reads.
+  const theme = new globalThis.MutationObserver(() => {
+    requestRedraw(graph);
+  });
+
+  theme.observe(container.ownerDocument.documentElement, { attributeFilter: ["class"] });
+
+  container.addEventListener("pointerdown", markMoved, { once: true, signal: listeners.signal });
+  container.addEventListener("wheel", markMoved, { once: true, signal: listeners.signal });
+
   function locate(node: GraphNode): DOMRect {
     const bounds = container.getBoundingClientRect();
     const { x, y } = graph.graph2ScreenCoords(node.x ?? 0, node.y ?? 0);
@@ -352,6 +399,8 @@ function createGraph(
     graph,
     dispose: () => {
       resize.disconnect();
+      theme.disconnect();
+      listeners.abort();
       latest.current.locatorRef.current = null;
       graph._destructor();
     },
@@ -438,6 +487,16 @@ export default function MentionGraphCanvas(props: MentionGraphCanvasProps) {
   return (
     <>
       <div ref={attach} aria-hidden="true" className="tw:size-full" />
+      {/* A new ref callback runs after every commit: force-graph redraws once the props it reads
+          are current, without an effect. */}
+      <span
+        hidden
+        ref={() => {
+          if (graph !== null) {
+            requestRedraw(graph);
+          }
+        }}
+      />
       <GraphControls graph={graph} scale={scale} />
     </>
   );
