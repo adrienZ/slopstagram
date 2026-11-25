@@ -1,12 +1,14 @@
 import { createInstance } from "i18next";
 import { initReactI18next } from "react-i18next";
-import { fr, type Translation } from "./locales/fr.ts";
+import fr from "./locales/fr.json" with { type: "json" };
 
 const DEFAULT_LANGUAGE = "fr";
 
+type Translation = typeof fr;
+
 const lazyLocales = {
-  en: async () => {
-    const { en } = await import("./locales/en.ts");
+  en: async (): Promise<Translation> => {
+    const { default: en } = await import("./locales/en.json", { with: { type: "json" } });
 
     return en;
   },

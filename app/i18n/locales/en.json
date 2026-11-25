@@ -1,0 +1,203 @@
+{
+  "common": {
+    "stories": "Stories",
+    "assistant": "Assistant",
+    "map": "Map",
+    "graph": "Graph",
+    "users": "Users",
+    "storyCount_one": "{{count}} story",
+    "storyCount_other": "{{count}} stories",
+    "noStoriesIn24h": "No story published in the last 24 hours.",
+    "avatarAlt": "{{name}} avatar",
+    "previewUnavailable": "Preview unavailable"
+  },
+  "errors": {
+    "internal": "500: Internal error",
+    "notFound": "404: Page not found"
+  },
+  "sidebar": {
+    "label": "Story navigation",
+    "tagline": "The story feed",
+    "today": "Today · {{day}}",
+    "pages": "Pages"
+  },
+  "layout": {
+    "toggleCalendar": "Show or hide the calendar"
+  },
+  "theme": {
+    "choose": "Choose the theme",
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "report": {
+    "loadedAt": "Feed loaded on {{date}}",
+    "noStoriesDay": "No story published that day."
+  },
+  "user": {
+    "allUsers": "← All users",
+    "summary_one": "{{count}} story · publication dates",
+    "summary_other": "{{count}} stories · publication dates",
+    "noStories": "No story saved for this user.",
+    "title": "{{name}}’s stories"
+  },
+  "filter": {
+    "byAccount": "Filter by account",
+    "clear": "Clear filters",
+    "shown": "Active filters",
+    "removePlace": "Remove place {{name}}"
+  },
+  "chat": {
+    "reasoning": "Reasoning",
+    "intro": "Mention an account with @ and ask what it published in the last 24 hours, or ask which accounts you know.",
+    "thinking": "The Assistant is thinking…",
+    "failed": "The model did not answer. Check that the Ollama server is running, then try again.",
+    "message": "Message",
+    "placeholder": "Write a message, @ to mention an account",
+    "send": "Send",
+    "mentionSuggestions": "Mention suggestions"
+  },
+  "assistant": {
+    "accounts": "Accounts",
+    "accountsFound": "Accounts found",
+    "noAccounts": "No account.",
+    "noAccountFound": "No account found.",
+    "unknownAccount": "No account is named {{handle}}.",
+    "places": "Places",
+    "placesFound": "Places found",
+    "noPlaces": "No place.",
+    "noPlaceFound": "No place found.",
+    "placesOf": "{{shown}} places out of {{total}}.",
+    "unknownPlace": "No place has the id {{id}}.",
+    "placeRead": "Place read",
+    "latestStories": "Latest stories",
+    "storiesTotal_one": "{{count}} story in total.",
+    "storiesTotal_other": "{{count}} stories in total.",
+    "summariesRead": "Summaries read",
+    "summaryPending": "The summary is not generated yet: it will be at the next story fetch.",
+    "storiesIn24h_one": "{{count}} story in the last 24 hours",
+    "storiesIn24h_other": "{{count}} stories in the last 24 hours"
+  },
+  "mentions": {
+    "ambiguousLabel": "People named {{query}}",
+    "ambiguous": "{{total}} people are named {{query}}.",
+    "connectedWith": "with {{names}}",
+    "unknownPerson": "Nobody named {{names}} in the mentions.",
+    "noConnections": "No mention connection.",
+    "connectionsLabel": "Mention connections",
+    "connectionsOf": "{{shown}} connections out of {{total}}.",
+    "noPeople": "No person found.",
+    "peopleLabel": "People found",
+    "connectionCount_one": "{{count}} connection",
+    "connectionCount_other": "{{count}} connections",
+    "peopleOf": "{{shown}} people out of {{total}}.",
+    "noObservation": "No story by {{first}} mentions {{second}}, nor the other way around.",
+    "readLabel": "Mention connection read",
+    "sourceStories": "Source stories"
+  },
+  "graph": {
+    "title": "Mention graph",
+    "intro": "Each line links a story’s author to a person that a sticker of that story mentions, over the whole kept history. A mention does not prove that two people know each other.",
+    "emptyTitle": "No mention to show",
+    "emptyDescription": "A connection appears as soon as a story mentions another person.",
+    "unknownAccounts_one": "Account missing from the graph: {{handles}}. The full graph is shown.",
+    "unknownAccounts_other": "Accounts missing from the graph: {{handles}}. The full graph is shown.",
+    "controls": "Graph controls",
+    "zoomOut": "Zoom out",
+    "zoomLevel": "Zoom level",
+    "zoomIn": "Zoom in",
+    "recenter": "Recenter the graph",
+    "viewProfile": "View profile",
+    "pointsAndConnections": "Points and connections",
+    "points": "Points",
+    "connections": "Connections",
+    "connectionLabel": "Connection between {{labels}}: {{stories}}",
+    "profileOf": "Profile of {{name}}",
+    "connectionStories": "Stories of the connection between {{labels}}",
+    "closeConnectionStories": "Close the connection stories",
+    "previousStories": "Previous stories",
+    "nextStories": "Next stories"
+  },
+  "map": {
+    "pageTitle": "Places map",
+    "filters": "Filters",
+    "noPlaces": "No place with coordinates to show.",
+    "tileError": "Map background unavailable. Places and the table remain accessible.",
+    "tileErrorSelect": "Map background unavailable. Choosing a place remains accessible.",
+    "canvas": "Places map",
+    "viewPlace": "View place: {{name}}",
+    "choosePlace": "Choose a place",
+    "selectPlace": "Select a place…",
+    "loading": "Loading the map…"
+  },
+  "place": {
+    "stories": "Stories of the place: {{name}}",
+    "closePreviews": "Close the place previews",
+    "previous": "Previous place",
+    "next": "Next place"
+  },
+  "story": {
+    "openPreview": "Open preview {{id}}",
+    "previewAlt": "preview {{id}}"
+  },
+  "timeline": {
+    "gallery": "Story gallery"
+  },
+  "locations": {
+    "history": "History places",
+    "placesOnMap_one": "{{count}} place on the map",
+    "placesOnMap_other": "{{count}} places on the map",
+    "unpositionedStickers_one": "{{count}} sticker without a confirmed position",
+    "unpositionedStickers_other": "{{count}} stickers without a confirmed position",
+    "unpositionedLocations_one": "{{count}} location without coordinates",
+    "unpositionedLocations_other": "{{count}} locations without coordinates",
+    "noCoordinates": "No place with coordinates. Stickers remain available in the table."
+  },
+  "stickers": {
+    "title": "Stickers",
+    "none": "No sticker",
+    "noneOfKind": "No {{kind}} sticker for this user.",
+    "story": "Story",
+    "table": "Stickers: {{kind}}",
+    "kind": "Sticker kind: {{kind}}",
+    "count_one": "{{count}} sticker",
+    "count_other": "{{count}} stickers",
+    "expand": "Show all: {{kind}}",
+    "pagination": "Pagination: {{kind}}",
+    "previousPage": "Previous page: {{kind}}",
+    "nextPage": "Next page: {{kind}}",
+    "dialogTitle": "Stickers · {{kind}}",
+    "fullHistory": "{{stickers}} in {{stories}} · full history"
+  },
+  "lightbox": {
+    "outdated": "Outdated analysis",
+    "outdatedDescription": "This analysis was not produced with the current model and prompt.",
+    "model": "Model",
+    "currentModel": "Current model",
+    "prompt": "Prompt",
+    "currentPrompt": "Current prompt",
+    "imagePreview": "Image preview",
+    "close": "Close the preview",
+    "previous": "Previous image",
+    "next": "Next image",
+    "storyDetails": "Story details",
+    "details": "Details",
+    "date": "Date",
+    "type": "Type",
+    "stickers": "Stickers",
+    "places": "Places",
+    "visionOcr": "Vision OCR",
+    "visionDescription": "Vision description",
+    "viewOnInstagram": "View this story on Instagram"
+  },
+  "music": {
+    "player": "Audio player: {{description}}",
+    "storyAudio": "Story audio",
+    "artwork": "Cover of {{description}}",
+    "pause": "Pause: {{description}}",
+    "play": "Play: {{description}}",
+    "seek": "Seek in the audio: {{description}}",
+    "listen": "Listen: {{description}}"
+  }
+}
