@@ -1,15 +1,17 @@
+import { useTranslation } from "react-i18next";
 import { useRef, useState, type SyntheticEvent } from "react";
 import { useAudio, useUnmount } from "react-use";
 import type { MusicPreview } from "../utils/music-preview.ts";
 
 export function useAudioPreview(preview: MusicPreview, preload: boolean, onError?: () => void) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
   const lastPlaying = useRef<HTMLAudioElement>(null);
 
   const [audio, state, controls, audioRef] = useAudio({
     src: preview.audioUrl ?? "",
-    "aria-label": `Écouter : ${preview.description}`,
+    "aria-label": t("music.listen", { description: preview.description }),
     preload: preload && preview.durationMs === null ? "metadata" : "none",
     hidden: true,
     onPlay(event: SyntheticEvent<HTMLAudioElement>) {

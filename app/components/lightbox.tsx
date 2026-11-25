@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { cn } from "cn";
 import type { StoryCardData } from "../utils/story-cards.ts";
 import { useState, type ReactNode } from "react";
@@ -34,6 +35,8 @@ function LightboxDetailsRow(props: { label: ReactNode; value: ReactNode }) {
 }
 
 function VisionLabel(props: { label: string; outdated?: OutdatedVision }) {
+  const { t } = useTranslation();
+
   if (props.outdated === undefined) {
     return props.label;
   }
@@ -48,26 +51,24 @@ function VisionLabel(props: { label: string; outdated?: OutdatedVision }) {
           <button
             className="tw:cursor-pointer tw:text-muted-foreground"
             type="button"
-            aria-label="Analyse obsolète"
+            aria-label={t("lightbox.outdated")}
           >
             <InfoIcon className="tw:size-3.5" />
           </button>
         </DialogTrigger>
         <DialogContent className="tw:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Analyse obsolète</DialogTitle>
-            <DialogDescription>
-              Cette analyse n’a pas été produite avec le modèle et le prompt actuels.
-            </DialogDescription>
+            <DialogTitle>{t("lightbox.outdated")}</DialogTitle>
+            <DialogDescription>{t("lightbox.outdatedDescription")}</DialogDescription>
           </DialogHeader>
           <dl className="tw:grid tw:grid-cols-[auto_1fr] tw:gap-x-3 tw:gap-y-1 tw:text-sm">
-            <dt className="tw:text-muted-foreground">Modèle</dt>
+            <dt className="tw:text-muted-foreground">{t("lightbox.model")}</dt>
             <dd>{model}</dd>
-            <dt className="tw:text-muted-foreground">Modèle actuel</dt>
+            <dt className="tw:text-muted-foreground">{t("lightbox.currentModel")}</dt>
             <dd>{currentModel}</dd>
-            <dt className="tw:text-muted-foreground">Prompt</dt>
+            <dt className="tw:text-muted-foreground">{t("lightbox.prompt")}</dt>
             <dd className="tw:font-mono">{promptHash.slice(0, HASH_PREVIEW_LENGTH)}</dd>
-            <dt className="tw:text-muted-foreground">Prompt actuel</dt>
+            <dt className="tw:text-muted-foreground">{t("lightbox.currentPrompt")}</dt>
             <dd className="tw:font-mono">{currentPromptHash.slice(0, HASH_PREVIEW_LENGTH)}</dd>
           </dl>
         </DialogContent>
@@ -114,6 +115,7 @@ function LightboxDialog(props: {
   linkToProfile: boolean;
   onOpenStory: OpenStory;
 }) {
+  const { t } = useTranslation();
   const [dismissedStory, setDismissedStory] = useState<string | null>(null);
 
   function close() {
@@ -161,19 +163,19 @@ function LightboxDialog(props: {
           }
         }}
       >
-        <DialogTitle className="tw:sr-only">Aperçu de l’image</DialogTitle>
+        <DialogTitle className="tw:sr-only">{t("lightbox.imagePreview")}</DialogTitle>
         <DialogClose asChild>
           <button
             className="tw:absolute tw:top-4 tw:right-4 tw:z-1 tw:size-10.5 tw:cursor-pointer tw:rounded-lg tw:border tw:border-background/40 tw:bg-foreground/70 tw:text-3xl tw:text-background"
             type="button"
-            aria-label="Fermer l’aperçu"
+            aria-label={t("lightbox.close")}
           >
             ×
           </button>
         </DialogClose>
         <LightboxNavButton
           direction={-1}
-          label="Image précédente"
+          label={t("lightbox.previous")}
           text="‹"
           hidden={props.stories.length < 2}
           onNavigate={navigate}
@@ -220,15 +222,17 @@ function LightboxDialog(props: {
           </div>
           <aside
             className="tw:flex-[1_1_360px] tw:overflow-auto tw:bg-muted tw:p-4.5 tw:text-foreground tw:max-[760px]:min-h-[34%] tw:max-[760px]:min-w-0 tw:max-[760px]:flex-[1_1_34%] tw:max-[760px]:p-3.5"
-            aria-label="Détails de la story"
+            aria-label={t("lightbox.storyDetails")}
           >
-            <h2 className="tw:my-5 tw:text-2xl tw:leading-normal tw:font-bold">Détails</h2>
+            <h2 className="tw:my-5 tw:text-2xl tw:leading-normal tw:font-bold">
+              {t("lightbox.details")}
+            </h2>
             <table className="tw:w-full tw:table-fixed tw:border-collapse tw:bg-card tw:text-card-foreground tw:max-[760px]:block tw:max-[760px]:w-auto">
               <tbody className="tw:max-[760px]:block">
-                <LightboxDetailsRow label="Date" value={props.story.publishedAt} />
-                <LightboxDetailsRow label="Type" value={props.story.mediaType} />
+                <LightboxDetailsRow label={t("lightbox.date")} value={props.story.publishedAt} />
+                <LightboxDetailsRow label={t("lightbox.type")} value={props.story.mediaType} />
                 <LightboxDetailsRow
-                  label="Stickers"
+                  label={t("lightbox.stickers")}
                   value={
                     props.story.stickerDetails === undefined ? (
                       props.story.stickers
@@ -247,16 +251,24 @@ function LightboxDialog(props: {
                     )
                   }
                 />
-                <LightboxDetailsRow label="Lieux" value={props.story.locations} />
+                <LightboxDetailsRow label={t("lightbox.places")} value={props.story.locations} />
                 <LightboxDetailsRow label="Instagram" value={props.story.igCaption} />
                 <LightboxDetailsRow label="Apple OCR" value={props.story.appleCaption} />
                 <LightboxDetailsRow
-                  label={<VisionLabel label="Vision OCR" outdated={props.story.visionOutdated} />}
+                  label={
+                    <VisionLabel
+                      label={t("lightbox.visionOcr")}
+                      outdated={props.story.visionOutdated}
+                    />
+                  }
                   value={props.story.visionOcr}
                 />
                 <LightboxDetailsRow
                   label={
-                    <VisionLabel label="Vision description" outdated={props.story.visionOutdated} />
+                    <VisionLabel
+                      label={t("lightbox.visionDescription")}
+                      outdated={props.story.visionOutdated}
+                    />
                   }
                   value={props.story.visionDescription}
                 />
@@ -268,13 +280,13 @@ function LightboxDialog(props: {
               rel="noreferrer"
               href={props.story.url}
             >
-              Voir cette story sur Instagram
+              {t("lightbox.viewOnInstagram")}
             </a>
           </aside>
         </div>
         <LightboxNavButton
           direction={1}
-          label="Image suivante"
+          label={t("lightbox.next")}
           text="›"
           hidden={props.stories.length < 2}
           onNavigate={navigate}

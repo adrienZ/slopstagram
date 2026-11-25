@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { StoryCardData } from "../utils/story-cards.ts";
 import type { UserTimeline } from "../loaders/account-timeline.ts";
 import { formatStoryDay } from "@@/core/domains/story-feed/story-days.ts";
@@ -11,8 +12,10 @@ export function TimelineGallery({
   years: UserTimeline["years"];
   storyByMediaPk: Map<string, StoryCardData>;
 }) {
+  const { t } = useTranslation();
+
   return (
-    <section aria-label="Galerie des stories">
+    <section aria-label={t("timeline.gallery")}>
       {years.map((year) => (
         <section key={year.label} className="tw:mb-10">
           <h2 className="tw:mb-5 tw:text-2xl tw:font-semibold">{year.label}</h2>
@@ -29,7 +32,7 @@ export function TimelineGallery({
                   <header className="tw:mb-3 tw:flex tw:items-baseline tw:gap-3">
                     <h4 className="tw:text-sm tw:font-medium">{formatStoryDay(day.key)}</h4>
                     <span className="tw:text-xs tw:text-muted-foreground">
-                      {day.stories.length} stories
+                      {t("common.storyCount", { count: day.stories.length })}
                     </span>
                   </header>
                   <div className="tw:grid tw:grid-cols-[repeat(auto-fill,minmax(125px,1fr))] tw:gap-1.5 tw:sm:grid-cols-[repeat(auto-fill,minmax(175px,1fr))]">

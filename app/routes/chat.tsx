@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { i18n } from "../i18n/index.ts";
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowLeftIcon } from "lucide-react";
 import { ChatPanel } from "../components/chat-panel.tsx";
@@ -5,6 +7,8 @@ import type { ChatPageData } from "../loaders/chat.ts";
 import { getChatPage } from "../query-service.ts";
 
 export function ChatPage({ accounts }: ChatPageData) {
+  const { t } = useTranslation();
+
   return (
     <>
       <header className="tw:flex tw:h-14 tw:shrink-0 tw:items-center tw:gap-3 tw:border-b tw:px-4">
@@ -13,9 +17,9 @@ export function ChatPage({ accounts }: ChatPageData) {
           className="tw:flex tw:items-center tw:gap-1 tw:text-sm tw:text-muted-foreground"
         >
           <ArrowLeftIcon aria-hidden="true" className="tw:size-4" />
-          Stories
+          {t("common.stories")}
         </a>
-        <h1 className="tw:text-sm tw:font-semibold">Assistant</h1>
+        <h1 className="tw:text-sm tw:font-semibold">{t("common.assistant")}</h1>
       </header>
       <ChatPanel accounts={accounts} />
     </>
@@ -30,6 +34,6 @@ function ChatRoute() {
 
 export const Route = createFileRoute("/chat")({
   loader: async () => await getChatPage(),
-  head: () => ({ meta: [{ title: "Assistant" }] }),
+  head: () => ({ meta: [{ title: i18n.t("common.assistant") }] }),
   component: ChatRoute,
 });

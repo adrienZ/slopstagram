@@ -2,6 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach, beforeEach, vi } from "vitest";
 import cssEscape from "css.escape";
+import "../../app/i18n/index.ts";
 import { setTheme } from "../../app/components/theme.ts";
 import { defineJsdomPolyfill, mockJsdomPolyfillValue } from "../setup/define-property.ts";
 

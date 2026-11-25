@@ -65,7 +65,7 @@ test("an account's stories are grouped by the day they were published", async ()
 
   expect(page.getAllByRole("main")).toHaveLength(1);
   expect(page.getByRole("heading", { name: `@${owner.username}`, level: 1 })).toBeDefined();
-  expect(page.getByText("2 storys · dates de publication")).toBeDefined();
+  expect(page.getByText("2 stories · dates de publication")).toBeDefined();
   const gallery = within(page.getByRole("region", { name: "Galerie des stories" }));
   // Newest day first, each day holding the stories published that day.
   expect(

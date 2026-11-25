@@ -215,7 +215,7 @@ test("music shows its cached cover in the card, expanded modal and story details
   };
   const { user } = await renderTimeline(props);
   const card = within(screen.getByRole("region", { name: "Type de sticker : music" }));
-  expect(card.getByText("2 stickers · 1 stories")).toBeVisible();
+  expect(card.getByText("2 stickers · 1 story")).toBeVisible();
   expect(card.getAllByText("Exact, original label")).toHaveLength(1);
   expect(card.getByRole("img", { name: "Pochette de Song — Artist" })).toHaveAttribute(
     "src",
@@ -294,7 +294,7 @@ test("music without audio stays hidden and another asset does not borrow its cov
   };
   const { user } = await renderTimeline(props);
   const card = within(screen.getByRole("region", { name: "Type de sticker : music" }));
-  expect(card.getByText("1 stickers · 1 stories")).toBeVisible();
+  expect(card.getByText("1 sticker · 1 story")).toBeVisible();
   expect(card.queryByText("Cover only")).not.toBeInTheDocument();
   expect(card.queryByRole("img", { name: /Pochette/u })).not.toBeInTheDocument();
   expect(card.getByRole("button", { name: "Lire : Audio only" })).toBeVisible();
@@ -353,11 +353,11 @@ test("music observations with media but without labels stay visible without incr
   });
   const { user } = await renderTimeline(props);
   const card = within(screen.getByRole("region", { name: "Type de sticker : music" }));
-  expect(card.getByText("1 stickers · 1 stories")).toBeVisible();
+  expect(card.getByText("1 sticker · 1 story")).toBeVisible();
   expect(card.getByRole("button", { name: "Lire : Musique reçue" })).toBeVisible();
   await user.click(card.getByRole("button", { name: "Tout afficher : music" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · music" }));
-  expect(modal.getByText("1 stickers dans 1 stories · historique complet")).toBeVisible();
+  expect(modal.getByText("1 sticker dans 1 story · historique complet")).toBeVisible();
   expect(modal.getAllByRole("row")).toHaveLength(3);
   expect(modal.getByRole("button", { name: "Lire : Musique reçue" })).toBeVisible();
 });
@@ -427,7 +427,7 @@ test("a DASH soundtrack has one explicitly labeled player per story in the card 
   const { user } = await renderTimeline(props);
   const card = within(screen.getByRole("region", { name: "Type de sticker : music" }));
   expect(card.getAllByText("Exact original label")).toHaveLength(2);
-  expect(card.getByText("2 stickers · 1 stories")).toBeVisible();
+  expect(card.getByText("2 stickers · 1 story")).toBeVisible();
   expect(card.getAllByLabelText("Écouter : Exact original label")).toHaveLength(1);
   const audio = card.getByLabelText("Écouter : Exact original label");
   expect(audio).toHaveAttribute("src", `/media/audio/${"f".repeat(64)}.m4a`);

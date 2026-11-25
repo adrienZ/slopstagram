@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   useId,
   useRef,
@@ -15,7 +16,12 @@ import { GRAPH_HEIGHT, GRAPH_WIDTH, useGraphViewport } from "../hooks/use-graph-
 import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/ui/avatar.tsx";
 import { Button } from "../shadcn/ui/button.tsx";
 import { Popover, PopoverAnchor, PopoverContent } from "../shadcn/ui/popover.tsx";
-import { formatStoryCount, formatUserInitials, getUserTimelineUrl } from "../utils/helper.ts";
+import {
+  formatConjunction,
+  formatStoryCount,
+  formatUserInitials,
+  getUserTimelineUrl,
+} from "../utils/helper.ts";
 
 type GraphPoint = MentionGraphPageData["graph"]["points"][number];
 
@@ -55,6 +61,8 @@ function activationHandlers(isClick: () => boolean, action: () => void) {
 }
 
 function AccountProfile({ point }: { point: AccountPoint }) {
+  const { t } = useTranslation();
+
   return (
     <>
       <div className="tw:flex tw:items-center tw:gap-3">
@@ -70,7 +78,7 @@ function AccountProfile({ point }: { point: AccountPoint }) {
         </div>
       </div>
       <Button asChild variant="outline" size="sm">
-        <a href={getUserTimelineUrl(point.username)}>Voir le profil</a>
+        <a href={getUserTimelineUrl(point.username)}>{t("graph.viewProfile")}</a>
       </Button>
     </>
   );
@@ -116,22 +124,24 @@ function GraphControls({
   onZoomOut: () => void;
   onRecenter: () => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div
       role="toolbar"
-      aria-label="Commandes du graphe"
+      aria-label={t("graph.controls")}
       className="tw:absolute tw:right-3 tw:bottom-3 tw:flex tw:items-center tw:gap-1 tw:rounded-lg tw:border tw:bg-background tw:p-1 tw:shadow-sm"
     >
-      <Button variant="ghost" size="icon" aria-label="Zoom arrière" onClick={onZoomOut}>
+      <Button variant="ghost" size="icon" aria-label={t("graph.zoomOut")} onClick={onZoomOut}>
         <MinusIcon aria-hidden="true" />
       </Button>
-      <output aria-label="Niveau de zoom" className="tw:w-12 tw:text-center tw:text-xs">
+      <output aria-label={t("graph.zoomLevel")} className="tw:w-12 tw:text-center tw:text-xs">
         {`${Math.round(scale * 100)} %`}
       </output>
-      <Button variant="ghost" size="icon" aria-label="Zoom avant" onClick={onZoomIn}>
+      <Button variant="ghost" size="icon" aria-label={t("graph.zoomIn")} onClick={onZoomIn}>
         <PlusIcon aria-hidden="true" />
       </Button>
-      <Button variant="ghost" size="icon" aria-label="Recentrer le graphe" onClick={onRecenter}>
+      <Button variant="ghost" size="icon" aria-label={t("graph.recenter")} onClick={onRecenter}>
         <LocateFixedIcon aria-hidden="true" />
       </Button>
     </div>
@@ -153,6 +163,7 @@ interface MentionGraphProps extends Pick<MentionGraphPageData["graph"], "points"
  */
 export function MentionGraph({ points, connections, selection, overlay }: MentionGraphProps) {
   const { selectedPointId, selectPoint, selectedConnectionId, selectConnection } = selection;
+  const { t } = useTranslation();
   const regionRef = useRef<HTMLElement>(null);
   const layout = useForceLayout(points, connections);
 
@@ -201,7 +212,10 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
         // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG has no <button>.
         role="button"
         tabIndex={0}
-        aria-label={`Connexion entre ${connection.labels.join(" et ")} : ${formatStoryCount(storyCount)}`}
+        aria-label={t("graph.connectionLabel", {
+          labels: formatConjunction(connection.labels),
+          stories: formatStoryCount(storyCount),
+        })}
         aria-pressed={connection.id === selectedConnectionId}
         data-highlighted={highlighted}
         className="tw:cursor-pointer tw:outline-none"
@@ -292,7 +306,7 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
   return (
     <section
       ref={regionRef}
-      aria-label="Graphe des mentions"
+      aria-label={t("graph.title")}
       className="tw:relative tw:h-[calc(100dvh-11rem)] tw:min-h-96 tw:overflow-hidden tw:rounded-lg tw:border tw:bg-muted/20"
     >
       {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- The canvas pans on drag and clears the selection on Escape. */}
@@ -301,7 +315,7 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
         viewBox={`0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`}
         // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG has no <fieldset>.
         role="group"
-        aria-label="Points et connexions"
+        aria-label={t("graph.pointsAndConnections")}
         className="tw:size-full tw:cursor-move tw:touch-none tw:select-none"
         onPointerDown={(event) => {
           startPan(event);
@@ -324,11 +338,11 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
         </defs>
         <g transform={`translate(${view.x} ${view.y}) scale(${view.scale})`}>
           {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG has no <fieldset>. */}
-          <g role="group" aria-label="Connexions">
+          <g role="group" aria-label={t("graph.connections")}>
             {connections.map(renderConnection)}
           </g>
           {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- SVG has no <fieldset>. */}
-          <g role="group" aria-label="Points">
+          <g role="group" aria-label={t("graph.points")}>
             {points.map(renderPoint)}
           </g>
           {hovered !== undefined && renderHoverLabel(hovered)}
@@ -352,7 +366,7 @@ export function MentionGraph({ points, connections, selection, overlay }: Mentio
         {selectedElement !== null && <PopoverAnchor virtualRef={{ current: selectedElement }} />}
         {selected?.kind === "account" && (
           <PopoverContent
-            aria-label={`Profil de ${selected.label}`}
+            aria-label={t("graph.profileOf", { name: selected.label })}
             className="tw:w-64"
             side="top"
             updatePositionStrategy="always"

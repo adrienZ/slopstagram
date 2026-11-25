@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { ReactNode } from "react";
 import { StorySidebar, type StorySidebarProps } from "./story-sidebar.tsx";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "../shadcn/ui/sidebar.tsx";
@@ -8,13 +9,15 @@ export function StoryLayout({
   title,
   ...sidebarProps
 }: StorySidebarProps & { children: ReactNode; title: string }) {
+  const { t } = useTranslation();
+
   return (
     <TooltipProvider>
       <SidebarProvider>
         <StorySidebar {...sidebarProps} />
         <SidebarInset className="tw:min-w-0">
           <header className="tw:flex tw:h-14 tw:shrink-0 tw:items-center tw:gap-3 tw:border-b tw:px-4">
-            <SidebarTrigger aria-label="Afficher ou masquer le calendrier" />
+            <SidebarTrigger aria-label={t("layout.toggleCalendar")} />
             <span className="tw:min-w-0 tw:truncate tw:text-sm tw:text-muted-foreground">
               {title}
             </span>

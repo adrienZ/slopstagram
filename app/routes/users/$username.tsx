@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { i18n } from "../../i18n/index.ts";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { Card, CardHeader, CardTitle, CardDescription } from "../../shadcn/ui/card.tsx";
@@ -19,20 +21,21 @@ function TimelineHeader({
   timeline: AccountTimelinePageData["timeline"];
   userName: string;
 }) {
+  const { t } = useTranslation();
   const displayName = timeline.timelineUser.full_name?.trim();
   const handle = formatUserHandle(timeline.timelineUser.username);
 
   return (
     <>
       <a className="tw:mb-6 tw:inline-block tw:text-muted-foreground" href="/">
-        ← Tous les utilisateurs
+        {t("user.allUsers")}
       </a>
       <Card className="tw:mb-8">
         <CardHeader className="tw:flex tw:flex-col tw:items-start tw:gap-4.5 tw:sm:flex-row tw:sm:items-center">
           <img
             className="tw:size-30 tw:shrink-0 tw:rounded-full tw:bg-muted tw:object-cover"
             src={timeline.avatarPath}
-            alt={`${userName} avatar`}
+            alt={t("common.avatarAlt", { name: userName })}
             width="120"
             height="120"
           />
@@ -52,7 +55,7 @@ function TimelineHeader({
               <ExternalLinkIcon className="tw:size-3.5" aria-hidden="true" />
             </a>
             <CardDescription className="tw:mt-1">
-              <p>{`${timeline.stories.length} story${timeline.stories.length > 1 ? "s" : ""} · dates de publication`}</p>
+              <p>{t("user.summary", { count: timeline.stories.length })}</p>
             </CardDescription>
           </div>
         </CardHeader>
@@ -69,6 +72,7 @@ export function TimelineContent({
   locations,
   sidebarUsers,
 }: AccountTimelinePageData & { selectedStory?: string }) {
+  const { t } = useTranslation();
   const storyByMediaPk = new Map(stories.map((story) => [story.mediaPk, story]));
 
   return (
@@ -80,7 +84,7 @@ export function TimelineContent({
         storyByMediaPk={storyByMediaPk}
         users={sidebarUsers}
       />
-      {timeline.stories.length === 0 && <p>Aucune story enregistrée pour cet utilisateur.</p>}
+      {timeline.stories.length === 0 && <p>{t("user.noStories")}</p>}
       <TimelineGallery years={timeline.years} storyByMediaPk={storyByMediaPk} />
       <Lightbox stories={stories} selectedStory={selectedStory} />
     </>
@@ -133,8 +137,8 @@ export const Route = createFileRoute("/users/$username")({
     meta: [
       {
         title: loaderData
-          ? `Stories de ${formatUserName(loaderData.timeline.timelineUser)}`
-          : "Stories",
+          ? i18n.t("user.title", { name: formatUserName(loaderData.timeline.timelineUser) })
+          : i18n.t("common.stories"),
       },
     ],
   }),

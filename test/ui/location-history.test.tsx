@@ -218,7 +218,7 @@ test("a location history without coordinates keeps every label and preview avail
 
   await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
-  expect(modal.getByText("0 lieux sur la carte")).toBeVisible();
+  expect(modal.getByText("0 lieu sur la carte")).toBeVisible();
   expect(modal.getByText("2 stickers sans position confirmée")).toBeVisible();
   expect(modal.getByText("1 localisation sans coordonnées")).toBeVisible();
   expect(
@@ -252,8 +252,8 @@ test("metadata without a displayable sticker remains mappable through its story 
   await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
   expect(modal.getByText("1 lieu sur la carte")).toBeVisible();
-  expect(modal.getByText("0 stickers sans position confirmée")).toBeVisible();
-  expect(modal.getByText("0 localisations sans coordonnées")).toBeVisible();
+  expect(modal.getByText("0 sticker sans position confirmée")).toBeVisible();
+  expect(modal.getByText("0 localisation sans coordonnées")).toBeVisible();
   expect(modal.getByText("Aucun sticker de type location pour cet utilisateur.")).toBeVisible();
   await user.click(await modal.findByRole("button", { name: "Même nom" }));
   expect(
@@ -295,8 +295,8 @@ test("overlapping anonymous places stay distinct and can each be selected withou
   );
   expect(selected.getAllByRole("button", { name: "Ouvrir aperçu location-0" })).toHaveLength(1);
   expect(modal.getByText("2 lieux sur la carte")).toBeVisible();
-  expect(modal.getByText("0 stickers sans position confirmée")).toBeVisible();
-  expect(modal.getByText("0 localisations sans coordonnées")).toBeVisible();
+  expect(modal.getByText("0 sticker sans position confirmée")).toBeVisible();
+  expect(modal.getByText("0 localisation sans coordonnées")).toBeVisible();
 });
 
 test("unlinked observations never supply a position for a separate legacy sticker", async () => {
@@ -339,8 +339,8 @@ test("a place category appears in the place list but not in the map popup", asyn
 
   await user.click(screen.getByRole("button", { name: "Tout afficher : location" }));
   const modal = within(await screen.findByRole("dialog", { name: "Stickers · location" }));
-  expect(modal.getByRole("option", { name: "Même nom · Pont · 1 stories" })).toBeVisible();
-  expect(modal.getByRole("option", { name: "Sans catégorie · 1 stories" })).toBeVisible();
+  expect(modal.getByRole("option", { name: "Même nom · Pont · 1 story" })).toBeVisible();
+  expect(modal.getByRole("option", { name: "Sans catégorie · 1 story" })).toBeVisible();
   const map = within(await modal.findByRole("region", { name: "Carte des lieux" }));
   await user.click(map.getByRole("button", { name: "Même nom" }));
   const popup = within(map.getByRole("region", { name: "Stories du lieu : Même nom" }));

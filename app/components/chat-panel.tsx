@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { BrainIcon, SendIcon } from "lucide-react";
 import type { AssistantUIMessage } from "@@/core/domains/assistant/assistant.ts";
 import { toolCallOf, useAssistantChat, type AssistantPart } from "../hooks/use-assistant-chat.ts";
@@ -41,6 +42,8 @@ function AssistantPartView({
   part: AssistantPart;
   places: Array<MentionablePlace>;
 }) {
+  const { t } = useTranslation();
+
   if (part.type === "text") {
     return (
       <ChatMarkdown accounts={accounts} places={places}>
@@ -61,7 +64,7 @@ function AssistantPartView({
             <TraceIcon>
               <BrainIcon />
             </TraceIcon>
-            <TraceTitle>Raisonnement</TraceTitle>
+            <TraceTitle>{t("chat.reasoning")}</TraceTitle>
           </TraceLine>
         </TraceCollapsibleTrigger>
         <TraceCollapsibleContent className="tw:whitespace-pre-wrap">
@@ -127,6 +130,7 @@ function ChatMessage({
 
 export function ChatPanel({ accounts }: { accounts: Array<SidebarUser> }) {
   const chat = useAssistantChat();
+  const { t } = useTranslation();
 
   const mentions = useMentionSuggestions({
     accounts,
@@ -149,10 +153,7 @@ export function ChatPanel({ accounts }: { accounts: Array<SidebarUser> }) {
           <MessageScrollerViewport>
             <MessageScrollerContent>
               {chat.messages.length === 0 && (
-                <p className="tw:text-sm tw:text-muted-foreground">
-                  Mentionne un compte avec @ et demande ce qu’il a publié dans les dernières 24
-                  heures, ou demande quels comptes tu connais.
-                </p>
+                <p className="tw:text-sm tw:text-muted-foreground">{t("chat.intro")}</p>
               )}
               {chat.messages.map((message) => (
                 <MessageScrollerItem
@@ -166,14 +167,14 @@ export function ChatPanel({ accounts }: { accounts: Array<SidebarUser> }) {
               {chat.waiting && (
                 <MessageScrollerItem messageId="waiting">
                   <p className="tw:text-sm tw:text-muted-foreground tw:shimmer">
-                    L’Assistant réfléchit…
+                    {t("chat.thinking")}
                   </p>
                 </MessageScrollerItem>
               )}
               {chat.failed && (
                 <MessageScrollerItem messageId="error">
                   <p role="alert" className="tw:text-sm tw:text-destructive">
-                    Le modèle n’a pas répondu. Vérifie que le serveur Ollama tourne, puis réessaie.
+                    {t("chat.failed")}
                   </p>
                 </MessageScrollerItem>
               )}
@@ -202,8 +203,8 @@ export function ChatPanel({ accounts }: { accounts: Array<SidebarUser> }) {
             <MentionBackdrop accounts={accounts} text={chat.draft} />
             <InputGroupTextarea
               {...mentions.field}
-              aria-label="Message"
-              placeholder="Écris un message, @ pour mentionner un compte"
+              aria-label={t("chat.message")}
+              placeholder={t("chat.placeholder")}
               value={chat.draft}
               className="tw:relative tw:text-transparent tw:caret-foreground"
               onKeyDown={(event) => {
@@ -226,7 +227,7 @@ export function ChatPanel({ accounts }: { accounts: Array<SidebarUser> }) {
               className="tw:ml-auto"
             >
               <SendIcon />
-              Envoyer
+              {t("chat.send")}
             </InputGroupButton>
           </InputGroupAddon>
         </InputGroup>

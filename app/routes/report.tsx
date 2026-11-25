@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { i18n } from "../i18n/index.ts";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { getReport } from "../query-service.ts";
@@ -22,6 +24,8 @@ export function ReportPage({
   users,
   selectedStory,
 }: StoryFeedPageData & { selectedStory?: string }) {
+  const { t } = useTranslation();
+
   return (
     <StoryLayout
       selectedDate={selectedDate}
@@ -29,16 +33,14 @@ export function ReportPage({
       today={today}
       onSelectDate={navigateToReportDate}
       disabledDates={getDisabledStoryDates(availableDates)}
-      title="Stories"
+      title={t("common.stories")}
       users={sidebarUsers}
     >
       <h1 className="tw:text-3xl tw:font-bold">{formatStoryViewTitle(selectedDate, today)}</h1>
-      {selectedDate === today && <p className="tw:mb-4">{`Fil chargé le ${date}`}</p>}
+      {selectedDate === today && <p className="tw:mb-4">{t("report.loadedAt", { date })}</p>}
       {users.length === 0 && (
         <p className="tw:my-4">
-          {selectedDate === today
-            ? "Aucune story publiée dans les dernières 24 heures."
-            : "Aucune story publiée ce jour-là."}
+          {selectedDate === today ? t("common.noStoriesIn24h") : t("report.noStoriesDay")}
         </p>
       )}
       {users.map((props) => (
@@ -103,7 +105,7 @@ export const Route = createFileRoute("/report")({
       {
         title: loaderData
           ? formatStoryViewTitle(loaderData.selectedDate, loaderData.today)
-          : "Stories",
+          : i18n.t("common.stories"),
       },
     ],
   }),

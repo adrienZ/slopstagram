@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type {
   AmbiguousMentionQuery,
   MentionConnectionList,
@@ -13,16 +14,17 @@ function formatMention({ author, mentioned, storyCount }: MentionDirection): str
 }
 
 function AmbiguousCandidates({ query, candidates, total }: AmbiguousMentionQuery) {
+  const { t } = useTranslation();
+
   return (
-    <section aria-label={`Personnes nommées ${query}`} className="tw:grid tw:gap-1">
-      <p>
-        {total} personnes s’appellent {query}.
-      </p>
+    <section aria-label={t("mentions.ambiguousLabel", { query })} className="tw:grid tw:gap-1">
+      <p>{t("mentions.ambiguous", { total, query })}</p>
       <ul className="tw:grid tw:gap-1">
         {candidates.map(({ person, connectedTo }) => (
           <li key={person.id}>
             {person.label}
-            {connectedTo.length > 0 && ` · avec ${connectedTo.join(", ")}`}
+            {connectedTo.length > 0 &&
+              ` · ${t("mentions.connectedWith", { names: connectedTo.join(", ") })}`}
           </li>
         ))}
       </ul>
@@ -32,8 +34,10 @@ function AmbiguousCandidates({ query, candidates, total }: AmbiguousMentionQuery
 
 /** The Mention connections the Assistant listed, as plain text. */
 export function MentionConnectionSummaries({ list }: { list: MentionConnectionList }) {
+  const { t } = useTranslation();
+
   if (list.status === "unknown_person") {
-    return <p>Personne ne s’appelle {list.query} dans les mentions.</p>;
+    return <p>{t("mentions.unknownPerson", { names: list.query })}</p>;
   }
 
   if (list.status === "ambiguous") {
@@ -41,12 +45,12 @@ export function MentionConnectionSummaries({ list }: { list: MentionConnectionLi
   }
 
   if (list.connections.length === 0) {
-    return <p>Aucune connexion de mention.</p>;
+    return <p>{t("mentions.noConnections")}</p>;
   }
 
   return (
     <>
-      <ul aria-label="Connexions de mention" className="tw:grid tw:gap-1">
+      <ul aria-label={t("mentions.connectionsLabel")} className="tw:grid tw:gap-1">
         {list.connections.map(({ people: [first, second], mentions }) => (
           <li key={`${first.id} ${second.id}`}>
             {first.label} – {second.label} · {mentions.map(formatMention).join(", ")}
@@ -54,9 +58,7 @@ export function MentionConnectionSummaries({ list }: { list: MentionConnectionLi
         ))}
       </ul>
       {list.total > list.connections.length && (
-        <p>
-          {list.connections.length} connexions sur {list.total}.
-        </p>
+        <p>{t("mentions.connectionsOf", { shown: list.connections.length, total: list.total })}</p>
       )}
     </>
   );
@@ -64,24 +66,24 @@ export function MentionConnectionSummaries({ list }: { list: MentionConnectionLi
 
 /** The people of the Mention connections the Assistant found, as plain text. */
 export function MentionPeople({ page }: { page: MentionPeoplePage }) {
+  const { t } = useTranslation();
+
   if (page.people.length === 0) {
-    return <p>Aucune personne trouvée.</p>;
+    return <p>{t("mentions.noPeople")}</p>;
   }
 
   return (
     <>
-      <ul aria-label="Personnes trouvées" className="tw:grid tw:gap-1">
+      <ul aria-label={t("mentions.peopleLabel")} className="tw:grid tw:gap-1">
         {page.people.map(({ person, connectionCount, storyCount }) => (
           <li key={person.id}>
-            {person.label} · {connectionCount} connexion{connectionCount > 1 ? "s" : ""} ·{" "}
+            {person.label} · {t("mentions.connectionCount", { count: connectionCount })} ·{" "}
             {formatStoryCount(storyCount)}
           </li>
         ))}
       </ul>
       {page.total > page.people.length && (
-        <p>
-          {page.people.length} personnes sur {page.total}.
-        </p>
+        <p>{t("mentions.peopleOf", { shown: page.people.length, total: page.total })}</p>
       )}
     </>
   );
@@ -89,8 +91,10 @@ export function MentionPeople({ page }: { page: MentionPeoplePage }) {
 
 /** The Mention connection the Assistant read, as plain text: who mentioned whom, and where. */
 export function MentionConnectionDetails({ read }: { read: MentionConnectionRead }) {
+  const { t } = useTranslation();
+
   if (read.status === "unknown_person") {
-    return <p>Personne ne s’appelle {read.queries.join(", ")} dans les mentions.</p>;
+    return <p>{t("mentions.unknownPerson", { names: read.queries.join(", ") })}</p>;
   }
 
   if (read.status === "ambiguous") {
@@ -100,17 +104,13 @@ export function MentionConnectionDetails({ read }: { read: MentionConnectionRead
   const [first, second] = read.people;
 
   if (read.status === "no_observation") {
-    return (
-      <p>
-        Aucune story de {first.label} ne mentionne {second.label}, ni l’inverse.
-      </p>
-    );
+    return <p>{t("mentions.noObservation", { first: first.label, second: second.label })}</p>;
   }
 
   return (
-    <section aria-label="Connexion de mention lue" className="tw:grid tw:gap-1">
+    <section aria-label={t("mentions.readLabel")} className="tw:grid tw:gap-1">
       <p className="tw:font-medium">{read.mentions.map(formatMention).join(", ")}</p>
-      <ul aria-label="Stories sources" className="tw:grid tw:gap-1">
+      <ul aria-label={t("mentions.sourceStories")} className="tw:grid tw:gap-1">
         {read.stories.map((story) => (
           <li key={story.storyPk}>
             {story.date !== null && (
@@ -122,7 +122,7 @@ export function MentionConnectionDetails({ read }: { read: MentionConnectionRead
           </li>
         ))}
       </ul>
-      {read.nextOffset !== null && <p>{formatStoryCount(read.storyCount)} au total.</p>}
+      {read.nextOffset !== null && <p>{t("assistant.storiesTotal", { count: read.storyCount })}</p>}
     </section>
   );
 }

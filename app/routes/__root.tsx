@@ -1,3 +1,4 @@
+import { i18n } from "../i18n/index.ts";
 import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { ThemeProvider } from "../components/theme-provider.tsx";
@@ -6,7 +7,7 @@ import "../assets/css/base.css";
 
 export function RootDocument({ children }: { children: ReactNode }) {
   return (
-    <html lang="fr" suppressHydrationWarning>
+    <html lang={i18n.language} suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>

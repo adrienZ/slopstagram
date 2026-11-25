@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { i18n } from "../i18n/index.ts";
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowLeftIcon } from "lucide-react";
 import { z } from "zod";
@@ -44,6 +46,7 @@ export function PlaceMapPage({
       : { name: filter.place.name, onRemove: filter.removePlace };
 
   const isDesktop = useMedia("(min-width: 1024px)", false);
+  const { t } = useTranslation();
   const storyByMediaPk = new Map(stories.map((story) => [story.mediaPk, story]));
   const avatarByUsername = new Map(accounts.map((account) => [account.username, account]));
 
@@ -70,16 +73,16 @@ export function PlaceMapPage({
           className="tw:flex tw:items-center tw:gap-1 tw:text-sm tw:text-muted-foreground"
         >
           <ArrowLeftIcon aria-hidden="true" className="tw:size-4" />
-          Stories
+          {t("common.stories")}
         </a>
-        <h1 className="tw:text-sm tw:font-semibold">Carte</h1>
+        <h1 className="tw:text-sm tw:font-semibold">{t("common.map")}</h1>
       </header>
       <main className="tw:mx-auto tw:w-full tw:max-w-360 tw:gap-6 tw:px-6 tw:pt-8 tw:pb-12 tw:max-[760px]:px-4 tw:max-[760px]:py-6 tw:max-lg:space-y-3 tw:lg:grid tw:lg:grid-cols-4">
         {isDesktop ? (
           // The panel spans the row, down to the bottom of the map; its list scrolls inside it.
-          <aside aria-label="Filtres" className="tw:relative tw:lg:col-span-1">
+          <aside aria-label={t("map.filters")} className="tw:relative tw:lg:col-span-1">
             <div className="tw:absolute tw:inset-0 tw:flex tw:flex-col tw:gap-2 tw:rounded-lg tw:border tw:p-3">
-              <h2 className="tw:text-sm tw:font-semibold">Filtrer par compte</h2>
+              <h2 className="tw:text-sm tw:font-semibold">{t("filter.byAccount")}</h2>
               <AccountChecklist
                 accounts={accounts}
                 selected={filter.selected}
@@ -101,7 +104,7 @@ export function PlaceMapPage({
         )}
         <div className="tw:space-y-3 tw:lg:col-span-3">
           {filter.places.length === 0 ? (
-            <p>Aucun lieu avec des coordonnées à afficher.</p>
+            <p>{t("map.noPlaces")}</p>
           ) : (
             <PlaceExplorer
               places={filter.places}
@@ -110,7 +113,7 @@ export function PlaceMapPage({
               showOwner
               renderMarker={renderMarker}
               mapClassName="tw:aspect-4/3 tw:w-full tw:lg:aspect-video"
-              tileErrorMessage="Fond de carte indisponible. Le choix du lieu reste accessible."
+              tileErrorMessage={t("map.tileErrorSelect")}
             />
           )}
         </div>
@@ -143,6 +146,6 @@ export const Route = createFileRoute("/map")({
     story: z.coerce.string().optional(),
   }),
   loader: async () => await getPlaceMap(),
-  head: () => ({ meta: [{ title: "Carte des lieux" }] }),
+  head: () => ({ meta: [{ title: i18n.t("map.pageTitle") }] }),
   component: PlaceMapRoute,
 });

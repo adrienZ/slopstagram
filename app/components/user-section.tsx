@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { StoryOutputUser } from "@@/core/domains/fetch-run/report-types.ts";
 import { formatUserHandle, formatUserName, getUserTimelineUrl } from "../utils/helper.ts";
 import type { StoryCardData } from "../utils/story-cards.ts";
@@ -13,6 +14,7 @@ export interface UserSectionProps {
 }
 
 export function UserSection({ user, avatar, summary, stories }: UserSectionProps) {
+  const { t } = useTranslation();
   const userName = formatUserName(user);
   const displayName = user.full_name?.trim();
   const hasSummary = summary !== undefined && summary.length > 0;
@@ -30,7 +32,7 @@ export function UserSection({ user, avatar, summary, stories }: UserSectionProps
                 <img
                   className="tw:size-20 tw:shrink-0 tw:rounded-full tw:bg-muted tw:object-cover"
                   src={avatar}
-                  alt={`${userName} avatar`}
+                  alt={t("common.avatarAlt", { name: userName })}
                   width="80"
                   height="80"
                 />
