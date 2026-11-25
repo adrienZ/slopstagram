@@ -438,3 +438,29 @@ test("a request that is not a conversation of UI messages is rejected", async (c
   expect(responses.map(({ status }) => status)).toStrictEqual([400, 400, 400, 400]);
   expect(world.ollama.requests).toStrictEqual([]);
 });
+
+test("with an Ollama API key, every chat request carries it as a bearer token", async (context) => {
+  vi.stubEnv("OLLAMA_API_KEY", "demo-key");
+  context.onTestFinished(() => {
+    vi.unstubAllEnvs();
+  });
+  const world = await createWorld(context);
+
+  await readChunks(await handleChatRequest(world.runtime, chatRequest(userMessage("Hello!"))));
+
+  const chats = world.ollama.requests.filter(({ kind }) => kind === "chat");
+  expect(chats.length).toBeGreaterThan(0);
+  expect(chats.map(({ authorization }) => authorization)).toStrictEqual(
+    chats.map(() => "Bearer demo-key"),
+  );
+});
+
+test("without an Ollama API key, chat requests carry no authorization", async (context) => {
+  const world = await createWorld(context);
+
+  await readChunks(await handleChatRequest(world.runtime, chatRequest(userMessage("Hello!"))));
+
+  const chats = world.ollama.requests.filter(({ kind }) => kind === "chat");
+  expect(chats.length).toBeGreaterThan(0);
+  expect(chats.map(({ authorization }) => authorization)).toStrictEqual(chats.map(() => null));
+});

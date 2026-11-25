@@ -88,7 +88,12 @@ export async function streamAssistantReply(
   runtime: AssistantRuntime,
   messages: Array<AssistantUIMessage>,
 ): Promise<Response> {
-  const ollama = createOllama({ baseURL: getOllamaHost(), fetch: runtime.fetchOllama });
+  const ollama = createOllama({
+    apiKey: process.env.OLLAMA_API_KEY,
+    baseURL: getOllamaHost(),
+    fetch: runtime.fetchOllama,
+  });
+
   const tools = createAssistantTools(runtime);
 
   function chatModel(think: boolean): AssistantModel {

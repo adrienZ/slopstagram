@@ -419,6 +419,7 @@ function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>
 
 function createOllama(behavior: OllamaBehavior = {}) {
   const requests: Array<{
+    authorization?: string | null;
     contextLength?: number;
     kind: "chat" | "summary" | "vision";
     prompt: string;
@@ -433,6 +434,7 @@ function createOllama(behavior: OllamaBehavior = {}) {
 
     if (chat.success) {
       requests.push({
+        authorization: new globalThis.Headers(init?.headers).get("authorization"),
         contextLength: chat.data.options?.num_ctx,
         kind: "chat",
         prompt: chat.data.messages.at(-1)?.content ?? "",
