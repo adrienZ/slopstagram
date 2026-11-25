@@ -102,3 +102,29 @@ test("a request that does not come from localhost is rejected before any tool ru
 
   expect(response.status).toBe(403);
 });
+
+test("a host listed in MCP_ALLOWED_HOSTS reaches the tools", async (context) => {
+  vi.stubEnv("MCP_ALLOWED_HOSTS", "demo.example, other.example");
+  context.onTestFinished(() => {
+    vi.unstubAllEnvs();
+  });
+  const world = await createWorld(context);
+
+  const response = await handleMcpRequest(
+    world.runtime,
+    mcpRequest({ method: "tools/list" }, { host: "demo.example", origin: "https://demo.example" }),
+  );
+
+  expect(response.status).toBe(200);
+});
+
+test("a host that is not listed is rejected before any tool runs", async (context) => {
+  const world = await createWorld(context);
+
+  const response = await handleMcpRequest(
+    world.runtime,
+    mcpRequest({ method: "tools/list" }, { host: "demo.example" }),
+  );
+
+  expect(response.status).toBe(403);
+});
