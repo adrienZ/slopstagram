@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { Matcher } from "react-day-picker";
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { fr } from "react-day-picker/locale";
 import {
   CalendarDaysIcon,
@@ -14,7 +15,7 @@ import { Button } from "../shadcn/ui/button.tsx";
 import { Calendar } from "../shadcn/ui/calendar.tsx";
 import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/ui/avatar.tsx";
 import type { SidebarUser } from "../loaders/sidebar-users.ts";
-import { formatUserHandle, formatUserInitials, getUserTimelineUrl } from "../utils/helper.ts";
+import { formatUserHandle, formatUserInitials } from "../utils/helper.ts";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../shadcn/ui/collapsible.tsx";
 import {
   Sidebar,
@@ -69,7 +70,7 @@ export function StorySidebar({
   return (
     <Sidebar aria-label={t("sidebar.label")}>
       <SidebarHeader className="tw:p-5">
-        <a href="/report" className="tw:flex tw:items-center tw:gap-3 tw:no-underline">
+        <Link to="/report" className="tw:flex tw:items-center tw:gap-3 tw:no-underline">
           <span className="tw:flex tw:size-9 tw:items-center tw:justify-center tw:rounded-lg tw:bg-sidebar-primary tw:text-sidebar-primary-foreground">
             <CalendarDaysIcon className="tw:size-5" />
           </span>
@@ -77,7 +78,7 @@ export function StorySidebar({
             <span className="tw:text-sm tw:font-semibold">Slopstagram</span>
             <span className="tw:text-xs tw:text-muted-foreground">{t("sidebar.tagline")}</span>
           </div>
-        </a>
+        </Link>
       </SidebarHeader>
       <SidebarSeparator />
       <SidebarContent>
@@ -119,26 +120,26 @@ export function StorySidebar({
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <a href="/chat">
+                    <Link to="/chat">
                       <MessageCircleIcon aria-hidden="true" />
                       <span>{t("common.assistant")}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <a href="/map">
+                    <Link to="/map">
                       <MapIcon aria-hidden="true" />
                       <span>{t("common.map")}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <a href="/graph">
+                    <Link to="/graph">
                       <WaypointsIcon aria-hidden="true" />
                       <span>{t("common.graph")}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
@@ -167,8 +168,9 @@ export function StorySidebar({
                               isActive={user.username === selectedUsername}
                               className="tw:h-11"
                             >
-                              <a
-                                href={getUserTimelineUrl(user.username)}
+                              <Link
+                                to="/users/$username"
+                                params={{ username: user.username }}
                                 aria-current={
                                   user.username === selectedUsername ? "page" : undefined
                                 }
@@ -180,7 +182,7 @@ export function StorySidebar({
                                   </AvatarFallback>
                                 </Avatar>
                                 <span>{formatUserHandle(user.username)}</span>
-                              </a>
+                              </Link>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
                         ))}
