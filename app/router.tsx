@@ -1,19 +1,7 @@
-import { useTranslation } from "react-i18next";
 import "./i18n/index.ts";
 import { createRouter, parseSearchWith, stringifySearchWith } from "@tanstack/react-router";
+import { InternalError, NotFound } from "./components/router-fallbacks.tsx";
 import { routeTree } from "./routeTree.gen.ts";
-
-function InternalError() {
-  const { t } = useTranslation();
-
-  return <h1>{t("errors.internal")}</h1>;
-}
-
-function NotFound() {
-  const { t } = useTranslation();
-
-  return <h1>{t("errors.notFound")}</h1>;
-}
 
 /** Everything the application router is configured with except its route tree, so tests can reuse it. */
 export const routerOptions = {
