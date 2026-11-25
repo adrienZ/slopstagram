@@ -183,13 +183,7 @@ export function ChatPanel({ accounts }: { accounts: Array<SidebarUser> }) {
           <MessageScrollerButton />
         </MessageScroller>
       </MessageScrollerProvider>
-      <form
-        className="tw:relative"
-        onSubmit={(event) => {
-          event.preventDefault();
-          chat.send();
-        }}
-      >
+      <form className="tw:relative" action={chat.send}>
         {mentions.listbox !== null && (
           <MentionSuggestionList
             id={mentions.listbox.id}
