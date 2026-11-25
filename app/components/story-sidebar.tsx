@@ -58,7 +58,7 @@ export function StorySidebar({
 }: StorySidebarProps) {
   const { setOpenMobile } = useSidebar();
   const { t } = useTranslation();
-  const [month, setMonth] = useState(new Date(`${selectedDate}T12:00:00Z`));
+  const [month, setMonth] = useState(() => new Date(`${selectedDate}T12:00:00Z`));
   const todayDate = new Date(`${today}T12:00:00Z`);
 
   function selectDate(date: Date) {
