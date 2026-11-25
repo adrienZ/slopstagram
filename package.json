@@ -69,6 +69,7 @@
   },
   "devDependencies": {
     "@interfere/landmines": "^0.1.1",
+    "@napi-rs/canvas": "^1.2.1",
     "@playwright/cli": "^0.1.25",
     "@shadcn/lint": "^0.2.5",
     "@tailwindcss/vite": "^4.3.5",

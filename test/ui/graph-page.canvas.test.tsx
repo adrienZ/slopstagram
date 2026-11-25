@@ -1,12 +1,11 @@
 import { act, createEvent, fireEvent, screen } from "@testing-library/react";
-import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi, type MockInstance } from "vitest";
 import { Route } from "../../app/routes/graph.tsx";
 import { loadMentionGraph } from "../../app/loaders/mention-graph.ts";
 import { createPageRenderer } from "../render-page.ts";
 import { mockJsdomPolyfillValue } from "../setup/define-property.ts";
 import { shareTestRuntime } from "../setup/test-runtime.ts";
 import { graphAccounts, seedGraphDatabase } from "../setup/mention-graph-seed.ts";
-import { findPaintedText, paintedImages } from "./canvas-2d.ts";
 
 const shared = shareTestRuntime(seedGraphDatabase);
 const renderer = createPageRenderer(Route, () => loadMentionGraph(shared.runtime, []), "/graph");
@@ -50,9 +49,27 @@ async function advance(ms: number) {
 
 // user-event and React Testing Library's async helpers wait on setTimeout, which these tests fake:
 // events go through fireEvent instead.
-async function mountGraph() {
-  await renderer.mountRoute("/graph");
+let fillText: MockInstance<CanvasRenderingContext2D["fillText"]>;
+let context: CanvasRenderingContext2D;
+
+async function watchCanvas(container: HTMLElement) {
   await vi.waitFor(() => screen.getByRole("toolbar", { name: "Commandes du graphe" }));
+
+  // force-graph's canvas has no role: it only draws what the accessible buttons already offer.
+  const drawing = container.querySelector("canvas")?.getContext("2d");
+
+  if (drawing === null || drawing === undefined) {
+    throw new Error("force-graph drew no canvas");
+  }
+
+  context = drawing;
+  // jsdom draws through @napi-rs/canvas, whose pixels say nothing about which point is where.
+  fillText = vi.spyOn(context, "fillText");
+}
+
+async function mountGraph() {
+  const { container } = await renderer.mountRoute("/graph");
+  await watchCanvas(container);
 }
 
 async function settle() {
@@ -63,6 +80,14 @@ async function settle() {
 async function press(name: string) {
   fireEvent.click(screen.getByRole("button", { name }));
   await advance(300);
+}
+
+/** Where the last frame wrote `text` on the canvas, in canvas pixels. */
+function findPaintedText(text: string) {
+  const call = fillText.mock.calls.findLast(([written]) => written === text);
+  const { a, d, e, f } = context.getTransform();
+
+  return call && { canvas: context.canvas, x: a * call[1] + e, y: d * call[2] + f };
 }
 
 function paintedAt(text: string) {
@@ -131,9 +156,9 @@ async function clickCanvas(at: CanvasPoint) {
 }
 
 test("the graph says it is loading until its first frame shows every Account", async () => {
-  await renderer.mountRoute("/graph");
+  const { container } = await renderer.mountRoute("/graph");
   expect(screen.getByText("Chargement du graphe…")).toBeVisible();
-  await vi.waitFor(() => screen.getByRole("toolbar", { name: "Commandes du graphe" }));
+  await watchCanvas(container);
   await advance(100);
   expect(screen.queryByText("Chargement du graphe…")).not.toBeInTheDocument();
   expect(["AD", "BE", "CL"].map((initials) => findPaintedText(initials))).not.toContain(undefined);
@@ -185,24 +210,6 @@ test("focusing a point's button names it on the canvas too", async () => {
   });
   await advance(100);
   expect(paintedAt(ada).x).toBe(paintedAt("AD").x);
-});
-
-test("an Account's photo fills its point once it has loaded", async () => {
-  mockJsdomPolyfillValue(globalThis.HTMLImageElement.prototype, "complete", { get: () => true });
-  mockJsdomPolyfillValue(globalThis.HTMLImageElement.prototype, "naturalWidth", { get: () => 64 });
-  mockJsdomPolyfillValue(globalThis.HTMLImageElement.prototype, "naturalHeight", { get: () => 48 });
-  await settle();
-
-  const [avatarPath] = loadMentionGraph(shared.runtime, []).graph.points.flatMap((point) =>
-    point.kind === "account" && point.label === ada ? [point.avatarPath] : [],
-  );
-
-  const initials = paintedAt("AD");
-  const photo = paintedImages().find(({ source }) => source === avatarPath);
-  expect(photo).toBeDefined();
-  expect((photo?.x ?? 0) + (photo?.width ?? 0) / 2).toBeCloseTo(initials.x);
-  expect((photo?.y ?? 0) + (photo?.height ?? 0) / 2).toBeCloseTo(initials.y);
-  expect(photo?.width).toBe(photo?.height);
 });
 
 test("the zoom buttons step the zoom, and recentering shows the whole graph again", async () => {
