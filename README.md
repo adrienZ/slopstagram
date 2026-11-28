@@ -56,6 +56,7 @@ everything lives in a local SQLite database.
 - 👁️ **Local vision**: OCR, image analysis and a daily summary per account.
 - 💬 **Chat Assistant**: ask about your feed, answered by a local model with tools.
 - ⏰ **Hourly refresh**: new stories fetched while the app runs.
+- 👥 **Several accounts**: one Instagram account per data folder, each with its own database, media, queue and login.
 
 The interface is in French.
 
@@ -178,6 +179,20 @@ npm run dev
 
 Open <http://localhost:5173/>. While the server runs, it fetches new stories every hour.
 
+### Several accounts
+
+Everything an account owns lives in one data folder: its database, cached media, bunqueue queue,
+backups and Playwright login. `SLOPSTAGRAM_DATA_DIR` picks the folder, `data/default` when unset.
+Set it on every command to work on another account:
+
+```bash
+SLOPSTAGRAM_DATA_DIR=data/work npm run auth
+SLOPSTAGRAM_DATA_DIR=data/work npm run create:report
+SLOPSTAGRAM_DATA_DIR=data/work npm run dev
+```
+
+The first run creates the folder. Accounts never share stories, media or logins.
+
 ## MCP server
 
 The tools the chat Assistant reads your data with are also served over
@@ -203,7 +218,8 @@ claude mcp add --transport http slopstagram http://localhost:5173/api/mcp
 
 ## Development
 
-Cached media, the SQLite databases, and the Playwright profile are stored in `./data`.
+Cached media, the SQLite database, the queue, and the Playwright profile are stored in
+`./data/default`, or in the folder `SLOPSTAGRAM_DATA_DIR` names.
 Database migrations are applied automatically when the Nitro server starts; scripts expect
 an initialized database. After changing an entity schema, generate a migration with:
 
