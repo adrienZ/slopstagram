@@ -13,6 +13,7 @@ const config: KnipConfig = {
   entry: [
     "scripts/*.ts!",
     "app/router.tsx!",
+    "app/start.ts!",
     "app/routes/**/*.{ts,tsx}!",
     "nitro/plugins/*.ts!",
     "test/**/*.test.ts",
