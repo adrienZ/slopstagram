@@ -1,5 +1,4 @@
 import { forceX, forceY } from "d3-force";
-import ForceGraph from "force-graph";
 import { LocateFixedIcon, MinusIcon, PlusIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -17,10 +16,7 @@ import {
   type GraphNode,
   type Scene,
 } from "./mention-graph-drawing.ts";
-
-type Graph = ForceGraph<GraphNode, GraphLink>;
-
-const CONNECTION_HIT_WIDTH = 14;
+import { createGraph as createForceGraph, type Graph } from "./mention-graph-picking.ts";
 
 /** Ticks for the simulation to cool down from its first, hottest step. */
 const SETTLE_TICKS = 300;
@@ -79,7 +75,7 @@ function createGraph(
   let settled = false;
   let moved = false;
   const listeners = new globalThis.AbortController();
-  const graph: Graph = new ForceGraph<GraphNode, GraphLink>(container);
+  const graph = createForceGraph(container);
 
   const painter = createPainter(connections, nodesById, () => {
     requestRedraw(graph);
@@ -108,7 +104,6 @@ function createGraph(
       drawConnection(link, context, scene);
     })
     .linkWidth((link) => connectionWidth(link.connection.storyPks.length))
-    .linkHoverPrecision(CONNECTION_HIT_WIDTH / 2)
     .onRenderFramePre(() => {
       // Read on every redraw, so the drawing follows the selection and the light or dark theme.
       scene = { ...latest.current, palette: readPalette(container) };
