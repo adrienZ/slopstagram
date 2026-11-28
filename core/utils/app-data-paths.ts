@@ -7,12 +7,7 @@ export const APP_CACHE_DIR = path.join(APP_DATA_DIR, "cache");
 export const APP_DATABASE_PATH =
   process.env.SLOPSTAGRAM_DATABASE_PATH ?? path.join(APP_DATA_DIR, "slopstagram.sqlite");
 
-/**
- * The bunqueue server of an account keeps its own queue, so two accounts never share jobs.
- * Read by bunqueue.config.ts, which Knip does not follow in production mode.
- *
- * @public
- */
+/** @public */
 export const APP_BUNQUEUE_PATH = path.join(APP_DATA_DIR, "bunq.db");
 
 export const APP_BACKUPS_DIR = path.join(APP_DATA_DIR, "backups");
