@@ -17,8 +17,7 @@
     "types": ["node", "vite/client"]
   },
   "include": [
-    "drizzle.config.ts",
-    "bunqueue.config.ts",
+    "*.config.ts",
     "core/**/*.ts",
     "devtools/**/*.ts",
     "evals/**/*.ts",
