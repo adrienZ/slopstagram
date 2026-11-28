@@ -43,11 +43,11 @@ rm -rf .vercel/output
 NITRO_PRESET=vercel npm run build > "$LOG_DIR/last-build.log" 2>&1 || fail "build failed, see $LOG_DIR/last-build.log"
 
 # A single file without WAL: the function filesystem is read-only.
-mkdir -p "$FUNCTION_DIR/data-demo"
-sqlite3 "$SLOPSTAGRAM_DATA_DIR/slopstagram.sqlite" ".backup '$FUNCTION_DIR/data-demo/slopstagram.sqlite'"
-sqlite3 "$FUNCTION_DIR/data-demo/slopstagram.sqlite" "PRAGMA journal_mode=DELETE;" > /dev/null
-rm -f "$FUNCTION_DIR/data-demo/slopstagram.sqlite-shm" "$FUNCTION_DIR/data-demo/slopstagram.sqlite-wal"
-cp -R "$SLOPSTAGRAM_DATA_DIR/cache" "$FUNCTION_DIR/data-demo/cache"
+mkdir -p "$FUNCTION_DIR/data/demo"
+sqlite3 "$SLOPSTAGRAM_DATA_DIR/slopstagram.sqlite" ".backup '$FUNCTION_DIR/data/demo/slopstagram.sqlite'"
+sqlite3 "$FUNCTION_DIR/data/demo/slopstagram.sqlite" "PRAGMA journal_mode=DELETE;" > /dev/null
+rm -f "$FUNCTION_DIR/data/demo/slopstagram.sqlite-shm" "$FUNCTION_DIR/data/demo/slopstagram.sqlite-wal"
+cp -R "$SLOPSTAGRAM_DATA_DIR/cache" "$FUNCTION_DIR/data/demo/cache"
 
 # The build traces this machine's sharp binaries, but the function runs on Linux.
 if [ ! -d "$SHARP_LINUX_DIR/node_modules/@img/sharp-linux-x64" ]; then
