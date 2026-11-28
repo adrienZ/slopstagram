@@ -419,6 +419,7 @@ function answerChat({ messages, tools }: z.infer<typeof OllamaChatRequestSchema>
 
 function createOllama(behavior: OllamaBehavior = {}) {
   const requests: Array<{
+    authorization?: string | null;
     contextLength?: number;
     kind: "chat" | "summary" | "vision";
     prompt: string;
@@ -433,6 +434,7 @@ function createOllama(behavior: OllamaBehavior = {}) {
 
     if (chat.success) {
       requests.push({
+        authorization: new globalThis.Headers(init?.headers).get("authorization"),
         contextLength: chat.data.options?.num_ctx,
         kind: "chat",
         prompt: chat.data.messages.at(-1)?.content ?? "",
@@ -488,6 +490,7 @@ export async function createWorld(
     backup?: RuntimeBoundaries["backup"];
     client?: RuntimeBoundaries["client"];
     editStory?: (story: RecordedStory) => void;
+    fetchGroq?: RuntimeBoundaries["fetchGroq"];
     ollama?: OllamaBehavior;
     ocr?: (position: number) => string | Error;
     queue?: RuntimeBoundaries["queue"];
@@ -535,6 +538,7 @@ export async function createWorld(
           : new globalThis.Response(png, { headers: { "content-type": "image/png" } }),
       );
     },
+    fetchGroq: options.fetchGroq,
     fetchOllama: ollama.fetchOllama,
     logger,
     queue: options.queue,

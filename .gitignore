@@ -17,3 +17,7 @@ data/*
 
 # evalite
 evalite-export/
+
+# vercel
+.vercel
+.env*

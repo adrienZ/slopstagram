@@ -31,6 +31,7 @@ export interface RuntimeBoundaries {
   client?: InstagramClient;
   fetchImage?: FetchImage;
   fetchMedia?: FetchMedia;
+  fetchGroq?: HttpFetch;
   fetchOllama?: HttpFetch;
   logger?: Logger;
   queue?: FetchRunQueue;

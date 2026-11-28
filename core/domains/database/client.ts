@@ -5,13 +5,20 @@ import { drizzle } from "drizzle-orm/node-sqlite";
 
 export type DrizzleDatabase = ReturnType<typeof drizzle>;
 
-export function createDrizzle(filename: string): DrizzleDatabase {
-  if (filename !== ":memory:") {
+export interface DrizzleOptions {
+  readOnly?: boolean;
+}
+
+// No WAL: a single-file database can be shipped and opened where the filesystem is read-only.
+export function createDrizzle(filename: string, options: DrizzleOptions = {}): DrizzleDatabase {
+  const readOnly = options.readOnly ?? false;
+
+  if (filename !== ":memory:" && !readOnly) {
     mkdirSync(path.dirname(filename), { recursive: true });
   }
 
-  const sqlite = new DatabaseSync(filename);
-  sqlite.exec("PRAGMA busy_timeout = 5000; PRAGMA journal_mode = WAL;");
+  const sqlite = new DatabaseSync(filename, { readOnly });
+  sqlite.exec("PRAGMA busy_timeout = 5000;");
 
   return drizzle({ client: sqlite });
 }

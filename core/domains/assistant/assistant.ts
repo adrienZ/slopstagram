@@ -13,6 +13,7 @@ import {
   type UIMessage,
   type UIMessageStreamOptions,
 } from "ai";
+import { createGroq } from "@ai-sdk/groq";
 import { createOllama } from "ai-sdk-ollama";
 import type { JsonValue } from "@@/core/utils/json-value.ts";
 import { getUserSummaryModel } from "@@/core/domains/accounts/user-summary.ts";
@@ -44,8 +45,11 @@ const MAX_STEPS = 4;
 /** The chat model, as the AI SDK takes it once it is built (not a model id). */
 type AssistantModel = Exclude<LanguageModel, string>;
 
+/** Groq's smallest model with tool calls; it reasons on its own, so the reasoning switch does not reach it. */
+const GROQ_CHAT_MODEL = "openai/gpt-oss-20b";
+
 export type AssistantRuntime = AssistantToolsRuntime &
-  Pick<Runtime, "fetchOllama" | "logger"> & {
+  Pick<Runtime, "fetchGroq" | "fetchOllama" | "logger"> & {
     /** Wraps the chat model: the evals use it to trace its calls. Production leaves it unset. */
     wrapModel?: (model: AssistantModel) => AssistantModel;
   };
@@ -84,16 +88,35 @@ function createFailureDescriber(
   };
 }
 
+// The hosted demo has no Ollama, so a Groq key sends the Assistant to Groq instead.
+function createModelBuilder(runtime: AssistantRuntime): (think: boolean) => AssistantModel {
+  const groqApiKey = process.env.GROQ_API_KEY;
+
+  if (groqApiKey !== undefined) {
+    const groq = createGroq({ apiKey: groqApiKey, fetch: runtime.fetchGroq });
+
+    return () => groq(GROQ_CHAT_MODEL);
+  }
+
+  const ollama = createOllama({
+    apiKey: process.env.OLLAMA_API_KEY,
+    baseURL: getOllamaHost(),
+    fetch: runtime.fetchOllama,
+  });
+
+  // The tool schemas nearly fill Ollama's default 4K context before reasoning starts.
+  return (think) => ollama(getAssistantModel(), { options: { num_ctx: 8192 }, think });
+}
+
 export async function streamAssistantReply(
   runtime: AssistantRuntime,
   messages: Array<AssistantUIMessage>,
 ): Promise<Response> {
-  const ollama = createOllama({ baseURL: getOllamaHost(), fetch: runtime.fetchOllama });
+  const buildModel = createModelBuilder(runtime);
   const tools = createAssistantTools(runtime);
 
   function chatModel(think: boolean): AssistantModel {
-    // The tool schemas nearly fill Ollama's default 4K context before reasoning starts.
-    const model = ollama(getAssistantModel(), { options: { num_ctx: 8192 }, think });
+    const model = buildModel(think);
 
     return runtime.wrapModel?.(model) ?? model;
   }

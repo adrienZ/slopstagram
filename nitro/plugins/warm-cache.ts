@@ -4,6 +4,7 @@ import { definePlugin } from "nitro";
 import { WARM_CACHE_QUEUE_NAME } from "@@/core/domains/fetch-run/warm-cache-queue.ts";
 import { startWarmCacheService } from "@@/core/domains/fetch-run/warm-cache-service.ts";
 import { getProductionRuntime } from "@@/core/domains/runtime/production-runtime.ts";
+import { APP_DATA_READ_ONLY } from "@@/core/utils/app-data-paths.ts";
 
 function spawnBunqueueServer() {
   return spawn("npm", ["run", "bunqueue:server"], {
@@ -14,6 +15,11 @@ function spawnBunqueueServer() {
 }
 
 export default definePlugin((nitroApp) => {
+  // A read-only deployment caches nothing, and has neither npm nor Bun to run the bunqueue server.
+  if (APP_DATA_READ_ONLY) {
+    return;
+  }
+
   const service = startWarmCacheService({
     runtime: getProductionRuntime(),
     spawnServer: spawnBunqueueServer,

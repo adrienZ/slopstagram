@@ -7,6 +7,9 @@ export const APP_CACHE_DIR = path.join(APP_DATA_DIR, "cache");
 export const APP_DATABASE_PATH =
   process.env.SLOPSTAGRAM_DATABASE_PATH ?? path.join(APP_DATA_DIR, "slopstagram.sqlite");
 
+// Vercel sets VERCEL on its functions, whose filesystem is read-only: the demo is browsed, never ingested.
+export const APP_DATA_READ_ONLY = process.env.VERCEL !== undefined;
+
 /** @public */
 export const APP_BUNQUEUE_PATH = path.join(APP_DATA_DIR, "bunq.db");
 
