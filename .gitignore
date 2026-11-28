@@ -17,3 +17,7 @@ data/*
 
 # evalite
 evalite-export/
+
+# Local copies of the data folder and the Playwright profile
+data-backup/
+user-data-backup/

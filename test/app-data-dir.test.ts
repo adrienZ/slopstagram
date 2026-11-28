@@ -51,3 +51,25 @@ test("the Playwright profile lives in the chosen data folder", async (context) =
 
   expect(PLAYWRIGHT_PROFILE_DIR).toBe(path.join(dataDirectory, "playwright", "user-data"));
 });
+
+test("without a chosen data folder, everything lives in data/default", async (context) => {
+  vi.stubEnv("SLOPSTAGRAM_DATA_DIR", undefined);
+  vi.stubEnv("SLOPSTAGRAM_DATABASE_PATH", undefined);
+  vi.resetModules();
+  context.onTestFinished(() => {
+    vi.unstubAllEnvs();
+  });
+
+  const paths = await import("@@/core/utils/app-data-paths.ts");
+
+  expect(paths.APP_DATABASE_PATH).toBe(path.resolve("data/default/slopstagram.sqlite"));
+  expect(paths.PLAYWRIGHT_PROFILE_DIR).toBe(path.resolve("data/default/playwright/user-data"));
+});
+
+test("the bunqueue queue lives in the chosen data folder", async (context) => {
+  const dataDirectory = await useDataDirectory(context);
+
+  const { APP_BUNQUEUE_PATH } = await import("@@/core/utils/app-data-paths.ts");
+
+  expect(APP_BUNQUEUE_PATH).toBe(path.join(dataDirectory, "bunq.db"));
+});

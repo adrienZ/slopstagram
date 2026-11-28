@@ -18,6 +18,7 @@
   },
   "include": [
     "drizzle.config.ts",
+    "bunqueue.config.ts",
     "core/**/*.ts",
     "devtools/**/*.ts",
     "evals/**/*.ts",

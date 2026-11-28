@@ -6,7 +6,7 @@ import { expect, test } from "vitest";
 import { z } from "zod";
 
 // The developer's own database, not the test one: the accounts they really follow.
-const LOCAL_DATABASE = path.resolve("data", "slopstagram.sqlite");
+const LOCAL_DATABASE = path.resolve("data", "default", "slopstagram.sqlite");
 
 // Shorter names are too common in synthetic data (a username such as "alice") to be told apart.
 const MIN_TERM_LENGTH = 6;
