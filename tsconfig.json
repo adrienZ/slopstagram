@@ -17,6 +17,7 @@
     "types": ["node", "vite/client"]
   },
   "include": [
+    "*.config.ts",
     "core/**/*.ts",
     "devtools/**/*.ts",
     "evals/**/*.ts",

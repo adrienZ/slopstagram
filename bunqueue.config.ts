@@ -1,4 +1,5 @@
 import { defineConfig } from "bunqueue";
+import { APP_BUNQUEUE_PATH } from "./core/utils/app-data-paths.ts";
 
 export default defineConfig({
   backup: {
@@ -6,7 +7,6 @@ export default defineConfig({
   },
 
   storage: {
-    // hardcoded value expected by dashboard UI
-    dataPath: "./data/bunq.db",
+    dataPath: APP_BUNQUEUE_PATH,
   },
 });
