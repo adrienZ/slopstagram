@@ -10,8 +10,8 @@ LOG_DIR="$SLOPSTAGRAM_DATA_DIR/logs"
 LOCK_DIR="$SLOPSTAGRAM_DATA_DIR/.refresh.lock"
 SHARP_LINUX_DIR=".vercel/sharp-linux"
 FUNCTION_DIR=".vercel/output/functions/__server.func"
-# Vercel's upload limit is 100 MB: stop before reaching it instead of failing mid-deploy.
-MAX_OUTPUT_MB=90
+# A Vercel function is limited to 250 MB unzipped, and the demo data ships inside it.
+MAX_OUTPUT_MB=230
 
 log() {
   printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
